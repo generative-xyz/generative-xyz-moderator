@@ -18,3 +18,7 @@ run-server:
 
 lint:
 	golangci-lint run ./...
+
+
+gen-proto:
+	 go run tools/main.go protoc
