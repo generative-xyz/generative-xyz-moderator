@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.renderingHub.io;
+option go_package = "renderingHub.io/api;api";
+
+import "google/api/annotations.proto";
+import "health.proto";
+
+service ApiService {
+  rpc Live (LiveRequest) returns (LiveResponse) {
+    option (google.api.http) = {
+      post: "/v1/health/live",
+      body: "*"
+    };
+  }
+  rpc Ping (PingRequest) returns (PingResponse) {
+    option (google.api.http) = {
+      get: "/v1/ping"
+    };
+  }
+}

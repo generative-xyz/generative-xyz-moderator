@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package api.renderingHub.io;
+option go_package = "renderingHub.io/api;api";
+
+message LiveRequest {
+  string message = 1;
+}
+
+message LiveResponse {
+  string message = 1;
+}
+
+message PingRequest {
+}
+
+message PingResponse {
+  string message = 1;
+}
