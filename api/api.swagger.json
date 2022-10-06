@@ -17,7 +17,7 @@
   ],
   "paths": {
     "/v1/health/live": {
-      "post": {
+      "get": {
         "operationId": "ApiService_Live",
         "responses": {
           "200": {
@@ -35,12 +35,10 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/ioLiveRequest"
-            }
+            "name": "message",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -69,14 +67,43 @@
           "ApiService"
         ]
       }
+    },
+    "/v1/template": {
+      "get": {
+        "operationId": "ApiService_GetTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetTemplateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ApiService"
+        ]
+      }
     }
   },
   "definitions": {
-    "ioLiveRequest": {
+    "ioGetTemplateResponse": {
       "type": "object",
       "properties": {
-        "message": {
-          "type": "string"
+        "template": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ioTemplate"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -92,6 +119,20 @@
       "type": "object",
       "properties": {
         "message": {
+          "type": "string"
+        }
+      }
+    },
+    "ioTemplate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "tokenId": {
+          "type": "string"
+        },
+        "symbol": {
           "type": "string"
         }
       }

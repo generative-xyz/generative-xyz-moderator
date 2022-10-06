@@ -2,6 +2,8 @@ package grpc
 
 import (
 	"context"
+
+	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/api/http"
 	"rederinghub.io/internal/services"
 	"rederinghub.io/pkg/log"
@@ -18,7 +20,7 @@ type Server struct {
 var ServiceCmd = &cobra.Command{
 	Use:   "app",
 	Short: "Rendering Hub APIs",
-	Long:  `Rendering Hub APIs`,
+	Long:  "Rendering Hub APIs",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := NewServer().Run()
 		if err != nil {
@@ -42,6 +44,7 @@ func (s *Server) Run() error {
 	s.addToContainer(
 		services.Init,
 		http.NewApiGateway,
+		adapter.NewMoralisAdapter,
 		Init,
 	)
 

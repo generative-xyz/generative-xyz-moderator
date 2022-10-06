@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package api.renderingHub.io;
-option go_package = "renderingHub.io/api;api";
+package api.renderinghub.io;
+option go_package = "renderinghub.io/api;api";
 
 message LiveRequest {
   string message = 1;

@@ -3,17 +3,18 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc"
 	"net"
 	"os"
 	"os/signal"
+	"syscall"
+
+	"google.golang.org/grpc"
 	"rederinghub.io/api"
 	"rederinghub.io/internal/api/http"
 	"rederinghub.io/internal/api/middleware"
 	"rederinghub.io/internal/services"
 	"rederinghub.io/pkg/config"
 	"rederinghub.io/pkg/log"
-	"syscall"
 )
 
 type GrpcServer interface {
@@ -24,14 +25,14 @@ type grpcServer struct {
 	logger log.Logger
 	ctx    context.Context
 	server *grpc.Server
-	svc    services.Service
+	apiSvc services.Service
 	gw     http.ApiGateway
 }
 
-func Init(service services.Service, gw http.ApiGateway) GrpcServer {
+func Init(apiSvc services.Service, gw http.ApiGateway) GrpcServer {
 	var g grpcServer
 	g.logger = log.NewLogger("grpc_server")
-	g.svc = service
+	g.apiSvc = apiSvc
 	g.gw = gw
 	return &g
 }
@@ -47,13 +48,14 @@ func (g *grpcServer) Run(ctx context.Context) error {
 	}
 
 	interceptors := middleware.NewInterceptor(g.logger)
+	grpc.EnableTracing = true
 	baseServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			interceptors.WithTimeoutInterceptor(),
 			interceptors.ValidationInterceptor(),
 		))
 
-	api.RegisterApiServiceServer(baseServer, g.svc)
+	api.RegisterApiServiceServer(baseServer, g.apiSvc)
 	g.server = baseServer
 	go func() {
 		g.logger.Info().Msgf("grpc server is listening to port %v", port)

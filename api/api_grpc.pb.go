@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ApiServiceClient interface {
 	Live(ctx context.Context, in *LiveRequest, opts ...grpc.CallOption) (*LiveResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
 }
 
 type apiServiceClient struct {
@@ -36,7 +37,7 @@ func NewApiServiceClient(cc grpc.ClientConnInterface) ApiServiceClient {
 
 func (c *apiServiceClient) Live(ctx context.Context, in *LiveRequest, opts ...grpc.CallOption) (*LiveResponse, error) {
 	out := new(LiveResponse)
-	err := c.cc.Invoke(ctx, "/api.renderingHub.io.ApiService/Live", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/Live", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,16 @@ func (c *apiServiceClient) Live(ctx context.Context, in *LiveRequest, opts ...gr
 
 func (c *apiServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, "/api.renderingHub.io.ApiService/Ping", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiServiceClient) GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error) {
+	out := new(GetTemplateResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetTemplate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +68,7 @@ func (c *apiServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...gr
 type ApiServiceServer interface {
 	Live(context.Context, *LiveRequest) (*LiveResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -70,6 +81,9 @@ func (UnimplementedApiServiceServer) Live(context.Context, *LiveRequest) (*LiveR
 }
 func (UnimplementedApiServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedApiServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -94,7 +108,7 @@ func _ApiService_Live_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.renderingHub.io.ApiService/Live",
+		FullMethod: "/api.renderinghub.io.ApiService/Live",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiServiceServer).Live(ctx, req.(*LiveRequest))
@@ -112,10 +126,28 @@ func _ApiService_Ping_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.renderingHub.io.ApiService/Ping",
+		FullMethod: "/api.renderinghub.io.ApiService/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiServiceServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiService_GetTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetTemplate(ctx, req.(*GetTemplateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -124,7 +156,7 @@ func _ApiService_Ping_Handler(srv interface{}, ctx context.Context, dec func(int
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ApiService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.renderingHub.io.ApiService",
+	ServiceName: "api.renderinghub.io.ApiService",
 	HandlerType: (*ApiServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -134,6 +166,10 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _ApiService_Ping_Handler,
+		},
+		{
+			MethodName: "GetTemplate",
+			Handler:    _ApiService_GetTemplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

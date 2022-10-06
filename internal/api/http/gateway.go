@@ -3,17 +3,18 @@ package http
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
+
+	"google.golang.org/grpc/credentials/insecure"
 	"rederinghub.io/api"
 	"rederinghub.io/internal/api/middleware"
 	"rederinghub.io/pkg/config"
 	"rederinghub.io/pkg/log"
-	"syscall"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -40,12 +41,8 @@ func (a *apiGateway) run() error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	serverMuxOption := runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
-		return key, true
-	})
-
 	mux := http.NewServeMux()
-	gwMux := runtime.NewServeMux(serverMuxOption)
+	gwMux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	err := api.RegisterApiServiceHandlerFromEndpoint(ctx, gwMux, fmt.Sprintf("%s:%s", server, grpcPort), opts)
