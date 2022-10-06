@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	server ServerCfg
+	server    ServerCfg
+	appConfig AppCfg
 )
 
 type ServerCfg struct {
@@ -16,9 +17,15 @@ type ServerCfg struct {
 	LogLevel  string `envconfig:"LOG_LEVEL" default:"debug"`
 }
 
+type AppCfg struct {
+	MoralisURL    string `envconfig:"MoralisURL" default:"https://deep-index.moralis.io/api/v2/nft/"`
+	MoralisAPIKey string `envconfig:"MoralisAPIKey" default:"6pELUXoEuCjQO1S92nEEQW6c1wNk1Qv4YdPNHJZPzkYeb3EOWlxF0pVPcWxd6J9u"`
+}
+
 func InitConfig() {
 	configs := []interface{}{
 		&server,
+		&appConfig,
 	}
 	for _, instance := range configs {
 		err := envconfig.Process("", instance)
@@ -30,4 +37,8 @@ func InitConfig() {
 
 func ServerConfig() ServerCfg {
 	return server
+}
+
+func AppConfig() AppCfg {
+	return appConfig
 }

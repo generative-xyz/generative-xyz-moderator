@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package api.renderinghub.io;
+option go_package = "renderinghub.io/api;api";
+
+message GetTemplateRequest {}
+
+enum TemplateType {
+  UNKNOWN_TEMPLATE_TYPE = 0;
+  JS_TEMPLATE_TYPE = 1;
+  PYTHON_TEMPLATE_TYPE = 2;
+}
+
+message Template {
+  string name = 1;
+  string token_id = 2;
+  string symbol = 3;
+}
+
+message GetTemplateResponse {
+  repeated Template template = 1;
+  int32 total = 2;
+}

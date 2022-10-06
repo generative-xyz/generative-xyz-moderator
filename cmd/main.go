@@ -1,18 +1,19 @@
 package main
 
 import (
+	"os"
+	"strings"
+
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 	"rederinghub.io/internal/api/grpc"
 	"rederinghub.io/pkg/config"
-	"strings"
 )
 
 var (
 	rootCmd = &cobra.Command{
-		Use:     "application",
+		Use:     "renderinghub",
 		Short:   "Rendering Hub application",
 		Long:    `Rendering Hub application`,
 		Version: "1.0.0",
@@ -30,6 +31,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Errorf("error while reading config file: %s", err)
 	}
+
 	for _, env := range viper.AllKeys() {
 		if viper.GetString(env) != "" {
 			_ = os.Setenv(env, viper.GetString(env))
