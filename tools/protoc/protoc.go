@@ -86,6 +86,16 @@ func Action(c *cli.Context) error {
 	if err != nil {
 		log.Println(err)
 	}
+
+	cmd = exec.Command("/bin/sh", "-c",
+		// TODO shuold dynamic here
+		fmt.Sprintf("cp %s%s swaggerUI", API_OUTPUT, "api.swagger.json"),
+	)
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return errors.New(string(out))
+	}
+
 	cmd = exec.Command("/bin/sh", "-c", "rm -rf tmp/")
 	out, err = cmd.CombinedOutput()
 	if err != nil {
