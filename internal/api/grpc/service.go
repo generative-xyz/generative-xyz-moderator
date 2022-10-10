@@ -3,17 +3,19 @@ package grpc
 import (
 	"context"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/api/http"
 	"rederinghub.io/internal/services"
-	"rederinghub.io/pkg/log"
+	"rederinghub.io/pkg/config"
+	log "rederinghub.io/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 )
 
 type Server struct {
-	logger    log.Logger
+	logger    *log.AutoLogger
 	container *dig.Container
 }
 
@@ -31,7 +33,10 @@ var ServiceCmd = &cobra.Command{
 }
 
 func NewServer() *Server {
-	logger := log.NewLogger("grpc_server")
+	logger := log.AtLog
+	if config.AppConfig().Environment == config.ProductionEnvironment {
+		log.InitLoggerDefault(true)
+	}
 	container := dig.New()
 
 	return &Server{
@@ -52,7 +57,7 @@ func (s *Server) Run() error {
 		_ = server.Run(context.Background())
 	})
 	if err != nil {
-		s.logger.Error().Msgf("server process ends: %v", err)
+		s.logger.Logger.Error("server process ends: %v", zap.Error(err))
 	}
 	return err
 }
@@ -62,7 +67,7 @@ func (s *Server) addToContainer(in ...interface{}) {
 	for _, i := range in {
 		err = s.container.Provide(i)
 		if err != nil {
-			s.logger.Panic().Msg(err.Error())
+			s.logger.Logger.Panic(err.Error())
 		}
 	}
 }

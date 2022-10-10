@@ -2,19 +2,16 @@ package middleware
 
 import (
 	"context"
-	"google.golang.org/grpc"
-	"rederinghub.io/pkg/log"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 type Interceptor struct {
-	logger log.Logger
 }
 
-func NewInterceptor(logger log.Logger) Interceptor {
-	return Interceptor{
-		logger: logger,
-	}
+func NewInterceptor() Interceptor {
+	return Interceptor{}
 }
 
 func (i Interceptor) WithTimeoutInterceptor() grpc.UnaryServerInterceptor {
