@@ -13,7 +13,6 @@ type Service interface {
 
 type service struct {
 	api.UnimplementedApiServiceServer
-
 	moralisAdapter adapter.MoralisAdapter
 }
 

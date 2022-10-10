@@ -14,7 +14,7 @@ import (
 	"rederinghub.io/internal/api/middleware"
 	"rederinghub.io/internal/services"
 	"rederinghub.io/pkg/config"
-	"rederinghub.io/pkg/log"
+	log "rederinghub.io/pkg/logger"
 )
 
 type GrpcServer interface {
@@ -22,7 +22,6 @@ type GrpcServer interface {
 }
 
 type grpcServer struct {
-	logger log.Logger
 	ctx    context.Context
 	server *grpc.Server
 	apiSvc services.Service
@@ -31,7 +30,6 @@ type grpcServer struct {
 
 func Init(apiSvc services.Service, gw http.ApiGateway) GrpcServer {
 	var g grpcServer
-	g.logger = log.NewLogger("grpc_server")
 	g.apiSvc = apiSvc
 	g.gw = gw
 	return &g
@@ -43,11 +41,11 @@ func (g *grpcServer) Run(ctx context.Context) error {
 	port := fmt.Sprintf(":%d", config.ServerConfig().GRPCPort)
 	grpcListener, err := net.Listen("tcp", port)
 	if err != nil {
-		g.logger.Error().Msg(fmt.Sprint("failed to start grpc server listener: ", err))
+		log.AtLog.Errorf(fmt.Sprint("failed to start grpc server listener: ", err))
 		return err
 	}
 
-	interceptors := middleware.NewInterceptor(g.logger)
+	interceptors := middleware.NewInterceptor()
 	grpc.EnableTracing = true
 	baseServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -58,7 +56,7 @@ func (g *grpcServer) Run(ctx context.Context) error {
 	api.RegisterApiServiceServer(baseServer, g.apiSvc)
 	g.server = baseServer
 	go func() {
-		g.logger.Info().Msgf("grpc server is listening to port %v", port)
+		log.AtLog.Infof("grpc server is listening to port %v", port)
 		errChan <- baseServer.Serve(grpcListener)
 	}()
 
@@ -74,7 +72,7 @@ func (g *grpcServer) Run(ctx context.Context) error {
 	}()
 
 	err = <-errChan
-	g.logger.Error().Msg(fmt.Sprint("Service is stopped: ", err))
+	log.AtLog.Print(fmt.Sprint("Service is stopped: ", err))
 	g.server.GracefulStop()
 
 	return err

@@ -14,7 +14,7 @@ import (
 	"rederinghub.io/api"
 	"rederinghub.io/internal/api/middleware"
 	"rederinghub.io/pkg/config"
-	"rederinghub.io/pkg/log"
+	log "rederinghub.io/pkg/logger"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -32,7 +32,6 @@ func NewApiGateway() ApiGateway {
 }
 
 func (a *apiGateway) run() error {
-	logger := log.NewLogger("http_server")
 	server := config.ServerConfig().SERVERUrl
 	grpcPort := fmt.Sprintf("%d", config.ServerConfig().GRPCPort)
 	httpPort := fmt.Sprintf("%d", config.ServerConfig().HTTPPort)
@@ -61,11 +60,11 @@ func (a *apiGateway) run() error {
 	go func() {
 		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			// it is fine to use Fatal here because it is not main goroutine
-			logger.Fatal().Msgf("HTTP server ListenAndServe: %v", err)
+			log.AtLog.Fatalf("HTTP server ListenAndServe: %v", err)
 		}
 	}()
 
-	logger.Info().Msgf("http server is listening to port %v", httpPort)
+	log.AtLog.Infof("http server is listening to port %v", httpPort)
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(
 		signalChan,
@@ -75,23 +74,22 @@ func (a *apiGateway) run() error {
 	)
 
 	<-signalChan
-	logger.Info().Msgf("os.Interrupt - shutting down...\n")
+	log.AtLog.Infof("os.Interrupt - shutting down...\n")
 
 	go func() {
 		<-signalChan
-		logger.Fatal().Msgf("os.Kill - terminating...\n")
+		log.AtLog.Infof("os.Kill - terminating...\n")
 	}()
 
 	graceFullCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelShutdown()
 
 	if err := httpServer.Shutdown(graceFullCtx); err != nil {
-		logger.Info().Msgf("shutdown error: %v\n", err)
+		log.AtLog.Infof("shutdown error: %v\n", err)
 		defer os.Exit(1)
 		return err
-	} else {
-		logger.Info().Msgf("gracefully stopped\n")
 	}
+	log.AtLog.Infof("gracefully stopped\n")
 
 	// manually cancel context if not using httpServer.RegisterOnShutdown(cancel)
 	cancel()
