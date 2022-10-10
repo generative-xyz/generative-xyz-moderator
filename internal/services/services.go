@@ -27,3 +27,7 @@ func (s *service) Live(context.Context, *api.LiveRequest) (*api.LiveResponse, er
 		Message: "OK",
 	}, nil
 }
+
+func (s *service) Ping(context.Context, *api.PingRequest) (*api.PingResponse, error) {
+	return &api.PingResponse{Message: "OK"}, nil
+}
