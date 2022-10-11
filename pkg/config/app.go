@@ -22,9 +22,11 @@ type ServerCfg struct {
 }
 
 type AppCfg struct {
-	Environment   string `envconfig:"ENVIRONMENT" default:"develop"`
-	MoralisURL    string `envconfig:"MORALIS_URL" default:"https://deep-index.moralis.io/api/v2/nft/"`
-	MoralisAPIKey string `envconfig:"MORALIS_API_KEY" default:"6pELUXoEuCjQO1S92nEEQW6c1wNk1Qv4YdPNHJZPzkYeb3EOWlxF0pVPcWxd6J9u"`
+	Environment                   string `envconfig:"ENVIRONMENT" default:"develop"`
+	MoralisURL                    string `envconfig:"MORALIS_URL" default:"https://deep-index.moralis.io/api/v2/nft/"`
+	MoralisAPIKey                 string `envconfig:"MORALIS_API_KEY" default:"6pELUXoEuCjQO1S92nEEQW6c1wNk1Qv4YdPNHJZPzkYeb3EOWlxF0pVPcWxd6J9u"`
+	GenerativeBoilerplateContract string `envconfig:"BOILERPLATE_CONTRACT" default:"0x19cbe1721a63dd4f391fc6f0a75596fe98c2301a"`
+	ChainID                       string `envconfig:"CHAIN_ID" default:"goerli"`
 }
 
 func InitConfig() {

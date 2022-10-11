@@ -25,6 +25,7 @@ type ApiServiceClient interface {
 	Live(ctx context.Context, in *LiveRequest, opts ...grpc.CallOption) (*LiveResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
+	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error)
 }
 
 type apiServiceClient struct {
@@ -62,6 +63,15 @@ func (c *apiServiceClient) GetTemplate(ctx context.Context, in *GetTemplateReque
 	return out, nil
 }
 
+func (c *apiServiceClient) GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error) {
+	out := new(GetTemplateDetailResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetTemplateDetail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServiceServer is the server API for ApiService service.
 // All implementations must embed UnimplementedApiServiceServer
 // for forward compatibility
@@ -69,6 +79,7 @@ type ApiServiceServer interface {
 	Live(context.Context, *LiveRequest) (*LiveResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
+	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -84,6 +95,9 @@ func (UnimplementedApiServiceServer) Ping(context.Context, *PingRequest) (*PingR
 }
 func (UnimplementedApiServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
+}
+func (UnimplementedApiServiceServer) GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTemplateDetail not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -152,6 +166,24 @@ func _ApiService_GetTemplate_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetTemplateDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetTemplateDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetTemplateDetail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetTemplateDetail(ctx, req.(*GetTemplateDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiService_ServiceDesc is the grpc.ServiceDesc for ApiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +202,10 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTemplate",
 			Handler:    _ApiService_GetTemplate_Handler,
+		},
+		{
+			MethodName: "GetTemplateDetail",
+			Handler:    _ApiService_GetTemplateDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
