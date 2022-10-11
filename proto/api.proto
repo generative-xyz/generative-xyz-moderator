@@ -23,4 +23,10 @@ service ApiService {
       get: "/v1/template"
     };
   }
+  rpc GetTemplateDetail(GetTemplateDetailRequest) returns (GetTemplateDetailResponse) {
+    option (google.api.http) = {
+      get: "/v1/template-detail"
+    };
+  }
+
 }

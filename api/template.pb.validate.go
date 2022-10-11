@@ -242,6 +242,118 @@ var _ interface {
 	ErrorName() string
 } = TemplateValidationError{}
 
+// Validate checks the field values on TemplateParam with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *TemplateParam) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TemplateParam with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in TemplateParamMultiError, or
+// nil if none found.
+func (m *TemplateParam) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TemplateParam) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for TypeI
+
+	// no validation rules for Max
+
+	// no validation rules for Min
+
+	// no validation rules for Decimal
+
+	if m.Value != nil {
+		// no validation rules for Value
+	}
+
+	if len(errors) > 0 {
+		return TemplateParamMultiError(errors)
+	}
+
+	return nil
+}
+
+// TemplateParamMultiError is an error wrapping multiple validation errors
+// returned by TemplateParam.ValidateAll() if the designated constraints
+// aren't met.
+type TemplateParamMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TemplateParamMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TemplateParamMultiError) AllErrors() []error { return m }
+
+// TemplateParamValidationError is the validation error returned by
+// TemplateParam.Validate if the designated constraints aren't met.
+type TemplateParamValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TemplateParamValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TemplateParamValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TemplateParamValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TemplateParamValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TemplateParamValidationError) ErrorName() string { return "TemplateParamValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TemplateParamValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTemplateParam.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TemplateParamValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TemplateParamValidationError{}
+
 // Validate checks the field values on GetTemplateResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -379,3 +491,215 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetTemplateResponseValidationError{}
+
+// Validate checks the field values on GetTemplateDetailRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTemplateDetailRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTemplateDetailRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTemplateDetailRequestMultiError, or nil if none found.
+func (m *GetTemplateDetailRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTemplateDetailRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	if len(errors) > 0 {
+		return GetTemplateDetailRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTemplateDetailRequestMultiError is an error wrapping multiple validation
+// errors returned by GetTemplateDetailRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetTemplateDetailRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTemplateDetailRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTemplateDetailRequestMultiError) AllErrors() []error { return m }
+
+// GetTemplateDetailRequestValidationError is the validation error returned by
+// GetTemplateDetailRequest.Validate if the designated constraints aren't met.
+type GetTemplateDetailRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTemplateDetailRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTemplateDetailRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTemplateDetailRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTemplateDetailRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTemplateDetailRequestValidationError) ErrorName() string {
+	return "GetTemplateDetailRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTemplateDetailRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTemplateDetailRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTemplateDetailRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTemplateDetailRequestValidationError{}
+
+// Validate checks the field values on GetTemplateDetailResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTemplateDetailResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTemplateDetailResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTemplateDetailResponseMultiError, or nil if none found.
+func (m *GetTemplateDetailResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTemplateDetailResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for TemplateType
+
+	if len(errors) > 0 {
+		return GetTemplateDetailResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTemplateDetailResponseMultiError is an error wrapping multiple validation
+// errors returned by GetTemplateDetailResponse.ValidateAll() if the
+// designated constraints aren't met.
+type GetTemplateDetailResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTemplateDetailResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTemplateDetailResponseMultiError) AllErrors() []error { return m }
+
+// GetTemplateDetailResponseValidationError is the validation error returned by
+// GetTemplateDetailResponse.Validate if the designated constraints aren't met.
+type GetTemplateDetailResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTemplateDetailResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTemplateDetailResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTemplateDetailResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTemplateDetailResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTemplateDetailResponseValidationError) ErrorName() string {
+	return "GetTemplateDetailResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTemplateDetailResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTemplateDetailResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTemplateDetailResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTemplateDetailResponseValidationError{}

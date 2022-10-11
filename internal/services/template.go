@@ -2,15 +2,16 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/labstack/gommon/log"
 	"rederinghub.io/api"
+	"rederinghub.io/pkg/config"
 )
 
 func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) (*api.GetTemplateResponse, error) {
-	//appConfig := config.AppConfig()
-	// TODO @khoa read from config
-	moralisResp, err := s.moralisAdapter.ListNFTs("0x19cbe1721a63dd4f391fc6f0a75596fe98c2301a", "goerli")
+	appConfig := config.AppConfig()
+	moralisResp, err := s.moralisAdapter.ListNFTs(appConfig.GenerativeBoilerplateContract, appConfig.ChainID)
 	if err != nil {
 		log.Errorf("moralis get nft error", err)
 		return nil, err
@@ -24,6 +25,15 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 			TokenId: nft.TokenID,
 			Symbol:  nft.Symbol,
 		})
+
 	}
 	return &resp, nil
+}
+
+func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {
+	fmt.Println(req.Name)
+	return &api.GetTemplateDetailResponse{
+		Code:         "abc",
+		TemplateType: 1,
+	}, nil
 }

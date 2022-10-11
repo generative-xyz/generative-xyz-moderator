@@ -89,9 +89,56 @@
           "ApiService"
         ]
       }
+    },
+    "/v1/template-detail": {
+      "get": {
+        "operationId": "ApiService_GetTemplateDetail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetTemplateDetailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
     }
   },
   "definitions": {
+    "ioGetTemplateDetailResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "templateType": {
+          "$ref": "#/definitions/ioTemplateType"
+        }
+      }
+    },
     "ioGetTemplateResponse": {
       "type": "object",
       "properties": {
@@ -136,6 +183,15 @@
           "type": "string"
         }
       }
+    },
+    "ioTemplateType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_TEMPLATE_TYPE",
+        "JS_TEMPLATE_TYPE",
+        "PYTHON_TEMPLATE_TYPE"
+      ],
+      "default": "UNKNOWN_TEMPLATE_TYPE"
     },
     "protobufAny": {
       "type": "object",

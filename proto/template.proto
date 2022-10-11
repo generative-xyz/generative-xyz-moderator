@@ -15,9 +15,30 @@ message Template {
   string name = 1;
   string token_id = 2;
   string symbol = 3;
+
+}
+
+message TemplateParam {
+  string typeI = 1;
+  uint32 max = 2;
+  uint32 min = 3;
+  uint32 decimal = 4;
+  repeated double available_decimal = 5;
+  repeated string available_string = 6;
+  optional uint32 value = 7;
 }
 
 message GetTemplateResponse {
   repeated Template template = 1;
   int32 total = 2;
+}
+
+message GetTemplateDetailRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message GetTemplateDetailResponse {
+  string code = 1;
+  TemplateType template_type = 2;
 }
