@@ -15,9 +15,9 @@ jobs:
         id: get_tag_name
         run: |
           if [[ $GITHUB_REF_NAME == 'develop' || $GITHUB_REF_NAME == 'staging' ]]; then
-            echo ::set-output name=IMAGE_TAG::${GITHUB_REF_NAME}
+            echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
           else
-            echo ::set-output name=IMAGE_TAG::${GITHUB_REF/refs\/tags\//}
+            echo "IMAGE_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
           fi
       - uses: RafikFarhad/push-to-gcr-github-action@v4.1
         with:
@@ -25,7 +25,7 @@ jobs:
           registry: gcr.io
           project_id: moshwithme
           image_name: rendering-hub
-          image_tag: latest,${{ steps.get_tag_name.outputs.IMAGE_TAG }}
+          image_tag: latest,${{ env.IMAGE_TAG }}
           dockerfile: ./Dockerfile
           context: ./
           
