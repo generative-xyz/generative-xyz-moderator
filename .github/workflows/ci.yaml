@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main", "staging", "develop"]
+  pull_request:
+    branches: [ "main", "staging", "develop"]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: |
+        short_sha=$(echo $GITHUB_SHA | head -n 7)
+        docker build . --file Dockerfile --tag rendering-hub:${GITHUB_BASE_REF}-${short_sha}
