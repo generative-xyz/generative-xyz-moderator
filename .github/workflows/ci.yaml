@@ -25,7 +25,7 @@ jobs:
           gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }} # can be base64 encoded or plain text
           registry: gcr.io
           project_id: moshwithme
-          image_name: rendering-hub
+          image_name: rove-rendering-hub
           image_tag: latest,${{ env.IMAGE_TAG }}
           dockerfile: ./Dockerfile
           context: ./
