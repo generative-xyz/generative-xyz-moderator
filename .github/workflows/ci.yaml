@@ -20,7 +20,6 @@ jobs:
             echo ::set-output name=IMAGE_TAG::${GITHUB_REF/refs\/tags\//}
           fi
       - uses: RafikFarhad/push-to-gcr-github-action@v4.1
-        if: github.ref_name == 'develop' or github.ref_name == 'staging'
         with:
           gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }} # can be base64 encoded or plain text
           registry: gcr.io
