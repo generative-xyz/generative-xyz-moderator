@@ -7,14 +7,26 @@ on:
     branches: [ "main", "staging", "develop"]
 
 jobs:
-
-  build:
-
+  build-and-push-to-gcr:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: |
-        short_sha=$(echo $GITHUB_SHA | head -n 7)
-        docker build . --file Dockerfile --tag rendering-hub:${GITHUB_REF_NAME}-${short_sha}
+      - uses: actions/checkout@v2
+      - name: Get the tag name
+        id: get_tag_name
+        run: |
+          if $GITHUB_REF_NAME == 'develop' || $GITHUB_REF_NAME == 'staging'; then
+            echo ::set-output name=IMAGE_TAG::${GITHUB_REF_NAME}
+          else
+            echo ::set-output name=IMAGE_TAG::${GITHUB_REF/refs\/tags\//}
+          fi
+      - uses: RafikFarhad/push-to-gcr-github-action@v4.1
+        if: github.ref_name == 'develop' or github.ref_name == 'staging'
+        with:
+          gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }} # can be base64 encoded or plain text
+          registry: gcr.io
+          project_id: moshwithme
+          image_name: rendering-hub
+          image_tag: latest,${{ steps.get_tag_name.outputs.IMAGE_TAG }}
+          dockerfile: ./Dockerfile
+          context: ./
+          
