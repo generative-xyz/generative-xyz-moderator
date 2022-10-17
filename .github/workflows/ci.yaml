@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       run: |
         short_sha=$(echo $GITHUB_SHA | head -n 7)
-        docker build . --file Dockerfile --tag rendering-hub:${GITHUB_BASE_REF}-${short_sha}
+        docker build . --file Dockerfile --tag rendering-hub:${GITHUB_REF_NAME}-${short_sha}
