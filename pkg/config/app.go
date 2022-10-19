@@ -25,7 +25,7 @@ type AppCfg struct {
 	Environment                   string `envconfig:"ENVIRONMENT" default:"develop"`
 	MoralisURL                    string `envconfig:"MORALIS_URL" default:"https://deep-index.moralis.io/api/v2/nft/"`
 	MoralisAPIKey                 string `envconfig:"MORALIS_API_KEY" default:"6pELUXoEuCjQO1S92nEEQW6c1wNk1Qv4YdPNHJZPzkYeb3EOWlxF0pVPcWxd6J9u"`
-	GenerativeBoilerplateContract string `envconfig:"BOILERPLATE_CONTRACT" default:"0x19cbe1721a63dd4f391fc6f0a75596fe98c2301a"`
+	GenerativeBoilerplateContract string `envconfig:"BOILERPLATE_CONTRACT" default:"0xae0C96BBD7733a1C7843af27e0683c74E182A3a7"`
 	ChainID                       string `envconfig:"CHAIN_ID" default:"goerli"`
 }
 

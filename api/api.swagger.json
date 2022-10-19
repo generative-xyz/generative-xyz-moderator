@@ -181,6 +181,9 @@
         },
         "symbol": {
           "type": "string"
+        },
+        "metadataImage": {
+          "type": "string"
         }
       }
     },
