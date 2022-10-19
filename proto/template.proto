@@ -15,7 +15,7 @@ message Template {
   string name = 1;
   string token_id = 2;
   string symbol = 3;
-
+  string metadata_image = 4;
 }
 
 message TemplateParam {

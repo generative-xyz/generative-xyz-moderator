@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/labstack/gommon/log"
@@ -20,13 +21,24 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 		Template: make([]*api.Template, 0, len(moralisResp.Result)),
 	}
 	for _, nft := range moralisResp.Result {
+		var (
+			image    = ""
+			metadata = make(map[string]interface{})
+		)
+		if err := json.Unmarshal([]byte(nft.Metadata), &metadata); err == nil {
+			if v, ok := metadata["image"]; ok {
+				image = v.(string)
+			}
+		}
 		resp.Template = append(resp.Template, &api.Template{
-			Name:    nft.Name,
-			TokenId: nft.TokenID,
-			Symbol:  nft.Symbol,
+			Name:          nft.Name,
+			TokenId:       nft.TokenID,
+			Symbol:        nft.Symbol,
+			MetadataImage: image,
 		})
-
 	}
+	resp.Total = int32(len(moralisResp.Result))
+
 	return &resp, nil
 }
 

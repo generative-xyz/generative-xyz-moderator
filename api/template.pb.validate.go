@@ -165,6 +165,8 @@ func (m *Template) validate(all bool) error {
 
 	// no validation rules for Symbol
 
+	// no validation rules for MetadataImage
+
 	if len(errors) > 0 {
 		return TemplateMultiError(errors)
 	}
