@@ -2,9 +2,12 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main", "staging", "develop"]
+    branches: [ "staging", "develop"]
+    tags:
+      - 'v**'
   pull_request:
     branches: [ "main", "staging", "develop"]
+
 
 jobs:
   build-and-push-to-gcr:
