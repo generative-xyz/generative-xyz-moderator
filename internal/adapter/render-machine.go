@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -50,12 +51,18 @@ func (a *renderMachineAdapter) Render(ctx context.Context, request *RenderReques
 	req.Header.Add("accept", "application/json")
 	req = req.WithContext(ctxCancel)
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{
+		Timeout: 5 * time.Minute,
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	defer res.Body.Close()
+	if res.Status != "200" {
+		return nil, errors.New("call to render machine got error")
+	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
