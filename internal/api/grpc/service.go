@@ -6,6 +6,8 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/api/http"
+	"rederinghub.io/internal/model"
+	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/services"
 	"rederinghub.io/pkg/config"
 	log "rederinghub.io/pkg/logger"
@@ -47,10 +49,17 @@ func NewServer() *Server {
 
 func (s *Server) Run() error {
 	s.addToContainer(
+		// Base
 		services.Init,
 		http.NewApiGateway,
-		adapter.NewMoralisAdapter,
 		Init,
+		model.NewDatabase,
+
+		// repository
+		repository.NewTemplateRepository,
+
+		// adapter
+		adapter.NewMoralisAdapter,
 	)
 
 	err := s.container.Invoke(func(server GrpcServer) {
