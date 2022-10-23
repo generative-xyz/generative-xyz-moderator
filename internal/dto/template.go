@@ -35,10 +35,10 @@ func (d *TemplateDTO) ToProto() *api.GetTemplateDetailResponse {
 		CustomUri:       d.CustomUri,
 		ProjectName:     d.ProjectName,
 		ClientSeed:      d.ClientSeed,
-		ParamsTemplate: func(d *TemplateDTO) *api.GetTemplateDetailResponse_ParamsTemplate {
-			params := make([]*api.GetTemplateDetailResponse_Param, 0, len(d.ParamsTemplate.Params))
+		ParamsTemplate: func(d *TemplateDTO) *api.ParamsTemplate {
+			params := make([]*api.Param, 0, len(d.ParamsTemplate.Params))
 			for _, item := range d.ParamsTemplate.Params {
-				params = append(params, &api.GetTemplateDetailResponse_Param{
+				params = append(params, &api.Param{
 					TypeValue:       uint32(item.TypeValue),
 					Max:             item.MaxStr,
 					Min:             item.MinStr,
@@ -48,7 +48,7 @@ func (d *TemplateDTO) ToProto() *api.GetTemplateDetailResponse {
 					Editable:        item.Editable,
 				})
 			}
-			return &api.GetTemplateDetailResponse_ParamsTemplate{
+			return &api.ParamsTemplate{
 				Seed:   d.ParamsTemplate.SeedStr,
 				Params: params,
 			}
