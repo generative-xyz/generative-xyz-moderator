@@ -28,5 +28,11 @@ service ApiService {
       get: "/v1/template-detail"
     };
   }
+  rpc TemplateRendering(TemplateRenderingRequest) returns (TemplateRenderingResponse) {
+    option (google.api.http) = {
+      post: "/v1/template-rendering",
+      body: "*"
+    };
+  }
 
 }
