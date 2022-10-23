@@ -28,6 +28,7 @@ type AppCfg struct {
 	GenerativeBoilerplateContract string `envconfig:"BOILERPLATE_CONTRACT" default:"0x95056d48b6DC390304e6d5c4638A413E7Bd931ce"`
 	ChainID                       string `envconfig:"CHAIN_ID" default:"goerli"`
 	RPC_URL                       string `envconfig:"CHAIN_ID" default:"https://ethereum-goerli-rpc.allthatnode.com"`
+	RenderMachineAddr             string `envconfig:"RENDER_MACHINE_ADDR" default:"rendering-machine-service:5000"`
 }
 
 func InitConfig() {

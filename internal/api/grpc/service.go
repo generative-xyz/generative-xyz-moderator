@@ -60,6 +60,7 @@ func (s *Server) Run() error {
 
 		// adapter
 		adapter.NewMoralisAdapter,
+		adapter.NewRenderMachineAdapter,
 	)
 
 	err := s.container.Invoke(func(server GrpcServer) {

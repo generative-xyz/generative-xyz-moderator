@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,6 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"rederinghub.io/api"
+	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/pkg/config"
 	"rederinghub.io/pkg/contracts/generative_boilerplate"
@@ -116,4 +118,43 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 	}
 
 	return templateDTO.ToProto(), nil
+}
+
+func (s *service) TemplateRendering(ctx context.Context, request *api.TemplateRenderingRequest) (*api.TemplateRenderingResponse, error) {
+	var (
+		templateDTOFromMongo bson.M
+		templateDTO          dto.TemplateDTO
+	)
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"tokenId": request.TokenId,
+	}, &templateDTOFromMongo); err != nil {
+		return nil, err
+	}
+
+	bytes, _ := json.Marshal(templateDTOFromMongo)
+	if err := json.Unmarshal(bytes, &templateDTO); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.renderMachineAdapter.Render(ctx, &adapter.RenderRequest{
+		Script: templateDTO.Script,
+		Params: func(_request *api.TemplateRenderingRequest) []string {
+			params := make([]string, 0, len(request.Params.Params))
+			for _, item := range request.Params.Params {
+				params = append(params, item.Value)
+			}
+
+			return params
+		}(request),
+		Seed: request.Params.Seed,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.TemplateRenderingResponse{
+		Glb:   fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", resp.Glb),
+		Image: fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", resp.Image),
+	}, nil
 }

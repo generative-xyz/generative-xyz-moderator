@@ -49,20 +49,30 @@ message GetTemplateDetailResponse {
   string custom_uri = 9;
   string project_name = 10;
   bool client_seed = 11;
-
-  message Param {
-    uint32 type_value = 1;
-    string  max = 2;
-    string  min = 3;
-    uint32  decimal = 4;
-    repeated string available_values = 5;
-    string value = 6;
-    bool editable = 7;
-  }
-  message ParamsTemplate {
-    string seed = 1;
-    repeated Param params = 2;
-  }
-
   ParamsTemplate params_template = 12;
+}
+
+message Param {
+  uint32 type_value = 1;
+  string  max = 2;
+  string  min = 3;
+  uint32  decimal = 4;
+  repeated string available_values = 5;
+  string value = 6;
+  bool editable = 7;
+}
+
+message ParamsTemplate {
+  string seed = 1;
+  repeated Param params = 2;
+}
+
+message TemplateRenderingRequest {
+  string token_id = 1;
+  ParamsTemplate params = 2;
+}
+
+message TemplateRenderingResponse {
+  string glb = 1;
+  string image = 2;
 }

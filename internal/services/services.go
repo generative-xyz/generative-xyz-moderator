@@ -14,14 +14,20 @@ type Service interface {
 
 type service struct {
 	api.UnimplementedApiServiceServer
-	moralisAdapter adapter.MoralisAdapter
+	moralisAdapter       adapter.MoralisAdapter
+	renderMachineAdapter adapter.RenderMachineAdapter
 
 	templateRepository repository.TemplateRepository
 }
 
-func Init(moralisAdapter adapter.MoralisAdapter, templateRepository repository.TemplateRepository) Service {
+func Init(moralisAdapter adapter.MoralisAdapter,
+	renderMachineAdapter adapter.RenderMachineAdapter,
+	templateRepository repository.TemplateRepository,
+) Service {
 	return &service{
-		moralisAdapter:     moralisAdapter,
+		moralisAdapter:       moralisAdapter,
+		renderMachineAdapter: renderMachineAdapter,
+
 		templateRepository: templateRepository,
 	}
 }
