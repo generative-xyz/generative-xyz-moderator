@@ -109,13 +109,7 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "name",
+            "name": "tokenId",
             "in": "query",
             "required": false,
             "type": "string"
@@ -128,14 +122,90 @@
     }
   },
   "definitions": {
+    "GetTemplateDetailResponseParam": {
+      "type": "object",
+      "properties": {
+        "typeValue": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "max": {
+          "type": "string"
+        },
+        "min": {
+          "type": "string"
+        },
+        "decimal": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "availableValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "value": {
+          "type": "string"
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "GetTemplateDetailResponseParamsTemplate": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GetTemplateDetailResponseParam"
+          }
+        }
+      }
+    },
     "ioGetTemplateDetailResponse": {
       "type": "object",
       "properties": {
-        "code": {
+        "tokenId": {
           "type": "string"
         },
-        "templateType": {
-          "$ref": "#/definitions/ioTemplateType"
+        "fee": {
+          "type": "string"
+        },
+        "feeToken": {
+          "type": "string"
+        },
+        "mintMaxSupply": {
+          "type": "string"
+        },
+        "mintTotalSupply": {
+          "type": "string"
+        },
+        "script": {
+          "type": "string"
+        },
+        "scriptType": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "creator": {
+          "type": "string"
+        },
+        "customUri": {
+          "type": "string"
+        },
+        "projectName": {
+          "type": "string"
+        },
+        "clientSeed": {
+          "type": "boolean"
+        },
+        "paramsTemplate": {
+          "$ref": "#/definitions/GetTemplateDetailResponseParamsTemplate"
         }
       }
     },
@@ -186,15 +256,6 @@
           "type": "string"
         }
       }
-    },
-    "ioTemplateType": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN_TEMPLATE_TYPE",
-        "JS_TEMPLATE_TYPE",
-        "PYTHON_TEMPLATE_TYPE"
-      ],
-      "default": "UNKNOWN_TEMPLATE_TYPE"
     },
     "protobufAny": {
       "type": "object",
