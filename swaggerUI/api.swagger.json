@@ -119,54 +119,41 @@
           "ApiService"
         ]
       }
+    },
+    "/v1/template-rendering": {
+      "post": {
+        "operationId": "ApiService_TemplateRendering",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioTemplateRenderingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ioTemplateRenderingRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
     }
   },
   "definitions": {
-    "GetTemplateDetailResponseParam": {
-      "type": "object",
-      "properties": {
-        "typeValue": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "max": {
-          "type": "string"
-        },
-        "min": {
-          "type": "string"
-        },
-        "decimal": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "availableValues": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "value": {
-          "type": "string"
-        },
-        "editable": {
-          "type": "boolean"
-        }
-      }
-    },
-    "GetTemplateDetailResponseParamsTemplate": {
-      "type": "object",
-      "properties": {
-        "seed": {
-          "type": "string"
-        },
-        "params": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GetTemplateDetailResponseParam"
-          }
-        }
-      }
-    },
     "ioGetTemplateDetailResponse": {
       "type": "object",
       "properties": {
@@ -205,7 +192,7 @@
           "type": "boolean"
         },
         "paramsTemplate": {
-          "$ref": "#/definitions/GetTemplateDetailResponseParamsTemplate"
+          "$ref": "#/definitions/ioParamsTemplate"
         }
       }
     },
@@ -232,6 +219,51 @@
         }
       }
     },
+    "ioParam": {
+      "type": "object",
+      "properties": {
+        "typeValue": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "max": {
+          "type": "string"
+        },
+        "min": {
+          "type": "string"
+        },
+        "decimal": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "availableValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "value": {
+          "type": "string"
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ioParamsTemplate": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "string"
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ioParam"
+          }
+        }
+      }
+    },
     "ioPingResponse": {
       "type": "object",
       "properties": {
@@ -253,6 +285,28 @@
           "type": "string"
         },
         "metadataImage": {
+          "type": "string"
+        }
+      }
+    },
+    "ioTemplateRenderingRequest": {
+      "type": "object",
+      "properties": {
+        "tokenId": {
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/definitions/ioParamsTemplate"
+        }
+      }
+    },
+    "ioTemplateRenderingResponse": {
+      "type": "object",
+      "properties": {
+        "glb": {
+          "type": "string"
+        },
+        "image": {
           "type": "string"
         }
       }
