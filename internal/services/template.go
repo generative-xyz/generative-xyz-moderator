@@ -3,11 +3,22 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/copier"
 	"github.com/labstack/gommon/log"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"rederinghub.io/api"
+	"rederinghub.io/internal/dto"
 	"rederinghub.io/pkg/config"
+	"rederinghub.io/pkg/contracts/generative_boilerplate"
 )
 
 func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) (*api.GetTemplateResponse, error) {
@@ -43,9 +54,66 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 }
 
 func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {
-	fmt.Println(req.Name)
-	return &api.GetTemplateDetailResponse{
-		Code:         "abc",
-		TemplateType: 1,
-	}, nil
+	appConfig := config.AppConfig()
+
+	var templateDTOFromMongo bson.M
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"tokenId": req.TokenId,
+	}, &templateDTOFromMongo); err != nil {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, err
+		}
+	} else {
+		bytes, _ := json.Marshal(templateDTOFromMongo)
+		var templateDTO dto.TemplateDTO
+		if err := json.Unmarshal(bytes, &templateDTO); err != nil {
+			return nil, err
+		}
+
+		return templateDTO.ToProto(), nil
+	}
+
+	// Get data from blockchain if not exist
+	client, err := ethclient.Dial(appConfig.RPC_URL)
+	addr := common.HexToAddress(appConfig.GenerativeBoilerplateContract)
+
+	instance, err := generative_boilerplate.NewGenerativeBoilerplate(addr, client)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
+	if !ok {
+		return nil, errors.New("invalid token id")
+	}
+
+	resp, err := instance.Projects(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Script == "" && resp.ScriptType == 0 && resp.ProjectName == "" {
+		return nil, status.Errorf(codes.NotFound, "token_id %v is not found", req.TokenId)
+	}
+
+	var templateDTO = dto.TemplateDTO{TokenID: req.TokenId}
+	if err := copier.Copy(&templateDTO, resp); err != nil {
+		return nil, err
+	}
+
+	var templateModel bson.M
+	if bytes, err := json.Marshal(&templateDTO); err != nil {
+		return nil, err
+	} else {
+		if err = json.Unmarshal(bytes, &templateModel); err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = s.templateRepository.Create(context.Background(), &templateModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return templateDTO.ToProto(), nil
 }
