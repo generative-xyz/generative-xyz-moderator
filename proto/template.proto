@@ -34,11 +34,35 @@ message GetTemplateResponse {
 }
 
 message GetTemplateDetailRequest {
-  string id = 1;
-  string name = 2;
+  string token_id = 1;
 }
 
 message GetTemplateDetailResponse {
-  string code = 1;
-  TemplateType template_type = 2;
+  string token_id = 1;
+  string fee = 2;
+  string fee_token = 3;
+  string mint_max_supply = 4;
+  string mint_total_supply = 5;
+  string script = 6;
+  uint32 script_type = 7;
+  string creator = 8;
+  string custom_uri = 9;
+  string project_name = 10;
+  bool client_seed = 11;
+
+  message Param {
+    uint32 type_value = 1;
+    string  max = 2;
+    string  min = 3;
+    uint32  decimal = 4;
+    repeated string available_values = 5;
+    string value = 6;
+    bool editable = 7;
+  }
+  message ParamsTemplate {
+    string seed = 1;
+    repeated Param params = 2;
+  }
+
+  ParamsTemplate params_template = 12;
 }

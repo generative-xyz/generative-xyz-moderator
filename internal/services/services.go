@@ -5,6 +5,7 @@ import (
 
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
+	"rederinghub.io/internal/repository"
 )
 
 type Service interface {
@@ -14,11 +15,14 @@ type Service interface {
 type service struct {
 	api.UnimplementedApiServiceServer
 	moralisAdapter adapter.MoralisAdapter
+
+	templateRepository repository.TemplateRepository
 }
 
-func Init(moralisAdapter adapter.MoralisAdapter) Service {
+func Init(moralisAdapter adapter.MoralisAdapter, templateRepository repository.TemplateRepository) Service {
 	return &service{
-		moralisAdapter: moralisAdapter,
+		moralisAdapter:     moralisAdapter,
+		templateRepository: templateRepository,
 	}
 }
 
