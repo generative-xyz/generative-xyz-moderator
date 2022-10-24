@@ -35,6 +35,8 @@ message GetTemplateResponse {
 
 message GetTemplateDetailRequest {
   string token_id = 1;
+  string chain_id = 2;
+  string contract_address = 3;
 }
 
 message GetTemplateDetailResponse {

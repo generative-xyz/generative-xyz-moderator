@@ -45,14 +45,14 @@ func (a *renderMachineAdapter) Render(ctx context.Context, request *RenderReques
 	if err != nil {
 		return nil, err
 	}
-	ctxCancel, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	ctxCancel, cancel := context.WithTimeout(ctx, 30*time.Minute)
 	defer cancel()
 	req, _ := http.NewRequest("POST", a.Address, bytes.NewBuffer(_bytes))
 	req.Header.Add("accept", "application/json")
 	req = req.WithContext(ctxCancel)
 
 	client := http.Client{
-		Timeout: 5 * time.Minute,
+		Timeout: 30 * time.Minute,
 	}
 	res, err := client.Do(req)
 	if err != nil {

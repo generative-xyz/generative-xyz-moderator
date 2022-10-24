@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -56,7 +57,10 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 }
 
 func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {
-	appConfig := config.AppConfig()
+	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
+	if !ok {
+		return nil, errors.New("missing config chain_config from server")
+	}
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
@@ -76,8 +80,8 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 	}
 
 	// Get data from blockchain if not exist
-	client, err := ethclient.Dial(appConfig.RPC_URL)
-	addr := common.HexToAddress(appConfig.GenerativeBoilerplateContract)
+	client, err := ethclient.Dial(chainURL)
+	addr := common.HexToAddress(req.ContractAddress)
 
 	instance, err := generative_boilerplate.NewGenerativeBoilerplate(addr, client)
 	if err != nil {
@@ -120,7 +124,9 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 	return templateDTO.ToProto(), nil
 }
 
-func (s *service) TemplateRendering(ctx context.Context, request *api.TemplateRenderingRequest) (*api.TemplateRenderingResponse, error) {
+func (s *service) TemplateRendering(_ctx context.Context, request *api.TemplateRenderingRequest) (*api.TemplateRenderingResponse, error) {
+	ctx, cancel := context.WithTimeout(_ctx, 30*time.Minute)
+	defer cancel()
 	var (
 		templateDTOFromMongo bson.M
 		templateDTO          dto.TemplateDTO
