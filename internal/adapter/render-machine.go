@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"rederinghub.io/pkg/config"
 )
@@ -45,22 +44,13 @@ func (a *renderMachineAdapter) Render(ctx context.Context, request *RenderReques
 	if err != nil {
 		return nil, err
 	}
-	ctxCancel, cancel := context.WithTimeout(ctx, 30*time.Minute)
-	defer cancel()
-	req, _ := http.NewRequest("POST", a.Address, bytes.NewBuffer(_bytes))
-	req.Header.Add("accept", "application/json")
-	req = req.WithContext(ctxCancel)
-
-	client := http.Client{
-		Timeout: 30 * time.Minute,
-	}
-	res, err := client.Do(req)
+	res, err := http.Post(a.Address, "application/json", bytes.NewBuffer(_bytes))
 	if err != nil {
 		return nil, err
 	}
 
 	defer res.Body.Close()
-	if res.Status != "200" {
+	if res.StatusCode != 200 {
 		return nil, errors.New("call to render machine got error")
 	}
 	body, err := ioutil.ReadAll(res.Body)
