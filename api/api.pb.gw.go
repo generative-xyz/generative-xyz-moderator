@@ -282,7 +282,7 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-rendering"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -429,7 +429,7 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-rendering"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -457,7 +457,7 @@ var (
 
 	pattern_ApiService_GetTemplateDetail_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "template-detail"}, ""))
 
-	pattern_ApiService_TemplateRendering_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "template-rendering"}, ""))
+	pattern_ApiService_TemplateRendering_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "template-render"}, ""))
 )
 
 var (
