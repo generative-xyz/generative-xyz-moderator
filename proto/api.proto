@@ -30,7 +30,7 @@ service ApiService {
   }
   rpc TemplateRendering(TemplateRenderingRequest) returns (TemplateRenderingResponse) {
     option (google.api.http) = {
-      post: "/v1/template-rendering",
+      post: "/v1/template-render",
       body: "*"
     };
   }

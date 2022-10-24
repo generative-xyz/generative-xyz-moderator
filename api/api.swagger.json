@@ -132,7 +132,7 @@
         ]
       }
     },
-    "/v1/template-rendering": {
+    "/v1/template-render": {
       "post": {
         "operationId": "ApiService_TemplateRendering",
         "responses": {
