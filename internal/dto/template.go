@@ -8,7 +8,7 @@ import (
 )
 
 type TemplateDTO struct {
-	TokenID            string                          `json:"tokenID" bson:"tokenID"`
+	TokenID            string                          `json:"tokenId" bson:"tokenId"`
 	FeeStr             string                          `json:"fee" bson:"fee"`
 	FeeToken           common.Address                  `json:"feeToken" bson:"feeToken"`
 	MintMaxSupplyStr   string                          `json:"mintMaxSupply" bson:"mintMaxSupply"`

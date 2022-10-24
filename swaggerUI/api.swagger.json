@@ -113,6 +113,18 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "contractAddress",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

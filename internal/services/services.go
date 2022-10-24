@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/pkg/config"
 )
 
 type Service interface {
@@ -40,4 +42,13 @@ func (s *service) Live(context.Context, *api.LiveRequest) (*api.LiveResponse, er
 
 func (s *service) Ping(context.Context, *api.PingRequest) (*api.PingResponse, error) {
 	return &api.PingResponse{Message: "OK"}, nil
+}
+
+func GetRPCURLFromChainID(chainID string) (string, bool) {
+	appConfig := config.AppConfig()
+	if v, ok := appConfig.ChainConfigs[chainID]; ok {
+		return fmt.Sprintf("%v%v", "https://", v), true
+	}
+
+	return "", false
 }

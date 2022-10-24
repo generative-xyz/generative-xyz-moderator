@@ -518,6 +518,10 @@ func (m *GetTemplateDetailRequest) validate(all bool) error {
 
 	// no validation rules for TokenId
 
+	// no validation rules for ChainId
+
+	// no validation rules for ContractAddress
+
 	if len(errors) > 0 {
 		return GetTemplateDetailRequestMultiError(errors)
 	}
