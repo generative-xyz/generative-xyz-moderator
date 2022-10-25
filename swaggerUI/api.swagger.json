@@ -169,8 +169,8 @@
     "ioGetTemplateDetailResponse": {
       "type": "object",
       "properties": {
-        "tokenId": {
-          "type": "string"
+        "nftInfo": {
+          "$ref": "#/definitions/ioNftInfo"
         },
         "fee": {
           "type": "string"
@@ -205,6 +205,9 @@
         },
         "paramsTemplate": {
           "$ref": "#/definitions/ioParamsTemplate"
+        },
+        "minterNftInfo": {
+          "type": "string"
         }
       }
     },
@@ -227,6 +230,24 @@
       "type": "object",
       "properties": {
         "message": {
+          "type": "string"
+        }
+      }
+    },
+    "ioNftInfo": {
+      "type": "object",
+      "properties": {
+        "networkType": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "chainId": {
+          "type": "string"
+        },
+        "tokenId": {
+          "type": "string"
+        },
+        "contractAddress": {
           "type": "string"
         }
       }
@@ -309,6 +330,12 @@
         },
         "params": {
           "$ref": "#/definitions/ioParamsTemplate"
+        },
+        "chainId": {
+          "type": "string"
+        },
+        "contractAddress": {
+          "type": "string"
         }
       }
     },

@@ -8,7 +8,7 @@ import (
 )
 
 type TemplateDTO struct {
-	TokenID            string                          `json:"tokenId" bson:"tokenId"`
+	NftInfo            NftInfo                         `json:"nftInfo" bson:"nftInfo"`
 	FeeStr             string                          `json:"fee" bson:"fee"`
 	FeeToken           common.Address                  `json:"feeToken" bson:"feeToken"`
 	MintMaxSupplyStr   string                          `json:"mintMaxSupply" bson:"mintMaxSupply"`
@@ -20,11 +20,18 @@ type TemplateDTO struct {
 	ProjectName        string                          `json:"projectName" bson:"projectName"`
 	ClientSeed         bool                            `json:"clientSeed" bson:"clientSeed"`
 	ParamsTemplate     BoilerplateParamParamsOfProject `json:"paramsTemplate" bson:"paramsTemplate"`
+	MinterNFTInfo      common.Address                  `json:"minterNFTInfo" bson:"minterNFTInfo"`
+}
+
+type NftInfo struct {
+	NetworkType     int    `json:"networkType" bson:"networkType"`
+	ChainId         string `json:"chainId" bson:"chainId"`
+	TokenId         string `json:"tokenId" bson:"tokenId"`
+	ContractAddress string `json:"contractAddress" bson:"contractAddress"`
 }
 
 func (d *TemplateDTO) ToProto() *api.GetTemplateDetailResponse {
 	return &api.GetTemplateDetailResponse{
-		TokenId:         d.TokenID,
 		Fee:             d.FeeStr,
 		FeeToken:        d.FeeToken.String(),
 		MintMaxSupply:   d.MintMaxSupplyStr,
@@ -35,6 +42,7 @@ func (d *TemplateDTO) ToProto() *api.GetTemplateDetailResponse {
 		CustomUri:       d.CustomUri,
 		ProjectName:     d.ProjectName,
 		ClientSeed:      d.ClientSeed,
+		MinterNftInfo:   d.MinterNFTInfo.String(),
 		ParamsTemplate: func(d *TemplateDTO) *api.ParamsTemplate {
 			params := make([]*api.Param, 0, len(d.ParamsTemplate.Params))
 			for _, item := range d.ParamsTemplate.Params {

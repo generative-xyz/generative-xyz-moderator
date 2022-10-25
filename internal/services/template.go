@@ -22,6 +22,12 @@ import (
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/pkg/config"
 	"rederinghub.io/pkg/contracts/generative_boilerplate"
+	"rederinghub.io/pkg/logger"
+	"rederinghub.io/pkg/utils/constants/contract"
+)
+
+const (
+	NftInfo = "nftInfo"
 )
 
 func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) (*api.GetTemplateResponse, error) {
@@ -64,7 +70,12 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
-		"tokenId": req.TokenId,
+		NftInfo: dto.NftInfo{
+			NetworkType:     int(contract.EVM_NetworkType),
+			ChainId:         req.ChainId,
+			TokenId:         req.TokenId,
+			ContractAddress: req.ContractAddress,
+		},
 	}, &templateDTOFromMongo); err != nil {
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, err
@@ -102,23 +113,37 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 		return nil, status.Errorf(codes.NotFound, "token_id %v is not found", req.TokenId)
 	}
 
-	var templateDTO = dto.TemplateDTO{TokenID: req.TokenId}
-	if err := copier.Copy(&templateDTO, resp); err != nil {
+	var templateDTO = dto.TemplateDTO{NftInfo: dto.NftInfo{
+		NetworkType:     int(contract.EVM_NetworkType),
+		ChainId:         req.ChainId,
+		TokenId:         req.TokenId,
+		ContractAddress: req.ContractAddress,
+	}}
+	if err := copier.Copy(&templateDTO, &resp); err != nil {
 		return nil, err
 	}
 
 	var templateModel bson.M
-	if bytes, err := json.Marshal(&templateDTO); err != nil {
+	if _bytes, err := json.Marshal(&templateDTO); err != nil {
 		return nil, err
 	} else {
-		if err = json.Unmarshal(bytes, &templateModel); err != nil {
+		if err = json.Unmarshal(_bytes, &templateModel); err != nil {
 			return nil, err
 		}
 	}
 
 	_, err = s.templateRepository.Create(context.Background(), &templateModel)
 	if err != nil {
+		logger.AtLog.Errorf("[TemplateDetail] Create error %v", err)
 		return nil, err
+	}
+
+	protoResp := templateDTO.ToProto()
+	protoResp.NftInfo = &api.NftInfo{
+		NetworkType:     int32(contract.EVM_NetworkType),
+		ChainId:         req.ChainId,
+		TokenId:         req.TokenId,
+		ContractAddress: req.ContractAddress,
 	}
 
 	return templateDTO.ToProto(), nil
@@ -132,7 +157,12 @@ func (s *service) TemplateRendering(_ctx context.Context, request *api.TemplateR
 		templateDTO          dto.TemplateDTO
 	)
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
-		"tokenId": request.TokenId,
+		NftInfo: dto.NftInfo{
+			NetworkType:     int(contract.EVM_NetworkType),
+			ChainId:         request.ChainId,
+			TokenId:         request.TokenId,
+			ContractAddress: request.ContractAddress,
+		},
 	}, &templateDTOFromMongo); err != nil {
 		return nil, err
 	}
