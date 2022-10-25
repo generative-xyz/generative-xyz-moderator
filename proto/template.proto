@@ -28,6 +28,13 @@ message TemplateParam {
   optional uint32 value = 7;
 }
 
+message NftInfo {
+  int32 network_type = 1;
+  string chain_id = 2;
+  string token_id = 3;
+  string contract_address = 4;
+}
+
 message GetTemplateResponse {
   repeated Template template = 1;
   int32 total = 2;
@@ -40,7 +47,7 @@ message GetTemplateDetailRequest {
 }
 
 message GetTemplateDetailResponse {
-  string token_id = 1;
+  NftInfo nft_info = 1;
   string fee = 2;
   string fee_token = 3;
   string mint_max_supply = 4;
@@ -52,6 +59,7 @@ message GetTemplateDetailResponse {
   string project_name = 10;
   bool client_seed = 11;
   ParamsTemplate params_template = 12;
+  string minter_nft_info = 13;
 }
 
 message Param {
@@ -72,6 +80,8 @@ message ParamsTemplate {
 message TemplateRenderingRequest {
   string token_id = 1;
   ParamsTemplate params = 2;
+  string chain_id = 3;
+  string contract_address = 4;
 }
 
 message TemplateRenderingResponse {
