@@ -190,7 +190,7 @@ func (s *service) TemplateRendering(_ctx context.Context, request *api.TemplateR
 	}
 
 	return &api.TemplateRenderingResponse{
-		Glb:   fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", resp.Glb),
-		Image: fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", resp.Image),
+		Glb:   fmt.Sprintf("ipfs://%v", resp.Glb),
+		Image: fmt.Sprintf("ipfs://%v", resp.Image),
 	}, nil
 }
