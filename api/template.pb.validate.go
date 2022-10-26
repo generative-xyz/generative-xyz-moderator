@@ -1299,6 +1299,8 @@ func (m *TemplateRenderingResponse) validate(all bool) error {
 
 	// no validation rules for Image
 
+	// no validation rules for Video
+
 	if len(errors) > 0 {
 		return TemplateRenderingResponseMultiError(errors)
 	}

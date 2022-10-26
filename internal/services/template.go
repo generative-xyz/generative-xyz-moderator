@@ -189,8 +189,15 @@ func (s *service) TemplateRendering(_ctx context.Context, request *api.TemplateR
 		return nil, err
 	}
 
-	return &api.TemplateRenderingResponse{
+	_resp := &api.TemplateRenderingResponse{
 		Glb:   fmt.Sprintf("ipfs://%v", resp.Glb),
 		Image: fmt.Sprintf("ipfs://%v", resp.Image),
-	}, nil
+		//Video: resp.Video,
+	}
+
+	if resp.Video != "" {
+		_resp.Video = fmt.Sprintf("ipfs://%v", resp.Video)
+	}
+
+	return _resp, nil
 }

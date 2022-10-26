@@ -87,4 +87,5 @@ message TemplateRenderingRequest {
 message TemplateRenderingResponse {
   string glb = 1;
   string image = 2;
+  string video = 3;
 }
