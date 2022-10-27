@@ -70,12 +70,9 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
-		NftInfo: dto.NftInfo{
-			NetworkType:     int(contract.EVM_NetworkType),
-			ChainId:         req.ChainId,
-			TokenId:         req.TokenId,
-			ContractAddress: req.ContractAddress,
-		},
+		"nftInfo.tokenId":         req.TokenId,
+		"nftInfo.chainId":         req.ChainId,
+		"nftInfo.contractAddress": req.ContractAddress,
 	}, &templateDTOFromMongo); err != nil {
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, err
