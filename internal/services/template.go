@@ -157,12 +157,9 @@ func (s *service) TemplateRendering(_ctx context.Context, request *api.TemplateR
 		templateDTO          dto.TemplateDTO
 	)
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
-		NftInfo: dto.NftInfo{
-			NetworkType:     int(contract.EVM_NetworkType),
-			ChainId:         request.ChainId,
-			TokenId:         request.TokenId,
-			ContractAddress: request.ContractAddress,
-		},
+		"nftInfo.tokenId":         request.TokenId,
+		"nftInfo.chainId":         request.ChainId,
+		"nftInfo.contractAddress": request.ContractAddress,
 	}, &templateDTOFromMongo); err != nil {
 		return nil, err
 	}
