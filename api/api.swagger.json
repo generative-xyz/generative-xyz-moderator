@@ -68,6 +68,54 @@
         ]
       }
     },
+    "/v1/rendered-nft/{chainId}/{contractAddress}/{projectId}/{tokenId}": {
+      "get": {
+        "operationId": "ApiService_GetRenderedNft",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetRenderedNftResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tokenId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
     "/v1/template": {
       "get": {
         "operationId": "ApiService_GetTemplate",
@@ -166,6 +214,32 @@
     }
   },
   "definitions": {
+    "ioGetRenderedNftResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "animationUrl": {
+          "type": "string"
+        },
+        "externalLink": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ioOpenSeaAttribute"
+          }
+        }
+      }
+    },
     "ioGetTemplateDetailResponse": {
       "type": "object",
       "properties": {
@@ -248,6 +322,17 @@
           "type": "string"
         },
         "contractAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "ioOpenSeaAttribute": {
+      "type": "object",
+      "properties": {
+        "traitType": {
+          "type": "string"
+        },
+        "value": {
           "type": "string"
         }
       }

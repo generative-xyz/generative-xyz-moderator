@@ -19,18 +19,21 @@ type service struct {
 	moralisAdapter       adapter.MoralisAdapter
 	renderMachineAdapter adapter.RenderMachineAdapter
 
-	templateRepository repository.TemplateRepository
+	templateRepository    repository.TemplateRepository
+	renderedNftRepository repository.RenderedNftRepository
 }
 
 func Init(moralisAdapter adapter.MoralisAdapter,
 	renderMachineAdapter adapter.RenderMachineAdapter,
 	templateRepository repository.TemplateRepository,
+	renderedNftRepository repository.RenderedNftRepository,
 ) Service {
 	return &service{
 		moralisAdapter:       moralisAdapter,
 		renderMachineAdapter: renderMachineAdapter,
 
-		templateRepository: templateRepository,
+		templateRepository:    templateRepository,
+		renderedNftRepository: renderedNftRepository,
 	}
 }
 
