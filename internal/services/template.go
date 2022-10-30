@@ -63,6 +63,7 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 }
 
 func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {
+	fmt.Println(req.ChainId)
 	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 	if !ok {
 		return nil, errors.New("missing config chain_config from server")
@@ -89,6 +90,10 @@ func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDet
 
 	// Get data from blockchain if not exist
 	client, err := ethclient.Dial(chainURL)
+	if err != nil {
+		return nil, err
+	}
+
 	addr := common.HexToAddress(req.ContractAddress)
 
 	instance, err := generative_boilerplate.NewGenerativeBoilerplate(addr, client)
