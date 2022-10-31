@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package api.renderinghub.io;
+option go_package = "renderinghub.io/api;api";
+
+message GetRenderedNftRequest {
+    string chain_id = 1;
+    string contract_address = 2;
+    string project_id = 3;
+    string token_id = 4;
+}
+
+message OpenSeaAttribute {
+    string trait_type = 1;
+    string value = 2;
+}
+
+message GetRenderedNftResponse {
+    string name = 1;
+    optional string description = 2;
+    string image = 3;
+    string animation_url = 4;
+    string external_link = 5;
+    repeated OpenSeaAttribute attributes = 6;
+}
