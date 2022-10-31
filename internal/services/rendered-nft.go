@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -63,6 +64,9 @@ func GetRenderedNft(
 }
 
 func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {
+	// lowercase contract address
+	req.ContractAddress = strings.ToLower(req.ContractAddress)
+
 	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 	if !ok {
 		return nil, errors.New("missing config chain_config from server")
@@ -171,8 +175,8 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 		req.TokenId,
 		template,
 		attributes,
-		fmt.Sprintf("ipfs://%v", rendered.Image),
-		fmt.Sprintf("ipfs://%v", rendered.Glb),
+		fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", rendered.Image),
+		fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", rendered.Glb),
 	)
 	if err != nil {
 		return nil, err
