@@ -50,6 +50,7 @@ func GetRenderedNft(
 			Value:     value,
 		}
 	}
+
 	return &model.RenderedNft{
 		ChainID:         chainID,
 		ContractAddress: contractAddress,
@@ -60,6 +61,7 @@ func GetRenderedNft(
 		Glb:             &glb,
 		ExternalLink:    utils.MakeStringPointer("https://rove.to"),
 		Attributes:      protoAttributes,
+		Description:     template.Description,
 	}, nil
 }
 
