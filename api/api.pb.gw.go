@@ -285,6 +285,134 @@ func local_request_ApiService_GetRenderedNft_0(ctx context.Context, marshaler ru
 
 }
 
+func request_ApiService_GetRenderedNftPost_0(ctx context.Context, marshaler runtime.Marshaler, client ApiServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetRenderedNftRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_id")
+	}
+
+	protoReq.ChainId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_id", err)
+	}
+
+	val, ok = pathParams["contract_address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "contract_address")
+	}
+
+	protoReq.ContractAddress, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "contract_address", err)
+	}
+
+	val, ok = pathParams["project_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "project_id")
+	}
+
+	protoReq.ProjectId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "project_id", err)
+	}
+
+	val, ok = pathParams["token_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "token_id")
+	}
+
+	protoReq.TokenId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "token_id", err)
+	}
+
+	msg, err := client.GetRenderedNftPost(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_ApiService_GetRenderedNftPost_0(ctx context.Context, marshaler runtime.Marshaler, server ApiServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetRenderedNftRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["chain_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_id")
+	}
+
+	protoReq.ChainId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_id", err)
+	}
+
+	val, ok = pathParams["contract_address"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "contract_address")
+	}
+
+	protoReq.ContractAddress, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "contract_address", err)
+	}
+
+	val, ok = pathParams["project_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "project_id")
+	}
+
+	protoReq.ProjectId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "project_id", err)
+	}
+
+	val, ok = pathParams["token_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "token_id")
+	}
+
+	protoReq.TokenId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "token_id", err)
+	}
+
+	msg, err := server.GetRenderedNftPost(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterApiServiceHandlerServer registers the http handlers for service ApiService to "mux".
 // UnaryRPC     :call ApiServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -298,21 +426,20 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Live", runtime.WithHTTPPathPattern("/v1/health/live"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Live", runtime.WithHTTPPathPattern("/v1/health/live"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_Live_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_Live_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_Live_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_Live_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -323,21 +450,20 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Ping", runtime.WithHTTPPathPattern("/v1/ping"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Ping", runtime.WithHTTPPathPattern("/v1/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_Ping_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_Ping_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_Ping_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_Ping_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -348,21 +474,20 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplate", runtime.WithHTTPPathPattern("/v1/template"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplate", runtime.WithHTTPPathPattern("/v1/template"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_GetTemplate_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_GetTemplate_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetTemplate_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetTemplate_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -373,21 +498,20 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplateDetail", runtime.WithHTTPPathPattern("/v1/template-detail"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplateDetail", runtime.WithHTTPPathPattern("/v1/template-detail"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_GetTemplateDetail_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_GetTemplateDetail_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetTemplateDetail_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetTemplateDetail_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -398,21 +522,20 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_TemplateRendering_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_TemplateRendering_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_TemplateRendering_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_TemplateRendering_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -423,21 +546,44 @@ func RegisterApiServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNft", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNft", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ApiService_GetRenderedNft_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ApiService_GetRenderedNft_0(ctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetRenderedNft_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetRenderedNft_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_ApiService_GetRenderedNftPost_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		ctx, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNftPost", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ApiService_GetRenderedNftPost_0(ctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ApiService_GetRenderedNftPost_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -487,20 +633,19 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Live", runtime.WithHTTPPathPattern("/v1/health/live"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Live", runtime.WithHTTPPathPattern("/v1/health/live"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_Live_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_Live_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_Live_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_Live_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -509,20 +654,19 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Ping", runtime.WithHTTPPathPattern("/v1/ping"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/Ping", runtime.WithHTTPPathPattern("/v1/ping"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_Ping_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_Ping_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_Ping_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_Ping_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -531,20 +675,19 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplate", runtime.WithHTTPPathPattern("/v1/template"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplate", runtime.WithHTTPPathPattern("/v1/template"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_GetTemplate_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_GetTemplate_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetTemplate_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetTemplate_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -553,20 +696,19 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplateDetail", runtime.WithHTTPPathPattern("/v1/template-detail"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetTemplateDetail", runtime.WithHTTPPathPattern("/v1/template-detail"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_GetTemplateDetail_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_GetTemplateDetail_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetTemplateDetail_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetTemplateDetail_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -575,20 +717,19 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/TemplateRendering", runtime.WithHTTPPathPattern("/v1/template-render"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_TemplateRendering_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_TemplateRendering_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_TemplateRendering_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_TemplateRendering_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -597,20 +738,40 @@ func RegisterApiServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNft", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNft", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ApiService_GetRenderedNft_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		resp, md, err := request_ApiService_GetRenderedNft_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ApiService_GetRenderedNft_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ApiService_GetRenderedNft_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_ApiService_GetRenderedNftPost_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		ctx, err = runtime.AnnotateContext(ctx, mux, req, "/api.renderinghub.io.ApiService/GetRenderedNftPost", runtime.WithHTTPPathPattern("/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ApiService_GetRenderedNftPost_0(ctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ApiService_GetRenderedNftPost_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -629,6 +790,8 @@ var (
 	pattern_ApiService_TemplateRendering_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "template-render"}, ""))
 
 	pattern_ApiService_GetRenderedNft_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "rendered-nft", "chain_id", "contract_address", "project_id", "token_id"}, ""))
+
+	pattern_ApiService_GetRenderedNftPost_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "rendered-nft", "chain_id", "contract_address", "project_id", "token_id"}, ""))
 )
 
 var (
@@ -643,4 +806,6 @@ var (
 	forward_ApiService_TemplateRendering_0 = runtime.ForwardResponseMessage
 
 	forward_ApiService_GetRenderedNft_0 = runtime.ForwardResponseMessage
+
+	forward_ApiService_GetRenderedNftPost_0 = runtime.ForwardResponseMessage
 )

@@ -40,4 +40,11 @@ service ApiService {
       get: '/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}'
     };
   }
+
+  rpc GetRenderedNftPost(GetRenderedNftRequest) returns (GetRenderedNftResponse) {
+    option (google.api.http) = {
+      post: '/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}',
+      body: '*'
+    };
+  }
 }

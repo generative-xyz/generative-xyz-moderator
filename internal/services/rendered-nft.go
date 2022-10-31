@@ -71,6 +71,59 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 	// lowercase contract address
 	req.ContractAddress = strings.ToLower(req.ContractAddress)
 
+	var templateDTOFromMongo bson.M
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"nftInfo.tokenId":         req.ProjectId,
+		"nftInfo.chainId":         req.ChainId,
+		"nftInfo.contractAddress": req.ContractAddress,
+	}, &templateDTOFromMongo); err != nil {
+		return nil, err
+	}
+
+	var template dto.TemplateDTO
+	{
+		doc, err := json.Marshal(templateDTOFromMongo)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal(doc, &template)
+	}
+
+	// find in mongo
+	var renderedNftBson bson.M
+	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
+		"chainId":         req.ChainId,
+		"contractAddress": req.ContractAddress,
+		"projectId":       req.ProjectId,
+		"tokenId":         req.TokenId,
+	}, &renderedNftBson)
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, err
+	}
+	// found in mongo
+	if err == nil {
+		var renderedNft model.RenderedNft
+		{
+			doc, err := json.Marshal(renderedNftBson)
+			if err != nil {
+				return nil, err
+			}
+			json.Unmarshal(doc, &renderedNft)
+		}
+
+		return renderedNft.ToProto(), nil
+	}
+
+	return nil, errors.New("Not found")
+}
+
+func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {
+	logger.AtLog.Infof("Handle [GetRenderedNftPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+
+	// lowercase contract address
+	req.ContractAddress = strings.ToLower(req.ContractAddress)
+
 	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 	if !ok {
 		return nil, errors.New("missing config chain_config from server")
