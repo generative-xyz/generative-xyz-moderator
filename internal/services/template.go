@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -63,6 +64,7 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 }
 
 func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {
+	req.ContractAddress = strings.ToLower(req.ContractAddress)
 	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 	if !ok {
 		return nil, errors.New("missing config chain_config from server")
