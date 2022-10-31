@@ -28,6 +28,7 @@ type ApiServiceClient interface {
 	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error)
 	TemplateRendering(ctx context.Context, in *TemplateRenderingRequest, opts ...grpc.CallOption) (*TemplateRenderingResponse, error)
 	GetRenderedNft(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
+	GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
 }
 
 type apiServiceClient struct {
@@ -92,6 +93,15 @@ func (c *apiServiceClient) GetRenderedNft(ctx context.Context, in *GetRenderedNf
 	return out, nil
 }
 
+func (c *apiServiceClient) GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error) {
+	out := new(GetRenderedNftResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetRenderedNftPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServiceServer is the server API for ApiService service.
 // All implementations must embed UnimplementedApiServiceServer
 // for forward compatibility
@@ -102,6 +112,7 @@ type ApiServiceServer interface {
 	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error)
 	TemplateRendering(context.Context, *TemplateRenderingRequest) (*TemplateRenderingResponse, error)
 	GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
+	GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -126,6 +137,9 @@ func (UnimplementedApiServiceServer) TemplateRendering(context.Context, *Templat
 }
 func (UnimplementedApiServiceServer) GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNft not implemented")
+}
+func (UnimplementedApiServiceServer) GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNftPost not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -248,6 +262,24 @@ func _ApiService_GetRenderedNft_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetRenderedNftPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRenderedNftRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetRenderedNftPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetRenderedNftPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetRenderedNftPost(ctx, req.(*GetRenderedNftRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiService_ServiceDesc is the grpc.ServiceDesc for ApiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -278,6 +310,10 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRenderedNft",
 			Handler:    _ApiService_GetRenderedNft_Handler,
+		},
+		{
+			MethodName: "GetRenderedNftPost",
+			Handler:    _ApiService_GetRenderedNftPost_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
