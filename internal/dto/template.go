@@ -21,6 +21,7 @@ type TemplateDTO struct {
 	ClientSeed         bool                            `json:"clientSeed" bson:"clientSeed"`
 	ParamsTemplate     BoilerplateParamParamsOfProject `json:"paramsTemplate" bson:"paramsTemplate"`
 	MinterNFTInfo      common.Address                  `json:"minterNFTInfo" bson:"minterNFTInfo"`
+	Description        *string                         `json:"description,omitempty"  bson:"description,omitempty"`
 }
 
 type NftInfo struct {
