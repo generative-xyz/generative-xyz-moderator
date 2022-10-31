@@ -226,10 +226,10 @@
         "image": {
           "type": "string"
         },
-        "animationUrl": {
+        "animation_url": {
           "type": "string"
         },
-        "externalLink": {
+        "external_link": {
           "type": "string"
         },
         "attributes": {
@@ -329,7 +329,7 @@
     "ioOpenSeaAttribute": {
       "type": "object",
       "properties": {
-        "traitType": {
+        "trait_type": {
           "type": "string"
         },
         "value": {
