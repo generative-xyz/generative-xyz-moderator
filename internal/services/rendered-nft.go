@@ -58,7 +58,7 @@ func GetRenderedNft(
 		Name:            fmt.Sprintf("%s #%s", template.ProjectName, tokenID),
 		Image:           &image,
 		Glb:             &glb,
-		ExternalLink:    utils.MakeStringPointer("rove.to"),
+		ExternalLink:    utils.MakeStringPointer("https://rove.to"),
 		Attributes:      protoAttributes,
 	}, nil
 }
@@ -175,8 +175,8 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 		req.TokenId,
 		template,
 		attributes,
-		fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", rendered.Image),
-		fmt.Sprintf("https://ipfs.rove.to/ipfs/%v", rendered.Glb),
+		fmt.Sprintf("ipfs://%v", rendered.Image),
+		fmt.Sprintf("ipfs://%v", rendered.Glb),
 	)
 	if err != nil {
 		return nil, err
