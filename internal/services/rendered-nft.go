@@ -64,7 +64,6 @@ func GetRenderedNft(
 }
 
 func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {
-	// Handle [GetRenderedNft] Create error
 	logger.AtLog.Infof("Handle [GetRenderedNft] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
 
 	// lowercase contract address
