@@ -171,8 +171,8 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 		req.TokenId,
 		template,
 		attributes,
-		rendered.Image,
-		rendered.Glb,
+		fmt.Sprintf("ipfs://%v", rendered.Image),
+		fmt.Sprintf("ipfs://%v", rendered.Glb),
 	)
 	if err != nil {
 		return nil, err

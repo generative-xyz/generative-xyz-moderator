@@ -9,10 +9,10 @@ type OpenSeaAttribute struct {
 
 type RenderedNft struct {
 	BaseModel
-	ChainID         string              `json:"chainID,omitempty"  bson:"chainID,omitempty"`
+	ChainID         string              `json:"chainId,omitempty"  bson:"chainId,omitempty"`
 	ContractAddress string              `json:"contractAddress,omitempty"  bson:"contractAddress,omitempty"`
-	ProjectID       string              `json:"projectID,omitempty"  bson:"projectID,omitempty"`
-	TokenID         string              `json:"tokenID,omitempty"  bson:"tokenID,omitempty"`
+	ProjectID       string              `json:"projectId,omitempty"  bson:"projectId,omitempty"`
+	TokenID         string              `json:"tokenId,omitempty"  bson:"tokenId,omitempty"`
 	Image           *string             `json:"image,omitempty"  bson:"image,omitempty"`
 	Glb             *string             `json:"glb,omitempty"  bson:"glb,omitempty"`
 	Video           *string             `json:"video,omitempty"  bson:"video,omitempty"`
