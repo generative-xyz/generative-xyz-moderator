@@ -6,6 +6,7 @@ option go_package = "renderinghub.io/api;api";
 import "google/api/annotations.proto";
 import "health.proto";
 import "template.proto";
+import "rendered-nft.proto";
 
 service ApiService {
   rpc Live (LiveRequest) returns (LiveResponse) {
@@ -34,5 +35,9 @@ service ApiService {
       body: "*"
     };
   }
-
+  rpc GetRenderedNft(GetRenderedNftRequest) returns (GetRenderedNftResponse) {
+    option (google.api.http) = {
+      get: '/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}'
+    };
+  }
 }

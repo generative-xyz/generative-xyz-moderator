@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -75,4 +76,17 @@ func (j *jsonObjectMarshaler) MarshalJSON() ([]byte, error) {
 
 func ZapJson(key string, obj any) zap.Field {
 	return zap.Reflect(key, &jsonObjectMarshaler{obj: obj})
+}
+
+func BsonToObject(bs bson.M, obj interface{}) error {
+	doc, err := bson.Marshal(bs)
+	if err != nil {
+		return err
+	}
+	bson.Unmarshal(doc, obj)
+	return nil
+}
+
+func MakeStringPointer(s string) *string {
+	return &s
 }
