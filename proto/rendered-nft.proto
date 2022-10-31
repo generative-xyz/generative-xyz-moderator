@@ -11,7 +11,7 @@ message GetRenderedNftRequest {
 }
 
 message OpenSeaAttribute {
-    string trait_type = 1;
+    string trait_type = 1 [json_name="trait_type"];
     string value = 2;
 }
 
@@ -19,7 +19,7 @@ message GetRenderedNftResponse {
     string name = 1;
     optional string description = 2;
     string image = 3;
-    string animation_url = 4;
-    string external_link = 5;
+    string animation_url = 4  [json_name="animation_url"];
+    string external_link = 5 [json_name="external_link"];
     repeated OpenSeaAttribute attributes = 6;
 }
