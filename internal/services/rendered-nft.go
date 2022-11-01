@@ -144,6 +144,9 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 		"nftInfo.tokenId": req.ProjectId,
 		"nftInfo.chainId": req.ChainId,
 	}, &templateDTOFromMongo); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
+		}
 		return nil, err
 	}
 
@@ -153,7 +156,9 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(doc, &template)
+		if err = json.Unmarshal(doc, &template); err != nil {
+			return nil, err
+		}
 	}
 
 	// find in mongo
@@ -176,7 +181,9 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 			if err != nil {
 				return nil, err
 			}
-			json.Unmarshal(doc, &renderedNft)
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
 		}
 
 		return renderedNft.ToCandyResponse(), nil
@@ -295,9 +302,9 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 	//req.ContractAddress = ""
 	req.ProjectId = "291199"
 
-	logger.AtLog.Infof("Handle [GetCandyMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+	logger.AtLog.Debugf("Handle [GetCandyMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
 	var templateDTOFromMongo bson.M
-	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+	if err := s.templateRepository.FindOne(ctx, map[string]interface{}{
 		"nftInfo.tokenId": req.ProjectId,
 		"nftInfo.chainId": req.ChainId,
 	}, &templateDTOFromMongo); err != nil {
@@ -366,6 +373,9 @@ func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNf
 		"nftInfo.chainId":         req.ChainId,
 		"nftInfo.contractAddress": req.ContractAddress,
 	}, &templateDTOFromMongo); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
+		}
 		return nil, err
 	}
 
