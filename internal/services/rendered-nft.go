@@ -18,6 +18,7 @@ import (
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/internal/model"
+	"rederinghub.io/pkg/contracts/candy_contract"
 	"rederinghub.io/pkg/contracts/generative_param"
 	"rederinghub.io/pkg/logger"
 	"rederinghub.io/pkg/utils"
@@ -116,6 +117,219 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 	}
 
 	return nil, errors.New("Not found")
+}
+
+func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMetadataRequest) (*api.GetCandyMetadataResponse, error) {
+
+	//req.ContractAddress = ""
+	req.ProjectId = "291199"
+
+	logger.AtLog.Infof("Handle [GetCandyMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+
+	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
+	if !ok {
+		return nil, errors.New("missing config chain_config from server")
+	}
+
+	var templateDTOFromMongo bson.M
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"nftInfo.tokenId": req.ProjectId,
+		"nftInfo.chainId": req.ChainId,
+	}, &templateDTOFromMongo); err != nil {
+		return nil, err
+	}
+
+	var template dto.TemplateDTO
+	{
+		doc, err := json.Marshal(templateDTOFromMongo)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal(doc, &template)
+	}
+
+	// find in mongo
+	var renderedNftBson bson.M
+	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
+		"chainId":         req.ChainId,
+		"contractAddress": template.NftInfo.ContractAddress,
+		"projectId":       req.ProjectId,
+		"tokenId":         req.TokenId,
+	}, &renderedNftBson)
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, err
+	}
+	// found in mongo
+	if err == nil {
+		var renderedNft model.RenderedNft
+		{
+			doc, err := json.Marshal(renderedNftBson)
+			if err != nil {
+				return nil, err
+			}
+			json.Unmarshal(doc, &renderedNft)
+		}
+
+		return renderedNft.ToCandyResponse(), nil
+	}
+
+	client, err := ethclient.Dial(chainURL)
+
+	if err != nil {
+		return nil, err
+	}
+	addr := common.HexToAddress(template.MinterNFTInfo.Hex())
+
+	instance, err := candy_contract.NewCandyContract(addr, client)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
+	if !ok {
+		return nil, errors.New("invalid token id")
+	}
+
+	colorPallete, shape, size, surface, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := make([]string, 0, 7)
+	for i := 0; i < 4; i++ {
+		params = append(params, colorPallete[i])
+	}
+	params = append(params, shape)
+	params = append(params, size)
+	params = append(params, surface)
+
+	// call to render machine
+	rendered, err := s.renderMachineAdapter.Render(ctx, &adapter.RenderRequest{
+		Script: template.Script,
+		Params: params,
+		Seed:   "1",
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	attributes := make([]generative_param.TraitInfoTrait, 0)
+
+	// save to mongo
+	renderedNft, err := GetRenderedNft(
+		req.ChainId,
+		req.ContractAddress,
+		req.ProjectId,
+		req.TokenId,
+		template,
+		attributes,
+		fmt.Sprintf("ipfs://%v", rendered.Image),
+		fmt.Sprintf("ipfs://%v", rendered.Glb),
+	)
+	renderedNft.Attributes = []*model.OpenSeaAttribute{
+		{
+			TraitType: "Color 1",
+			Value:     colorPallete[0],
+		},
+		{
+			TraitType: "Color 2",
+			Value:     colorPallete[1],
+		},
+		{
+			TraitType: "Color 3",
+			Value:     colorPallete[2],
+		},
+		{
+			TraitType: "Color 4",
+			Value:     colorPallete[3],
+		},
+		{
+			TraitType: "Shape",
+			Value:     shape,
+		},
+		{
+			TraitType: "Size",
+			Value:     size,
+		},
+		{
+			TraitType: "Surface",
+			Value:     surface,
+		},
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var renderedNftModel bson.M
+	if _bytes, err := json.Marshal(&renderedNft); err != nil {
+		return nil, err
+	} else {
+		if err = json.Unmarshal(_bytes, &renderedNftModel); err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = s.renderedNftRepository.Create(context.Background(), &renderedNftModel)
+	if err != nil {
+		logger.AtLog.Errorf("[GetRenderedNft] Create error %v", err)
+		return nil, err
+	}
+
+	return renderedNft.ToCandyResponse(), nil
+}
+
+func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadataRequest) (*api.GetCandyMetadataResponse, error) {
+	//req.ContractAddress = ""
+	req.ProjectId = "291199"
+
+	logger.AtLog.Infof("Handle [GetCandyMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+	var templateDTOFromMongo bson.M
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"nftInfo.tokenId": req.ProjectId,
+		"nftInfo.chainId": req.ChainId,
+	}, &templateDTOFromMongo); err != nil {
+		return nil, err
+	}
+
+	var template dto.TemplateDTO
+	{
+		doc, err := json.Marshal(templateDTOFromMongo)
+		if err != nil {
+			return nil, err
+		}
+		json.Unmarshal(doc, &template)
+	}
+
+	// find in mongo
+	var renderedNftBson bson.M
+	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
+		"chainId":         req.ChainId,
+		"contractAddress": template.NftInfo.ContractAddress,
+		"projectId":       req.ProjectId,
+		"tokenId":         req.TokenId,
+	}, &renderedNftBson)
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, err
+	}
+	// found in mongo
+	if err == nil {
+		var renderedNft model.RenderedNft
+		{
+			doc, err := json.Marshal(renderedNftBson)
+			if err != nil {
+				return nil, err
+			}
+			json.Unmarshal(doc, &renderedNft)
+		}
+
+		return renderedNft.ToCandyResponse(), nil
+	}
+
+	return nil, errors.New("not found")
 }
 
 func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {

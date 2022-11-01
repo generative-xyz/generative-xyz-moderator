@@ -68,6 +68,104 @@
         ]
       }
     },
+    "/v1/rendered-nft/{chainId}/metadata/{tokenId}": {
+      "get": {
+        "operationId": "ApiService_GetCandyMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetCandyMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tokenId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contractAddress",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      },
+      "post": {
+        "operationId": "ApiService_GetCandyMetadataPost",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetCandyMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tokenId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "contractAddress": {
+                  "type": "string"
+                },
+                "projectId": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
     "/v1/rendered-nft/{chainId}/{contractAddress}/{projectId}/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetRenderedNft",
@@ -268,6 +366,32 @@
     }
   },
   "definitions": {
+    "ioGetCandyMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "animation_url": {
+          "type": "string"
+        },
+        "external_link": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ioOpenSeaAttribute"
+          }
+        }
+      }
+    },
     "ioGetRenderedNftResponse": {
       "type": "object",
       "properties": {

@@ -28,6 +28,8 @@ type ApiServiceClient interface {
 	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error)
 	TemplateRendering(ctx context.Context, in *TemplateRenderingRequest, opts ...grpc.CallOption) (*TemplateRenderingResponse, error)
 	GetRenderedNft(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
+	GetCandyMetadata(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error)
+	GetCandyMetadataPost(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error)
 	GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
 }
 
@@ -93,6 +95,24 @@ func (c *apiServiceClient) GetRenderedNft(ctx context.Context, in *GetRenderedNf
 	return out, nil
 }
 
+func (c *apiServiceClient) GetCandyMetadata(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error) {
+	out := new(GetCandyMetadataResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetCandyMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiServiceClient) GetCandyMetadataPost(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error) {
+	out := new(GetCandyMetadataResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetCandyMetadataPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *apiServiceClient) GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error) {
 	out := new(GetRenderedNftResponse)
 	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetRenderedNftPost", in, out, opts...)
@@ -112,6 +132,8 @@ type ApiServiceServer interface {
 	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error)
 	TemplateRendering(context.Context, *TemplateRenderingRequest) (*TemplateRenderingResponse, error)
 	GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
+	GetCandyMetadata(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error)
+	GetCandyMetadataPost(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error)
 	GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
@@ -137,6 +159,12 @@ func (UnimplementedApiServiceServer) TemplateRendering(context.Context, *Templat
 }
 func (UnimplementedApiServiceServer) GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNft not implemented")
+}
+func (UnimplementedApiServiceServer) GetCandyMetadata(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCandyMetadata not implemented")
+}
+func (UnimplementedApiServiceServer) GetCandyMetadataPost(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCandyMetadataPost not implemented")
 }
 func (UnimplementedApiServiceServer) GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNftPost not implemented")
@@ -262,6 +290,42 @@ func _ApiService_GetRenderedNft_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetCandyMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCandyMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetCandyMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetCandyMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetCandyMetadata(ctx, req.(*GetCandyMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiService_GetCandyMetadataPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCandyMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetCandyMetadataPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetCandyMetadataPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetCandyMetadataPost(ctx, req.(*GetCandyMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ApiService_GetRenderedNftPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRenderedNftRequest)
 	if err := dec(in); err != nil {
@@ -310,6 +374,14 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRenderedNft",
 			Handler:    _ApiService_GetRenderedNft_Handler,
+		},
+		{
+			MethodName: "GetCandyMetadata",
+			Handler:    _ApiService_GetCandyMetadata_Handler,
+		},
+		{
+			MethodName: "GetCandyMetadataPost",
+			Handler:    _ApiService_GetCandyMetadataPost_Handler,
 		},
 		{
 			MethodName: "GetRenderedNftPost",
