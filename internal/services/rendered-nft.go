@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
@@ -73,7 +74,7 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 	req.ContractAddress = strings.ToLower(req.ContractAddress)
 
 	var templateDTOFromMongo bson.M
-	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+	if err := s.templateRepository.FindOne(ctx, map[string]interface{}{
 		"nftInfo.tokenId":         req.ProjectId,
 		"nftInfo.chainId":         req.ChainId,
 		"nftInfo.contractAddress": req.ContractAddress,
@@ -87,7 +88,9 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(doc, &template)
+		if err = json.Unmarshal(doc, &template); err != nil {
+			return nil, err
+		}
 	}
 
 	// find in mongo
@@ -110,13 +113,18 @@ func (s *service) GetRenderedNft(ctx context.Context, req *api.GetRenderedNftReq
 			if err != nil {
 				return nil, err
 			}
-			json.Unmarshal(doc, &renderedNft)
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
 		}
 
 		return renderedNft.ToProto(), nil
 	}
 
-	return nil, errors.New("Not found")
+	return nil, TemplateNotFoundError{
+		TokenID: req.TokenId,
+		ChainID: req.ChainId,
+	}
 }
 
 func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMetadataRequest) (*api.GetCandyMetadataResponse, error) {
@@ -189,7 +197,7 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 
 	tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
 	if !ok {
-		return nil, errors.New("invalid token id")
+		return nil, InvalidTokenIDError{TokenID: req.TokenId}
 	}
 
 	colorPallete, shape, size, surface, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
@@ -291,6 +299,9 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 		"nftInfo.tokenId": req.ProjectId,
 		"nftInfo.chainId": req.ChainId,
 	}, &templateDTOFromMongo); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
+		}
 		return nil, err
 	}
 
@@ -300,7 +311,9 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(doc, &template)
+		if err = json.Unmarshal(doc, &template); err != nil {
+			return nil, err
+		}
 	}
 
 	// find in mongo
@@ -323,13 +336,15 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 			if err != nil {
 				return nil, err
 			}
-			json.Unmarshal(doc, &renderedNft)
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
 		}
 
 		return renderedNft.ToCandyResponse(), nil
 	}
 
-	return nil, errors.New("not found")
+	return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
 }
 
 func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {
@@ -358,7 +373,9 @@ func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNf
 		if err != nil {
 			return nil, err
 		}
-		json.Unmarshal(doc, &template)
+		if err = json.Unmarshal(doc, &template); err != nil {
+			return nil, err
+		}
 	}
 
 	// find in mongo
@@ -381,7 +398,9 @@ func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNf
 			if err != nil {
 				return nil, err
 			}
-			json.Unmarshal(doc, &renderedNft)
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
 		}
 
 		return renderedNft.ToProto(), nil
@@ -401,7 +420,7 @@ func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNf
 
 	tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
 	if !ok {
-		return nil, errors.New("invalid token id")
+		return nil, InvalidTokenIDError{TokenID: req.TokenId}
 	}
 
 	seed, resp, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
