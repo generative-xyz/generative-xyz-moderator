@@ -10,14 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
 	"rederinghub.io/api"
 	"rederinghub.io/internal/api/middleware"
 	"rederinghub.io/pkg/config"
 	log "rederinghub.io/pkg/logger"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc"
 )
 
 type ApiGateway interface {

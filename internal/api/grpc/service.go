@@ -3,7 +3,10 @@ package grpc
 import (
 	"context"
 
+	"github.com/spf13/cobra"
+	"go.uber.org/dig"
 	"go.uber.org/zap"
+
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/api/http"
 	"rederinghub.io/internal/model"
@@ -11,9 +14,6 @@ import (
 	"rederinghub.io/internal/services"
 	"rederinghub.io/pkg/config"
 	log "rederinghub.io/pkg/logger"
-
-	"github.com/spf13/cobra"
-	"go.uber.org/dig"
 )
 
 type Server struct {

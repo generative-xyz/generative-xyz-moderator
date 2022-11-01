@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+
 	"rederinghub.io/api"
 	"rederinghub.io/internal/api/http"
 	"rederinghub.io/internal/api/middleware"

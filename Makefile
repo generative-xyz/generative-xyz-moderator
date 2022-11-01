@@ -8,7 +8,8 @@ install-go-tools:
 
 install-osx: install-go-tools
 	brew install protobuf
-
+	brew tap incu6us/homebrew-tap
+	brew install incu6us/homebrew-tap/goimports-reviser
 
 update:
 	go mod tidy
@@ -19,6 +20,9 @@ run-server:
 
 lint:
 	golangci-lint run ./...
+
+order-import:
+	 find ./ -name \*.go ! -path './/api/*.go' -exec goimports-reviser {} \;
 
 
 gen-proto:
