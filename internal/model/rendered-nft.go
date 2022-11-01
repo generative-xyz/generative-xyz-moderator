@@ -50,6 +50,17 @@ func (r *RenderedNft) ToProto() *api.GetRenderedNftResponse {
 	}
 }
 
+func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
+	return &api.GetCandyMetadataResponse{
+		Name:         r.Name,
+		Description:  r.Description,
+		Image:        *r.Image,
+		AnimationUrl: *r.Glb,
+		ExternalLink: *r.ExternalLink,
+		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
+	}
+}
+
 func (m RenderedNft) CollectionName() string {
 	return "rendered_nfts"
 }
