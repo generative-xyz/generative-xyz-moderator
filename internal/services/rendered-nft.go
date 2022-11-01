@@ -151,10 +151,10 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
-		"chainId":         req.ChainId,
-		"contractAddress": template.NftInfo.ContractAddress,
-		"projectId":       req.ProjectId,
-		"tokenId":         req.TokenId,
+		"chainId": req.ChainId,
+		//"contractAddress": template.NftInfo.ContractAddress,
+		"projectId": req.ProjectId,
+		"tokenId":   req.TokenId,
 	}, &renderedNftBson)
 
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
@@ -306,10 +306,10 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
-		"chainId":         req.ChainId,
-		"contractAddress": template.NftInfo.ContractAddress,
-		"projectId":       req.ProjectId,
-		"tokenId":         req.TokenId,
+		"chainId": req.ChainId,
+		//"contractAddress": template.NftInfo.ContractAddress,
+		"projectId": req.ProjectId,
+		"tokenId":   req.TokenId,
 	}, &renderedNftBson)
 
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
