@@ -353,7 +353,11 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 		return renderedNft.ToCandyResponse(), nil
 	}
 
-	return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
+	return &api.GetCandyMetadataResponse{
+		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
+		Image:       "https://i.seadn.io/gcs/files/c269f82880b9d2bedec513b4d87cd92e.jpg?auto=format&w=256",
+		Description: utils.MakeStringPointer("SWΞΞTS is an NFT collection of on-chain, generative candies from Rove. Each of the 5,000 designs is algorithmically generated, unique, and lives forever on Ethereum."),
+	}, nil
 }
 
 func (s *service) GetRenderedNftPost(ctx context.Context, req *api.GetRenderedNftRequest) (*api.GetRenderedNftResponse, error) {
