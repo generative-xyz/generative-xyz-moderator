@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"rederinghub.io/internal/api/grpc"
 	"rederinghub.io/pkg/config"
 )

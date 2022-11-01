@@ -2,6 +2,7 @@ package model
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+
 	"rederinghub.io/pkg/drivers/mongodb"
 	"rederinghub.io/pkg/logger"
 )

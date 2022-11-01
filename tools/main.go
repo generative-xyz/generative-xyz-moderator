@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"os"
-	"rederinghub.io/tools/protoc"
 
 	"github.com/urfave/cli/v2"
+
+	"rederinghub.io/tools/protoc"
 )
 
 func main() {
