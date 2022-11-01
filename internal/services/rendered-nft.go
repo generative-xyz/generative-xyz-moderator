@@ -286,6 +286,8 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 		return nil, err
 	}
 
+	logger.AtLog.Infof("Done [GenerateCandy] #%s", req.TokenId)
+
 	return renderedNft.ToCandyResponse(), nil
 }
 
@@ -293,7 +295,7 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 	//req.ContractAddress = ""
 	req.ProjectId = "291199"
 
-	logger.AtLog.Infof("Handle [GetCandyMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+	logger.AtLog.Infof("Handle [GetCandyMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
 		"nftInfo.tokenId": req.ProjectId,
