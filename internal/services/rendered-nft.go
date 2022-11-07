@@ -186,6 +186,19 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 			}
 		}
 
+		tokenIDNumber, _ := strconv.Atoi(req.TokenId)
+		if tokenIDNumber > 4500 {
+			renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+				TraitType: "Special edition",
+				Value:     "true",
+			})
+		} else {
+			renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+				TraitType: "Special edition",
+				Value:     "false",
+			})
+		}
+
 		return renderedNft.ToCandyResponse(), nil
 	}
 
@@ -244,6 +257,9 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 		fmt.Sprintf("ipfs://%v", rendered.Image),
 		fmt.Sprintf("ipfs://%v", rendered.Glb),
 	)
+	if err != nil {
+		return nil, err
+	}
 	renderedNft.Attributes = []*model.OpenSeaAttribute{
 		{
 			TraitType: "Color 1",
@@ -274,8 +290,18 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 			Value:     surface,
 		},
 	}
-	if err != nil {
-		return nil, err
+
+	tokenIDNumber, _ := strconv.Atoi(req.TokenId)
+	if tokenIDNumber > 4500 {
+		renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+			TraitType: "Special edition",
+			Value:     "true",
+		})
+	} else {
+		renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+			TraitType: "Special edition",
+			Value:     "false",
+		})
 	}
 
 	var renderedNftModel bson.M
@@ -350,6 +376,18 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 			}
 		}
 
+		tokenIDNumber, _ := strconv.Atoi(req.TokenId)
+		if tokenIDNumber > 4500 {
+			renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+				TraitType: "Special edition",
+				Value:     "true",
+			})
+		} else {
+			renderedNft.Attributes = append(renderedNft.Attributes, &model.OpenSeaAttribute{
+				TraitType: "Special edition",
+				Value:     "false",
+			})
+		}
 		return renderedNft.ToCandyResponse(), nil
 	}
 
