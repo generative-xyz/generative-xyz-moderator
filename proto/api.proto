@@ -60,4 +60,17 @@ service ApiService {
       body: '*'
     };
   }
+
+  rpc GetAvatarMetadata(GetAvatarMetadataRequest) returns (GetAvatarMetadataResponse) {
+    option (google.api.http) = {
+      get: '/v1/rendered-nft/{chain_id}/{contract_address}/metadata/{token_id}'
+    };
+  }
+
+  rpc GetAvatarMetadataPost(GetAvatarMetadataRequest) returns (GetAvatarMetadataResponse) {
+    option (google.api.http) = {
+      post: '/v1/rendered-nft/{chain_id}/{contract_address}/metadata/{token_id}',
+      body: '*'
+    };
+  }
 }

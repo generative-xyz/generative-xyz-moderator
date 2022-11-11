@@ -654,3 +654,261 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetCandyMetadataResponseValidationError{}
+
+// Validate checks the field values on GetAvatarMetadataResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetAvatarMetadataResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetAvatarMetadataResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetAvatarMetadataResponseMultiError, or nil if none found.
+func (m *GetAvatarMetadataResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetAvatarMetadataResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Image
+
+	// no validation rules for AnimationUrl
+
+	// no validation rules for ExternalLink
+
+	for idx, item := range m.GetAttributes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetAvatarMetadataResponseValidationError{
+						field:  fmt.Sprintf("Attributes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetAvatarMetadataResponseValidationError{
+						field:  fmt.Sprintf("Attributes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetAvatarMetadataResponseValidationError{
+					field:  fmt.Sprintf("Attributes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if len(errors) > 0 {
+		return GetAvatarMetadataResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetAvatarMetadataResponseMultiError is an error wrapping multiple validation
+// errors returned by GetAvatarMetadataResponse.ValidateAll() if the
+// designated constraints aren't met.
+type GetAvatarMetadataResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetAvatarMetadataResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetAvatarMetadataResponseMultiError) AllErrors() []error { return m }
+
+// GetAvatarMetadataResponseValidationError is the validation error returned by
+// GetAvatarMetadataResponse.Validate if the designated constraints aren't met.
+type GetAvatarMetadataResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetAvatarMetadataResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetAvatarMetadataResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetAvatarMetadataResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetAvatarMetadataResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetAvatarMetadataResponseValidationError) ErrorName() string {
+	return "GetAvatarMetadataResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetAvatarMetadataResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetAvatarMetadataResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetAvatarMetadataResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetAvatarMetadataResponseValidationError{}
+
+// Validate checks the field values on GetAvatarMetadataRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetAvatarMetadataRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetAvatarMetadataRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetAvatarMetadataRequestMultiError, or nil if none found.
+func (m *GetAvatarMetadataRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetAvatarMetadataRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ChainId
+
+	// no validation rules for ContractAddress
+
+	// no validation rules for ProjectId
+
+	// no validation rules for TokenId
+
+	if len(errors) > 0 {
+		return GetAvatarMetadataRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetAvatarMetadataRequestMultiError is an error wrapping multiple validation
+// errors returned by GetAvatarMetadataRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetAvatarMetadataRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetAvatarMetadataRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetAvatarMetadataRequestMultiError) AllErrors() []error { return m }
+
+// GetAvatarMetadataRequestValidationError is the validation error returned by
+// GetAvatarMetadataRequest.Validate if the designated constraints aren't met.
+type GetAvatarMetadataRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetAvatarMetadataRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetAvatarMetadataRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetAvatarMetadataRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetAvatarMetadataRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetAvatarMetadataRequestValidationError) ErrorName() string {
+	return "GetAvatarMetadataRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetAvatarMetadataRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetAvatarMetadataRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetAvatarMetadataRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetAvatarMetadataRequestValidationError{}
