@@ -21,9 +21,10 @@ type renderMachineAdapter struct {
 }
 
 type RenderRequest struct {
-	Script string   `json:"script"`
-	Params []string `json:"params"`
-	Seed   string   `json:"seed"`
+	Script      string   `json:"script"`
+	Params      []string `json:"params"`
+	Seed        string   `json:"seed"`
+	BlenderType string   `json:"blender_type,omitempty"`
 }
 
 type RenderResponse struct {

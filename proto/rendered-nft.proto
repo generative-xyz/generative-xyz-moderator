@@ -39,3 +39,20 @@ message GetCandyMetadataResponse {
     string external_link = 5 [json_name="external_link"];
     repeated OpenSeaAttribute attributes = 6;
 }
+
+message GetAvatarMetadataResponse {
+    string name = 1;
+    optional string description = 2;
+    string image = 3;
+    string animation_url = 4  [json_name="animation_url"];
+    string external_link = 5 [json_name="external_link"];
+    repeated OpenSeaAttribute attributes = 6;
+}
+
+
+message GetAvatarMetadataRequest {
+    string chain_id = 1;
+    string contract_address = 2;
+    string project_id = 3;
+    string token_id = 4;
+}
