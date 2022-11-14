@@ -9,18 +9,23 @@ type OpenSeaAttribute struct {
 
 type RenderedNft struct {
 	BaseModel
-	ChainID         string              `json:"chainId,omitempty"  bson:"chainId,omitempty"`
-	ContractAddress string              `json:"contractAddress,omitempty"  bson:"contractAddress,omitempty"`
-	ProjectID       string              `json:"projectId,omitempty"  bson:"projectId,omitempty"`
-	TokenID         string              `json:"tokenId,omitempty"  bson:"tokenId,omitempty"`
-	Image           *string             `json:"image,omitempty"  bson:"image,omitempty"`
-	Glb             *string             `json:"glb,omitempty"  bson:"glb,omitempty"`
-	Video           *string             `json:"video,omitempty"  bson:"video,omitempty"`
-	Name            string              `json:"name,omitempty"  bson:"name,omitempty"`
-	Description     *string             `json:"description,omitempty"  bson:"description,omitempty"`
-	ExternalLink    *string             `json:"externalLink,omitempty"  bson:"externalLink,omitempty"`
-	Attributes      []*OpenSeaAttribute `json:"attributes,omitempty"  bson:"attributes,omitempty"`
-	EmotionTime     string              `json:"emotionTime,omitempty" bson:"emotionTime,omitempty"`
+	ChainID         string               `json:"chainId,omitempty"  bson:"chainId,omitempty"`
+	ContractAddress string               `json:"contractAddress,omitempty"  bson:"contractAddress,omitempty"`
+	ProjectID       string               `json:"projectId,omitempty"  bson:"projectId,omitempty"`
+	TokenID         string               `json:"tokenId,omitempty"  bson:"tokenId,omitempty"`
+	Image           *string              `json:"image,omitempty"  bson:"image,omitempty"`
+	Glb             *string              `json:"glb,omitempty"  bson:"glb,omitempty"`
+	Video           *string              `json:"video,omitempty"  bson:"video,omitempty"`
+	Name            string               `json:"name,omitempty"  bson:"name,omitempty"`
+	Description     *string              `json:"description,omitempty"  bson:"description,omitempty"`
+	ExternalLink    *string              `json:"externalLink,omitempty"  bson:"externalLink,omitempty"`
+	Attributes      []*OpenSeaAttribute  `json:"attributes,omitempty"  bson:"attributes,omitempty"`
+	EmotionTime     string               `json:"emotionTime,omitempty" bson:"emotionTime,omitempty"`
+	Metadata        *RenderedNftMetadata `json:"metadata,omitempty" bson:"metadata,omitempty"`
+}
+
+type RenderedNftMetadata struct {
+	BackgroundColor *string `json:"backgroundColor,omitempty" bson:"backgroundColor,omitempty"`
 }
 
 func (o *OpenSeaAttribute) ToProto() *api.OpenSeaAttribute {
@@ -63,7 +68,7 @@ func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
 }
 
 func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
-	return &api.GetAvatarMetadataResponse{
+	resp := &api.GetAvatarMetadataResponse{
 		Name:         r.Name,
 		Description:  r.Description,
 		Image:        *r.Image,
@@ -71,6 +76,14 @@ func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
 		ExternalLink: *r.ExternalLink,
 		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
 	}
+
+	if r.Metadata != nil {
+		metadata := r.Metadata
+		if metadata.BackgroundColor != nil {
+			resp.BackgroundColor = metadata.BackgroundColor
+		}
+	}
+	return resp
 }
 
 func (m RenderedNft) CollectionName() string {

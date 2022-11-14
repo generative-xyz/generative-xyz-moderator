@@ -28,9 +28,14 @@ type RenderRequest struct {
 }
 
 type RenderResponse struct {
-	Glb   string `json:"glb"`
-	Image string `json:"image"`
-	Video string `json:"video"`
+	Glb      string                 `json:"glb"`
+	Image    string                 `json:"image"`
+	Video    string                 `json:"video"`
+	Metadata RenderResponseMetadata `json:"metadata"`
+}
+
+type RenderResponseMetadata struct {
+	BackgroundColor string `json:"background_color"`
 }
 
 func NewRenderMachineAdapter() RenderMachineAdapter {

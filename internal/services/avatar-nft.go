@@ -155,6 +155,9 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 	}
 	renderedNft.Attributes = s.getAvatarOpenSeaTraits(&player)
 	renderedNft.EmotionTime = player.EmotionTime
+	if rendered.Metadata.BackgroundColor != "" {
+		renderedNft.Metadata = &model.RenderedNftMetadata{BackgroundColor: &rendered.Metadata.BackgroundColor}
+	}
 
 	var renderedNftModel bson.M
 	if _bytes, err := json.Marshal(&renderedNft); err != nil {
