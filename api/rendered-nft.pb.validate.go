@@ -723,6 +723,10 @@ func (m *GetAvatarMetadataResponse) validate(all bool) error {
 		// no validation rules for Description
 	}
 
+	if m.BackgroundColor != nil {
+		// no validation rules for BackgroundColor
+	}
+
 	if len(errors) > 0 {
 		return GetAvatarMetadataResponseMultiError(errors)
 	}

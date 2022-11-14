@@ -490,6 +490,9 @@
           "items": {
             "$ref": "#/definitions/ioOpenSeaAttribute"
           }
+        },
+        "background_color": {
+          "type": "string"
         }
       }
     },
