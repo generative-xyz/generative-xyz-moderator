@@ -86,7 +86,3 @@ func BsonToObject(bs bson.M, obj interface{}) error {
 	bson.Unmarshal(doc, obj)
 	return nil
 }
-
-func MakeStringPointer(s string) *string {
-	return &s
-}
