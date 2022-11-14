@@ -369,6 +369,54 @@
         ]
       }
     },
+    "/v1/sweet-nft/{chainId}/metadatas/{tokenIds}": {
+      "get": {
+        "operationId": "ApiService_GetCandyMetadatas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetCandyMetadatasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tokenIds",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contractAddress",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
     "/v1/template": {
       "get": {
         "operationId": "ApiService_GetTemplate",
@@ -518,6 +566,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/ioOpenSeaAttribute"
+          }
+        }
+      }
+    },
+    "ioGetCandyMetadatasResponse": {
+      "type": "object",
+      "properties": {
+        "metadatas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ioGetCandyMetadataResponse"
           }
         }
       }
