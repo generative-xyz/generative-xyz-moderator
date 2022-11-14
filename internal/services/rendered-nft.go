@@ -22,7 +22,11 @@ import (
 	"rederinghub.io/pkg/contracts/candy_contract"
 	"rederinghub.io/pkg/contracts/generative_param"
 	"rederinghub.io/pkg/logger"
-	"rederinghub.io/pkg/utils"
+	"rederinghub.io/pkg/utils/pointerutil"
+)
+
+const (
+	CandyProjectID = "291199"
 )
 
 func GetRenderedNft(
@@ -61,7 +65,7 @@ func GetRenderedNft(
 		Name:            fmt.Sprintf("%s #%s", template.ProjectName, tokenID),
 		Image:           &image,
 		Glb:             &glb,
-		ExternalLink:    utils.MakeStringPointer("https://rove.to"),
+		ExternalLink:    pointerutil.MakePointer("https://rove.to"),
 		Attributes:      protoAttributes,
 		Description:     template.Description,
 	}, nil
@@ -326,30 +330,9 @@ func (s *service) GetCandyMetadataPost(ctx context.Context, req *api.GetCandyMet
 
 func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadataRequest) (*api.GetCandyMetadataResponse, error) {
 	//req.ContractAddress = ""
-	req.ProjectId = "291199"
+	req.ProjectId = CandyProjectID
 
 	logger.AtLog.Debugf("Handle [GetCandyMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
-	var templateDTOFromMongo bson.M
-	if err := s.templateRepository.FindOne(ctx, map[string]interface{}{
-		"nftInfo.tokenId": req.ProjectId,
-		"nftInfo.chainId": req.ChainId,
-	}, &templateDTOFromMongo); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
-		}
-		return nil, err
-	}
-
-	var template dto.TemplateDTO
-	{
-		doc, err := json.Marshal(templateDTOFromMongo)
-		if err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(doc, &template); err != nil {
-			return nil, err
-		}
-	}
 
 	// find in mongo
 	var renderedNftBson bson.M
@@ -394,7 +377,58 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 	return &api.GetCandyMetadataResponse{
 		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
 		Image:       "https://i.seadn.io/gcs/files/c269f82880b9d2bedec513b4d87cd92e.jpg?auto=format&w=256",
-		Description: utils.MakeStringPointer("SWΞΞTS is an NFT collection of on-chain, generative candies from Rove. Each of the 5,000 designs is algorithmically generated, unique, and lives forever on Ethereum."),
+		Description: pointerutil.MakePointer("SWΞΞTS is an NFT collection of on-chain, generative candies from Rove. Each of the 5,000 designs is algorithmically generated, unique, and lives forever on Ethereum."),
+	}, nil
+}
+
+func (s *service) GetCandyMetadatas(ctx context.Context, req *api.GetCandyMetadatasRequest) (*api.GetCandyMetadatasResponse, error) {	
+	//req.ContractAddress = ""
+	req.ProjectId = CandyProjectID
+
+	// split request's token_ids to get list of token ids to find
+	tokenIds := strings.Split(req.TokenIds, ",")
+
+	var renderedNftsBson []bson.M
+	filter := map[string]interface{}{
+		"chainId": req.ChainId,
+		//"contractAddress": template.NftInfo.ContractAddress,
+		"projectId": req.ProjectId,
+		"tokenId":   map[string]interface{} {
+			"$in": tokenIds,
+		},
+	}
+	if err := s.renderedNftRepository.Find(ctx, filter, &renderedNftsBson); err != nil {
+		logger.AtLog.Errorf(
+			"can not find candy metadatas %s %s %s %s", 
+			req.ChainId, req.ContractAddress, req.ProjectId, req.TokenIds,
+		)
+		return nil, err
+	}
+
+	var renderedNftsDtos = make([]*api.GetCandyMetadataResponse, 0, len(renderedNftsBson))
+	
+	// not add duplicated rendered nft to response
+	addedTokenIds := make(map[string]bool)
+	for _, renderedNftBson := range renderedNftsBson {
+		var renderedNft model.RenderedNft
+		{
+			doc, err := json.Marshal(renderedNftBson)
+			if err != nil {
+				return nil, err
+			}
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
+		}
+		// add to reponse if the token is not added
+		if _, ok := addedTokenIds[renderedNft.TokenID]; !ok {
+			addedTokenIds[renderedNft.TokenID] = true
+			renderedNftsDtos = append(renderedNftsDtos, renderedNft.ToCandyResponse())
+		}
+	}
+
+	return &api.GetCandyMetadatasResponse{
+		Metadatas: renderedNftsDtos,
 	}, nil
 }
 
