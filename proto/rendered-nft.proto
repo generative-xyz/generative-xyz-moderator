@@ -40,6 +40,17 @@ message GetCandyMetadataResponse {
     repeated OpenSeaAttribute attributes = 6;
 }
 
+message GetCandyMetadatasRequest {
+    string chain_id = 1;
+    string contract_address = 2;
+    string project_id = 3;
+    string token_ids = 4;
+}
+
+message GetCandyMetadatasResponse {
+    repeated GetCandyMetadataResponse metadatas = 1;
+}
+
 message GetAvatarMetadataResponse {
     string name = 1;
     optional string description = 2;
