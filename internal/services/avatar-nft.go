@@ -123,6 +123,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 		player.Tatoo,
 		player.Glasses,
 		player.Captain,
+		player.FacePaint,
 	}
 
 	// call to render machine
