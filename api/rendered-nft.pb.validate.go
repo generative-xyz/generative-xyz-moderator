@@ -655,6 +655,252 @@ var _ interface {
 	ErrorName() string
 } = GetCandyMetadataResponseValidationError{}
 
+// Validate checks the field values on GetCandyMetadatasRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetCandyMetadatasRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetCandyMetadatasRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetCandyMetadatasRequestMultiError, or nil if none found.
+func (m *GetCandyMetadatasRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetCandyMetadatasRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ChainId
+
+	// no validation rules for ContractAddress
+
+	// no validation rules for ProjectId
+
+	// no validation rules for TokenIds
+
+	if len(errors) > 0 {
+		return GetCandyMetadatasRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetCandyMetadatasRequestMultiError is an error wrapping multiple validation
+// errors returned by GetCandyMetadatasRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetCandyMetadatasRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetCandyMetadatasRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetCandyMetadatasRequestMultiError) AllErrors() []error { return m }
+
+// GetCandyMetadatasRequestValidationError is the validation error returned by
+// GetCandyMetadatasRequest.Validate if the designated constraints aren't met.
+type GetCandyMetadatasRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetCandyMetadatasRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetCandyMetadatasRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetCandyMetadatasRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetCandyMetadatasRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetCandyMetadatasRequestValidationError) ErrorName() string {
+	return "GetCandyMetadatasRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetCandyMetadatasRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetCandyMetadatasRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetCandyMetadatasRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetCandyMetadatasRequestValidationError{}
+
+// Validate checks the field values on GetCandyMetadatasResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetCandyMetadatasResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetCandyMetadatasResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetCandyMetadatasResponseMultiError, or nil if none found.
+func (m *GetCandyMetadatasResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetCandyMetadatasResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetMetadatas() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetCandyMetadatasResponseValidationError{
+						field:  fmt.Sprintf("Metadatas[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetCandyMetadatasResponseValidationError{
+						field:  fmt.Sprintf("Metadatas[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetCandyMetadatasResponseValidationError{
+					field:  fmt.Sprintf("Metadatas[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetCandyMetadatasResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetCandyMetadatasResponseMultiError is an error wrapping multiple validation
+// errors returned by GetCandyMetadatasResponse.ValidateAll() if the
+// designated constraints aren't met.
+type GetCandyMetadatasResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetCandyMetadatasResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetCandyMetadatasResponseMultiError) AllErrors() []error { return m }
+
+// GetCandyMetadatasResponseValidationError is the validation error returned by
+// GetCandyMetadatasResponse.Validate if the designated constraints aren't met.
+type GetCandyMetadatasResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetCandyMetadatasResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetCandyMetadatasResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetCandyMetadatasResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetCandyMetadatasResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetCandyMetadatasResponseValidationError) ErrorName() string {
+	return "GetCandyMetadatasResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetCandyMetadatasResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetCandyMetadatasResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetCandyMetadatasResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetCandyMetadatasResponseValidationError{}
+
 // Validate checks the field values on GetAvatarMetadataResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.

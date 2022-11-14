@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/pkg/contracts/avatar_contract"
+	"rederinghub.io/pkg/utils/pointerutil"
 
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
@@ -20,7 +21,6 @@ import (
 	"rederinghub.io/internal/model"
 	"rederinghub.io/pkg/contracts/generative_param"
 	"rederinghub.io/pkg/logger"
-	"rederinghub.io/pkg/utils"
 )
 
 func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
@@ -298,6 +298,6 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 	return &api.GetAvatarMetadataResponse{
 		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
 		Image:       "https://i.seadn.io/gae/iFdea-Nd80jLGqELcfuBuygkdzlwekgyXxoWnh6z7oSUfapJgsfgQs2HABhWTU1xsbyGhLRhkXneprVAG40OWKhB2YzQbW_69UmMuw?auto=format&w=256",
-		Description: utils.MakeStringPointer("FOOTBALLΞR is a living character that reacts to the games as you do. Through Chainlink oracles connected to match results, your avatar will smile, frown, and tire as its team wins or loses on the field."),
+		Description: pointerutil.MakePointer("FOOTBALLΞR is a living character that reacts to the games as you do. Through Chainlink oracles connected to match results, your avatar will smile, frown, and tire as its team wins or loses on the field."),
 	}, nil
 }

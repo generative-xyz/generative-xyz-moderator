@@ -47,6 +47,12 @@ service ApiService {
     };
   }
 
+  rpc GetCandyMetadatas(GetCandyMetadatasRequest) returns (GetCandyMetadatasResponse) {
+    option (google.api.http) = {
+      get: '/v1/sweet-nft/{chain_id}/metadatas/{token_ids}'
+    };
+  }
+
   rpc GetCandyMetadataPost(GetCandyMetadataRequest) returns (GetCandyMetadataResponse) {
     option (google.api.http) = {
       post: '/v1/rendered-nft/{chain_id}/metadata/{token_id}',
