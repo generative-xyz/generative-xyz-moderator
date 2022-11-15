@@ -415,7 +415,7 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 
 	return &api.GetAvatarMetadataResponse{
 		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
-		Image:       "https://i.seadn.io/gae/iFdea-Nd80jLGqELcfuBuygkdzlwekgyXxoWnh6z7oSUfapJgsfgQs2HABhWTU1xsbyGhLRhkXneprVAG40OWKhB2YzQbW_69UmMuw?auto=format&w=256",
-		Description: pointerutil.MakePointer("FOOTBALLΞR is a living character that reacts to the games as you do. Through Chainlink oracles connected to match results, your avatar will smile, frown, and tire as its team wins or loses on the field."),
+		Image:       "https://cdn.rove.to/events/world-cup/wc-thumbnail.png",
+		Description: pointerutil.MakePointer("Build your World Cup dream team with PLAYΞRS, a limited collection of 10,000 living 3D generative avatars. Every PLAYΞRS is algorithmically generated from 16 different attributes, with expressions that react to their team’s success on the field. Start your collection today."),
 	}, nil
 }
