@@ -183,32 +183,16 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 func (s *service) getAvatarOpenSeaTraits(player *avatar_contract.AVATARSPlayer) []*model.OpenSeaAttribute {
 	ret := []*model.OpenSeaAttribute{
 		{
-			TraitType: "Emotion",
-			Value:     player.Emotion,
-		},
-		{
-			TraitType: "Nation",
-			Value:     player.Nation,
-		},
-		{
-			TraitType: "Dna",
+			TraitType: "DNA",
 			Value:     player.Dna,
 		},
 		{
-			TraitType: "Beard",
-			Value:     player.Beard,
+			TraitType: "Team",
+			Value:     player.Nation,
 		},
 		{
-			TraitType: "Hair",
-			Value:     player.Hair,
-		},
-		{
-			TraitType: "Undershirt",
-			Value:     player.Undershirt,
-		},
-		{
-			TraitType: "Shoes",
-			Value:     player.Shoes,
+			TraitType: "Number",
+			Value:     player.Number.String(),
 		},
 		{
 			TraitType: "Top",
@@ -219,23 +203,156 @@ func (s *service) getAvatarOpenSeaTraits(player *avatar_contract.AVATARSPlayer) 
 			Value:     player.Bottom,
 		},
 		{
-			TraitType: "Number",
-			Value:     player.Number.String(),
+			TraitType: "Hair",
+			Value:     player.Hair,
 		},
 		{
-			TraitType: "Tatoo",
-			Value:     player.Tatoo,
+			TraitType: "Beard",
+			Value:     player.Beard,
+		},
+		{
+			TraitType: "Facial Paint",
+			Value:     player.FacePaint,
 		},
 		{
 			TraitType: "Glasses",
 			Value:     player.Glasses,
 		},
 		{
+			TraitType: "Boots",
+			Value:     player.Shoes,
+		},
+		{
+			TraitType: "Tattoos",
+			Value:     player.Tatoo,
+		},
+		{
+			TraitType: "Reacts",
+			Value:     player.EmotionTime,
+		},
+		{
 			TraitType: "Captain",
 			Value:     player.Captain,
 		},
+		{
+			TraitType: "Undershirt",
+			Value:     player.Undershirt,
+		},
 	}
+
+	s.getAvatarTraitsResolvedValue(ret)
+
 	return ret
+}
+
+func (s *service) getAvatarTraitsResolvedValue(attrs []*model.OpenSeaAttribute) {
+	data := map[string]map[string]string{
+		"DNA": {
+			"1": "Male",
+			"2": "Female",
+			"3": "Robot",
+			"4": "Ape",
+			"5": "Alien",
+			"6": "Golden Ballhead",
+		},
+		"Top": {
+			"1": "Shirt",
+			"2": "Hoodie",
+			"3": "Topless",
+			"4": "Camisole",
+		},
+		"Bottom": {
+			"1": "Shorts",
+			"2": "Joggers",
+			"3": "Shorts",
+			"4": "Skirt",
+		},
+		"Hair": {
+			"0": "None",
+			"1": "Short",
+			"2": "Long",
+			"3": "Wild",
+			"4": "Beanie",
+			"5": "Sombrero",
+			"6": "Cockscomb",
+			"7": "Headdress",
+			"8": "\"Ronaldo 2002\"",
+			"9": "Mohawk",
+		},
+		"Boots": {
+			"1": "Classic",
+			"2": "Futuristic",
+			"3": "Golden",
+		},
+		"Tattoos": {
+			"0": "None",
+			"1": "Bitcoin",
+			"2": "Ethereum",
+			"3": "Soccer Ball",
+		},
+		"Beard": {
+			"0": "None",
+			"1": "Trimmed",
+			"2": "Bushy",
+		},
+		"Glasses": {
+			"0": "None",
+			"1": "3D",
+			"2": "VR",
+			"3": "AR",
+			"4": "\"Edgar Davids\"",
+			"5": "Gold",
+		},
+		"Captain": {
+			"0": "No",
+			"1": "Yes",
+		},
+		"Undershirt": {
+			"0":  "None",
+			"1":  "GM",
+			"2":  "WAGMI",
+			"3":  "Probably Nothing",
+			"4":  "Up Only",
+			"5":  "RightClick Save As",
+			"6":  "JPGs",
+			"7":  "LFG",
+			"8":  "Wen Moon",
+			"9":  "Shelling Point",
+			"10": "Valhalla",
+			"11": "McDonald’s",
+			"12": "NFA",
+			"13": "MFERS",
+			"14": "XCOPY",
+			"15": "Moonbirds",
+			"16": "Nouns",
+			"17": "Cryptoadz",
+		},
+		"Facial Paint": {
+			"0": "None",
+			"1": "Flag",
+		},
+		"Reacts": {
+			"1": "Daily",
+			"2": "Weekly",
+			"3": "Monthly",
+		},
+	}
+
+	for _, attr := range attrs {
+		if attr.TraitType == "Team" {
+			continue
+		} else if attr.TraitType == "Number" {
+			if attr.Value == "0" {
+				attr.Value = "None"
+			}
+		} else {
+			if item, ok := data[attr.TraitType]; ok {
+				if val, ok := item[attr.Value]; ok {
+					attr.Value = val
+				}
+			}
+		}
+	}
 }
 
 func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
