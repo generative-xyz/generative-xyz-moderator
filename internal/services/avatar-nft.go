@@ -415,7 +415,7 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 
 	return &api.GetAvatarMetadataResponse{
 		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
-		Image:       "https://cdn.rove.to/events/world-cup/wc-thumbnail.png",
+		Image:       "https://cdn.rove.to/events/world-cup/football-avatar-thumbnail.gif",
 		Description: pointerutil.MakePointer("Build your World Cup dream team with PLAYΞRS, a limited collection of 10,000 living 3D generative avatars. Every PLAYΞRS is algorithmically generated from 16 different attributes, with expressions that react to their team’s success on the field. Start your collection today."),
 	}, nil
 }
