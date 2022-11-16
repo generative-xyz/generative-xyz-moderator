@@ -120,7 +120,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 		player.Top,
 		player.Bottom,
 		player.Number.String(),
-		player.Tatoo,
+		player.Tattoo,
 		player.Glasses,
 		player.Captain,
 		player.FacePaint,
@@ -224,7 +224,7 @@ func (s *service) getAvatarOpenSeaTraits(player *avatar_contract.AVATARSPlayer) 
 		},
 		{
 			TraitType: "Tattoos",
-			Value:     player.Tatoo,
+			Value:     player.Tattoo,
 		},
 		{
 			TraitType: "Reacts",
