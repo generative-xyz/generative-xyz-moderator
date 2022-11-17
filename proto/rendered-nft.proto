@@ -59,6 +59,7 @@ message GetAvatarMetadataResponse {
     string external_link = 5 [json_name="external_link"];
     repeated OpenSeaAttribute attributes = 6;
     optional string background_color = 7 [json_name="background_color"];
+    string glb_url = 8 [json_name="glb_url"];
 }
 
 

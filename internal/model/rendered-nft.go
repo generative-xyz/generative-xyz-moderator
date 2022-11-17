@@ -75,6 +75,11 @@ func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
 		AnimationUrl: *r.Glb,
 		ExternalLink: *r.ExternalLink,
 		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
+		GlbUrl:       *r.Glb,
+	}
+
+	if r.Video != nil && *(r.Video) != "" {
+		resp.AnimationUrl = *(r.Video)
 	}
 
 	if r.Metadata != nil {
