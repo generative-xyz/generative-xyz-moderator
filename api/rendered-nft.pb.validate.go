@@ -965,6 +965,8 @@ func (m *GetAvatarMetadataResponse) validate(all bool) error {
 
 	}
 
+	// no validation rules for GlbUrl
+
 	if m.Description != nil {
 		// no validation rules for Description
 	}

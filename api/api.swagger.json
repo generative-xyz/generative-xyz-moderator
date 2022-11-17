@@ -541,6 +541,9 @@
         },
         "background_color": {
           "type": "string"
+        },
+        "glb_url": {
+          "type": "string"
         }
       }
     },
