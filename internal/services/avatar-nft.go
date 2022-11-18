@@ -23,6 +23,12 @@ import (
 	"rederinghub.io/pkg/logger"
 )
 
+func (s *service) hotfixRepponseAvatarPost(avatar model.RenderedNft) *api.GetAvatarMetadataResponse {
+	resp := avatar.ToAvatarResponse()
+	resp.AnimationUrl = resp.GlbUrl
+	return resp
+}
+
 func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
 
 	//req.ContractAddress = ""
@@ -83,7 +89,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 			}
 		}
 
-		return renderedNft.ToAvatarResponse(), nil
+		return s.hotfixRepponseAvatarPost(renderedNft), nil
 	}
 
 	client, err := ethclient.Dial(chainURL)
@@ -177,7 +183,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 
 	logger.AtLog.Infof("Done [GetAvatarMetadataPost] #%s", req.TokenId)
 
-	return renderedNft.ToAvatarResponse(), nil
+	return s.hotfixRepponseAvatarPost(*renderedNft), nil
 }
 
 func (s *service) getAvatarOpenSeaTraits(player *avatar_contract.AVATARSPlayer) []*model.OpenSeaAttribute {
