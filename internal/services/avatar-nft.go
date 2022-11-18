@@ -253,7 +253,7 @@ func (s *service) getAvatarTraitsResolvedValue(attrs []*model.OpenSeaAttribute) 
 			"3": "Robot",
 			"4": "Ape",
 			"5": "Alien",
-			"6": "Trophy",
+			"6": "Ballon d’Or",
 		},
 		"Top": {
 			"1": "Shirt",
@@ -300,8 +300,7 @@ func (s *service) getAvatarTraitsResolvedValue(attrs []*model.OpenSeaAttribute) 
 			"1": "3D",
 			"2": "VR",
 			"3": "AR",
-			"4": "Goggles",
-			"5": "Gold",
+			"4": "Gold",
 		},
 		"Captain": {
 			"0": "No",
