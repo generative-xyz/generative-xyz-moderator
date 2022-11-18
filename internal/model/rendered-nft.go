@@ -22,6 +22,7 @@ type RenderedNft struct {
 	Attributes      []*OpenSeaAttribute  `json:"attributes,omitempty"  bson:"attributes,omitempty"`
 	EmotionTime     string               `json:"emotionTime,omitempty" bson:"emotionTime,omitempty"`
 	Metadata        *RenderedNftMetadata `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	Gif             *string              `json:"gif,omitempty"  bson:"gif,omitempty"`
 }
 
 type RenderedNftMetadata struct {
@@ -68,11 +69,15 @@ func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
 }
 
 func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
+	gif := ""
+	if r.Gif != nil {
+		gif = *r.Gif
+	}
 	resp := &api.GetAvatarMetadataResponse{
 		Name:         r.Name,
 		Description:  r.Description,
 		Image:        *r.Image,
-		AnimationUrl: *r.Glb,
+		AnimationUrl: gif,
 		ExternalLink: *r.ExternalLink,
 		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
 		GlbUrl:       *r.Glb,
