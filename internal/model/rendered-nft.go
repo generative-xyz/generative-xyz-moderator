@@ -69,15 +69,15 @@ func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
 }
 
 func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
-	gif := ""
-	if r.Gif != nil {
-		gif = *r.Gif
+	video := ""
+	if r.Video != nil {
+		video = *r.Video
 	}
 	resp := &api.GetAvatarMetadataResponse{
 		Name:         r.Name,
 		Description:  r.Description,
 		Image:        *r.Image,
-		AnimationUrl: gif,
+		AnimationUrl: video,
 		ExternalLink: *r.ExternalLink,
 		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
 		GlbUrl:       *r.Glb,
