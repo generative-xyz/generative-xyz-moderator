@@ -8,6 +8,8 @@ import (
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/pkg/config"
+
+	"github.com/jellydator/ttlcache/v3"
 )
 
 type Service interface {
@@ -21,6 +23,8 @@ type service struct {
 
 	templateRepository    repository.TemplateRepository
 	renderedNftRepository repository.RenderedNftRepository
+
+	cache *ttlcache.Cache[string, string]
 }
 
 func Init(moralisAdapter adapter.MoralisAdapter,
@@ -28,12 +32,14 @@ func Init(moralisAdapter adapter.MoralisAdapter,
 	templateRepository repository.TemplateRepository,
 	renderedNftRepository repository.RenderedNftRepository,
 ) Service {
+	cache := ttlcache.New[string, string]()
 	return &service{
 		moralisAdapter:       moralisAdapter,
 		renderMachineAdapter: renderMachineAdapter,
 
 		templateRepository:    templateRepository,
 		renderedNftRepository: renderedNftRepository,
+		cache: cache,
 	}
 }
 
