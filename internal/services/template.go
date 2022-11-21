@@ -26,7 +26,6 @@ import (
 	"rederinghub.io/pkg/contracts/generative_boilerplate"
 	"rederinghub.io/pkg/logger"
 	"rederinghub.io/pkg/utils/constants/contract"
-	"rederinghub.io/pkg/utils/pointerutil"
 )
 
 const (
@@ -63,38 +62,6 @@ func (s *service) GetTemplate(ctx context.Context, req *api.GetTemplateRequest) 
 	resp.Total = int32(len(moralisResp.Result))
 
 	return &resp, nil
-}
-
-func (s *service) getTemplateByProjectID(ctx context.Context, chainID *string, projectID *string) (*dto.TemplateDTO, error) {
-	filter := make(map[string]interface{})
-	if chainID != nil {
-		filter["nftInfo.chainId"] = chainID
-	}
-	if projectID != nil {
-		filter["nftInfo.tokenId"] = projectID
-	}
-	var templateDTOFromMongo bson.M
-	if err := s.templateRepository.FindOne(ctx, filter, &templateDTOFromMongo); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, TemplateNotFoundError{
-				TokenID: pointerutil.ResolveValue(projectID), 
-				ChainID: pointerutil.ResolveValue(chainID),
-			}
-		}
-		return nil, err
-	}
-
-	var template dto.TemplateDTO
-	{
-		doc, err := json.Marshal(templateDTOFromMongo)
-		if err != nil {
-			return nil, err
-		}
-		if err = json.Unmarshal(doc, &template); err != nil {
-			return nil, err
-		}
-	}
-	return &template, nil
 }
 
 func (s *service) GetTemplateDetail(ctx context.Context, req *api.GetTemplateDetailRequest) (*api.GetTemplateDetailResponse, error) {

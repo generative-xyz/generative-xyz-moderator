@@ -6,20 +6,21 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jellydator/ttlcache/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/pkg/contracts/avatar_contract"
 	"rederinghub.io/pkg/utils/pointerutil"
 
 	"rederinghub.io/api"
-	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/internal/model"
-	"rederinghub.io/pkg/contracts/generative_param"
 	"rederinghub.io/pkg/logger"
 )
 
@@ -30,16 +31,10 @@ func (s *service) hotfixRepponseAvatarPost(avatar model.RenderedNft) *api.GetAva
 }
 
 func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
-
 	//req.ContractAddress = ""
 	req.ProjectId = "140292"
 
-	logger.AtLog.Infof("Handle [GetCandyMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
-
-	chainURL, ok := GetRPCURLFromChainID(req.ChainId)
-	if !ok {
-		return nil, errors.New("missing config chain_config from server")
-	}
+	logger.AtLog.Infof("Handle [GetAvatarMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
@@ -64,6 +59,54 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 		}
 	}
 
+	// find avatar emotion
+	var emotion string
+	cached := s.cache.Get(s.getPlayerAvatarCacheKey(req.TokenId), ttlcache.WithDisableTouchOnHit[string, string]())
+	if cached != nil {
+		emotion = cached.Value()
+		logger.AtLog.Infof("Cache hit %v", emotion)
+	} else {
+		chainURL, ok := GetRPCURLFromChainID(req.ChainId)
+		if !ok {
+			return nil, errors.New("missing config chain_config from server")
+		}
+	
+		// call to contract to get emotion
+		client, err := ethclient.Dial(chainURL)
+
+		if err != nil {
+			return nil, err
+		}
+		addr := common.HexToAddress(template.NftInfo.ContractAddress)
+
+		instance, err := avatar_contract.NewAvatarContract(addr, client)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
+		if !ok {
+			return nil, InvalidTokenIDError{TokenID: req.TokenId}
+		}
+
+		player, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
+		if err != nil {
+			return nil, err
+		}
+
+		emotion = player.Emotion
+
+		s.cache.Set(s.getPlayerAvatarCacheKey(req.TokenId), emotion, 5 * time.Minute)
+		logger.AtLog.Infof("Cache missed %v", emotion)
+	}
+
+
+	var emotionInt int
+	if i, err := strconv.Atoi(emotion); err == nil {
+		emotionInt = i
+	}
+	
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
@@ -71,6 +114,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 		"contractAddress": template.NftInfo.ContractAddress,
 		"projectId":       req.ProjectId,
 		"tokenId":         req.TokenId,
+		"metadata.emotion": emotionInt,
 	}, &renderedNftBson)
 
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
@@ -92,98 +136,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 		return s.hotfixRepponseAvatarPost(renderedNft), nil
 	}
 
-	client, err := ethclient.Dial(chainURL)
-
-	if err != nil {
-		return nil, err
-	}
-	addr := common.HexToAddress(template.NftInfo.ContractAddress)
-
-	instance, err := avatar_contract.NewAvatarContract(addr, client)
-
-	if err != nil {
-		return nil, err
-	}
-
-	tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
-	if !ok {
-		return nil, InvalidTokenIDError{TokenID: req.TokenId}
-	}
-
-	player, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
-	if err != nil {
-		return nil, err
-	}
-
-	params := []string{
-		player.Emotion,
-		player.Nation,
-		player.Dna,
-		player.Beard,
-		player.Hair,
-		player.Undershirt,
-		player.Shoes,
-		player.Top,
-		player.Bottom,
-		player.Number.String(),
-		player.Tattoo,
-		player.Glasses,
-		player.Captain,
-		player.FacePaint,
-	}
-
-	// call to render machine
-	rendered, err := s.renderMachineAdapter.Render(ctx, &adapter.RenderRequest{
-		Script:      template.Script,
-		Params:      params,
-		Seed:        "1",
-		BlenderType: "avatar",
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	attributes := make([]generative_param.TraitInfoTrait, 0)
-
-	// save to mongo
-	renderedNft, err := GetRenderedNft(
-		req.ChainId,
-		req.ContractAddress,
-		req.ProjectId,
-		req.TokenId,
-		template,
-		attributes,
-		fmt.Sprintf("ipfs://%v", rendered.Image),
-		fmt.Sprintf("ipfs://%v", rendered.Glb),
-	)
-	if err != nil {
-		return nil, err
-	}
-	renderedNft.Attributes = s.getAvatarOpenSeaTraits(&player)
-	renderedNft.EmotionTime = player.EmotionTime
-	if rendered.Metadata.BackgroundColor != "" {
-		renderedNft.Metadata = &model.RenderedNftMetadata{BackgroundColor: &rendered.Metadata.BackgroundColor}
-	}
-
-	var renderedNftModel bson.M
-	if _bytes, err := json.Marshal(&renderedNft); err != nil {
-		return nil, err
-	} else {
-		if err = json.Unmarshal(_bytes, &renderedNftModel); err != nil {
-			return nil, err
-		}
-	}
-
-	_, err = s.renderedNftRepository.Create(context.Background(), &renderedNftModel)
-	if err != nil {
-		logger.AtLog.Errorf("[GetAvatarMetadataPost] Create error %v", err)
-		return nil, err
-	}
-
-	logger.AtLog.Infof("Done [GetAvatarMetadataPost] #%s", req.TokenId)
-
-	return s.hotfixRepponseAvatarPost(*renderedNft), nil
+	return nil, errors.New("avatar is not rendered")
 }
 
 func (s *service) getAvatarOpenSeaTraits(player *avatar_contract.AVATARSPlayer) []*model.OpenSeaAttribute {
@@ -360,12 +313,16 @@ func (s *service) getAvatarTraitsResolvedValue(attrs []*model.OpenSeaAttribute) 
 	}
 }
 
+func (s *service) getPlayerAvatarCacheKey(tokenID string) string {
+	return fmt.Sprintf("player_emotion:%v", tokenID)
+}
+
 func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
 	//req.ContractAddress = ""
 	//req.ContractAddress = ""
 	req.ProjectId = "140292"
 
-	logger.AtLog.Infof("Handle [GetCandyMetadataPost] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
+	logger.AtLog.Infof("Handle [GetAvatarMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
@@ -390,6 +347,55 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 		}
 	}
 
+	// find avatar emotion
+	var emotion string
+	cached := s.cache.Get(s.getPlayerAvatarCacheKey(req.TokenId), ttlcache.WithDisableTouchOnHit[string, string]())
+	if cached != nil {
+		emotion = cached.Value()
+		logger.AtLog.Infof("Cache hit %v", emotion)
+	} else {
+		chainURL, ok := GetRPCURLFromChainID(req.ChainId)
+		if !ok {
+			return nil, errors.New("missing config chain_config from server")
+		}
+	
+
+		// call to contract to get emotion
+		client, err := ethclient.Dial(chainURL)
+
+		if err != nil {
+			return nil, err
+		}
+		addr := common.HexToAddress(template.NftInfo.ContractAddress)
+
+		instance, err := avatar_contract.NewAvatarContract(addr, client)
+
+		if err != nil {
+			return nil, err
+		}
+
+		tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
+		if !ok {
+			return nil, InvalidTokenIDError{TokenID: req.TokenId}
+		}
+
+		player, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
+		if err != nil {
+			return nil, err
+		}
+
+		emotion = player.Emotion
+
+		s.cache.Set(s.getPlayerAvatarCacheKey(req.TokenId), emotion, 5 * time.Minute)
+		logger.AtLog.Infof("Cache missed %v", emotion)
+	}
+
+
+	var emotionInt int
+	if i, err := strconv.Atoi(emotion); err == nil {
+		emotionInt = i
+	}
+	
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
@@ -397,6 +403,7 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 		"contractAddress": template.NftInfo.ContractAddress,
 		"projectId":       req.ProjectId,
 		"tokenId":         req.TokenId,
+		"metadata.emotion": emotionInt,
 	}, &renderedNftBson)
 
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
