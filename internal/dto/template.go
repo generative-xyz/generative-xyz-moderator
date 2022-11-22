@@ -23,6 +23,8 @@ type TemplateDTO struct {
 	ParamsTemplate     BoilerplateParamParamsOfProject `json:"paramsTemplate" bson:"paramsTemplate"`
 	MinterNFTInfo      common.Address                  `json:"minterNFTInfo" bson:"minterNFTInfo"`
 	Description        *string                         `json:"description,omitempty"  bson:"description,omitempty"`
+	BlenderType        string                          `json:"blenderType,omitempty" bson:"blenderType,omitempty"`
+	MappingAttribute   map[string]map[string]string    `json:"mappingAttribute,omitempty" bson:"mappingAttribute,omitempty"`
 }
 
 type NftInfo struct {

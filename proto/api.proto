@@ -79,4 +79,17 @@ service ApiService {
       body: '*'
     };
   }
+
+  rpc GetGenerativeNFTMetadata(GetGenerativeNFTMetadataRequest) returns (GetGenerativeNFTMetadataResponse) {
+    option (google.api.http) = {
+      get: '/v1/generative-nft/{chain_id}/{contract_address}/metadata/{token_id}'
+    };
+  }
+
+  rpc GetGenerativeNFTMetadataPost(GetGenerativeNFTMetadataRequest) returns (GetGenerativeNFTMetadataResponse) {
+    option (google.api.http) = {
+      post: '/v1/generative-nft/{chain_id}/{contract_address}/metadata/{token_id}',
+      body: '*'
+    };
+  }
 }
