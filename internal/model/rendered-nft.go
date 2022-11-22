@@ -57,6 +57,18 @@ func (r *RenderedNft) ToProto() *api.GetRenderedNftResponse {
 	}
 }
 
+func (r *RenderedNft) ToGenerativeProto() *api.GetGenerativeNFTMetadataResponse {
+	return &api.GetGenerativeNFTMetadataResponse{
+		Name:         r.Name,
+		Description:  r.Description,
+		Image:        *r.Image,
+		AnimationUrl: *r.Glb,
+		GlbUrl:       *r.Glb,
+		ExternalLink: *r.ExternalLink,
+		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
+	}
+}
+
 func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
 	return &api.GetCandyMetadataResponse{
 		Name:         r.Name,

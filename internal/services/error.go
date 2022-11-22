@@ -8,12 +8,13 @@ import (
 )
 
 type TemplateNotFoundError struct {
-	TokenID string
-	ChainID string
+	TokenID         string
+	ChainID         string
+	ContractAddress string
 }
 
 func (e TemplateNotFoundError) Error() string {
-	return fmt.Sprintf("template with tokenId %s and chainId %s not found", e.TokenID, e.ChainID)
+	return fmt.Sprintf("template with tokenId %s and chainId %s and contract_address %v not found", e.TokenID, e.ChainID, e.ContractAddress)
 }
 
 func (e TemplateNotFoundError) GRPCStatus() *status.Status {

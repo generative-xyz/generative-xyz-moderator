@@ -25,6 +25,9 @@ type RenderRequest struct {
 	Params      []string `json:"params"`
 	Seed        string   `json:"seed"`
 	BlenderType string   `json:"blender_type,omitempty"`
+	RenderImage bool     `json:"render_image,omitempty"`
+	RenderModel bool     `json:"render_model,omitempty"`
+	RenderVideo bool     `json:"render_video,omitempty"`
 }
 
 type RenderResponse struct {

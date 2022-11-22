@@ -34,6 +34,8 @@ type ApiServiceClient interface {
 	GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
 	GetAvatarMetadata(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error)
 	GetAvatarMetadataPost(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error)
+	GetGenerativeNFTMetadata(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
+	GetGenerativeNFTMetadataPost(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
 }
 
 type apiServiceClient struct {
@@ -152,6 +154,24 @@ func (c *apiServiceClient) GetAvatarMetadataPost(ctx context.Context, in *GetAva
 	return out, nil
 }
 
+func (c *apiServiceClient) GetGenerativeNFTMetadata(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error) {
+	out := new(GetGenerativeNFTMetadataResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiServiceClient) GetGenerativeNFTMetadataPost(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error) {
+	out := new(GetGenerativeNFTMetadataResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadataPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServiceServer is the server API for ApiService service.
 // All implementations must embed UnimplementedApiServiceServer
 // for forward compatibility
@@ -168,6 +188,8 @@ type ApiServiceServer interface {
 	GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
 	GetAvatarMetadata(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error)
 	GetAvatarMetadataPost(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error)
+	GetGenerativeNFTMetadata(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
+	GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -210,6 +232,12 @@ func (UnimplementedApiServiceServer) GetAvatarMetadata(context.Context, *GetAvat
 }
 func (UnimplementedApiServiceServer) GetAvatarMetadataPost(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAvatarMetadataPost not implemented")
+}
+func (UnimplementedApiServiceServer) GetGenerativeNFTMetadata(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGenerativeNFTMetadata not implemented")
+}
+func (UnimplementedApiServiceServer) GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGenerativeNFTMetadataPost not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -440,6 +468,42 @@ func _ApiService_GetAvatarMetadataPost_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetGenerativeNFTMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGenerativeNFTMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetGenerativeNFTMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetGenerativeNFTMetadata(ctx, req.(*GetGenerativeNFTMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiService_GetGenerativeNFTMetadataPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGenerativeNFTMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetGenerativeNFTMetadataPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadataPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetGenerativeNFTMetadataPost(ctx, req.(*GetGenerativeNFTMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiService_ServiceDesc is the grpc.ServiceDesc for ApiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -494,6 +558,14 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAvatarMetadataPost",
 			Handler:    _ApiService_GetAvatarMetadataPost_Handler,
+		},
+		{
+			MethodName: "GetGenerativeNFTMetadata",
+			Handler:    _ApiService_GetGenerativeNFTMetadata_Handler,
+		},
+		{
+			MethodName: "GetGenerativeNFTMetadataPost",
+			Handler:    _ApiService_GetGenerativeNFTMetadataPost_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

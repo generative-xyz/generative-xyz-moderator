@@ -1164,3 +1164,269 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetAvatarMetadataRequestValidationError{}
+
+// Validate checks the field values on GetGenerativeNFTMetadataResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetGenerativeNFTMetadataResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetGenerativeNFTMetadataResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetGenerativeNFTMetadataResponseMultiError, or nil if none found.
+func (m *GetGenerativeNFTMetadataResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetGenerativeNFTMetadataResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Image
+
+	// no validation rules for AnimationUrl
+
+	// no validation rules for ExternalLink
+
+	for idx, item := range m.GetAttributes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetGenerativeNFTMetadataResponseValidationError{
+						field:  fmt.Sprintf("Attributes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetGenerativeNFTMetadataResponseValidationError{
+						field:  fmt.Sprintf("Attributes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetGenerativeNFTMetadataResponseValidationError{
+					field:  fmt.Sprintf("Attributes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for GlbUrl
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.BackgroundColor != nil {
+		// no validation rules for BackgroundColor
+	}
+
+	if len(errors) > 0 {
+		return GetGenerativeNFTMetadataResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetGenerativeNFTMetadataResponseMultiError is an error wrapping multiple
+// validation errors returned by
+// GetGenerativeNFTMetadataResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetGenerativeNFTMetadataResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetGenerativeNFTMetadataResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetGenerativeNFTMetadataResponseMultiError) AllErrors() []error { return m }
+
+// GetGenerativeNFTMetadataResponseValidationError is the validation error
+// returned by GetGenerativeNFTMetadataResponse.Validate if the designated
+// constraints aren't met.
+type GetGenerativeNFTMetadataResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetGenerativeNFTMetadataResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetGenerativeNFTMetadataResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetGenerativeNFTMetadataResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetGenerativeNFTMetadataResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetGenerativeNFTMetadataResponseValidationError) ErrorName() string {
+	return "GetGenerativeNFTMetadataResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetGenerativeNFTMetadataResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetGenerativeNFTMetadataResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetGenerativeNFTMetadataResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetGenerativeNFTMetadataResponseValidationError{}
+
+// Validate checks the field values on GetGenerativeNFTMetadataRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetGenerativeNFTMetadataRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetGenerativeNFTMetadataRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetGenerativeNFTMetadataRequestMultiError, or nil if none found.
+func (m *GetGenerativeNFTMetadataRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetGenerativeNFTMetadataRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ChainId
+
+	// no validation rules for ContractAddress
+
+	// no validation rules for TokenId
+
+	if len(errors) > 0 {
+		return GetGenerativeNFTMetadataRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetGenerativeNFTMetadataRequestMultiError is an error wrapping multiple
+// validation errors returned by GetGenerativeNFTMetadataRequest.ValidateAll()
+// if the designated constraints aren't met.
+type GetGenerativeNFTMetadataRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetGenerativeNFTMetadataRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetGenerativeNFTMetadataRequestMultiError) AllErrors() []error { return m }
+
+// GetGenerativeNFTMetadataRequestValidationError is the validation error
+// returned by GetGenerativeNFTMetadataRequest.Validate if the designated
+// constraints aren't met.
+type GetGenerativeNFTMetadataRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetGenerativeNFTMetadataRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetGenerativeNFTMetadataRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetGenerativeNFTMetadataRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetGenerativeNFTMetadataRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetGenerativeNFTMetadataRequestValidationError) ErrorName() string {
+	return "GetGenerativeNFTMetadataRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetGenerativeNFTMetadataRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetGenerativeNFTMetadataRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetGenerativeNFTMetadataRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetGenerativeNFTMetadataRequestValidationError{}

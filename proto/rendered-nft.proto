@@ -69,3 +69,21 @@ message GetAvatarMetadataRequest {
     string project_id = 3;
     string token_id = 4;
 }
+
+message GetGenerativeNFTMetadataResponse {
+    string name = 1;
+    optional string description = 2;
+    string image = 3;
+    string animation_url = 4  [json_name="animation_url"];
+    string external_link = 5 [json_name="external_link"];
+    repeated OpenSeaAttribute attributes = 6;
+    optional string background_color = 7 [json_name="background_color"];
+    string glb_url = 8 [json_name="glb_url"];
+}
+
+
+message GetGenerativeNFTMetadataRequest {
+    string chain_id = 1;
+    string contract_address = 2;
+    string token_id = 3;
+}
