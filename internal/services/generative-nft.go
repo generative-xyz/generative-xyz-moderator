@@ -251,113 +251,62 @@ func (s *service) getOpenseaTraitsResolvedValue(attrs []*model.OpenSeaAttribute,
 	}
 }
 
-//
-//func (s *service) GetGenerativeNFTMetadata(ctx context.Context, req *api.GetGenerativeNFTMetadataRequest) (*api.GetGenerativeNFTMetadataResponse, error) {
-//
-//	logger.AtLog.Infof("Handle [GetAvatarMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.ProjectId, req.TokenId)
-//
-//	var templateDTOFromMongo bson.M
-//	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
-//		"nftInfo.tokenId":         req.ProjectId,
-//		"nftInfo.contractAddress": req.ContractAddress,
-//		"nftInfo.chainId":         req.ChainId,
-//	}, &templateDTOFromMongo); err != nil {
-//		if errors.Is(err, mongo.ErrNoDocuments) {
-//			return nil, TemplateNotFoundError{TokenID: req.ProjectId, ChainID: req.ChainId}
-//		}
-//		return nil, err
-//	}
-//
-//	var template dto.TemplateDTO
-//	{
-//		doc, err := json.Marshal(templateDTOFromMongo)
-//		if err != nil {
-//			return nil, err
-//		}
-//		if err = json.Unmarshal(doc, &template); err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	// find avatar emotion
-//	var emotion string
-//	cached := s.cache.Get(s.getPlayerAvatarCacheKey(req.TokenId), ttlcache.WithDisableTouchOnHit[string, string]())
-//	if cached != nil {
-//		emotion = cached.Value()
-//		logger.AtLog.Infof("Cache hit %v", emotion)
-//	} else {
-//		chainURL, ok := GetRPCURLFromChainID(req.ChainId)
-//		if !ok {
-//			return nil, errors.New("missing config chain_config from server")
-//		}
-//
-//		// call to contract to get emotion
-//		client, err := ethclient.Dial(chainURL)
-//
-//		if err != nil {
-//			return nil, err
-//		}
-//		addr := common.HexToAddress(template.NftInfo.ContractAddress)
-//
-//		instance, err := avatar_contract.NewAvatarContract(addr, client)
-//
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		tokenID, ok := new(big.Int).SetString(req.TokenId, 10)
-//		if !ok {
-//			return nil, InvalidTokenIDError{TokenID: req.TokenId}
-//		}
-//
-//		player, err := instance.GetParamValues(&bind.CallOpts{Context: context.Background(), Pending: false}, tokenID)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		emotion = player.Emotion
-//
-//		s.cache.Set(s.getPlayerAvatarCacheKey(req.TokenId), emotion, 5*time.Minute)
-//		logger.AtLog.Infof("Cache missed %v", emotion)
-//	}
-//
-//	var emotionInt int
-//	if i, err := strconv.Atoi(emotion); err == nil {
-//		emotionInt = i
-//	}
-//
-//	// find in mongo
-//	var renderedNftBson bson.M
-//	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
-//		"chainId":          req.ChainId,
-//		"contractAddress":  template.NftInfo.ContractAddress,
-//		"projectId":        req.ProjectId,
-//		"tokenId":          req.TokenId,
-//		"metadata.emotion": emotionInt,
-//	}, &renderedNftBson)
-//
-//	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
-//		return nil, err
-//	}
-//	// found in mongo
-//	if err == nil {
-//		var renderedNft model.RenderedNft
-//		{
-//			doc, err := json.Marshal(renderedNftBson)
-//			if err != nil {
-//				return nil, err
-//			}
-//			if err = json.Unmarshal(doc, &renderedNft); err != nil {
-//				return nil, err
-//			}
-//		}
-//
-//		return renderedNft.ToAvatarResponse(), nil
-//	}
-//
-//	return &api.GetAvatarMetadataResponse{
-//		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
-//		Image:       "https://cdn.rove.to/events/world-cup/football-avatar-thumbnail.gif",
-//		Description: pointerutil.MakePointer("Build your World Cup dream team with PLAYΞRS, a limited collection of 10,000 living 3D generative avatars. Every PLAYΞRS is algorithmically generated from 16 different attributes, with expressions that react to their team’s success on the field. Start your collection today."),
-//	}, nil
-//}
+func (s *service) GetGenerativeNFTMetadata(ctx context.Context, req *api.GetGenerativeNFTMetadataRequest) (*api.GetGenerativeNFTMetadataResponse, error) {
+
+	logger.AtLog.Infof("Handle [GetGenerativeNFTMetadata] %s %s %s", req.ChainId, req.ContractAddress, req.TokenId)
+
+	var templateDTOFromMongo bson.M
+	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
+		"nftInfo.contractAddress": req.ContractAddress,
+		"nftInfo.chainId":         req.ChainId,
+	}, &templateDTOFromMongo); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, TemplateNotFoundError{ContractAddress: req.ContractAddress, ChainID: req.ChainId}
+		}
+		return nil, err
+	}
+
+	var template dto.TemplateDTO
+	{
+		doc, err := json.Marshal(templateDTOFromMongo)
+		if err != nil {
+			return nil, err
+		}
+		if err = json.Unmarshal(doc, &template); err != nil {
+			return nil, err
+		}
+	}
+
+	// find in mongo
+	var renderedNftBson bson.M
+	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
+		"chainId":         req.ChainId,
+		"contractAddress": template.NftInfo.ContractAddress,
+		"tokenId":         req.TokenId,
+	}, &renderedNftBson)
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, err
+	}
+	// found in mongo
+	if err == nil {
+		var renderedNft model.RenderedNft
+		{
+			doc, err := json.Marshal(renderedNftBson)
+			if err != nil {
+				return nil, err
+			}
+			if err = json.Unmarshal(doc, &renderedNft); err != nil {
+				return nil, err
+			}
+		}
+
+		return renderedNft.ToGenerativeProto(), nil
+	}
+
+	return &api.GetGenerativeNFTMetadataResponse{
+		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
+		Image:       "https://cdn.rove.to/metaverse/rove/Rove_logo.png",
+		Description: template.Description,
+	}, nil
+}
