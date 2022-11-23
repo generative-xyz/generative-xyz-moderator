@@ -1,6 +1,9 @@
 package model
 
-import "rederinghub.io/api"
+import (
+	"rederinghub.io/api"
+	"rederinghub.io/internal/dto"
+)
 
 type OpenSeaAttribute struct {
 	TraitType string
@@ -57,8 +60,8 @@ func (r *RenderedNft) ToProto() *api.GetRenderedNftResponse {
 	}
 }
 
-func (r *RenderedNft) ToGenerativeProto() *api.GetGenerativeNFTMetadataResponse {
-	return &api.GetGenerativeNFTMetadataResponse{
+func (r *RenderedNft) ToGenerativeProto(template dto.TemplateDTO) *api.GetGenerativeNFTMetadataResponse {
+	resp := &api.GetGenerativeNFTMetadataResponse{
 		Name:         r.Name,
 		Description:  r.Description,
 		Image:        *r.Image,
@@ -67,6 +70,12 @@ func (r *RenderedNft) ToGenerativeProto() *api.GetGenerativeNFTMetadataResponse 
 		ExternalLink: *r.ExternalLink,
 		Attributes:   OpenSeaAttributeSlice(r.Attributes).ToProto(),
 	}
+
+	switch template.BlenderType {
+	case "confetti", "horn":
+		resp.AnimationUrl = ""
+	}
+	return resp
 }
 
 func (r *RenderedNft) ToCandyResponse() *api.GetCandyMetadataResponse {
