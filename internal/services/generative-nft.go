@@ -78,7 +78,7 @@ func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.Get
 			}
 		}
 
-		return renderedNft.ToGenerativeProto(), nil
+		return renderedNft.ToGenerativeProto(template), nil
 	}
 
 	params, obj, err := s.getParamFromContract(template, chainURL, req)
@@ -137,7 +137,7 @@ func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.Get
 
 	logger.AtLog.Infof("Done [GetGenerativeNFTMetadataPost] #%s", req.TokenId)
 
-	return renderedNft.ToGenerativeProto(), nil
+	return renderedNft.ToGenerativeProto(template), nil
 }
 
 func (s *service) getParamFromContract(template dto.TemplateDTO, chainURL string, req *api.GetGenerativeNFTMetadataRequest) ([]string, interface{}, error) {
@@ -301,7 +301,7 @@ func (s *service) GetGenerativeNFTMetadata(ctx context.Context, req *api.GetGene
 			}
 		}
 
-		return renderedNft.ToGenerativeProto(), nil
+		return renderedNft.ToGenerativeProto(template), nil
 	}
 
 	return &api.GetGenerativeNFTMetadataResponse{
