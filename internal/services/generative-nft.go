@@ -17,6 +17,7 @@ import (
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/internal/model"
+	"rederinghub.io/pkg/config"
 	"rederinghub.io/pkg/contracts/confetti_contract"
 	"rederinghub.io/pkg/contracts/generative_param"
 	"rederinghub.io/pkg/contracts/horn_contract"
@@ -24,7 +25,7 @@ import (
 )
 
 func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.GetGenerativeNFTMetadataRequest) (*api.GetGenerativeNFTMetadataResponse, error) {
-	logger.AtLog.Infof("Handle [GetGenerativeNFTMetadata] %s %s %s %s", req.ChainId, req.ContractAddress, req.TokenId)
+	logger.AtLog.Infof("Handle [GetGenerativeNFTMetadata] %s %s %s", req.ChainId, req.ContractAddress, req.TokenId)
 
 	var templateDTOFromMongo bson.M
 	if err := s.templateRepository.FindOne(context.Background(), map[string]interface{}{
@@ -135,7 +136,14 @@ func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.Get
 		return nil, err
 	}
 
+
 	logger.AtLog.Infof("Done [GetGenerativeNFTMetadataPost] #%s", req.TokenId)
+	appConfig := config.AppConfig()
+	go func ()  {
+		if err := s.moralisAdapter.ResyncNFTMetadata(req.ContractAddress, appConfig.ChainID, req.TokenId); err != nil {
+			logger.AtLog.Errorf("error when call resync nft metadata %v", err)
+		}
+	}()
 
 	return renderedNft.ToGenerativeProto(template), nil
 }
