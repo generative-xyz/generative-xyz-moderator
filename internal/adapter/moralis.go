@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -23,6 +24,7 @@ type MoralisNFT struct {
 
 type MoralisAdapter interface {
 	ListNFTs(contract string, chainID string) (*MoralisNFTResponse, error)
+	ResyncNFTMetadata(contract string, chainID string, tokenID string) (error)
 }
 
 type moralisAdapter struct {
@@ -52,6 +54,28 @@ func (m *moralisAdapter) ListNFTs(contract string, chainID string) (*MoralisNFTR
 	}
 
 	return &resp, nil
+}
+
+func (m *moralisAdapter) ResyncNFTMetadata(contract string, chainID string, tokenID string) (error) {
+	url := fmt.Sprintf("%v%v/%v/metadata/resync?chain=%v&mode=sync", m.url, contract, tokenID, chainID)
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("X-API-Key", m.apiKey)
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	_, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewMoralisAdapter() MoralisAdapter {
