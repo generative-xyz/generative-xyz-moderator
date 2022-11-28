@@ -381,7 +381,7 @@ func (s *service) GetCandyMetadata(ctx context.Context, req *api.GetCandyMetadat
 	}, nil
 }
 
-func (s *service) GetCandyMetadatas(ctx context.Context, req *api.GetCandyMetadatasRequest) (*api.GetCandyMetadatasResponse, error) {	
+func (s *service) GetCandyMetadatas(ctx context.Context, req *api.GetCandyMetadatasRequest) (*api.GetCandyMetadatasResponse, error) {
 	//req.ContractAddress = ""
 	req.ProjectId = CandyProjectID
 
@@ -393,20 +393,20 @@ func (s *service) GetCandyMetadatas(ctx context.Context, req *api.GetCandyMetada
 		"chainId": req.ChainId,
 		//"contractAddress": template.NftInfo.ContractAddress,
 		"projectId": req.ProjectId,
-		"tokenId":   map[string]interface{} {
+		"tokenId": map[string]interface{}{
 			"$in": tokenIds,
 		},
 	}
 	if err := s.renderedNftRepository.Find(ctx, filter, &renderedNftsBson); err != nil {
 		logger.AtLog.Errorf(
-			"can not find candy metadatas %s %s %s %s", 
+			"can not find candy metadatas %s %s %s %s",
 			req.ChainId, req.ContractAddress, req.ProjectId, req.TokenIds,
 		)
 		return nil, err
 	}
 
 	var renderedNftsDtos = make([]*api.GetCandyMetadataResponse, 0, len(renderedNftsBson))
-	
+
 	// not add duplicated rendered nft to response
 	addedTokenIds := make(map[string]bool)
 	for _, renderedNftBson := range renderedNftsBson {

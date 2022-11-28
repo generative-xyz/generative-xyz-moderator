@@ -16,6 +16,48 @@
     "application/json"
   ],
   "paths": {
+    "/v1/clear-cache/{chainId}/{contractAddress}/{tokenId}": {
+      "get": {
+        "operationId": "ApiService_GetClearCacheInternal",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetClearCacheInternalResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "contractAddress",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "tokenId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
     "/v1/generative-nft/{chainId}/{contractAddress}/metadata/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetGenerativeNFTMetadata",
@@ -671,6 +713,14 @@
           "items": {
             "$ref": "#/definitions/ioGetCandyMetadataResponse"
           }
+        }
+      }
+    },
+    "ioGetClearCacheInternalResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
         }
       }
     },

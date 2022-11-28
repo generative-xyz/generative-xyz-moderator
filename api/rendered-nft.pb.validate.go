@@ -1430,3 +1430,217 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetGenerativeNFTMetadataRequestValidationError{}
+
+// Validate checks the field values on GetClearCacheInternalRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetClearCacheInternalRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetClearCacheInternalRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetClearCacheInternalRequestMultiError, or nil if none found.
+func (m *GetClearCacheInternalRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetClearCacheInternalRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ChainId
+
+	// no validation rules for ContractAddress
+
+	// no validation rules for TokenId
+
+	if len(errors) > 0 {
+		return GetClearCacheInternalRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetClearCacheInternalRequestMultiError is an error wrapping multiple
+// validation errors returned by GetClearCacheInternalRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GetClearCacheInternalRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetClearCacheInternalRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetClearCacheInternalRequestMultiError) AllErrors() []error { return m }
+
+// GetClearCacheInternalRequestValidationError is the validation error returned
+// by GetClearCacheInternalRequest.Validate if the designated constraints
+// aren't met.
+type GetClearCacheInternalRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetClearCacheInternalRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetClearCacheInternalRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetClearCacheInternalRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetClearCacheInternalRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetClearCacheInternalRequestValidationError) ErrorName() string {
+	return "GetClearCacheInternalRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetClearCacheInternalRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetClearCacheInternalRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetClearCacheInternalRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetClearCacheInternalRequestValidationError{}
+
+// Validate checks the field values on GetClearCacheInternalResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetClearCacheInternalResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetClearCacheInternalResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetClearCacheInternalResponseMultiError, or nil if none found.
+func (m *GetClearCacheInternalResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetClearCacheInternalResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Message
+
+	if len(errors) > 0 {
+		return GetClearCacheInternalResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetClearCacheInternalResponseMultiError is an error wrapping multiple
+// validation errors returned by GetClearCacheInternalResponse.ValidateAll()
+// if the designated constraints aren't met.
+type GetClearCacheInternalResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetClearCacheInternalResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetClearCacheInternalResponseMultiError) AllErrors() []error { return m }
+
+// GetClearCacheInternalResponseValidationError is the validation error
+// returned by GetClearCacheInternalResponse.Validate if the designated
+// constraints aren't met.
+type GetClearCacheInternalResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetClearCacheInternalResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetClearCacheInternalResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetClearCacheInternalResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetClearCacheInternalResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetClearCacheInternalResponseValidationError) ErrorName() string {
+	return "GetClearCacheInternalResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetClearCacheInternalResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetClearCacheInternalResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetClearCacheInternalResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetClearCacheInternalResponseValidationError{}

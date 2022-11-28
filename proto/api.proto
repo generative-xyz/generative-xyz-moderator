@@ -92,4 +92,9 @@ service ApiService {
       body: '*'
     };
   }
+  rpc GetClearCacheInternal(GetClearCacheInternalRequest) returns (GetClearCacheInternalResponse) {
+    option (google.api.http) = {
+      get: '/v1/clear-cache/{chain_id}/{contract_address}/{token_id}'
+    };
+  }
 }

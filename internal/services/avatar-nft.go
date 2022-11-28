@@ -5,29 +5,35 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jellydator/ttlcache/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"rederinghub.io/pkg/contracts/avatar_contract"
-	"rederinghub.io/pkg/utils/pointerutil"
 
 	"rederinghub.io/api"
 	"rederinghub.io/internal/dto"
 	"rederinghub.io/internal/model"
+	"rederinghub.io/pkg/contracts/avatar_contract"
 	"rederinghub.io/pkg/logger"
+	"rederinghub.io/pkg/utils/pointerutil"
 )
 
-func (s *service) hotfixRepponseAvatarPost(avatar model.RenderedNft) *api.GetAvatarMetadataResponse {
+func (s *service) hotfixResponseAvatarPost(avatar model.RenderedNft) *api.GetAvatarMetadataResponse {
 	resp := avatar.ToAvatarResponse()
 	resp.AnimationUrl = resp.GlbUrl
 	return resp
+}
+
+func (s *service) getAvatarCacheRedisKey(chainID, contractAddress, tokenID string) string {
+	return fmt.Sprintf("Hub_%s_%s_%s", chainID, strings.ToLower(contractAddress), tokenID)
 }
 
 func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
@@ -61,16 +67,18 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 
 	// find avatar emotion
 	var emotion string
-	cached := s.cache.Get(s.getPlayerAvatarCacheKey(req.TokenId), ttlcache.WithDisableTouchOnHit[string, string]())
-	if cached != nil {
-		emotion = cached.Value()
+
+	redisKey := s.getAvatarCacheRedisKey(req.ChainId, req.ContractAddress, req.TokenId)
+	cached := s.redisClient.Get(ctx, redisKey).Val()
+	if len(cached) > 0 {
+		emotion = cached
 		logger.AtLog.Infof("Cache hit %v", emotion)
 	} else {
 		chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 		if !ok {
 			return nil, errors.New("missing config chain_config from server")
 		}
-	
+
 		// call to contract to get emotion
 		client, err := ethclient.Dial(chainURL)
 
@@ -97,23 +105,22 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 
 		emotion = player.Emotion
 
-		s.cache.Set(s.getPlayerAvatarCacheKey(req.TokenId), emotion, 5 * time.Minute)
+		s.redisClient.Set(ctx, redisKey, emotion, 5*time.Minute)
 		logger.AtLog.Infof("Cache missed %v", emotion)
 	}
-
 
 	var emotionInt int
 	if i, err := strconv.Atoi(emotion); err == nil {
 		emotionInt = i
 	}
-	
+
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
-		"chainId":         req.ChainId,
-		"contractAddress": template.NftInfo.ContractAddress,
-		"projectId":       req.ProjectId,
-		"tokenId":         req.TokenId,
+		"chainId":          req.ChainId,
+		"contractAddress":  template.NftInfo.ContractAddress,
+		"projectId":        req.ProjectId,
+		"tokenId":          req.TokenId,
 		"metadata.emotion": emotionInt,
 	}, &renderedNftBson)
 
@@ -133,7 +140,7 @@ func (s *service) GetAvatarMetadataPost(ctx context.Context, req *api.GetAvatarM
 			}
 		}
 
-		return s.hotfixRepponseAvatarPost(renderedNft), nil
+		return s.hotfixResponseAvatarPost(renderedNft), nil
 	}
 
 	return nil, errors.New("avatar is not rendered")
@@ -317,6 +324,17 @@ func (s *service) getPlayerAvatarCacheKey(tokenID string) string {
 	return fmt.Sprintf("player_emotion:%v", tokenID)
 }
 
+func (s *service) GetClearCacheInternal(ctx context.Context, req *api.GetClearCacheInternalRequest) (*api.GetClearCacheInternalResponse, error) {
+	redisKey := s.getAvatarCacheRedisKey(req.ChainId, req.ContractAddress, req.TokenId)
+	if err := s.redisClient.Del(ctx, redisKey).Err(); err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return &api.GetClearCacheInternalResponse{
+		Message: "OK",
+	}, nil
+}
+
 func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetadataRequest) (*api.GetAvatarMetadataResponse, error) {
 	//req.ContractAddress = ""
 	//req.ContractAddress = ""
@@ -349,16 +367,16 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 
 	// find avatar emotion
 	var emotion string
-	cached := s.cache.Get(s.getPlayerAvatarCacheKey(req.TokenId), ttlcache.WithDisableTouchOnHit[string, string]())
-	if cached != nil {
-		emotion = cached.Value()
+	redisKey := s.getAvatarCacheRedisKey(req.ChainId, req.ContractAddress, req.TokenId)
+	cached := s.redisClient.Get(ctx, redisKey).Val()
+	if len(cached) > 0 {
+		emotion = cached
 		logger.AtLog.Infof("Cache hit %v", emotion)
 	} else {
 		chainURL, ok := GetRPCURLFromChainID(req.ChainId)
 		if !ok {
 			return nil, errors.New("missing config chain_config from server")
 		}
-	
 
 		// call to contract to get emotion
 		client, err := ethclient.Dial(chainURL)
@@ -386,23 +404,22 @@ func (s *service) GetAvatarMetadata(ctx context.Context, req *api.GetAvatarMetad
 
 		emotion = player.Emotion
 
-		s.cache.Set(s.getPlayerAvatarCacheKey(req.TokenId), emotion, 5 * time.Minute)
+		s.redisClient.Set(ctx, redisKey, emotion, 5*time.Minute)
 		logger.AtLog.Infof("Cache missed %v", emotion)
 	}
-
 
 	var emotionInt int
 	if i, err := strconv.Atoi(emotion); err == nil {
 		emotionInt = i
 	}
-	
+
 	// find in mongo
 	var renderedNftBson bson.M
 	err := s.renderedNftRepository.FindOne(context.Background(), map[string]interface{}{
-		"chainId":         req.ChainId,
-		"contractAddress": template.NftInfo.ContractAddress,
-		"projectId":       req.ProjectId,
-		"tokenId":         req.TokenId,
+		"chainId":          req.ChainId,
+		"contractAddress":  template.NftInfo.ContractAddress,
+		"projectId":        req.ProjectId,
+		"tokenId":          req.TokenId,
 		"metadata.emotion": emotionInt,
 	}, &renderedNftBson)
 

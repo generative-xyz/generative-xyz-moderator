@@ -24,7 +24,7 @@ type MoralisNFT struct {
 
 type MoralisAdapter interface {
 	ListNFTs(contract string, chainID string) (*MoralisNFTResponse, error)
-	ResyncNFTMetadata(contract string, chainID string, tokenID string) (error)
+	ResyncNFTMetadata(contract string, chainID string, tokenID string) error
 }
 
 type moralisAdapter struct {
@@ -56,7 +56,7 @@ func (m *moralisAdapter) ListNFTs(contract string, chainID string) (*MoralisNFTR
 	return &resp, nil
 }
 
-func (m *moralisAdapter) ResyncNFTMetadata(contract string, chainID string, tokenID string) (error) {
+func (m *moralisAdapter) ResyncNFTMetadata(contract string, chainID string, tokenID string) error {
 	url := fmt.Sprintf("%v%v/%v/metadata/resync?chain=%v&mode=sync", m.url, contract, tokenID, chainID)
 
 	req, _ := http.NewRequest("GET", url, nil)
