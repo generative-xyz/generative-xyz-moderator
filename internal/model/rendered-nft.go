@@ -104,10 +104,6 @@ func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
 		GlbUrl:       *r.Glb,
 	}
 
-	if r.Video != nil && *(r.Video) != "" {
-		resp.AnimationUrl = *(r.Video)
-	}
-
 	if r.Metadata != nil {
 		metadata := r.Metadata
 		if metadata.BackgroundColor != nil {
