@@ -36,6 +36,7 @@ type ApiServiceClient interface {
 	GetAvatarMetadataPost(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error)
 	GetGenerativeNFTMetadata(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
 	GetGenerativeNFTMetadataPost(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
+	GetClearCacheInternal(ctx context.Context, in *GetClearCacheInternalRequest, opts ...grpc.CallOption) (*GetClearCacheInternalResponse, error)
 }
 
 type apiServiceClient struct {
@@ -172,6 +173,15 @@ func (c *apiServiceClient) GetGenerativeNFTMetadataPost(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *apiServiceClient) GetClearCacheInternal(ctx context.Context, in *GetClearCacheInternalRequest, opts ...grpc.CallOption) (*GetClearCacheInternalResponse, error) {
+	out := new(GetClearCacheInternalResponse)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetClearCacheInternal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServiceServer is the server API for ApiService service.
 // All implementations must embed UnimplementedApiServiceServer
 // for forward compatibility
@@ -190,6 +200,7 @@ type ApiServiceServer interface {
 	GetAvatarMetadataPost(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error)
 	GetGenerativeNFTMetadata(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
 	GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
+	GetClearCacheInternal(context.Context, *GetClearCacheInternalRequest) (*GetClearCacheInternalResponse, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -238,6 +249,9 @@ func (UnimplementedApiServiceServer) GetGenerativeNFTMetadata(context.Context, *
 }
 func (UnimplementedApiServiceServer) GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGenerativeNFTMetadataPost not implemented")
+}
+func (UnimplementedApiServiceServer) GetClearCacheInternal(context.Context, *GetClearCacheInternalRequest) (*GetClearCacheInternalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClearCacheInternal not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -504,6 +518,24 @@ func _ApiService_GetGenerativeNFTMetadataPost_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetClearCacheInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClearCacheInternalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetClearCacheInternal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetClearCacheInternal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetClearCacheInternal(ctx, req.(*GetClearCacheInternalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiService_ServiceDesc is the grpc.ServiceDesc for ApiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -566,6 +598,10 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGenerativeNFTMetadataPost",
 			Handler:    _ApiService_GetGenerativeNFTMetadataPost_Handler,
+		},
+		{
+			MethodName: "GetClearCacheInternal",
+			Handler:    _ApiService_GetClearCacheInternal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

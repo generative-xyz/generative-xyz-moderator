@@ -30,6 +30,8 @@ type AppCfg struct {
 	RPC_URL                       string            `envconfig:"RPC_URL" default:"https://ethereum-goerli-rpc.allthatnode.com"`
 	RenderMachineAddr             string            `envconfig:"RENDER_MACHINE_ADDR" default:"rendering-machine.develop"`
 	ChainConfigs                  map[string]string `envconfig:"CHAIN_CONFIG" default:""`
+	RedisAddr                     string            `envconfig:"REDIS_ADDR" default:"localhost:6379"`
+	RedisPassword                 string            `envconfig:"REDIS_PASSWORD" default:""`
 }
 
 func InitConfig() {

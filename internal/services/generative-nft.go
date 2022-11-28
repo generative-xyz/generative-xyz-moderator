@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/dto"
@@ -136,10 +137,9 @@ func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.Get
 		return nil, err
 	}
 
-
 	logger.AtLog.Infof("Done [GetGenerativeNFTMetadataPost] #%s", req.TokenId)
 	appConfig := config.AppConfig()
-	go func ()  {
+	go func() {
 		if err := s.moralisAdapter.ResyncNFTMetadata(req.ContractAddress, appConfig.ChainID, req.TokenId); err != nil {
 			logger.AtLog.Errorf("error when call resync nft metadata %v", err)
 		}

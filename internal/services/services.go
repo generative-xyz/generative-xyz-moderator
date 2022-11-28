@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
+	"log"
 
 	"rederinghub.io/api"
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/pkg/config"
-
-	"github.com/jellydator/ttlcache/v3"
 )
 
 type Service interface {
@@ -24,7 +24,7 @@ type service struct {
 	templateRepository    repository.TemplateRepository
 	renderedNftRepository repository.RenderedNftRepository
 
-	cache *ttlcache.Cache[string, string]
+	redisClient *redis.Client
 }
 
 func Init(moralisAdapter adapter.MoralisAdapter,
@@ -32,14 +32,20 @@ func Init(moralisAdapter adapter.MoralisAdapter,
 	templateRepository repository.TemplateRepository,
 	renderedNftRepository repository.RenderedNftRepository,
 ) Service {
-	cache := ttlcache.New[string, string]()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     config.AppConfig().RedisAddr,
+		Password: config.AppConfig().RedisPassword,
+	})
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("can not connect to redis")
+	}
 	return &service{
 		moralisAdapter:       moralisAdapter,
 		renderMachineAdapter: renderMachineAdapter,
 
 		templateRepository:    templateRepository,
 		renderedNftRepository: renderedNftRepository,
-		cache: cache,
+		redisClient:           redisClient,
 	}
 }
 

@@ -87,3 +87,13 @@ message GetGenerativeNFTMetadataRequest {
     string contract_address = 2;
     string token_id = 3;
 }
+
+message GetClearCacheInternalRequest {
+    string chain_id = 1;
+    string contract_address = 2;
+    string token_id = 3;
+}
+
+message GetClearCacheInternalResponse {
+    string message = 1;
+}
