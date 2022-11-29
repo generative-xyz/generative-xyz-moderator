@@ -8,7 +8,6 @@ require (
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
-	github.com/jellydator/ttlcache/v3 v3.0.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/labstack/gommon v0.4.0
