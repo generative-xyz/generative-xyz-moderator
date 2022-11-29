@@ -10,6 +10,15 @@ import (
 type BaseModel struct {
 	ID primitive.ObjectID `bson:"_id" json:"id"`
 
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
+	CreatedAt time.Time `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
+}
+
+func (b *BaseModel) WithTimeInfo() {
+	if b == nil {
+		return
+	}
+	now := time.Now().UTC()
+	b.CreatedAt = now
+	b.UpdatedAt = now
 }
