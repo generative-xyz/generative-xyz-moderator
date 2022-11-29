@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"rederinghub.io/api"
 	"rederinghub.io/internal/dto"
 )
@@ -115,4 +116,12 @@ func (r *RenderedNft) ToAvatarResponse() *api.GetAvatarMetadataResponse {
 
 func (m RenderedNft) CollectionName() string {
 	return "rendered_nfts"
+}
+
+func (r *RenderedNft) ToRenderingRepsonse() *api.GetGenerativeNFTMetadataResponse {
+	return &api.GetGenerativeNFTMetadataResponse{
+		Name:        fmt.Sprintf("Rendering on #%s", r.TokenID),
+		Image:       "https://cdn.rove.to/metaverse/rove/Rove_logo.png",
+		Description: r.Description,
+	}
 }

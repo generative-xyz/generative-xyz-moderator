@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -81,6 +82,14 @@ func (s *service) GetGenerativeNFTMetadataPost(ctx context.Context, req *api.Get
 		}
 
 		return renderedNft.ToGenerativeProto(template), nil
+	}
+
+	redisKey := fmt.Sprintf("POST_REQUEST_%s_%s_%s", req.ChainId, req.ContractAddress, req.TokenId)
+	if ok := s.redisClient.SetNX(ctx, redisKey, redisKey, 30*time.Minute).Val(); !ok {
+		return (&model.RenderedNft{
+			TokenID:     req.TokenId,
+			Description: template.Description,
+		}).ToRenderingRepsonse(), nil
 	}
 
 	params, obj, err := s.getParamFromContract(template, chainURL, req)
@@ -312,9 +321,8 @@ func (s *service) GetGenerativeNFTMetadata(ctx context.Context, req *api.GetGene
 		return renderedNft.ToGenerativeProto(template), nil
 	}
 
-	return &api.GetGenerativeNFTMetadataResponse{
-		Name:        fmt.Sprintf("Rendering on #%s", req.TokenId),
-		Image:       "https://cdn.rove.to/metaverse/rove/Rove_logo.png",
+	return (&model.RenderedNft{
+		TokenID:     req.TokenId,
 		Description: template.Description,
-	}, nil
+	}).ToRenderingRepsonse(), nil
 }
