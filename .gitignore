@@ -3,3 +3,5 @@ tmp
 vendor
 .env
 main
+__debug_bin
+.vscode
