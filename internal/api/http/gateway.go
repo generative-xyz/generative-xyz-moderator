@@ -53,6 +53,8 @@ func (a *apiGateway) run() error {
 	mux.Handle("/", middleware.AllowCORS(gwMux))
 	rootPath, _ := os.Getwd()
 	spew.Dump(rootPath)
+	spew.Dump(http.Dir(rootPath + "/swaggerUI"))
+	
 	fs := http.FileServer(http.Dir(rootPath + "/swaggerUI"))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
