@@ -18,6 +18,7 @@ WORKDIR /app
 EXPOSE 10000
 EXPOSE 8000
 
+COPY --from=builder /app/renderinghub-server ./
 COPY --from=builder /app/swaggerUI ./swaggerUI
 
 RUN chmod +x /app/renderinghub-server
