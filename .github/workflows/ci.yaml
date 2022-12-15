@@ -1,5 +1,5 @@
 name: Docker Image CI
-runs-on: self-hosted
+
 on:
   push:
     branches: [ "staging", "develop"]
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-and-push-to-gcr:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Get the tag name
