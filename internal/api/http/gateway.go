@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -51,6 +52,7 @@ func (a *apiGateway) run() error {
 
 	mux.Handle("/", middleware.AllowCORS(gwMux))
 	rootPath, _ := os.Getwd()
+	spew.Dump(rootPath)
 	fs := http.FileServer(http.Dir(rootPath + "/swaggerUI"))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 

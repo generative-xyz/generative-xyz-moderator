@@ -3,6 +3,7 @@ module rederinghub.io
 go 1.18
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-redis/redis/v8 v8.0.0
 	github.com/gobeam/mongo-go-pagination v0.0.8
