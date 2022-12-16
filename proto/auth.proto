@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package api.renderinghub.io;
+option go_package = "renderinghub.io/api;api";
+
+message GetNonceMessageReq {
+    string address = 1;
+}
+
+message GetNonceMessageResp {
+    string message = 1;
+}
+
+message VerifyNonceMessageReq {
+    string address = 1;
+    string signature = 2;
+}
+
+message VerifyNonceMessageResp{
+    string access_token = 1;
+    string refresh_token = 2;
+}
+
+message UserProfileReq{}
+
+message UpdateUserProfileReq{
+    string email = 1;
+}
+
+message UserProfileResp{
+    string id = 1;
+    string wallet_address = 2;
+}
+
+

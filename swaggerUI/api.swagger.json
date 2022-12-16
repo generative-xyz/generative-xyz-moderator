@@ -16,7 +16,71 @@
     "application/json"
   ],
   "paths": {
-    "/v1/clear-cache/{chainId}/{contractAddress}/{tokenId}": {
+    "/api/v1/auth/nonce": {
+      "post": {
+        "operationId": "ApiService_GetAuthNonce",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioGetNonceMessageResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ioGetNonceMessageReq"
+            }
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
+    "/api/v1/auth/nonce/verify": {
+      "post": {
+        "operationId": "ApiService_VerifyAuthNounce",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioVerifyNonceMessageResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ioVerifyNonceMessageReq"
+            }
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
+    "/api/v1/clear-cache/{chainId}/{contractAddress}/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetClearCacheInternal",
         "responses": {
@@ -58,7 +122,7 @@
         ]
       }
     },
-    "/v1/generative-nft/{chainId}/{contractAddress}/metadata/{tokenId}": {
+    "/api/v1/generative-nft/{chainId}/{contractAddress}/metadata/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetGenerativeNFTMetadata",
         "responses": {
@@ -148,7 +212,7 @@
         ]
       }
     },
-    "/v1/health/live": {
+    "/api/v1/health/live": {
       "get": {
         "operationId": "ApiService_Live",
         "responses": {
@@ -178,7 +242,7 @@
         ]
       }
     },
-    "/v1/ping": {
+    "/api/v1/ping": {
       "get": {
         "operationId": "ApiService_Ping",
         "responses": {
@@ -200,7 +264,59 @@
         ]
       }
     },
-    "/v1/rendered-nft/{chainId}/metadata/{tokenId}": {
+    "/api/v1/profile": {
+      "get": {
+        "operationId": "ApiService_GetProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioUserProfileResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ApiService"
+        ]
+      },
+      "put": {
+        "operationId": "ApiService_UpdateProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ioUserProfileResp"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ioUpdateUserProfileReq"
+            }
+          }
+        ],
+        "tags": [
+          "ApiService"
+        ]
+      }
+    },
+    "/api/v1/rendered-nft/{chainId}/metadata/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetCandyMetadata",
         "responses": {
@@ -298,7 +414,7 @@
         ]
       }
     },
-    "/v1/rendered-nft/{chainId}/{contractAddress}/metadata/{tokenId}": {
+    "/api/v1/rendered-nft/{chainId}/{contractAddress}/metadata/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetAvatarMetadata",
         "responses": {
@@ -399,7 +515,7 @@
         ]
       }
     },
-    "/v1/rendered-nft/{chainId}/{contractAddress}/{projectId}/{tokenId}": {
+    "/api/v1/rendered-nft/{chainId}/{contractAddress}/{projectId}/{tokenId}": {
       "get": {
         "operationId": "ApiService_GetRenderedNft",
         "responses": {
@@ -501,7 +617,7 @@
         ]
       }
     },
-    "/v1/sweet-nft/{chainId}/metadatas/{tokenIds}": {
+    "/api/v1/sweet-nft/{chainId}/metadatas/{tokenIds}": {
       "get": {
         "operationId": "ApiService_GetCandyMetadatas",
         "responses": {
@@ -549,7 +665,7 @@
         ]
       }
     },
-    "/v1/template": {
+    "/api/v1/template": {
       "get": {
         "operationId": "ApiService_GetTemplate",
         "responses": {
@@ -571,7 +687,7 @@
         ]
       }
     },
-    "/v1/template-detail": {
+    "/api/v1/template-detail": {
       "get": {
         "operationId": "ApiService_GetTemplateDetail",
         "responses": {
@@ -613,7 +729,7 @@
         ]
       }
     },
-    "/v1/template-render": {
+    "/api/v1/template-render": {
       "post": {
         "operationId": "ApiService_TemplateRendering",
         "responses": {
@@ -752,6 +868,22 @@
           "type": "string"
         },
         "glb_url": {
+          "type": "string"
+        }
+      }
+    },
+    "ioGetNonceMessageReq": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        }
+      }
+    },
+    "ioGetNonceMessageResp": {
+      "type": "object",
+      "properties": {
+        "message": {
           "type": "string"
         }
       }
@@ -976,6 +1108,47 @@
           "type": "string"
         },
         "video": {
+          "type": "string"
+        }
+      }
+    },
+    "ioUpdateUserProfileReq": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "ioUserProfileResp": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "walletAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "ioVerifyNonceMessageReq": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "signature": {
+          "type": "string"
+        }
+      }
+    },
+    "ioVerifyNonceMessageResp": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "refreshToken": {
           "type": "string"
         }
       }

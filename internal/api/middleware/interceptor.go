@@ -5,7 +5,15 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"rederinghub.io/pkg/interceptor"
+	"rederinghub.io/pkg/oauth2service"
 )
+
+var AllowedAuthMethods = []string{
+	"GetProfile",
+	"UpdateProfile",
+}
+
 
 type Interceptor struct {
 }
@@ -22,4 +30,10 @@ func (i Interceptor) contextInterceptor(ctx context.Context, req interface{}, in
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	return handler(timeoutCtx, req)
+}
+
+func (i Interceptor) AuthInterceptor() grpc.UnaryServerInterceptor {	
+	auth := oauth2service.NewAuth2()
+	authInterceptor := interceptor.NewAuthInterceptor(*auth, AllowedAuthMethods)
+	return authInterceptor.Unary()
 }

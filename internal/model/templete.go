@@ -1,7 +1,7 @@
 package model
 
 type Template struct {
-	BaseModel
+	BaseModel `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
 }
 
