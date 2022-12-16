@@ -11,6 +11,7 @@ import (
 	"rederinghub.io/internal/adapter"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/pkg/config"
+	"rederinghub.io/pkg/oauth2service"
 )
 
 type Service interface {
@@ -24,19 +25,25 @@ type service struct {
 
 	templateRepository    repository.TemplateRepository
 	renderedNftRepository repository.RenderedNftRepository
+	userRepository repository.IUserRepository
 
 	redisClient *redis.Client
+	auth2Service *oauth2service.Auth2
 }
 
 func Init(moralisAdapter adapter.MoralisAdapter,
 	renderMachineAdapter adapter.RenderMachineAdapter,
 	templateRepository repository.TemplateRepository,
 	renderedNftRepository repository.RenderedNftRepository,
+	userRepository repository.IUserRepository,
 ) Service {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     config.AppConfig().RedisAddr,
 		Password: config.AppConfig().RedisPassword,
 	})
+
+	auth := oauth2service.NewAuth2()
+
 	if err := redisClient.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("can not connect to redis")
 	}
@@ -47,6 +54,8 @@ func Init(moralisAdapter adapter.MoralisAdapter,
 		templateRepository:    templateRepository,
 		renderedNftRepository: renderedNftRepository,
 		redisClient:           redisClient,
+		userRepository:           userRepository,
+		auth2Service:  auth,
 	}
 }
 

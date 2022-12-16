@@ -126,7 +126,6 @@ func (b *BaseRepository) Update(ctx context.Context, model interface{}, id primi
 		ctx,
 		bson.D{
 			{Key: "_id", Value: id},
-			{Key: "date_modified", Value: dateModified},
 		},
 		model,
 		opts...,

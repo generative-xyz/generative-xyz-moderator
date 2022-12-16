@@ -52,6 +52,7 @@ func (g *grpcServer) Run(ctx context.Context) error {
 		grpc.ChainUnaryInterceptor(
 			interceptors.WithTimeoutInterceptor(),
 			interceptors.ValidationInterceptor(),
+			interceptors.AuthInterceptor(),
 		))
 
 	api.RegisterApiServiceServer(baseServer, g.apiSvc)
