@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api.renderinghub.io;
+option go_package = "renderinghub.io/api;api";
+
+message GetTokenMessageReq {
+  string contract_addr = 1;
+  string token_id = 2;
+}
+
+message GetTokenMessageResp {}
