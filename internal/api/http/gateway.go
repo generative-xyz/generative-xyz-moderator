@@ -52,7 +52,6 @@ func (a *apiGateway) run() error {
 	mux.Handle("/", middleware.AllowCORS(gwMux))
 	
 	rootPath, _ := os.Getwd()
-	//rootPath := "/Users/autonomous/go/src/rendering-hub"
 	fs := http.FileServer(http.Dir(rootPath + "/swaggerUI"))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 

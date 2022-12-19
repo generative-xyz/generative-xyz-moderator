@@ -5,3 +5,4 @@ vendor
 main
 __debug_bin
 .vscode
+main.go
