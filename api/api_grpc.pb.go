@@ -24,23 +24,11 @@ const _ = grpc.SupportPackageIsVersion7
 type ApiServiceClient interface {
 	Live(ctx context.Context, in *LiveRequest, opts ...grpc.CallOption) (*LiveResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
-	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error)
-	TemplateRendering(ctx context.Context, in *TemplateRenderingRequest, opts ...grpc.CallOption) (*TemplateRenderingResponse, error)
-	GetRenderedNft(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
-	GetCandyMetadata(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error)
-	GetCandyMetadatas(ctx context.Context, in *GetCandyMetadatasRequest, opts ...grpc.CallOption) (*GetCandyMetadatasResponse, error)
-	GetCandyMetadataPost(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error)
-	GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error)
-	GetAvatarMetadata(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error)
-	GetAvatarMetadataPost(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error)
-	GetGenerativeNFTMetadata(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
-	GetGenerativeNFTMetadataPost(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error)
-	GetClearCacheInternal(ctx context.Context, in *GetClearCacheInternalRequest, opts ...grpc.CallOption) (*GetClearCacheInternalResponse, error)
 	GetAuthNonce(ctx context.Context, in *GetNonceMessageReq, opts ...grpc.CallOption) (*GetNonceMessageResp, error)
 	VerifyAuthNounce(ctx context.Context, in *VerifyNonceMessageReq, opts ...grpc.CallOption) (*VerifyNonceMessageResp, error)
 	GetProfile(ctx context.Context, in *UserProfileReq, opts ...grpc.CallOption) (*UserProfileResp, error)
 	UpdateProfile(ctx context.Context, in *UpdateUserProfileReq, opts ...grpc.CallOption) (*UserProfileResp, error)
+	GetToken(ctx context.Context, in *GetTokenMessageReq, opts ...grpc.CallOption) (*GetTokenMessageResp, error)
 }
 
 type apiServiceClient struct {
@@ -63,123 +51,6 @@ func (c *apiServiceClient) Live(ctx context.Context, in *LiveRequest, opts ...gr
 func (c *apiServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/Ping", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error) {
-	out := new(GetTemplateResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetTemplate", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error) {
-	out := new(GetTemplateDetailResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetTemplateDetail", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) TemplateRendering(ctx context.Context, in *TemplateRenderingRequest, opts ...grpc.CallOption) (*TemplateRenderingResponse, error) {
-	out := new(TemplateRenderingResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/TemplateRendering", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetRenderedNft(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error) {
-	out := new(GetRenderedNftResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetRenderedNft", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetCandyMetadata(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error) {
-	out := new(GetCandyMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetCandyMetadata", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetCandyMetadatas(ctx context.Context, in *GetCandyMetadatasRequest, opts ...grpc.CallOption) (*GetCandyMetadatasResponse, error) {
-	out := new(GetCandyMetadatasResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetCandyMetadatas", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetCandyMetadataPost(ctx context.Context, in *GetCandyMetadataRequest, opts ...grpc.CallOption) (*GetCandyMetadataResponse, error) {
-	out := new(GetCandyMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetCandyMetadataPost", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetRenderedNftPost(ctx context.Context, in *GetRenderedNftRequest, opts ...grpc.CallOption) (*GetRenderedNftResponse, error) {
-	out := new(GetRenderedNftResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetRenderedNftPost", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetAvatarMetadata(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error) {
-	out := new(GetAvatarMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetAvatarMetadata", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetAvatarMetadataPost(ctx context.Context, in *GetAvatarMetadataRequest, opts ...grpc.CallOption) (*GetAvatarMetadataResponse, error) {
-	out := new(GetAvatarMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetAvatarMetadataPost", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetGenerativeNFTMetadata(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error) {
-	out := new(GetGenerativeNFTMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadata", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetGenerativeNFTMetadataPost(ctx context.Context, in *GetGenerativeNFTMetadataRequest, opts ...grpc.CallOption) (*GetGenerativeNFTMetadataResponse, error) {
-	out := new(GetGenerativeNFTMetadataResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadataPost", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiServiceClient) GetClearCacheInternal(ctx context.Context, in *GetClearCacheInternalRequest, opts ...grpc.CallOption) (*GetClearCacheInternalResponse, error) {
-	out := new(GetClearCacheInternalResponse)
-	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetClearCacheInternal", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -222,29 +93,26 @@ func (c *apiServiceClient) UpdateProfile(ctx context.Context, in *UpdateUserProf
 	return out, nil
 }
 
+func (c *apiServiceClient) GetToken(ctx context.Context, in *GetTokenMessageReq, opts ...grpc.CallOption) (*GetTokenMessageResp, error) {
+	out := new(GetTokenMessageResp)
+	err := c.cc.Invoke(ctx, "/api.renderinghub.io.ApiService/GetToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServiceServer is the server API for ApiService service.
 // All implementations must embed UnimplementedApiServiceServer
 // for forward compatibility
 type ApiServiceServer interface {
 	Live(context.Context, *LiveRequest) (*LiveResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
-	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error)
-	TemplateRendering(context.Context, *TemplateRenderingRequest) (*TemplateRenderingResponse, error)
-	GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
-	GetCandyMetadata(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error)
-	GetCandyMetadatas(context.Context, *GetCandyMetadatasRequest) (*GetCandyMetadatasResponse, error)
-	GetCandyMetadataPost(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error)
-	GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error)
-	GetAvatarMetadata(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error)
-	GetAvatarMetadataPost(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error)
-	GetGenerativeNFTMetadata(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
-	GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error)
-	GetClearCacheInternal(context.Context, *GetClearCacheInternalRequest) (*GetClearCacheInternalResponse, error)
 	GetAuthNonce(context.Context, *GetNonceMessageReq) (*GetNonceMessageResp, error)
 	VerifyAuthNounce(context.Context, *VerifyNonceMessageReq) (*VerifyNonceMessageResp, error)
 	GetProfile(context.Context, *UserProfileReq) (*UserProfileResp, error)
 	UpdateProfile(context.Context, *UpdateUserProfileReq) (*UserProfileResp, error)
+	GetToken(context.Context, *GetTokenMessageReq) (*GetTokenMessageResp, error)
 	mustEmbedUnimplementedApiServiceServer()
 }
 
@@ -258,45 +126,6 @@ func (UnimplementedApiServiceServer) Live(context.Context, *LiveRequest) (*LiveR
 func (UnimplementedApiServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedApiServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
-}
-func (UnimplementedApiServiceServer) GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTemplateDetail not implemented")
-}
-func (UnimplementedApiServiceServer) TemplateRendering(context.Context, *TemplateRenderingRequest) (*TemplateRenderingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TemplateRendering not implemented")
-}
-func (UnimplementedApiServiceServer) GetRenderedNft(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNft not implemented")
-}
-func (UnimplementedApiServiceServer) GetCandyMetadata(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCandyMetadata not implemented")
-}
-func (UnimplementedApiServiceServer) GetCandyMetadatas(context.Context, *GetCandyMetadatasRequest) (*GetCandyMetadatasResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCandyMetadatas not implemented")
-}
-func (UnimplementedApiServiceServer) GetCandyMetadataPost(context.Context, *GetCandyMetadataRequest) (*GetCandyMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCandyMetadataPost not implemented")
-}
-func (UnimplementedApiServiceServer) GetRenderedNftPost(context.Context, *GetRenderedNftRequest) (*GetRenderedNftResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRenderedNftPost not implemented")
-}
-func (UnimplementedApiServiceServer) GetAvatarMetadata(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAvatarMetadata not implemented")
-}
-func (UnimplementedApiServiceServer) GetAvatarMetadataPost(context.Context, *GetAvatarMetadataRequest) (*GetAvatarMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAvatarMetadataPost not implemented")
-}
-func (UnimplementedApiServiceServer) GetGenerativeNFTMetadata(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetGenerativeNFTMetadata not implemented")
-}
-func (UnimplementedApiServiceServer) GetGenerativeNFTMetadataPost(context.Context, *GetGenerativeNFTMetadataRequest) (*GetGenerativeNFTMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetGenerativeNFTMetadataPost not implemented")
-}
-func (UnimplementedApiServiceServer) GetClearCacheInternal(context.Context, *GetClearCacheInternalRequest) (*GetClearCacheInternalResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetClearCacheInternal not implemented")
-}
 func (UnimplementedApiServiceServer) GetAuthNonce(context.Context, *GetNonceMessageReq) (*GetNonceMessageResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuthNonce not implemented")
 }
@@ -308,6 +137,9 @@ func (UnimplementedApiServiceServer) GetProfile(context.Context, *UserProfileReq
 }
 func (UnimplementedApiServiceServer) UpdateProfile(context.Context, *UpdateUserProfileReq) (*UserProfileResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfile not implemented")
+}
+func (UnimplementedApiServiceServer) GetToken(context.Context, *GetTokenMessageReq) (*GetTokenMessageResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetToken not implemented")
 }
 func (UnimplementedApiServiceServer) mustEmbedUnimplementedApiServiceServer() {}
 
@@ -354,240 +186,6 @@ func _ApiService_Ping_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiServiceServer).Ping(ctx, req.(*PingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTemplateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetTemplate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetTemplate",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetTemplate(ctx, req.(*GetTemplateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetTemplateDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTemplateDetailRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetTemplateDetail(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetTemplateDetail",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetTemplateDetail(ctx, req.(*GetTemplateDetailRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_TemplateRendering_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TemplateRenderingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).TemplateRendering(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/TemplateRendering",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).TemplateRendering(ctx, req.(*TemplateRenderingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetRenderedNft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRenderedNftRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetRenderedNft(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetRenderedNft",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetRenderedNft(ctx, req.(*GetRenderedNftRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetCandyMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCandyMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetCandyMetadata(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetCandyMetadata",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetCandyMetadata(ctx, req.(*GetCandyMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetCandyMetadatas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCandyMetadatasRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetCandyMetadatas(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetCandyMetadatas",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetCandyMetadatas(ctx, req.(*GetCandyMetadatasRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetCandyMetadataPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCandyMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetCandyMetadataPost(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetCandyMetadataPost",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetCandyMetadataPost(ctx, req.(*GetCandyMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetRenderedNftPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRenderedNftRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetRenderedNftPost(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetRenderedNftPost",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetRenderedNftPost(ctx, req.(*GetRenderedNftRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetAvatarMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAvatarMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetAvatarMetadata(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetAvatarMetadata",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetAvatarMetadata(ctx, req.(*GetAvatarMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetAvatarMetadataPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAvatarMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetAvatarMetadataPost(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetAvatarMetadataPost",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetAvatarMetadataPost(ctx, req.(*GetAvatarMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetGenerativeNFTMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetGenerativeNFTMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetGenerativeNFTMetadata(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadata",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetGenerativeNFTMetadata(ctx, req.(*GetGenerativeNFTMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetGenerativeNFTMetadataPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetGenerativeNFTMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetGenerativeNFTMetadataPost(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetGenerativeNFTMetadataPost",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetGenerativeNFTMetadataPost(ctx, req.(*GetGenerativeNFTMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiService_GetClearCacheInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetClearCacheInternalRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiServiceServer).GetClearCacheInternal(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.renderinghub.io.ApiService/GetClearCacheInternal",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServiceServer).GetClearCacheInternal(ctx, req.(*GetClearCacheInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -664,6 +262,24 @@ func _ApiService_UpdateProfile_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiService_GetToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTokenMessageReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServiceServer).GetToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.renderinghub.io.ApiService/GetToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServiceServer).GetToken(ctx, req.(*GetTokenMessageReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiService_ServiceDesc is the grpc.ServiceDesc for ApiService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -680,58 +296,6 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApiService_Ping_Handler,
 		},
 		{
-			MethodName: "GetTemplate",
-			Handler:    _ApiService_GetTemplate_Handler,
-		},
-		{
-			MethodName: "GetTemplateDetail",
-			Handler:    _ApiService_GetTemplateDetail_Handler,
-		},
-		{
-			MethodName: "TemplateRendering",
-			Handler:    _ApiService_TemplateRendering_Handler,
-		},
-		{
-			MethodName: "GetRenderedNft",
-			Handler:    _ApiService_GetRenderedNft_Handler,
-		},
-		{
-			MethodName: "GetCandyMetadata",
-			Handler:    _ApiService_GetCandyMetadata_Handler,
-		},
-		{
-			MethodName: "GetCandyMetadatas",
-			Handler:    _ApiService_GetCandyMetadatas_Handler,
-		},
-		{
-			MethodName: "GetCandyMetadataPost",
-			Handler:    _ApiService_GetCandyMetadataPost_Handler,
-		},
-		{
-			MethodName: "GetRenderedNftPost",
-			Handler:    _ApiService_GetRenderedNftPost_Handler,
-		},
-		{
-			MethodName: "GetAvatarMetadata",
-			Handler:    _ApiService_GetAvatarMetadata_Handler,
-		},
-		{
-			MethodName: "GetAvatarMetadataPost",
-			Handler:    _ApiService_GetAvatarMetadataPost_Handler,
-		},
-		{
-			MethodName: "GetGenerativeNFTMetadata",
-			Handler:    _ApiService_GetGenerativeNFTMetadata_Handler,
-		},
-		{
-			MethodName: "GetGenerativeNFTMetadataPost",
-			Handler:    _ApiService_GetGenerativeNFTMetadataPost_Handler,
-		},
-		{
-			MethodName: "GetClearCacheInternal",
-			Handler:    _ApiService_GetClearCacheInternal_Handler,
-		},
-		{
 			MethodName: "GetAuthNonce",
 			Handler:    _ApiService_GetAuthNonce_Handler,
 		},
@@ -746,6 +310,10 @@ var ApiService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateProfile",
 			Handler:    _ApiService_UpdateProfile_Handler,
+		},
+		{
+			MethodName: "GetToken",
+			Handler:    _ApiService_GetToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
