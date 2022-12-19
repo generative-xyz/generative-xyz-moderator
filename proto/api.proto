@@ -8,6 +8,7 @@ import "health.proto";
 import "template.proto";
 import "rendered-nft.proto";
 import "auth.proto";
+import "token.proto";
 
 service ApiService {
   rpc Live (LiveRequest) returns (LiveResponse) {
@@ -20,85 +21,7 @@ service ApiService {
       get: "/api/v1/ping"
     };
   }
-  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/template"
-    };
-  }
-  rpc GetTemplateDetail(GetTemplateDetailRequest) returns (GetTemplateDetailResponse) {
-    option (google.api.http) = {
-      get: "/api/v1/template-detail"
-    };
-  }
-  rpc TemplateRendering(TemplateRenderingRequest) returns (TemplateRenderingResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/template-render",
-      body: "*"
-    };
-  }
-  rpc GetRenderedNft(GetRenderedNftRequest) returns (GetRenderedNftResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}'
-    };
-  }
-
-  rpc GetCandyMetadata(GetCandyMetadataRequest) returns (GetCandyMetadataResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/rendered-nft/{chain_id}/metadata/{token_id}'
-    };
-  }
-
-  rpc GetCandyMetadatas(GetCandyMetadatasRequest) returns (GetCandyMetadatasResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/sweet-nft/{chain_id}/metadatas/{token_ids}'
-    };
-  }
-
-  rpc GetCandyMetadataPost(GetCandyMetadataRequest) returns (GetCandyMetadataResponse) {
-    option (google.api.http) = {
-      post: '/api/v1/rendered-nft/{chain_id}/metadata/{token_id}',
-      body: '*'
-    };
-  }
-
-  rpc GetRenderedNftPost(GetRenderedNftRequest) returns (GetRenderedNftResponse) {
-    option (google.api.http) = {
-      post: '/api/v1/rendered-nft/{chain_id}/{contract_address}/{project_id}/{token_id}',
-      body: '*'
-    };
-  }
-
-  rpc GetAvatarMetadata(GetAvatarMetadataRequest) returns (GetAvatarMetadataResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/rendered-nft/{chain_id}/{contract_address}/metadata/{token_id}'
-    };
-  }
-
-  rpc GetAvatarMetadataPost(GetAvatarMetadataRequest) returns (GetAvatarMetadataResponse) {
-    option (google.api.http) = {
-      post: '/api/v1/rendered-nft/{chain_id}/{contract_address}/metadata/{token_id}',
-      body: '*'
-    };
-  }
-
-  rpc GetGenerativeNFTMetadata(GetGenerativeNFTMetadataRequest) returns (GetGenerativeNFTMetadataResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/generative-nft/{chain_id}/{contract_address}/metadata/{token_id}'
-    };
-  }
-
-  rpc GetGenerativeNFTMetadataPost(GetGenerativeNFTMetadataRequest) returns (GetGenerativeNFTMetadataResponse) {
-    option (google.api.http) = {
-      post: '/api/v1/generative-nft/{chain_id}/{contract_address}/metadata/{token_id}',
-      body: '*'
-    };
-  }
-  rpc GetClearCacheInternal(GetClearCacheInternalRequest) returns (GetClearCacheInternalResponse) {
-    option (google.api.http) = {
-      get: '/api/v1/clear-cache/{chain_id}/{contract_address}/{token_id}'
-    };
-  }
-
+  
   rpc GetAuthNonce(GetNonceMessageReq) returns (GetNonceMessageResp) {
     option (google.api.http) = {
       post: '/api/v1/auth/nonce',
@@ -123,6 +46,12 @@ service ApiService {
     option (google.api.http) = {
       put: '/api/v1/profile',
       body: '*'
+    };
+  }
+
+  rpc GetToken(GetTokenMessageReq) returns (GetTokenMessageResp) {
+    option (google.api.http) = {
+      get: '/api/token/{contract_addr}/{token_id}',
     };
   }
 
