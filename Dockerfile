@@ -1,4 +1,4 @@
-FROM amd64/golang:1.16.0-alpine as builder
+FROM amd64/golang:1.17.0-alpine as builder
 
 RUN apk update && apk upgrade && \
     apk --update add git make gcc g++ gnutls gnutls-dev gnutls-c++
@@ -23,6 +23,8 @@ RUN cat  $HOME/.netrc
 RUN go mod download
 
 COPY  . .
+
+RUN  go mod tidy -compat=1.17
 
 RUN echo "✅ Build for Linux"; make build
 
