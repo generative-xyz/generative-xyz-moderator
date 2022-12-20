@@ -1,25 +1,40 @@
-FROM golang:1.18 as builder
+FROM amd64/golang:1.16.0-alpine as builder
+
+RUN apk update && apk upgrade && \
+    apk --update add git make gcc g++ gnutls gnutls-dev gnutls-c++
+
+ARG ENV=dev
+ARG NETRC_USER=user
+ARG NETRC_TOKEN=123
+
+ENV ENV=${ENV} \
+    CGO_ENABLED=1
 
 WORKDIR /app
 
-COPY ./ ./
+COPY go.mod go.sum Makefile ./
 
-RUN set -eux; \
-    go mod download
+RUN make init
 
-RUN go build -o renderinghub-server cmd/main.go
+RUN echo machine gitlab.com login ${NETRC_USER} password ${NETRC_TOKEN} > $HOME/.netrc
 
-## Today ubuntu is using minimalized image by default, using ubuntu for better compatible than alpine
-FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y ca-certificates wget
+RUN cat  $HOME/.netrc
 
-WORKDIR /app
+RUN go mod download
 
-EXPOSE 10000
-EXPOSE 8000
+COPY  . .
 
-COPY --from=builder /app/renderinghub-server ./
-COPY --from=builder /app/swaggerUI ./swaggerUI
+RUN echo "✅ Build for Linux"; make build
 
-RUN chmod +x /app/renderinghub-server
-CMD ["./renderinghub-server", "app"]
+# Distribution
+FROM alpine:latest
+
+RUN apk update && apk upgrade && \
+    apk --update --no-cache add tzdata && \
+    mkdir /app 
+
+WORKDIR /app 
+
+EXPOSE 9090
+
+COPY --from=builder /app/backend-api /app

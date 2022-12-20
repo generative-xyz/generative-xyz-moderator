@@ -1,0 +1,1181 @@
+basePath: /rederinghub.io/v1
+definitions:
+  request.AlbumImagesRequest:
+    properties:
+      image_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  request.AlbumRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  request.DeviceTypeRequest:
+    properties:
+      code:
+        type: string
+      fa_channel:
+        type: string
+      fd_channel:
+        type: string
+      is_activated:
+        type: boolean
+      name:
+        type: string
+      thumbnail_url:
+        type: string
+    type: object
+  request.GetOtpCode:
+    properties:
+      email:
+        type: string
+    type: object
+  request.ImageRequest:
+    properties:
+      from_market_place:
+        type: string
+      image_data:
+        type: string
+      image_name:
+        type: string
+      image_type:
+        type: string
+      image_url:
+        type: string
+      nft_chain:
+        type: string
+      nft_contract_address:
+        type: string
+      nft_description:
+        type: string
+      nft_detail_url:
+        type: string
+      nft_id:
+        type: string
+      nft_name:
+        type: string
+      nft_owner_id:
+        type: string
+      nft_owner_name:
+        type: string
+      nft_token_id:
+        type: string
+      thumbnail:
+        type: string
+    type: object
+  request.LoginWithOtpCode:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+    type: object
+  request.PersonalDeviceRequest:
+    properties:
+      device_type_code:
+        type: integer
+      device_type_id:
+        type: integer
+      fa_channel:
+        type: string
+      fd_channel:
+        type: string
+      hub_id:
+        type: string
+      label:
+        type: string
+      mac_address:
+        type: string
+    type: object
+  request.RefreshTokenData:
+    properties:
+      redirect_uri:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  response.AlbumResponse:
+    properties:
+      device_ids:
+        description: Thumbnail *frame.FrameResponse `json:"thumbnail"`
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  response.DeviceTypeResp:
+    properties:
+      code:
+        type: string
+      fa_channel:
+        type: string
+      fd_channel:
+        type: string
+      id:
+        type: string
+      is_activated:
+        type: boolean
+      name:
+        type: string
+      thumbnail_url:
+        type: string
+    type: object
+  response.ImageResp:
+    properties:
+      aspect_ratio:
+        type: string
+      aspect_ratio_height:
+        type: integer
+      aspect_ratio_width:
+        type: integer
+      device_id:
+        type: string
+      from_market_place:
+        type: string
+      full_name:
+        type: string
+      height:
+        type: integer
+      id:
+        type: string
+      image_type:
+        type: string
+      mine_type:
+        type: string
+      name:
+        type: string
+      nft_chain:
+        type: string
+      nft_contract_address:
+        type: string
+      nft_description:
+        type: string
+      nft_detail_url:
+        type: string
+      nft_id:
+        type: string
+      nft_name:
+        type: string
+      nft_owner_id:
+        type: string
+      nft_owner_name:
+        type: string
+      nft_token_id:
+        type: string
+      path:
+        type: string
+      qrcode_url:
+        type: string
+      size:
+        type: integer
+      thumbnails:
+        additionalProperties:
+          type: string
+        type: object
+      url:
+        type: string
+      user_id:
+        type: integer
+      using_type:
+        type: string
+      width:
+        type: integer
+    type: object
+  response.JsonResponse:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+      status:
+        type: boolean
+    type: object
+  response.PaginationResponse:
+    properties:
+      current_page:
+        type: integer
+      cursor:
+        type: string
+      items: {}
+      next_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.PersonalDeviceResp:
+    properties:
+      device_type_code:
+        type: integer
+      device_type_id:
+        type: integer
+      fa_channel:
+        type: string
+      fd_channel:
+        type: string
+      hub_id:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      mac_address:
+        type: string
+    type: object
+  response.TokenRes:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is a sample server Autonomous devices management server.
+  title: 'Autonomous: OG Device APIs server.'
+  version: 1.0.0
+paths:
+  /albums:
+    get:
+      consumes:
+      - application/json
+      description: List Albums
+      parameters:
+      - description: filter by user_id
+        in: query
+        name: user_id
+        type: string
+      - description: filter by name
+        in: query
+        name: name
+        type: string
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.AlbumResponse'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: List Albums
+      tags:
+      - Albums
+    post:
+      consumes:
+      - application/json
+      description: Create album
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.AlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AlbumResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create album
+      tags:
+      - Albums
+  /albums/{albumID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete album
+      parameters:
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete album
+      tags:
+      - Albums
+    get:
+      consumes:
+      - application/json
+      description: Get Album
+      parameters:
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.AlbumResponse'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: Get Album
+      tags:
+      - Albums
+    put:
+      consumes:
+      - application/json
+      description: album
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.AlbumRequest'
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AlbumResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: album
+      tags:
+      - Albums
+  /albums/{albumID}/devices:
+    delete:
+      consumes:
+      - application/json
+      description: Delete album's device
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PersonalDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete album's device
+      tags:
+      - Album's devices
+    post:
+      consumes:
+      - application/json
+      description: Create Album devices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.PaginationResponse'
+                  type: array
+              type: object
+      summary: Create Album devices
+      tags:
+      - Album's devices
+  /albums/{albumID}/images:
+    delete:
+      consumes:
+      - application/json
+      description: Delete album's image
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PersonalDeviceRequest'
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete album's image
+      tags:
+      - Album's Images
+    get:
+      consumes:
+      - application/json
+      description: List Album Images
+      parameters:
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.PaginationResponse'
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: List Album Images
+      tags:
+      - Album's Images
+    post:
+      consumes:
+      - application/json
+      description: Create Album Image
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.AlbumImagesRequest'
+      - description: album ID
+        in: path
+        name: albumID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.PaginationResponse'
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: Create Album Image
+      tags:
+      - Album's Images
+  /auth/otp/get:
+    post:
+      consumes:
+      - application/json
+      description: Get OTP code
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.GetOtpCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Get OTP code
+      tags:
+      - Auth
+  /auth/otp/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with the generated OTP code
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.LoginWithOtpCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenRes'
+              type: object
+      summary: Login with the generated OTP code
+      tags:
+      - Auth
+  /auth/token:
+    post:
+      consumes:
+      - application/json
+      description: Refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RefreshTokenData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenRes'
+              type: object
+      summary: Refresh token
+      tags:
+      - Auth
+  /devices/personal:
+    get:
+      consumes:
+      - application/json
+      description: List personal devices
+      parameters:
+      - description: filter by hub_id
+        in: query
+        name: hub_id
+        type: string
+      - description: filter by user_id
+        in: query
+        name: user_id
+        type: string
+      - description: filter by mac_address
+        in: query
+        name: mac_address
+        type: string
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.PersonalDeviceResp'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: List personal devices
+      tags:
+      - Personal device
+    post:
+      consumes:
+      - application/json
+      description: Create personal device
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PersonalDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Create personal device
+      tags:
+      - Personal device
+  /devices/personal/{deviceID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete personal device
+      parameters:
+      - description: device ID
+        in: path
+        name: deviceID
+        required: true
+        type: string
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PersonalDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete personal device
+      tags:
+      - Personal device
+    put:
+      consumes:
+      - application/json
+      description: Update personal device
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.PersonalDeviceRequest'
+      - description: device ID
+        in: path
+        name: deviceID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Update personal device
+      tags:
+      - Personal device
+  /images:
+    get:
+      consumes:
+      - application/json
+      description: List Images
+      parameters:
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.ImageResp'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: List Images
+      tags:
+      - Image (framePhoto)
+    post:
+      consumes:
+      - application/json
+      description: Create Image
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ImageResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create Image
+      tags:
+      - Image (framePhoto)
+  /images/{imageID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete image
+      parameters:
+      - description: imageID
+        in: path
+        name: imageID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete image
+      tags:
+      - Image (framePhoto)
+    get:
+      consumes:
+      - application/json
+      description: Get Image
+      parameters:
+      - description: album ID
+        in: path
+        name: imageID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ImageResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: Get Image
+      tags:
+      - Image (framePhoto)
+    put:
+      consumes:
+      - application/json
+      description: update Image
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ImageRequest'
+      - description: album ID
+        in: path
+        name: imageID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ImageResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: update Image
+      tags:
+      - Image (framePhoto)
+  /profile:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a current user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Delete a current user's profile
+      tags:
+      - Profile
+    get:
+      consumes:
+      - application/json
+      description: User profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: User profile
+      tags:
+      - Profile
+  /profile/logout:
+    get:
+      consumes:
+      - application/json
+      description: Logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Logout
+      tags:
+      - Profile
+  /types:
+    get:
+      consumes:
+      - application/json
+      description: List DeviceTypes
+      parameters:
+      - description: filter by name
+        in: query
+        name: name
+        type: string
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.DeviceTypeResp'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: List DeviceTypes
+      tags:
+      - DeviceTypes
+    post:
+      consumes:
+      - application/json
+      description: Create DeviceType
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeviceTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DeviceTypeResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create DeviceType
+      tags:
+      - DeviceTypes
+  /types/{deviceTypeID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete DeviceType
+      parameters:
+      - description: DeviceType ID
+        in: path
+        name: deviceTypeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete DeviceType
+      tags:
+      - DeviceTypes
+    get:
+      consumes:
+      - application/json
+      description: Get DeviceType
+      parameters:
+      - description: DeviceType ID
+        in: path
+        name: deviceTypeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/response.PaginationResponse'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/response.DeviceTypeResp'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      security:
+      - Authorization: []
+      summary: Get DeviceType
+      tags:
+      - DeviceTypes
+    put:
+      consumes:
+      - application/json
+      description: DeviceType
+      parameters:
+      - description: Request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeviceTypeRequest'
+      - description: DeviceType ID
+        in: path
+        name: deviceTypeID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DeviceTypeResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: DeviceType
+      tags:
+      - DeviceTypes
+securityDefinitions:
+  Api-Key:
+    in: header
+    name: Api-Key
+    type: apiKey
+  Authorization:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

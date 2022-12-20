@@ -1,0 +1,7 @@
+include:
+  - project: 'autonomous-hot-desking/ops/gitlab-ci'
+    ref: backend
+    file: 'Docker.gitlab-ci.yml'
+  - project: 'autonomous-hot-desking/ops/gitlab-ci'
+    ref: backend
+    file: 'Deploy.gitlab-ci.yml'
