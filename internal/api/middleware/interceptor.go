@@ -27,7 +27,7 @@ func (i Interceptor) WithTimeoutInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (i Interceptor) contextInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*10)
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Second * 60)
 	defer cancel()
 	return handler(timeoutCtx, req)
 }
