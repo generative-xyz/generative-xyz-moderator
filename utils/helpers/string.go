@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"crypto/md5"
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -69,4 +70,18 @@ func GenerateCachedProfileKey(accessToken string) string {
 
 func GenerateUserKey(accessToken string) string {
 	return fmt.Sprintf("%s_%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
+}
+
+
+func Base64Decode(base64Str string) ([]byte, error) {
+	sDec, err := b64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return nil, err
+	}
+    return sDec, nil
+}
+
+func Base64Eecode(data []byte) string {
+	sDec := b64.StdEncoding.EncodeToString(data)
+    return sDec
 }

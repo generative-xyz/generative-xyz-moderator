@@ -28,13 +28,22 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//api
 	api := h.Handler.PathPrefix("/api").Subrouter()
+	
 	v1 := api.PathPrefix("/v1").Subrouter()
-	v1.HandleFunc("", h.healthCheck).Methods("GET")
+	v1.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
+	v1.HandleFunc("/", h.healthCheck).Methods("GET")
 
 	//auth
 	auth := v1.PathPrefix("/auth").Subrouter()
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
+
+	//profile
+	singedIn := v1.PathPrefix("/profile").Subrouter()
+	singedIn.Use(h.MiddleWare.AccessToken)
+	singedIn.HandleFunc("", h.profile).Methods("GET")
+	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

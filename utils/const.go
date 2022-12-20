@@ -48,6 +48,7 @@ const (
 	KEY_DELETED_AT       string = "deleted_at"
 
 	COLLECTION_USERS string = "users"
+	COLLECTION_TOKEN_URI string = "token_uri"
 )
 
 type PubSubSendOtp struct {
