@@ -37,6 +37,7 @@ func (s *service) GetAuthNonce(ctx context.Context, req *api.GetNonceMessageReq)
 	// find in mongo
 	user, err := s.userRepository.FindUserByWalletAddress(ctx, addr)
 	if err != nil {
+		
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			//insert
 			user := &model.Users{}
