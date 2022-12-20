@@ -20,9 +20,8 @@ var AllowCORS = func(next http.Handler) http.Handler {
 
 
 		spew.Dump(req.Header.Get("Access-Control-Request-Method"))
-		spew.Dump(req.Method )
 		if req.Method == "OPTIONS" && req.Header.Get("Access-Control-Request-Method") != "" {
-			
+			spew.Dump("Run here")
 			return
 		}
 		next.ServeHTTP(w, req)
