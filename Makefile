@@ -1,29 +1,50 @@
-install-go-tools:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
-	go install github.com/envoyproxy/protoc-gen-validate@v0.6.13
-	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
-	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+APP=backend-api
+LDFLAGS+="-s -w"
+
+init:
+	export GOPRIVATE=gitlab.com/*
+	export GO111MODULE=on
+	export GIT_TERMINAL_PROMPT=1
+ 	export GOPROXY=direct
+	export GOSUMDB=off
+
+proto:
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative utils/proto/*.proto
+
+test: 
+	go test -v -cover -covermode=atomic ./app_test/...
+
+build:
+	go build -v -ldflags $(LDFLAGS) -o $(APP) 
 
 
-install-osx: install-go-tools
-	brew install protobuf
-	brew tap incu6us/homebrew-tap
-	brew install incu6us/homebrew-tap/goimports-reviser
+unittest:
+	go test -short  ./internal/app_test
 
-update:
-	go mod tidy
-	go mod vendor
+clean:
+	if [ -f ${BINARY} ] ; then rm ${BINARY} ; fi
 
-run-server:
-	 go run cmd/main.go app
+build-docker:
+	docker build -t ${APP} .
+
+run:
+	docker-compose up --build -d
+
+stop:
+	docker-compose down
+
+lint-prepare:
+	@echo "Installing golangci-lint" 
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s latest
 
 lint:
-	golangci-lint run ./...
+	./bin/golangci-lint run ./...
 
-order-import:
-	 find ./ -name \*.go ! -path './/api/*.go' -exec goimports-reviser {} \;
+.PHONY: clean install unittest build docker run stop vendor lint-prepare lint
 
-
-gen-proto:
-	 go run tools/main.go protoc
+build-staging:
+	git checkout main
+	git pull origin main
+	git merge develop
+	git push origin main
+	git checkout develop

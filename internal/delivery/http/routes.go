@@ -1,0 +1,123 @@
+package http
+
+import (
+	"net/http"
+	"os"
+	"strconv"
+
+	"rederinghub.io/docs"
+	_ "rederinghub.io/docs"
+	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/tracer"
+
+	"github.com/opentracing/opentracing-go"
+	httpSwagger "github.com/swaggo/http-swagger"
+)
+
+func (h *httpDelivery) registerRoutes() {
+	h.RegisterDocumentRoutes()
+	h.RegisterV1Routes()
+}
+
+func (h *httpDelivery) RegisterV1Routes() {
+	h.Handler.Use(h.MiddleWare.Tracer)
+	h.Handler.Use(h.MiddleWare.LoggingMiddleware)
+	h.Handler.HandleFunc("/", h.healthCheck).Methods("GET")
+
+	//api
+	api := h.Handler.PathPrefix("/rederinghub.io").Subrouter()
+	v1 := api.PathPrefix("/v1").Subrouter()
+	v1.HandleFunc("", h.healthCheck).Methods("GET")
+
+	//auth
+	auth := v1.PathPrefix("/auth").Subrouter()
+	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
+	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
+}
+
+func (h *httpDelivery) RegisterDocumentRoutes() {
+	documentUrl := `/rederinghub.io-docs/`
+	domain := os.Getenv("swagger_domain")
+	docs.SwaggerInfo.Host = domain
+	docs.SwaggerInfo.BasePath = "/rederinghub.io/v1"
+	swaggerURL := documentUrl + "swagger/doc.json"
+	h.Handler.PathPrefix(documentUrl).Handler(httpSwagger.Handler(
+		httpSwagger.URL(swaggerURL), //The url pointing to API definition
+		httpSwagger.DeepLinking(true),
+		//httpSwagger.DocExpansion("none"),
+		httpSwagger.DomID("#swagger-ui"),
+	))
+}
+
+func (h *httpDelivery) StartSpan(name string, r *http.Request) (opentracing.Span, *tracer.TraceLog) {
+	span := h.Tracer.StartSpanFromHeaderInjection(r.Header, name)
+	log := tracer.NewTraceLog()
+	return span, log
+}
+
+func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
+	span := h.Tracer.StartSpan("healthCheck")
+	h.Response.SetTrace(h.Tracer)
+	h.Response.SetSpan(span)
+	defer span.Finish()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "It work!", "")
+}
+
+func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}) response.PaginationResponse {
+	next := int(data.Next)
+	prev := int(data.Prev)
+	currentPage := int(data.Page)
+
+	resp := response.PaginationResponse{}
+	resp.Items = items
+	resp.NextPage = &next
+	resp.CurrentPage = currentPage
+	resp.TotalItems = data.Total
+	resp.TotalPages = data.TotalPage
+	resp.Cursor = data.Currsor
+	resp.PrevPage = &prev
+
+	return resp
+}
+
+func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, error) {
+	f := &structure.BaseFilters{}
+
+	limitInt := 10
+	pageInt := 1
+	var err error
+
+	limit := r.URL.Query().Get("limit")
+	if limit != "" {
+		limitInt, err = strconv.Atoi(limit)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	page := r.URL.Query().Get("page")
+	if page != "" {
+		pageInt, err = strconv.Atoi(page)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sort := r.URL.Query().Get("sort")
+	if sort != "" {
+		sortInt, err := strconv.Atoi(sort)
+		if err != nil {
+			return nil, err
+		}
+		f.Sort = sortInt
+	}
+
+	f.SortBy = r.URL.Query().Get("sort_by")
+
+	f.Page = int64(pageInt)
+	f.Limit = int64(limitInt)
+
+	return f, nil
+}
