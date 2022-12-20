@@ -13,3 +13,9 @@ type VerifyMessageRequest struct {
 	Sinature string `json:"signature"`
 	Address string `json:"address"`
 }
+
+type UpdateProfileRequest struct {
+	DisplayName *string `json:"display_name"`
+	Bio *string `json:"bio"`
+}
+

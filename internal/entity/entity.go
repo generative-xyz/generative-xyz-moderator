@@ -15,6 +15,9 @@ type BaseEntity struct {
 	UpdatedAt *time.Time `bson:"updated_at"`
 	ID            primitive.ObjectID `bson:"_id"`
 	UUID            string `bson:"uuid"`
+	IsVerified bool `bson:"is_verified"`
+	VerifiedAt *time.Time `bson:"verified_at"`
+	Message string `bson:"message"`
 }
 
 

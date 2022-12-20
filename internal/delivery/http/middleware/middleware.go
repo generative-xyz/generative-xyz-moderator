@@ -181,12 +181,13 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
  
 		m.cache.SetData( helpers.GenerateCachedProfileKey(token), p)
 		m.cache.SetStringData(helpers.GenerateUserKey(token), p.ID)
-		log.SetTag(utils.EMAIL_TAG, p.Email)
+		//log.SetTag(utils.EMAIL_TAG, p.Email)
+		//log.SetTag(utils.WALLET_ADDRESS_TAG, p.WalletAddress)
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, utils.AUTH_TOKEN, token)
 		ctx = context.WithValue(ctx, utils.SIGNED_WALLET_ADDRESS, p.WalletAddress)
-		ctx = context.WithValue(ctx, utils.SIGNED_EMAIL, p.Email)
+		//ctx = context.WithValue(ctx, utils.SIGNED_EMAIL, p.Email)
 		ctx = context.WithValue(ctx, utils.SIGNED_USER_ID, p.ID)
 		wrapped := wrapResponseWriter(w)
 		next.ServeHTTP(wrapped, r.WithContext(ctx))

@@ -116,7 +116,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	user.UpdatedAt = &now
 
 	userID := user.UUID
-	token, refreshToken, err := u.Auth2.GenerateAllTokens(user.WalletAddress, user.Email, user.FirstName, user.LastName, userID)
+	token, refreshToken, err := u.Auth2.GenerateAllTokens(user.WalletAddress, "", "", "", userID)
 	if err != nil {
 		log.Error("u.Auth2.GenerateAllTokens", err.Error(), err)
 		return nil, err
@@ -201,6 +201,57 @@ func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*struct
 	return &resp, nil
 }
 
+func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, data structure.UpdateProfile) (*structure.ProfileResponse, error) {
+	span, log := u.StartSpan("UserProfile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	log.SetData("input.UserID", userID)
+	log.SetData("input.data", data)
+
+	user, err := u.Repo.FindUserByID(userID)
+	if err != nil {
+		log.Error("u.Repo.FindUserByID", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	
+	
+	
+	if data.DisplayName != nil {
+		user.DisplayName = *data.DisplayName
+	}
+	
+	if data.Bio != nil {
+		user.Bio = *data.Bio
+	}
+	
+	updated, err := u.Repo.UpdateUserByID(userID, user)
+	if err != nil {
+		log.Error("u.Repo.UpdateUserByID", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+
+	resp :=  u.profileToResp(user)
+	return &resp, nil
+}
+
+
+func  (u Usecase) Logout(rootSpan opentracing.Span, accessToken string) (bool, error) {
+	span, log := u.StartSpan("Logout", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	tokenMd5 := helpers.GenerateMd5String(accessToken)
+	err := u.Cache.Delete(tokenMd5)
+	if err != nil {
+		log.Error("u.Cache.Delete", err.Error(), err)
+		return false, err
+	}
+	
+	return true, nil
+}
 
 func (u Usecase) profileToResp(profile *entity.Users) structure.ProfileResponse {
 	domain := os.Getenv("API_DOMAIN")
@@ -210,13 +261,7 @@ func (u Usecase) profileToResp(profile *entity.Users) structure.ProfileResponse 
 		profileAvatar = profile.Avatar
 	}
 	avatarURL := fmt.Sprintf("%s/files/%s", domain, profileAvatar)
-	
 
-	profileCoverImage := os.Getenv("DEFAUTL_COVER_IMAGE")
-	if profile.CoverPhoto != "" {
-		profileCoverImage = profile.CoverPhoto
-	}
-	coverPhotoURL := fmt.Sprintf("%s/files/%s", domain, profileCoverImage)
 	
 	addr := profile.WalletAddress
 	walletAddresses := []string{}
@@ -224,24 +269,9 @@ func (u Usecase) profileToResp(profile *entity.Users) structure.ProfileResponse 
 	
 	resp := structure.ProfileResponse{
 		ID: profile.UUID,
-		Email: profile.Email,
-		FirstName: profile.FirstName,
-		LastName: profile.LastName,
-		WalletAddress: profile.WalletAddress,
-		IsVerified: profile.IsVerified,
-		VerifiedAt: profile.VerifiedAt,
-		NickName: profile.Nickname,
+		DisplayName: profile.DisplayName,
 		Bio: profile.Bio,
 		Avatar: avatarURL,
-		CoverPhoto: coverPhotoURL,
-		LinkOpensea: profile.LinkOpensea,
-		LinkSocial: profile.LinkSocial,
-		CreatedAt: profile.CreatedAt,
-		EstimateValue: 0,
-		TotalOwned: 0,
-		TotalItems: 0,
-		TotalCreated: 0,
-		TotalForging: 0,
 	}
 
 	
