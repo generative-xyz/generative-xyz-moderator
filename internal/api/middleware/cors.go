@@ -9,12 +9,11 @@ import (
 // AllowCORS
 var AllowCORS = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// corsAllowOrigin := "*"
-		// if origin := req.Header.Get("Origin"); origin != "" {
-		// 	corsAllowOrigin = origin
-		// }
-
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		corsAllowOrigin := "*"
+		if origin := req.Header.Get("Origin"); origin != "" {
+			corsAllowOrigin = origin
+		}
+		w.Header().Set("Access-Control-Allow-Origin", corsAllowOrigin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
