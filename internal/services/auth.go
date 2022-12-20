@@ -144,6 +144,9 @@ func (s service) GetProfile(ctx context.Context,  req *api.UserProfileReq) (*api
 	resp := &api.UserProfileResp{
 		Id: user.UUID,
 		WalletAddress: user.WalletAddress,
+		AvatarURL: user.AvatarURL,
+		Bio: user.Bio,
+		DisplayName: user.DisplayName,
 	}
 	return resp, nil
 }
@@ -166,9 +169,29 @@ func (s service) UpdateProfile(ctx context.Context,  req *api.UpdateUserProfileR
 		return nil, err
 	}
 
+	if req.GetAvatarURL() != "" {
+		user.DisplayName = req.GetAvatarURL()
+	}
+	
+	if req.GetBio() != "" {
+		user.Bio = req.GetBio()
+	}
+	
+	if req.GetDisplayName() != "" {
+		user.DisplayName = req.GetDisplayName()
+	}
+
+	err = s.userRepository.UpdateOneByID(ctx, user, user.ID)
+	if  err != nil {
+		return nil, err
+	}
+
 	resp := &api.UserProfileResp{
 		Id: user.UUID,
 		WalletAddress: user.WalletAddress,
+		AvatarURL: user.AvatarURL,
+		Bio: user.Bio,
+		DisplayName: user.DisplayName,
 	}
 	return resp, nil
 }

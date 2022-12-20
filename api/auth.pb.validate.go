@@ -577,7 +577,11 @@ func (m *UpdateUserProfileReq) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Email
+	// no validation rules for DisplayName
+
+	// no validation rules for Bio
+
+	// no validation rules for AvatarURL
 
 	if len(errors) > 0 {
 		return UpdateUserProfileReqMultiError(errors)
@@ -684,6 +688,12 @@ func (m *UserProfileResp) validate(all bool) error {
 	// no validation rules for Id
 
 	// no validation rules for WalletAddress
+
+	// no validation rules for DisplayName
+
+	// no validation rules for Bio
+
+	// no validation rules for AvatarURL
 
 	if len(errors) > 0 {
 		return UserProfileRespMultiError(errors)

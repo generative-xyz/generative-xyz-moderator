@@ -26,6 +26,7 @@ type service struct {
 	templateRepository    repository.TemplateRepository
 	renderedNftRepository repository.RenderedNftRepository
 	userRepository repository.IUserRepository
+	tokenUriRepository repository.ITokenUriRepository
 
 	redisClient *redis.Client
 	auth2Service *oauth2service.Auth2
@@ -36,6 +37,7 @@ func Init(moralisAdapter adapter.MoralisAdapter,
 	templateRepository repository.TemplateRepository,
 	renderedNftRepository repository.RenderedNftRepository,
 	userRepository repository.IUserRepository,
+	tokenUriRepository repository.ITokenUriRepository,
 ) Service {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     config.AppConfig().RedisAddr,
@@ -55,6 +57,7 @@ func Init(moralisAdapter adapter.MoralisAdapter,
 		renderedNftRepository: renderedNftRepository,
 		redisClient:           redisClient,
 		userRepository:           userRepository,
+		tokenUriRepository:           tokenUriRepository,
 		auth2Service:  auth,
 	}
 }

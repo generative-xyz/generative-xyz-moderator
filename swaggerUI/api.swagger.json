@@ -260,7 +260,13 @@
     "ioUpdateUserProfileReq": {
       "type": "object",
       "properties": {
-        "email": {
+        "DisplayName": {
+          "type": "string"
+        },
+        "Bio": {
+          "type": "string"
+        },
+        "AvatarURL": {
           "type": "string"
         }
       }
@@ -272,6 +278,15 @@
           "type": "string"
         },
         "walletAddress": {
+          "type": "string"
+        },
+        "DisplayName": {
+          "type": "string"
+        },
+        "Bio": {
+          "type": "string"
+        },
+        "AvatarURL": {
           "type": "string"
         }
       }
