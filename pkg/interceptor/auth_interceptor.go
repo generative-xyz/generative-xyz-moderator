@@ -67,7 +67,9 @@ func (ai *AuthInterceptor) authorize(ctx context.Context) (context.Context, erro
 		return ctx, status.New(codes.Unauthenticated, "missing token").Err()
 	}
 
-	authData, err := ai.auth.ClaimToken(m[AuthKey][0])
+	token := m[AuthKey][0];
+	token = strings.ReplaceAll(token, "Bearer", "")
+	authData, err := ai.auth.ClaimToken(token)
 	if err != nil {
 		return ctx, status.New(codes.Unauthenticated, "unauthorized").Err()
 	}
@@ -81,7 +83,7 @@ func (ai *AuthInterceptor) authorize(ctx context.Context) (context.Context, erro
 			log.Println("Error while unmarshaling authData data", err)
 		}
 	}
-	meta[string(ContextKeyToken)] = m[AuthKey][0]
+	meta[string(ContextKeyToken)] = token
 	spew.Dump(meta)
 	ctx = ai.SetContextMetadata(ctx, meta)
 	return ctx, nil
