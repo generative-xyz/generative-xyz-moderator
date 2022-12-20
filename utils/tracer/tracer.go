@@ -60,7 +60,6 @@ func NewTracing(log logger.Ilogger) *tracer {
 	t.closer = closer
 	t.tracer = tracer
 	t.logger = log
-
 	return t
 }
 
