@@ -27,7 +27,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	h.Handler.HandleFunc("/", h.healthCheck).Methods("GET")
 
 	//api
-	api := h.Handler.PathPrefix("/rederinghub.io").Subrouter()
+	api := h.Handler.PathPrefix("/api").Subrouter()
 	v1 := api.PathPrefix("/v1").Subrouter()
 	v1.HandleFunc("", h.healthCheck).Methods("GET")
 
@@ -38,10 +38,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
-	documentUrl := `/rederinghub.io-docs/`
+	documentUrl := `/swagger/`
 	domain := os.Getenv("swagger_domain")
 	docs.SwaggerInfo.Host = domain
-	docs.SwaggerInfo.BasePath = "/rederinghub.io/v1"
+	docs.SwaggerInfo.BasePath = "/api/v1"
 	swaggerURL := documentUrl + "swagger/doc.json"
 	h.Handler.PathPrefix(documentUrl).Handler(httpSwagger.Handler(
 		httpSwagger.URL(swaggerURL), //The url pointing to API definition
