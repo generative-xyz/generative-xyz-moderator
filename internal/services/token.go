@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"math/big"
 	"strings"
 
@@ -22,8 +21,12 @@ import (
 )
 
 func (s *service) GetToken(ctx context.Context, req *api.GetTokenMessageReq) (*api.GetTokenMessageResp, error) {
-	logger.AtLog.Infof("Handle [GetToken] %s %s", req.ContractAddr, req.TokenId)
-	tokenUri, err := s.tokenUriRepository.FindTokenBy(ctx, req.GetContractAddr(), req.GetTokenId())
+	
+	addr := req.GetContractAddr()
+	tokenID := req.GetTokenId()
+
+	logger.AtLog.Infof("Handle [GetToken] %s %s", addr, tokenID)
+	tokenUri, err := s.tokenUriRepository.FindTokenBy(ctx, addr, tokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			tokenUri, err = s.getTokenInfo(ctx, req)
@@ -40,13 +43,14 @@ func (s *service) GetToken(ctx context.Context, req *api.GetTokenMessageReq) (*a
 	defer cancel()
 
 	var res string
+	spew.Dump(tokenUri.AnimationURL)
 	err = chromedp.Run(cctx,
 		chromedp.Navigate(tokenUri.AnimationURL),
 		chromedp.EvaluateAsDevTools("window.$generativeTraitss",&res),
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	resp := &api.GetTokenMessageResp{}
