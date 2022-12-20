@@ -15,7 +15,7 @@ var AllowCORS = func(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", corsAllowOrigin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, POST, GET, DELETE, PUT, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, X-Requested-With, param")
 		if req.Method == "OPTIONS" && req.Header.Get("Access-Control-Request-Method") != "" {
 			return
 		}

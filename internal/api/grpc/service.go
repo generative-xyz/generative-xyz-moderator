@@ -59,6 +59,7 @@ func (s *Server) Run() error {
 		repository.NewTemplateRepository,
 		repository.NewRenderedNftRepository,
 		repository.NewUserRepository,
+		repository.NewTokenURIRepository,
 
 		// adapter
 		adapter.NewMoralisAdapter,
