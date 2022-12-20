@@ -21,20 +21,36 @@ func (s *service) GetToken(ctx context.Context, req *api.GetTokenMessageReq) (*a
 		return nil, errors.New("missing config chain_config from server")
 	}
 
-	tokenID := new(big.Int)
-	tokenID, ok = tokenID.SetString(req.GetTokenId(), 10)
-	if !ok {
-		err := errors.New("Cannot convert tokenID")
-		return nil, err
-	}
+	addr := common.HexToAddress(req.GetContractAddr())
+
 	// call to contract to get emotion
 	client, err := ethclient.Dial(chainURL)
 	if err != nil {
 		return nil, err
 	}
-	addr := common.HexToAddress(req.ContractAddr)
 
-	gProject, err := generative_project_contract.NewGenerativeProjectContract(addr, client)
+	nftProjectDetail, err := s.getNftContractDetail(client, addr, req.TokenId)
+	if err != nil {
+		return nil, err
+	}
+
+	parentAddr := nftProjectDetail.GenNFTAddr
+	tokenUriData, err := s.getNftProjectTokenUri(client, parentAddr,  req.TokenId)
+	spew.Dump(tokenUriData)
+	
+	resp := &api.GetTokenMessageResp{}
+	return resp, nil
+}
+
+func (s *service) getNftContractDetail(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*generative_project_contract.NFTProjectProject, error) {
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
+	if !ok {
+		err := errors.New("Cannot convert tokenID")
+		return nil, err
+	}
+
+	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +60,18 @@ func (s *service) GetToken(ctx context.Context, req *api.GetTokenMessageReq) (*a
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(proDetail.GenNFTAddr)
+	return &proDetail, nil
+}
 
-	gNft, err := generative_nft_contract.NewGenerativeNftContract(addr, client)
+func (s *service) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
+	if !ok {
+		err := errors.New("Cannot convert tokenID")
+		return nil, err
+	}
+
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +80,6 @@ func (s *service) GetToken(ctx context.Context, req *api.GetTokenMessageReq) (*a
 	if err !=nil {
 		return nil, err
 	}
-	spew.Dump(value)
 
-	resp := &api.GetTokenMessageResp{}
-	return resp, nil
+	return &value, nil
 }
