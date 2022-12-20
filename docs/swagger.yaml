@@ -200,6 +200,37 @@ paths:
       summary: Logout
       tags:
       - Profile
+  /token/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneratedMessage'
+              type: object
+      summary: get token uri data
+      tags:
+      - token_uri
 securityDefinitions:
   Api-Key:
     in: header
