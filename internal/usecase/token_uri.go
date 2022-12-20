@@ -24,7 +24,8 @@ import (
 func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*structure.GetTokenMessageResp, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-	
+
+	log.SetData("req", req)
 	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
