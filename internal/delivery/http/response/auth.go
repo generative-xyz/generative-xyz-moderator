@@ -3,8 +3,8 @@ package response
 import "time"
 
 type TokenRes struct{
-	AccessToken string `json:"access_token"`
-	RefreshToken  string `json:"refresh_token"`
+	AccessToken string `json:"accessToken"`
+	RefreshToken  string `json:"refreshToken"`
 }
 
 type GeneratedMessage struct {
@@ -12,19 +12,19 @@ type GeneratedMessage struct {
 }
 
 type VerifyResponse struct {
-	IsVerified bool `json:"is_verified"`
-	Token string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	IsVerified bool `json:"isVerified"`
+	Token string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 
 type ProfileResponse struct {
 	BaseResponse
-	WalletAddress string `json:"wallet_address"`
-	DisplayName string `json:"display_name"`
+	WalletAddress string `json:"walletAddress"`
+	DisplayName string `json:"displayName"`
 	Bio string `json:"bio"`
 	Avatar string `json:"avatar"`
-	CreatedAt *time.Time `json:"created_at"`
+	CreatedAt *time.Time `json:"createdAt"`
 }
 
 type LogoutResponse struct {
