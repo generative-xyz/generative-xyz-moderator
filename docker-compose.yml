@@ -43,9 +43,9 @@ services:
        GCS_BUCKET: ${GCS_BUCKET}
        GCS_AUTH: ${GCS_AUTH}
 
-  redis_service:
+  api_redis_service:
     restart: always
-    container_name: redis_service
+    container_name: api_redis_service
     image: docker.io/bitnami/redis:6.2
     environment:
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
@@ -56,8 +56,8 @@ services:
     volumes:
       - "./datadir/redis:/bitnami/redis/data"
 
-  jaeger:
-    container_name: jaeger
+  api_jaeger:
+    container_name: api_jaeger
     restart: always
     image: jaegertracing/all-in-one:1.23
     environment:
