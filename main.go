@@ -10,6 +10,7 @@ import (
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
 	"rederinghub.io/utils/global"
+	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
@@ -63,7 +64,6 @@ func init() {
 
 // @BasePath /rederinghub.io/v1
 func main() {
-
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
 	startServer()
@@ -75,6 +75,12 @@ func startServer() {
 	t := tracer.NewTracing(logger)
 	r := mux.NewRouter()
 
+	gcs, err := googlecloud.NewDataGCStorage(*conf)
+	if err != nil {
+		logger.Error("Can not init gcs", err)
+		return
+	}
+
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
@@ -85,6 +91,7 @@ func startServer() {
 		DBConnection: mongoConnection,
 		Cache:        cache,
 		Auth2: *auth2Service,
+		GCS: gcs,
 	}
 
 

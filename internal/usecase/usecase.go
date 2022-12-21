@@ -4,6 +4,7 @@ import (
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
+	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/mqttClient"
 	"rederinghub.io/utils/oauth2service"
@@ -23,6 +24,7 @@ type Usecase struct {
 	Cache       redis.IRedisCache
 	MqttClient mqttClient.IDeviceMqtt
 	Auth2 oauth2service.Auth2
+	GCS           googlecloud.IGcstorage
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -34,6 +36,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.PubSub = global.Pubsub
 	u.Cache = global.Cache
 	u.Auth2 = global.Auth2
+	u.GCS = global.GCS
 	return u, nil
 }
 

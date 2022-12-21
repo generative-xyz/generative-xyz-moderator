@@ -20,6 +20,7 @@ type Config struct {
 	SigningKey string
 	Services map[string]string
 	MQTTConfig     MQTTConfig
+	Gcs       *GCS
 }
 
 type MQTTConfig struct {
@@ -120,6 +121,11 @@ func NewConfig() (*Config, error) {
 			Port:     os.Getenv("MQTT_PORT"),
 			UserName:     os.Getenv("MQTT_USERNAME"),
 			Password:     os.Getenv("MQTT_PASSWORD"),
+		},
+		Gcs: &GCS{
+			ProjectId: os.Getenv("GCS_PROJECT_ID"),
+			Bucket: os.Getenv("GCS_BUCKET"),
+			Auth: os.Getenv("GCS_AUTH"),
 		},
 	}
 
