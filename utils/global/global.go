@@ -3,6 +3,7 @@ package global
 import (
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
+	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
@@ -21,4 +22,5 @@ type Global struct {
 	Pubsub       redis.IPubSubClient
 	Tracer       tracer.ITracer
 	Auth2 oauth2service.Auth2
+	GCS           googlecloud.IGcstorage
 }

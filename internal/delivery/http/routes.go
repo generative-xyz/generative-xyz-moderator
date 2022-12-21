@@ -39,6 +39,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
+	files := v1.PathPrefix("/files").Subrouter()
+	// files.Use(h.MiddleWare.AccessToken)
+	files.HandleFunc("", h.UploadFile).Methods("POST")
+	
+
 	//profile
 	singedIn := v1.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)

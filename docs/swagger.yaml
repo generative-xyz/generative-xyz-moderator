@@ -19,6 +19,21 @@ definitions:
       signature:
         type: string
     type: object
+  response.FileRes:
+    properties:
+      file_name:
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: string
+      mime_type:
+        type: string
+      uploaded_by:
+        type: string
+      url:
+        type: string
+    type: object
   response.GeneratedMessage:
     properties:
       message:
@@ -206,6 +221,32 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
+  /v1/files:
+    post:
+      description: Upload file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload file
+      tags:
+      - Files
   /v1/profile:
     get:
       consumes:

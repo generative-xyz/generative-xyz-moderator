@@ -49,6 +49,7 @@ const (
 
 	COLLECTION_USERS string = "users"
 	COLLECTION_TOKEN_URI string = "token_uri"
+	COLLECTION_FILES string = "files"
 )
 
 type PubSubSendOtp struct {
