@@ -23,6 +23,7 @@ type HttpTxConsumer struct {
 	Blockchain blockchain.Blockchain
 	DefaultLastProcessedBlock int64
 	CronJobPeriod int32
+	BatchLogSize int32
 	Addresses []common.Address
 	Cache redis.IRedisCache
 	Logger logger.Ilogger
@@ -33,13 +34,12 @@ func NewHttpTxConsumer(global *global.Global, cfg config.TxConsumerConfig) (*Htt
 	txConsumer := new(HttpTxConsumer)
 	txConsumer.DefaultLastProcessedBlock = cfg.StartBlock
 	txConsumer.CronJobPeriod = cfg.CronJobPeriod
+	txConsumer.BatchLogSize = cfg.BatchLogSize
 	txConsumer.Addresses = make([]common.Address, 0)
-	fmt.Println(cfg.Addresses)
 	for _, address := range cfg.Addresses {
 		fmt.Println(address)
 		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
 	}
-	fmt.Println(txConsumer.Addresses)
 	txConsumer.Cache = global.Cache
 	txConsumer.Logger = global.Logger
 	txConsumer.Blockchain = global.Blockchain
@@ -86,14 +86,17 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		return err
 	}
 	fromBlock := lastProcessedBlock + 1
-	toBlock, err := c.Blockchain.GetBlockNumber()
+	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
 		return err
 	}
 
+	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock + int64(c.BatchLogSize))))
+
+
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
 
-	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *toBlock, c.Addresses)
+	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		return err
 	}
@@ -104,11 +107,12 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		// do switch case with log.Address and log.Topics
 		if log.Topics[0].String() == TRANSFER_NFT_SIGNATURE {
 			fmt.Println(log.Topics)
+			// 
 		}
 	}
 
 	// if no error occured, save toBlock as lastProcessedBlock
-	err = c.Cache.SetStringData(c.getRedisKey(), toBlock.String())
+	err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
 	if err != nil {
 		return err
 	}
