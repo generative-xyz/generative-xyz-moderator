@@ -13,6 +13,7 @@ type TokenUri struct {
 	Name string `bson:"name" json:"name"`
 	Description string `bson:"description" json:"description"`
 	Image string `bson:"image" json:"image"`
+	ParsedImage *string `bson:"parsed_image" json:"parsed_image"`
 	AnimationURL string `bson:"animation_url" json:"animation_url"`
 	Attributes string `bson:"attributes" json:"attributes"`
 	ParsedAttributes []TokenUriAttr `bson:"parsed_attributes" json:"parsed_attributes"`

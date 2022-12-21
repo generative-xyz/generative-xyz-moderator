@@ -1,6 +1,36 @@
 version: "3.8"
 services:
-  
+
+  api_service: 
+    restart: always
+    container_name: api_service
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+       ENV: dev
+       swagger_domain: localhost:8000
+       SERVICE_PORT: 8000
+       DEBUG: true
+       CONTEXT_TIMEOUT: 30
+       JAEGER_SERVICE_NAME: og-base-project
+       JAEGER_REPORTER_LOG_SPANS: true
+       JAEGER_AGENT_HOST: jaeger
+       JAEGER_AGENT_PORT: 6831
+       AUTH_SECRET_KEY: auth_123_og_backend
+       MONGO_USER: root
+       MONGO_PASSWORD: 8esxtOw5zK3sjM4Q
+       MONGO_HOST: 34.82.141.153
+       MONGO_PORT: 27017
+       MONGO_DB: rendering-hub
+       OG_SERVICE_URL: https://devnet.generative.xyz/api/v1
+       MQTT_ADDR: 34.82.151.52
+       MQTT_PORT: 1883
+       MQTT_USERNAME: autonomous
+       MQTT_PASSWORD: 123
+       CHAIN_URL: https://matic-mumbai.chainstacklabs.com
+
   redis_service:
     restart: always
     container_name: redis_service
