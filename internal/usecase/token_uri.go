@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 	"strings"
@@ -41,41 +42,69 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 		}
 	}
 
-	if tokenUri.ParsedAttributes != nil  {
+	if tokenUri.ParsedAttributes == nil  {
+		cctx, cancel := chromedp.NewContext(context.Background())
+		defer cancel()
+		
+		traits := make(map[string]interface{})
+		err = chromedp.Run(cctx,
+			chromedp.Navigate(tokenUri.AnimationURL),
+			chromedp.EvaluateAsDevTools("window.$generativeTraits",&traits),
+		)
+
+		if err != nil {
+			log.Error("chromedp.Run", err.Error(), err)
+			return nil, err
+		}
+
+		attrs := []entity.TokenUriAttr{}
+		for key, item := range traits {
+			attr := entity.TokenUriAttr{}
+			attr.TraitType = key
+			attr.Value = item
+			
+			attrs = append(attrs, attr)
+		}
+		tokenUri.ParsedAttributes = attrs
+
+		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
+		if err != nil {
+			log.Error("u.Repo.UpdateOne", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("updated", updated)
+
+		return tokenUri, nil
+	}
+	
+	if tokenUri.ParsedImage == nil  {
+		var buf []byte
+		cctx, cancel := chromedp.NewContext(context.Background())
+		defer cancel()
+	
+		err = chromedp.Run(cctx,
+			chromedp.Navigate(tokenUri.AnimationURL),
+			chromedp.CaptureScreenshot(&buf),
+		)
+
+		image := helpers.Base64Eecode(buf)
+		image = fmt.Sprintf("%s,%s","data:image/png;base64",image)
+		if err != nil {
+			log.Error("chromedp.ParsedImage.Run", err.Error(), err)
+			return nil, err
+		}
+
+		tokenUri.ParsedImage = &image
+		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
+		if err != nil {
+			log.Error("u.Repo.UpdateOne", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("updated", updated)
 		return tokenUri, nil
 	}
 
-	
-	cctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
-	
-	traits := make(map[string]interface{})
-	err = chromedp.Run(cctx,
-		chromedp.Navigate(tokenUri.AnimationURL),
-		chromedp.EvaluateAsDevTools("window.$generativeTraits",&traits),
-	)
 
-	if err != nil {
-		log.Error("chromedp.Run", err.Error(), err)
-		return nil, err
-	}
-
-	attrs := []entity.TokenUriAttr{}
-	for key, item := range traits {
-		attr := entity.TokenUriAttr{}
-		attr.TraitType = key
-		attr.Value = item
-		
-		attrs = append(attrs, attr)
-	}
-	tokenUri.ParsedAttributes = attrs
-
-	updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
-	if err != nil {
-		log.Error("u.Repo.UpdateOne", err.Error(), err)
-		return nil, err
-	}
-	log.SetData("updated", updated)
 	return tokenUri, nil
 }
 

@@ -43,7 +43,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	resp := response.TokenURIResp{
 		Name: message.Name,
 		Description: message.Description,
-		Image: message.Image,
+		Image: *message.ParsedImage,
 		AnimationURL: message.AnimationURL,
 		Attributes: message.ParsedAttributes,
 	}
