@@ -18,7 +18,7 @@ import (
 // @Produce  json
 // @Param request body request.GenerateMessageRequest true "Generate message request"
 // @Success 200 {object} response.JsonResponse{data=response.GeneratedMessage}
-// @Router /auth/nonce [POST]
+// @Router /v1/auth/nonce [POST]
 func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("generateMessage", r)
 	defer h.Tracer.FinishSpan(span, log )
@@ -56,7 +56,7 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param request body request.VerifyMessageRequest true "Verify message request"
 // @Success 200 {object} response.JsonResponse{data=response.VerifyResponse}
-// @Router /auth/nonce/verify [POST]
+// @Router /v1/auth/nonce/verify [POST]
 func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.Verify", r)
 	defer h.Tracer.FinishSpan(span, log )

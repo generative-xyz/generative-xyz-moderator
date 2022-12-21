@@ -28,9 +28,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//api
 	api := h.Handler.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
+	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
 	
 	v1 := api.PathPrefix("/v1").Subrouter()
-	v1.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
 	v1.HandleFunc("/", h.healthCheck).Methods("GET")
 
 	//auth
@@ -51,7 +52,7 @@ func (h *httpDelivery) RegisterDocumentRoutes() {
 	documentUrl := `/swagger/`
 	domain := os.Getenv("swagger_domain")
 	docs.SwaggerInfo.Host = domain
-	docs.SwaggerInfo.BasePath = "/api/v1"
+	docs.SwaggerInfo.BasePath = "/api"
 	swaggerURL := documentUrl + "swagger/doc.json"
 	h.Handler.PathPrefix(documentUrl).Handler(httpSwagger.Handler(
 		httpSwagger.URL(swaggerURL), //The url pointing to API definition

@@ -7,3 +7,7 @@ type TokenURIResp struct{
 	AnimationURL string `json:"animation_url"`
 	Attributes interface{} `json:"attributes"`
 }
+
+type TokenTraitsResp struct{
+	Attributes interface{} `json:"attributes"`
+}
