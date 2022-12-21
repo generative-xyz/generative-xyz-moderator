@@ -30,7 +30,10 @@ type redisCache struct {
 func NewRedisCache(cfg config.RedisConfig) *redisCache {
 	r := new(redisCache)
 	ctx := context.Background()
-	redisDB, _ := strconv.Atoi( cfg.DB)
+	redisDB, err := strconv.Atoi( cfg.DB)
+	if err != nil {
+		panic(err)
+	}
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Address,
 		Password: cfg.Password, // no password set
