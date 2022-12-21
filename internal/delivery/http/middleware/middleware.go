@@ -156,7 +156,6 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-
 		token := r.Header.Get(utils.AUTH_TOKEN)
 		if token == "" {
 			err := errors.New("token is empty")
@@ -165,8 +164,10 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 			return
 		}
 
+		token = helpers.ReplaceToken(token)
+
 		//TODO implement here
-		p, err := m.usecase.UserProfile(span, token)
+		p, err := m.usecase.ValidateAccessToken(span, token)
 		if err != nil {
 			log.Error("cannot_verify_token", "token cannot be verified", err)
 			m.response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
@@ -180,7 +181,7 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		
  
 		m.cache.SetData( helpers.GenerateCachedProfileKey(token), p)
-		m.cache.SetStringData(helpers.GenerateUserKey(token), p.ID)
+		m.cache.SetStringData(helpers.GenerateUserKey(token), p.Uid)
 		//log.SetTag(utils.EMAIL_TAG, p.Email)
 		//log.SetTag(utils.WALLET_ADDRESS_TAG, p.WalletAddress)
 
@@ -188,7 +189,7 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, utils.AUTH_TOKEN, token)
 		ctx = context.WithValue(ctx, utils.SIGNED_WALLET_ADDRESS, p.WalletAddress)
 		//ctx = context.WithValue(ctx, utils.SIGNED_EMAIL, p.Email)
-		ctx = context.WithValue(ctx, utils.SIGNED_USER_ID, p.ID)
+		ctx = context.WithValue(ctx, utils.SIGNED_USER_ID, p.Uid)
 		wrapped := wrapResponseWriter(w)
 		next.ServeHTTP(wrapped, r.WithContext(ctx))
 	}
