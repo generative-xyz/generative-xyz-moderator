@@ -42,7 +42,15 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 		}
 	}
 
+	// tokenUri, err := u.getTokenInfo(span, req)
+	// if err != nil {
+	// 	log.Error("u.getTokenInfo", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	isUpdate := false
 	if tokenUri.ParsedAttributes == nil  {
+		isUpdate = true
 		cctx, cancel := chromedp.NewContext(context.Background())
 		defer cancel()
 		
@@ -66,18 +74,10 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 			attrs = append(attrs, attr)
 		}
 		tokenUri.ParsedAttributes = attrs
-
-		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
-		if err != nil {
-			log.Error("u.Repo.UpdateOne", err.Error(), err)
-			return nil, err
-		}
-		log.SetData("updated", updated)
-
-		return tokenUri, nil
 	}
 	
 	if tokenUri.ParsedImage == nil  {
+		isUpdate = true
 		var buf []byte
 		cctx, cancel := chromedp.NewContext(context.Background())
 		defer cancel()
@@ -95,15 +95,18 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 		}
 
 		tokenUri.ParsedImage = &image
+		
+	}
+
+	if isUpdate {
 		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
 		if err != nil {
 			log.Error("u.Repo.UpdateOne", err.Error(), err)
 			return nil, err
 		}
 		log.SetData("updated", updated)
-		return tokenUri, nil
 	}
-
+	
 	return tokenUri, nil
 }
 
