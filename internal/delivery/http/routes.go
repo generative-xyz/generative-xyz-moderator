@@ -30,6 +30,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api := h.Handler.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
+	api.HandleFunc("/project/{contractAddress}/{projectID}", h.projectDetail).Methods("GET")
 	
 	v1 := api.PathPrefix("/v1").Subrouter()
 	v1.HandleFunc("/", h.healthCheck).Methods("GET")

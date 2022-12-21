@@ -105,6 +105,37 @@ info:
   title: 'Autonomous: OG Device APIs server.'
   version: 1.0.0
 paths:
+  /project/{contractAddress}/{projectID}:
+    get:
+      consumes:
+      - application/json
+      description: get project's detail
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenTraitsResp'
+              type: object
+      summary: get project's detail
+      tags:
+      - token_uri
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
