@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/opentracing/opentracing-go"
@@ -25,8 +26,7 @@ import (
 func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-
-	log.SetData("req", req)
+	
 	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -181,13 +181,22 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span,  req structure.GetToken
 		return nil, err
 	}
 
-	nftProjectDetail, err := u.getNftContractDetail(client, addr, req.TokenID)
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(req.TokenID, 10)
+	if !ok {
+		err := errors.New("Cannot convert tokenID")
+		return nil, err
+	}
+	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
+	nftProjectDetail, err := u.getNftContractDetail(client, addr, *projectID)
 	if err != nil {
 		log.Error("u.getNftContractDetail", err.Error(), err)
 		return nil, err
 	}
 
-	parentAddr := nftProjectDetail.GenNFTAddr
+	nftProject := nftProjectDetail.ProjectDetail
+	parentAddr := nftProject.GenNFTAddr
+	spew.Dump(parentAddr.String())
 	tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr,  req.TokenID)
 	if err != nil {
 		log.Error("u.getNftProjectTokenUri", err.Error(), err)
@@ -223,25 +232,100 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span,  req structure.GetToken
 	return dataObject, nil
 }
 
-func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*generative_project_contract.NFTProjectProject, error) {
-	tokenID := new(big.Int)
-	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
-	if !ok {
-		err := errors.New("Cannot convert tokenID")
-		return nil, err
-	}
-
+func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
 		return nil, err
 	}
 
-	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
-	proDetail, err := gProject.ProjectDetails(nil,  projectID)
-	if err != nil {
-		return nil, err
+	pDchan := make(chan structure.ProjectDetailChan, 1)
+	pStatuschan := make(chan structure.ProjectStatusChan, 1)
+	pTokenURIchan := make(chan structure.ProjectNftTokenUriChan, 1)
+
+	go func(pDchan chan structure.ProjectDetailChan, projectID *big.Int) {
+		proDetail := &generative_project_contract.NFTProjectProject{}
+		var err error
+
+		defer func ()  {
+			pDchan <- structure.ProjectDetailChan{
+				ProjectDetail: proDetail,
+				Err:  err,
+			}
+		}()
+
+		proDetailReps, err := gProject.ProjectDetails(nil,  projectID)
+		if err != nil {
+			return 
+		}
+
+		proDetail = &proDetailReps
+
+	}(pDchan, &projectID)
+
+	go func(pDchan chan structure.ProjectStatusChan, projectID *big.Int) {
+		var status *bool
+		var err error
+
+		defer func ()  {
+			pDchan <- structure.ProjectStatusChan{
+				Status: status,
+				Err:  err,
+			}
+		}()
+
+		pStatus, err := gProject.ProjectStatus(nil,  projectID)
+		if err != nil {
+			return 
+		}
+
+		status = &pStatus
+
+	}(pStatuschan, &projectID)
+
+	go func(pDchan chan structure.ProjectNftTokenUriChan, projectID *big.Int) {
+		var tokenURI *string
+		var err error
+
+		defer func ()  {
+			pDchan <- structure.ProjectNftTokenUriChan{
+				TokenURI: tokenURI,
+				Err:  err,
+			}
+		}()
+
+		pTokenUri, err := gProject.TokenURI(nil,  projectID)
+		if err != nil {
+			return 
+		}
+
+		tokenURI = &pTokenUri
+
+	}(pTokenURIchan, &projectID)
+
+
+	detailFromChain := <-  pDchan
+	statusFromChain := <-  pStatuschan
+	tokenFromChain := <-  pTokenURIchan
+
+	if detailFromChain.Err != nil {
+		return nil, detailFromChain.Err
 	}
-	return &proDetail, nil
+	
+	if statusFromChain.Err != nil {
+		return nil, statusFromChain.Err
+	}
+	
+	if tokenFromChain.Err != nil {
+		return nil, tokenFromChain.Err
+	}
+
+	resp := &structure.ProjectDetail{
+		ProjectDetail: detailFromChain.ProjectDetail,
+		Status: *statusFromChain.Status,
+		NftTokenUri: *tokenFromChain.TokenURI,
+	}
+		
+	return resp, nil
 }
 
 func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
@@ -263,4 +347,50 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 	}
 
 	return &value, nil
+}
+
+func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+	span, log := u.StartSpan("GetTokenTraits", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
+	
+	data, err := u.Cache.GetData(contractDataKey)
+	if err != nil {
+		log.SetData("req", req)
+		chainURL := os.Getenv("CHAIN_URL")
+		addr := common.HexToAddress(req.ContractAddress)
+
+		log.SetData("chainURL", chainURL)
+		// call to contract to get emotion
+		client, err := ethclient.Dial(chainURL)
+		if err != nil {
+			log.Error("ethclient.Dial", err.Error(), err)
+			return nil, err
+		}
+
+		projectID := new(big.Int)
+		projectID, ok := projectID.SetString(req.ProjectID, 10)
+		if !ok {
+			err := errors.New("Cannot convert tokenID")
+			return nil, err
+		}
+		contractDetail, err := u.getNftContractDetail(client, addr, *projectID)
+		if err != nil {
+			log.Error("u.getNftContractDetail", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("contractDetail", contractDetail)
+		u.Cache.SetData(contractDataKey, contractDetail)
+		return contractDetail, nil
+	}
+
+	bytes := []byte(*data)
+	contractDetail := &structure.ProjectDetail{}
+	err = json.Unmarshal(bytes, contractDetail)
+	if err != nil {
+		log.Error("json.Unmarshal", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("cached.ContractDetail", contractDetail)
+	return contractDetail, nil
 }
