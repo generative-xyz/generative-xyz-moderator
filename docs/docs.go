@@ -628,7 +628,7 @@ var SwaggerInfo = swaggerInfo{
 	Host:        "",
 	BasePath:    "/rederinghub.io/v1",
 	Schemes:     []string{},
-	Title:       "Autonomous: OG Device APIs server.",
+	Title:       "Generative.xyz APIs",
 	Description: "This is a sample server Autonomous devices management server.",
 }
 

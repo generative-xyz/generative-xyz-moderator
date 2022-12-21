@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "description": "This is a sample server Autonomous devices management server.",
-        "title": "Autonomous: OG Device APIs server.",
+        "title": "Generative.xyz APIs",
         "contact": {},
         "version": "1.0.0"
     },
