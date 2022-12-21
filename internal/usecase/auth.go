@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -184,7 +183,7 @@ func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer s
 	return isVerified, nil
 }
 
-func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*structure.ProfileResponse, error) {
+func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*entity.Users, error) {
 	span, log := u.StartSpan("UserProfile", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
@@ -197,11 +196,10 @@ func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*struct
 
 
 	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
-	resp :=  u.profileToResp(user)
-	return &resp, nil
+	return user, nil
 }
 
-func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, data structure.UpdateProfile) (*structure.ProfileResponse, error) {
+func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, data structure.UpdateProfile) (*entity.Users, error) {
 	span, log := u.StartSpan("UserProfile", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
@@ -233,9 +231,7 @@ func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, da
 	}
 
 	log.SetData("updated", updated)
-
-	resp :=  u.profileToResp(user)
-	return &resp, nil
+	return user, nil
 }
 
 
@@ -251,29 +247,4 @@ func  (u Usecase) Logout(rootSpan opentracing.Span, accessToken string) (bool, e
 	}
 	
 	return true, nil
-}
-
-func (u Usecase) profileToResp(profile *entity.Users) structure.ProfileResponse {
-	domain := os.Getenv("API_DOMAIN")
-
-	profileAvatar := os.Getenv("DEFAUTL_AVATAR")
-	if profile.Avatar != "" {
-		profileAvatar = profile.Avatar
-	}
-	avatarURL := fmt.Sprintf("%s/files/%s", domain, profileAvatar)
-
-	
-	addr := profile.WalletAddress
-	walletAddresses := []string{}
-	walletAddresses = append(walletAddresses, addr)
-	
-	resp := structure.ProfileResponse{
-		ID: profile.UUID,
-		DisplayName: profile.DisplayName,
-		Bio: profile.Bio,
-		Avatar: avatarURL,
-	}
-
-	
-	return resp
 }

@@ -16,7 +16,7 @@ import (
 // @Produce  json
 // @Param contractAddress path string true "contract address"
 // @Param tokenID path string true "token ID"
-// @Success 200 {object} response.JsonResponse{data=response.GeneratedMessage}
+// @Success 200 {object} response.JsonResponse{data=response.TokenURIResp}
 // @Router /token/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenURI", r)
@@ -40,7 +40,15 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp := response.TokenURIResp{
+		Name: message.Name,
+		Description: message.Description,
+		Image: message.Image,
+		AnimationURL: message.AnimationURL,
+		Attributes: message.ParsedAttributes,
+	}
+
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, message, "")
+	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }

@@ -15,6 +15,12 @@ type TokenUri struct {
 	Image string `bson:"image" json:"image"`
 	AnimationURL string `bson:"animation_url" json:"animation_url"`
 	Attributes string `bson:"attributes" json:"attributes"`
+	ParsedAttributes []TokenUriAttr `bson:"parsed_attributes" json:"parsed_attributes"`
+}
+
+type TokenUriAttr struct {
+	TraitType string `bson:"trait_type" json:"trait_type"`
+	Value interface{} `bson:"value" json:"value"`
 }
 
 func (u TokenUri) TableName() string { 

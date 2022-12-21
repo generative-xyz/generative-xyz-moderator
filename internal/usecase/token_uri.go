@@ -21,7 +21,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*structure.GetTokenMessageResp, error) {
+func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
@@ -40,14 +40,19 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 			return nil, err
 		}
 	}
+
+	if tokenUri.ParsedAttributes != nil  {
+		return tokenUri, nil
+	}
+
 	
 	cctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
-
-	var res interface{}
+	
+	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.Navigate(tokenUri.AnimationURL),
-		chromedp.EvaluateAsDevTools("window.$generativeTraits",&res),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits",&traits),
 	)
 
 	if err != nil {
@@ -55,9 +60,23 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 		return nil, err
 	}
 
-	log.SetData("res", res)
-	resp := &structure.GetTokenMessageResp{}
-	return resp, nil
+	attrs := []entity.TokenUriAttr{}
+	for key, item := range traits {
+		attr := entity.TokenUriAttr{}
+		attr.TraitType = key
+		attr.Value = item
+		
+		attrs = append(attrs, attr)
+	}
+	tokenUri.ParsedAttributes = attrs
+
+	updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
+	if err != nil {
+		log.Error("u.Repo.UpdateOne", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("updated", updated)
+	return tokenUri, nil
 }
 
 func (u Usecase) getTokenInfo(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*entity.TokenUri, error) {

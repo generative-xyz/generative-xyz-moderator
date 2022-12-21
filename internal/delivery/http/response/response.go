@@ -4,10 +4,30 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/tracer"
 
+	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 )
+
+type IResponse interface {
+	SetID(string)
+	GetID() string
+}
+
+
+type BaseResponse struct {
+	ID        string                  `json:"id"`
+}
+
+func (p *BaseResponse) SetID(ID string) {
+	p.ID = ID
+}
+
+func (p BaseResponse) GetID() string {
+	return p.ID
+}
 
 type IHttpResponse interface {
 	RespondWithError(w http.ResponseWriter, httpCode int, appCode int, payload error)
@@ -119,4 +139,13 @@ func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode i
 	if err != nil {
 		panic(err)
 	}
+}
+
+func CopyEntityToRes(toValue IResponse, from entity.IEntity) error {
+	err := copier.Copy(toValue, from)
+	if err != nil {
+		return err
+	}
+	toValue.SetID(from.GetID())
+	return nil
 }
