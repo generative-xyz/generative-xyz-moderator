@@ -31,31 +31,10 @@ RUN echo "✅ Build for Linux"; make build
 # Distribution
 FROM alpine:latest
 
-RUN apk upgrade --no-cache --available \
-    && apk add --no-cache \
-      chromium \
-      ttf-freefont \
-      font-noto-emoji \
-    && apk add --no-cache \
-      --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing \
-      font-wqy-zenheis
-
-
 RUN apk update && apk upgrade && \
     apk --update --no-cache add tzdata && \
     mkdir /app 
 
-RUN  adduser -D chrome \
-    && chown -R chrome:chrome /app
-
-USER chrome
-
 WORKDIR /app 
-
-ENV CHROME_BIN=/usr/bin/chromium-browser \
-    CHROME_PATH=/usr/lib/chromium/
-
-# Autorun chrome headless
-ENTRYPOINT ["chromium-browser", "--headless", "--use-gl=swiftshader", "--disable-software-rasterizer", "--disable-dev-shm-usage"]
 
 COPY --from=builder /app/backend-api /app
