@@ -89,7 +89,10 @@ func NewConfig() (*Config, error) {
 	godotenv.Load()
 	services := make(map[string]string)
 	isDebug,  _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	timeOut, _ := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
+	timeOut, err := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
+	if err != nil {
+		panic(err)
+	}
 	
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{

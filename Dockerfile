@@ -1,7 +1,8 @@
-FROM amd64/golang:1.17.0-alpine as builder
+FROM golang:1.18 as builder
 
-RUN apk update && apk upgrade && \
-    apk --update add git make gcc g++ gnutls gnutls-dev gnutls-c++
+RUN apt-get -y update && apt-get -y upgrade && \
+    apt-get -y install git && \
+    apt-get -y install make 
 
 ARG ENV=dev
 ARG NETRC_USER=user
@@ -29,11 +30,13 @@ RUN  go mod tidy -compat=1.17
 RUN echo "✅ Build for Linux"; make build
 
 # Distribution
-FROM alpine:latest
+FROM ubuntu:20.04
+RUN apt-get -y update 
+RUN apt-get -y install  software-properties-common && \
+    apt-get -y update  && \
+    apt-get -y install chromium-browser && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 
-RUN apk update && apk upgrade && \
-    apk --update --no-cache add tzdata && \
-    mkdir /app 
 
 WORKDIR /app 
 
