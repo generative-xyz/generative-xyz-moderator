@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/oauth2service"
 )
 
 
@@ -234,7 +235,6 @@ func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, da
 	return user, nil
 }
 
-
 func  (u Usecase) Logout(rootSpan opentracing.Span, accessToken string) (bool, error) {
 	span, log := u.StartSpan("Logout", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
@@ -247,4 +247,38 @@ func  (u Usecase) Logout(rootSpan opentracing.Span, accessToken string) (bool, e
 	}
 	
 	return true, nil
+}
+
+func  (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken string) (*oauth2service.SignedDetails, error) {
+	span, log := u.StartSpan("ValidateAccessToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	tokenMd5 := helpers.GenerateMd5String(accessToken)
+	
+	userID, err := u.Cache.GetData(tokenMd5)
+	if err != nil {
+		err = errors.New("Access token is invaild")
+		log.Error("u.Cache.GetData", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("cached.UserID", userID)
+	
+	//Claim wallet Address
+	claim, err := u.Auth2.ValidateToken(accessToken)
+	if err != nil {
+		log.Error("u.Auth2.ValidateToken", err.Error(), err)
+		return nil, err
+	}
+
+	if userID == nil {
+		err := errors.New("Cannot find userID")
+		log.Error("userID.Empty",err.Error(), err)
+		return nil, err
+	}
+
+	timeT := time.Unix(claim.ExpiresAt, 0)
+	log.SetData("claim.Exp", timeT)
+	log.SetData("claim", claim)
+	return claim, err
 }

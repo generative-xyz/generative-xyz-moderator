@@ -85,3 +85,10 @@ func Base64Eecode(data []byte) string {
 	sDec := b64.StdEncoding.EncodeToString(data)
     return sDec
 }
+
+func ReplaceToken(token string) string {
+	token = strings.ReplaceAll(token, "Bearer", "")
+	token = strings.ReplaceAll(token, "bearer", "")
+	token = strings.ReplaceAll(token, " ", "")
+	return token
+}
