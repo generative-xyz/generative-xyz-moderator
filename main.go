@@ -7,7 +7,9 @@ import (
 	"rederinghub.io/external/nfts"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/internal/txconsumer"
 	"rederinghub.io/internal/usecase"
+	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
 	"rederinghub.io/utils/global"
@@ -24,6 +26,7 @@ import (
 var conf *config.Config
 var logger _logger.Ilogger
 var mongoConnection connections.IConnection
+var ethClient *blockchain.Blockchain
 
 func init() {
 	c, err := config.NewConfig()
@@ -43,6 +46,12 @@ func init() {
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
 	if err != nil {
 		log.Println("Can not connect mongoDB ", err)
+		panic(err)
+	}
+
+	ethClient, err = blockchain.NewBlockchain(c.BlockchainConfig)
+	if err != nil {
+		log.Println("Can not connect to eth client ", err)
 		panic(err)
 	}
 
@@ -96,8 +105,8 @@ func startServer() {
 		Auth2: *auth2Service,
 		GCS: gcs,
 		MoralisNFT: *moralis,
+		Blockchain: *ethClient,
 	}
-
 
 	repo, err := repository.NewRepository(&g)
 	if err != nil {
@@ -115,6 +124,15 @@ func startServer() {
 	if err != nil {
 		logger.Error("Init handler failure", err)
 		return
+	}
+
+	if (conf.TxConsumerConfig.Enabled) {
+		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, conf.TxConsumerConfig)
+		if err != nil {
+			logger.Error("Failed to init tx consumer")
+			return
+		}
+		txConsumer.StartListen()
 	}
 
 	log.Println("started server and listening")

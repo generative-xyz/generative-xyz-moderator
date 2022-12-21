@@ -13,6 +13,7 @@ import (
 )
 
 type IRedisCache interface {
+	Exists(key string) (*bool, error)
 	SetData(key string, value interface{}) error
 	SetStringData(key string, value string) error
 	SetStringDataWithExpTime(key string, value string,  exipredIn int) error
@@ -103,4 +104,13 @@ func (r *redisCache) Delete(key string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *redisCache) Exists(key string) (*bool, error) {
+	value, err := r.client.Exists(key).Result()
+	if err != nil {
+		return nil, err
+	}
+	res := value > 0
+	return &res, nil
 }
