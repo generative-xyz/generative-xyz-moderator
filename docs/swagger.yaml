@@ -43,13 +43,13 @@ definitions:
         type: string
       bio:
         type: string
-      created_at:
+      createdAt:
         type: string
-      display_name:
+      displayName:
         type: string
       id:
         type: string
-      wallet_address:
+      walletAddress:
         type: string
     type: object
   response.RespondErr:
@@ -59,13 +59,29 @@ definitions:
       message:
         type: string
     type: object
+  response.TokenTraitsResp:
+    properties:
+      attributes: {}
+    type: object
+  response.TokenURIResp:
+    properties:
+      animation_url:
+        type: string
+      attributes: {}
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
   response.VerifyResponse:
     properties:
-      access_token:
+      accessToken:
         type: string
-      is_verified:
+      isVerified:
         type: boolean
-      refresh_token:
+      refreshToken:
         type: string
     type: object
 info:
@@ -74,7 +90,69 @@ info:
   title: 'Autonomous: OG Device APIs server.'
   version: 1.0.0
 paths:
-  /auth/nonce:
+  /token/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenURIResp'
+              type: object
+      summary: get token uri data
+      tags:
+      - token_uri
+  /trait/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token's traits
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenTraitsResp'
+              type: object
+      summary: get token's traits
+      tags:
+      - token_uri
+  /v1/auth/nonce:
     post:
       consumes:
       - application/json
@@ -101,7 +179,7 @@ paths:
       summary: Generate a message
       tags:
       - Auth
-  /auth/nonce/verify:
+  /v1/auth/nonce/verify:
     post:
       consumes:
       - application/json
@@ -128,7 +206,7 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
-  /profile:
+  /v1/profile:
     get:
       consumes:
       - application/json
@@ -178,7 +256,7 @@ paths:
       summary: Edit User profile
       tags:
       - Profile
-  /profile/logout:
+  /v1/profile/logout:
     post:
       consumes:
       - application/json
@@ -200,37 +278,6 @@ paths:
       summary: Logout
       tags:
       - Profile
-  /token/{contractAddress}/{tokenID}:
-    get:
-      consumes:
-      - application/json
-      description: get token uri data
-      parameters:
-      - description: contract address
-        in: path
-        name: contractAddress
-        required: true
-        type: string
-      - description: token ID
-        in: path
-        name: tokenID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.GeneratedMessage'
-              type: object
-      summary: get token uri data
-      tags:
-      - token_uri
 securityDefinitions:
   Api-Key:
     in: header

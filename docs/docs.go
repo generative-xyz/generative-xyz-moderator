@@ -23,7 +23,109 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/nonce": {
+        "/token/{contractAddress}/{tokenID}": {
+            "get": {
+                "description": "get token uri data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "token_uri"
+                ],
+                "summary": "get token uri data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.TokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/trait/{contractAddress}/{tokenID}": {
+            "get": {
+                "description": "get token's traits",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "token_uri"
+                ],
+                "summary": "get token's traits",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.TokenTraitsResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/nonce": {
             "post": {
                 "description": "Generate a message for user's wallet",
                 "consumes": [
@@ -69,7 +171,7 @@ var doc = `{
                 }
             }
         },
-        "/auth/nonce/verify": {
+        "/v1/auth/nonce/verify": {
             "post": {
                 "description": "Verified the generated message",
                 "consumes": [
@@ -115,7 +217,7 @@ var doc = `{
                 }
             }
         },
-        "/profile": {
+        "/v1/profile": {
             "get": {
                 "security": [
                     {
@@ -204,7 +306,7 @@ var doc = `{
                 }
             }
         },
-        "/profile/logout": {
+        "/v1/profile/logout": {
             "post": {
                 "security": [
                     {
@@ -235,57 +337,6 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.LogoutResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/token/{contractAddress}/{tokenID}": {
-            "get": {
-                "description": "get token uri data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "token_uri"
-                ],
-                "summary": "get token uri data",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "contract address",
-                        "name": "contractAddress",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "token ID",
-                        "name": "tokenID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.JsonResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.GeneratedMessage"
                                         }
                                     }
                                 }
@@ -364,16 +415,16 @@ var doc = `{
                 "bio": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "display_name": {
+                "displayName": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "wallet_address": {
+                "walletAddress": {
                     "type": "string"
                 }
             }
@@ -389,16 +440,40 @@ var doc = `{
                 }
             }
         },
+        "response.TokenTraitsResp": {
+            "type": "object",
+            "properties": {
+                "attributes": {}
+            }
+        },
+        "response.TokenURIResp": {
+            "type": "object",
+            "properties": {
+                "animation_url": {
+                    "type": "string"
+                },
+                "attributes": {},
+                "description": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "response.VerifyResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
+                "accessToken": {
                     "type": "string"
                 },
-                "is_verified": {
+                "isVerified": {
                     "type": "boolean"
                 },
-                "refresh_token": {
+                "refreshToken": {
                     "type": "string"
                 }
             }

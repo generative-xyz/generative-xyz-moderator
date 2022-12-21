@@ -104,7 +104,64 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 		return tokenUri, nil
 	}
 
+	return tokenUri, nil
+}
 
+func (u Usecase) GetTokenTraits(rootSpan opentracing.Span,  req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("GetTokenTraits", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	log.SetData("req", req)
+	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			tokenUri, err = u.getTokenInfo(span, req)
+			if err != nil {
+				log.Error("u.getTokenInfo", err.Error(), err)
+				return nil, err
+			}
+
+		}else{
+			log.Error("u.Repo.FindTokenBy", err.Error(), err)
+			return nil, err
+		}
+	}
+
+	if tokenUri.ParsedAttributes == nil  {
+		cctx, cancel := chromedp.NewContext(context.Background())
+		defer cancel()
+		
+		traits := make(map[string]interface{})
+		err = chromedp.Run(cctx,
+			chromedp.Navigate(tokenUri.AnimationURL),
+			chromedp.EvaluateAsDevTools("window.$generativeTraits",&traits),
+		)
+
+		if err != nil {
+			log.Error("chromedp.Run", err.Error(), err)
+			return nil, err
+		}
+
+		attrs := []entity.TokenUriAttr{}
+		for key, item := range traits {
+			attr := entity.TokenUriAttr{}
+			attr.TraitType = key
+			attr.Value = item
+			
+			attrs = append(attrs, attr)
+		}
+		tokenUri.ParsedAttributes = attrs
+
+		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
+		if err != nil {
+			log.Error("u.Repo.UpdateOne", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("updated", updated)
+
+		return tokenUri, nil
+	}
+	
 	return tokenUri, nil
 }
 
