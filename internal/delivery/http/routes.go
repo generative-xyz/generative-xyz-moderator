@@ -43,6 +43,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	singedIn.Use(h.MiddleWare.AccessToken)
 	singedIn.HandleFunc("", h.profile).Methods("GET")
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
+	singedIn.HandleFunc("/logout", h.logout).Methods("PUT")
 
 }
 

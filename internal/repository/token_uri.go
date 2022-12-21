@@ -2,9 +2,11 @@ package repository
 
 import (
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
@@ -30,4 +32,15 @@ func (r Repository) CreateTokenURI(data *entity.TokenUri) error {
 	}
 
 	return nil
+}
+
+
+func (r Repository) UpdateTokenByID(tokenUri string, updateddUser *entity.TokenUri) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, tokenUri}}
+	result, err := r.UpdateOne(updateddUser.TableName(), filter, updateddUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

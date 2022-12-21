@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 
@@ -44,7 +45,13 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 
 	log.SetData("profile", profile)
 	
-	resp := h.profileToResp(profile)
+	resp, err := h.profileToResp(profile)
+	if err != nil {
+		log.Error("h.profileToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -133,26 +140,31 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	log.SetData("input.Data", updateProfile)
 	profile, err := h.Usecase.UpdateUserProfile(span, userID, updateProfile)
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		log.Error("h.Usecase.GenerateMessage", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
 	log.SetData("updated.profile", profile)
-	resp := h.profileToResp(profile)
+	resp, err := h.profileToResp(profile)
+	if err != nil {
+		log.Error("h.profileToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
 	log.SetData("respond.profile", profile)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) profileToResp(profile *structure.ProfileResponse) response.ProfileResponse {
-	resp := response.ProfileResponse{
-		ID: profile.ID,
-		WalletAddress: profile.WalletAddress,
-		DisplayName: profile.DisplayName,
-		Bio: profile.Bio,
+func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileResponse, error) {
+	resp := &response.ProfileResponse{}
+	
+	err := response.CopyEntityToRes( resp, profile)
+	if err != nil {
+		return nil, err
 	}
-
-
-	return resp
+	
+	return resp, nil
 }

@@ -19,7 +19,7 @@ type VerifyResponse struct {
 
 
 type ProfileResponse struct {
-	ID string `json:"id"`
+	BaseResponse
 	WalletAddress string `json:"wallet_address"`
 	DisplayName string `json:"display_name"`
 	Bio string `json:"bio"`
