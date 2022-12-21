@@ -50,7 +50,7 @@ func init() {
 	mongoConnection = mongoDbConnection
 }
 
-// @title Autonomous: OG Device APIs server.
+// @title Generative.xyz APIs
 // @version 1.0.0
 // @description This is a sample server Autonomous devices management server.
 
