@@ -1,7 +1,11 @@
 package global
 
 import (
+<<<<<<< HEAD
 	"rederinghub.io/external/nfts"
+=======
+	"rederinghub.io/utils/blockchain"
+>>>>>>> add tx-consumer
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/googlecloud"
@@ -25,4 +29,5 @@ type Global struct {
 	Auth2 oauth2service.Auth2
 	GCS           googlecloud.IGcstorage
 	MoralisNFT nfts.MoralisNfts
+	Blockchain blockchain.Blockchain
 }

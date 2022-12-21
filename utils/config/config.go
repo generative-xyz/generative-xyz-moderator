@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -22,6 +23,8 @@ type Config struct {
 	MQTTConfig     MQTTConfig
 	Gcs       *GCS
 	Moralis MoralisConfig
+	BlockchainConfig BlockchainConfig
+	TxConsumerConfig TxConsumerConfig
 }
 
 type MQTTConfig struct {
@@ -84,12 +87,25 @@ type RedisConfig struct {
 	ENV      string
 }
 
+
 type Chain struct {
 	ID  int
 	Name string
 	FullName string
 	Currency       string
 	CurrencyLogo       string
+}
+
+type BlockchainConfig struct {
+	ETHEndpoint string
+}
+
+type TxConsumerConfig struct {
+	Enabled bool
+	StartBlock int64
+	CronJobPeriod int32
+	BatchLogSize int32
+	Addresses []string
 }
 
 func NewConfig() (*Config, error) {
@@ -101,6 +117,15 @@ func NewConfig() (*Config, error) {
 		panic(err)
 	}
 	
+	timeOut, _ := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
+
+	// tx consumer config
+	enabled, _ := strconv.ParseBool(os.Getenv("TX_CONSUMER_ENABLED"))
+	startBlock, _ := strconv.Atoi(os.Getenv("TX_CONSUMER_START_BLOCK"))
+	cronJobPeriod, _ := strconv.Atoi(os.Getenv("TX_CONSUMER_CRON_JOB_PERIOD"))
+	batchLogSize, _ := strconv.Atoi(os.Getenv("TX_CONSUMER_BATCH_LOG_SIZE"))
+	addresses := strings.Split(os.Getenv("TX_CONSUMER_ADDRESSES"), ",")
+
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -141,6 +166,15 @@ func NewConfig() (*Config, error) {
 			Key: os.Getenv("MORALIS_KEY"),
 			URL: os.Getenv("MORALIS_API_URL"),
 			Chain: os.Getenv("MORALIS_CHAIN"),
+		BlockchainConfig: BlockchainConfig{
+			ETHEndpoint: os.Getenv("ETH_ENDPOINT"),
+		},
+		TxConsumerConfig: TxConsumerConfig{
+			Enabled: enabled,
+			StartBlock: int64(startBlock),
+			CronJobPeriod: int32(cronJobPeriod),
+			BatchLogSize: int32(batchLogSize),
+			Addresses: addresses,
 		},
 	}
 
