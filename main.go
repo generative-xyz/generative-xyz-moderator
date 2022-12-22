@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"rederinghub.io/external/nfts"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
@@ -81,6 +82,8 @@ func startServer() {
 		return
 	}
 
+	moralis := nfts.NewMoralisNfts(conf, t, cache)
+
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
@@ -92,6 +95,7 @@ func startServer() {
 		Cache:        cache,
 		Auth2: *auth2Service,
 		GCS: gcs,
+		MoralisNFT: *moralis,
 	}
 
 

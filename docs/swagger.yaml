@@ -287,6 +287,15 @@ paths:
       - application/json
       description: get tokens by project address
       parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
       - description: contract address
         in: path
         name: contractAddress

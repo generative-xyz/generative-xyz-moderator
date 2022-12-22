@@ -21,6 +21,7 @@ type Config struct {
 	Services map[string]string
 	MQTTConfig     MQTTConfig
 	Gcs       *GCS
+	Moralis MoralisConfig
 }
 
 type MQTTConfig struct {
@@ -28,6 +29,12 @@ type MQTTConfig struct {
 	Port string
 	UserName       string
 	Password      string
+}
+
+type MoralisConfig struct {
+	Key  string
+	URL string
+	Chain string
 }
 
 
@@ -129,6 +136,11 @@ func NewConfig() (*Config, error) {
 			ProjectId: os.Getenv("GCS_PROJECT_ID"),
 			Bucket: os.Getenv("GCS_BUCKET"),
 			Auth: os.Getenv("GCS_AUTH"),
+		},
+		Moralis: MoralisConfig{
+			Key: os.Getenv("MORALIS_KEY"),
+			URL: os.Getenv("MORALIS_API_URL"),
+			Chain: os.Getenv("MORALIS_CHAIN"),
 		},
 	}
 

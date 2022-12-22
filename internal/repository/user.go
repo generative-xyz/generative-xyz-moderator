@@ -136,12 +136,12 @@ func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, er
 		return nil, err
 	}
 	
-	resp.Data = users
-	resp.Limit = p.Pagination.PerPage
+	resp.Result = users
+	//resp.Limit = p.Pagination.PerPage
 	resp.Page = p.Pagination.Page
-	resp.Next = p.Pagination.Next
-	resp.Prev = p.Pagination.Prev
-	resp.TotalPage = p.Pagination.TotalPage
+	// resp.Next = p.Pagination.Next
+	// resp.Prev = p.Pagination.Prev
+	// resp.TotalPage = p.Pagination.TotalPage
 	resp.Total = p.Pagination.Total
 	return resp, nil
 }
