@@ -87,7 +87,46 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	
 	log.SetData("resp.project", project)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
+}
+
+// UserCredits godoc
+// @Summary get projects
+// @Description get projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Param contractAddress path string true "contract address"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project [GET]
+func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("projects", r)
+	defer h.Tracer.FinishSpan(span, log )
+	var err error
+	vars := mux.Vars(r)
+	contractAddress := vars["contractAddress"]
+	span.SetTag("contractAddress", contractAddress)
+	limitInt := 10
+
+	limit := r.URL.Query().Get("limit")
+	cursor := r.URL.Query().Get("cursor")
+	if limit != "" {
+		limitInt, err = strconv.Atoi(limit)
+		if err != nil {
+			log.Error("strconv.Atoi.limit", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+	}
+
+	_ = limitInt
+	_ = cursor
+
+	
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondWithoutContainer(w, http.StatusOK, nil)
 }
 
 // UserCredits godoc
@@ -153,7 +192,7 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 
 	resp := h.PaginationResp(data, respItems)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
 func (h *httpDelivery) projectToResp(input structure.ProjectDetail) (*response.ProjectResp, error) {
