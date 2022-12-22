@@ -15,7 +15,7 @@ import (
 // @Param file formData file true "file"
 // @Produce  multipart/form-data
 // @Success 200 {object} response.JsonResponse{data=response.FileRes}
-// @Router /v1/files [POST]
+// @Router /files [POST]
 func (h *httpDelivery) UploadFile(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.UploadFile", r)
 	defer h.Tracer.FinishSpan(span, log )

@@ -21,7 +21,7 @@ import (
 // @Produce  json
 // @Security Authorization
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
-// @Router /v1/profile [GET]
+// @Router /profile [GET]
 func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.profile", r)
 	defer h.Tracer.FinishSpan(span, log )
@@ -64,7 +64,7 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Security Authorization
 // @Success 200 {object} response.JsonResponse{data=response.LogoutResponse}
-// @Router /v1/profile/logout [POST]
+// @Router /profile/logout [POST]
 func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.logout", r)
 	defer h.Tracer.FinishSpan(span, log )
@@ -108,7 +108,7 @@ func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 // @Security Authorization
 // @Param request body request.UpdateProfileRequest true "Update profile request"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
-// @Router /v1/profile [PUT]
+// @Router /profile [PUT]
 func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.updateProfile", r)
 	defer h.Tracer.FinishSpan(span, log )

@@ -1,5 +1,7 @@
 basePath: /rederinghub.io/v1
 definitions:
+  request.CreateProjectReq:
+    type: object
   request.GenerateMessageRequest:
     properties:
       address:
@@ -105,6 +107,158 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /auth/nonce:
+    post:
+      consumes:
+      - application/json
+      description: Generate a message for user's wallet
+      parameters:
+      - description: Generate message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.GenerateMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneratedMessage'
+              type: object
+      summary: Generate a message
+      tags:
+      - Auth
+  /auth/nonce/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verified the generated message
+      parameters:
+      - description: Verify message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VerifyMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.VerifyResponse'
+              type: object
+      summary: Verified the generated message
+      tags:
+      - Auth
+  /files:
+    post:
+      description: Upload file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload file
+      tags:
+      - Files
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: User profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: User profile
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Edit User profile
+      parameters:
+      - description: Update profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Edit User profile
+      tags:
+      - Profile
+  /profile/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.LogoutResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Logout
+      tags:
+      - Profile
   /project/{contractAddress}/{projectID}:
     get:
       consumes:
@@ -127,15 +281,32 @@ paths:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.TokenTraitsResp'
-              type: object
+            $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
       tags:
-      - token_uri
+      - Project
+  /projects:
+    post:
+      consumes:
+      - application/json
+      description: Get projects
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Get projects
+      tags:
+      - Project
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
@@ -198,158 +369,6 @@ paths:
       summary: get token's traits
       tags:
       - token_uri
-  /v1/auth/nonce:
-    post:
-      consumes:
-      - application/json
-      description: Generate a message for user's wallet
-      parameters:
-      - description: Generate message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.GenerateMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.GeneratedMessage'
-              type: object
-      summary: Generate a message
-      tags:
-      - Auth
-  /v1/auth/nonce/verify:
-    post:
-      consumes:
-      - application/json
-      description: Verified the generated message
-      parameters:
-      - description: Verify message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.VerifyMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.VerifyResponse'
-              type: object
-      summary: Verified the generated message
-      tags:
-      - Auth
-  /v1/files:
-    post:
-      description: Upload file
-      parameters:
-      - description: file
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - multipart/form-data
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.FileRes'
-              type: object
-      security:
-      - Authorization: []
-      summary: Upload file
-      tags:
-      - Files
-  /v1/profile:
-    get:
-      consumes:
-      - application/json
-      description: User profile
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.ProfileResponse'
-              type: object
-      security:
-      - Authorization: []
-      summary: User profile
-      tags:
-      - Profile
-    put:
-      consumes:
-      - application/json
-      description: Edit User profile
-      parameters:
-      - description: Update profile request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.UpdateProfileRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.ProfileResponse'
-              type: object
-      security:
-      - Authorization: []
-      summary: Edit User profile
-      tags:
-      - Profile
-  /v1/profile/logout:
-    post:
-      consumes:
-      - application/json
-      description: Logout
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.LogoutResponse'
-              type: object
-      security:
-      - Authorization: []
-      summary: Logout
-      tags:
-      - Profile
 securityDefinitions:
   Api-Key:
     in: header
