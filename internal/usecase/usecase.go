@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
@@ -25,6 +26,7 @@ type Usecase struct {
 	MqttClient mqttClient.IDeviceMqtt
 	Auth2 oauth2service.Auth2
 	GCS           googlecloud.IGcstorage
+	MoralisNft nfts.MoralisNfts
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -37,11 +39,12 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.Cache = global.Cache
 	u.Auth2 = global.Auth2
 	u.GCS = global.GCS
+	u.MoralisNft = global.MoralisNFT
 	return u, nil
 }
 
 func (uc *Usecase) Version() string {
-	return "OG-API Server - version 1"
+	return "Generateve-API Server - version 1"
 }
 
 func (uc *Usecase) SetSpan(span opentracing.Span) {

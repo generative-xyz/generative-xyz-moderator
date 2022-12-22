@@ -339,6 +339,18 @@ var doc = `{
                 "summary": "get project's tokens",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "contract address",
                         "name": "contractAddress",

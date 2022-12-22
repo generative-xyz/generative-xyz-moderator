@@ -30,12 +30,9 @@ type BaseFilters struct {
 }
 
 type Pagination struct {
-	Data interface{}
-	Page int64
-	TotalPage int64
-	Next int64
-	Prev int64
-	Limit int64
-	Total int64
-	Currsor string
+	Result interface{} 
+	Page int64 
+	PageSize int64 
+	Total int64 
+	Currsor string 
 }

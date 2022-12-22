@@ -1,6 +1,7 @@
 package global
 
 import (
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/googlecloud"
@@ -23,4 +24,5 @@ type Global struct {
 	Tracer       tracer.ITracer
 	Auth2 oauth2service.Auth2
 	GCS           googlecloud.IGcstorage
+	MoralisNFT nfts.MoralisNfts
 }

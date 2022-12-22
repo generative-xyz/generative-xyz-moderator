@@ -1,10 +1,13 @@
 package http
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 )
@@ -64,7 +67,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	projectID := vars["projectID"]
 	span.SetTag("projectID", projectID)
 
-	message, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+	project, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
 		ContractAddress: contractAddress,
 		ProjectID: projectID,
 	})
@@ -75,17 +78,14 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := &response.ProjectResp{}
-	err = copier.Copy(resp, message.ProjectDetail)
+	resp, err := h.projectToResp(*project)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		log.Error(" h.projectToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-	resp.Status = message.Status
-	resp.NftTokenURI = message.NftTokenUri
 	
-	log.SetData("resp.message", message)
+	log.SetData("resp.project", project)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
@@ -96,19 +96,73 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Tags Project
 // @Accept  json
 // @Produce  json
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Param contractAddress path string true "contract address"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens [GET]
 func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projectTokens", r)
 	defer h.Tracer.FinishSpan(span, log )
-
+	var err error
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
-	
+	limitInt := 10
 
+	limit := r.URL.Query().Get("limit")
+	cursor := r.URL.Query().Get("cursor")
+	if limit != "" {
+		limitInt, err = strconv.Atoi(limit)
+		if err != nil {
+			log.Error("strconv.Atoi.limit", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+	}
+	
+	data, err := h.Usecase.GetTokensByContract(span, contractAddress, nfts.MoralisFilter{
+		Limit: &limitInt,
+		Cursor: &cursor,
+	})
+	if err != nil {
+		log.Error("h.Usecase.GetTokensByContract", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	respItems := []response.ProjectResp{}
+	iProjectData := data.Result
+	projectsData, ok := (iProjectData).([]structure.ProjectDetail)
+	if !ok {
+		err := errors.New( "Cannot parse products")
+		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	for _, project := range projectsData {	
+		resp, err := h.projectToResp(project)
+		if err != nil {
+			log.Error(" h.projectToResp", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		respItems = append(respItems, *resp)
+	}
+
+	resp := h.PaginationResp(data, respItems)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondWithoutContainer(w, http.StatusOK, nil)
+	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
+}
+
+func (h *httpDelivery) projectToResp(input structure.ProjectDetail) (*response.ProjectResp, error) {
+	resp := &response.ProjectResp{}
+	err := copier.Copy(resp, input.ProjectDetail)
+	if err != nil {
+		return nil, err
+	}
+	resp.Status = input.Status
+	resp.NftTokenURI = input.NftTokenUri
+	return resp, nil
 }
