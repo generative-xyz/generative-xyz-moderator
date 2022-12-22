@@ -32,21 +32,21 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
 	api.HandleFunc("/project/{contractAddress}/{projectID}", h.projectDetail).Methods("GET")
 	
-	v1 := api.PathPrefix("/v1").Subrouter()
-	v1.HandleFunc("/", h.healthCheck).Methods("GET")
+	//v1 := api.PathPrefix("/v1").Subrouter()
+	api.HandleFunc("/", h.healthCheck).Methods("GET")
 
 	//auth
-	auth := v1.PathPrefix("/auth").Subrouter()
+	auth := api.PathPrefix("/auth").Subrouter()
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
-	files := v1.PathPrefix("/files").Subrouter()
+	files := api.PathPrefix("/files").Subrouter()
 	// files.Use(h.MiddleWare.AccessToken)
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	
 
 	//profile
-	singedIn := v1.PathPrefix("/profile").Subrouter()
+	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
 	singedIn.HandleFunc("", h.profile).Methods("GET")
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
