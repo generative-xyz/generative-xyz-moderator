@@ -42,15 +42,15 @@ definitions:
     type: object
   response.FileRes:
     properties:
-      file_name:
+      fileName:
         type: string
-      file_size:
+      fileSize:
         type: integer
       id:
         type: string
-      mime_type:
+      mimeType:
         type: string
-      uploaded_by:
+      uploadedBy:
         type: string
       url:
         type: string
@@ -119,6 +119,20 @@ definitions:
         type: boolean
       refreshToken:
         type: string
+    type: object
+  structure.FileContentReq:
+    properties:
+      content:
+        type: string
+      mediaType:
+        type: string
+    type: object
+  structure.MinifyDataResp:
+    properties:
+      files:
+        additionalProperties:
+          $ref: '#/definitions/structure.FileContentReq'
+        type: object
     type: object
 info:
   contact: {}
@@ -288,6 +302,31 @@ paths:
         type: file
       produces:
       - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload file
+      tags:
+      - Files
+  /files/minify:
+    post:
+      description: Upload file
+      parameters:
+      - description: Data for minify
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/structure.MinifyDataResp'
       responses:
         "200":
           description: OK
