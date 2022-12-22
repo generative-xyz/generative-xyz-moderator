@@ -1,11 +1,16 @@
 package usecase
 
 import (
+	"os"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/opentracing/opentracing-go"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 )
 
 func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateProjectReq) (*entity.Projects, error) {
@@ -22,18 +27,44 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 	span, log := u.StartSpan("CreateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
+	chainURL := os.Getenv("CHAIN_URL")
+	log.SetData("chainURL", chainURL)
+	// call to contract to get emotion
+	client, err := ethclient.Dial(chainURL)
+	if err != nil {
+		log.Error("ethclient.Dial", err.Error(), err)
+		return nil, err
+	}
+
+	contractAddr :=  common.HexToAddress(contractAddress)
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		return nil, err
+	}
+
+	project, err := gNft.Project(nil)
+	if err != nil {
+		log.Error("gNft.Project", err.Error(), err)
+		return nil, err
+	}
+	parentAddr := project.ProjectAddr
+
 	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
 	if err != nil {
 		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
 		return nil, err
 	}
-
+	parentAddrStr :=  parentAddr.String()
 	result := []entity.TokenUri{}
 	for _, item := range resp.Result {
-		//tokenUri := item.TokenUri
-		_ = item
-
-		
+		tokenID := item.TokenID
+		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID })
+		if err != nil {
+			log.Error("u.getTokenInfo", err.Error(), err)
+			return nil, err
+		}
+		result = append(result, *token)
 	}
 	
 	p := &entity.Pagination{}

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/opentracing/opentracing-go"
@@ -199,7 +198,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span,  req structure.GetToken
 
 	nftProject := nftProjectDetail.ProjectDetail
 	parentAddr := nftProject.GenNFTAddr
-	spew.Dump(parentAddr.String())
+	
 	tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr,  req.TokenID)
 	if err != nil {
 		log.Error("u.getNftProjectTokenUri", err.Error(), err)
@@ -304,7 +303,6 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 		tokenURI = &pTokenUri
 
 	}(pTokenURIchan, &projectID)
-
 
 	detailFromChain := <-  pDchan
 	statusFromChain := <-  pStatuschan
