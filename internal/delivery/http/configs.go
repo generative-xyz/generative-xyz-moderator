@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
 
@@ -21,9 +23,31 @@ func (h *httpDelivery) getConfigs(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getConfigs", r)
 	defer h.Tracer.FinishSpan(span, log )
 
+	data, err := h.Usecase.GetConfigs(span, structure.FilterConfigs{})
+	if err != nil {
+		log.Error("h.Usecase.GetConfigs", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp := []response.ConfigResp{}
+	iConfs := data.Result
+	confs := iConfs.([]entity.Configs)
+
+	for _, conf := range confs  {
+		respItem := &response.ConfigResp{}
+		err := response.CopyEntityToRes(respItem, &conf)
+		if err != nil {
+			log.Error("response.CopyEntityToRes", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	
+		resp = append(resp, *respItem)
+	}
 
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(data, resp), "")
 }
 
 // UserCredits godoc
@@ -55,7 +79,6 @@ func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	config, err := h.Usecase.CreateConfig(span, structure.ConfigData{
 		Key: *reqBody.Key,
 		Value: *reqBody.Value,
@@ -66,9 +89,11 @@ func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	resp := &response.ConfigResp{}
+	response.CopyEntityToRes(resp, config)
 
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, config, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -83,8 +108,14 @@ func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) deleteConfig(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("deleteConfigs", r)
 	defer h.Tracer.FinishSpan(span, log )
-
-
+	vars := mux.Vars(r)
+	key := vars["key"]
+	err := h.Usecase.DeleteConfig(span, key)
+	if err != nil {
+		log.Error("h.Usecase.DeleteConfig", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
@@ -101,9 +132,17 @@ func (h *httpDelivery) deleteConfig(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) getConfig(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getConfig", r)
 	defer h.Tracer.FinishSpan(span, log )
-
-
+	vars := mux.Vars(r)
+	key := vars["key"]
+	config, err := h.Usecase.GetConfig(span, key)
+	if err != nil {
+		log.Error("h.Usecase.GetConfig", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	resp := &response.ConfigResp{}
+	response.CopyEntityToRes(resp, config)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

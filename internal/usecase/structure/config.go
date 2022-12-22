@@ -5,8 +5,8 @@ type ConfigData struct {
 	Value string `json:"value"`
 }
 
-type FilterCoonfigs struct {
-	
+type FilterConfigs struct {
+	BaseFilters
 }
 
 
