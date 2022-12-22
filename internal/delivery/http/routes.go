@@ -30,7 +30,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api := h.Handler.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
-	api.HandleFunc("/project/{contractAddress}/{projectID}", h.projectDetail).Methods("GET")
+	
 	
 	//v1 := api.PathPrefix("/v1").Subrouter()
 	api.HandleFunc("/", h.healthCheck).Methods("GET")
@@ -52,6 +52,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
 	singedIn.HandleFunc("/logout", h.logout).Methods("PUT")
 
+	//project
+	project := api.PathPrefix("/project").Subrouter()
+	project.HandleFunc("", h.createProjects).Methods("POST")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens", h.projectTokens).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
