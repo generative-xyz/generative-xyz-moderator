@@ -259,7 +259,50 @@ paths:
       summary: Logout
       tags:
       - Profile
-  /project/{contractAddress}/{projectID}:
+  /project:
+    post:
+      consumes:
+      - application/json
+      description: Create projects
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Create project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens:
+    get:
+      consumes:
+      - application/json
+      description: get tokens by project address
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's tokens
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
       - application/json
@@ -283,28 +326,6 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
-      tags:
-      - Project
-  /projects:
-    post:
-      consumes:
-      - application/json
-      description: Get projects
-      parameters:
-      - description: Create profile request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateProjectReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: Get projects
       tags:
       - Project
   /token/{contractAddress}/{tokenID}:

@@ -10,14 +10,14 @@ import (
 )
 
 // UserCredits godoc
-// @Summary Get projects
-// @Description Get projects
+// @Summary Create project
+// @Description Create projects
 // @Tags Project
 // @Accept  json
 // @Produce  json
 // @Param request body request.CreateProjectReq true "Create profile request"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /projects [POST]
+// @Router /project [POST]
 func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.projects", r)
 	defer h.Tracer.FinishSpan(span, log )
@@ -52,7 +52,7 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Param contractAddress path string true "contract address"
 // @Param projectID path string true "token ID"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /project/{contractAddress}/{projectID} [GET]
+// @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenTrait", r)
 	defer h.Tracer.FinishSpan(span, log )
@@ -88,4 +88,27 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
+}
+
+// UserCredits godoc
+// @Summary get project's tokens
+// @Description get tokens by project address
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param contractAddress path string true "contract address"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens [GET]
+func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("projectTokens", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	vars := mux.Vars(r)
+	contractAddress := vars["contractAddress"]
+	span.SetTag("contractAddress", contractAddress)
+	
+	
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondWithoutContainer(w, http.StatusOK, nil)
 }

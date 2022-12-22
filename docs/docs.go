@@ -290,7 +290,73 @@ var doc = `{
                 }
             }
         },
-        "/project/{contractAddress}/{projectID}": {
+        "/project": {
+            "post": {
+                "description": "Create projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project",
+                "parameters": [
+                    {
+                        "description": "Create profile request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens": {
+            "get": {
+                "description": "get tokens by project address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}": {
             "get": {
                 "description": "get project's detail",
                 "consumes": [
@@ -317,40 +383,6 @@ var doc = `{
                         "name": "projectID",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/projects": {
-            "post": {
-                "description": "Get projects",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "Get projects",
-                "parameters": [
-                    {
-                        "description": "Create profile request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateProjectReq"
-                        }
                     }
                 ],
                 "responses": {
