@@ -21,6 +21,13 @@ definitions:
       signature:
         type: string
     type: object
+  response.ConfigResp:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   response.FileRes:
     properties:
       file_name:
@@ -161,6 +168,96 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
+  /configs:
+    get:
+      consumes:
+      - application/json
+      description: Get configs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: Get configs
+      tags:
+      - Configs
+    post:
+      consumes:
+      - application/json
+      description: create config
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: create config
+      tags:
+      - Configs
+  /configs/{key}:
+    delete:
+      consumes:
+      - application/json
+      description: delete config
+      parameters:
+      - description: config key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: delete config
+      tags:
+      - Configs
+    get:
+      consumes:
+      - application/json
+      description: get one config
+      parameters:
+      - description: config key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: get one config
+      tags:
+      - Configs
   /files:
     post:
       description: Upload file

@@ -58,6 +58,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.createProjects).Methods("POST")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens", h.projectTokens).Methods("GET")
+	
+	
+	//project
+	config := api.PathPrefix("/configs").Subrouter()
+	config.HandleFunc("", h.getConfigs).Methods("GET")
+	config.HandleFunc("", h.createConfig).Methods("POST")
+	config.HandleFunc("/{key}", h.getConfig).Methods("GET")
+	config.HandleFunc("/{key}", h.deleteConfig).Methods("DELETE")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
