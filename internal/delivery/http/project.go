@@ -9,6 +9,7 @@ import (
 	"github.com/jinzhu/copier"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
 
@@ -137,16 +138,16 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Param contractAddress path string true "contract address"
+// @Param genNFTAddr path string true "This is provided from Project Detail API"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /project/{contractAddress}/tokens [GET]
+// @Router /project/{genNFTAddr}/tokens [GET]
 func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projectTokens", r)
 	defer h.Tracer.FinishSpan(span, log )
 	var err error
 	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
+	genNFTAddr := vars["genNFTAddr"]
+	span.SetTag("genNFTAddr", genNFTAddr)
 	limitInt := 10
 
 	limit := r.URL.Query().Get("limit")
@@ -160,7 +161,7 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	
-	data, err := h.Usecase.GetTokensByContract(span, contractAddress, nfts.MoralisFilter{
+	data, err := h.Usecase.GetTokensByContract(span, genNFTAddr, nfts.MoralisFilter{
 		Limit: &limitInt,
 		Cursor: &cursor,
 	})
@@ -170,9 +171,9 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respItems := []response.ProjectResp{}
-	iProjectData := data.Result
-	projectsData, ok := (iProjectData).([]structure.ProjectDetail)
+	respItems := []response.TokenURIResp{}
+	iTokensData := data.Result
+	tokensData, ok := (iTokensData).([]entity.TokenUri)
 	if !ok {
 		err := errors.New( "Cannot parse products")
 		log.Error("ctx.Value.Token",  err.Error(), err)
@@ -180,14 +181,15 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, project := range projectsData {	
-		resp, err := h.projectToResp(project)
-		if err != nil {
-			log.Error(" h.projectToResp", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-			return
+	for _, token := range tokensData {	
+		resp := response.TokenURIResp{
+			Name: token.Name,
+			Description: token.Description,
+			Image: *token.ParsedImage,
+			AnimationURL: token.AnimationURL,
+			Attributes: token.ParsedAttributes,
 		}
-		respItems = append(respItems, *resp)
+		respItems = append(respItems, resp)
 	}
 
 	resp := h.PaginationResp(data, respItems)

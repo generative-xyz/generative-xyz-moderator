@@ -161,6 +161,17 @@ var doc = `{
                     "Configs"
                 ],
                 "summary": "create config",
+                "parameters": [
+                    {
+                        "description": "Create a config",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateConfigRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -520,7 +531,46 @@ var doc = `{
                 }
             }
         },
-        "/project/{contractAddress}/tokens": {
+        "/project/{contractAddress}/tokens/{projectID}": {
+            "get": {
+                "description": "get project's detail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
                 "consumes": [
@@ -548,47 +598,8 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "contract address",
-                        "name": "contractAddress",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/{contractAddress}/tokens/{projectID}": {
-            "get": {
-                "description": "get project's detail",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "get project's detail",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "contract address",
-                        "name": "contractAddress",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "token ID",
-                        "name": "projectID",
+                        "description": "This is provided from Project Detail API",
+                        "name": "genNFTAddr",
                         "in": "path",
                         "required": true
                     }
@@ -707,6 +718,21 @@ var doc = `{
         }
     },
     "definitions": {
+        "request.CreateConfigRequest": {
+            "type": "object",
+            "required": [
+                "key",
+                "value"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateProjectReq": {
             "type": "object"
         },
@@ -743,6 +769,9 @@ var doc = `{
         "response.ConfigResp": {
             "type": "object",
             "properties": {
+                "id": {
+                    "type": "string"
+                },
                 "key": {
                     "type": "string"
                 },

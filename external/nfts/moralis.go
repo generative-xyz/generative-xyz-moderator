@@ -13,6 +13,7 @@ import (
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -127,6 +128,7 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*MoralisTokensResp, error){
 	url := fmt.Sprintf("%s/%s", URLNft, contractAddr )
 	fullUrl := m.generateUrl(url, &f)
+	spew.Dump(fullUrl)
 
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {

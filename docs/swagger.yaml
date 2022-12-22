@@ -1,5 +1,15 @@
 basePath: /rederinghub.io/v1
 definitions:
+  request.CreateConfigRequest:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    required:
+    - key
+    - value
+    type: object
   request.CreateProjectReq:
     type: object
   request.GenerateMessageRequest:
@@ -23,6 +33,8 @@ definitions:
     type: object
   response.ConfigResp:
     properties:
+      id:
+        type: string
       key:
         type: string
       value:
@@ -192,6 +204,13 @@ paths:
       consumes:
       - application/json
       description: create config
+      parameters:
+      - description: Create a config
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateConfigRequest'
       produces:
       - application/json
       responses:
@@ -407,36 +426,6 @@ paths:
       summary: Create project
       tags:
       - Project
-  /project/{contractAddress}/tokens:
-    get:
-      consumes:
-      - application/json
-      description: get tokens by project address
-      parameters:
-      - description: limit
-        in: query
-        name: limit
-        type: integer
-      - description: The cursor returned in the previous response (used for getting
-          the next page).
-        in: query
-        name: cursor
-        type: string
-      - description: contract address
-        in: path
-        name: contractAddress
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: get project's tokens
-      tags:
-      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
@@ -461,6 +450,36 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
+      tags:
+      - Project
+  /project/{genNFTAddr}/tokens:
+    get:
+      consumes:
+      - application/json
+      description: get tokens by project address
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      - description: This is provided from Project Detail API
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's tokens
       tags:
       - Project
   /token/{contractAddress}/{tokenID}:

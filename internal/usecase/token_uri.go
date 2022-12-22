@@ -60,10 +60,10 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 			chromedp.EvaluateAsDevTools("window.$generativeTraits",&traits),
 		)
 
-		if err != nil {
-			log.Error("chromedp.Run", err.Error(), err)
-			return nil, err
-		}
+		// if err != nil {
+		// 	log.Error("chromedp.Run", err.Error(), err)
+		// 	return nil, err
+		// }
 
 		attrs := []entity.TokenUriAttr{}
 		for key, item := range traits {
@@ -89,10 +89,10 @@ func (u Usecase) GetToken(rootSpan opentracing.Span,  req structure.GetTokenMess
 
 		image := helpers.Base64Eecode(buf)
 		image = fmt.Sprintf("%s,%s","data:image/png;base64",image)
-		if err != nil {
-			log.Error("chromedp.ParsedImage.Run", err.Error(), err)
-			return nil, err
-		}
+		// if err != nil {
+		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
+		// 	return nil, err
+		// }
 
 		tokenUri.ParsedImage = &image
 		

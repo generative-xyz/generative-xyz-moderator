@@ -26,5 +26,5 @@ type ProjectResp struct{
 	GenNFTAddr common.Address `json:"genNFTAddr"`
 	ItemDesc string `json:"itemDesc"`
 	Status bool `json:"status"`
-	NftTokenURI string `json:"nftTokenURI"`
+	NftTokenURI string `json:"projectURI"`
 }
