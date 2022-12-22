@@ -326,6 +326,51 @@ var doc = `{
                 }
             }
         },
+        "/files/minify": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Upload file",
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload file",
+                "parameters": [
+                    {
+                        "description": "Data for minify",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/structure.MinifyDataResp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [
@@ -783,19 +828,19 @@ var doc = `{
         "response.FileRes": {
             "type": "object",
             "properties": {
-                "file_name": {
+                "fileName": {
                     "type": "string"
                 },
-                "file_size": {
+                "fileSize": {
                     "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "mime_type": {
+                "mimeType": {
                     "type": "string"
                 },
-                "uploaded_by": {
+                "uploadedBy": {
                     "type": "string"
                 },
                 "url": {
@@ -900,6 +945,28 @@ var doc = `{
                 },
                 "refreshToken": {
                     "type": "string"
+                }
+            }
+        },
+        "structure.FileContentReq": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "mediaType": {
+                    "type": "string"
+                }
+            }
+        },
+        "structure.MinifyDataResp": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/structure.FileContentReq"
+                    }
                 }
             }
         }
