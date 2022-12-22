@@ -54,6 +54,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//project
 	project := api.PathPrefix("/project").Subrouter()
+	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens", h.projectTokens).Methods("GET")

@@ -260,6 +260,35 @@ paths:
       tags:
       - Profile
   /project:
+    get:
+      consumes:
+      - application/json
+      description: get projects
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get projects
+      tags:
+      - Project
     post:
       consumes:
       - application/json
