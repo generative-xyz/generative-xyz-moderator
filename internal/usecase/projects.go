@@ -30,14 +30,10 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 
 	result := []entity.TokenUri{}
 	for _, item := range resp.Result {
-		tokenUri := item.TokenUri
+		//tokenUri := item.TokenUri
+		_ = item
 
-		parsed, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: item.TokenAddress, TokenID: item.TokenID })
-		if err != nil {
-			log.Error("u.MoralisNft.GetProjectDetail", err.Error(), err)
-			return nil, err
-		}
-		result = append(result, *parsed)
+		
 	}
 	
 	p := &entity.Pagination{}
