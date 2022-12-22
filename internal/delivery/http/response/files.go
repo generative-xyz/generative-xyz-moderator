@@ -2,9 +2,9 @@ package response
 
 type FileRes struct{
 	BaseResponse
-	FileName string `json:"file_name"`
-	UploadedBy string `json:"uploaded_by"`
+	FileName string `json:"fileName"`
+	UploadedBy string `json:"uploadedBy"`
 	URL string `json:"url"`
-	MineType     string       `json:"mime_type"`
-	FileSize     int       `json:"file_size"`
+	MineType     string       `json:"mimeType"`
+	FileSize     int       `json:"fileSize"`
 }
