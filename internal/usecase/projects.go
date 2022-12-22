@@ -28,9 +28,11 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 		return nil, err
 	}
 
-	result := []structure.ProjectDetail{}
+	result := []entity.TokenUri{}
 	for _, item := range resp.Result {
-		parsed, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: item.TokenAddress, ProjectID: item.TokenID })
+		tokenUri := item.TokenUri
+
+		parsed, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: item.TokenAddress, TokenID: item.TokenID })
 		if err != nil {
 			log.Error("u.MoralisNft.GetProjectDetail", err.Error(), err)
 			return nil, err

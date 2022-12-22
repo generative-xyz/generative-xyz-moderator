@@ -2,128 +2,44 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
-	"rederinghub.io/internal/delivery/http/response"
-	"rederinghub.io/internal/entity"
-	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
-
 	"rederinghub.io/internal/delivery/http/request"
+	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/usecase/structure"
 )
 
 // UserCredits godoc
-// @Summary User profile
-// @Description User profile
-// @Tags Profile
+// @Summary Get configs
+// @Description Get configs
+// @Tags Configs
 // @Accept  json
 // @Produce  json
-// @Security Authorization
-// @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
-// @Router /profile [GET]
-func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.profile", r)
+// @Success 200 {object} response.JsonResponse{data=response.ConfigResp}
+// @Router /configs [GET]
+func (h *httpDelivery) getConfigs(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getConfigs", r)
 	defer h.Tracer.FinishSpan(span, log )
 
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		err := errors.New( "Token is incorect")
-		log.Error("ctx.Value.Token",  err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	profile, err := h.Usecase.UserProfile(span, userID)
-	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
-	log.SetData("profile", profile)
-	
-	resp, err := h.profileToResp(profile)
-	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
 
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 // UserCredits godoc
-// @Summary Logout
-// @Description Logout
-// @Tags Profile
+// @Summary create config
+// @Description create config
+// @Tags Configs
 // @Accept  json
 // @Produce  json
-// @Security Authorization
-// @Success 200 {object} response.JsonResponse{data=response.LogoutResponse}
-// @Router /profile/logout [POST]
-func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.logout", r)
+// @Param request body request.CreateConfigRequest true "Create a config"
+// @Success 200 {object} response.JsonResponse{data=response.ConfigResp}
+// @Router /configs [POST]
+func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("createConfig", r)
 	defer h.Tracer.FinishSpan(span, log )
 
-	ctx := r.Context()
-	iToken := ctx.Value(utils.AUTH_TOKEN)
-	token, ok := iToken.(string)
-	if !ok {
-		err := errors.New( "Token is incorect")
-		log.Error("ctx.Value.Token",  err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	isLogedOut, err := h.Usecase.Logout(span, token)
-	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
-	msg := "Logout successfully"
-	if !isLogedOut {
-		msg = "Fail! Cannot logout"
-	}
-
-	resp := response.LogoutResponse{
-		Message:  msg,
-	}
-
-	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
-}
-
-// UserCredits godoc
-// @Summary Edit User profile
-// @Description Edit User profile
-// @Tags Profile
-// @Accept  json
-// @Produce  json
-// @Security Authorization
-// @Param request body request.UpdateProfileRequest true "Update profile request"
-// @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
-// @Router /profile [PUT]
-func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.updateProfile", r)
-	defer h.Tracer.FinishSpan(span, log )
-
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		err := errors.New( "Token is incorect")
-		log.Error("ctx.Value.Token",  err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	var reqBody request.UpdateProfileRequest
+	var reqBody request.CreateConfigRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
@@ -132,39 +48,62 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateProfile := structure.UpdateProfile{
-		Bio: reqBody.Bio,
-		DisplayName: reqBody.DisplayName,
-	}
-
-	log.SetData("input.Data", updateProfile)
-	profile, err := h.Usecase.UpdateUserProfile(span, userID, updateProfile)
+	err = reqBody.Validate()
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		log.Error("reqBody.Validate", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("updated.profile", profile)
-	resp, err := h.profileToResp(profile)
+
+	config, err := h.Usecase.CreateConfig(span, structure.ConfigData{
+		Key: *reqBody.Key,
+		Value: *reqBody.Value,
+	})
+
 	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		log.Error("h.Usecase.CreateConfig", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("respond.profile", profile)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, config, "")
 }
 
-func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileResponse, error) {
-	resp := &response.ProfileResponse{}
-	
-	err := response.CopyEntityToRes( resp, profile)
-	if err != nil {
-		return nil, err
-	}
-	
-	return resp, nil
+// UserCredits godoc
+// @Summary delete config
+// @Description delete config
+// @Tags Configs
+// @Accept  json
+// @Produce  json
+// @Param key path string true "config key"
+// @Success 200 {object} response.JsonResponse{data=response.ConfigResp}
+// @Router /configs/{key} [DELETE]
+func (h *httpDelivery) deleteConfig(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("deleteConfigs", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
+
+// UserCredits godoc
+// @Summary get one config
+// @Description get one config
+// @Tags Configs
+// @Accept  json
+// @Produce  json
+// @Param key path string true "config key"
+// @Success 200 {object} response.JsonResponse{data=response.ConfigResp}
+// @Router /configs/{key} [GET]
+func (h *httpDelivery) getConfig(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getConfig", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+}
+
