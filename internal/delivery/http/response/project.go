@@ -8,6 +8,8 @@ import (
 
 
 type ProjectResp struct{
+	ContractAddress string `json:"contractAddress"`
+	TokenID string `json:"tokenID"`
 	MaxSupply big.Int `json:"maxSupply"`
 	Limit big.Int `json:"limit"`
 	MintPrice string `json:"mintPrice"`
