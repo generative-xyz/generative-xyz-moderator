@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-)
-
-const (
-	TRANSFER_NFT_SIGNATURE = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 )
 
 type HttpTxConsumer struct {
@@ -28,9 +26,10 @@ type HttpTxConsumer struct {
 	Cache redis.IRedisCache
 	Logger logger.Ilogger
 	RedisKey string
+	Usecase    usecase.Usecase
 }
 
-func NewHttpTxConsumer(global *global.Global, cfg config.TxConsumerConfig) (*HttpTxConsumer, error) {
+func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.TxConsumerConfig) (*HttpTxConsumer, error) {
 	txConsumer := new(HttpTxConsumer)
 	txConsumer.DefaultLastProcessedBlock = cfg.StartBlock
 	txConsumer.CronJobPeriod = cfg.CronJobPeriod
@@ -44,6 +43,7 @@ func NewHttpTxConsumer(global *global.Global, cfg config.TxConsumerConfig) (*Htt
 	txConsumer.Logger = global.Logger
 	txConsumer.Blockchain = global.Blockchain
 	txConsumer.RedisKey = "tx-consumer"
+	txConsumer.Usecase = uc
 	return txConsumer, nil
 }
 
@@ -52,13 +52,14 @@ func (c *HttpTxConsumer) getRedisKey() string {
 }
 
 func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
+	lastProcessed := c.DefaultLastProcessedBlock
+	
 	redisKey := c.getRedisKey()
-
 	exists, err := c.Cache.Exists(redisKey)
 	if err != nil {
 		return 0, err
 	}
-	lastProcessed := c.DefaultLastProcessedBlock
+	
 	if *exists {
 		processed, err := c.Cache.GetData(redisKey)
 		if err != nil {
@@ -92,22 +93,17 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock + int64(c.BatchLogSize))))
-
-
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
-
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		return err
 	}
 
 	for _, log := range logs {
-		fmt.Println(log.Address)
-		fmt.Println(log.Topics[0])
+
 		// do switch case with log.Address and log.Topics
-		if log.Topics[0].String() == TRANSFER_NFT_SIGNATURE {
-			fmt.Println(log.Topics)
-			// 
+		if log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
+			c.Usecase.UpdateProjectWithListener(log)
 		}
 	}
 

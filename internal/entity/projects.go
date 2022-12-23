@@ -15,6 +15,7 @@ type Projects struct {
 	MintPrice string `bson:"mintPrice"`
 	Name string `bson:"name"`
 	CreatorName string `bson:"creatorName"`
+	CreatorAddrr string `bson:"creatorAddress"`
 	Description string `bson:"description"`
 	Thumbnail string `bson:"thumbnail"`
 	ThirdPartyScripts []string `bson:"thirdPartyScripts"`
@@ -31,10 +32,12 @@ type Projects struct {
 	SocialMedium string `bson:"socialMedium"`
 	SocialInstagram string `bson:"socialInstagram"`
 	License string `bson:"license"`
+	GenNFTAddr string `bson:"genNFTAddr"`
 	MintTokenAddress string `bson:"mintTokenAddress"`
 	Hash string `bson:"hash"`
 	Tags []string `bson:"tags"`
 	Categories []string `bson:"categories"`
+	Status bool `bson:"status"`
 }
 
 type FilterProjects struct {

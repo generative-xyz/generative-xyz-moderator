@@ -56,3 +56,9 @@ func (uc *Usecase) StartSpan(name string,  rootSpan opentracing.Span) (opentraci
 	log := tracer.NewTraceLog()
 	return span, log
 }
+
+func (uc *Usecase) StartSpanWithoutRoot(name string) (opentracing.Span, *tracer.TraceLog) {
+	span := uc.Tracer.StartSpan(name)
+	log := tracer.NewTraceLog()
+	return span, log
+}

@@ -116,8 +116,6 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		panic(err)
 	}
-	
-	timeOut, _ := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
 
 	// tx consumer config
 	enabled, _ := strconv.ParseBool(os.Getenv("TX_CONSUMER_ENABLED"))
@@ -166,6 +164,7 @@ func NewConfig() (*Config, error) {
 			Key: os.Getenv("MORALIS_KEY"),
 			URL: os.Getenv("MORALIS_API_URL"),
 			Chain: os.Getenv("MORALIS_CHAIN"),
+		},
 		BlockchainConfig: BlockchainConfig{
 			ETHEndpoint: os.Getenv("ETH_ENDPOINT"),
 		},

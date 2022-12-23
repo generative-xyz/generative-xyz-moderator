@@ -96,3 +96,10 @@ func ReplaceToken(token string) string {
 func ProjectDetailKey(contractAddr string, tokenID string) string {
 	return fmt.Sprintf("project_detail_%s_%s",contractAddr, tokenID)
 }
+
+func HexaNumberToInteger(hexaString string) string {
+    // replace 0x or 0X with empty String  
+    numberStr := strings.Replace(hexaString, "0x", "", -1)
+    numberStr = strings.Replace(numberStr, "0X", "", -1)
+    return numberStr
+}

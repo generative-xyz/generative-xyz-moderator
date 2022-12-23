@@ -127,12 +127,15 @@ func startServer() {
 	}
 
 	if (conf.TxConsumerConfig.Enabled) {
-		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, conf.TxConsumerConfig)
+		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, *uc, conf.TxConsumerConfig)
 		if err != nil {
 			logger.Error("Failed to init tx consumer")
 			return
 		}
-		txConsumer.StartListen()
+		go func (txConsumer *txconsumer.HttpTxConsumer)  {
+			txConsumer.StartListen()
+		}(txConsumer)
+		
 	}
 
 	log.Println("started server and listening")

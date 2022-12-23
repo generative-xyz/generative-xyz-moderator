@@ -1,11 +1,8 @@
 package global
 
 import (
-<<<<<<< HEAD
 	"rederinghub.io/external/nfts"
-=======
 	"rederinghub.io/utils/blockchain"
->>>>>>> add tx-consumer
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/googlecloud"
