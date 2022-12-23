@@ -1,8 +1,8 @@
 package request
 
 type RefreshTokenData struct {
-	RefreshToken  string `json:"refresh_token"`
-	RedirectUri string `json:"redirect_uri"`
+	RefreshToken  string `json:"refreshToken"`
+	RedirectUri string `json:"redirectUri"`
 }
 
 type GenerateMessageRequest struct {
@@ -15,7 +15,8 @@ type VerifyMessageRequest struct {
 }
 
 type UpdateProfileRequest struct {
-	DisplayName *string `json:"display_name"`
+	DisplayName *string `json:"displayName"`
 	Bio *string `json:"bio"`
+	Avatar *string `json:"avatar"`
 }
 
