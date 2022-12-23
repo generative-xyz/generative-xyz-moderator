@@ -16,61 +16,13 @@ definitions:
         items:
           type: string
         type: array
-      creatorName:
-        type: string
-      description:
-        type: string
-      hash:
-        type: string
-      license:
-        type: string
-      limitSupply:
-        type: integer
-      maxSupply:
-        type: integer
-      mintFee:
-        type: integer
-      mintPrice:
-        type: string
-      mintTokenAddress:
-        type: string
-      name:
-        type: string
-      openMintUnixTimestamp:
-        type: integer
-      reservationList:
-        items:
-          type: string
-        type: array
-      royalty:
-        type: integer
-      scripts:
-        items:
-          type: string
-        type: array
-      socialDiscord:
-        type: string
-      socialInstagram:
-        type: string
-      socialMedium:
-        type: string
-      socialTwitter:
-        type: string
-      socialWeb:
-        type: string
-      styles:
+      contractAddress:
         type: string
       tags:
         items:
           type: string
         type: array
-      thirdPartyScripts:
-        items:
-          type: string
-        type: array
-      thumbnail:
-        type: string
-      tokenDescription:
+      tokenID:
         type: string
     type: object
   request.GenerateMessageRequest:
