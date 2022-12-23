@@ -350,8 +350,8 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 	return &value, nil
 }
 
-func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
-	span, log := u.StartSpan(fmt.Sprintf("GetProjectDetail.%s.%s", req.ContractAddress, req.ProjectID), rootSpan)
+func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+	span, log := u.StartSpan("getProjectDetailFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 	

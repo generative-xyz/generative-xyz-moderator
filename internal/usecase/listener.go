@@ -96,7 +96,7 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 			}
 		}()
 
-		projectDetail, err = u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+		projectDetail, err = u.getProjectDetailFromChain(span, structure.GetProjectDetailMessageReq{
 			ContractAddress:  contractAddr,
 			ProjectID:  tokenIDStr,
 		})
