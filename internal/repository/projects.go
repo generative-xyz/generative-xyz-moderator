@@ -23,7 +23,7 @@ func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
-func (r Repository) CreateProjectURI(data *entity.Projects) error {
+func (r Repository) CreateProject(data *entity.Projects) error {
 
 	err := r.InsertOne(data.TableName(), data)
 	if err != nil {
@@ -33,3 +33,18 @@ func (r Repository) CreateProjectURI(data *entity.Projects) error {
 	return nil
 }
 
+func (r Repository) ListProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
+	confs := []entity.Configs{}
+	resp := &entity.Pagination{}
+	f := bson.M{}
+
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	return resp, nil
+}

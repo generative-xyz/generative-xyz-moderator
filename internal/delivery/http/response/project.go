@@ -10,7 +10,7 @@ import (
 type ProjectResp struct{
 	MaxSupply big.Int `json:"maxSupply"`
 	Limit big.Int `json:"limit"`
-	MintPrice big.Int `json:"mintPrice"`
+	MintPrice string `json:"mintPrice"`
 	MintPriceAddr common.Address `json:"mintPriceAddr"`
 	Name string `json:"name"`
 	Creator string `json:"creator"`

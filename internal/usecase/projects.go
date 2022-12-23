@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 
 	"rederinghub.io/external/nfts"
@@ -16,10 +17,21 @@ import (
 func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("CreateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-	resp := &entity.Projects{}
-	
+	pe := &entity.Projects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
 
-	return resp, nil
+	err = u.Repo.CreateProject(pe)
+	if err != nil {
+		log.Error("u.Repo.CreateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("pe",pe)
+	return pe, nil
 }
 
 
