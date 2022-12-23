@@ -38,6 +38,7 @@ type Projects struct {
 	Tags []string `bson:"tags"`
 	Categories []string `bson:"categories"`
 	Status bool `bson:"status"`
+	NftTokenUri string `bson:"nftTokenUri"`
 }
 
 type FilterProjects struct {

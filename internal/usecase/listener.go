@@ -149,6 +149,9 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	project.SocialDiscord = projectDetail.ProjectDetail.Social.Discord
 	project.SocialMedium = projectDetail.ProjectDetail.Social.Medium
 	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
+	project.Thumbnail = projectDetail.ProjectDetail.Image
+	project.NftTokenUri = projectDetail.NftTokenUri
+
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		log.Error(" u.UpdateProject", err.Error(), err)
