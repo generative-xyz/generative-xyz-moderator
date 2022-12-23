@@ -34,7 +34,6 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateP
 	return pe, nil
 }
 
-
 func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
 	span, log := u.StartSpan("CreateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
@@ -95,4 +94,24 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span,  req structure.UpdateP
 	
 
 	return resp, nil
+}
+
+func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetProjects", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		log.Error("u.Repo.CreateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("projects",projects)
+	return projects, nil
 }

@@ -115,9 +115,9 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Tags Project
 // @Accept  json
 // @Produce  json
+// @Param contractAddress query string false "Filter project via contract address"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Param contractAddress path string true "contract address"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]
 func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
@@ -140,12 +140,33 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = limitInt
-	_ = cursor
+	f := structure.FilterProjects{}
+	f.Limit = int64(limitInt)
+	f.Cursor = cursor
+	uProjects, err := h.Usecase.GetProjects(span, f)
+	if err != nil {
+		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
 
-	
+	pResp :=  []response.ProjectResp{}
+	iProjects := uProjects.Result
+	projects := iProjects.([]entity.Projects)
+	for _, project := range projects {
+		p := &response.ProjectResp{}
+		err = copier.Copy(p, project)
+		if err != nil {
+			log.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *p)
+	}
+
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondWithoutContainer(w, http.StatusOK, nil)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
 // UserCredits godoc

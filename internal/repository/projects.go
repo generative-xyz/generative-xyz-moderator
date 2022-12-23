@@ -74,8 +74,8 @@ func (r Repository) UpdateProject( data *entity.Projects) error {
 	return nil
 }
 
-func (r Repository) ListProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
-	confs := []entity.Configs{}
+func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
+	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
