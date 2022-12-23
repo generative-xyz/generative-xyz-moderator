@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -97,14 +96,14 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.projectToResp(*project)
+	resp, err := h.projectToResp(project)
 	if err != nil {
 		log.Error(" h.projectToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 	
-	log.SetData("resp.project", project)
+	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
@@ -155,7 +154,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	projects := iProjects.([]entity.Projects)
 	for _, project := range projects {
 		p := &response.ProjectResp{}
-		err = copier.Copy(p, project)
+		err = response.CopyEntityToRes(p, &project)
 		if err != nil {
 			log.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
@@ -236,14 +235,24 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
-func (h *httpDelivery) projectToResp(input structure.ProjectDetail) (*response.ProjectResp, error) {
+func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectResp, error) {
 	resp := &response.ProjectResp{}
-	err := copier.Copy(resp, input.ProjectDetail)
-	if err != nil {
-		return nil, err
-	}
-	resp.MintPrice = fmt.Sprintf("%d", input.ProjectDetail.MintPrice)
-	resp.Status = input.Status
+	social := make(map[string]string)
+	response.CopyEntityToRes(resp, input)
+	resp.MintPriceAddr = input.MintTokenAddress
+	resp.Limit = input.LimitSupply
+	resp.Creator = input.CreatorName
+	resp.CreatorAddr = input.CreatorAddrr
+	resp.Desc = input.Description
+	resp.ItemDesc = input.Description
+	resp.License = input.License
+	resp.Image = input.Thumbnail
+	resp.ScriptType = input.ThirdPartyScripts
 	resp.NftTokenURI = input.NftTokenUri
+	social["web"] = input.SocialWeb
+	social["twitter"] = input.SocialTwitter
+	social["discord"] = input.SocialDiscord
+	social["medium"] = input.SocialMedium
+	social["instagram"] = input.SocialInstagram
 	return resp, nil
 }

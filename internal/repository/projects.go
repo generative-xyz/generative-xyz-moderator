@@ -70,6 +70,8 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	if err != nil {
 		return nil, err
 	}
+
+	_ = r.Cache.SetData(helpers.ProjectDetailKey(data.ContractAddress, data.TokenID), data)
 	return result, nil
 }
 

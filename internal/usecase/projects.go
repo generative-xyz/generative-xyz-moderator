@@ -115,3 +115,16 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterPro
 	log.SetData("projects",projects)
 	return projects, nil
 }
+
+func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	span, log := u.StartSpan("GetProjectDetail", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	c, err := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
+	if err != nil {
+		log.Error("u.Repo.FindProjectBy", err.Error(), err)
+		return nil, err
+	}
+	
+	return c, nil
+}
