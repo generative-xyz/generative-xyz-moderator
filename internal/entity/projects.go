@@ -8,6 +8,10 @@ import (
 
 type Projects struct {
 	BaseEntity`bson:",inline"`
+	ContractAddress string `bson:"contractAddress"`
+	TokenID string `bson:"tokenID"`
+	Tags []string `bson:"tags"`
+	Categories []string `bson:"categories"`
 }
 
 type FilterProjects struct {

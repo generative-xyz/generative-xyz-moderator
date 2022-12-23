@@ -1,13 +1,16 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -26,9 +29,24 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.projects", r)
 	defer h.Tracer.FinishSpan(span, log )
 
-	message, err := h.Usecase.CreateProject(span, structure.CreateProjectReq{
-	
-	})
+	var reqBody request.CreateProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.CreateProjectReq{}
+	err = copier.Copy(reqUsecase, reqBody)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	message, err := h.Usecase.CreateProject(span, *reqUsecase)
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
@@ -44,7 +62,7 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -203,6 +221,7 @@ func (h *httpDelivery) projectToResp(input structure.ProjectDetail) (*response.P
 	if err != nil {
 		return nil, err
 	}
+	resp.MintPrice = fmt.Sprintf("%d", input.ProjectDetail.MintPrice)
 	resp.Status = input.Status
 	resp.NftTokenURI = input.NftTokenUri
 	return resp, nil
