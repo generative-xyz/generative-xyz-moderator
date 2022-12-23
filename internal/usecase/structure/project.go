@@ -1,5 +1,9 @@
 package structure
 
+type FilterProjects struct {
+	BaseFilters
+}
+
 type CreateProjectReq struct {
 	ContractAddress string `json:"contractAddress"`
 	TokenID string `json:"tokenID"`
