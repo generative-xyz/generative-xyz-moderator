@@ -515,6 +515,12 @@ var doc = `{
                 "summary": "get projects",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
@@ -525,13 +531,6 @@ var doc = `{
                         "description": "The cursor returned in the previous response (used for getting the next page).",
                         "name": "cursor",
                         "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "contract address",
-                        "name": "contractAddress",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {

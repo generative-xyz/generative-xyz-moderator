@@ -433,6 +433,10 @@ paths:
       - application/json
       description: get projects
       parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
       - description: limit
         in: query
         name: limit
@@ -441,11 +445,6 @@ paths:
           the next page).
         in: query
         name: cursor
-        type: string
-      - description: contract address
-        in: path
-        name: contractAddress
-        required: true
         type: string
       produces:
       - application/json
