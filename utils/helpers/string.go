@@ -92,3 +92,7 @@ func ReplaceToken(token string) string {
 	token = strings.ReplaceAll(token, " ", "")
 	return token
 }
+
+func ProjectDetailKey(contractAddr string, tokenID string) string {
+	return fmt.Sprintf("project_detail_%s_%s",contractAddr, tokenID)
+}

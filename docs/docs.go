@@ -787,70 +787,7 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "creatorName": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "hash": {
-                    "type": "string"
-                },
-                "license": {
-                    "type": "string"
-                },
-                "limitSupply": {
-                    "type": "integer"
-                },
-                "maxSupply": {
-                    "type": "integer"
-                },
-                "mintFee": {
-                    "type": "integer"
-                },
-                "mintPrice": {
-                    "type": "string"
-                },
-                "mintTokenAddress": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "openMintUnixTimestamp": {
-                    "type": "integer"
-                },
-                "reservationList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "royalty": {
-                    "type": "integer"
-                },
-                "scripts": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "socialDiscord": {
-                    "type": "string"
-                },
-                "socialInstagram": {
-                    "type": "string"
-                },
-                "socialMedium": {
-                    "type": "string"
-                },
-                "socialTwitter": {
-                    "type": "string"
-                },
-                "socialWeb": {
-                    "type": "string"
-                },
-                "styles": {
+                "contractAddress": {
                     "type": "string"
                 },
                 "tags": {
@@ -859,16 +796,7 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "thirdPartyScripts": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "thumbnail": {
-                    "type": "string"
-                },
-                "tokenDescription": {
+                "tokenID": {
                     "type": "string"
                 }
             }
