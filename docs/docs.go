@@ -811,10 +811,13 @@ var doc = `{
         "request.UpdateProfileRequest": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "bio": {
                     "type": "string"
                 },
-                "display_name": {
+                "displayName": {
                     "type": "string"
                 }
             }

@@ -46,20 +46,19 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message, err := h.Usecase.CreateProject(span, *reqUsecase)
-
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-
-	resp := &response.ProjectResp{}
-	err = copier.Copy(resp, message)
+	
+	resp, err  := h.projectToResp(message)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		log.Error("h.projectToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
+
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -153,8 +152,8 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
 	for _, project := range projects {
-		p := &response.ProjectResp{}
-		err = response.CopyEntityToRes(p, &project)
+
+		p, err := h.projectToResp(&project)
 		if err != nil {
 			log.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)

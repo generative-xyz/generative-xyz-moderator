@@ -32,9 +32,11 @@ definitions:
     type: object
   request.UpdateProfileRequest:
     properties:
+      avatar:
+        type: string
       bio:
         type: string
-      display_name:
+      displayName:
         type: string
     type: object
   request.VerifyMessageRequest:
