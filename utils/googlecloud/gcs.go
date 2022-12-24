@@ -85,7 +85,7 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 		fname = fname[strLen-8 : strLen]
 	}
 
-	fname = fmt.Sprintf("%d-%s", now, fname)
+	fname = fmt.Sprintf("upload/%d-%s", now, fname)
 
 	fmt.Printf("Uploaded File: %+v\n", file.FileHeader.Filename)
 	fmt.Printf("File Size: %+v\n", file.FileHeader.Size)
@@ -135,7 +135,7 @@ func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 	defer cancel()
 
 	// create reader
-	r, err := g.bucket.Object(fileName).NewReader(ctx)
+	r, err := g.bucket.Object(fmt.Sprintf("upload/%s",fileName)).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
