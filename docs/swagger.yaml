@@ -1,5 +1,12 @@
 basePath: /rederinghub.io/v1
 definitions:
+  request.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
   request.CreateConfigRequest:
     properties:
       key:
@@ -44,6 +51,13 @@ definitions:
       address:
         type: string
       signature:
+        type: string
+    type: object
+  response.CategoryResp:
+    properties:
+      id:
+        type: string
+      name:
         type: string
     type: object
   response.ConfigResp:
@@ -209,6 +223,134 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get Categorys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: Get Categorys
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: create Category
+      parameters:
+      - description: Create a Category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: create Category
+      tags:
+      - Categories
+  /categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete Category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: delete Category
+      tags:
+      - Categories
+    get:
+      consumes:
+      - application/json
+      description: get one Category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: get one Category
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      description: update Category
+      parameters:
+      - description: Create a Category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: update Category
+      tags:
+      - Categories
   /configs:
     get:
       consumes:

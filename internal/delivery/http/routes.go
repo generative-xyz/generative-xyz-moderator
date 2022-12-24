@@ -60,12 +60,21 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{genNFTAddr}/tokens", h.projectTokens).Methods("GET")
 	
 	
-	//project
+	//configs
 	config := api.PathPrefix("/configs").Subrouter()
 	config.HandleFunc("", h.getConfigs).Methods("GET")
 	config.HandleFunc("", h.createConfig).Methods("POST")
 	config.HandleFunc("/{key}", h.getConfig).Methods("GET")
 	config.HandleFunc("/{key}", h.deleteConfig).Methods("DELETE")
+	
+	
+	//categories
+	categories := api.PathPrefix("/categories").Subrouter()
+	categories.HandleFunc("", h.getCategories).Methods("GET")
+	categories.HandleFunc("", h.createCategory).Methods("POST")
+	categories.HandleFunc("/{id}", h.getCategory).Methods("GET")
+	categories.HandleFunc("/{id}", h.updateCategory).Methods("PUT")
+	categories.HandleFunc("/{id}", h.deleteCategory).Methods("DELETE")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

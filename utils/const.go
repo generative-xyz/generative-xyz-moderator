@@ -52,6 +52,7 @@ const (
 	COLLECTION_FILES string = "files"
 	COLLECTION_PROJECTS string = "projects"
 	COLLECTION_CONFIGS string = "configs"
+	COLLECTION_CATEGORIES string = "categories"
 )
 
 type PubSubSendOtp struct {
