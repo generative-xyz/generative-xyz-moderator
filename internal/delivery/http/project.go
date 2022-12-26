@@ -253,5 +253,10 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	social["discord"] = input.SocialDiscord
 	social["medium"] = input.SocialMedium
 	social["instagram"] = input.SocialInstagram
+	resp.MintingInfo = response.NftMintingDetail{
+		Index: input.MintingInfo.Index,
+		IndexReserve: input.MintingInfo.IndexReverse,
+	}
+	resp.Royalty = input.Royalty
 	return resp, nil
 }

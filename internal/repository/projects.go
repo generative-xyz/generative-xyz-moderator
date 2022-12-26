@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"strings"
 
 	"rederinghub.io/internal/entity"
@@ -28,38 +29,36 @@ func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
 func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
-	// p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
-	// if err != nil {
-	// 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"contractAddress", contractAddress}, {"tokenid", tokenID}})
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
+	go r.findProjectBy(contractAddress, tokenID)
 	
-	// 	err = helpers.Transform(usr, resp)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return resp, nil
-	// }
+	p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
+	if err != nil {
+		return r.findProjectBy(contractAddress, tokenID)
+	}
 
-	// bytes := []byte(*p)
-	// err = json.Unmarshal(bytes, resp)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	bytes := []byte(*p)
+	err = json.Unmarshal(bytes, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
 
+func (r Repository) findProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
+	contractAddress = strings.ToLower(contractAddress)
+	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"contractAddress", contractAddress}, {"tokenid", tokenID}})
-		if err != nil {
-			return nil, err
-		}
-	
-		err = helpers.Transform(usr, resp)
-		if err != nil {
-			return nil, err
-		}
-		return resp, nil
+	if err != nil {
+		return nil, err
+	}
 
-	//return resp, nil
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	
+	r.Cache.SetData(helpers.ProjectDetailKey(contractAddress, tokenID), resp)
+	return resp, nil
 }
 
 func (r Repository) CreateProject(data *entity.Projects) error {

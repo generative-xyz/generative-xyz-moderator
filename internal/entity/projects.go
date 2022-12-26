@@ -40,6 +40,12 @@ type Projects struct {
 	Status bool `bson:"status"`
 	NftTokenUri string `bson:"nftTokenUri"`
 	IsSynced bool `bson:"isSynced"`
+	MintingInfo ProjectMintingInfo `bson:",inline"`
+}
+
+type	ProjectMintingInfo struct {
+	Index int64 `bson:"index"`
+	IndexReverse int64 `bson:"indexReverse"`
 }
 
 type FilterProjects struct {
