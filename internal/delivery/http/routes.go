@@ -31,6 +31,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
 	
+	//api
+	tokens := h.Handler.PathPrefix("/tokens").Subrouter()
+	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
+	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
+	
 	
 	//v1 := api.PathPrefix("/v1").Subrouter()
 	api.HandleFunc("/", h.healthCheck).Methods("GET")
@@ -66,7 +71,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	config.HandleFunc("", h.createConfig).Methods("POST")
 	config.HandleFunc("/{key}", h.getConfig).Methods("GET")
 	config.HandleFunc("/{key}", h.deleteConfig).Methods("DELETE")
-	
 	
 	//categories
 	categories := api.PathPrefix("/categories").Subrouter()

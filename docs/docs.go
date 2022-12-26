@@ -884,7 +884,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "token_uri"
+                    "Token for Opensea"
                 ],
                 "summary": "get token uri data",
                 "parameters": [
@@ -925,6 +925,108 @@ var doc = `{
                 }
             }
         },
+        "/tokens/traits/{contractAddress}/{tokenID}": {
+            "get": {
+                "description": "get token's traits",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "get token's traits",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenTraitsResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/{contractAddress}/{tokenID}": {
+            "get": {
+                "description": "get token uri data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "get token uri data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/trait/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token's traits",
@@ -935,7 +1037,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "token_uri"
+                    "Token for Opensea"
                 ],
                 "summary": "get token's traits",
                 "parameters": [
@@ -1112,6 +1214,30 @@ var doc = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.InternalTokenTraitsResp": {
+            "type": "object",
+            "properties": {
+                "attributes": {}
+            }
+        },
+        "response.InternalTokenURIResp": {
+            "type": "object",
+            "properties": {
+                "animationUrl": {
+                    "type": "string"
+                },
+                "attributes": {},
+                "description": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
