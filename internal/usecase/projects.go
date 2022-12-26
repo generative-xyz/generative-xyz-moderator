@@ -146,8 +146,9 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 		}
 		u.Cache.SetData(key, p)
 	}
+	
+	cached, err = u.Cache.GetData(key)
 	projects := []entity.Projects{}
-
 	bytes := []byte(*cached)
 	err = json.Unmarshal(bytes, &projects)
 	if err != nil {
