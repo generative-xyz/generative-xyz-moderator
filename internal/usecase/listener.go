@@ -32,15 +32,23 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	log.SetData("chainLog", chainLog)
 	topics := chainLog.Topics
 
-	pChan := make(chan projectChan, 1)
-	pDChan := make(chan projectDetailChan, 1)
+	
 	
 	tokenIDStr :=  helpers.HexaNumberToInteger(topics[3].String())
 	tokenID, _ := strconv.Atoi(tokenIDStr)
-
-	contractAddr := strings.ToLower(chainLog.Address.String()) 
 	tokenIDStr = fmt.Sprintf("%d",tokenID)
+	contractAddr := strings.ToLower(chainLog.Address.String()) 
 
+	u.UpdateProjectFromChain(contractAddr, tokenIDStr)
+}
+
+func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) (*entity.Projects, error) {
+	span, log := u.StartSpanWithoutRoot("UpdateProjectWithListener.GetProjectDetail")
+	defer u.Tracer.FinishSpan(span, log )
+
+	pChan := make(chan projectChan, 1)
+	pDChan := make(chan projectDetailChan, 1)
+	
 	log.SetData("contractAddr", contractAddr)
 	log.SetData("tokenIDStr", tokenIDStr)
 
@@ -114,13 +122,13 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	err := projectFChan.Err 
 	if err != nil {
 		log.Error("projectFChan.Err ", err.Error(), err)
-		return
+		return nil, err
 	}
 
 	err = projectDetailFChan.Err
 	if err != nil {
 		log.Error("projectDetailFChan.Err ", err.Error(), err)
-		return
+		return nil, err
 	}
 
 	project := projectFChan.Data
@@ -137,7 +145,7 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	project.ThirdPartyScripts= projectDetail.ProjectDetail.ScriptType
 	project.Styles= projectDetail.ProjectDetail.Styles
 	project.GenNFTAddr= projectDetail.ProjectDetail.GenNFTAddr.String()
-	project.Hash = txnHash
+	//project.Hash = txnHash
 	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
 	project.MaxSupply = int(projectDetail.ProjectDetail.MaxSupply.Int64())
 	project.LimitSupply = int(projectDetail.ProjectDetail.Limit.Int64())
@@ -151,14 +159,15 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
 	project.Thumbnail = projectDetail.ProjectDetail.Image
 	project.NftTokenUri = projectDetail.NftTokenUri
+	project.IsSynced = true
 
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		log.Error(" u.UpdateProject", err.Error(), err)
-		return
+		return nil, err
 	}
 
 	log.SetData("updated",updated)
-	return 
+	return  project, nil
 }
 
