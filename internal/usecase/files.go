@@ -10,13 +10,13 @@ import (
 	"strings"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/tdewolff/minify"
-	"github.com/tdewolff/minify/css"
-	"github.com/tdewolff/minify/html"
-	"github.com/tdewolff/minify/js"
-	"github.com/tdewolff/minify/json"
-	"github.com/tdewolff/minify/svg"
-	"github.com/tdewolff/minify/xml"
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/css"
+	"github.com/tdewolff/minify/v2/html"
+	"github.com/tdewolff/minify/v2/js"
+	"github.com/tdewolff/minify/v2/json"
+	"github.com/tdewolff/minify/v2/svg"
+	"github.com/tdewolff/minify/v2/xml"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -45,14 +45,13 @@ func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity
 	}
 
 	log.SetData("uploaded", uploaded)
-	
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
-		FileName:   uploaded.Name,
-		FileSize:   int(uploaded.Size),
-		MineType:   uploaded.Minetype,
-		URL:  cdnURL,
+		FileName: uploaded.Name,
+		FileSize: int(uploaded.Size),
+		MineType: uploaded.Minetype,
+		URL:      cdnURL,
 	}
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
