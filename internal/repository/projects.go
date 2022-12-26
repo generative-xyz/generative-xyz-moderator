@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 
@@ -103,4 +104,32 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	return resp, nil
+}
+
+func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error)  {
+	projects := []entity.Projects{}
+	
+	f := bson.M{}
+	f[utils.KEY_DELETED_AT] = nil
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error)  {
+	//products := &entity.Products{}
+	f := bson.M{}
+	count, err := r.DB.Collection(utils.COLLECTION_PROJECTS).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	return &count, nil
 }

@@ -175,11 +175,24 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getRandomProject", r)
 	defer h.Tracer.FinishSpan(span, log )
+	var err error
+
+	project, err := h.Usecase.GetRandomProject(span)
+	if err != nil {
+		log.Error(" h.GetRandomProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
 	
-	
+	resp, err := h.projectToResp(project)
+	if err != nil {
+		log.Error(" h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
 
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc

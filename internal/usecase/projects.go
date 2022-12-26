@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -99,15 +100,14 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span,  req structure.UpdateP
 func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetProjects", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-	pe := &entity.FilterProjects{
-		WalletAddress: req.WalletAddress,
-	}
+	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
+	pe.WalletAddress = req.WalletAddress
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
@@ -116,6 +116,34 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterPro
 
 	log.SetData("projects",projects)
 	return projects, nil
+}
+
+func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, error) {
+	span, log := u.StartSpan("GetRandomProject", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	count, err := u.Repo.CountProjects(entity.FilterProjects{})
+	if err != nil {
+		log.Error("u.Repo.CountProjects", err.Error(), err)
+		return nil, err
+	}
+
+	timeNow := time.Now().UTC().Nanosecond()
+	rand := int(timeNow) % int(*count)
+
+	//TODO - cache will be applied here
+	p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
+	if err != nil {
+		log.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+	
+	projectRand := p[rand]
+
+	return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+		ContractAddress: projectRand.ContractAddress,
+		ProjectID: projectRand.TokenID,
+	})
 }
 
 func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {

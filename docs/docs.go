@@ -718,6 +718,11 @@ var doc = `{
         },
         "/profile/projects": {
             "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "get current user's projects",
                 "consumes": [
                     "application/json"

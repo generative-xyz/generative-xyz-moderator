@@ -613,6 +613,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: get current user's projects
       tags:
       - Profile
