@@ -89,6 +89,22 @@ definitions:
       message:
         type: string
     type: object
+  response.InternalTokenTraitsResp:
+    properties:
+      attributes: {}
+    type: object
+  response.InternalTokenURIResp:
+    properties:
+      animationUrl:
+        type: string
+      attributes: {}
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
   response.JsonResponse:
     properties:
       data: {}
@@ -707,7 +723,69 @@ paths:
               type: object
       summary: get token uri data
       tags:
-      - token_uri
+      - Token for Opensea
+  /tokens/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: get token uri data
+      tags:
+      - Tokens
+  /tokens/traits/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token's traits
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenTraitsResp'
+              type: object
+      summary: get token's traits
+      tags:
+      - Tokens
   /trait/{contractAddress}/{tokenID}:
     get:
       consumes:
@@ -738,7 +816,7 @@ paths:
               type: object
       summary: get token's traits
       tags:
-      - token_uri
+      - Token for Opensea
 securityDefinitions:
   Api-Key:
     in: header
