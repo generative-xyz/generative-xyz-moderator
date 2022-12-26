@@ -88,6 +88,11 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
+	if filter.WalletAddress != nil {
+		if *filter.WalletAddress != "" {
+			f["creatorAddress"] = *filter.WalletAddress
+		}
+	}
 
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
 	if err != nil {

@@ -54,6 +54,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
 	singedIn.HandleFunc("", h.profile).Methods("GET")
+	singedIn.HandleFunc("/projects", h.getUserProjects).Methods("GET")
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
 	singedIn.HandleFunc("/logout", h.logout).Methods("PUT")
 
@@ -61,6 +62,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
+	project.HandleFunc("/random", h.getRandomProject).Methods("POST")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.projectTokens).Methods("GET")
 	
@@ -151,8 +153,14 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 		f.Sort = sortInt
 	}
 
-	f.SortBy = r.URL.Query().Get("sort_by")
+	
+	cursor := r.URL.Query().Get("cursor")
+	if cursor != "" {
+		f.Cursor = cursor
+	}
+	
 
+	f.SortBy = r.URL.Query().Get("sort_by")
 	f.Page = int64(pageInt)
 	f.Limit = int64(limitInt)
 

@@ -716,6 +716,49 @@ var doc = `{
                 }
             }
         },
+        "/profile/projects": {
+            "get": {
+                "description": "get current user's projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "get current user's projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -779,6 +822,49 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/request.CreateProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/random": {
+            "get": {
+                "description": "get the random projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get the random projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {

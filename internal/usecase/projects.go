@@ -99,7 +99,9 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span,  req structure.UpdateP
 func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetProjects", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-	pe := &entity.FilterProjects{}
+	pe := &entity.FilterProjects{
+		WalletAddress: req.WalletAddress,
+	}
 	err := copier.Copy(pe, req)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
