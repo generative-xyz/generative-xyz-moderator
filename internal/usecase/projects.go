@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/json"
 	"os"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateProjectReq) (*entity.Projects, error) {
@@ -121,25 +123,44 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterPro
 func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, error) {
 	span, log := u.StartSpan("GetRandomProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
+
 	
-	count, err := u.Repo.CountProjects(entity.FilterProjects{})
+	key := helpers.ProjectRandomKey()
+
+	//always reload data
+	go func ()  {
+		p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
+		if err != nil {
+			return 
+		}
+		u.Cache.SetData(key, p)
+	}()
+
+	
+	cached, err := u.Cache.GetData(key)
 	if err != nil {
-		log.Error("u.Repo.CountProjects", err.Error(), err)
+		p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
+		if err != nil {
+			log.Error("u.Repo.GetProjects", err.Error(), err)
+			return nil, err
+		}
+		u.Cache.SetData(key, p)
+	}
+	projects := []entity.Projects{}
+
+	bytes := []byte(*cached)
+	err = json.Unmarshal(bytes, &projects)
+	if err != nil {
+		log.Error("json.Unmarshal", err.Error(), err)
 		return nil, err
 	}
-
+	
 	timeNow := time.Now().UTC().Nanosecond()
-	rand := int(timeNow) % int(*count)
+	rand := int(timeNow) % len(projects)
 
 	//TODO - cache will be applied here
-	p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
-	if err != nil {
-		log.Error("u.Repo.GetProjects", err.Error(), err)
-		return nil, err
-	}
 	
-	projectRand := p[rand]
-
+	projectRand := projects[rand]
 	return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
 		ContractAddress: projectRand.ContractAddress,
 		ProjectID: projectRand.TokenID,

@@ -852,26 +852,6 @@ var doc = `{
                     "Project"
                 ],
                 "summary": "get the random projects",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter project via contract address",
-                        "name": "contractAddress",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "The cursor returned in the previous response (used for getting the next page).",
-                        "name": "cursor",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
