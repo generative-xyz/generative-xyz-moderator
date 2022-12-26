@@ -9,7 +9,7 @@ import (
 type Projects struct {
 	BaseEntity`bson:",inline"`
 	ContractAddress string `bson:"contractAddress"`
-	TokenID string `bsonbson:"tokenID"`
+	TokenID string `bson:"tokenid"`
 	MaxSupply int `bson:"maxSupply"`
 	LimitSupply int `bson:"limitSupply"`
 	MintPrice string `bson:"mintPrice"`
@@ -39,6 +39,7 @@ type Projects struct {
 	Categories []string `bson:"categories"`
 	Status bool `bson:"status"`
 	NftTokenUri string `bson:"nftTokenUri"`
+	IsSynced bool `bson:"isSynced"`
 }
 
 type FilterProjects struct {
