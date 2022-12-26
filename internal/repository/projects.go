@@ -28,7 +28,7 @@ func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
 
 func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
-
+	contractAddress = strings.ToLower(contractAddress)
 	p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
 	if err != nil {
 		usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"contractAddress", contractAddress}, {"tokenID", tokenID}})
