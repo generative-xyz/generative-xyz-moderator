@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -11,7 +13,7 @@ import (
 
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
 	resp := &entity.TokenUri{}
-
+	contractAddress = strings.ToLower(contractAddress)
 	usr, err := r.FilterOne(entity.TokenUri{}.TableName(), bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}})
 	if err != nil {
 		return nil, err
