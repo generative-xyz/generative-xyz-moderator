@@ -10,8 +10,8 @@ type Projects struct {
 	BaseEntity`bson:",inline"`
 	ContractAddress string `bson:"contractAddress"`
 	TokenID string `bson:"tokenid"`
-	MaxSupply int `bson:"maxSupply"`
-	LimitSupply int `bson:"limitSupply"`
+	MaxSupply int64 `bson:"maxSupply"`
+	LimitSupply int64 `bson:"limitSupply"`
 	MintPrice string `bson:"mintPrice"`
 	Name string `bson:"name"`
 	CreatorName string `bson:"creatorName"`

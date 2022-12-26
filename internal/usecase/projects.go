@@ -146,7 +146,7 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 		}
 		u.Cache.SetData(key, p)
 	}
-	
+
 	cached, err = u.Cache.GetData(key)
 	projects := []entity.Projects{}
 	bytes := []byte(*cached)
@@ -166,6 +166,27 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 		ContractAddress: projectRand.ContractAddress,
 		ProjectID: projectRand.TokenID,
 	})
+}
+
+func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetMintedOutProjects", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	pe.WalletAddress = req.WalletAddress
+	projects, err := u.Repo.GetMintedOutProjects(*pe)
+	if err != nil {
+		log.Error("u.Repo.CreateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("projects",projects)
+	return projects, nil
 }
 
 func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {

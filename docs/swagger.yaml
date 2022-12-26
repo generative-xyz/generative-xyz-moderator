@@ -724,6 +724,35 @@ paths:
       summary: get project's tokens
       tags:
       - Project
+  /project/minted-out:
+    get:
+      consumes:
+      - application/json
+      description: get minted out projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get minted out projects
+      tags:
+      - Project
   /project/random:
     get:
       consumes:

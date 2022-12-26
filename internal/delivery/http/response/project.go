@@ -5,8 +5,8 @@ type ProjectResp struct{
 	BaseResponse
 	ContractAddress string `json:"contractAddress"`
 	TokenID string `json:"tokenID"`
-	MaxSupply int `json:"maxSupply"`
-	Limit int `json:"limit"`
+	MaxSupply int64 `json:"maxSupply"`
+	Limit int64 `json:"limit"`
 	MintPrice string `json:"mintPrice"`
 	MintPriceAddr string `json:"mintPriceAddr"`
 	Name string `json:"name"`

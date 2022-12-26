@@ -824,6 +824,49 @@
                 }
             }
         },
+        "/project/minted-out": {
+            "get": {
+                "description": "get minted out projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get minted out projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/random": {
             "get": {
                 "description": "get the random projects",
