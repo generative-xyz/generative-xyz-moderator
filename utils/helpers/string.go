@@ -97,6 +97,10 @@ func ProjectDetailKey(contractAddr string, tokenID string) string {
 	return fmt.Sprintf("project_detail_%s_%s",contractAddr, tokenID)
 }
 
+func ProjectRandomKey() string {
+	return fmt.Sprintf("project_random")
+}
+
 func HexaNumberToInteger(hexaString string) string {
     // replace 0x or 0X with empty String  
     numberStr := strings.Replace(hexaString, "0x", "", -1)

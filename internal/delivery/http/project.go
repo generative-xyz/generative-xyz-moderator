@@ -167,9 +167,6 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 // @Tags Project
 // @Accept  json
 // @Produce  json
-// @Param contractAddress query string false "Filter project via contract address"
-// @Param limit query int false "limit"
-// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/random [GET]
 func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) {
