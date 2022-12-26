@@ -2,6 +2,7 @@ package structure
 
 type FilterProjects struct {
 	BaseFilters
+	WalletAddress *string
 }
 
 type CreateProjectReq struct {

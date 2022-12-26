@@ -125,22 +125,16 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	limitInt := 10
 
-	limit := r.URL.Query().Get("limit")
-	cursor := r.URL.Query().Get("cursor")
-	if limit != "" {
-		limitInt, err = strconv.Atoi(limit)
-		if err != nil {
-			log.Error("strconv.Atoi.limit", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-			return
-		}
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
 	}
 
 	f := structure.FilterProjects{}
-	f.Limit = int64(limitInt)
-	f.Cursor = cursor
+	f.BaseFilters = *baseF
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
@@ -165,6 +159,27 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}
+
+// UserCredits godoc
+// @Summary get the random projects
+// @Description get the random projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param contractAddress query string false "Filter project via contract address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/random [GET]
+func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getRandomProject", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 // UserCredits godoc

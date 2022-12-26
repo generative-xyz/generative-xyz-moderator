@@ -50,6 +50,7 @@ type	ProjectMintingInfo struct {
 
 type FilterProjects struct {
 	BaseFilters
+	WalletAddress *string
 }
 
 func (u Projects) TableName() string { 
