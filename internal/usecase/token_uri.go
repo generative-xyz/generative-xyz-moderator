@@ -222,7 +222,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span,  req structure.GetToken
 		return nil, err
 	}
 
-	dataObject.ContractAddress = req.ContractAddress
+	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.TokenID = req.TokenID
 	
 	err = u.Repo.CreateTokenURI(dataObject)

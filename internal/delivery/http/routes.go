@@ -32,7 +32,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
 	
 	//api
-	tokens := h.Handler.PathPrefix("/tokens").Subrouter()
+	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
 	
@@ -62,7 +62,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
-	project.HandleFunc("/random", h.getRandomProject).Methods("POST")
+	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.projectTokens).Methods("GET")
 	
@@ -126,6 +126,7 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 
 	limitInt := 10
 	pageInt := 1
+	sortInt := -1 //desc
 	var err error
 
 	limit := r.URL.Query().Get("limit")
@@ -146,21 +147,24 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 
 	sort := r.URL.Query().Get("sort")
 	if sort != "" {
-		sortInt, err := strconv.Atoi(sort)
+		sortInt, err = strconv.Atoi(sort)
 		if err != nil {
 			return nil, err
 		}
-		f.Sort = sortInt
 	}
-
 	
 	cursor := r.URL.Query().Get("cursor")
 	if cursor != "" {
 		f.Cursor = cursor
 	}
-	
 
-	f.SortBy = r.URL.Query().Get("sort_by")
+	sortBy := "created_at"
+	if r.URL.Query().Get("sort_by") != "" {
+		sortBy = r.URL.Query().Get("sort_by")
+	}
+	
+	f.SortBy = sortBy
+	f.Sort = sortInt
 	f.Page = int64(pageInt)
 	f.Limit = int64(limitInt)
 

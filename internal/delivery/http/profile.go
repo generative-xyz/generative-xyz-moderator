@@ -164,6 +164,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 // @Tags Profile
 // @Accept  json
 // @Produce  json
+// @Security Authorization
 // @Param contractAddress query string false "Filter project via contract address"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
