@@ -67,26 +67,34 @@ func (m MoralisNfts) generateUrl(path string, filters *MoralisFilter) string {
 		}
 		
 		if filters.Limit != nil { 
-			params[KeyLimit] = []string{
-				strconv.Itoa(*filters.Limit),
-			}
+			if  *filters.Limit != 0 {
+				params[KeyLimit] = []string{
+					strconv.Itoa(*filters.Limit),
+				}
+			}	
 		}
 		
 		if filters.TotalRanges != nil { 
-			params[KeyTotalRanges] = []string{
-				strconv.Itoa(*filters.TotalRanges),
+			if *filters.TotalRanges != 0 {
+				params[KeyTotalRanges] = []string{
+					strconv.Itoa(*filters.TotalRanges),
+				}
 			}
 		}
 		
 		if filters.Range != nil { 
-			params[KeyRange] = []string{
-				strconv.Itoa(*filters.Range),
+			if *filters.Range != 0 {
+				params[KeyRange] = []string{
+					strconv.Itoa(*filters.Range),
+				}
 			}
 		}
 		
 		if filters.Cursor != nil { 
-			params[KeyCurrsor] = []string{
-				*filters.Cursor,
+			if *filters.Cursor != "" {
+				params[KeyCurrsor] = []string{
+					*filters.Cursor,
+				}
 			}
 		}
 
@@ -134,7 +142,7 @@ func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*Mor
 	if err != nil {
 		return nil, err
 	}
-
+	spew.Dump(fullUrl)
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
