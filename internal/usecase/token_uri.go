@@ -12,6 +12,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -320,12 +321,67 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 		return nil, tokenFromChain.Err
 	}
 
+	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
+	if err != nil {
+		return nil, err
+	}
+
+	//nft project detail chain
+	nftProjectDchan := make(chan structure.NftProjectDetailChan, 1)
+	go func(nftProjectDchan chan structure.NftProjectDetailChan,  gNftProject *generative_nft_contract.GenerativeNftContract) {
+		data  := &structure.NftProjectDetail{}
+		var err error
+
+		defer func ()  {
+			nftProjectDchan <- structure.NftProjectDetailChan{
+				Data: data,
+				Err:  err,
+			}
+		}()
+
+		respData, err := gNftProject.Project(nil)
+		err = copier.Copy(data, respData)
+
+	}(nftProjectDchan, gNftProject)
+	
+	nftRoyaltychan := make(chan structure.RoyaltyChan, 1)
+	go func(nftRoyaltychan chan structure.RoyaltyChan,  gNftProject *generative_nft_contract.GenerativeNftContract) {
+		var data *big.Int
+		var err error
+
+		defer func ()  {
+			nftRoyaltychan <- structure.RoyaltyChan{
+				Data: data,
+				Err:  err,
+			}
+		}()
+
+		data, err = gNftProject.Royalty(nil)
+
+	}(nftRoyaltychan, gNftProject)
+
+	dataFromNftPChan := <- nftProjectDchan
+	dataFromRoyaltyPChan := <- nftRoyaltychan
+
 	resp := &structure.ProjectDetail{
 		ProjectDetail: detailFromChain.ProjectDetail,
 		Status: *statusFromChain.Status,
 		NftTokenUri: *tokenFromChain.TokenURI,
 	}
 		
+
+	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
+		resp.NftProjectDetail = *dataFromNftPChan.Data
+	}else{
+		resp.NftProjectDetail = structure.NftProjectDetail{}
+	}
+	
+	if dataFromRoyaltyPChan.Err == nil  && dataFromRoyaltyPChan.Data != nil {
+		resp.Royalty = structure.ProjectRoyalty{
+			Data: *dataFromRoyaltyPChan.Data,
+		}
+	}
+	
 	return resp, nil
 }
 
@@ -355,6 +411,7 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span,  req struc
 	defer u.Tracer.FinishSpan(span, log )
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 	
+	u.Cache.Delete(contractDataKey)
 	data, err := u.Cache.GetData(contractDataKey)
 	if err != nil {
 		log.SetData("req", req)

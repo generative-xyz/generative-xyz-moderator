@@ -24,4 +24,11 @@ type ProjectResp struct{
 	ItemDesc string `json:"itemDesc"`
 	Status bool `json:"status"`
 	NftTokenURI string `json:"projectURI"`
+	MintingInfo NftMintingDetail `json:"mintingInfo"`
+	Royalty int `json:"royalty"`
+}
+
+type NftMintingDetail struct {
+	Index           int64 `json:"index"`
+	IndexReserve    int64 `json:"indexReserve"`
 }

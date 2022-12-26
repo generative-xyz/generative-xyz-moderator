@@ -160,7 +160,20 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 	project.Thumbnail = projectDetail.ProjectDetail.Image
 	project.NftTokenUri = projectDetail.NftTokenUri
 	project.IsSynced = true
+	project.Royalty = int(projectDetail.Royalty.Data.Int64())
 
+	if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
+		project.MintingInfo = entity.ProjectMintingInfo{
+			Index: projectDetail.NftProjectDetail.Index.Int64(),
+			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
+		}
+	}else{
+		project.MintingInfo = entity.ProjectMintingInfo{
+			Index: 0,
+			IndexReverse: 0,
+		}
+	}
+	
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		log.Error(" u.UpdateProject", err.Error(), err)

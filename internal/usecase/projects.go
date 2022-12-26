@@ -120,6 +120,19 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetP
 	span, log := u.StartSpan("GetProjectDetail", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
+	//alway update project in a separated process
+	go func (rootSpan opentracing.Span)  {
+		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
+		defer u.Tracer.FinishSpan(span, log )
+
+		_, err :=  u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
+		if err != nil {
+			log.Error("u.Repo.FindProjectBy", err.Error(), err)
+			return
+		}
+
+	}(span)
+	
 	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID) 
 	if  (c == nil) || (c != nil && !c.IsSynced ) {
 		p, err :=  u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
