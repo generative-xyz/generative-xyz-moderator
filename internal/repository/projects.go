@@ -133,3 +133,25 @@ func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error) 
 
 	return &count, nil
 }
+
+func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
+	confs := []entity.Projects{}
+	resp := &entity.Pagination{}
+	f := bson.M{}
+
+	query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
+	err := json. Unmarshal([]byte(query), &f)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	return resp, nil
+}

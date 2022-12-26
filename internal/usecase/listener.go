@@ -147,8 +147,8 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 	project.GenNFTAddr= projectDetail.ProjectDetail.GenNFTAddr.String()
 	//project.Hash = txnHash
 	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
-	project.MaxSupply = int(projectDetail.ProjectDetail.MaxSupply.Int64())
-	project.LimitSupply = int(projectDetail.ProjectDetail.Limit.Int64())
+	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
+	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
 	project.MintTokenAddress = string(projectDetail.ProjectDetail.MintPriceAddr.String())
 	project.License = projectDetail.ProjectDetail.License
 	project.Status = projectDetail.Status

@@ -162,6 +162,61 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary get minted out projects
+// @Description  get minted out projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param contractAddress query string false "Filter project via contract address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/minted-out [GET]
+func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("projects", r)
+	defer h.Tracer.FinishSpan(span, log )
+	var err error
+	vars := mux.Vars(r)
+	contractAddress := vars["contractAddress"]
+	span.SetTag("contractAddress", contractAddress)
+
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f := structure.FilterProjects{}
+	f.BaseFilters = *baseF
+	uProjects, err := h.Usecase.GetMintedOutProjects(span, f)
+	if err != nil {
+		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	pResp :=  []response.ProjectResp{}
+	iProjects := uProjects.Result
+	projects := iProjects.([]entity.Projects)
+	for _, project := range projects {
+
+		p, err := h.projectToResp(&project)
+		if err != nil {
+			log.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *p)
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}
+
+
+// UserCredits godoc
 // @Summary get the random projects
 // @Description get the random projects
 // @Tags Project
