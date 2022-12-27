@@ -44,7 +44,7 @@ func NewTracing(log logger.Ilogger) *tracer {
 	t := new(tracer)
 	cfg, err := config.FromEnv()
 	if err != nil {
-		panic(fmt.Sprintf("Could not parse Jaeger env vars: %s", err.Error()))
+		//panic(fmt.Sprintf("Could not parse Jaeger env vars: %s", err.Error()))
 	}
 
 	cfg.Sampler = &config.SamplerConfig{
@@ -90,7 +90,7 @@ func (t *tracer) StartSpanFromInjection(tracingInjection map[string]string, oper
 	return span
 }
 
-func (t *tracer) StartSpanFromHeaderInjection(tracingInjection http.Header, operationName string) opentracing.Span{
+func (t *tracer) StartSpanFromHeaderInjection(tracingInjection http.Header, operationName string) opentracing.Span {
 	tracer := t.tracer
 	spanCtx, err := t.GetTrace().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(tracingInjection))
 	if err != nil {
@@ -98,7 +98,7 @@ func (t *tracer) StartSpanFromHeaderInjection(tracingInjection http.Header, oper
 		span := tracer.StartSpan(operationName)
 		return span
 	}
-	
+
 	span := t.StartWithOpts(operationName, ext.RPCServerOption(spanCtx))
 	return span
 }
@@ -170,7 +170,7 @@ func (t *tracer) StartSpanFromContext(ctx context.Context, name string) opentrac
 }
 
 func (t *tracer) FinishSpan(span opentracing.Span, log *TraceLog) {
-	
+
 	log.ToSpan(span)
 
 	span.Finish()

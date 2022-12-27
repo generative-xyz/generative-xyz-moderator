@@ -1000,6 +1000,12 @@
                         "name": "tokenID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Capture timeout",
+                        "name": "captureTimeout",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1102,6 +1108,12 @@
                         "name": "tokenID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Capture timeout",
+                        "name": "captureTimeout",
+                        "in": "query"
                     }
                 ],
                 "responses": {
