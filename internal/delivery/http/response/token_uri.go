@@ -1,5 +1,7 @@
 package response
 
+import "time"
+
 type TokenURIResp struct{
 	Name string `json:"name"`
 	Description string `json:"description"`
@@ -19,6 +21,10 @@ type InternalTokenURIResp struct{
 	Image string `json:"image"`
 	AnimationURL string `json:"animationUrl"`
 	Attributes interface{} `json:"attributes"`
+	MintedTime time.Time `json:"mintedTime"`
+	OwnerAddr string `json:"ownerAddr"`
+	Owner *ProfileResponse `json:"owner"`
+	Project *ProjectResp `json:"project"`
 }
 
 type InternalTokenTraitsResp struct{

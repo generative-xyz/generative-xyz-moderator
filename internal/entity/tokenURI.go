@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -17,6 +19,9 @@ type TokenUri struct {
 	AnimationURL string `bson:"animation_url" json:"animation_url"`
 	Attributes string `bson:"attributes" json:"attributes"`
 	ParsedAttributes []TokenUriAttr `bson:"parsed_attributes" json:"parsed_attributes"`
+	ProjectID string `bson:"project_id" json:"project_id"`
+	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
+	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
 }
 
 type TokenUriAttr struct {
