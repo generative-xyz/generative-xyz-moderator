@@ -31,10 +31,17 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	
+	err = reqBody.SelfValidate()
+	if err != nil {
+		log.Error("reqBody.SelfValidate", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	log.SetData("request.decoder", decoder)
 	message, err := h.Usecase.GenerateMessage(span, structure.GenerateMessage{
-		Address: reqBody.Address,
+		Address: *reqBody.Address,
 	})
 
 	if err != nil {
@@ -69,11 +76,19 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+
+	err = reqBody.SelfValidate()
+	if err != nil {
+		log.Error("reqBody.SelfValidate", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 	
 	log.SetData("request.decoder", decoder)
 	verified, err := h.Usecase.VerifyMessage(span, structure.VerifyMessage{
-		Signature: reqBody.Sinature,
-		Address: reqBody.Address,
+		Signature: *reqBody.Sinature,
+		Address: *reqBody.Address,
 	})
 
 	log.SetData("verified", verified)
