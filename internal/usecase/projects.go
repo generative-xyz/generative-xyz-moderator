@@ -17,9 +17,9 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateProjectReq) (*entity.Projects, error) {
+func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("CreateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
@@ -33,13 +33,13 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span,  req structure.CreateP
 		return nil, err
 	}
 
-	log.SetData("pe",pe)
+	log.SetData("pe", pe)
 	return pe, nil
 }
 
-func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
+func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
 	span, log := u.StartSpan("CreateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 
 	chainURL := os.Getenv("CHAIN_URL")
 	log.SetData("chainURL", chainURL)
@@ -50,7 +50,7 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 		return nil, err
 	}
 
-	contractAddr :=  common.HexToAddress(contractAddress)
+	contractAddr := common.HexToAddress(contractAddress)
 	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
 	if err != nil {
 		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
@@ -69,18 +69,18 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
 		return nil, err
 	}
-	parentAddrStr :=  parentAddr.String()
+	parentAddrStr := parentAddr.String()
 	result := []entity.TokenUri{}
 	for _, item := range resp.Result {
 		tokenID := item.TokenID
-		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID })
+		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
 		if err != nil {
 			log.Error("u.getTokenInfo", err.Error(), err)
 			return nil, err
 		}
 		result = append(result, *token)
 	}
-	
+
 	p := &entity.Pagination{}
 	p.Result = result
 	p.Currsor = resp.Cursor
@@ -90,18 +90,17 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span,  contractAddress
 	return p, nil
 }
 
-func (u Usecase) UpdateProject(rootSpan opentracing.Span,  req structure.UpdateProjectReq) (*entity.Projects, error) {
+func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("UpdateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	resp := &entity.Projects{}
-	
 
 	return resp, nil
 }
 
-func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
+func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
@@ -116,27 +115,25 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span,  req structure.FilterPro
 		return nil, err
 	}
 
-	log.SetData("projects",projects)
+	log.SetData("projects", projects)
 	return projects, nil
 }
 
 func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, error) {
 	span, log := u.StartSpan("GetRandomProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 
-	
 	key := helpers.ProjectRandomKey()
 
 	//always reload data
-	go func ()  {
+	go func() {
 		p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
 		if err != nil {
-			return 
+			return
 		}
 		u.Cache.SetData(key, p)
 	}()
 
-	
 	cached, err := u.Cache.GetData(key)
 	if err != nil {
 		p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
@@ -155,22 +152,22 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 		log.Error("json.Unmarshal", err.Error(), err)
 		return nil, err
 	}
-	
+
 	timeNow := time.Now().UTC().Nanosecond()
 	rand := int(timeNow) % len(projects)
 
 	//TODO - cache will be applied here
-	
+
 	projectRand := projects[rand]
 	return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
 		ContractAddress: projectRand.ContractAddress,
-		ProjectID: projectRand.TokenID,
+		ProjectID:       projectRand.TokenID,
 	})
 }
 
-func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span,  req structure.FilterProjects) (*entity.Pagination, error) {
+func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetMintedOutProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
@@ -185,30 +182,30 @@ func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span,  req structure.
 		return nil, err
 	}
 
-	log.SetData("projects",projects)
+	log.SetData("projects", projects)
 	return projects, nil
 }
 
-func (u Usecase) GetProjectDetail(rootSpan opentracing.Span,  req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("GetProjectDetail", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 
 	//alway update project in a separated process
-	go func (rootSpan opentracing.Span)  {
+	go func(rootSpan opentracing.Span) {
 		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
+		defer u.Tracer.FinishSpan(span, log)
 
-		_, err :=  u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
+		_, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		if err != nil {
 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return
 		}
 
 	}(span)
-	
-	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID) 
-	if  (c == nil) || (c != nil && !c.IsSynced ) {
-		p, err :=  u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
+
+	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
+	if (c == nil) || (c != nil && !c.IsSynced) {
+		p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		if err != nil {
 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return nil, err

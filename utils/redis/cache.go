@@ -16,7 +16,7 @@ type IRedisCache interface {
 	Exists(key string) (*bool, error)
 	SetData(key string, value interface{}) error
 	SetStringData(key string, value string) error
-	SetStringDataWithExpTime(key string, value string,  exipredIn int) error
+	SetStringDataWithExpTime(key string, value string, exipredIn int) error
 	GetData(key string) (*string, error)
 	Delete(key string) error
 	SetDataWithExpireTime(key string, value interface{}, exipredIn int) error //exipredIn second
@@ -31,14 +31,14 @@ type redisCache struct {
 func NewRedisCache(cfg config.RedisConfig) *redisCache {
 	r := new(redisCache)
 	ctx := context.Background()
-	redisDB, err := strconv.Atoi( cfg.DB)
+	redisDB, err := strconv.Atoi(cfg.DB)
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Address,
 		Password: cfg.Password, // no password set
-		DB:      redisDB,       // use default DB
+		DB:       redisDB,      // use default DB
 	})
 
 	r.cfg = cfg
@@ -55,7 +55,7 @@ func (r *redisCache) SetStringData(key string, value string) error {
 	return nil
 }
 
-func (r *redisCache) SetStringDataWithExpTime(key string, value string,  exipredIn int) error {
+func (r *redisCache) SetStringDataWithExpTime(key string, value string, exipredIn int) error {
 	timeD := time.Duration(rand.Int31n(int32(exipredIn))) * time.Second
 	err := r.client.Set(key, value, timeD).Err()
 	if err != nil {

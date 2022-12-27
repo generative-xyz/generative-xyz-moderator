@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/response"
@@ -16,36 +17,44 @@ import (
 // @Produce  json
 // @Param contractAddress path string true "contract address"
 // @Param tokenID path string true "token ID"
+// @Param captureTimeout query integer false "Capture timeout"
 // @Success 200 {object} response.JsonResponse{data=response.TokenURIResp}
 // @Router /token/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenURI", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
+
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
+	captureTimeout := r.URL.Query().Get("captureTimeout")
+	log.SetData("captureTimeout", captureTimeout)
+	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
+	if errT != nil {
+		captureTimeoutInt = 5
+	}
+
 	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
-		TokenID: tokenID,
-	})
+		TokenID:         tokenID,
+	}, captureTimeoutInt)
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.TokenURIResp{
-		Name: message.Name,
-		Description: message.Description,
-		Image: *message.ParsedImage,
+		Name:         message.Name,
+		Description:  message.Description,
+		Image:        *message.ParsedImage,
 		AnimationURL: message.AnimationURL,
-		Attributes: message.ParsedAttributes,
+		Attributes:   message.ParsedAttributes,
 	}
 
 	log.SetData("resp.message", message)
@@ -65,28 +74,28 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 // @Router /trait/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenTrait", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
+
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
 	message, err := h.Usecase.GetTokenTraits(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
-		TokenID: tokenID,
+		TokenID:         tokenID,
 	})
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.TokenTraitsResp{}
-	resp.Attributes  = message.ParsedAttributes
+	resp.Attributes = message.ParsedAttributes
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
@@ -100,41 +109,49 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param contractAddress path string true "contract address"
 // @Param tokenID path string true "token ID"
+// @Param captureTimeout query integer false "Capture timeout"
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /tokens/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenURI", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
+
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
+	captureTimeout := r.URL.Query().Get("captureTimeout")
+	log.SetData("captureTimeout", captureTimeout)
+	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
+	if errT != nil {
+		captureTimeoutInt = 5
+	}
+
 	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
-		TokenID: tokenID,
-	})
+		TokenID:         tokenID,
+	}, captureTimeoutInt)
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.InternalTokenURIResp{
-		Name: message.Name,
-		Description: message.Description,
-		Image: *message.ParsedImage,
+		Name:         message.Name,
+		Description:  message.Description,
+		Image:        *message.ParsedImage,
 		AnimationURL: message.AnimationURL,
-		Attributes: message.ParsedAttributes,
+		Attributes:   message.ParsedAttributes,
 	}
 
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success,  resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -149,29 +166,29 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 // @Router /tokens/traits/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("tokenTrait", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
+
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
 	message, err := h.Usecase.GetTokenTraits(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
-		TokenID: tokenID,
+		TokenID:         tokenID,
 	})
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.InternalTokenTraitsResp{}
-	resp.Attributes  = message.ParsedAttributes
+	resp.Attributes = message.ParsedAttributes
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success,  resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

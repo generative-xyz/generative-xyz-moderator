@@ -784,6 +784,10 @@ paths:
         name: tokenID
         required: true
         type: string
+      - description: Capture timeout
+        in: query
+        name: captureTimeout
+        type: integer
       produces:
       - application/json
       responses:
@@ -815,6 +819,10 @@ paths:
         name: tokenID
         required: true
         type: string
+      - description: Capture timeout
+        in: query
+        name: captureTimeout
+        type: integer
       produces:
       - application/json
       responses:
