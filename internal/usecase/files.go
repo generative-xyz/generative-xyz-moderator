@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"bufio"
+	"bytes"
+	"compress/flate"
 	"fmt"
 	"io"
 	"net/http"
@@ -64,6 +66,14 @@ func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity
 	return fileModel, nil
 }
 
+func (u Usecase) Deflate(inflated []byte) []byte {
+	var b bytes.Buffer
+	w, _ := flate.NewWriter(&b, flate.DefaultCompression)
+	w.Write(inflated)
+	w.Close()
+	return b.Bytes()
+}
+
 func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDataResp) (*structure.MinifyDataResp, error) {
 	span, log := u.StartSpan("MinifyFiles", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
@@ -106,8 +116,8 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 			log.Error("m.String", err.Error(), err)
 			return nil, err
 		}
-
-		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out}
+		deflate := u.Deflate([]byte(out))
+		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out, Deflate: helpers.Base64Eecode(deflate)}
 	}
 
 	return &structure.MinifyDataResp{Files: resp}, nil
