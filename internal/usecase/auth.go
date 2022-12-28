@@ -200,6 +200,21 @@ func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*entity
 	return user, nil
 }
 
+func (u Usecase) GetUserProfileByWalletAddress(rootSpan opentracing.Span, userAddr string) (*entity.Users, error) {
+	span, log := u.StartSpan("UserProfile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	log.SetData("input.userAddr", userAddr)
+	user, err := u.Repo.FindUserByWalletAddress(userAddr)
+	if err != nil {
+		log.Error("u.GetUserProfileByWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	return user, nil
+}
+
 func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, data structure.UpdateProfile) (*entity.Users, error) {
 	span, log := u.StartSpan("UserProfile", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )

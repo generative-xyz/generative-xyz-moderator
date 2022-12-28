@@ -45,3 +45,11 @@ func (a *Blockchain) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses 
 	}
 	return logs, nil
 }
+
+func (a *Blockchain) GetBlockByNumber(blockNumber big.Int) (*types.Block, error) {
+	block, err := a.client.BlockByNumber(context.Background(), &blockNumber)
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
+}

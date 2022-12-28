@@ -97,7 +97,62 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		// }
 
 		tokenUri.ParsedImage = &image
+	}
 
+	if tokenUri.ProjectID == "" {
+		err := func() error {
+			tokenID := new(big.Int)
+			tokenID, ok := tokenID.SetString(req.TokenID, 10)
+			if !ok {
+				return errors.New("cannot convert tokenID to big int")
+			}
+			projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
+
+			tokenUri.ProjectID = projectID.String()
+			isUpdate = true
+			return nil
+		}()
+		if err != nil {
+			log.Error("error update token uri project id", err.Error(), err)
+		}
+	}
+
+	if tokenUri.BlockNumberMinted == nil || tokenUri.MintedTime == nil {
+		err := func() error {
+			project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: req.ContractAddress, ProjectID: tokenUri.ProjectID})
+			if err != nil {
+				return err
+			}
+
+			log.SetData("project", project)
+
+			// try to get block number minted and minted time from moralis
+			nft, err := u.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, req.TokenID)
+			if err != nil {
+				return err
+			}
+
+			blockNumber := nft.BlockNumberMinted
+			blockNumberBigInt := new(big.Int)
+			blockNumberBigInt, ok := blockNumberBigInt.SetString(blockNumber, 10)
+			if !ok {
+				return errors.New("cannot convert blockNumber to bigint")
+			}
+			// get time by block number
+			block, err := u.Blockchain.GetBlockByNumber(*blockNumberBigInt)
+			if err != nil {
+				return err
+			}
+			// get time from block
+			mintedTime := time.Unix(int64(block.Time()), 0)
+			tokenUri.BlockNumberMinted = &blockNumber
+			tokenUri.MintedTime = &mintedTime
+			isUpdate = true
+			return nil
+		}()
+		if err != nil {
+			log.Error("error update token uri block number minted", err.Error(), err)
+		}
 	}
 
 	if isUpdate {
@@ -189,8 +244,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(req.TokenID, 10)
 	if !ok {
-		err := errors.New("Cannot convert tokenID")
-		return nil, err
+		return nil, errors.New("cannot convert tokenID")
 	}
 	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
 	nftProjectDetail, err := u.getNftContractDetail(client, addr, *projectID)
@@ -226,6 +280,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.TokenID = req.TokenID
+	dataObject.ProjectID = projectID.String()
 
 	err = u.Repo.CreateTokenURI(dataObject)
 	if err != nil {
@@ -390,8 +445,7 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
 	if !ok {
-		err := errors.New("Cannot convert tokenID")
-		return nil, err
+		return nil, errors.New("cannot convert tokenID")
 	}
 
 	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
@@ -430,8 +484,7 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 		projectID := new(big.Int)
 		projectID, ok := projectID.SetString(req.ProjectID, 10)
 		if !ok {
-			err := errors.New("Cannot convert tokenID")
-			return nil, err
+			return nil, errors.New("cannot convert tokenID")
 		}
 		contractDetail, err := u.getNftContractDetail(client, addr, *projectID)
 		if err != nil {

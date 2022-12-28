@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/response"
@@ -141,12 +142,47 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// find project by projectID and contract address
+	project, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: message.ProjectID})
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	// find owner address on moralis
+	nft, err := h.Usecase.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, tokenID)
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	profile, _ := h.Usecase.GetUserProfileByWalletAddress(span, strings.ToLower(nft.Owner))
+	var profileResp *response.ProfileResponse
+	if profile != nil {
+		profileResp, _ = h.profileToResp(profile)
+	} else {
+		profileResp = nil
+	}
+
+	projectResp, err := h.projectToResp(project)
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	resp := response.InternalTokenURIResp{
 		Name:         message.Name,
 		Description:  message.Description,
 		Image:        *message.ParsedImage,
 		AnimationURL: message.AnimationURL,
 		Attributes:   message.ParsedAttributes,
+		OwnerAddr:    nft.Owner,
+		Owner:        profileResp,
+		MintedTime:   *message.MintedTime,
+		Project:      projectResp,
 	}
 
 	log.SetData("resp.message", message)
