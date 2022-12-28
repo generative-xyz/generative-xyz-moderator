@@ -1,5 +1,20 @@
 package nfts
 
+type NftFilter struct {
+	TokenAddress string `json:"token_address"`
+	TokenId      string `json:"token_id"`
+}
+
+type MoralisGetMultipleNftsReqBody struct {
+	Tokens            []NftFilter `json:"tokens"`
+	NormalizeMetadata *bool       `json:"normalizeMetadata,omitempty"`
+}
+
+type MoralisGetMultipleNftsFilter struct {
+	Chain             *string     `json:"chain"`
+	ReqBody MoralisGetMultipleNftsReqBody
+}
+
 type  MoralisFilter struct {
 	Chain *string `json:"chain"`
 	Format *string `json:"format"`
@@ -29,6 +44,7 @@ type MoralisToken struct {
 	Symbol string `json:"symbol"`
 	TokenUri string `json:"token_uri"`
 	MetadataString *string `json:"metadata"`
+	BlockNumberMinted string `json:"block_number_minted"`
 	Metadata *MoralisTokenMetadata `json:"-"`
 }
 

@@ -1,7 +1,9 @@
 package nfts
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -117,6 +119,7 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 	}
 	
 	req.Header.Add("accept", "application/json")
+	req.Header.Add("content-type", "application/json")
 	req.Header.Add("X-API-Key", m.apiKey)
 
 	res, err := http.DefaultClient.Do(req)
@@ -150,4 +153,50 @@ func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*Mor
 	}
 
 	return resp, nil
+}
+
+func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisToken, error) {
+	url := fmt.Sprintf("%s/%s", URLNft, "getMultipleNFTs")
+	fullUrl := m.generateUrl(url, &MoralisFilter{Chain: f.Chain})
+	spew.Dump(fullUrl)
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(f.ReqBody)
+	if err != nil {
+			return nil, err
+	}
+	data, err := m.request(fullUrl, "POST", nil, &buf)
+	if err != nil {
+		return nil, err
+	}
+	spew.Dump(fullUrl)
+	resp := make([]MoralisToken, 0);
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID string) (*MoralisToken, error) {
+	nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
+		Chain: nil,
+		ReqBody: MoralisGetMultipleNftsReqBody{
+			Tokens: []NftFilter{
+				{
+					TokenAddress: contractAddr,
+					TokenId: tokenID,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(nfts) != 1 {
+		return nil, errors.New("cannot find moralis token") 
+	} else {
+		return &nfts[0], nil
+	}
 }
