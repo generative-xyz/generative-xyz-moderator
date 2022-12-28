@@ -1,0 +1,912 @@
+basePath: /rederinghub.io/v1
+definitions:
+  request.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  request.CreateConfigRequest:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    required:
+    - key
+    - value
+    type: object
+  request.CreateProjectReq:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      contractAddress:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tokenID:
+        type: string
+    type: object
+  request.GenerateMessageRequest:
+    properties:
+      address:
+        type: string
+    type: object
+  request.UpdateProfileRequest:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      displayName:
+        type: string
+    type: object
+  request.VerifyMessageRequest:
+    properties:
+      address:
+        type: string
+      signature:
+        type: string
+    type: object
+  response.CategoryResp:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  response.ConfigResp:
+    properties:
+      id:
+        type: string
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  response.FileRes:
+    properties:
+      fileName:
+        type: string
+      fileSize:
+        type: integer
+      id:
+        type: string
+      mimeType:
+        type: string
+      uploadedBy:
+        type: string
+      url:
+        type: string
+    type: object
+  response.GeneratedMessage:
+    properties:
+      message:
+        type: string
+    type: object
+  response.InternalTokenTraitsResp:
+    properties:
+      attributes: {}
+    type: object
+  response.InternalTokenURIResp:
+    properties:
+      animationUrl:
+        type: string
+      attributes: {}
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  response.JsonResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.RespondErr'
+      status:
+        type: boolean
+    type: object
+  response.LogoutResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  response.ProfileResponse:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      walletAddress:
+        type: string
+    type: object
+  response.RespondErr:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  response.TokenTraitsResp:
+    properties:
+      attributes: {}
+    type: object
+  response.TokenURIResp:
+    properties:
+      animation_url:
+        type: string
+      attributes: {}
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  response.VerifyResponse:
+    properties:
+      accessToken:
+        type: string
+      isVerified:
+        type: boolean
+      refreshToken:
+        type: string
+    type: object
+  structure.FileContentReq:
+    properties:
+      content:
+        type: string
+      mediaType:
+        type: string
+    type: object
+  structure.MinifyDataResp:
+    properties:
+      files:
+        additionalProperties:
+          $ref: '#/definitions/structure.FileContentReq'
+        type: object
+    type: object
+info:
+  contact: {}
+  description: This is a sample server Autonomous devices management server.
+  title: Generative.xyz APIs
+  version: 1.0.0
+paths:
+  /auth/nonce:
+    post:
+      consumes:
+      - application/json
+      description: Generate a message for user's wallet
+      parameters:
+      - description: Generate message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.GenerateMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneratedMessage'
+              type: object
+      summary: Generate a message
+      tags:
+      - Auth
+  /auth/nonce/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verified the generated message
+      parameters:
+      - description: Verify message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VerifyMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.VerifyResponse'
+              type: object
+      summary: Verified the generated message
+      tags:
+      - Auth
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get Categorys
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: Get Categorys
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: create Category
+      parameters:
+      - description: Create a Category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: create Category
+      tags:
+      - Categories
+  /categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete Category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: delete Category
+      tags:
+      - Categories
+    get:
+      consumes:
+      - application/json
+      description: get one Category
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: get one Category
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      description: update Category
+      parameters:
+      - description: Create a Category
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: update Category
+      tags:
+      - Categories
+  /configs:
+    get:
+      consumes:
+      - application/json
+      description: Get configs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: Get configs
+      tags:
+      - Configs
+    post:
+      consumes:
+      - application/json
+      description: create config
+      parameters:
+      - description: Create a config
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: create config
+      tags:
+      - Configs
+  /configs/{key}:
+    delete:
+      consumes:
+      - application/json
+      description: delete config
+      parameters:
+      - description: config key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: delete config
+      tags:
+      - Configs
+    get:
+      consumes:
+      - application/json
+      description: get one config
+      parameters:
+      - description: config key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConfigResp'
+              type: object
+      summary: get one config
+      tags:
+      - Configs
+  /files:
+    post:
+      description: Upload file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload file
+      tags:
+      - Files
+  /files/minify:
+    post:
+      description: Upload file
+      parameters:
+      - description: Data for minify
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/structure.MinifyDataResp'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload file
+      tags:
+      - Files
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: User profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: User profile
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Edit User profile
+      parameters:
+      - description: Update profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Edit User profile
+      tags:
+      - Profile
+  /profile/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.LogoutResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Logout
+      tags:
+      - Profile
+  /profile/projects:
+    get:
+      consumes:
+      - application/json
+      description: get current user's projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: get current user's projects
+      tags:
+      - Profile
+  /project:
+    get:
+      consumes:
+      - application/json
+      description: get projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get projects
+      tags:
+      - Project
+    post:
+      consumes:
+      - application/json
+      description: Create projects
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Create project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}:
+    get:
+      consumes:
+      - application/json
+      description: get project's detail
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's detail
+      tags:
+      - Project
+  /project/{genNFTAddr}/tokens:
+    get:
+      consumes:
+      - application/json
+      description: get tokens by project address
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      - description: This is provided from Project Detail API
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's tokens
+      tags:
+      - Project
+  /project/minted-out:
+    get:
+      consumes:
+      - application/json
+      description: get minted out projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get minted out projects
+      tags:
+      - Project
+  /project/random:
+    get:
+      consumes:
+      - application/json
+      description: get the random projects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get the random projects
+      tags:
+      - Project
+  /token/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Capture timeout
+        in: query
+        name: captureTimeout
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenURIResp'
+              type: object
+      summary: get token uri data
+      tags:
+      - Token for Opensea
+  /tokens/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Capture timeout
+        in: query
+        name: captureTimeout
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: get token uri data
+      tags:
+      - Tokens
+  /tokens/traits/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token's traits
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenTraitsResp'
+              type: object
+      summary: get token's traits
+      tags:
+      - Tokens
+  /trait/{contractAddress}/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get token's traits
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TokenTraitsResp'
+              type: object
+      summary: get token's traits
+      tags:
+      - Token for Opensea
+securityDefinitions:
+  Api-Key:
+    in: header
+    name: Api-Key
+    type: apiKey
+  Authorization:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
