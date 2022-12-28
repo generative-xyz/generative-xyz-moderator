@@ -6,5 +6,6 @@ type MinifyDataResp struct {
 
 type FileContentReq struct {
 	MediaType string `json:"mediaType"`
-	Content string `json:"content"`
+	Content   string `json:"content"`
+	Deflate   string `json:"deflate"`
 }
