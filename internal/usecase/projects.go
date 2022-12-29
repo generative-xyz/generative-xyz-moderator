@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -104,11 +105,27 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProj
 		return nil, err
 	}
 
-	pe.WalletAddress = req.WalletAddress
+	contractAddress := os.Getenv("GENERATIVE_PROJECT")
 	projects, err := u.Repo.GetProjects(*pe)
-	if err != nil {
-		log.Error("u.Repo.CreateProject", err.Error(), err)
-		return nil, err
+	if err != nil || projects.Total == 0 {
+		mProjects, err := u.MoralisNft.GetNftByContract(contractAddress, nfts.MoralisFilter{})
+
+		if err != nil {
+			log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+			return nil, err
+		}
+
+		for _, mProject := range mProjects.Result {
+			p, err := u.UpdateProjectFromChain(span, contractAddress, mProject.TokenID)
+			if err != nil {
+				log.Error("u.Repo.FindProjectBy", err.Error(), err)
+				return nil, err
+			}
+			//resp = append(resp, *p)
+			log.SetData("p", *p)
+		}
+		
+		return  u.Repo.GetProjects(*pe)
 	}
 
 	log.SetData("projects", projects)
@@ -191,7 +208,7 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
-		_, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
+		_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
 		if err != nil {
 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return
@@ -201,7 +218,7 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 
 	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) {
-		p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
+		p, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
 		if err != nil {
 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return nil, err

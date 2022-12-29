@@ -10,6 +10,7 @@ type Projects struct {
 	BaseEntity`bson:",inline"`
 	ContractAddress string `bson:"contractAddress"`
 	TokenID string `bson:"tokenid"`
+	TokenIDInt int64 `bson:"tokenIDInt"`
 	MaxSupply int64 `bson:"maxSupply"`
 	LimitSupply int64 `bson:"limitSupply"`
 	MintPrice string `bson:"mintPrice"`
@@ -41,6 +42,8 @@ type Projects struct {
 	NftTokenUri string `bson:"nftTokenUri"`
 	IsSynced bool `bson:"isSynced"`
 	MintingInfo ProjectMintingInfo `bson:",inline"`
+	CompleteTime int64  `json:"completeTime"`
+	Reservers []string `json:"reservers"`
 }
 
 type	ProjectMintingInfo struct {

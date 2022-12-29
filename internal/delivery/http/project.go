@@ -338,5 +338,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		IndexReserve: input.MintingInfo.IndexReverse,
 	}
 	resp.Royalty = input.Royalty
+	resp.Reservers = input.Reservers
+	resp.CompleteTime = input.CompleteTime
 	return resp, nil
 }
