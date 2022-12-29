@@ -23,6 +23,7 @@ type Config struct {
 	MQTTConfig     MQTTConfig
 	Gcs       *GCS
 	Moralis MoralisConfig
+	Covalent CovalentConfig
 	BlockchainConfig BlockchainConfig
 	TxConsumerConfig TxConsumerConfig
 }
@@ -40,6 +41,11 @@ type MoralisConfig struct {
 	Chain string
 }
 
+type CovalentConfig struct {
+	Key  string
+	URL string
+	Chain string
+}
 
 type Context struct {
 	TimeOut int
@@ -164,6 +170,11 @@ func NewConfig() (*Config, error) {
 			Key: os.Getenv("MORALIS_KEY"),
 			URL: os.Getenv("MORALIS_API_URL"),
 			Chain: os.Getenv("MORALIS_CHAIN"),
+		},
+		Covalent: CovalentConfig{
+			Key: os.Getenv("COVALENT_KEY"),
+			URL: os.Getenv("COVALENT_API_URL"),
+			Chain: os.Getenv("COVALENT_CHAIN"),
 		},
 		BlockchainConfig: BlockchainConfig{
 			ETHEndpoint: os.Getenv("ETH_ENDPOINT"),

@@ -26,5 +26,6 @@ type Global struct {
 	Auth2 oauth2service.Auth2
 	GCS           googlecloud.IGcstorage
 	MoralisNFT nfts.MoralisNfts
+	CovalentNFT nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
 }

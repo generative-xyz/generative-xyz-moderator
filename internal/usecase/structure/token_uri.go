@@ -76,3 +76,8 @@ type NftProjectDetailChan struct {
 	Err error
 }
 
+type GetNftTransactionsReq struct {
+	Chain *string
+	ContractAddress string
+	TokenID string
+}
