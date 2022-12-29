@@ -463,7 +463,7 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 	defer u.Tracer.FinishSpan(span, log)
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
-	u.Cache.Delete(contractDataKey)
+	//u.Cache.Delete(contractDataKey)
 	data, err := u.Cache.GetData(contractDataKey)
 	if err != nil {
 		log.SetData("req", req)

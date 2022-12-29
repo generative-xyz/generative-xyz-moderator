@@ -39,11 +39,11 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	tokenIDStr = fmt.Sprintf("%d",tokenID)
 	contractAddr := strings.ToLower(chainLog.Address.String()) 
 
-	u.UpdateProjectFromChain(contractAddr, tokenIDStr)
+	u.UpdateProjectFromChain(span, contractAddr, tokenIDStr)
 }
 
-func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) (*entity.Projects, error) {
-	span, log := u.StartSpanWithoutRoot("UpdateProjectWithListener.GetProjectDetail")
+func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr string, tokenIDStr string) (*entity.Projects, error) {
+	span, log := u.StartSpan("UpdateProjectWithListener.GetProjectDetail", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
 	pChan := make(chan projectChan, 1)
@@ -51,6 +51,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 	
 	log.SetData("contractAddr", contractAddr)
 	log.SetData("tokenIDStr", tokenIDStr)
+	tokenIDInt, err := strconv.Atoi(tokenIDStr)
+	if err != nil {
+		log.Error("strconv.Atoi.tokenIDStr", err.Error(), err)
+		return nil, err
+	}
 
 	go func(rootSpan opentracing.Span, pChan chan projectChan, contractAddr string, tokenIDStr string) {
 		span, log := u.StartSpan("GetProjectDetail.Project", rootSpan)
@@ -69,7 +74,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 			}
 		}()
 
-		project, err = u.Repo.FindProjectBy(contractAddr, tokenIDStr)
+		project, err = u.Repo.FindProjectWithoutCache(contractAddr, tokenIDStr)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				project = &entity.Projects{}
@@ -119,7 +124,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 	projectFChan := <- pChan
 	projectDetailFChan := <- pDChan
 
-	err := projectFChan.Err 
+	err = projectFChan.Err 
 	if err != nil {
 		log.Error("projectFChan.Err ", err.Error(), err)
 		return nil, err
@@ -139,17 +144,17 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 
 	project.Name = projectDetail.ProjectDetail.Name
 	project.CreatorName = projectDetail.ProjectDetail.Creator
-	project.CreatorAddrr = projectDetail.ProjectDetail.CreatorAddr.String()
+	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
 	project.Description = projectDetail.ProjectDetail.Desc
 	project.Scripts= projectDetail.ProjectDetail.Scripts
 	project.ThirdPartyScripts= projectDetail.ProjectDetail.ScriptType
 	project.Styles= projectDetail.ProjectDetail.Styles
-	project.GenNFTAddr= projectDetail.ProjectDetail.GenNFTAddr.String()
-	//project.Hash = txnHash
+	project.GenNFTAddr= strings.ToLower( projectDetail.ProjectDetail.GenNFTAddr.String())
+	project.TokenIDInt = int64(tokenIDInt)
 	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
 	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
 	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
-	project.MintTokenAddress = string(projectDetail.ProjectDetail.MintPriceAddr.String())
+	project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
 	project.License = projectDetail.ProjectDetail.License
 	project.Status = projectDetail.Status
 	project.SocialWeb = projectDetail.ProjectDetail.Social.Web
@@ -161,6 +166,10 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 	project.NftTokenUri = projectDetail.NftTokenUri
 	project.IsSynced = true
 	project.Royalty = int(projectDetail.Royalty.Data.Int64())
+	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+	for _, reserve := range projectDetail.ProjectDetail.Reserves {
+		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()) )
+	}
 
 	if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
 		project.MintingInfo = entity.ProjectMintingInfo{
@@ -174,6 +183,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string) 
 		}
 	}
 	
+	log.SetData("project",project)
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
 		log.Error(" u.UpdateProject", err.Error(), err)

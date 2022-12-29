@@ -19,13 +19,14 @@ type ProjectResp struct{
 	Social interface{} `json:"social"`
 	Scripts []string `json:"scripts"`
 	Styles string `json:"styles"`
-	CompleteTime int  `json:"completeTime"`
+	CompleteTime int64  `json:"completeTime"`
 	GenNFTAddr string `json:"genNFTAddr"`
 	ItemDesc string `json:"itemDesc"`
 	Status bool `json:"status"`
 	NftTokenURI string `json:"projectURI"`
 	MintingInfo NftMintingDetail `json:"mintingInfo"`
 	Royalty int `json:"royalty"`
+	Reservers []string `json:"reservers"`
 }
 
 type NftMintingDetail struct {

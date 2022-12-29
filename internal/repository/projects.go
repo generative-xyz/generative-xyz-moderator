@@ -45,6 +45,11 @@ func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*ent
 	return resp, nil
 }
 
+func (r Repository) FindProjectWithoutCache( contractAddress string, tokenID string) (*entity.Projects, error) {
+	contractAddress = strings.ToLower(contractAddress)
+	return  r.findProjectBy(contractAddress, tokenID)
+}
+
 func (r Repository) findProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
 	contractAddress = strings.ToLower(contractAddress)
 	resp := &entity.Projects{}
@@ -89,6 +94,9 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
+
+	filter.SortBy = "tokenIDInt"
+	filter.Sort = -1
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = *filter.WalletAddress
