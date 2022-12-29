@@ -2,11 +2,9 @@ package usecase
 
 import (
 	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 
@@ -41,10 +39,8 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	span, log := u.StartSpan("CreateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	chainURL := os.Getenv("CHAIN_URL")
-	log.SetData("chainURL", chainURL)
 	// call to contract to get emotion
-	client, err := ethclient.Dial(chainURL)
+	client, err := helpers.EthDialer()
 	if err != nil {
 		log.Error("ethclient.Dial", err.Error(), err)
 		return nil, err

@@ -749,6 +749,50 @@
                 }
             }
         },
+        "/profile/{walletAddress}": {
+            "get": {
+                "description": "User profile via wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "User profile via wallet address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -1348,8 +1392,20 @@
                 "image": {
                     "type": "string"
                 },
+                "mintedTime": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/response.ProfileResponse"
+                },
+                "ownerAddr": {
+                    "type": "string"
+                },
+                "project": {
+                    "$ref": "#/definitions/response.ProjectResp"
                 }
             }
         },
@@ -1373,6 +1429,17 @@
                 }
             }
         },
+        "response.NftMintingDetail": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer"
+                },
+                "indexReserve": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.ProfileResponse": {
             "type": "object",
             "properties": {
@@ -1392,6 +1459,87 @@
                     "type": "string"
                 },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProjectResp": {
+            "type": "object",
+            "properties": {
+                "completeTime": {
+                    "type": "integer"
+                },
+                "contractAddress": {
+                    "type": "string"
+                },
+                "creator": {
+                    "type": "string"
+                },
+                "creatorAddr": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "genNFTAddr": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "itemDesc": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "mintPriceAddr": {
+                    "type": "string"
+                },
+                "mintingInfo": {
+                    "$ref": "#/definitions/response.NftMintingDetail"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectURI": {
+                    "type": "string"
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "scriptType": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "social": {},
+                "status": {
+                    "type": "boolean"
+                },
+                "styles": {
+                    "type": "string"
+                },
+                "tokenID": {
                     "type": "string"
                 }
             }
@@ -1449,6 +1597,9 @@
             "type": "object",
             "properties": {
                 "content": {
+                    "type": "string"
+                },
+                "deflate": {
                     "type": "string"
                 },
                 "mediaType": {
