@@ -587,6 +587,45 @@ var doc = `{
                 }
             }
         },
+        "/nfts/{contractAddress}/transactions/{tokenID}": {
+            "get": {
+                "description": "get nft transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Nfts"
+                ],
+                "summary": "get nft transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [

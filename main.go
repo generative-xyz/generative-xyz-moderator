@@ -92,6 +92,7 @@ func startServer() {
 	}
 
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
+	covalent := nfts.NewCovalentNfts(conf);
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -105,6 +106,7 @@ func startServer() {
 		Auth2: *auth2Service,
 		GCS: gcs,
 		MoralisNFT: *moralis,
+		CovalentNFT: *covalent,
 		Blockchain: *ethClient,
 	}
 

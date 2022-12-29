@@ -586,6 +586,32 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /nfts/{contractAddress}/transactions/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: get nft transactions
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get nft transactions
+      tags:
+      - Nfts
   /profile:
     get:
       consumes:

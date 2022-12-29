@@ -28,6 +28,7 @@ type Usecase struct {
 	Auth2 oauth2service.Auth2
 	GCS           googlecloud.IGcstorage
 	MoralisNft nfts.MoralisNfts
+	CovalentNft nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
 }
 
@@ -42,6 +43,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.Auth2 = global.Auth2
 	u.GCS = global.GCS
 	u.MoralisNft = global.MoralisNFT
+	u.CovalentNft = global.CovalentNFT
 	u.Blockchain = global.Blockchain
 	return u, nil
 }

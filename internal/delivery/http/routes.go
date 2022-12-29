@@ -85,6 +85,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	categories.HandleFunc("/{id}", h.getCategory).Methods("GET")
 	categories.HandleFunc("/{id}", h.updateCategory).Methods("PUT")
 	categories.HandleFunc("/{id}", h.deleteCategory).Methods("DELETE")
+
+	//nfts
+	nfts := api.PathPrefix("/nfts").Subrouter()
+	nfts.HandleFunc("/{contractAddress}/transactions/{tokenID}", h.getNftTransactions).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
