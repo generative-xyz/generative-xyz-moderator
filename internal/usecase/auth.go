@@ -297,3 +297,19 @@ func  (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken str
 	log.SetData("claim", claim)
 	return claim, err
 }
+
+func  (u Usecase) UserProfileByWallet(rootSpan opentracing.Span, walletAddress string) (*entity.Users, error) {
+	span, log := u.StartSpan("UserProfile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+
+	log.SetData("input.walletAddress", walletAddress)
+	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
+	if err != nil {
+		log.Error("u.Auth2.ValidateToken", err.Error(), err)
+		return nil, err
+	}
+
+
+	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	return user, nil
+}

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 
@@ -89,7 +88,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 			chromedp.CaptureScreenshot(&buf),
 		)
 
-		image := helpers.Base64Eecode(buf)
+		image := helpers.Base64Encode(buf)
 		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
 		// if err != nil {
 		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
@@ -230,12 +229,10 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("req", req)
-	chainURL := os.Getenv("CHAIN_URL")
 	addr := common.HexToAddress(req.ContractAddress)
 
-	log.SetData("chainURL", chainURL)
 	// call to contract to get emotion
-	client, err := ethclient.Dial(chainURL)
+	client, err := helpers.EthDialer()
 	if err != nil {
 		log.Error("ethclient.Dial", err.Error(), err)
 		return nil, err
@@ -470,12 +467,10 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 	data, err := u.Cache.GetData(contractDataKey)
 	if err != nil {
 		log.SetData("req", req)
-		chainURL := os.Getenv("CHAIN_URL")
+		
 		addr := common.HexToAddress(req.ContractAddress)
-
-		log.SetData("chainURL", chainURL)
 		// call to contract to get emotion
-		client, err := ethclient.Dial(chainURL)
+		client, err := helpers.EthDialer()
 		if err != nil {
 			log.Error("ethclient.Dial", err.Error(), err)
 			return nil, err

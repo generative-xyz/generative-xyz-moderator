@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opentracing/opentracing-go"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
@@ -22,6 +23,7 @@ import (
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/contracts/generative_project_data"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 )
@@ -104,6 +106,20 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 		return nil
 	})
 
+	
+	client, err := helpers.EthDialer()
+	if err != nil {
+		log.Error("ethclient.Dial", err.Error(), err)
+		return nil, err
+	}
+
+	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
+	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
+	if err != nil {
+		log.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		return nil, err
+	}
+
 	for fileName, fileInfo := range input.Files {
 		bytes, err := helpers.Base64Decode(fileInfo.Content)
 		if err != nil {
@@ -117,7 +133,15 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 			return nil, err
 		}
 		deflate := u.Deflate([]byte(out))
-		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out, Deflate: helpers.Base64Eecode(deflate)}
+
+		script := helpers.Base64Encode(deflate)
+		inflate, _ := gDataNft.InflateScript(nil, script)
+		if inflate.Err != 0 || inflate.Result != out {
+			script = ""
+		}
+
+		log.SetData("inflate", inflate)
+		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out, Deflate: script}
 	}
 
 	return &structure.MinifyDataResp{Files: resp}, nil

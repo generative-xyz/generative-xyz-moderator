@@ -51,6 +51,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	
 	//profile
+	profile := api.PathPrefix("/profile").Subrouter()
+	profile.HandleFunc("/{walletAddress}", h.profileByWallet).Methods("GET")
+	
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
 	singedIn.HandleFunc("", h.profile).Methods("GET")

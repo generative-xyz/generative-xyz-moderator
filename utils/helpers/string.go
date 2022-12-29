@@ -81,7 +81,7 @@ func Base64Decode(base64Str string) ([]byte, error) {
     return sDec, nil
 }
 
-func Base64Eecode(data []byte) string {
+func Base64Encode(data []byte) string {
 	sDec := b64.StdEncoding.EncodeToString(data)
     return sDec
 }

@@ -102,8 +102,16 @@ definitions:
         type: string
       image:
         type: string
+      mintedTime:
+        type: string
       name:
         type: string
+      owner:
+        $ref: '#/definitions/response.ProfileResponse'
+      ownerAddr:
+        type: string
+      project:
+        $ref: '#/definitions/response.ProjectResp'
     type: object
   response.JsonResponse:
     properties:
@@ -118,6 +126,13 @@ definitions:
       message:
         type: string
     type: object
+  response.NftMintingDetail:
+    properties:
+      index:
+        type: integer
+      indexReserve:
+        type: integer
+    type: object
   response.ProfileResponse:
     properties:
       avatar:
@@ -131,6 +146,60 @@ definitions:
       id:
         type: string
       walletAddress:
+        type: string
+    type: object
+  response.ProjectResp:
+    properties:
+      completeTime:
+        type: integer
+      contractAddress:
+        type: string
+      creator:
+        type: string
+      creatorAddr:
+        type: string
+      desc:
+        type: string
+      genNFTAddr:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      itemDesc:
+        type: string
+      license:
+        type: string
+      limit:
+        type: integer
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      mintPriceAddr:
+        type: string
+      mintingInfo:
+        $ref: '#/definitions/response.NftMintingDetail'
+      name:
+        type: string
+      projectURI:
+        type: string
+      royalty:
+        type: integer
+      scriptType:
+        items:
+          type: string
+        type: array
+      scripts:
+        items:
+          type: string
+        type: array
+      social: {}
+      status:
+        type: boolean
+      styles:
+        type: string
+      tokenID:
         type: string
     type: object
   response.RespondErr:
@@ -168,6 +237,8 @@ definitions:
   structure.FileContentReq:
     properties:
       content:
+        type: string
+      deflate:
         type: string
       mediaType:
         type: string
@@ -563,6 +634,32 @@ paths:
       security:
       - Authorization: []
       summary: Edit User profile
+      tags:
+      - Profile
+  /profile/{walletAddress}:
+    get:
+      consumes:
+      - application/json
+      description: User profile via wallet address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      summary: User profile via wallet address
       tags:
       - Profile
   /profile/logout:
