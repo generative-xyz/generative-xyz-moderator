@@ -158,13 +158,35 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	profile, _ := h.Usecase.GetUserProfileByWalletAddress(span, strings.ToLower(nft.Owner))
-	var profileResp *response.ProfileResponse
-	if profile != nil {
-		profileResp, _ = h.profileToResp(profile)
-	} else {
-		profileResp = nil
+	getProfile := func(c chan *response.ProfileResponse, address string) {
+		var profileResp *response.ProfileResponse
+		var err error
+
+		defer func() {
+			c <- profileResp
+		}()
+
+		profile, err := h.Usecase.GetUserProfileByWalletAddress(span, strings.ToLower(address))
+		if err != nil {
+			return
+		}
+		if profile != nil {
+			profileResp, err = h.profileToResp(profile)
+			if err != nil {
+				profileResp = nil
+				return
+			}
+		}
 	}
+
+	ownerProfileChan := make(chan *response.ProfileResponse, 1) 
+	creatorProfileChan := make(chan *response.ProfileResponse, 1) 
+
+	go getProfile(ownerProfileChan, nft.Owner)
+	go getProfile(creatorProfileChan, project.CreatorAddrr)
+
+	ownerProfileResp := <-ownerProfileChan
+	creatorProfileResp := <-creatorProfileChan
 
 	projectResp, err := h.projectToResp(project)
 	if err != nil {
@@ -180,9 +202,10 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		AnimationURL: message.AnimationURL,
 		Attributes:   message.ParsedAttributes,
 		OwnerAddr:    nft.Owner,
-		Owner:        profileResp,
+		Owner:        ownerProfileResp,
 		MintedTime:   *message.MintedTime,
 		Project:      projectResp,
+		Creator: creatorProfileResp,
 	}
 
 	log.SetData("resp.message", message)

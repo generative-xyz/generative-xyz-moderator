@@ -25,6 +25,7 @@ type InternalTokenURIResp struct{
 	OwnerAddr string `json:"ownerAddr"`
 	Owner *ProfileResponse `json:"owner"`
 	Project *ProjectResp `json:"project"`
+	Creator *ProfileResponse `json:"creator"`
 }
 
 type InternalTokenTraitsResp struct{
