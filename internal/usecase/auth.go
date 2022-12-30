@@ -240,6 +240,26 @@ func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, da
 		user.Bio = *data.Bio
 	}
 	
+	if data.ProfileSocial.Discord != nil {
+		user.ProfileSocial.Discord = *data.ProfileSocial.Discord
+	}
+	
+	if data.ProfileSocial.Web != nil {
+		user.ProfileSocial.Web = *data.ProfileSocial.Web
+	}
+	
+	if data.ProfileSocial.Twitter != nil {
+		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
+	}
+	
+	if data.ProfileSocial.Medium != nil {
+		user.ProfileSocial.Medium = *data.ProfileSocial.Medium
+	}
+	
+	if data.ProfileSocial.Web != nil {
+		user.ProfileSocial.Web = *data.ProfileSocial.Web
+	}
+	
 	updated, err := u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
 		log.Error("u.Repo.UpdateUserByID", err.Error(), err)
