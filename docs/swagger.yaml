@@ -925,6 +925,35 @@ paths:
       summary: get the random projects
       tags:
       - Project
+  /project/recent-works:
+    get:
+      consumes:
+      - application/json
+      description: get the recent work projects (posible of minted out)
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get the recent work projects
+      tags:
+      - Project
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
