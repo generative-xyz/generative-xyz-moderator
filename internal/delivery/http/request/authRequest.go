@@ -20,6 +20,15 @@ type UpdateProfileRequest struct {
 	DisplayName *string `json:"displayName"`
 	Bio *string `json:"bio"`
 	Avatar *string `json:"avatar"`
+	ProfileSocial ProfileSocial `json:"profileSocial"`
+}
+
+type ProfileSocial  struct{
+    Web string `json:"web"`;
+    Twitter string `json:"twitter"`;
+    Discord string `json:"discord"`;
+    Medium string `json:"medium"`;
+	Instagram string `json:"instagram"`;
 }
 
 func (g GenerateMessageRequest) SelfValidate() error {

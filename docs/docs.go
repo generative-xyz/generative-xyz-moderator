@@ -1346,6 +1346,26 @@ var doc = `{
                 }
             }
         },
+        "request.ProfileSocial": {
+            "type": "object",
+            "properties": {
+                "discord": {
+                    "type": "string"
+                },
+                "instagram": {
+                    "type": "string"
+                },
+                "medium": {
+                    "type": "string"
+                },
+                "twitter": {
+                    "type": "string"
+                },
+                "web": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -1357,6 +1377,9 @@ var doc = `{
                 },
                 "displayName": {
                     "type": "string"
+                },
+                "profileSocial": {
+                    "$ref": "#/definitions/request.ProfileSocial"
                 }
             }
         },
@@ -1512,7 +1535,30 @@ var doc = `{
                 "id": {
                     "type": "string"
                 },
+                "profileSocial": {
+                    "$ref": "#/definitions/response.ProfileSocial"
+                },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProfileSocial": {
+            "type": "object",
+            "properties": {
+                "discord": {
+                    "type": "string"
+                },
+                "instagram": {
+                    "type": "string"
+                },
+                "medium": {
+                    "type": "string"
+                },
+                "twitter": {
+                    "type": "string"
+                },
+                "web": {
                     "type": "string"
                 }
             }
@@ -1570,6 +1616,12 @@ var doc = `{
                 },
                 "projectURI": {
                     "type": "string"
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "royalty": {
                     "type": "integer"

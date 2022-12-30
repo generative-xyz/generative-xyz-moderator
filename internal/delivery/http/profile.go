@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -132,13 +133,16 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateProfile := structure.UpdateProfile{
-		Bio: reqBody.Bio,
-		DisplayName: reqBody.DisplayName,
+	updateProfile := &structure.UpdateProfile{}
+	err = copier.Copy(updateProfile, reqBody)
+	if err != nil {
+		log.Error("copier.Copy.structure.UpdateProfile", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
 	}
 
 	log.SetData("input.Data", updateProfile)
-	profile, err := h.Usecase.UpdateUserProfile(span, userID, updateProfile)
+	profile, err := h.Usecase.UpdateUserProfile(span, userID, *updateProfile)
 	if err != nil {
 		log.Error("h.Usecase.GenerateMessage", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)

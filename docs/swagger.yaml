@@ -37,6 +37,19 @@ definitions:
       address:
         type: string
     type: object
+  request.ProfileSocial:
+    properties:
+      discord:
+        type: string
+      instagram:
+        type: string
+      medium:
+        type: string
+      twitter:
+        type: string
+      web:
+        type: string
+    type: object
   request.UpdateProfileRequest:
     properties:
       avatar:
@@ -45,6 +58,8 @@ definitions:
         type: string
       displayName:
         type: string
+      profileSocial:
+        $ref: '#/definitions/request.ProfileSocial'
     type: object
   request.VerifyMessageRequest:
     properties:
@@ -145,7 +160,22 @@ definitions:
         type: string
       id:
         type: string
+      profileSocial:
+        $ref: '#/definitions/response.ProfileSocial'
       walletAddress:
+        type: string
+    type: object
+  response.ProfileSocial:
+    properties:
+      discord:
+        type: string
+      instagram:
+        type: string
+      medium:
+        type: string
+      twitter:
+        type: string
+      web:
         type: string
     type: object
   response.ProjectResp:
@@ -184,6 +214,10 @@ definitions:
         type: string
       projectURI:
         type: string
+      reservers:
+        items:
+          type: string
+        type: array
       royalty:
         type: integer
       scriptType:

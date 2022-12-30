@@ -29,7 +29,18 @@ type Users struct {
 	Bio string `bson:"bio"`
 	Avatar string `bson:"avatar"`
 	CreatedAt *time.Time `bson:"created_at"`
+	ProfileSocial ProfileSocial
 }
+
+
+type ProfileSocial  struct{
+    Web string `bson:"web"`;
+    Twitter string `bson:"twitter"`;
+    Discord string `bson:"discord"`;
+    Medium string `bson:"medium"`;
+	Instagram string `bson:"instagram"`;
+}
+
 
 func (u Users) TableName() string { 
 	return utils.COLLECTION_USERS

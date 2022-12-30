@@ -30,4 +30,13 @@ type ProfileResponse struct {
 type UpdateProfile struct {
 	DisplayName *string 
 	Bio *string 
+	ProfileSocial ProfileSocial
+}
+
+type ProfileSocial  struct{
+    Web *string 
+    Twitter *string
+    Discord *string 
+    Medium *string 
+	Instagram *string 
 }
