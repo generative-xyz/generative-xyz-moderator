@@ -342,3 +342,57 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CompleteTime = input.CompleteTime
 	return resp, nil
 }
+
+// UserCredits godoc
+// @Summary get the recent work projects
+// @Description  get the recent work projects (posible of minted out)
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param contractAddress query string false "Filter project via contract address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/recent-works [GET]
+func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("projects", r)
+	defer h.Tracer.FinishSpan(span, log )
+	var err error
+	vars := mux.Vars(r)
+	contractAddress := vars["contractAddress"]
+	span.SetTag("contractAddress", contractAddress)
+
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f := structure.FilterProjects{}
+	f.BaseFilters = *baseF
+	uProjects, err := h.Usecase.GetRecentWorksProjects(span, f)
+	if err != nil {
+		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	pResp :=  []response.ProjectResp{}
+	iProjects := uProjects.Result
+	projects := iProjects.([]entity.Projects)
+	for _, project := range projects {
+
+		p, err := h.projectToResp(&project)
+		if err != nil {
+			log.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *p)
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}

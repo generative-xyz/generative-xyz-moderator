@@ -227,3 +227,24 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	}
 	return c, nil
 }
+
+func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetRecentWorksProjects", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	pe.WalletAddress = req.WalletAddress
+	projects, err := u.Repo.GetRecentWorksProjects(*pe)
+	if err != nil {
+		log.Error("u.Repo.CreateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("projects", projects)
+	return projects, nil
+}
