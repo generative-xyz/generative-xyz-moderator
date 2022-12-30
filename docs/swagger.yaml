@@ -268,6 +268,11 @@ definitions:
       refreshToken:
         type: string
     type: object
+  structure.DeflateDataResp:
+    properties:
+      data:
+        type: string
+    type: object
   structure.FileContentReq:
     properties:
       content:
@@ -593,6 +598,31 @@ paths:
       security:
       - Authorization: []
       summary: Upload file
+      tags:
+      - Files
+  /files/deflate:
+    post:
+      description: Check the deflate data
+      parameters:
+      - description: Data for minify
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/structure.DeflateDataResp'
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/structure.DeflateDataResp'
+              type: object
+      security:
+      - Authorization: []
+      summary: Check the deflate data
       tags:
       - Files
   /files/minify:
