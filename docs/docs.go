@@ -549,11 +549,11 @@ var doc = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Check the deflate data",
+                "description": "Deflate a string",
                 "tags": [
                     "Files"
                 ],
-                "summary": "Check the deflate data",
+                "summary": "Deflate a string",
                 "parameters": [
                     {
                         "description": "Data for minify",
@@ -1551,6 +1551,9 @@ var doc = `{
                     "type": "string"
                 },
                 "attributes": {},
+                "creator": {
+                    "$ref": "#/definitions/response.ProfileResponse"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -1658,9 +1661,6 @@ var doc = `{
                     "type": "integer"
                 },
                 "contractAddress": {
-                    "type": "string"
-                },
-                "creator": {
                     "type": "string"
                 },
                 "creatorAddr": {
