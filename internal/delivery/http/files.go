@@ -75,8 +75,8 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 
 
 // UserCredits godoc
-// @Summary Check the deflate data
-// @Description Check the deflate data
+// @Summary Deflate a string
+// @Description Deflate a string
 // @Tags Files
 // @Content-Type: application/json
 // @Security Authorization

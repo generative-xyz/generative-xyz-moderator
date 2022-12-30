@@ -113,6 +113,8 @@ definitions:
       animationUrl:
         type: string
       attributes: {}
+      creator:
+        $ref: '#/definitions/response.ProfileResponse'
       description:
         type: string
       image:
@@ -183,8 +185,6 @@ definitions:
       completeTime:
         type: integer
       contractAddress:
-        type: string
-      creator:
         type: string
       creatorAddr:
         type: string
@@ -602,7 +602,7 @@ paths:
       - Files
   /files/deflate:
     post:
-      description: Check the deflate data
+      description: Deflate a string
       parameters:
       - description: Data for minify
         in: body
@@ -622,7 +622,7 @@ paths:
               type: object
       security:
       - Authorization: []
-      summary: Check the deflate data
+      summary: Deflate a string
       tags:
       - Files
   /files/minify:
