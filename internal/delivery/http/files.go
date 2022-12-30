@@ -72,3 +72,37 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 }
+
+
+// UserCredits godoc
+// @Summary Check the deflate data
+// @Description Check the deflate data
+// @Tags Files
+// @Content-Type: application/json
+// @Security Authorization
+// @Param request body structure.DeflateDataResp true "Data for minify"
+// @Success 200 {object} response.JsonResponse{data=structure.DeflateDataResp}
+// @Router /files/deflate [POST]
+func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.deflate", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	reqBody := &structure.DeflateDataResp{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	
+	err = h.Usecase.DeflateString(span, reqBody)
+	if err != nil {
+		log.Error(" h.Usecase.DeflateString", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
+}

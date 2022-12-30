@@ -135,7 +135,7 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 		deflate := u.Deflate([]byte(out))
 
 		script := helpers.Base64Encode(deflate)
-		inflate, _ := gDataNft.InflateScript(nil, script)
+		inflate, _ := gDataNft.InflateString(nil, script)
 		if inflate.Err != 0 || inflate.Result != out {
 			script = ""
 		}
@@ -145,4 +145,44 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 	}
 
 	return &structure.MinifyDataResp{Files: resp}, nil
+}
+
+func (u Usecase) DeflateString(rootSpan opentracing.Span, input *structure.DeflateDataResp) error {
+	span, log := u.StartSpan("CheckDeflate", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	//TODO implement here
+
+	client, err := helpers.EthDialer()
+	if err != nil {
+		log.Error("ethclient.Dial", err.Error(), err)
+		return err
+	}
+
+	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
+	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
+	if err != nil {
+		log.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		return err
+	}
+	
+	inputByte := []byte(input.Data)
+	deflate := u.Deflate(inputByte)
+	script := helpers.Base64Encode(deflate)
+	
+	log.SetData("len(deflate)", len(deflate))
+	log.SetData("len(inputByte)", len(inputByte))
+	if len(deflate) > len(inputByte) {
+		input.Data = ""
+		return nil
+	}
+	
+	inflate, _ := gDataNft.InflateString(nil, script)
+	if inflate.Err != 0 || inflate.Result != input.Data {
+		log.SetData("inflate.Err", inflate.Err)
+		input.Data = ""
+		return nil
+	}
+	log.SetData("inflate", inflate)
+	input.Data = script
+	return  nil
 }

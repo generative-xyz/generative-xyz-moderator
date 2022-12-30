@@ -49,6 +49,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// files.Use(h.MiddleWare.AccessToken)
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
+	files.HandleFunc("/deflate", h.deflate).Methods("POST")
 	
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()

@@ -542,6 +542,51 @@ var doc = `{
                 }
             }
         },
+        "/files/deflate": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Check the deflate data",
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Check the deflate data",
+                "parameters": [
+                    {
+                        "description": "Data for minify",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/structure.DeflateDataResp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/structure.DeflateDataResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/files/minify": {
             "post": {
                 "security": [
@@ -1738,6 +1783,14 @@ var doc = `{
                     "type": "boolean"
                 },
                 "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "structure.DeflateDataResp": {
+            "type": "object",
+            "properties": {
+                "data": {
                     "type": "string"
                 }
             }
