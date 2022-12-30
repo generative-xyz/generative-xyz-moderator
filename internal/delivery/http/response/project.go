@@ -10,7 +10,6 @@ type ProjectResp struct{
 	MintPrice string `json:"mintPrice"`
 	MintPriceAddr string `json:"mintPriceAddr"`
 	Name string `json:"name"`
-	Creator string `json:"creator"`
 	CreatorAddr string `json:"creatorAddr"`
 	License string `json:"license"`
 	Desc string `json:"desc"`
@@ -27,6 +26,11 @@ type ProjectResp struct{
 	MintingInfo NftMintingDetail `json:"mintingInfo"`
 	Royalty int `json:"royalty"`
 	Reservers []string `json:"reservers"`
+}
+
+type ProjectRespWithCreatorProfile struct {
+	ProjectResp    `json:"project_resp"`
+	CreatorProfile ProfileResponse `json:"creator_profile"`
 }
 
 type NftMintingDetail struct {
