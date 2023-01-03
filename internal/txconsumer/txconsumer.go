@@ -115,6 +115,10 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 				c.Usecase.ResolveMarketplaceMakeOffer(log)
 			case c.Config.MarketplaceEvents.AcceptMakeOffer:
 				c.Usecase.ResolveMarketplaceAcceptOfferEvent(log)
+			case c.Config.MarketplaceEvents.CancelListing:
+				c.Usecase.ResolveMarketplaceCancelListing(log)
+			case c.Config.MarketplaceEvents.CancelMakeOffer:
+				c.Usecase.ResolveMarketplaceCancelOffer(log)
 			}
 		}
 		// do switch case with log.Address and log.Topics

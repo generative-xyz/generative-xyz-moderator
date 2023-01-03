@@ -128,6 +128,57 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 	return nil
 }
 
+func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceCancelListing")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParseCancelListing(chainLog)
+	if err != nil {
+		log.Error("cannot parse cancel listing event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-cancel-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.CancelListing(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve cancel listing event", "", err)
+	}
+
+	return nil
+}
+
+func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceCancelOffer")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParseCancelMakeOffer(chainLog)
+	if err != nil {
+		log.Error("cannot parse cancel offer event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-cancel-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.CancelOffer(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve cancel offer event", "", err)
+	}
+
+	return nil
+}
+
+
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
 	span, log := u.StartSpanWithoutRoot("UpdateProjectWithListener.GetProjectDetail")
