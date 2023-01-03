@@ -287,19 +287,9 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		return nil, err
 	}
 
-	err = projectDetailFChan.Err
-	if err != nil {
-		log.Error("projectDetailFChan.Err ", err.Error(), err)
-		return nil, err
-	}
-
 	project := projectFChan.Data
-	projectDetail := projectDetailFChan.Data
-
 	log.SetData("project", project)
-	log.SetData("projectDetail", projectDetail)
-
-
+	
 	//get creator profile
 	getProfile := func(profileChan chan structure.ProfileChan, address string) {
 		var user *entity.Users
@@ -322,54 +312,62 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	go getProfile(profileChan, project.CreatorAddrr)
 
 	usrFromChan := <- profileChan
-	project.Name = projectDetail.ProjectDetail.Name
-	project.CreatorName = projectDetail.ProjectDetail.Creator
-	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
-	project.Description = projectDetail.ProjectDetail.Desc
-	project.Scripts= projectDetail.ProjectDetail.Scripts
-	project.ThirdPartyScripts= projectDetail.ProjectDetail.ScriptType
-	project.Styles= projectDetail.ProjectDetail.Styles
-	project.GenNFTAddr= strings.ToLower( projectDetail.ProjectDetail.GenNFTAddr.String())
-	project.TokenIDInt = int64(tokenIDInt)
-	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
-	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
-	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
-	project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
-	project.License = projectDetail.ProjectDetail.License
-	project.Status = projectDetail.Status
-	project.SocialWeb = projectDetail.ProjectDetail.Social.Web
-	project.SocialTwitter = projectDetail.ProjectDetail.Social.Twitter
-	project.SocialDiscord = projectDetail.ProjectDetail.Social.Discord
-	project.SocialMedium = projectDetail.ProjectDetail.Social.Medium
-	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
-	project.Thumbnail = projectDetail.ProjectDetail.Image
-	project.NftTokenUri = projectDetail.NftTokenUri
-	project.IsSynced = true
-	project.Royalty = int(projectDetail.Royalty.Data.Int64())
-	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
 
+	project.MintingInfo = entity.ProjectMintingInfo{
+		Index: 0,
+		IndexReverse: 0,
+	}
+
+	err = projectDetailFChan.Err
+	if err != nil {
+		log.Error("projectDetailFChan.Err ", err.Error(), err)
+		//return nil, err
+	}else{
+		projectDetail := projectDetailFChan.Data
+		log.SetData("projectDetail", projectDetail)
+		project.IsSynced = true
+		project.Name = projectDetail.ProjectDetail.Name
+		project.CreatorName = projectDetail.ProjectDetail.Creator
+		project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
+		project.Description = projectDetail.ProjectDetail.Desc
+		project.Scripts= projectDetail.ProjectDetail.Scripts
+		project.ThirdPartyScripts= projectDetail.ProjectDetail.ScriptType
+		project.Styles= projectDetail.ProjectDetail.Styles
+		project.GenNFTAddr= strings.ToLower( projectDetail.ProjectDetail.GenNFTAddr.String())
+		project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
+		project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
+		project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
+		project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
+		project.License = projectDetail.ProjectDetail.License
+		project.Status = projectDetail.Status
+		project.SocialWeb = projectDetail.ProjectDetail.Social.Web
+		project.SocialTwitter = projectDetail.ProjectDetail.Social.Twitter
+		project.SocialDiscord = projectDetail.ProjectDetail.Social.Discord
+		project.SocialMedium = projectDetail.ProjectDetail.Social.Medium
+		project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
+		project.Thumbnail = projectDetail.ProjectDetail.Image
+		project.NftTokenUri = projectDetail.NftTokenUri
+		project.Royalty = int(projectDetail.Royalty.Data.Int64())
+		project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+		for _, reserve := range projectDetail.ProjectDetail.Reserves {
+			project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()) )
+		}
+
+		if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
+			project.MintingInfo = entity.ProjectMintingInfo{
+				Index: projectDetail.NftProjectDetail.Index.Int64(),
+				IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
+			}
+		}
+	}
+	
+	project.TokenIDInt = int64(tokenIDInt)
 	if usrFromChan.Err != nil {
 		log.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
 	}else{
 		project.CreatorProfile = *usrFromChan.Data
 	}
 
-	for _, reserve := range projectDetail.ProjectDetail.Reserves {
-		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()) )
-	}
-
-	if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
-		project.MintingInfo = entity.ProjectMintingInfo{
-			Index: projectDetail.NftProjectDetail.Index.Int64(),
-			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
-		}
-	}else{
-		project.MintingInfo = entity.ProjectMintingInfo{
-			Index: 0,
-			IndexReverse: 0,
-		}
-	}
-	
 	log.SetData("project",project)
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -94,6 +95,12 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 		return nil, err
 	}
 
+	if len(projects) == 0 {
+		err := errors.New("Project are not found")
+		log.Error("Projects.are.not.found", err.Error(), err)
+		return nil, err 
+	}
+
 	timeNow := time.Now().UTC().Nanosecond()
 	rand := int(timeNow) % len(projects)
 
@@ -131,18 +138,23 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	span, log := u.StartSpan("GetProjectDetail", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	//alway update project in a separated process
-	go func(rootSpan opentracing.Span) {
-		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
+	defer func  ()  {
+		//alway update project in a separated process
+		go func(rootSpan opentracing.Span) {
+			span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
 
-		_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
-		if err != nil {
-			log.Error("u.Repo.FindProjectBy", err.Error(), err)
-			return
-		}
+			_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
+			if err != nil {
+				log.Error("u.Repo.FindProjectBy", err.Error(), err)
+				return
+			}
 
-	}(span)
+		}(span)	
+	}()
+
+	log.SetTag("ProjectID", req.ProjectID)
+	log.SetTag("ContractAddress", req.ContractAddress)
 
 	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) {

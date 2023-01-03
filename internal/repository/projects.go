@@ -93,8 +93,7 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
-	f := bson.M{}
-
+	f := r.FilterProjects(filter)
 	filter.SortBy = "tokenIDInt"
 	filter.Sort = -1
 	if filter.WalletAddress != nil {
@@ -116,9 +115,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 
 func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error)  {
 	projects := []entity.Projects{}
-	
-	f := bson.M{}
-	f[utils.KEY_DELETED_AT] = nil
+	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
@@ -133,7 +130,7 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 
 func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error)  {
 	//products := &entity.Products{}
-	f := bson.M{}
+	f := r.FilterProjects(filter)
 	count, err := r.DB.Collection(utils.COLLECTION_PROJECTS).CountDocuments(context.TODO(), f)
 	if err != nil {
 		return nil, err
@@ -145,7 +142,7 @@ func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error) 
 func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
-	f := bson.M{}
+	f := r.FilterProjects(filter)
 
 	query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
 	err := json. Unmarshal([]byte(query), &f)
@@ -167,7 +164,7 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
-	f := bson.M{}
+	f := r.FilterProjects(filter)
 
 	query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
 	err := json. Unmarshal([]byte(query), &f)
@@ -184,4 +181,11 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	return resp, nil
+}
+
+func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
+	f := bson.M{}
+	f["isSynced"] = true
+	f[utils.KEY_DELETED_AT] = nil
+	return f
 }
