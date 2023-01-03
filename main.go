@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"rederinghub.io/internal/delivery/crontab"
+
 	"rederinghub.io/external/nfts"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/repository"
@@ -14,11 +16,10 @@ import (
 	"rederinghub.io/utils/connections"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
+	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
-
-	_logger "rederinghub.io/utils/logger"
 
 	"github.com/gorilla/mux"
 )
@@ -139,6 +140,12 @@ func startServer() {
 		}(txConsumer)
 		
 	}
+
+	cron := crontab.NewScronHandler(&g, *uc)
+	go func (cron *crontab.ScronHandler)  {
+		logger.Info("Cron is listening")
+		cron.StartServer()
+	}(cron)
 
 	log.Println("started server and listening")
 	h.StartServer()
