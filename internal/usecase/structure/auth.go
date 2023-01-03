@@ -1,6 +1,10 @@
 package structure
 
-import "time"
+import (
+	"time"
+
+	"rederinghub.io/internal/entity"
+)
 
 
 type GenerateMessage struct {
@@ -39,4 +43,9 @@ type ProfileSocial  struct{
     Discord *string 
     Medium *string 
 	Instagram *string 
+}
+
+type ProfileChan struct {
+	Data *entity.Users
+	Err error
 }

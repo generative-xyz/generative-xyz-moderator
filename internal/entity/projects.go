@@ -42,8 +42,9 @@ type Projects struct {
 	NftTokenUri string `bson:"nftTokenUri"`
 	IsSynced bool `bson:"isSynced"`
 	MintingInfo ProjectMintingInfo `bson:",inline"`
-	CompleteTime int64  `json:"completeTime"`
-	Reservers []string `json:"reservers"`
+	CompleteTime int64  `bson:"completeTime"`
+	Reservers []string `bson:"reservers"`
+	CreatorProfile Users `bson:"creatorProfile"`
 }
 
 type	ProjectMintingInfo struct {

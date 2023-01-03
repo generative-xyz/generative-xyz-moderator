@@ -188,6 +188,8 @@ definitions:
         type: string
       creatorAddr:
         type: string
+      creatorProfile:
+        $ref: '#/definitions/response.ProfileResponse'
       desc:
         type: string
       genNFTAddr:

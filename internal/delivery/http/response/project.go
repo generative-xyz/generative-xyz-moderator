@@ -26,12 +26,10 @@ type ProjectResp struct{
 	MintingInfo NftMintingDetail `json:"mintingInfo"`
 	Royalty int `json:"royalty"`
 	Reservers []string `json:"reservers"`
+	CreatorProfile ProfileResponse `json:"creatorProfile"`
 }
 
-type ProjectRespWithCreatorProfile struct {
-	ProjectResp    `json:"project_resp"`
-	CreatorProfile ProfileResponse `json:"creator_profile"`
-}
+
 
 type NftMintingDetail struct {
 	Index           int64 `json:"index"`

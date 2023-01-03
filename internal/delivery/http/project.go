@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -102,39 +101,10 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-
-	getProfile := func(c chan *response.ProfileResponse, address string) {
-		var profileResp *response.ProfileResponse
-		var err error
-
-		defer func() {
-			c <- profileResp
-		}()
-
-		profile, err := h.Usecase.GetUserProfileByWalletAddress(span, strings.ToLower(address))
-		if err != nil {
-			return
-		}
-		if profile != nil {
-			profileResp, err = h.profileToResp(profile)
-			if err != nil {
-				profileResp = nil
-				return
-			}
-		}
-	}
-
-	creatorProfileChan := make(chan *response.ProfileResponse, 1) 
-
-	go getProfile(creatorProfileChan, project.CreatorAddrr)
-
-	creatorProfileResp := <-creatorProfileChan
-
-	projectWithCreator := h.makeProjectWithCreatorResponse(resp, creatorProfileResp)
 	
 	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, projectWithCreator , "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
 
 // UserCredits godoc
@@ -369,6 +339,12 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.Royalty = input.Royalty
 	resp.Reservers = input.Reservers
 	resp.CompleteTime = input.CompleteTime
+
+	profileResp, err  := h.profileToResp(&input.CreatorProfile)
+	if err == nil {
+		resp.CreatorProfile = *profileResp
+	}
+	
 	return resp, nil
 }
 
@@ -424,11 +400,4 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
-}
-
-func (h *httpDelivery) makeProjectWithCreatorResponse(prjResp *response.ProjectResp, creator *response.ProfileResponse) (resp *response.ProjectRespWithCreatorProfile) {
-	resp = &response.ProjectRespWithCreatorProfile{}
-	copier.CopyWithOption(resp, prjResp, copier.Option{DeepCopy: true})
-	resp.CreatorProfile = *creator
-	return
 }
