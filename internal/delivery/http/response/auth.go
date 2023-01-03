@@ -29,11 +29,11 @@ type ProfileResponse struct {
 }
 
 type ProfileSocial  struct{
-    Web string `bson:"web"`;
-    Twitter string `bson:"web"`;
-    Discord string `bson:"discord"`;
-    Medium string `bson:"medium"`;
-	Instagram string `bson:"instagram"`;
+    Web string `json:"web"`;
+    Twitter string `json:"twitter"`;
+    Discord string `json:"discord"`;
+    Medium string `json:"medium"`;
+	Instagram string `json:"instagram"`;
 }
 
 
