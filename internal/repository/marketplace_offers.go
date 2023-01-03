@@ -58,3 +58,26 @@ func (r Repository) AcceptOfferByOfferingID(offeringID string) error {
 	
 	return err
 }
+
+func (r Repository) CancelOfferByOfferingID(offeringID string) error {
+	obj := &entity.MarketplaceOffers{}
+	
+	f := bson.D{
+		{Key: "offering_id", Value: offeringID,},
+	}
+
+	Offer, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_OFFERS, f)
+	if err != nil {
+		return err
+	}
+
+	err = helpers.Transform(Offer, obj)
+	if err != nil {
+		return err
+	}
+
+	obj.Closed = true
+	_, err = r.UpdateOne(obj.TableName(), f, obj)
+	
+	return err
+}

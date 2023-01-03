@@ -120,3 +120,34 @@ func (u Usecase) AcceptMakeOffer(rootSpan opentracing.Span, event *generative_ma
 
 	return nil
 }
+
+func (u Usecase) CancelListing(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibCancelListing) error {
+	span, log := u.StartSpan("CancelListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
+	log.SetData("cancel listing offeringId", offeringID)
+	err := u.Repo.CancelListingByOfferingID(offeringID)
+	if err != nil {
+		return err
+	}
+
+	// TODO: @dac add update collection stats here
+
+	return nil
+}
+
+func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibCancelMakeOffer) error {
+	span, log := u.StartSpan("CancelMakeOffer", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
+	log.SetData("cancel make offer offeringId", offeringID)
+	err := u.Repo.CancelOfferByOfferingID(offeringID)
+	if err != nil {
+		return err
+	}
+
+	// TODO: @dac add update collection stats here
+
+	return nil
+}
+
