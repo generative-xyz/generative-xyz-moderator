@@ -25,7 +25,7 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [POST]
 func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.projects", r)
+	span, log := h.StartSpan("createProjects", r)
 	defer h.Tracer.FinishSpan(span, log )
 
 	var reqBody request.CreateProjectReq
@@ -44,6 +44,10 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	log.SetData("reqUsecase",reqUsecase)
+	log.SetTag("contractAddress",reqUsecase.ContractAddress)
+	log.SetTag("tokenID",reqUsecase.TokenID)
 
 	message, err := h.Usecase.CreateProject(span, *reqUsecase)
 	if err != nil {
@@ -74,7 +78,7 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenTrait", r)
+	span, log := h.StartSpan("projectDetail", r)
 	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)

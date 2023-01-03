@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
@@ -575,4 +576,106 @@ func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
 	}
 
 	return nil
+}
+
+func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetTokensByContract", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// call to contract to get emotion
+	client, err := helpers.EthDialer()
+	if err != nil {
+		log.Error("ethclient.Dial", err.Error(), err)
+		return nil, err
+	}
+
+	contractAddr := common.HexToAddress(contractAddress)
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		return nil, err
+	}
+
+	project, err := gNft.Project(nil)
+	if err != nil {
+		log.Error("gNft.Project", err.Error(), err)
+		return nil, err
+	}
+	parentAddr := project.ProjectAddr
+
+	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
+	if err != nil {
+		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+		return nil, err
+	}
+	parentAddrStr := parentAddr.String()
+	result := []entity.TokenUri{}
+	for _, item := range resp.Result {
+		tokenID := item.TokenID
+		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
+		if err != nil {
+			log.Error("u.getTokenInfo", err.Error(), err)
+			return nil, err
+		}
+		result = append(result, *token)
+	}
+
+	p := &entity.Pagination{}
+	p.Result = result
+	p.Currsor = resp.Cursor
+	p.Total = int64(resp.Total)
+	p.Page = int64(resp.Page)
+	p.PageSize = int64(resp.PageSize)
+	return p, nil
+}
+
+func (u Usecase) GetTokensByWalletAddress(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetTokensByContract", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// call to contract to get emotion
+	client, err := helpers.EthDialer()
+	if err != nil {
+		log.Error("ethclient.Dial", err.Error(), err)
+		return nil, err
+	}
+
+	contractAddr := common.HexToAddress(contractAddress)
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		return nil, err
+	}
+
+	project, err := gNft.Project(nil)
+	if err != nil {
+		log.Error("gNft.Project", err.Error(), err)
+		return nil, err
+	}
+	parentAddr := project.ProjectAddr
+
+	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
+	if err != nil {
+		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+		return nil, err
+	}
+	parentAddrStr := parentAddr.String()
+	result := []entity.TokenUri{}
+	for _, item := range resp.Result {
+		tokenID := item.TokenID
+		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
+		if err != nil {
+			log.Error("u.getTokenInfo", err.Error(), err)
+			return nil, err
+		}
+		result = append(result, *token)
+	}
+
+	p := &entity.Pagination{}
+	p.Result = result
+	p.Currsor = resp.Cursor
+	p.Total = int64(resp.Total)
+	p.Page = int64(resp.Page)
+	p.PageSize = int64(resp.PageSize)
+	return p, nil
 }
