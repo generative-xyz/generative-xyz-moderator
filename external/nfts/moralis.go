@@ -179,23 +179,39 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 }
 
 func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID string) (*MoralisToken, error) {
-	nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
-		Chain: nil,
-		ReqBody: MoralisGetMultipleNftsReqBody{
-			Tokens: []NftFilter{
-				{
-					TokenAddress: contractAddr,
-					TokenId: tokenID,
+	key := fmt.Sprintf("NFT_C_%s_T_%s", contractAddr, tokenID)
+
+	cached, err := m.cache.GetData(key)
+	if cached == nil || err != nil {
+		nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
+			Chain: nil,
+			ReqBody: MoralisGetMultipleNftsReqBody{
+				Tokens: []NftFilter{
+					{
+						TokenAddress: contractAddr,
+						TokenId: tokenID,
+					},
 				},
 			},
-		},
-	})
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(nfts) != 1 {
+			return nil, errors.New("cannot find moralis token") 
+		} else {
+
+			nft := nfts[0]
+			m.cache.SetData(key, nft)
+			return &nft, nil
+		}
+	}
+	
+	resp := &MoralisToken{}
+	bytes := []byte(*cached)
+	err = json.Unmarshal(bytes, resp)
 	if err != nil {
 		return nil, err
 	}
-	if len(nfts) != 1 {
-		return nil, errors.New("cannot find moralis token") 
-	} else {
-		return &nfts[0], nil
-	}
+	return resp, nil
 }

@@ -47,7 +47,7 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 
 	message, err := h.Usecase.CreateProject(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		log.Error("h.Usecase.CreateProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}

@@ -26,8 +26,9 @@ import (
 func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-
-	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
+	contractAddress := req.ContractAddress
+	tokenID := req.TokenID
+	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, tokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			tokenUri, err = u.getTokenInfo(span, req)
@@ -42,13 +43,62 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		}
 	}
 
-	// tokenUri, err := u.getTokenInfo(span, req)
-	// if err != nil {
-	// 	log.Error("u.getTokenInfo", err.Error(), err)
-	// 	return nil, err
-	// }
+	if tokenUri.ProjectID == "" {
+		tokenUri, err = u.getTokenInfo(span, req)
+			if err != nil {
+				log.Error("u.getTokenInfo", err.Error(), err)
+				return nil, err
+			}
+	}
 
 	isUpdate := false
+
+	// find project by projectID and contract address
+	project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: tokenUri.ProjectID})
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		return nil, err
+	}
+
+	// find owner address on moralis
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, tokenID)
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		return nil, err
+	}
+
+	getProfile := func(c chan structure.ProfileChan, address string) {
+		var profile *entity.Users
+		var err error
+
+		defer func() {
+			c <- structure.ProfileChan{
+				Data:  profile,
+				Err:  err,
+			}
+		}()
+
+		profile, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
+		if err != nil {
+			return
+		}
+	}
+
+	ownerProfileChan := make(chan structure.ProfileChan, 1) 
+	creatorProfileChan := make(chan structure.ProfileChan, 1) 
+
+	go getProfile(ownerProfileChan, nft.Owner)
+	go getProfile(creatorProfileChan, project.CreatorAddrr)
+
+	ownerProfileResp := <-ownerProfileChan
+	creatorProfileResp := <-creatorProfileChan
+
+
+	if tokenUri.OwnerAddr == "" {
+		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
+		isUpdate = true
+	}
+
 	if tokenUri.ParsedAttributes == nil {
 		isUpdate = true
 		cctx, cancel := chromedp.NewContext(context.Background())
@@ -163,6 +213,9 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		log.SetData("updated", updated)
 	}
 
+	tokenUri.Owner = ownerProfileResp.Data
+	tokenUri.Creator = creatorProfileResp.Data
+	tokenUri.Project = project
 	return tokenUri, nil
 }
 
