@@ -11,6 +11,7 @@ import (
 type TokenUri struct {
 	BaseEntity `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
+	TokenIDInt int `bson:"token_id_int" json:"token_id_int"`
 	ContractAddress string `bson:"contract_address" json:"contract_address"`
 	Name string `bson:"name" json:"name"`
 	Description string `bson:"description" json:"description"`

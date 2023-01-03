@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,8 +94,9 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 	ownerProfileResp := <-ownerProfileChan
 	creatorProfileResp := <-creatorProfileChan
+	tokenIDInt, _ := strconv.Atoi(tokenID)
 
-
+	tokenUri.TokenIDInt = tokenIDInt
 	if tokenUri.OwnerAddr == "" {
 		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
 		isUpdate = true
