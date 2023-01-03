@@ -281,3 +281,38 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
+
+// UserCredits godoc
+// @Summary User profile's nft
+// @Description User profile's nft
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string true "Wallet address"
+// @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
+// @Router /profile/wallet/{walletAddress}/nfts [GET]
+func (h *httpDelivery) getProfileNfts(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.getProfileNfts", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(span, walletAddress)
+	if err != nil {
+		log.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	log.SetData("profile", profile)
+	
+	resp, err := h.profileToResp(profile)
+	if err != nil {
+		log.Error("h.profileToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}

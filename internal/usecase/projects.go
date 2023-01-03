@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 
-	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -33,57 +30,6 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreatePr
 
 	log.SetData("pe", pe)
 	return pe, nil
-}
-
-func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
-	span, log := u.StartSpan("CreateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	// call to contract to get emotion
-	client, err := helpers.EthDialer()
-	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
-		return nil, err
-	}
-
-	contractAddr := common.HexToAddress(contractAddress)
-	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
-	if err != nil {
-		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
-		return nil, err
-	}
-
-	project, err := gNft.Project(nil)
-	if err != nil {
-		log.Error("gNft.Project", err.Error(), err)
-		return nil, err
-	}
-	parentAddr := project.ProjectAddr
-
-	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
-	if err != nil {
-		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
-		return nil, err
-	}
-	parentAddrStr := parentAddr.String()
-	result := []entity.TokenUri{}
-	for _, item := range resp.Result {
-		tokenID := item.TokenID
-		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
-		if err != nil {
-			log.Error("u.getTokenInfo", err.Error(), err)
-			return nil, err
-		}
-		result = append(result, *token)
-	}
-
-	p := &entity.Pagination{}
-	p.Result = result
-	p.Currsor = resp.Cursor
-	p.Total = int64(resp.Total)
-	p.Page = int64(resp.Page)
-	p.PageSize = int64(resp.PageSize)
-	return p, nil
 }
 
 func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
@@ -173,7 +119,7 @@ func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span, req structure.F
 	pe.WalletAddress = req.WalletAddress
 	projects, err := u.Repo.GetMintedOutProjects(*pe)
 	if err != nil {
-		log.Error("u.Repo.CreateProject", err.Error(), err)
+		log.Error("u.Repo.GetMintedOutProjects", err.Error(), err)
 		return nil, err
 	}
 
@@ -223,7 +169,7 @@ func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure
 	pe.WalletAddress = req.WalletAddress
 	projects, err := u.Repo.GetRecentWorksProjects(*pe)
 	if err != nil {
-		log.Error("u.Repo.CreateProject", err.Error(), err)
+		log.Error("u.Repo.GetRecentWorksProjects", err.Error(), err)
 		return nil, err
 	}
 
