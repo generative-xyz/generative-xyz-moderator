@@ -1666,6 +1666,9 @@ var doc = `{
                 "creatorAddr": {
                     "type": "string"
                 },
+                "creatorProfile": {
+                    "$ref": "#/definitions/response.ProfileResponse"
+                },
                 "desc": {
                     "type": "string"
                 },

@@ -146,6 +146,29 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	log.SetData("project", project)
 	log.SetData("projectDetail", projectDetail)
 
+
+	//get creator profile
+	getProfile := func(profileChan chan structure.ProfileChan, address string) {
+		var user *entity.Users
+		var err error
+
+		defer func() {
+			profileChan <- structure.ProfileChan{
+				Data: user,
+				Err: err,
+			}
+		}()
+
+		user, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
+		if err != nil {
+			return
+		}
+	}
+
+	profileChan := make(chan structure.ProfileChan, 1)
+	go getProfile(profileChan, project.CreatorAddrr)
+
+	usrFromChan := <- profileChan
 	project.Name = projectDetail.ProjectDetail.Name
 	project.CreatorName = projectDetail.ProjectDetail.Creator
 	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
@@ -171,6 +194,13 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	project.IsSynced = true
 	project.Royalty = int(projectDetail.Royalty.Data.Int64())
 	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+
+	if usrFromChan.Err != nil {
+		log.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
+	}else{
+		project.CreatorProfile = *usrFromChan.Data
+	}
+
 	for _, reserve := range projectDetail.ProjectDetail.Reserves {
 		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()) )
 	}
