@@ -3,12 +3,14 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
@@ -51,6 +53,8 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	
 	log.SetData("contractAddr", contractAddr)
 	log.SetData("tokenIDStr", tokenIDStr)
+	log.SetTag("contractAddr", contractAddr)
+	log.SetTag("tokenIDStr", tokenIDStr)
 	tokenIDInt, err := strconv.Atoi(tokenIDStr)
 	if err != nil {
 		log.Error("strconv.Atoi.tokenIDStr", err.Error(), err)
@@ -194,3 +198,27 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	return  project, nil
 }
 
+func (u Usecase) GetProjectsFromChain(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.GetProjectsFromChain", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	contractAddress := os.Getenv("GENERATIVE_PROJECT")
+	mProjects, err := u.MoralisNft.GetNftByContract(contractAddress, nfts.MoralisFilter{})
+	if err != nil {
+		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+		return err
+	}
+
+	log.SetData("mProjects", mProjects)
+	for _, mProject := range mProjects.Result {
+		p, err := u.UpdateProjectFromChain(span, contractAddress, mProject.TokenID)
+		if err != nil {
+			log.Error("u.Repo.FindProjectBy", err.Error(), err)
+			return err
+		}
+		//resp = append(resp, *p)
+		log.SetData("p", *p)
+	}
+
+	return nil
+}
