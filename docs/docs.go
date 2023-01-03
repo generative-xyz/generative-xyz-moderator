@@ -848,7 +848,7 @@ var doc = `{
                 }
             }
         },
-        "/profile/{walletAddress}": {
+        "/profile/wallet/{walletAddress}": {
             "get": {
                 "description": "User profile via wallet address",
                 "consumes": [
