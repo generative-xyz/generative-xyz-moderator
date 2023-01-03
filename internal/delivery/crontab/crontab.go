@@ -54,6 +54,11 @@ func (h ScronHandler) StartServer() {
 		if err != nil {
 			log.Error("h.Usecase.UpdateProductPrice", err.Error(), err)
 		}
+		
+		err = h.Usecase.UpdateTokensFromChain(span)
+		if err != nil {
+			log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
+		}
 
 	})
 

@@ -554,3 +554,25 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 	log.SetData("cached.ContractDetail", contractDetail)
 	return contractDetail, nil
 }
+
+func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.UpdateTokensFromChain", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	tokens, err := u.Repo.GetAllTokens()
+	if err != nil {
+		log.Error("GetAllTokens", err.Error(), err)
+		return err
+	}
+
+	for _, token := range tokens {
+		
+		_, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
+		if err != nil {
+			log.Error(fmt.Sprintf("u.GetToken_%s_%s", token.ContractAddress,  token.TokenID), err.Error(), err)
+			return err
+		}
+	}
+
+	return nil
+}
