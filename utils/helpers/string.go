@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/identicon"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -106,4 +107,8 @@ func HexaNumberToInteger(hexaString string) string {
     numberStr := strings.Replace(hexaString, "0x", "", -1)
     numberStr = strings.Replace(numberStr, "0X", "", -1)
     return numberStr
+}
+
+func CreateIcon(name *string) string {
+	return identicon.CreateIcon(name)
 }

@@ -12,6 +12,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -238,7 +239,11 @@ func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileRe
 	if err != nil {
 		return nil, err
 	}
-	
+
+	if resp.Avatar == "" {
+		resp.Avatar = helpers.CreateIcon(&profile.WalletAddress)
+	}
+ 	 
 	return resp, nil
 }
 

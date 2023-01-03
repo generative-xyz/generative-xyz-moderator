@@ -38,7 +38,7 @@ const (
 	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360          //a year (second)
 	DB_CACHE_EXPIRED_TIME            int    = 86400                //a week
 	DB_CACHE_KEY                     string = "object_cache_%s_%s" //a week
-	NONCE_MESSAGE_FORMAT             string = "Welcome %s to OG"
+	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
 	KEY_UUID             string = "uuid"
 	KEY_BASE_PRODUCT_KEY string = "product_key"
