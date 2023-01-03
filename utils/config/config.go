@@ -121,6 +121,8 @@ type MarketplaceEvents struct {
 	PurchaseToken string
 	MakeOffer string
 	AcceptMakeOffer string
+	CancelListing string
+	CancelMakeOffer string
 }
 
 func NewConfig() (*Config, error) {
@@ -201,6 +203,8 @@ func NewConfig() (*Config, error) {
 			PurchaseToken: os.Getenv("MARKETPLACE_PURCHASE_TOKEN"),
 			MakeOffer: os.Getenv("MARKETPLACE_MAKE_OFFER"),
 			AcceptMakeOffer: os.Getenv("MARKETPLACE_ACCEPT_MAKE_OFFER"),
+			CancelListing: os.Getenv("MARKETPLACE_CANCEL_LISTING"),
+			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
 	}
 
