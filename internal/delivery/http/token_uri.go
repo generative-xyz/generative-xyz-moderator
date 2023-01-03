@@ -3,7 +3,6 @@ package http
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/response"
@@ -142,70 +141,21 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// find project by projectID and contract address
-	project, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: message.ProjectID})
-	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	ownerResp, _ := h.profileToResp(message.Owner)
+	creatorResp, _ := h.profileToResp(message.Creator)
+	projectResp, _ := h.projectToResp(message.Project)
 
-	// find owner address on moralis
-	nft, err := h.Usecase.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, tokenID)
-	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	getProfile := func(c chan *response.ProfileResponse, address string) {
-		var profileResp *response.ProfileResponse
-		var err error
-
-		defer func() {
-			c <- profileResp
-		}()
-
-		profile, err := h.Usecase.GetUserProfileByWalletAddress(span, strings.ToLower(address))
-		if err != nil {
-			return
-		}
-		if profile != nil {
-			profileResp, err = h.profileToResp(profile)
-			if err != nil {
-				profileResp = nil
-				return
-			}
-		}
-	}
-
-	ownerProfileChan := make(chan *response.ProfileResponse, 1) 
-	creatorProfileChan := make(chan *response.ProfileResponse, 1) 
-
-	go getProfile(ownerProfileChan, nft.Owner)
-	go getProfile(creatorProfileChan, project.CreatorAddrr)
-
-	ownerProfileResp := <-ownerProfileChan
-	creatorProfileResp := <-creatorProfileChan
-
-	projectResp, err := h.projectToResp(project)
-	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	resp := response.InternalTokenURIResp{
+	resp := &response.InternalTokenURIResp{
 		Name:         message.Name,
 		Description:  message.Description,
 		Image:        *message.ParsedImage,
 		AnimationURL: message.AnimationURL,
 		Attributes:   message.ParsedAttributes,
-		OwnerAddr:    nft.Owner,
-		Owner:        ownerProfileResp,
+		OwnerAddr:    message.OwnerAddr,
+		Owner:        ownerResp,
 		MintedTime:   *message.MintedTime,
 		Project:      projectResp,
-		Creator: creatorProfileResp,
+		Creator: creatorResp,
 	}
 
 	log.SetData("resp.message", message)
