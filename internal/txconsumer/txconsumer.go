@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,15 +28,16 @@ type HttpTxConsumer struct {
 	Logger logger.Ilogger
 	RedisKey string
 	Usecase    usecase.Usecase
+	Config        *config.Config
 }
 
-func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.TxConsumerConfig) (*HttpTxConsumer, error) {
+func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.Config) (*HttpTxConsumer, error) {
 	txConsumer := new(HttpTxConsumer)
-	txConsumer.DefaultLastProcessedBlock = cfg.StartBlock
-	txConsumer.CronJobPeriod = cfg.CronJobPeriod
-	txConsumer.BatchLogSize = cfg.BatchLogSize
+	txConsumer.DefaultLastProcessedBlock = cfg.TxConsumerConfig.StartBlock
+	txConsumer.CronJobPeriod = cfg.TxConsumerConfig.CronJobPeriod
+	txConsumer.BatchLogSize = cfg.TxConsumerConfig.BatchLogSize
 	txConsumer.Addresses = make([]common.Address, 0)
-	for _, address := range cfg.Addresses {
+	for _, address := range cfg.TxConsumerConfig.Addresses {
 		fmt.Println(address)
 		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
 	}
@@ -44,6 +46,7 @@ func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.TxCo
 	txConsumer.Blockchain = global.Blockchain
 	txConsumer.RedisKey = "tx-consumer"
 	txConsumer.Usecase = uc
+	txConsumer.Config = &cfg
 	return txConsumer, nil
 }
 
@@ -100,7 +103,20 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	for _, log := range logs {
-
+		// marketplace logs
+		if strings.ToLower(log.Address.String()) == c.Config.MarketplaceEvents.Contract {
+			topic :=  strings.ToLower(log.Topics[0].String())
+			switch topic {
+			case c.Config.MarketplaceEvents.ListToken:
+				c.Usecase.ResolveMarketplaceListTokenEvent(log)
+			case c.Config.MarketplaceEvents.PurchaseToken:
+				c.Usecase.ResolveMarketplacePurchaseTokenEvent(log)
+			case c.Config.MarketplaceEvents.MakeOffer:
+				c.Usecase.ResolveMarketplaceMakeOffer(log)
+			case c.Config.MarketplaceEvents.AcceptMakeOffer:
+				c.Usecase.ResolveMarketplaceAcceptOfferEvent(log)
+			}
+		}
 		// do switch case with log.Address and log.Topics
 		if log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
 			c.Usecase.UpdateProjectWithListener(log)

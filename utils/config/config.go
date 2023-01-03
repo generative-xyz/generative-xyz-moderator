@@ -26,6 +26,7 @@ type Config struct {
 	Covalent CovalentConfig
 	BlockchainConfig BlockchainConfig
 	TxConsumerConfig TxConsumerConfig
+	MarketplaceEvents MarketplaceEvents
 }
 
 type MQTTConfig struct {
@@ -114,6 +115,14 @@ type TxConsumerConfig struct {
 	Addresses []string
 }
 
+type MarketplaceEvents struct {
+	Contract string
+	ListToken string
+	PurchaseToken string
+	MakeOffer string
+	AcceptMakeOffer string
+}
+
 func NewConfig() (*Config, error) {
 	godotenv.Load()
 	services := make(map[string]string)
@@ -185,6 +194,13 @@ func NewConfig() (*Config, error) {
 			CronJobPeriod: int32(cronJobPeriod),
 			BatchLogSize: int32(batchLogSize),
 			Addresses: addresses,
+		},
+		MarketplaceEvents: MarketplaceEvents{
+			Contract: os.Getenv("MARKETPLACE_CONTRACT"),
+			ListToken: os.Getenv("MARKETPLACE_LIST_TOKEN"),
+			PurchaseToken: os.Getenv("MARKETPLACE_PURCHASE_TOKEN"),
+			MakeOffer: os.Getenv("MARKETPLACE_MAKE_OFFER"),
+			AcceptMakeOffer: os.Getenv("MARKETPLACE_ACCEPT_MAKE_OFFER"),
 		},
 	}
 

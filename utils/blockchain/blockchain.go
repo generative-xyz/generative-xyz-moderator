@@ -53,3 +53,7 @@ func (a *Blockchain) GetBlockByNumber(blockNumber big.Int) (*types.Block, error)
 	}
 	return block, nil
 }
+
+func (a *Blockchain) GetClient() *ethclient.Client {
+	return a.client
+}
