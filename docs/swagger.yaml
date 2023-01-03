@@ -728,32 +728,6 @@ paths:
       summary: Edit User profile
       tags:
       - Profile
-  /profile/{walletAddress}:
-    get:
-      consumes:
-      - application/json
-      description: User profile via wallet address
-      parameters:
-      - description: Wallet address
-        in: path
-        name: walletAddress
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.ProfileResponse'
-              type: object
-      summary: User profile via wallet address
-      tags:
-      - Profile
   /profile/logout:
     post:
       consumes:
@@ -805,6 +779,32 @@ paths:
       security:
       - Authorization: []
       summary: get current user's projects
+      tags:
+      - Profile
+  /profile/wallet/{walletAddress}:
+    get:
+      consumes:
+      - application/json
+      description: User profile via wallet address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      summary: User profile via wallet address
       tags:
       - Profile
   /project:

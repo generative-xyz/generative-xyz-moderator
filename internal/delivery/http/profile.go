@@ -229,9 +229,6 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
-
-	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileResponse, error) {
@@ -253,7 +250,7 @@ func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileRe
 // @Produce  json
 // @Param walletAddress path string true "Wallet address"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
-// @Router /profile/{walletAddress} [GET]
+// @Router /profile/wallet/{walletAddress} [GET]
 func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.profileByWallet", r)
 	defer h.Tracer.FinishSpan(span, log )
