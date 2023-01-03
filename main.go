@@ -130,7 +130,7 @@ func startServer() {
 	}
 
 	if (conf.TxConsumerConfig.Enabled) {
-		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, *uc, conf.TxConsumerConfig)
+		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, *uc, *conf)
 		if err != nil {
 			logger.Error("Failed to init tx consumer")
 			return

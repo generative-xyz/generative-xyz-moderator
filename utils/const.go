@@ -53,6 +53,8 @@ const (
 	COLLECTION_PROJECTS string = "projects"
 	COLLECTION_CONFIGS string = "configs"
 	COLLECTION_CATEGORIES string = "categories"
+	COLLECTION_MARKETPLACE_LISTINGS string = "marketplace_listings"
+	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
 )
 
 type PubSubSendOtp struct {

@@ -13,6 +13,7 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/contracts/generative_marketplace_lib"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -24,6 +25,107 @@ type projectChan struct {
 type projectDetailChan struct {
 	Data *structure.ProjectDetail
 	Err error
+}
+
+func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog  types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceListTokenEvent")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParseListingToken(chainLog)
+
+	if err != nil {
+		log.Error("cannot parse list token event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.ListToken(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve list token event", "", err)
+	}
+
+	return nil
+}
+
+func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplacePurchaseTokenEvent")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParsePurchaseToken(chainLog)
+	if err != nil {
+		log.Error("cannot parse purchase token event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.PurchaseToken(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve purchase token event", "", err)
+	}
+
+	return nil
+}
+
+func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceMakeOffer")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParseMakeOffer(chainLog)
+	if err != nil {
+		log.Error("cannot parse make offer event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.MakeOffer(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve make offer event", "", err)
+	}
+
+	return nil
+}
+
+func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
+	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceAcceptOfferEvent")
+	defer u.Tracer.FinishSpan(span, log)
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init marketplace contract", "", err)
+		return err
+	}
+	event, err := marketplaceContract.ParseAcceptMakeOffer(chainLog)
+	if err != nil {
+		log.Error("cannot parse accept offer event", "", err)
+		return err
+	}
+
+	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+
+	err = u.AcceptMakeOffer(span, event)
+
+	if err != nil {
+		log.Error("fail when resolve accept offer event", "", err)
+	}
+
+	return nil
 }
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
