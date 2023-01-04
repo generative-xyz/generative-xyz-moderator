@@ -266,7 +266,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			}
 		}()
 
-		projectDetail, err = u.getProjectDetailFromChain(span, structure.GetProjectDetailMessageReq{
+		projectDetail, err = u.getProjectDetailFromChainWithoutCache(span, structure.GetProjectDetailMessageReq{
 			ContractAddress:  contractAddr,
 			ProjectID:  tokenIDStr,
 		})

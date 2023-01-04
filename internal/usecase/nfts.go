@@ -24,7 +24,7 @@ func (u Usecase) GetNftTransactions(rootSpan opentracing.Span, req structure.Get
 }
 
 func (u Usecase) GetNftMintedTime(rootSpan opentracing.Span, req structure.GetNftMintedTimeReq) (*structure.NftMintedTime, error) {
-	span, log := u.StartSpan("GetNftTransactions", rootSpan)
+	span, log := u.StartSpan("GetNftMintedTime", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("req", req);
