@@ -205,14 +205,21 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	}
 
 	log.SetData("isUpdate", isUpdate)
+	//isUpdate = true
 	if isUpdate {
-		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
+		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
 			log.Error("u.Repo.UpdateOne", err.Error(), err)
 			return nil, err
 		}
 		log.SetData("updated", updated)
 	}
+
+	// err = u.Repo.CreateTokenURI(dataObject)
+	// if err != nil {
+	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
+	// 	return nil, err
+	// }
 
 	tokenUri.Owner = ownerProfileResp.Data
 	tokenUri.Creator = creatorProfileResp.Data
@@ -277,12 +284,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.TokenID = req.TokenID
 	dataObject.ProjectID = projectID.String()
-
-	err = u.Repo.CreateTokenURI(dataObject)
-	if err != nil {
-		log.Error("u.Repo.CreateTokenURI", err.Error(), err)
-		return nil, err
-	}
 
 	log.SetData("dataObject", dataObject)
 	return dataObject, nil
