@@ -23,6 +23,7 @@ type TokenUri struct {
 	ProjectID string `bson:"project_id" json:"project_id"`
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
+	GenNFTAddr string `bson:"genNFTAddr"`
 
 	OwnerAddr string `bson:"ownerAddr"`
 	Owner *Users `bson:"-"`

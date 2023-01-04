@@ -203,6 +203,11 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 			log.Error("error update token uri block number minted", err.Error(), err)
 		}
 	}
+	
+	if tokenUri.GenNFTAddr == ""  {
+		isUpdate = true
+		tokenUri.GenNFTAddr = project.GenNFTAddr
+	}
 
 	log.SetData("isUpdate", isUpdate)
 	//isUpdate = true

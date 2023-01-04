@@ -22,6 +22,7 @@ type InternalTokenURIResp struct{
 	AnimationURL string `json:"animationUrl"`
 	Attributes interface{} `json:"attributes"`
 	MintedTime time.Time `json:"mintedTime"`
+	GenNFTAddr string `json:"genNFTAddr"`
 	OwnerAddr string `json:"ownerAddr"`
 	Owner *ProfileResponse `json:"owner"`
 	Project *ProjectResp `json:"project"`
