@@ -77,6 +77,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		return nil, err
 	}
 
+	log.SetData("nft", nft)
 	getProfile := func(c chan structure.ProfileChan, address string) {
 		var profile *entity.Users
 		var err error
@@ -104,6 +105,9 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	creatorProfileResp := <-creatorProfileChan
 	tokenIDInt, _ := strconv.Atoi(tokenID)
 
+	log.SetData("ownerProfileResp", ownerProfileResp)
+	log.SetData("creatorProfileResp", creatorProfileResp)
+	
 	tokenUri.TokenIDInt = tokenIDInt
 	if tokenUri.OwnerAddr == "" {
 		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
