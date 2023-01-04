@@ -26,9 +26,14 @@ import (
 func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	contractAddress := req.ContractAddress
-	tokenID := req.TokenID
-	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, tokenID)
+	
+	log.SetTag("contractAddress",req.ContractAddress)
+	log.SetTag("tokenID",req.TokenID)
+	
+	contractAddress := strings.ToLower(req.ContractAddress) 
+	tokenID := strings.ToLower(req.TokenID)
+	
+	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			log.SetData("u.getTokenInfo.mongo.ErrNoDocuments", "true")
@@ -44,6 +49,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		}
 	}
 
+	log.SetData("tokenUri", tokenUri)
 	if tokenUri.ProjectID == "" {
 		tokenUri, err = u.getTokenInfo(span, req)
 		if err != nil {
@@ -54,6 +60,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		log.SetData("u.getTokenInfo.tokenUri.ProjectID.Token.Empty", "true")
 	}
 
+	
 	isUpdate := false
 
 	// find project by projectID and contract address
@@ -197,6 +204,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		}
 	}
 
+	log.SetData("isUpdate", isUpdate)
 	if isUpdate {
 		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
 		if err != nil {
@@ -209,64 +217,6 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	tokenUri.Owner = ownerProfileResp.Data
 	tokenUri.Creator = creatorProfileResp.Data
 	tokenUri.Project = project
-	return tokenUri, nil
-}
-
-func (u Usecase) GetTokenTraits(rootSpan opentracing.Span, req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetTokenTraits", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetData("req", req)
-	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			tokenUri, err = u.getTokenInfo(span, req)
-			if err != nil {
-				log.Error("u.getTokenInfo", err.Error(), err)
-				return nil, err
-			}
-
-		} else {
-			log.Error("u.Repo.FindTokenBy", err.Error(), err)
-			return nil, err
-		}
-	}
-
-	if tokenUri.ParsedAttributes == nil {
-		cctx, cancel := chromedp.NewContext(context.Background())
-		defer cancel()
-
-		traits := make(map[string]interface{})
-		err = chromedp.Run(cctx,
-			chromedp.Navigate(tokenUri.AnimationURL),
-			chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
-		)
-
-		if err != nil {
-			log.Error("chromedp.Run", err.Error(), err)
-			return nil, err
-		}
-
-		attrs := []entity.TokenUriAttr{}
-		for key, item := range traits {
-			attr := entity.TokenUriAttr{}
-			attr.TraitType = key
-			attr.Value = item
-
-			attrs = append(attrs, attr)
-		}
-		tokenUri.ParsedAttributes = attrs
-
-		updated, err := u.Repo.UpdateTokenByID(tokenUri.UUID, tokenUri)
-		if err != nil {
-			log.Error("u.Repo.UpdateOne", err.Error(), err)
-			return nil, err
-		}
-		log.SetData("updated", updated)
-
-		return tokenUri, nil
-	}
-
 	return tokenUri, nil
 }
 
