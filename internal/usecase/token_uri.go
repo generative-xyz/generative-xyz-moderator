@@ -31,6 +31,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	tokenUri, err := u.Repo.FindTokenBy(req.ContractAddress, tokenID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.SetData("u.getTokenInfo.mongo.ErrNoDocuments", "true")
 			tokenUri, err = u.getTokenInfo(span, req)
 			if err != nil {
 				log.Error("u.getTokenInfo", err.Error(), err)
@@ -45,10 +46,12 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 	if tokenUri.ProjectID == "" {
 		tokenUri, err = u.getTokenInfo(span, req)
-			if err != nil {
-				log.Error("u.getTokenInfo", err.Error(), err)
-				return nil, err
-			}
+		if err != nil {
+			log.Error("u.getTokenInfo", err.Error(), err)
+			return nil, err
+		}
+
+		log.SetData("u.getTokenInfo.tokenUri.ProjectID.Token.Empty", "true")
 	}
 
 	isUpdate := false
@@ -268,7 +271,7 @@ func (u Usecase) GetTokenTraits(rootSpan opentracing.Span, req structure.GetToke
 }
 
 func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("UserProfile", rootSpan)
+	span, log := u.StartSpan("Usecase.getTokenInfo", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("req", req)
