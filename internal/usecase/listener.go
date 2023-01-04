@@ -359,9 +359,12 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 				IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
 			}
 		}
+		project.BlockNumberMinted = projectDetail.NftMintedTime.BlockNumberMinted
+		project.MintedTime = projectDetail.NftMintedTime.MintedTime
 	}
 	
 	project.TokenIDInt = int64(tokenIDInt)
+
 	if usrFromChan.Err != nil {
 		log.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
 	}else{

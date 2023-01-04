@@ -178,27 +178,16 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 			log.SetData("project", project)
 
-			// try to get block number minted and minted time from moralis
-			nft, err := u.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, req.TokenID)
+			nftMintedTime, err := u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+				ContractAddress: project.GenNFTAddr,
+				TokenID: req.TokenID,
+			})
 			if err != nil {
 				return err
 			}
 
-			blockNumber := nft.BlockNumberMinted
-			blockNumberBigInt := new(big.Int)
-			blockNumberBigInt, ok := blockNumberBigInt.SetString(blockNumber, 10)
-			if !ok {
-				return errors.New("cannot convert blockNumber to bigint")
-			}
-			// get time by block number
-			block, err := u.Blockchain.GetBlockByNumber(*blockNumberBigInt)
-			if err != nil {
-				return err
-			}
-			// get time from block
-			mintedTime := time.Unix(int64(block.Time()), 0)
-			tokenUri.BlockNumberMinted = &blockNumber
-			tokenUri.MintedTime = &mintedTime
+			tokenUri.BlockNumberMinted = nftMintedTime.BlockNumberMinted
+			tokenUri.MintedTime = nftMintedTime.MintedTime
 			isUpdate = true
 			return nil
 		}()
@@ -354,6 +343,7 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 	pDchan := make(chan structure.ProjectDetailChan, 1)
 	pStatuschan := make(chan structure.ProjectStatusChan, 1)
 	pTokenURIchan := make(chan structure.ProjectNftTokenUriChan, 1)
+	mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
 
 	go func(pDchan chan structure.ProjectDetailChan, projectID *big.Int) {
 		proDetail := &generative_project_contract.NFTProjectProject{}
@@ -415,9 +405,26 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 
 	}(pTokenURIchan, &projectID)
 
+	go func(mintedTimeChan chan structure.NftMintedTimeChan, projectID *big.Int) {
+		var mintedTime *structure.NftMintedTime
+		var err error
+		defer func() {
+			mintedTimeChan <- structure.NftMintedTimeChan{
+				NftMintedTime: mintedTime,
+				Err: err,
+			}
+		}()
+		span, _ := u.StartSpanWithoutRoot("getNftContractDetail.GetNftMintedTime")
+		mintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+			ContractAddress: contractAddr.String(),
+			TokenID: projectID.String(),
+		})
+	}(mintedTimeChan, &projectID)
+
 	detailFromChain := <-pDchan
 	statusFromChain := <-pStatuschan
 	tokenFromChain := <-pTokenURIchan
+	nftMintedTime := <-mintedTimeChan
 
 	if detailFromChain.Err != nil {
 		return nil, detailFromChain.Err
@@ -429,6 +436,10 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 
 	if tokenFromChain.Err != nil {
 		return nil, tokenFromChain.Err
+	}
+
+	if nftMintedTime.Err != nil {
+		return nil, nftMintedTime.Err
 	}
 
 	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
@@ -477,6 +488,7 @@ func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr com
 		ProjectDetail: detailFromChain.ProjectDetail,
 		Status:        *statusFromChain.Status,
 		NftTokenUri:   *tokenFromChain.TokenURI,
+		NftMintedTime:  *nftMintedTime.NftMintedTime,
 	}
 
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
