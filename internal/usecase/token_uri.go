@@ -107,7 +107,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 	log.SetData("ownerProfileResp", ownerProfileResp)
 	log.SetData("creatorProfileResp", creatorProfileResp)
-	
+
 	tokenUri.TokenIDInt = tokenIDInt
 	if tokenUri.OwnerAddr == "" {
 		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
@@ -267,7 +267,10 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	nftProject := nftProjectDetail.ProjectDetail
 	parentAddr := nftProject.GenNFTAddr
-
+	
+	log.SetData("nftProject", nftProject)
+	log.SetData("parentAddr", parentAddr)
+	
 	tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
 	if err != nil {
 		log.Error("u.getNftProjectTokenUri", err.Error(), err)
@@ -291,8 +294,13 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
+	dataObject.CreatorAddr = strings.ToLower(nftProject.Creator)
+	dataObject.OwnerAddr = strings.ToLower(nftProject.Creator)
+
 	dataObject.TokenID = req.TokenID
 	dataObject.ProjectID = projectID.String()
+	dataObject.MintedTime = nftProjectDetail.NftMintedTime.MintedTime
+	dataObject.BlockNumberMinted = nftProjectDetail.NftMintedTime.BlockNumberMinted
 
 	log.SetData("dataObject", dataObject)
 	return dataObject, nil

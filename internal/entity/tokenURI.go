@@ -23,9 +23,10 @@ type TokenUri struct {
 	ProjectID string `bson:"project_id" json:"project_id"`
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
-	GenNFTAddr string `bson:"genNFTAddr"`
+	GenNFTAddr string `bson:"gen_nft_addrress"`
 
-	OwnerAddr string `bson:"ownerAddr"`
+	OwnerAddr string `bson:"owner_addrress"`
+	CreatorAddr string `bson:"creator_address"`
 	Owner *Users `bson:"-"`
 	Project *Projects `bson:"-"`
 	Creator *Users `bson:"-"`
