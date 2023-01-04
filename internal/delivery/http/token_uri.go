@@ -83,10 +83,10 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
-	message, err := h.Usecase.GetTokenTraits(span, structure.GetTokenMessageReq{
+	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
-	})
+	}, 5)
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
@@ -184,10 +184,10 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 	tokenID := vars["tokenID"]
 	span.SetTag("tokenID", tokenID)
 
-	message, err := h.Usecase.GetTokenTraits(span, structure.GetTokenMessageReq{
+	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
-	})
+	}, 5)
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)

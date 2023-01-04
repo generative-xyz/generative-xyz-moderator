@@ -47,9 +47,9 @@ func (r Repository) CreateTokenURI(data *entity.TokenUri) error {
 	return nil
 }
 
-func (r Repository) UpdateTokenByID(tokenUri string, updateddUser *entity.TokenUri) (*mongo.UpdateResult, error) {
-	filter := bson.D{{utils.KEY_UUID, tokenUri}}
-	result, err := r.UpdateOne(updateddUser.TableName(), filter, updateddUser)
+func (r Repository) UpdateTokenByID(tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, tokenID}}
+	result, err := r.UpdateOne(inputData.TableName(), filter, inputData)
 	if err != nil {
 		return nil, err
 	}

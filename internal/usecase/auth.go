@@ -201,7 +201,7 @@ func  (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*entity
 }
 
 func (u Usecase) GetUserProfileByWalletAddress(rootSpan opentracing.Span, userAddr string) (*entity.Users, error) {
-	span, log := u.StartSpan("UserProfile", rootSpan)
+	span, log := u.StartSpan("GetUserProfileByWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
 	log.SetData("input.userAddr", userAddr)
