@@ -292,7 +292,7 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respItems := []response.TokenURIResp{}
+	respItems := []response.InternalTokenURIResp{}
 	iTokensData := data.Result
 	tokensData, ok := (iTokensData).([]entity.TokenUri)
 	if !ok {
@@ -303,12 +303,21 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, token := range tokensData {	
-		resp := response.TokenURIResp{
-			Name: token.Name,
-			Description: token.Description,
-			Image: *token.ParsedImage,
+		ownerResp, _ := h.profileToResp(token.Owner)
+		creatorResp, _ := h.profileToResp(token.Creator)
+		projectResp, _ := h.projectToResp(token.Project)
+
+		resp := response.InternalTokenURIResp{
+			Name:         token.Name,
+			Description:  token.Description,
+			Image:        *token.ParsedImage,
 			AnimationURL: token.AnimationURL,
-			Attributes: token.ParsedAttributes,
+			Attributes:   token.ParsedAttributes,
+			OwnerAddr:    token.OwnerAddr,
+			Owner:        ownerResp,
+			MintedTime:   *token.MintedTime,
+			Project:      projectResp,
+			Creator: creatorResp,
 		}
 		respItems = append(respItems, resp)
 	}
@@ -343,8 +352,6 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.Royalty = input.Royalty
 	resp.Reservers = input.Reservers
 	resp.CompleteTime = input.CompleteTime
-	resp.BlockNumberMinted = input.BlockNumberMinted
-	resp.MintedTime = input.MintedTime
 
 	profileResp, err  := h.profileToResp(&input.CreatorProfile)
 	if err == nil {
