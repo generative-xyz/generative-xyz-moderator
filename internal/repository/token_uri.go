@@ -11,6 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
@@ -72,4 +73,25 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 	}
 
 	return tokens, nil
+}
+
+func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
+	if inputData.UUID == ""  {
+		inputData.SetID()
+		inputData.SetCreatedAt()
+	}
+
+	inputData.SetUpdatedAt()
+	bData, _ := inputData.ToBson()
+	filter := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
+	update := bson.D{{"$set",  bData}}
+	opts := options.Update().SetUpsert(true)
+
+	//id := fmt.Sprintf("%s%s", contractAddress, tokenID)
+	result, err := r.DB.Collection(inputData.TableName()).UpdateOne( context.TODO(), filter, update, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
