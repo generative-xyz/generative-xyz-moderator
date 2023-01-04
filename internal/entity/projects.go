@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -45,6 +47,8 @@ type Projects struct {
 	CompleteTime int64  `bson:"completeTime"`
 	Reservers []string `bson:"reservers"`
 	CreatorProfile Users `bson:"creatorProfile"`
+	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
+	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
 }
 
 type	ProjectMintingInfo struct {

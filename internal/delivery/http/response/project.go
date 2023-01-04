@@ -1,5 +1,7 @@
 package response
 
+import "time"
+
 
 type ProjectResp struct{
 	BaseResponse
@@ -27,6 +29,8 @@ type ProjectResp struct{
 	Royalty int `json:"royalty"`
 	Reservers []string `json:"reservers"`
 	CreatorProfile ProfileResponse `json:"creatorProfile"`
+	BlockNumberMinted *string           `json:"blockNumberMinted"`
+	MintedTime       *time.Time        `json:"mintedTime"`
 }
 
 
