@@ -13,7 +13,6 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -21,7 +20,6 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
-	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -289,7 +287,10 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, errors.New("cannot convert tokenID")
 	}
 	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
-	nftProjectDetail, err := u.getNftContractDetail(client, addr, *projectID)
+	nftProjectDetail, err := u.getProjectDetailFromChain(span, structure.GetProjectDetailMessageReq{
+		ContractAddress: addr.String(),
+		ProjectID: projectID.String(),
+	})
 	if err != nil {
 		log.Error("u.getNftContractDetail", err.Error(), err)
 		return nil, err
@@ -334,178 +335,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	return dataObject, nil
 }
 
-func (u Usecase) getNftContractDetail(client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
-	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
-	if err != nil {
-		return nil, err
-	}
-
-	pDchan := make(chan structure.ProjectDetailChan, 1)
-	pStatuschan := make(chan structure.ProjectStatusChan, 1)
-	pTokenURIchan := make(chan structure.ProjectNftTokenUriChan, 1)
-	mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
-
-	go func(pDchan chan structure.ProjectDetailChan, projectID *big.Int) {
-		proDetail := &generative_project_contract.NFTProjectProject{}
-		var err error
-
-		defer func() {
-			pDchan <- structure.ProjectDetailChan{
-				ProjectDetail: proDetail,
-				Err:           err,
-			}
-		}()
-
-		proDetailReps, err := gProject.ProjectDetails(nil, projectID)
-		if err != nil {
-			return
-		}
-
-		proDetail = &proDetailReps
-
-	}(pDchan, &projectID)
-
-	go func(pDchan chan structure.ProjectStatusChan, projectID *big.Int) {
-		var status *bool
-		var err error
-
-		defer func() {
-			pDchan <- structure.ProjectStatusChan{
-				Status: status,
-				Err:    err,
-			}
-		}()
-
-		pStatus, err := gProject.ProjectStatus(nil, projectID)
-		if err != nil {
-			return
-		}
-
-		status = &pStatus
-
-	}(pStatuschan, &projectID)
-
-	go func(pDchan chan structure.ProjectNftTokenUriChan, projectID *big.Int) {
-		var tokenURI *string
-		var err error
-
-		defer func() {
-			pDchan <- structure.ProjectNftTokenUriChan{
-				TokenURI: tokenURI,
-				Err:      err,
-			}
-		}()
-
-		pTokenUri, err := gProject.TokenURI(nil, projectID)
-		if err != nil {
-			return
-		}
-
-		tokenURI = &pTokenUri
-
-	}(pTokenURIchan, &projectID)
-
-	go func(mintedTimeChan chan structure.NftMintedTimeChan, projectID *big.Int) {
-		var mintedTime *structure.NftMintedTime
-		var err error
-		defer func() {
-			mintedTimeChan <- structure.NftMintedTimeChan{
-				NftMintedTime: mintedTime,
-				Err: err,
-			}
-		}()
-		span, _ := u.StartSpanWithoutRoot("getNftContractDetail.GetNftMintedTime")
-		mintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
-			ContractAddress: contractAddr.String(),
-			TokenID: projectID.String(),
-		})
-	}(mintedTimeChan, &projectID)
-
-	detailFromChain := <-pDchan
-	statusFromChain := <-pStatuschan
-	tokenFromChain := <-pTokenURIchan
-	nftMintedTime := <-mintedTimeChan
-
-	if detailFromChain.Err != nil {
-		return nil, detailFromChain.Err
-	}
-
-	if statusFromChain.Err != nil {
-		return nil, statusFromChain.Err
-	}
-
-	if tokenFromChain.Err != nil {
-		return nil, tokenFromChain.Err
-	}
-
-	if nftMintedTime.Err != nil {
-		return nil, nftMintedTime.Err
-	}
-
-	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
-	if err != nil {
-		return nil, err
-	}
-
-	//nft project detail chain
-	nftProjectDchan := make(chan structure.NftProjectDetailChan, 1)
-	go func(nftProjectDchan chan structure.NftProjectDetailChan, gNftProject *generative_nft_contract.GenerativeNftContract) {
-		data := &structure.NftProjectDetail{}
-		var err error
-
-		defer func() {
-			nftProjectDchan <- structure.NftProjectDetailChan{
-				Data: data,
-				Err:  err,
-			}
-		}()
-
-		respData, err := gNftProject.Project(nil)
-		err = copier.Copy(data, respData)
-
-	}(nftProjectDchan, gNftProject)
-
-	nftRoyaltychan := make(chan structure.RoyaltyChan, 1)
-	go func(nftRoyaltychan chan structure.RoyaltyChan, gNftProject *generative_nft_contract.GenerativeNftContract) {
-		var data *big.Int
-		var err error
-
-		defer func() {
-			nftRoyaltychan <- structure.RoyaltyChan{
-				Data: data,
-				Err:  err,
-			}
-		}()
-
-		data, err = gNftProject.Royalty(nil)
-
-	}(nftRoyaltychan, gNftProject)
-
-	dataFromNftPChan := <-nftProjectDchan
-	dataFromRoyaltyPChan := <-nftRoyaltychan
-
-	resp := &structure.ProjectDetail{
-		ProjectDetail: detailFromChain.ProjectDetail,
-		Status:        *statusFromChain.Status,
-		NftTokenUri:   *tokenFromChain.TokenURI,
-		NftMintedTime:  *nftMintedTime.NftMintedTime,
-	}
-
-	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
-		resp.NftProjectDetail = *dataFromNftPChan.Data
-	} else {
-		resp.NftProjectDetail = structure.NftProjectDetail{}
-	}
-
-	if dataFromRoyaltyPChan.Err == nil && dataFromRoyaltyPChan.Data != nil {
-		resp.Royalty = structure.ProjectRoyalty{
-			Data: *dataFromRoyaltyPChan.Data,
-		}
-	}
-
-	return resp, nil
-}
-
 func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
@@ -524,50 +353,6 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 	}
 
 	return &value, nil
-}
-
-func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
-	span, log := u.StartSpan("getProjectDetailFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
-
-	//u.Cache.Delete(contractDataKey)
-	data, err := u.Cache.GetData(contractDataKey)
-	if err != nil {
-		log.SetData("req", req)
-		
-		addr := common.HexToAddress(req.ContractAddress)
-		// call to contract to get emotion
-		client, err := helpers.EthDialer()
-		if err != nil {
-			log.Error("ethclient.Dial", err.Error(), err)
-			return nil, err
-		}
-
-		projectID := new(big.Int)
-		projectID, ok := projectID.SetString(req.ProjectID, 10)
-		if !ok {
-			return nil, errors.New("cannot convert tokenID")
-		}
-		contractDetail, err := u.getNftContractDetail(client, addr, *projectID)
-		if err != nil {
-			log.Error("u.getNftContractDetail", err.Error(), err)
-			return nil, err
-		}
-		log.SetData("contractDetail", contractDetail)
-		u.Cache.SetData(contractDataKey, contractDetail)
-		return contractDetail, nil
-	}
-
-	bytes := []byte(*data)
-	contractDetail := &structure.ProjectDetail{}
-	err = json.Unmarshal(bytes, contractDetail)
-	if err != nil {
-		log.Error("json.Unmarshal", err.Error(), err)
-		return nil, err
-	}
-	log.SetData("cached.ContractDetail", contractDetail)
-	return contractDetail, nil
 }
 
 func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
