@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"rederinghub.io/internal/entity"
@@ -28,12 +29,21 @@ func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity
 }
 
 func (r Repository) CreateTokenURI(data *entity.TokenUri) error {
-
-	err := r.InsertOne(data.TableName(), data)
+	t, err := r.FindTokenBy(data.ContractAddress, data.TokenID)
 	if err != nil {
-		return err
+		if errors.Is(err, mongo.ErrNoDocuments)  {
+			
+			err = r.InsertOne(data.TableName(), data)
+			if err != nil {
+				return err
+			}
+
+		}
+		
+		return  err
 	}
 
+	data =  t
 	return nil
 }
 
