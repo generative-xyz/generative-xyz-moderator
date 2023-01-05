@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -195,12 +197,137 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+// UserCredits godoc
+// @Summary get project's tokens
+// @Description get tokens by project address
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Param genNFTAddr path string true "This is provided from Project Detail API"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{genNFTAddr}/tokens [GET]
+func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.TokensOfAProfile", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	vars := mux.Vars(r)
+	genNFTAddr := vars["genNFTAddr"]
+	log.SetData("genNFTAddr",genNFTAddr)
+	log.SetTag(utils.GEN_NFT_ADDRESS_TAG, genNFTAddr)
+	f := structure.FilterTokens{}
+	f.GenNFTAddr = &genNFTAddr
+
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	
+	resp, err := h.getTokens(span, f)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+}
+
+// UserCredits godoc
+// @Summary User profile's nft
+// @Description User profile's nft
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string true "Wallet address"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /profile/wallet/{walletAddress}/nfts [GET]
+func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.TokensOfAProfile", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]
+	log.SetData("walletAddress",walletAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
+	f := structure.FilterTokens{}
+	f.CreatorAddr = &walletAddress
+
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	
+	resp, err := h.getTokens(span, f)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+
+}
+
+func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTokens) (*response.PaginationResponse, error) {
+	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
+	defer h.Tracer.FinishSpan(span, log )
+	
+
+	pag, err := h.Usecase.FilterTokens(span, f)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		return nil, err
+	}
+
+	respItems := []response.InternalTokenURIResp{}
+	iTokensData := pag.Result
+	tokensData, ok := (iTokensData).([]entity.TokenUri)
+	if !ok {
+		err := errors.New( "Cannot parse products")
+		log.Error("ctx.Value.Token",  err.Error(), err)
+		return nil, err
+	}
+
+	for _, token := range tokensData {	
+		resp, err := h.tokenToResp(&token)
+		if err != nil {
+			err := errors.New( "Cannot parse products")
+			log.Error("tokenToResp",  err.Error(), err)
+			return nil, err
+		}
+		respItems = append(respItems, *resp)
+	}
+
+	resp := h.PaginationResp(pag, respItems)
+	return &resp, nil
+	
+}
+
 func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
 	resp := &response.InternalTokenURIResp{}
 	err := response.CopyEntityToRes(resp, input)
 	if err != nil {
 		return nil, err
 	}
+	resp.Attributes = input.ParsedAttributes
+	if input.ParsedImage  != nil {
+		resp.Image = *input.ParsedImage
+	}else{
+		resp.Image =  ""
+	}
+	
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)
@@ -215,7 +342,6 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 			resp.Creator = creatorResp
 		}
 	}
-
 
 	if input.Project != nil {
 		projectResp, err := h.projectToResp(input.Project)
