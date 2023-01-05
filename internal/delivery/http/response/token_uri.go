@@ -16,6 +16,7 @@ type TokenTraitsResp struct{
 
 
 type InternalTokenURIResp struct{
+	BaseResponse
 	Name string `json:"name"`
 	Description string `json:"description"`
 	Image string `json:"image"`

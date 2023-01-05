@@ -117,6 +117,10 @@ definitions:
         $ref: '#/definitions/response.ProfileResponse'
       description:
         type: string
+      genNFTAddr:
+        type: string
+      id:
+        type: string
       image:
         type: string
       mintedTime:
@@ -182,6 +186,8 @@ definitions:
     type: object
   response.ProjectResp:
     properties:
+      blockNumberMinted:
+        type: string
       completeTime:
         type: integer
       contractAddress:
@@ -209,6 +215,8 @@ definitions:
       mintPrice:
         type: string
       mintPriceAddr:
+        type: string
+      mintedTime:
         type: string
       mintingInfo:
         $ref: '#/definitions/response.NftMintingDetail'
@@ -805,6 +813,32 @@ paths:
                   $ref: '#/definitions/response.ProfileResponse'
               type: object
       summary: User profile via wallet address
+      tags:
+      - Profile
+  /profile/wallet/{walletAddress}/nfts:
+    get:
+      consumes:
+      - application/json
+      description: User profile's nft
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: User profile's nft
       tags:
       - Profile
   /project:

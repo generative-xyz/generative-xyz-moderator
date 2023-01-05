@@ -1,11 +1,13 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
 
@@ -130,7 +132,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		captureTimeoutInt = 5
 	}
 
-	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
+	token, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
@@ -141,24 +143,15 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ownerResp, _ := h.profileToResp(message.Owner)
-	creatorResp, _ := h.profileToResp(message.Creator)
-	projectResp, _ := h.projectToResp(message.Project)
-
-	resp := &response.InternalTokenURIResp{
-		Name:         message.Name,
-		Description:  message.Description,
-		Image:        *message.ParsedImage,
-		AnimationURL: message.AnimationURL,
-		Attributes:   message.ParsedAttributes,
-		OwnerAddr:    message.OwnerAddr,
-		Owner:        ownerResp,
-		MintedTime:   *message.MintedTime,
-		Project:      projectResp,
-		Creator: creatorResp,
+	resp, err := h.tokenToResp(token)
+	if err != nil {
+		err := errors.New( "Cannot parse products")
+		log.Error("tokenToResp",  err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
 
-	log.SetData("resp.message", message)
+	log.SetData("resp.token", token)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -200,4 +193,36 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 	log.SetData("resp.message", message)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
+	resp := &response.InternalTokenURIResp{}
+	err := response.CopyEntityToRes(resp, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.Owner != nil {
+		ownerResp, err := h.profileToResp(input.Owner)
+		if err == nil {
+			resp.Owner = ownerResp
+		}
+	}
+	
+	if input.Creator != nil {
+		creatorResp, err := h.profileToResp(input.Creator)
+		if err == nil {
+			resp.Creator = creatorResp
+		}
+	}
+
+
+	if input.Project != nil {
+		projectResp, err := h.projectToResp(input.Project)
+		if err == nil {
+			resp.Project = projectResp
+		}
+	}
+
+	return resp, nil
 }

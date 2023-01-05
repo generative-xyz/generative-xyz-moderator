@@ -82,3 +82,11 @@ type GetNftTransactionsReq struct {
 	ContractAddress string
 	TokenID string
 }
+
+type FilterTokens struct {
+	BaseFilters
+	ContractAddress *string
+	OwnerAddr *string
+	CreatorAddr *string
+	GenNFTAddr *string
+}

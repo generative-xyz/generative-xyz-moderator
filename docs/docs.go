@@ -892,6 +892,50 @@ var doc = `{
                 }
             }
         },
+        "/profile/wallet/{walletAddress}/nfts": {
+            "get": {
+                "description": "User profile's nft",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "User profile's nft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -1557,6 +1601,12 @@ var doc = `{
                 "description": {
                     "type": "string"
                 },
+                "genNFTAddr": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
                 "image": {
                     "type": "string"
                 },
@@ -1657,6 +1707,9 @@ var doc = `{
         "response.ProjectResp": {
             "type": "object",
             "properties": {
+                "blockNumberMinted": {
+                    "type": "string"
+                },
                 "completeTime": {
                     "type": "integer"
                 },
@@ -1697,6 +1750,9 @@ var doc = `{
                     "type": "string"
                 },
                 "mintPriceAddr": {
+                    "type": "string"
+                },
+                "mintedTime": {
                     "type": "string"
                 },
                 "mintingInfo": {
