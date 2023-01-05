@@ -27,6 +27,11 @@ type projectDetailChan struct {
 	Err error
 }
 
+type projectStatChan struct {
+	Data *entity.ProjectStat
+	Err error
+}
+
 func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog  types.Log) error {
 	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceListTokenEvent")
 	defer u.Tracer.FinishSpan(span, log)
@@ -203,6 +208,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 
 	pChan := make(chan projectChan, 1)
 	pDChan := make(chan projectDetailChan, 1)
+	pSChan := make(chan projectStatChan, 1)
 	
 	log.SetData("contractAddr", contractAddr)
 	log.SetData("tokenIDStr", tokenIDStr)
@@ -277,9 +283,33 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	
 
 	}(span, pDChan, contractAddr, tokenIDStr)
-	
+
+	go func(rootSpan opentracing.Span, pDChan chan projectStatChan, contractAddr string, tokenIDStr string) {
+		span, log := u.StartSpan("GetProjectDetail.ProjectStat", rootSpan)
+		defer u.Tracer.FinishSpan(span, log )
+		projectStat := &entity.ProjectStat{}
+		var err error
+
+		defer func  ()  {
+			pDChan <- projectStatChan {
+				Data: projectStat,
+				Err:  err,
+			}
+		}()
+
+		projectStat, err = u.GetUpdatedProjectStats(span, structure.GetProjectReq{
+			ContractAddr: contractAddr,
+			TokenID: tokenIDStr,
+		})
+		if err != nil {
+			log.Error(" u.SyncProjectStats", err.Error(), err)
+			return
+		}
+	}(span, pSChan, contractAddr, tokenIDStr)
+
 	projectFChan := <- pChan
 	projectDetailFChan := <- pDChan
+	projectStatFChan := <- pSChan
 
 	err = projectFChan.Err 
 	if err != nil {
@@ -369,6 +399,12 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		log.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
 	}else{
 		project.CreatorProfile = *usrFromChan.Data
+	}
+
+	if projectStatFChan.Err != nil {
+		log.Error("projectStatFChan.Err", projectStatFChan.Err.Error(), projectStatFChan.Err)
+	} else {
+		project.Stats = *projectStatFChan.Data
 	}
 
 	log.SetData("project",project)

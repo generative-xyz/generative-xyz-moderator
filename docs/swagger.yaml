@@ -248,12 +248,19 @@ definitions:
           type: string
         type: array
       social: {}
+      stats:
+        $ref: '#/definitions/response.ProjectStatResp'
       status:
         type: boolean
       styles:
         type: string
       tokenID:
         type: string
+    type: object
+  response.ProjectStatResp:
+    properties:
+      uniqueOwnerCount:
+        type: integer
     type: object
   response.RedisResponse:
     properties:

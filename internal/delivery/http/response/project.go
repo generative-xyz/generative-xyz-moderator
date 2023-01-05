@@ -31,9 +31,12 @@ type ProjectResp struct{
 	CreatorProfile ProfileResponse `json:"creatorProfile"`
 	BlockNumberMinted *string           `json:"blockNumberMinted"`
 	MintedTime       *time.Time        `json:"mintedTime"`
+	Stats ProjectStatResp `json:"stats"`
 }
 
-
+type ProjectStatResp struct {
+	UniqueOwnerCount uint32 `json:"uniqueOwnerCount"`
+}
 
 type NftMintingDetail struct {
 	Index           int64 `json:"index"`

@@ -27,3 +27,8 @@ type UpdateProjectReq struct {
 	OpenMintUnixTimestamp int `bson:"openMintUnixTimestamp"`
 	TokenDescription string `bson:"tokenDescription"`
 }
+
+type GetProjectReq struct {
+	ContractAddr string
+	TokenID string
+}
