@@ -13,3 +13,17 @@ type MarketplaceListing struct {
 	Finished           bool   `json:"finished"`
 	DurationTime       string `json:"durationTime"`
 }
+
+type MarketplaceOffer struct {
+	BaseResponse         `json:",inline"`
+	ID                 string `json:"id"`
+	OfferingId         string `json:"offeringID"`
+	CollectionContract string `json:"collectionContract"`
+	TokenId            string `json:"tokenID"`
+	Seller             string `json:"seller"`
+	Erc20Token         string `json:"erc20Token"`
+	Price              string `json:"price"`
+	Closed             bool   `json:"closed"`
+	Finished           bool   `json:"finished"`
+	DurationTime       string `json:"durationTime"`
+}

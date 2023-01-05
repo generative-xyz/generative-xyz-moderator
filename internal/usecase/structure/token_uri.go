@@ -100,3 +100,13 @@ type FilterMkListing struct {
 	Closed             *bool  
 	Finished           *bool  
 }
+
+type FilterMkOffers struct {
+	BaseFilters
+	CollectionContract *string
+	TokenId *string
+	Erc20Token *string
+	SellerAddress *string
+	Closed             *bool  
+	Finished           *bool  
+}

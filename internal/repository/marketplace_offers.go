@@ -81,3 +81,58 @@ func (r Repository) CancelOfferByOfferingID(offeringID string) error {
 	
 	return err
 }
+
+func (r Repository) filterOffers(filter entity.FilterMarketplaceOffers) bson.M {
+	f := bson.M{}
+	f[utils.KEY_DELETED_AT] = nil
+
+	if filter.CollectionContract != nil {
+		if *filter.CollectionContract != "" {
+			f["collection_contract"] = *filter.CollectionContract
+		}
+	}
+	
+	if filter.TokenId != nil {
+		if *filter.TokenId != "" {
+			f["token_id"] = *filter.TokenId
+		}
+	}
+	
+	if filter.Erc20Token != nil {
+		if *filter.Erc20Token != "" {
+			f["erc_20_token"] = *filter.Erc20Token
+		}
+	}
+	
+	if filter.SellerAddress != nil {
+		if *filter.SellerAddress != "" {
+			f["seller"] = *filter.SellerAddress
+		}
+	}
+	
+	if filter.Closed != nil {
+		f["closed"] = *filter.Closed
+	}
+	
+	if filter.Finished != nil {
+		f["finished"] = *filter.Finished
+	}
+	
+	return f
+}
+
+func (r Repository) FilterMarketplaceOffers(filter entity.FilterMarketplaceOffers) (*entity.Pagination, error)  {
+	confs := []entity.MarketplaceOffers{}
+	resp := &entity.Pagination{}
+	f := r.filterOffers(filter)
+
+	p, err := r.Paginate(utils.COLLECTION_MARKETPLACE_OFFERS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	return resp, nil
+}

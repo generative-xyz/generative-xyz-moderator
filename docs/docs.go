@@ -839,6 +839,81 @@ var doc = `{
                 }
             }
         },
+        "/marketplace/offers/{genNFTAddr}/token/{tokenID}": {
+            "get": {
+                "description": "Get market place offer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MarketPlace"
+                ],
+                "summary": "Get market place offer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "genNFTAddrress",
+                        "name": "genNFTAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "tokenID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "true|false, default all",
+                        "name": "closed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "true|false, default all",
+                        "name": "finished",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "sort by field",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "1: ASC, -1: DESC",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit default 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page start with 1",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/nfts/{contractAddress}/transactions/{tokenID}": {
             "get": {
                 "description": "get nft transactions",
