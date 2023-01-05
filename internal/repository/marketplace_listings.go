@@ -109,7 +109,15 @@ func (r Repository) filterListings(filter entity.FilterMarketplaceListings) bson
 			f["seller"] = *filter.SellerAddress
 		}
 	}
-
+	
+	if filter.Closed != nil {
+		f["closed"] = *filter.Closed
+	}
+	
+	if filter.Finished != nil {
+		f["finished"] = *filter.Finished
+	}
+	
 	return f
 }
 

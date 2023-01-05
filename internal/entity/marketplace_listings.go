@@ -12,6 +12,8 @@ type FilterMarketplaceListings struct {
 	TokenId *string
 	Erc20Token *string
 	SellerAddress *string
+	Closed             *bool  
+	Finished           *bool  
 }
 
 type MarketplaceListings struct {
