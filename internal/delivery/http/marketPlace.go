@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -19,6 +20,12 @@ import (
 // @Produce  json
 // @Param genNFTAddr path string true "genNFTAddrress"
 // @Param tokenID path string true "tokenID"
+// @Param closed query bool false "true|false, default all"
+// @Param finished query bool false "true|false, default all"
+// @Param sort_by query string false "sort by field"
+// @Param sort query int false "1: ASC, -1: DESC"
+// @Param limit query int false "limit default 10"
+// @Param page query int false "page start with 1"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /marketplace/listing/{genNFTAddr}/token/{tokenID} [GET]
 func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *http.Request) {
@@ -36,11 +43,29 @@ func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *
 		return
 	}
 
+	
+	closed := r.URL.Query().Get("closed")
+	finished := r.URL.Query().Get("finished")
+
+	closedBool, err := strconv.ParseBool(closed)
+	if err != nil {
+		log.Error("strconv.ParseBool.closed", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	finishedBool, err := strconv.ParseBool(finished)
+	if err != nil {
+		log.Error("strconv.ParseBool.finished", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
 	f := structure.FilterMkListing{}
 	f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
-
-
+	f.Closed = &closedBool
+	f.Finished = &finishedBool
 	f.BaseFilters = *bf
 	
 	resp, err := h.getMkListings(span, f)
