@@ -1220,7 +1220,7 @@ var doc = `{
         },
         "/profile/wallet/{walletAddress}/selling-nfts": {
             "get": {
-                "description": "User profile's nft",
+                "description": "User profile's selling nft",
                 "consumes": [
                     "application/json"
                 ],
@@ -1228,9 +1228,9 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Profile"
+                    "MarketPlace"
                 ],
-                "summary": "User profile's nft",
+                "summary": "User profile's selling nft",
                 "parameters": [
                     {
                         "type": "string",
