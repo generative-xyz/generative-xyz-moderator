@@ -20,6 +20,7 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
 )
@@ -90,7 +91,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		
 		var profile *entity.Users
 		var err error
-		log.SetTag("walletAddress", address)
+		log.SetTag(utils.WALLET_ADDRESS_TAG, address)
 		
 		defer func() {
 			response :=  structure.ProfileChan{

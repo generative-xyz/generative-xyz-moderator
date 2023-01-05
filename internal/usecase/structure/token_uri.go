@@ -88,6 +88,8 @@ type FilterTokens struct {
 	OwnerAddr *string
 	CreatorAddr *string
 	GenNFTAddr *string
+	CollectionIDs []string
+	TokenIDs []string
 }
 
 type FilterMkListing struct {

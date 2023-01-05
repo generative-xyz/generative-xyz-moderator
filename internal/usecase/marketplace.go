@@ -10,7 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken) error {
@@ -153,7 +155,6 @@ func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_market
 	return nil
 }
 
-
 func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.FilterMkListing) (*entity.Pagination, error) {
 	span, log := u.StartSpan("FilterListing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
@@ -196,3 +197,81 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 	return ml, nil
 }
 
+func (u Usecase) GetListingBySeller(rootSpan opentracing.Span, sellerAddress string) ([]entity.MarketplaceListings,[]string,[]string, error) {
+	span, log := u.StartSpan("FilterListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	cachedKey, cachedContractIDsKey, cachedTokensIDsKey := helpers.ProfileSelingKey(sellerAddress)
+	
+	listings := []entity.MarketplaceListings{}
+	contractIDS := []string{}
+	tokenIDS := []string{}
+	var err error
+
+	log.SetTag(utils.WALLET_ADDRESS_TAG, sellerAddress)
+	log.SetData("cachedKey", cachedKey)
+	log.SetData("cachedContractIDsKey", cachedContractIDsKey)
+	log.SetData("cachedTokensIDsKey", cachedTokensIDsKey)
+
+	//always reloa data
+	liveReload := func (rootSpan opentracing.Span, sellerAddress string, cachedKey string, cachedContractIDsKey string, cachedTokensIDsKey string) ([]entity.MarketplaceListings, []string, []string, error)  {
+		span, log := u.StartSpan("FilterListing.Live.Reload", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		listings, err = u.Repo.GetListingBySeller(sellerAddress)
+		if err != nil {
+			log.Error("u.Repo.GetListingBySeller", err.Error(), err)
+			return nil, nil, nil, err
+		}
+
+		contractIDS := []string{}
+		tokenIDS := []string{}
+		for key, listing := range listings {
+			log.SetData(fmt.Sprintf("listing.%d",key),listing)
+			contractIDS = append(contractIDS, listing.CollectionContract)
+			tokenIDS = append(tokenIDS, listing.TokenId)
+		}
+		
+		
+		u.Cache.SetData(cachedKey, listings)
+		u.Cache.SetData(cachedContractIDsKey, contractIDS)
+		u.Cache.SetData(cachedTokensIDsKey, tokenIDS)
+		return listings, contractIDS, tokenIDS, nil
+	}
+
+	go liveReload(span, sellerAddress, cachedKey, cachedContractIDsKey, cachedTokensIDsKey)
+
+	cached, err := u.Cache.GetData(cachedKey)
+	if err == nil && cached != nil {
+		err = helpers.ParseCache(cached, &listings)
+		if err != nil  {
+			log.Error("helpers.ParseCache.listings", err.Error(), err)
+			return nil, nil, nil, err
+		}
+		
+		cached, err := u.Cache.GetData(cachedContractIDsKey)
+		err = helpers.ParseCache(cached, &contractIDS)
+		if err != nil  {
+			log.Error("helpers.ParseCache.cachedContractIDsKey", err.Error(), err)
+			return nil, nil, nil, err
+		}
+		
+		cached, err = u.Cache.GetData(cachedTokensIDsKey)
+		err = helpers.ParseCache(cached, &tokenIDS)
+		if err != nil  {
+			log.Error("helpers.ParseCache.tokenIDS", err.Error(), err)
+			return nil, nil, nil, err
+		}
+
+	}else{
+		listings, contractIDS, tokenIDS, err = liveReload(span, sellerAddress, cachedKey, cachedContractIDsKey, cachedTokensIDsKey)
+		if err != nil  {
+			log.Error("liveReload", err.Error(), err)
+			return nil, nil, nil, err
+		}
+	}
+
+	log.SetData("listings", listings)
+	log.SetData("contractIDS", contractIDS)
+	log.SetData("tokenIDS", tokenIDS)
+	return listings, contractIDS, tokenIDS, nil
+}
