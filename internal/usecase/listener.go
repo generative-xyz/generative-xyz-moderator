@@ -389,9 +389,35 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 				IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
 			}
 		}
-		project.BlockNumberMinted = projectDetail.NftMintedTime.BlockNumberMinted
-		project.MintedTime = projectDetail.NftMintedTime.MintedTime
 	}
+
+	// get minted time 
+	if project.BlockNumberMinted == nil || project.MintedTime == nil {
+		mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
+		go func(mintedTimeChan chan structure.NftMintedTimeChan) {
+			var mintedTime *structure.NftMintedTime
+			var err error
+			defer func() {
+				mintedTimeChan <- structure.NftMintedTimeChan{
+					NftMintedTime: mintedTime,
+					Err: err,
+				}
+			}()
+			span, _ := u.StartSpanWithoutRoot("getNftContractDetail.GetNftMintedTime")
+			mintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+				ContractAddress: project.ContractAddress,
+				TokenID: project.TokenID,
+			})
+		}(mintedTimeChan)
+		mintedTimeFChan := <-mintedTimeChan
+		if mintedTimeFChan.Err != nil {
+			log.Error("mintedTimeFChan.Err ", mintedTimeFChan.Err.Error(), mintedTimeFChan.Err)
+		} else {
+			project.BlockNumberMinted = mintedTimeFChan.NftMintedTime.BlockNumberMinted
+			project.MintedTime = mintedTimeFChan.NftMintedTime.MintedTime
+		}
+	}
+
 	
 	project.TokenIDInt = int64(tokenIDInt)
 

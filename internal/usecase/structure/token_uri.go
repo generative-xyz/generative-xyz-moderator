@@ -29,7 +29,6 @@ type ProjectDetail struct {
 	NftTokenUri string
 	Royalty ProjectRoyalty
 	NftProjectDetail NftProjectDetail
-	NftMintedTime NftMintedTime
 }
 
 type ProjectRoyalty struct {
