@@ -1956,6 +1956,9 @@
                     }
                 },
                 "social": {},
+                "stats": {
+                    "$ref": "#/definitions/response.ProjectStatResp"
+                },
                 "status": {
                     "type": "boolean"
                 },
@@ -1964,6 +1967,14 @@
                 },
                 "tokenID": {
                     "type": "string"
+                }
+            }
+        },
+        "response.ProjectStatResp": {
+            "type": "object",
+            "properties": {
+                "uniqueOwnerCount": {
+                    "type": "integer"
                 }
             }
         },

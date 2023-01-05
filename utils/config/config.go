@@ -27,6 +27,7 @@ type Config struct {
 	BlockchainConfig BlockchainConfig
 	TxConsumerConfig TxConsumerConfig
 	MarketplaceEvents MarketplaceEvents
+	TimeResyncProjectStat int32
 }
 
 type MQTTConfig struct {
@@ -141,6 +142,8 @@ func NewConfig() (*Config, error) {
 	batchLogSize, _ := strconv.Atoi(os.Getenv("TX_CONSUMER_BATCH_LOG_SIZE"))
 	addresses := strings.Split(os.Getenv("TX_CONSUMER_ADDRESSES"), ",")
 
+	timeResyncProjectStat, _ := strconv.Atoi(os.Getenv("TIME_RESYNC_PROJECT_STAT"))
+
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -206,6 +209,7 @@ func NewConfig() (*Config, error) {
 			CancelListing: os.Getenv("MARKETPLACE_CANCEL_LISTING"),
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
+		TimeResyncProjectStat: int32(timeResyncProjectStat),
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")

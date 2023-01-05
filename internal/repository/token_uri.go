@@ -141,6 +141,25 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 	if err != nil {
 		return nil, err
 	}
-
 	return result, nil
+}
+
+
+func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+	f := bson.D{{
+		Key: utils.KEY_PROJECT_ID, 
+		Value: projectID,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }

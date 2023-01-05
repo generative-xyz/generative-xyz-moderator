@@ -47,6 +47,7 @@ const (
 	KEY_AUTO_USERID      string = "user_id"
 	KEY_WALLET_ADDRESS   string = "wallet_address"
 	KEY_DELETED_AT       string = "deleted_at"
+	KEY_PROJECT_ID			 string = "project_id"
 
 	COLLECTION_USERS string = "users"
 	COLLECTION_TOKEN_URI string = "token_uri"

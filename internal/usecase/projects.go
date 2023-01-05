@@ -195,6 +195,34 @@ func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure
 	return projects, nil
 }
 
+func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, error) {
+	span, log := u.StartSpan("SyncProjectStats", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	// do not resync
+	if project.Stats.LastTimeSynced != nil && project.Stats.LastTimeSynced.Unix() + int64(u.Config.TimeResyncProjectStat) > time.Now().Unix() {
+		return &project.Stats, nil
+	}
+
+	allTokenFromDb, err := u.Repo.GetAllTokensByProjectID(project.TokenID)
+	if err != nil {
+		return nil, err
+	}
+	owners := make(map[string]bool)
+	for _, token := range allTokenFromDb {
+		owners[token.OwnerAddr] = true
+	}
+	now := time.Now()
+	return &entity.ProjectStat{
+		LastTimeSynced: &now,
+		UniqueOwnerCount: uint32(len(owners)),
+	}, nil
+}
+
 
 func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
 	span, log := u.StartSpan("getProjectDetailFromChainWithoutCache", rootSpan)

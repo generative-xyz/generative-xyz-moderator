@@ -8,6 +8,12 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type ProjectStat struct {
+	LastTimeSynced   *time.Time `bson:"lastTimeSynced" json:"lastTimeSynced"`
+	UniqueOwnerCount uint32     `bson:"uniqueOwnerCount" json:"uniqueOwnerCount"`
+	// TODO add other stats here
+}
+
 type Projects struct {
 	BaseEntity`bson:",inline"`
 	ContractAddress string `bson:"contractAddress"`
@@ -48,7 +54,8 @@ type Projects struct {
 	Reservers []string `bson:"reservers"`
 	CreatorProfile Users `bson:"creatorProfile"`
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
-	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
+	MintedTime *time.Time `bson:"minted_time" json:"minted_time"`
+	Stats                 ProjectStat        `bson:"stats"`
 }
 
 type	ProjectMintingInfo struct {

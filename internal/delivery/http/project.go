@@ -273,6 +273,11 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.Royalty = input.Royalty
 	resp.Reservers = input.Reservers
 	resp.CompleteTime = input.CompleteTime
+	resp.BlockNumberMinted = input.BlockNumberMinted
+	resp.MintedTime = input.MintedTime
+	resp.Stats = response.ProjectStatResp{
+		UniqueOwnerCount: input.Stats.UniqueOwnerCount,
+	}
 
 	profileResp, err  := h.profileToResp(&input.CreatorProfile)
 	if err == nil {
