@@ -12,6 +12,16 @@ import (
 func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
+	cached, err := r.GetCache(utils.COLLECTION_USERS, walletAddress)
+	if err ==  nil && cached != nil {
+		err = helpers.Transform(cached, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	}
+
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, walletAddress}})
 	if err != nil {
 		return nil, err
@@ -21,6 +31,8 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 	if err != nil {
 		return nil, err
 	}
+
+	r.CreateCache(utils.COLLECTION_USERS, walletAddress, resp)
 	return resp, nil
 }
 

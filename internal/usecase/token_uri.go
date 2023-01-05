@@ -78,16 +78,28 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		return nil, err
 	}
 
+	if nft.Owner != tokenUri.OwnerAddr {
+		tokenUri.OwnerAddr =  nft.Owner
+		isUpdate = true
+	}
+
 	log.SetData("nft", nft)
-	getProfile := func(c chan structure.ProfileChan, address string) {
+	getProfile := func(rootSpan opentracing.Span, c chan structure.ProfileChan, address string) {
+		span, log := u.StartSpan("GetToken.Profile", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+		
 		var profile *entity.Users
 		var err error
-
+		log.SetTag("walletAddress", address)
+		
 		defer func() {
-			c <- structure.ProfileChan{
+			response :=  structure.ProfileChan{
 				Data:  profile,
 				Err:  err,
 			}
+
+			log.SetData("response", response)
+			c <- response
 		}()
 
 		profile, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
@@ -99,8 +111,8 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	ownerProfileChan := make(chan structure.ProfileChan, 1) 
 	creatorProfileChan := make(chan structure.ProfileChan, 1) 
 
-	go getProfile(ownerProfileChan, nft.Owner)
-	go getProfile(creatorProfileChan, project.CreatorAddrr)
+	go getProfile(span, ownerProfileChan, nft.Owner)
+	go getProfile(span, creatorProfileChan, project.CreatorAddrr)
 
 	ownerProfileResp := <-ownerProfileChan
 	creatorProfileResp := <-creatorProfileChan
@@ -110,6 +122,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	log.SetData("creatorProfileResp", creatorProfileResp)
 
 	tokenUri.TokenIDInt = tokenIDInt
+
 	if tokenUri.OwnerAddr == "" {
 		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
 		isUpdate = true
@@ -364,10 +377,6 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	span, log := u.StartSpan("GetTokensByContract", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	//TODO: check if the inserted Project which has Tokens.
-	// If it has, return the added Tokens.
-
-	// TODO: separate these code lines to another process
 	client, err := helpers.EthDialer()
 	if err != nil {
 		log.Error("ethclient.Dial", err.Error(), err)
