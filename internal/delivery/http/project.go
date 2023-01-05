@@ -303,23 +303,14 @@ func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, token := range tokensData {	
-		ownerResp, _ := h.profileToResp(token.Owner)
-		creatorResp, _ := h.profileToResp(token.Creator)
-		projectResp, _ := h.projectToResp(token.Project)
-
-		resp := response.InternalTokenURIResp{
-			Name:         token.Name,
-			Description:  token.Description,
-			Image:        *token.ParsedImage,
-			AnimationURL: token.AnimationURL,
-			Attributes:   token.ParsedAttributes,
-			OwnerAddr:    token.OwnerAddr,
-			Owner:        ownerResp,
-			MintedTime:   *token.MintedTime,
-			Project:      projectResp,
-			Creator: creatorResp,
+		resp, err := h.tokenToResp(&token)
+		if err != nil {
+			err := errors.New( "Cannot parse products")
+			log.Error("tokenToResp",  err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
 		}
-		respItems = append(respItems, resp)
+		respItems = append(respItems, *resp)
 	}
 
 	resp := h.PaginationResp(data, respItems)

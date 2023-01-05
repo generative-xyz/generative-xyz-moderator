@@ -13,6 +13,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -212,6 +213,21 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 		isUpdate = true
 		tokenUri.GenNFTAddr = project.GenNFTAddr
 	}
+	
+	if tokenUri.Owner == nil  {
+		isUpdate = true
+		tokenUri.Owner = ownerProfileResp.Data
+	}
+	
+	if tokenUri.Creator == nil  {
+		isUpdate = true
+		tokenUri.Creator = creatorProfileResp.Data
+	}
+	
+	if tokenUri.Project == nil  {
+		isUpdate = true
+		tokenUri.Project = project
+	}
 
 	log.SetData("isUpdate", isUpdate)
 	//isUpdate = true
@@ -229,10 +245,6 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
 	// 	return nil, err
 	// }
-
-	tokenUri.Owner = ownerProfileResp.Data
-	tokenUri.Creator = creatorProfileResp.Data
-	tokenUri.Project = project
 	return tokenUri, nil
 }
 
@@ -352,7 +364,10 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	span, log := u.StartSpan("GetTokensByContract", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	// call to contract to get emotion
+	//TODO: check if the inserted Project which has Tokens.
+	// If it has, return the added Tokens.
+
+	// TODO: separate these code lines to another process
 	client, err := helpers.EthDialer()
 	if err != nil {
 		log.Error("ethclient.Dial", err.Error(), err)
@@ -399,53 +414,22 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	return p, nil
 }
 
-func (u Usecase) GetTokensByWalletAddress(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
+func (u Usecase) FilterTokens(rootSpan opentracing.Span, walletAddress string, filter structure.FilterTokens) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetTokensByContract", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	// call to contract to get emotion
-	client, err := helpers.EthDialer()
+	pe := &entity.FilterTokenUris{}
+	err := copier.Copy(pe, filter)
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		log.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
-	contractAddr := common.HexToAddress(contractAddress)
-	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	tokens, err := u.Repo.FilterTokenUri(*pe)
 	if err != nil {
-		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		log.Error("u.Repo.FilterTokenUri", err.Error(), err)
 		return nil, err
 	}
-
-	project, err := gNft.Project(nil)
-	if err != nil {
-		log.Error("gNft.Project", err.Error(), err)
-		return nil, err
-	}
-	parentAddr := project.ProjectAddr
-
-	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
-	if err != nil {
-		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
-		return nil, err
-	}
-	parentAddrStr := parentAddr.String()
-	result := []entity.TokenUri{}
-	for _, item := range resp.Result {
-		tokenID := item.TokenID
-		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
-		if err != nil {
-			log.Error("u.getTokenInfo", err.Error(), err)
-			return nil, err
-		}
-		result = append(result, *token)
-	}
-
-	p := &entity.Pagination{}
-	p.Result = result
-	p.Currsor = resp.Cursor
-	p.Total = int64(resp.Total)
-	p.Page = int64(resp.Page)
-	p.PageSize = int64(resp.PageSize)
-	return p, nil
+	
+	return tokens, nil
 }

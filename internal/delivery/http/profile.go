@@ -289,7 +289,7 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string true "Wallet address"
-// @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /profile/wallet/{walletAddress}/nfts [GET]
 func (h *httpDelivery) getProfileNfts(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.getProfileNfts", r)
@@ -297,22 +297,49 @@ func (h *httpDelivery) getProfileNfts(w http.ResponseWriter, r *http.Request) {
 	
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(span, walletAddress)
+	log.SetData("walletAddress",walletAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
+	f := structure.FilterTokens{}
+	f.CreatorAddr = &walletAddress
+
+	bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	log.SetData("profile", profile)
-	
-	resp, err := h.profileToResp(profile)
+	f.BaseFilters = *bf
+	data, err := h.Usecase.FilterTokens(span, walletAddress, f)
 	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
+		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
+	respItems := []response.InternalTokenURIResp{}
+	iTokensData := data.Result
+	tokensData, ok := (iTokensData).([]entity.TokenUri)
+	if !ok {
+		err := errors.New( "Cannot parse products")
+		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	for _, token := range tokensData {	
+		resp, err := h.tokenToResp(&token)
+		if err != nil {
+			err := errors.New( "Cannot parse products")
+			log.Error("tokenToResp",  err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		respItems = append(respItems, *resp)
+	}
+
+	resp := h.PaginationResp(data, respItems)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+
 }

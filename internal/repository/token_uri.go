@@ -29,6 +29,55 @@ func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity
 	return resp, nil
 }
 
+func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagination, error) {
+	tokens := []entity.TokenUri{}
+	resp := &entity.Pagination{}
+	
+	f := r.filterToken(filter)
+	
+	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &tokens)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = tokens
+	resp.Page = t.Pagination.Page
+	resp.Total = t.Pagination.Total
+	return resp, nil
+}
+
+func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
+	f := bson.M{}
+	f[utils.KEY_DELETED_AT] = nil
+
+
+	if filter.CreatorAddr != nil {
+		if *filter.CreatorAddr != "" {
+			f["creator_address"] = *filter.CreatorAddr
+		}
+ 	}
+	
+	if filter.OwnerAddr != nil {
+		if *filter.OwnerAddr != "" {
+			f["owner_addrress"] = *filter.OwnerAddr
+		}
+ 	}
+	
+	if filter.GenNFTAddr != nil {
+		if *filter.GenNFTAddr != "" {
+			f["gen_nft_addrress"] = *filter.GenNFTAddr
+		}
+ 	}
+	
+	if filter.ContractAddress != nil {
+		if *filter.ContractAddress != "" {
+			f["contract_address"] = *filter.ContractAddress
+		}
+ 	}
+
+	return f
+}
+
 func (r Repository) CreateTokenURI(data *entity.TokenUri) error {
 	t, err := r.FindTokenBy(data.ContractAddress, data.TokenID)
 	if err != nil {

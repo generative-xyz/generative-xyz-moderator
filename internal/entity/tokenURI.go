@@ -8,6 +8,14 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type FilterTokenUris struct {
+	BaseFilters
+	ContractAddress *string
+	OwnerAddr *string
+	CreatorAddr *string
+	GenNFTAddr *string
+}
+
 type TokenUri struct {
 	BaseEntity `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
@@ -27,9 +35,11 @@ type TokenUri struct {
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`
-	Owner *Users `bson:"-"`
-	Project *Projects `bson:"-"`
-	Creator *Users `bson:"-"`
+
+	//accept duplicated data to query more faster
+	Owner *Users `bson:"owner"`
+	Project *Projects `bson:"project"`
+	Creator *Users `bson:"creator"`
 }
 
 type TokenUriAttr struct {
