@@ -90,3 +90,11 @@ type FilterTokens struct {
 	CreatorAddr *string
 	GenNFTAddr *string
 }
+
+type FilterMkListing struct {
+	BaseFilters
+	CollectionContract *string
+	TokenId *string
+	Erc20Token *string
+	SellerAddress *string
+}

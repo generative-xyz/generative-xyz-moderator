@@ -98,6 +98,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/redis/{key}", h.getRedis).Methods("GET")
 	admin.HandleFunc("/redis", h.upsertRedis).Methods("POST")
 	admin.HandleFunc("/redis/{key}", h.deleteRedis).Methods("DELETE")
+
+	//Marketplace
+	marketplace := api.PathPrefix("/marketplace").Subrouter()
+	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

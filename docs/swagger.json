@@ -749,6 +749,45 @@
                 }
             }
         },
+        "/marketplace/listing/{genNFTAddr}/token/{tokenID}": {
+            "get": {
+                "description": "Get market place listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MarketPlace"
+                ],
+                "summary": "Get market place listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "genNFTAddrress",
+                        "name": "genNFTAddr",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "tokenID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/nfts/{contractAddress}/transactions/{tokenID}": {
             "get": {
                 "description": "get nft transactions",
@@ -1752,6 +1791,9 @@
                 },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
+                },
+                "tokenID": {
+                    "type": "string"
                 }
             }
         },
