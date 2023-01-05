@@ -32,9 +32,9 @@ type projectStatChan struct {
 	Err error
 }
 
-func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog  types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceListTokenEvent")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplaceListTokenEvent(rootSpan opentracing.Span, chainLog  types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplaceListTokenEvent", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
@@ -58,9 +58,9 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog  types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplacePurchaseTokenEvent")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplacePurchaseTokenEvent(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplacePurchaseTokenEvent", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
@@ -83,9 +83,9 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceMakeOffer")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplaceMakeOffer(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplaceMakeOffer", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
@@ -108,9 +108,9 @@ func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceAcceptOfferEvent")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplaceAcceptOfferEvent(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplaceAcceptOfferEvent", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
@@ -133,9 +133,9 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceCancelListing")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplaceCancelListing(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplaceCancelListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
@@ -158,9 +158,9 @@ func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
-	span, log := u.StartSpanWithoutRoot("TxConsumerListener.ResolveMarketplaceCancelOffer")
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ResolveMarketplaceCancelOffer(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("ResolveMarketplaceCancelOffer", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
 		log.Error("cannot init marketplace contract", "", err)
