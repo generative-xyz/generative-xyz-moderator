@@ -280,6 +280,48 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 
 }
 
+
+// UserCredits godoc
+// @Summary User profile's nft
+// @Description User profile's nft
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string true "Wallet address"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /profile/wallet/{walletAddress}/selling-nfts [GET]
+func (h *httpDelivery) SellingTokensOfAProfile(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.SellingTokensOfAProfile", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]
+	log.SetData("walletAddress",walletAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
+	f := structure.FilterTokens{}
+	f.CreatorAddr = &walletAddress
+
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	
+	resp, err := h.getTokens(span, f)
+	if err != nil {
+		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+
+}
+
 func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTokens) (*response.PaginationResponse, error) {
 	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
 	defer h.Tracer.FinishSpan(span, log )

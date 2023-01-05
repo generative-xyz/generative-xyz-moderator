@@ -1040,6 +1040,32 @@ paths:
       summary: User profile's nft
       tags:
       - Profile
+  /profile/wallet/{walletAddress}/selling-nfts:
+    get:
+      consumes:
+      - application/json
+      description: User profile's nft
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: User profile's nft
+      tags:
+      - Profile
   /project:
     get:
       consumes:

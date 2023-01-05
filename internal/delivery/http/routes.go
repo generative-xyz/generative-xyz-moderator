@@ -55,6 +55,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/selling-nfts", h.SellingTokensOfAProfile).Methods("GET")
 	
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
