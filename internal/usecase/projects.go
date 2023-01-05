@@ -309,7 +309,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 	pDchan := make(chan structure.ProjectDetailChan, 1)
 	pStatuschan := make(chan structure.ProjectStatusChan, 1)
 	pTokenURIchan := make(chan structure.ProjectNftTokenUriChan, 1)
-	mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
 
 	go func(pDchan chan structure.ProjectDetailChan, projectID *big.Int) {
 		proDetail := &generative_project_contract.NFTProjectProject{}
@@ -371,26 +370,9 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 
 	}(pTokenURIchan, &projectID)
 
-	go func(mintedTimeChan chan structure.NftMintedTimeChan, projectID *big.Int) {
-		var mintedTime *structure.NftMintedTime
-		var err error
-		defer func() {
-			mintedTimeChan <- structure.NftMintedTimeChan{
-				NftMintedTime: mintedTime,
-				Err: err,
-			}
-		}()
-		span, _ := u.StartSpanWithoutRoot("getNftContractDetail.GetNftMintedTime")
-		mintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
-			ContractAddress: contractAddr.String(),
-			TokenID: projectID.String(),
-		})
-	}(mintedTimeChan, &projectID)
-
 	detailFromChain := <-pDchan
 	statusFromChain := <-pStatuschan
 	tokenFromChain := <-pTokenURIchan
-	nftMintedTime := <-mintedTimeChan
 
 	if detailFromChain.Err != nil {
 		return nil, detailFromChain.Err
@@ -402,10 +384,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 
 	if tokenFromChain.Err != nil {
 		return nil, tokenFromChain.Err
-	}
-
-	if nftMintedTime.Err != nil {
-		return nil, nftMintedTime.Err
 	}
 
 	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
@@ -454,7 +432,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		ProjectDetail: detailFromChain.ProjectDetail,
 		Status:        *statusFromChain.Status,
 		NftTokenUri:   *tokenFromChain.TokenURI,
-		NftMintedTime:  *nftMintedTime.NftMintedTime,
 	}
 
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {

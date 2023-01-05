@@ -324,8 +324,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	dataObject.TokenID = req.TokenID
 	dataObject.ProjectID = projectID.String()
-	dataObject.MintedTime = nftProjectDetail.NftMintedTime.MintedTime
-	dataObject.BlockNumberMinted = nftProjectDetail.NftMintedTime.BlockNumberMinted
 
 	log.SetData("dataObject", dataObject)
 	return dataObject, nil
