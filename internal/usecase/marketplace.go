@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
 )
 
@@ -149,5 +151,27 @@ func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_market
 	// TODO: @dac add update collection stats here
 
 	return nil
+}
+
+
+func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.FilterMkListing) (*entity.Pagination, error) {
+	span, log := u.StartSpan("FilterListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	fm := &entity.FilterMarketplaceListings{}
+	err := copier.Copy(fm, filter)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	ml, err := u.Repo.FilterMarketplaceListings(*fm)
+	if err != nil {
+		log.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("filtered", ml)
+	return ml, nil
 }
 

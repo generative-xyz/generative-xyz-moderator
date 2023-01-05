@@ -140,6 +140,8 @@ definitions:
         type: string
       project:
         $ref: '#/definitions/response.ProjectResp'
+      tokenID:
+        type: string
     type: object
   response.JsonResponse:
     properties:
@@ -750,6 +752,32 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /marketplace/listing/{genNFTAddr}/token/{tokenID}:
+    get:
+      consumes:
+      - application/json
+      description: Get market place listing
+      parameters:
+      - description: genNFTAddrress
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      - description: tokenID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Get market place listing
+      tags:
+      - MarketPlace
   /nfts/{contractAddress}/transactions/{tokenID}:
     get:
       consumes:
