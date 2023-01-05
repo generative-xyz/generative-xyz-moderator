@@ -46,26 +46,29 @@ func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *
 	
 	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
-
-	closedBool, err := strconv.ParseBool(closed)
-	if err != nil {
-		log.Error("strconv.ParseBool.closed", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
-	finishedBool, err := strconv.ParseBool(finished)
-	if err != nil {
-		log.Error("strconv.ParseBool.finished", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
 	f := structure.FilterMkListing{}
+	if closed != "" {
+		closedBool, err := strconv.ParseBool(closed)
+		if err != nil {
+			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Closed = &closedBool
+	}
+	
+	if finished != "" {
+		finishedBool, err := strconv.ParseBool(finished)
+		if err != nil {
+			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Finished = &finishedBool
+	}
+	
 	f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
-	f.Closed = &closedBool
-	f.Finished = &finishedBool
 	f.BaseFilters = *bf
 	
 	resp, err := h.getMkListings(span, f)
