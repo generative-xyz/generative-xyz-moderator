@@ -61,6 +61,13 @@ definitions:
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
     type: object
+  request.UpsertRedisRequest:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   request.VerifyMessageRequest:
     properties:
       address:
@@ -246,6 +253,11 @@ definitions:
       tokenID:
         type: string
     type: object
+  response.RedisResponse:
+    properties:
+      value:
+        type: string
+    type: object
   response.RespondErr:
     properties:
       code:
@@ -305,6 +317,84 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /admin/redis:
+    post:
+      consumes:
+      - application/json
+      description: Upsert Redis
+      parameters:
+      - description: Upsert redis key
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpsertRedisRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RedisResponse'
+              type: object
+      summary: Upsert Redis
+      tags:
+      - Admin
+  /admin/redis/{key}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Redis
+      parameters:
+      - description: Redis key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Delete Redis
+      tags:
+      - Admin
+    get:
+      consumes:
+      - application/json
+      description: Get Redis
+      parameters:
+      - description: Redis key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RedisResponse'
+              type: object
+      summary: Get Redis
+      tags:
+      - Admin
   /auth/nonce:
     post:
       consumes:
