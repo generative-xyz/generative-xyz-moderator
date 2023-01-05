@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/usecase"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/tracer"
 )
 
 type HttpTxConsumer struct {
@@ -29,6 +32,7 @@ type HttpTxConsumer struct {
 	RedisKey string
 	Usecase    usecase.Usecase
 	Config        *config.Config
+	Tracer  tracer.ITracer
 }
 
 func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.Config) (*HttpTxConsumer, error) {
@@ -47,8 +51,22 @@ func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.Conf
 	txConsumer.RedisKey = "tx-consumer"
 	txConsumer.Usecase = uc
 	txConsumer.Config = &cfg
+	txConsumer.Tracer = global.Tracer
 	return txConsumer, nil
 }
+
+func (h *HttpTxConsumer) StartSpan(name string,  rootSpan opentracing.Span) (opentracing.Span, *tracer.TraceLog) {
+	span := h.Tracer.StartSpanFromRoot(rootSpan, name)
+	log := tracer.NewTraceLog()
+	return span, log
+}
+
+func (h *HttpTxConsumer) StartSpanWithoutRoot(name string) (opentracing.Span, *tracer.TraceLog) {
+	span := h.Tracer.StartSpan(name)
+	log := tracer.NewTraceLog()
+	return span, log
+}
+
 
 func (c *HttpTxConsumer) getRedisKey() string {
 	return fmt.Sprintf("%s:lastest_processed", c.RedisKey)
@@ -84,6 +102,8 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 }
 
 func (c *HttpTxConsumer) resolveTransaction() error {
+	span, log := c.StartSpanWithoutRoot("resolveTransaction")
+	defer c.Tracer.FinishSpan(span, log )
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
 		c.Logger.Error("Error when get last processed block", err)
@@ -97,40 +117,61 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock + int64(c.BatchLogSize))))
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
+	log.SetData("from block", fromBlock)
+	log.SetData("to block", toBlock)
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		return err
 	}
 
-	for _, log := range logs {
+	for _, _log := range logs {
 		// marketplace logs
-		if strings.ToLower(log.Address.String()) == c.Config.MarketplaceEvents.Contract {
-			topic :=  strings.ToLower(log.Topics[0].String())
+		if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
+			topic :=  strings.ToLower(_log.Topics[0].String())
+			log.SetData("topic", topic)
+			log.SetData("topic tx hash", _log.TxHash)
+			log.SetData("topic block number", _log.BlockNumber)
 			switch topic {
 			case c.Config.MarketplaceEvents.ListToken:
-				c.Usecase.ResolveMarketplaceListTokenEvent(log)
+				log.SetTag("event", "ListToken")
+				err = c.Usecase.ResolveMarketplaceListTokenEvent(span, _log)
 			case c.Config.MarketplaceEvents.PurchaseToken:
-				c.Usecase.ResolveMarketplacePurchaseTokenEvent(log)
+				log.SetData("event", "PurchaseToken")
+				err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(span, _log)
 			case c.Config.MarketplaceEvents.MakeOffer:
-				c.Usecase.ResolveMarketplaceMakeOffer(log)
+				log.SetData("event", "MakeOffer")
+				err = c.Usecase.ResolveMarketplaceMakeOffer(span, _log)
 			case c.Config.MarketplaceEvents.AcceptMakeOffer:
-				c.Usecase.ResolveMarketplaceAcceptOfferEvent(log)
+				log.SetData("event", "AcceptMakeOffer")
+				err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(span, _log)
 			case c.Config.MarketplaceEvents.CancelListing:
-				c.Usecase.ResolveMarketplaceCancelListing(log)
+				log.SetData("event", "CancelListing")
+				err = c.Usecase.ResolveMarketplaceCancelListing(span, _log)
 			case c.Config.MarketplaceEvents.CancelMakeOffer:
-				c.Usecase.ResolveMarketplaceCancelOffer(log)
+				log.SetData("event", "CancelMakeOffer")
+				err = c.Usecase.ResolveMarketplaceCancelOffer(span, _log)
 			}
 		}
 		// do switch case with log.Address and log.Topics
-		if log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
-			c.Usecase.UpdateProjectWithListener(log)
+		if _log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
+			c.Usecase.UpdateProjectWithListener(_log)
+		}
+		if err != nil {
+			log.Error("error resolve event", err.Error(), err)
+			return err
 		}
 	}
 
-	// if no error occured, save toBlock as lastProcessedBlock
-	err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
-	if err != nil {
-		return err
+	lock, err := c.Cache.GetData(utils.REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK)
+	if err == nil && *lock == "true" {
+		log.SetData("lock-tx-consumer-update-last-processed-block", true)
+	} else {
+		// if no error occured, save toBlock as lastProcessedBlock
+		err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
+		if err != nil {
+			log.Error("error set redis", err.Error(), err)
+			return err
+		}
 	}
 
 	return nil

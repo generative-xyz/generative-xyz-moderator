@@ -57,6 +57,8 @@ const (
 	COLLECTION_CATEGORIES string = "categories"
 	COLLECTION_MARKETPLACE_LISTINGS string = "marketplace_listings"
 	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
+
+	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 )
 
 type PubSubSendOtp struct {
