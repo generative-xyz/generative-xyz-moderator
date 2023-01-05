@@ -1044,7 +1044,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: User profile's nft
+      description: User profile's selling nft
       parameters:
       - description: Wallet address
         in: path
@@ -1079,9 +1079,9 @@ paths:
                 data:
                   $ref: '#/definitions/response.InternalTokenURIResp'
               type: object
-      summary: User profile's nft
+      summary: User profile's selling nft
       tags:
-      - Profile
+      - MarketPlace
   /project:
     get:
       consumes:
