@@ -92,6 +92,12 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//nfts
 	nfts := api.PathPrefix("/nfts").Subrouter()
 	nfts.HandleFunc("/{contractAddress}/transactions/{tokenID}", h.getNftTransactions).Methods("GET")
+
+	//admin
+	admin := api.PathPrefix("/admin").Subrouter()
+	admin.HandleFunc("/redis/{key}", h.getRedis).Methods("GET")
+	admin.HandleFunc("/redis", h.upsertRedis).Methods("POST")
+	admin.HandleFunc("/redis/{key}", h.deleteRedis).Methods("DELETE")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
