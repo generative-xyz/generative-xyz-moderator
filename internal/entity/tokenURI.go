@@ -14,6 +14,8 @@ type FilterTokenUris struct {
 	OwnerAddr *string
 	CreatorAddr *string
 	GenNFTAddr *string
+	CollectionIDs []string
+	TokenIDs []string
 }
 
 type TokenUri struct {

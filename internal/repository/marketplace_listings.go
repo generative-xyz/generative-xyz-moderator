@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -134,5 +136,24 @@ func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceLis
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	return resp, nil
+}
+
+func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.MarketplaceListings, error)  {
+	resp := []entity.MarketplaceListings{}
+	filter := entity.FilterMarketplaceListings{
+		SellerAddress: &sellerAddress,
+	}
+
+	f := r.filterListings(filter)
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_LISTINGS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
 	return resp, nil
 }

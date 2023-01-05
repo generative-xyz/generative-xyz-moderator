@@ -74,6 +74,14 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			f["contract_address"] = *filter.ContractAddress
 		}
  	}
+	
+	if len(filter.CollectionIDs) > 0 {
+		f["gen_nft_addrress"] = bson.D{ {"$in", filter.CollectionIDs} }
+ 	}
+	
+	if len(filter.TokenIDs) > 0 {
+		f["token_id"] =  bson.D{ {"$in", filter.TokenIDs} }
+ 	}
 
 	return f
 }

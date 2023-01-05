@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -59,6 +60,19 @@ func JsonTransform(from interface{}, to interface{}) error {
 	return nil
 }
 
+func ParseCache(cached *string, resp interface{}) error {
+	if cached == nil {
+		return errors.New("Cached data is empty")
+	}
+
+	bytes := []byte(*cached)
+	err := json.Unmarshal(bytes, &resp)
+	if err != nil  {
+		return err
+	}
+	return nil
+}
+ 
 func GenerateKey(key string) string {
 	key = strings.ToUpper(key)
 	key = strings.ReplaceAll(key, " ", "_")
@@ -100,6 +114,10 @@ func ProjectDetailKey(contractAddr string, tokenID string) string {
 
 func ProjectRandomKey() string {
 	return fmt.Sprintf("project_random")
+}
+
+func ProfileSelingKey(sellerAddress string) (string, string, string) {
+	return fmt.Sprintf("selling.item.%s",sellerAddress),  fmt.Sprintf("selling.item.contractIDS.%s",sellerAddress), fmt.Sprintf("selling.item.tokenIDs.%s",sellerAddress)
 }
 
 func HexaNumberToInteger(hexaString string) string {
