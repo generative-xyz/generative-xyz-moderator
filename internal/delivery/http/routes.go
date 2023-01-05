@@ -54,7 +54,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
-	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.getProfileNfts).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
@@ -71,7 +71,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-	project.HandleFunc("/{genNFTAddr}/tokens", h.projectTokens).Methods("GET")
+	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
 	
 	
 	//configs
@@ -116,6 +116,12 @@ func (h *httpDelivery) RegisterDocumentRoutes() {
 
 func (h *httpDelivery) StartSpan(name string, r *http.Request) (opentracing.Span, *tracer.TraceLog) {
 	span := h.Tracer.StartSpanFromHeaderInjection(r.Header, name)
+	log := tracer.NewTraceLog()
+	return span, log
+}
+
+func (h *httpDelivery) StartSpanFromRoot(rootSpan opentracing.Span, optName string) (opentracing.Span, *tracer.TraceLog) {
+	span := h.Tracer.StartSpanFromRoot( rootSpan, optName)
 	log := tracer.NewTraceLog()
 	return span, log
 }

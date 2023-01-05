@@ -2,13 +2,10 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
-	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -249,73 +246,6 @@ func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) 
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
-}
-
-// UserCredits godoc
-// @Summary get project's tokens
-// @Description get tokens by project address
-// @Tags Project
-// @Accept  json
-// @Produce  json
-// @Param limit query int false "limit"
-// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Param genNFTAddr path string true "This is provided from Project Detail API"
-// @Success 200 {object} response.JsonResponse{}
-// @Router /project/{genNFTAddr}/tokens [GET]
-func (h *httpDelivery) projectTokens(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("projectTokens", r)
-	defer h.Tracer.FinishSpan(span, log )
-	var err error
-	vars := mux.Vars(r)
-	genNFTAddr := vars["genNFTAddr"]
-	span.SetTag("genNFTAddr", genNFTAddr)
-	limitInt := 10
-
-	limit := r.URL.Query().Get("limit")
-	cursor := r.URL.Query().Get("cursor")
-	if limit != "" {
-		limitInt, err = strconv.Atoi(limit)
-		if err != nil {
-			log.Error("strconv.Atoi.limit", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-			return
-		}
-	}
-	
-	data, err := h.Usecase.GetTokensByContract(span, genNFTAddr, nfts.MoralisFilter{
-		Limit: &limitInt,
-		Cursor: &cursor,
-	})
-	if err != nil {
-		log.Error("h.Usecase.GetTokensByContract", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
-	respItems := []response.InternalTokenURIResp{}
-	iTokensData := data.Result
-	tokensData, ok := (iTokensData).([]entity.TokenUri)
-	if !ok {
-		err := errors.New( "Cannot parse products")
-		log.Error("ctx.Value.Token",  err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	for _, token := range tokensData {	
-		resp, err := h.tokenToResp(&token)
-		if err != nil {
-			err := errors.New( "Cannot parse products")
-			log.Error("tokenToResp",  err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-		respItems = append(respItems, *resp)
-	}
-
-	resp := h.PaginationResp(data, respItems)
-	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
 func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectResp, error) {

@@ -414,9 +414,20 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	return p, nil
 }
 
-func (u Usecase) FilterTokens(rootSpan opentracing.Span, walletAddress string, filter structure.FilterTokens) (*entity.Pagination, error) {
+func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.FilterTokens) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetTokensByContract", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
+	
+	if filter.GenNFTAddr != nil {
+		go func (rootSpan opentracing.Span, genNftAddress string) {
+			span, log := u.StartSpan("GetTokensByContract.Live.Process", rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
+			
+			u.GetTokensByContract(span, genNftAddress, nfts.MoralisFilter{})
+
+		}(span, *filter.GenNFTAddr)
+	}
 
 	pe := &entity.FilterTokenUris{}
 	err := copier.Copy(pe, filter)

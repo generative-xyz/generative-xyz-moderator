@@ -25,6 +25,7 @@ const (
 
 	EMAIL_TAG          string = "email"
 	WALLET_ADDRESS_TAG string = "wallet_address"
+	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"
 
 	PubsubCreateDeviceType           string = "Device:PubsubCreateDeviceType"
 	PubsubUpdateDeviceType           string = "Device:PubsubUpdateDeviceType"
