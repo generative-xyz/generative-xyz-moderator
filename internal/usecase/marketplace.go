@@ -167,7 +167,28 @@ func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.Fil
 	
 	ml, err := u.Repo.FilterMarketplaceListings(*fm)
 	if err != nil {
-		log.Error("u.Repo.GetProjects", err.Error(), err)
+		log.Error("u.Repo.FilterMarketplaceListings", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("filtered", ml)
+	return ml, nil
+}
+
+func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.FilterMkOffers) (*entity.Pagination, error) {
+	span, log := u.StartSpan("FilterListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	fm := &entity.FilterMarketplaceOffers{}
+	err := copier.Copy(fm, filter)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	ml, err := u.Repo.FilterMarketplaceOffers(*fm)
+	if err != nil {
+		log.Error("u.Repo.FilterMarketplaceOffers", err.Error(), err)
 		return nil, err
 	}
 

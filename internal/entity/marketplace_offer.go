@@ -6,6 +6,16 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type FilterMarketplaceOffers struct {
+	BaseFilters
+	CollectionContract *string
+	TokenId *string
+	Erc20Token *string
+	SellerAddress *string
+	Closed             *bool  
+	Finished           *bool  
+}
+
 type MarketplaceOffers struct {
 	BaseEntity         `bson:",inline"`
 	ID                 string `bson:"id"`
