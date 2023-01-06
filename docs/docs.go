@@ -914,6 +914,74 @@ var doc = `{
                 }
             }
         },
+        "/marketplace/wallet/{walletAddress}/listing": {
+            "get": {
+                "description": "User profile's selling nft",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MarketPlace"
+                ],
+                "summary": "User profile's selling nft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sort by field",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "1: ASC, -1: DESC",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit default 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page start with 1",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/nfts/{contractAddress}/transactions/{tokenID}": {
             "get": {
                 "description": "get nft transactions",
@@ -1194,74 +1262,6 @@ var doc = `{
                         "name": "walletAddress",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.JsonResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.InternalTokenURIResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/profile/wallet/{walletAddress}/selling-nfts": {
-            "get": {
-                "description": "User profile's selling nft",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MarketPlace"
-                ],
-                "summary": "User profile's selling nft",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet address",
-                        "name": "walletAddress",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "sort by field",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "1: ASC, -1: DESC",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit default 10",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page start with 1",
-                        "name": "page",
-                        "in": "query"
                     }
                 ],
                 "responses": {
