@@ -73,7 +73,7 @@ func (c *HttpTxConsumer) getRedisKey() string {
 }
 
 func (c *HttpTxConsumer) getLastProcessedBlock(rootSpan opentracing.Span) (int64, error) {
-	span, log := c.StartSpanWithoutRoot("getLastProcessedBlock")
+	span, log := c.StartSpan("getLastProcessedBlock", rootSpan)
 	defer c.Tracer.FinishSpan(span, log)
 	lastProcessed := c.DefaultLastProcessedBlock
 	
