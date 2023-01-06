@@ -173,7 +173,25 @@ func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.Fil
 	}
 
 	log.SetData("filtered", ml)
+
+	listingResp := []entity.MarketplaceListings{}
+	iListings := ml.Result
+	listing := iListings.([]entity.MarketplaceListings) 
+	for _, listingItem := range listing {
+		
+		tok, err := u.Repo.FindTokenByGenNftAddr(listingItem.CollectionContract, listingItem.TokenId)
+		if err != nil  {
+			log.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
+			continue
+		}
+
+		listingItem.Token = *tok
+		listingResp =append(listingResp, listingItem)
+	}
+	
+	ml.Result = listingResp
 	return ml, nil
+	
 }
 
 func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.FilterMkOffers) (*entity.Pagination, error) {
@@ -194,6 +212,23 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 	}
 
 	log.SetData("filtered", ml)
+
+	offersResp := []entity.MarketplaceOffers{}
+	iOffers := ml.Result
+	offers := iOffers.([]entity.MarketplaceOffers) 
+	for _, offer := range offers {
+		
+		tok, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
+		if err != nil  {
+			log.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
+			continue
+		}
+
+		offer.Token = *tok
+		offersResp =append(offersResp, offer)
+	}
+
+	ml.Result = offersResp
 	return ml, nil
 }
 

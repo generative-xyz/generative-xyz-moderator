@@ -27,12 +27,10 @@ func (r Repository) FindTokenUriWithoutCache(filter bson.D) (*entity.TokenUri, e
 	return resp, nil
 }
 
-func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
-	key := helpers.TokenURIKey(contractAddress, tokenID)
+func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*entity.TokenUri, error) {
 	// always reload cache
-	liveReload := func (contractAddress string, tokenID string, key string) (*entity.TokenUri, error) {
-		f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
-		token, err := r.FindTokenUriWithoutCache(f)
+	liveReload := func (filter bson.D, key string) (*entity.TokenUri, error) {
+		token, err := r.FindTokenUriWithoutCache(filter)
 		if err != nil {
 			return nil, err
 		}
@@ -40,11 +38,11 @@ func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity
 		return token, nil
 	}
 
-	go liveReload(contractAddress, tokenID, key)
+	go liveReload(filter, cachedKey)
 
-	cached, err := r.Cache.GetData(key)
+	cached, err := r.Cache.GetData(cachedKey)
 	if err != nil  || cached == nil{
-		return liveReload(contractAddress, tokenID, key)
+		return liveReload(filter, cachedKey)
 	}
 
 	tok := &entity.TokenUri{}
@@ -56,33 +54,17 @@ func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity
 	return  tok, nil
 }
 
+func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
+	key := helpers.TokenURIKey(contractAddress, tokenID)
+	f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
+
+	return r.FindTokenUriWithtCache(f, key)
+}
+
 func (r Repository) FindTokenByGenNftAddr(genNftAddrr string, tokenID string) (*entity.TokenUri, error) {
 	key := helpers.TokenURIByGenNftAddrKey(genNftAddrr, tokenID)
-	// always reload cache
-	liveReload := func (contractAddress string, tokenID string, key string) (*entity.TokenUri, error) {
-		f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
-		token, err := r.FindTokenUriWithoutCache(f)
-		if err != nil {
-			return nil, err
-		}
-		r.Cache.SetData(key, token)
-		return token, nil
-	}
-
-	go liveReload(genNftAddrr, tokenID, key)
-
-	cached, err := r.Cache.GetData(key)
-	if err != nil  || cached == nil{
-		return liveReload(genNftAddrr, tokenID, key)
-	}
-
-	tok := &entity.TokenUri{}
-	err = helpers.ParseCache(cached, tok)
-	if err != nil {
-		return nil, err
-	}
-
-	return  tok, nil
+	f := bson.D{{"gen_nft_addrress", genNftAddrr}, {"token_id", tokenID}}
+	return r.FindTokenUriWithtCache(f, key)
 }
 
 func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagination, error) {
