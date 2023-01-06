@@ -149,3 +149,11 @@ func CopyEntityToRes(toValue IResponse, from entity.IEntity) error {
 	toValue.SetID(from.GetID())
 	return nil
 }
+
+func CopyEntityToResNoID(toValue IResponse, from entity.IEntityNoID) error {
+	err := copier.Copy(toValue, from)
+	if err != nil {
+		return err
+	}
+	return nil
+}

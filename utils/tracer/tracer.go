@@ -9,7 +9,6 @@ import (
 
 	"rederinghub.io/utils/logger"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -81,7 +80,6 @@ func (t *tracer) StartSpanFromInjection(tracingInjection map[string]string, oper
 	spanCtx, err := tracer.Extract(opentracing.TextMap, opentracing.TextMapCarrier(tracingInjection))
 
 	if err != nil {
-		spew.Dump(err)
 		span := tracer.StartSpan(operationName)
 		return span
 	}
@@ -94,7 +92,6 @@ func (t *tracer) StartSpanFromHeaderInjection(tracingInjection http.Header, oper
 	tracer := t.tracer
 	spanCtx, err := t.GetTrace().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(tracingInjection))
 	if err != nil {
-		spew.Dump(err)
 		span := tracer.StartSpan(operationName)
 		return span
 	}

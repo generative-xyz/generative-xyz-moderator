@@ -5,15 +5,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type IEntity interface {
+type IEntityNoID interface {
 	TableName() string
 	ToBson() (*bson.D, error)
-	SetID()
-	GetID() string
 	SetCreatedAt()
 	SetUpdatedAt()
 	SetDeletedAt()
 	Decode(from *primitive.D) error
+}
+
+type IEntity interface {
+	SetID()
+	GetID() string
+	IEntityNoID
 }
 
 type SortType int 

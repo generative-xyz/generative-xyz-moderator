@@ -15,7 +15,6 @@ import (
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -139,13 +138,12 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*MoralisTokensResp, error){
 	url := fmt.Sprintf("%s/%s", URLNft, contractAddr )
 	fullUrl := m.generateUrl(url, &f)
-	spew.Dump(fullUrl)
 
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(fullUrl)
+	
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
@@ -158,13 +156,12 @@ func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*Mor
 func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string,f MoralisFilter) (*MoralisTokensResp, error){
 	url := fmt.Sprintf("%s/%s", URLNft, wallletAddress )
 	fullUrl := m.generateUrl(url, &f)
-	spew.Dump(fullUrl)
-
+	
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(fullUrl)
+	
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
@@ -177,8 +174,7 @@ func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string,f MoralisFilter
 func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisToken, error) {
 	url := fmt.Sprintf("%s/%s", URLNft, "getMultipleNFTs")
 	fullUrl := m.generateUrl(url, &MoralisFilter{Chain: f.Chain})
-	spew.Dump(fullUrl)
-
+	
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(f.ReqBody)
 	if err != nil {
@@ -188,7 +184,7 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(fullUrl)
+	
 	resp := make([]MoralisToken, 0);
 	err = json.Unmarshal(data, &resp)
 	if err != nil {
