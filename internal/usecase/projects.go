@@ -265,7 +265,7 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 			totalTradingVolumn.Add(totalTradingVolumn, price)
 		}
 		// update floor price
-		if !listing.Closed && time.Now().Unix() < durationTime {
+		if !listing.Closed && (time.Now().Unix() < durationTime || durationTime == 0) {
 			if floorPrice == nil {
 				floorPrice = price
 			} else {
@@ -301,7 +301,7 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		}
 
 		// update floor price
-		if !offer.Closed && time.Now().Unix() < durationTime {
+		if !offer.Closed && (time.Now().Unix() < durationTime || durationTime == 0) {
 			if bestMakeOfferPrice == nil {
 				bestMakeOfferPrice = price
 			} else {
