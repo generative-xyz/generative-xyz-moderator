@@ -146,6 +146,7 @@ func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.Marketpla
 	}
 
 	f := r.filterListings(filter)
+
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_LISTINGS).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
@@ -157,3 +158,22 @@ func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.Marketpla
 
 	return resp, nil
 }
+
+func (r Repository) GetAllListingByCollectionContract(contract string) ([]entity.MarketplaceListings, error) {
+	listings := []entity.MarketplaceListings{}
+	f := bson.D{{
+		Key: utils.KEY_LISTING_CONTRACT,
+		Value: contract,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_LISTINGS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+} 

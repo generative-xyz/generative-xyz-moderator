@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -136,3 +138,22 @@ func (r Repository) FilterMarketplaceOffers(filter entity.FilterMarketplaceOffer
 	resp.Total = p.Pagination.Total
 	return resp, nil
 }
+
+func (r Repository) GetAllOfferByCollectionContract(contract string) ([]entity.MarketplaceOffers, error) {
+	offers := []entity.MarketplaceOffers{}
+	f := bson.D{{
+		Key: utils.KEY_LISTING_CONTRACT,
+		Value: contract,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_OFFERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &offers); err != nil {
+		return nil, err
+	}
+
+	return offers, nil
+} 

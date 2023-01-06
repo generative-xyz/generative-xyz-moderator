@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +15,7 @@ import (
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/helpers"
@@ -216,10 +218,121 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	for _, token := range allTokenFromDb {
 		owners[token.OwnerAddr] = true
 	}
+
+	var allListings []entity.MarketplaceListings
+	var allOffers []entity.MarketplaceOffers
+
+	allListings, err = u.Repo.GetAllListingByCollectionContract(project.GenNFTAddr)
+	if err != nil {
+		log.Error("u.Repo.GetAllListingByCollectionContract", err.Error(), err)
+		return nil, err
+	}
+
+	allOffers, err = u.Repo.GetAllOfferByCollectionContract(project.GenNFTAddr)
+	if err != nil {
+		log.Error("u.Repo.GetAllOfferByCollectionContract", err.Error(), err)
+		return nil, err
+	}
+
+	var totalTradingVolumn *big.Int
+	var floorPrice *big.Int
+	var bestMakeOfferPrice *big.Int
+	var listedPercent int32
+	listingSet := make(map[string]bool)
+
+	for _, listing := range allListings {
+		if listing.Erc20Token != utils.EVM_NULL_ADDRESS {
+			continue
+		}
+		price := new(big.Int)
+		price, ok := price.SetString(listing.Price, 10)
+		if !ok {
+			err := errors.New("fail to convert price to big int")
+			log.Error("fail to convert price to big int", err.Error(), err)
+			continue
+		}
+		durationTime, err := strconv.ParseInt(listing.DurationTime, 10, 64)
+		if err != nil {
+			log.Error("fail to parse duration time", err.Error(), err)
+			continue
+		}
+
+		// update total volumn trading
+		if listing.Finished {
+			if totalTradingVolumn == nil {
+				totalTradingVolumn = new(big.Int)
+			}
+			totalTradingVolumn.Add(totalTradingVolumn, price)
+		}
+		// update floor price
+		if !listing.Closed && time.Now().Unix() < durationTime {
+			if floorPrice == nil {
+				floorPrice = price
+			} else {
+				if floorPrice.Cmp(price) > 0 {
+					floorPrice = price
+				}
+			}
+		}
+
+		listingSet[listing.CollectionContract] = true
+	}
+
+	for _, offer := range allOffers {
+		price := new(big.Int)
+		price, ok := price.SetString(offer.Price, 10)
+		if !ok {
+			err := errors.New("fail to convert price to big int")
+			log.Error("fail to convert price to big int", err.Error(), err)
+			continue
+		}
+		durationTime, err := strconv.ParseInt(offer.DurationTime, 10, 64)
+		if err != nil {
+			log.Error("fail to parse duration time", err.Error(), err)
+			continue
+		}
+
+		// update total volumn trading
+		if offer.Finished {
+			if totalTradingVolumn == nil {
+				totalTradingVolumn = new(big.Int)
+			}
+			totalTradingVolumn.Add(totalTradingVolumn, price)
+		}
+
+		// update floor price
+		if !offer.Closed && time.Now().Unix() < durationTime {
+			if bestMakeOfferPrice == nil {
+				bestMakeOfferPrice = price
+			} else {
+				if bestMakeOfferPrice.Cmp(price) < 0 {
+					bestMakeOfferPrice = price
+				}
+			}
+		}
+
+	}
+
+	listedPercent = int32(len(listingSet) * 100 / len(allTokenFromDb))
+
+	if totalTradingVolumn == nil {
+		totalTradingVolumn = new(big.Int)
+	}
+	if floorPrice == nil {
+		floorPrice = new(big.Int)
+	}
+	if bestMakeOfferPrice == nil {
+		bestMakeOfferPrice = new(big.Int)
+	}
+
 	now := time.Now()
 	return &entity.ProjectStat{
 		LastTimeSynced: &now,
 		UniqueOwnerCount: uint32(len(owners)),
+		TotalTradingVolumn: totalTradingVolumn.String(),
+		FloorPrice: floorPrice.String(),
+		BestMakeOfferPrice: bestMakeOfferPrice.String(),
+		ListedPercent: listedPercent,
 	}, nil
 }
 

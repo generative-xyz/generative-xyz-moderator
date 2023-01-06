@@ -277,6 +277,10 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.MintedTime = input.MintedTime
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount: input.Stats.UniqueOwnerCount,
+		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
+		FloorPrice: input.Stats.FloorPrice,
+		BestMakeOfferPrice: input.Stats.BestMakeOfferPrice,
+		ListedPercent: input.Stats.ListedPercent,
 	}
 
 	profileResp, err  := h.profileToResp(&input.CreatorProfile)
