@@ -21,7 +21,7 @@ type MarketplaceOffer struct {
 	OfferingId         string `json:"offeringID"`
 	CollectionContract string `json:"collectionContract"`
 	TokenId            string `json:"tokenID"`
-	Seller             string `json:"seller"`
+	Buyer             string `json:"buyer"`
 	Erc20Token         string `json:"erc20Token"`
 	Price              string `json:"price"`
 	Closed             bool   `json:"closed"`

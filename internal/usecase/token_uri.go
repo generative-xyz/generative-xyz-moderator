@@ -244,7 +244,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	}
 
 	log.SetData("isUpdate", isUpdate)
-	//isUpdate = true
+	isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
