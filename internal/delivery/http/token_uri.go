@@ -117,7 +117,7 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /tokens/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenURI", r)
+	span, log := h.StartSpan("tokenURIWithResp", r)
 	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
@@ -145,6 +145,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	log.SetData("h.Usecase.GetToken", token)
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New( "Cannot parse products")

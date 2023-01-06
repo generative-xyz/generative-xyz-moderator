@@ -158,8 +158,8 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 	key1 := helpers.TokenURIKey(contractAddress, tokenID)
 	key2 := helpers.TokenURIByGenNftAddrKey(inputData.GenNFTAddr, tokenID)
 	
-	r.Cache.SetData(key1, result)
-	r.Cache.SetData(key2, result)
+	r.Cache.SetData(key1, inputData)
+	r.Cache.SetData(key2, inputData)
 	return result, nil
 }
 

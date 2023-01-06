@@ -37,6 +37,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	
 	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
 	if err != nil {
+		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			log.SetData("u.getTokenInfo.mongo.ErrNoDocuments", "true")
 			tokenUri, err = u.getTokenInfo(span, req)
@@ -66,14 +67,14 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	// find project by projectID and contract address
 	project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: tokenUri.ProjectID})
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		log.Error("u.GetProjectDetail", err.Error(), err)
 		return nil, err
 	}
 
 	// find owner address on moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, tokenID)
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		log.Error(" u.MoralisNft.GetNftByContractAndTokenID", err.Error(), err)
 		return nil, err
 	}
 
@@ -252,6 +253,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("updated", updated)
 	}
 
+	log.SetData("tokenUri.Inserted", tokenUri)
 	// err = u.Repo.CreateTokenURI(dataObject)
 	// if err != nil {
 	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
@@ -271,11 +273,19 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
 	if err != nil {
+		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return u.GetLiveToken(span, req, captureTimeout)
+			token, err := u.GetLiveToken(span, req, captureTimeout)
+			if err != nil { 
+				log.Error("u.GetLiveToken", err.Error(), err)
+				return nil, err
+			}
+			log.SetData("live.tokenUri", tokenUri)
+			return token, nil
 		}
 	}
 
+	log.SetData("tokenUri", tokenUri)
 	return tokenUri, nil
 }
 
