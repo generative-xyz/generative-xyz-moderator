@@ -36,6 +36,10 @@ type ProjectResp struct{
 
 type ProjectStatResp struct {
 	UniqueOwnerCount uint32 `json:"uniqueOwnerCount"`
+	TotalTradingVolumn string `json:"totalTradingVolumn"`
+	FloorPrice         string `json:"floorPrice"`
+	BestMakeOfferPrice string `json:"bestMakeOfferPrice"`
+	ListedPercent      int32 `json:"listedPercent"`
 }
 
 type NftMintingDetail struct {

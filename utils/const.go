@@ -48,6 +48,7 @@ const (
 	KEY_WALLET_ADDRESS   string = "wallet_address"
 	KEY_DELETED_AT       string = "deleted_at"
 	KEY_PROJECT_ID			 string = "project_id"
+	KEY_LISTING_CONTRACT string = "collection_contract"
 
 	COLLECTION_USERS string = "users"
 	COLLECTION_TOKEN_URI string = "token_uri"
@@ -59,6 +60,7 @@ const (
 	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
+	EVM_NULL_ADDRESS string = "0x0000000000000000000000000000000000000000"
 )
 
 type PubSubSendOtp struct {
