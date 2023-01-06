@@ -165,7 +165,7 @@ func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *h
 // @Param limit query int false "limit default 10"
 // @Param page query int false "page start with 1"
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
-// @Router /profile/wallet/{walletAddress}/selling-nfts [GET]
+// @Router /marketplace/wallet/{walletAddress}/listing [GET]
 func (h *httpDelivery) SellingTokensOfAProfile(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.SellingTokensOfAProfile", r)
 	defer h.Tracer.FinishSpan(span, log )

@@ -12,6 +12,7 @@ type MarketplaceListing struct {
 	Closed             bool   `json:"closed"`
 	Finished           bool   `json:"finished"`
 	DurationTime       string `json:"durationTime"`
+	Token InternalTokenURIResp `json:"token"`
 }
 
 type MarketplaceOffer struct {
@@ -26,4 +27,5 @@ type MarketplaceOffer struct {
 	Closed             bool   `json:"closed"`
 	Finished           bool   `json:"finished"`
 	DurationTime       string `json:"durationTime"`
+	Token InternalTokenURIResp `json:"token"`
 }

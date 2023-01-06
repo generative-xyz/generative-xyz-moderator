@@ -55,7 +55,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
-	profile.HandleFunc("/wallet/{walletAddress}/selling-nfts", h.SellingTokensOfAProfile).Methods("GET")
 	
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
@@ -104,6 +103,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
 	marketplace.HandleFunc("/offers/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
+	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.SellingTokensOfAProfile).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
