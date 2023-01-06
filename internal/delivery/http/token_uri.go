@@ -257,7 +257,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 	log.SetData("walletAddress",walletAddress)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
 	f := structure.FilterTokens{}
-	f.CreatorAddr = &walletAddress
+	f.OwnerAddr = &walletAddress
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
