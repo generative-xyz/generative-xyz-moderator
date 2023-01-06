@@ -29,3 +29,7 @@ type MarketplaceOffer struct {
 	DurationTime       string `json:"durationTime"`
 	Token InternalTokenURIResp `json:"token"`
 }
+
+type MarketplaceStatResp struct {
+	Stats ProjectStatResp `json:"stats"`
+}

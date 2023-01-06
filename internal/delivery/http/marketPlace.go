@@ -374,3 +374,47 @@ func (h *httpDelivery) mkOfferToResp(input *entity.MarketplaceOffers) (*response
 	}
 	return resp, nil
 }
+
+// UserCredits godoc
+// @Summary get project's detail
+// @Description get project's detail
+// @Tags MarketPlace
+// @Accept  json
+// @Produce  json
+// @Param genNFTAddr path string true "Gen NFT Addr"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /marketplace/stats/{genNFTAddr} [GET]
+func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getCollectionStats", r)
+	defer h.Tracer.FinishSpan(span, log)
+	vars := mux.Vars(r)
+	genNFTAddr := vars["genNFTAddr"]
+	span.SetTag("genNFTAddr", genNFTAddr)
+	project, err := h.Usecase.GetProjectByGenNFTAddr(span, genNFTAddr)
+	if  err != nil {
+		log.Error(" h.GetProjectByGenNFTAddr", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+	resp, err := h.projectToStatResp(project)
+	if  err != nil {
+		log.Error(" h.projectToStatResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+	log.SetData("project", project)
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
+}
+
+func (h *httpDelivery) projectToStatResp(project *entity.Projects) (*response.MarketplaceStatResp, error) {
+	return &response.MarketplaceStatResp{
+		Stats: response.ProjectStatResp{
+			UniqueOwnerCount: project.Stats.UniqueOwnerCount,
+			TotalTradingVolumn: project.Stats.TotalTradingVolumn,
+			FloorPrice: project.Stats.FloorPrice,
+			BestMakeOfferPrice: project.Stats.BestMakeOfferPrice,
+			ListedPercent: project.Stats.ListedPercent,
+		},
+	}, nil
+}

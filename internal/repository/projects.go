@@ -189,3 +189,18 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f[utils.KEY_DELETED_AT] = nil
 	return f
 }
+
+func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {
+	genNFTAddr = strings.ToLower(genNFTAddr)
+	resp := &entity.Projects{}
+	prj, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "genNFTAddr", Value: genNFTAddr}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(prj, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}

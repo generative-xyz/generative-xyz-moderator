@@ -49,6 +49,13 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdatePr
 	return resp, nil
 }
 
+func (u Usecase) GetProjectByGenNFTAddr(rootSpan opentracing.Span, genNFTAddr string) (*entity.Projects, error) {
+	span, log := u.StartSpan("GetProjects", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	project, err := u.Repo.FindProjectByGenNFTAddr(genNFTAddr)
+	return project, err
+}
+
 func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetProjects", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
