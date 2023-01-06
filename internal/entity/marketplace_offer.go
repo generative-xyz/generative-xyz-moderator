@@ -11,7 +11,7 @@ type FilterMarketplaceOffers struct {
 	CollectionContract *string
 	TokenId *string
 	Erc20Token *string
-	SellerAddress *string
+	BuyerAddress *string
 	Closed             *bool  
 	Finished           *bool  
 }
@@ -28,6 +28,7 @@ type MarketplaceOffers struct {
 	Closed             bool   `bson:"closed"`
 	Finished           bool   `bson:"finished"`
 	DurationTime       string `bson:"duration_time"`
+	Token TokenUri `bson:"-"`
 }
 
 func (u MarketplaceOffers) TableName() string { 

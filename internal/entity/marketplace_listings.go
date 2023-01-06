@@ -28,6 +28,7 @@ type MarketplaceListings struct {
 	Closed             bool   `bson:"closed"`
 	Finished           bool   `bson:"finished"`
 	DurationTime       string `bson:"duration_time"`
+	Token TokenUri `bson:"-"`
 }
 
 func (u MarketplaceListings) TableName() string { 

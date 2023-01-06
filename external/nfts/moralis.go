@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"rederinghub.io/utils/config"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
@@ -227,10 +228,10 @@ func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID str
 	}
 	
 	resp := &MoralisToken{}
-	bytes := []byte(*cached)
-	err = json.Unmarshal(bytes, resp)
+	err = helpers.ParseCache(cached,resp)
 	if err != nil {
 		return nil, err
 	}
+
 	return resp, nil
 }

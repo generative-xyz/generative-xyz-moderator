@@ -7,6 +7,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/global"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 
@@ -180,72 +181,6 @@ func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error)
 	return result, nil
 }
 
-// func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, sortBy string, sortOrder  entity.SortType, returnData interface{}) (*PaginatedData, error) {	
-// 	keyObject := PaginationKey{
-// 		Colllection: dbName,
-// 		Page: page,
-// 		Limit: limit,
-// 		Filter: filter,
-// 		OrderBy: sortBy,
-// 		Order: sortOrder,
-// 	}
-
-// 	keyObjectByte, _ := json.Marshal(keyObject)
-// 	md5Key := fmt.Sprintf("%x", md5.Sum([]byte(keyObjectByte)))
-// 	redisKey := fmt.Sprintf(utils.REDIS_PAGINATION_KEY, md5Key)
-// 	redisKeyData := fmt.Sprintf(utils.REDIS_PAGINATION_DATA_KEY, md5Key)
-
-// 	cachedPaginatedData, errPagination := r.Cache.GetData(redisKey)
-// 	cachedData, errData := r.Cache.GetData(redisKeyData)
-
-// 	if (errPagination == nil && errData == nil ) &&  ( cachedPaginatedData != nil && cachedData != nil ) {
-// 		data := &PaginatedData{}
-// 		cachedPaginationBytes := []byte(*cachedPaginatedData)
-// 		cachedDataBytes := []byte(*cachedData)
-
-// 		err := json.Unmarshal(cachedPaginationBytes, data)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-
-// 		err = json.Unmarshal(cachedDataBytes, &returnData)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		return data, nil
-
-// 	}
-	
-// 	paginatedData := New(r.DB.Collection(dbName)).
-// 		Context(context.TODO()).
-// 		Limit(int64(limit)).
-// 		Page(int64(page))
-
-// 	if 	sortBy != "" {
-// 		if sortOrder == entity.SORT_ASC || sortOrder == entity.SORT_DESC {
-// 			//sortValue := bson.D{{"created_at", -1}}
-// 			paginatedData = paginatedData.Sort(sortBy, sortOrder)
-// 		}	
-// 	}else{
-// 		paginatedData = paginatedData.Sort("created_at", entity.SORT_DESC)
-// 	}
-		
-// 	data, err :=	paginatedData.Filter(filter).
-// 		Decode(returnData).
-// 		Find()
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-	
-// 	r.Cache.SetDataWithExpireTime(redisKey, *data, utils.DB_CACHE_EXPIRED_TIME)
-// 	r.Cache.SetDataWithExpireTime(redisKeyData, returnData, utils.DB_CACHE_EXPIRED_TIME)
-
-// 	return data, nil
-// }
-
 func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, sortBy string, sortOrder  entity.SortType, returnData interface{}) (*PaginatedData, error) {	
 	paginatedData := New(r.DB.Collection(dbName)).
 		Context(context.TODO()).
@@ -295,13 +230,12 @@ func (r Repository) GetCache(dbName string, objID string) (*bson.M, error) {
 		return nil, err
 	}
 
-	bytes := []byte(*data)
 	resp := &bson.M{}
-	
-	err = bson.Unmarshal(bytes, resp)
+	err = helpers.ParseCache(data, resp)
 	if err != nil {
 		return nil, err
 	}
+	
 	return resp, nil
 }
 
