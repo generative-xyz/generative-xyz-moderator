@@ -72,7 +72,9 @@ func (c *HttpTxConsumer) getRedisKey() string {
 	return fmt.Sprintf("%s:lastest_processed", c.RedisKey)
 }
 
-func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
+func (c *HttpTxConsumer) getLastProcessedBlock(rootSpan opentracing.Span) (int64, error) {
+	span, log := c.StartSpanWithoutRoot("getLastProcessedBlock")
+	defer c.Tracer.FinishSpan(span, log)
 	lastProcessed := c.DefaultLastProcessedBlock
 	
 	redisKey := c.getRedisKey()
@@ -92,6 +94,8 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 			return (c.DefaultLastProcessedBlock), nil
 		}
 		lastProcessedSavedOnRedis, err := strconv.ParseInt(*processed, 10, 64)
+		log.SetData("processed", processed)
+		log.SetData("lastProcessedSavedOnRedis", lastProcessedSavedOnRedis)
 		if err != nil {
 			return 0, err
 		}
@@ -104,7 +108,7 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 func (c *HttpTxConsumer) resolveTransaction() error {
 	span, log := c.StartSpanWithoutRoot("resolveTransaction")
 	defer c.Tracer.FinishSpan(span, log)
-	lastProcessedBlock, err := c.getLastProcessedBlock()
+	lastProcessedBlock, err := c.getLastProcessedBlock(span)
 	if err != nil {
 		log.Error("Error when get last processed block", err.Error(), err)
 		return err
