@@ -105,6 +105,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/offers/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
 	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.ListingOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
+	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

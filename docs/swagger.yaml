@@ -259,6 +259,14 @@ definitions:
     type: object
   response.ProjectStatResp:
     properties:
+      bestMakeOfferPrice:
+        type: string
+      floorPrice:
+        type: string
+      listedPercent:
+        type: integer
+      totalTradingVolumn:
+        type: string
       uniqueOwnerCount:
         type: integer
     type: object
@@ -857,6 +865,27 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: Get market place offer
+      tags:
+      - MarketPlace
+  /marketplace/stats/{genNFTAddr}:
+    get:
+      consumes:
+      - application/json
+      description: get project's detail
+      parameters:
+      - description: Gen NFT Addr
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's detail
       tags:
       - MarketPlace
   /marketplace/wallet/{walletAddress}/listing:
