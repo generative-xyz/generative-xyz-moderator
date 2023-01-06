@@ -312,7 +312,12 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 
 	}
 
-	listedPercent = int32(len(listingSet) * 100 / len(allTokenFromDb))
+	if len(allTokenFromDb) > 0 {
+		listedPercent = int32(len(listingSet) * 100 / len(allTokenFromDb))
+	} else {
+		listedPercent = 0
+	}
+	
 
 	if totalTradingVolumn == nil {
 		totalTradingVolumn = new(big.Int)
