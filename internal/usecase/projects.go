@@ -272,10 +272,9 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 				if floorPrice.Cmp(price) > 0 {
 					floorPrice = price
 				}
+				listingSet[listing.CollectionContract] = true
 			}
 		}
-
-		listingSet[listing.CollectionContract] = true
 	}
 
 	for _, offer := range allOffers {
