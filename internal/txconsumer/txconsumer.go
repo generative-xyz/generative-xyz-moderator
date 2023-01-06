@@ -118,6 +118,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
 	log.SetData("from block", fromBlock)
 	log.SetData("to block", toBlock)
+	log.SetData("block number", blockNumber.Int64())
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		return err
