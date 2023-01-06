@@ -103,10 +103,10 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 
 func (c *HttpTxConsumer) resolveTransaction() error {
 	span, log := c.StartSpanWithoutRoot("resolveTransaction")
-	defer c.Tracer.FinishSpan(span, log )
+	defer c.Tracer.FinishSpan(span, log)
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
-		c.Logger.Error("Error when get last processed block", err)
+		log.Error("Error when get last processed block", err.Error(), err)
 		return err
 	}
 	fromBlock := lastProcessedBlock + 1
@@ -114,7 +114,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	if err != nil {
 		return err
 	}
-
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock + int64(c.BatchLogSize))))
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
 	log.SetData("from block", fromBlock)
@@ -168,6 +167,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	} else {
 		// if no error occured, save toBlock as lastProcessedBlock
 		err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
+		log.SetData("set-last-processed", strconv.FormatInt(toBlock, 10))
 		if err != nil {
 			log.Error("error set redis", err.Error(), err)
 			return err
