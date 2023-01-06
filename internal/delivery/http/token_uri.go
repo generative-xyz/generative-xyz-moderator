@@ -318,7 +318,7 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 
 func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
 	resp := &response.InternalTokenURIResp{}
-	err := response.CopyEntityToRes(resp, input)
+	err := response.CopyEntityToResNoID(resp, input)
 	if err != nil {
 		return nil, err
 	}

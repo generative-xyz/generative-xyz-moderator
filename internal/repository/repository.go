@@ -116,7 +116,7 @@ func (r Repository) FindOneWithoutCache(dbName string, id string) (*bson.M, erro
 func (r Repository) FilterOne(dbName string, filter bson.D) (*bson.M, error) {	
 	data := &bson.M{}
 	
-	err := r.DB.Collection(dbName).FindOne(context.TODO(), filter).Decode(data)
+	err := r.DB.Collection(dbName).FindOne(context.Background(), filter).Decode(data)
 	if err != nil {
 		return nil, err
 	}

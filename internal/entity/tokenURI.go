@@ -19,7 +19,7 @@ type FilterTokenUris struct {
 }
 
 type TokenUri struct {
-	BaseEntity `bson:",inline"`
+	BaseEntityNoID `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
 	TokenIDInt int `bson:"token_id_int" json:"token_id_int"`
 	ContractAddress string `bson:"contract_address" json:"contract_address"`

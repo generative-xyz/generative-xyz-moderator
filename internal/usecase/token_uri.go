@@ -25,13 +25,13 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetToken", rootSpan)
+func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("GetLiveToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	
 	log.SetTag("contractAddress",req.ContractAddress)
 	log.SetTag("tokenID",req.TokenID)
-	
+
 	contractAddress := strings.ToLower(req.ContractAddress) 
 	tokenID := strings.ToLower(req.TokenID)
 	
@@ -61,8 +61,6 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 		log.SetData("u.getTokenInfo.tokenUri.ProjectID.Token.Empty", "true")
 	}
-
-	
 	isUpdate := false
 
 	// find project by projectID and contract address
@@ -244,7 +242,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	}
 
 	log.SetData("isUpdate", isUpdate)
-	isUpdate = true
+	//isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
@@ -259,6 +257,25 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
 	// 	return nil, err
 	// }
+	return tokenUri, nil
+}
+
+func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("GetToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	go u.GetLiveToken(span, req, captureTimeout)
+
+	contractAddress := strings.ToLower(req.ContractAddress) 
+	tokenID := strings.ToLower(req.TokenID)
+
+	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return u.GetLiveToken(span, req, captureTimeout)
+		}
+	}
+
 	return tokenUri, nil
 }
 

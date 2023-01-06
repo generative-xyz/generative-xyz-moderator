@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -34,12 +33,12 @@ func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*en
 		if err != nil {
 			return nil, err
 		}
+		//spew.Dump("FindTokenUriWithtCache", filter, token)
 		r.Cache.SetData(key, token)
 		return token, nil
 	}
 
 	go liveReload(filter, cachedKey)
-
 	cached, err := r.Cache.GetData(cachedKey)
 	if err != nil  || cached == nil{
 		return liveReload(filter, cachedKey)
@@ -124,35 +123,6 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	return f
 }
 
-func (r Repository) CreateTokenURI(data *entity.TokenUri) error {
-	t, err := r.FindTokenBy(data.ContractAddress, data.TokenID)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments)  {
-			
-			err = r.InsertOne(data.TableName(), data)
-			if err != nil {
-				return err
-			}
-
-		}
-		
-		return  err
-	}
-
-	data =  t
-	return nil
-}
-
-func (r Repository) UpdateTokenByID(tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
-	filter := bson.D{{utils.KEY_UUID, tokenID}}
-	result, err := r.UpdateOne(inputData.TableName(), filter, inputData)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 	tokens := []entity.TokenUri{}
 
@@ -173,11 +143,6 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 }
 
 func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
-	if inputData.UUID == ""  {
-		inputData.SetID()
-		inputData.SetCreatedAt()
-	}
-	
 	inputData.SetUpdatedAt()
 	bData, _ := inputData.ToBson()
 	filter := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
@@ -189,6 +154,12 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 	if err != nil {
 		return nil, err
 	}
+
+	key1 := helpers.TokenURIKey(contractAddress, tokenID)
+	key2 := helpers.TokenURIByGenNftAddrKey(inputData.GenNFTAddr, tokenID)
+	
+	r.Cache.SetData(key1, result)
+	r.Cache.SetData(key2, result)
 	return result, nil
 }
 
