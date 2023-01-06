@@ -401,14 +401,14 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 		return contractDetail, nil
 	}
 
-	bytes := []byte(*data)
+	
 	contractDetail := &structure.ProjectDetail{}
-	err = json.Unmarshal(bytes, contractDetail)
+	err = helpers.ParseCache(data, contractDetail)
 	if err != nil {
-		log.Error("json.Unmarshal", err.Error(), err)
+		log.Error("helpers.ParseCache", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("cached.ContractDetail", contractDetail)
+
 	return contractDetail, nil
 }
 

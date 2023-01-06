@@ -106,9 +106,9 @@ func (r Repository) filterOffers(filter entity.FilterMarketplaceOffers) bson.M {
 		}
 	}
 	
-	if filter.SellerAddress != nil {
-		if *filter.SellerAddress != "" {
-			f["seller"] = *filter.SellerAddress
+	if filter.BuyerAddress != nil {
+		if *filter.BuyerAddress != "" {
+			f["buyer"] = *filter.BuyerAddress
 		}
 	}
 	

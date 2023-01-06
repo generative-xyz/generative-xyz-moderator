@@ -198,7 +198,7 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 }
 
 func (u Usecase) GetListingBySeller(rootSpan opentracing.Span, sellerAddress string) ([]entity.MarketplaceListings,[]string,[]string, error) {
-	span, log := u.StartSpan("FilterListing", rootSpan)
+	span, log := u.StartSpan("GetListingBySeller", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	cachedKey, cachedContractIDsKey, cachedTokensIDsKey := helpers.ProfileSelingKey(sellerAddress)
 	

@@ -901,6 +901,48 @@ paths:
       summary: User profile's selling nft
       tags:
       - MarketPlace
+  /marketplace/wallet/{walletAddress}/offer:
+    get:
+      consumes:
+      - application/json
+      description: User profile's selling nft
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      - description: sort by field
+        in: query
+        name: sort_by
+        type: string
+      - description: '1: ASC, -1: DESC'
+        in: query
+        name: sort
+        type: integer
+      - description: limit default 10
+        in: query
+        name: limit
+        type: integer
+      - description: page start with 1
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: User profile's selling nft
+      tags:
+      - MarketPlace
   /nfts/{contractAddress}/transactions/{tokenID}:
     get:
       consumes:

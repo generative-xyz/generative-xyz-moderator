@@ -10,7 +10,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -166,40 +165,116 @@ func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *h
 // @Param page query int false "page start with 1"
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /marketplace/wallet/{walletAddress}/listing [GET]
-func (h *httpDelivery) SellingTokensOfAProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.SellingTokensOfAProfile", r)
+func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("ListingOfAProfile", r)
 	defer h.Tracer.FinishSpan(span, log )
-	
+
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	log.SetData("walletAddress",walletAddress)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
 	
-	f := structure.FilterTokens{}
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	f.BaseFilters = *bf
-	_, contracAddrress, tokenIDs, err := h.Usecase.GetListingBySeller(span, walletAddress)
-	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.GetListingBySeller", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
-	}
-
-	f.CollectionIDs = contracAddrress
-	f.TokenIDs = tokenIDs
-	log.SetData("contracAddrress", contracAddrress)
-	log.SetData("tokenIDs", tokenIDs)
-	log.SetData("filter", f)
 	
-	resp, err := h.getTokens(span, f)
+	closed := r.URL.Query().Get("closed")
+	finished := r.URL.Query().Get("finished")
+	f := structure.FilterMkListing{}
+	if closed != "" {
+		closedBool, err := strconv.ParseBool(closed)
+		if err != nil {
+			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Closed = &closedBool
+	}
+	
+	if finished != "" {
+		finishedBool, err := strconv.ParseBool(finished)
+		if err != nil {
+			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Finished = &finishedBool
+	}
+	
+	f.SellerAddress = &walletAddress
+	f.BaseFilters = *bf
+	
+	resp, err := h.getMkListings(span, f)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+
+}
+
+// UserCredits godoc
+// @Summary User profile's selling nft
+// @Description User profile's selling nft
+// @Tags MarketPlace
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string true "Wallet address"
+// @Param sort_by query string false "sort by field"
+// @Param sort query int false "1: ASC, -1: DESC"
+// @Param limit query int false "limit default 10"
+// @Param page query int false "page start with 1"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /marketplace/wallet/{walletAddress}/offer [GET]
+func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("OfferOfAProfile", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]
+	
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	
+	closed := r.URL.Query().Get("closed")
+	finished := r.URL.Query().Get("finished")
+	f := structure.FilterMkOffers{}
+	if closed != "" {
+		closedBool, err := strconv.ParseBool(closed)
+		if err != nil {
+			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Closed = &closedBool
+	}
+	
+	if finished != "" {
+		finishedBool, err := strconv.ParseBool(finished)
+		if err != nil {
+			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Finished = &finishedBool
+	}
+	
+	f.BuyerAddress = &walletAddress
+	f.BaseFilters = *bf
+	
+	resp, err := h.getMkOffers(span, f)
+	if err != nil {
+		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}

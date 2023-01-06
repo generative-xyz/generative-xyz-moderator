@@ -103,7 +103,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
 	marketplace.HandleFunc("/offers/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
-	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.SellingTokensOfAProfile).Methods("GET")
+	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.ListingOfAProfile).Methods("GET")
+	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

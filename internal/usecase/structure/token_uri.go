@@ -107,7 +107,7 @@ type FilterMkOffers struct {
 	CollectionContract *string
 	TokenId *string
 	Erc20Token *string
-	SellerAddress *string
+	BuyerAddress *string
 	Closed             *bool  
 	Finished           *bool  
 }
