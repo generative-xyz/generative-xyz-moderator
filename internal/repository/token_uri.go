@@ -177,7 +177,7 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 		inputData.SetID()
 		inputData.SetCreatedAt()
 	}
-
+	
 	inputData.SetUpdatedAt()
 	bData, _ := inputData.ToBson()
 	filter := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
