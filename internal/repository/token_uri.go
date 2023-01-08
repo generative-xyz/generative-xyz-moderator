@@ -39,6 +39,7 @@ func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*en
 	}
 
 	go liveReload(filter, cachedKey)
+	
 	cached, err := r.Cache.GetData(cachedKey)
 	if err != nil  || cached == nil{
 		return liveReload(filter, cachedKey)
