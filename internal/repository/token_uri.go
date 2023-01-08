@@ -61,6 +61,12 @@ func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity
 	return r.FindTokenUriWithtCache(f, key)
 }
 
+func (r Repository) FindTokenByWithoutCache(contractAddress string, tokenID string) (*entity.TokenUri, error) {
+	f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
+
+	return r.FindTokenUriWithoutCache(f)
+}
+
 func (r Repository) FindTokenByGenNftAddr(genNftAddrr string, tokenID string) (*entity.TokenUri, error) {
 	key := helpers.TokenURIByGenNftAddrKey(genNftAddrr, tokenID)
 	f := bson.D{{"gen_nft_addrress", genNftAddrr}, {"token_id", tokenID}}
