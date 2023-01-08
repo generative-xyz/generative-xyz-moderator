@@ -162,7 +162,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 
 	//if true {
-	if tokenUri.ParsedImage != nil {
+	if tokenUri.ParsedImage == nil {
 		isUpdate = true
 		var buf []byte
 		cctx, cancel := chromedp.NewContext(context.Background())
@@ -204,8 +204,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			log.Error("image.Decode", err.Error(), err)
 			//return nil, err
 		}
-
-		
 	}
 
 	if tokenUri.ProjectID == "" {
