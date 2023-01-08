@@ -176,12 +176,21 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 		img, _, err := image.Decode(bytes.NewReader(buf))
 		if err == nil {
+			min := img.Bounds().Dx()
+			if img.Bounds().Dy() < min {
+				min = img.Bounds().Dy()
+			}
+			if min > 960 {
+				min = 960
+			}
+
 			croppedImg, err := cutter.Crop(img, cutter.Config{
-				Width:  960,
-				Height: 960,
+				Width:  min,
+				Height: min,
 				Mode: cutter.Centered,
 			})
-	
+			
+			spew.Dump("croppedImg", croppedImg)
 			buf1 := new(bytes.Buffer)
 			err = png.Encode(buf1, croppedImg)
 			
@@ -204,6 +213,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			log.Error("image.Decode", err.Error(), err)
 			//return nil, err
 		}
+
 	}
 
 	if tokenUri.ProjectID == "" {
