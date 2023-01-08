@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 )
 
@@ -58,7 +57,6 @@ func (c CovalentNfts) GetNftTransactions(f CovalentNftTransactionFilter) (*Coval
 	}
 	chainID := ChainToChainID[chain]
 	url := fmt.Sprintf("%s/%v/tokens/%s/nft_transactions/%s/?quote-currency=USD&format=JSON", c.serverURL, chainID, f.ContractAddress, f.TokenID);
-	spew.Dump(url)
 	data, err := c.request(url, "GET", nil, nil)
 	if err != nil {
 		return nil, err
