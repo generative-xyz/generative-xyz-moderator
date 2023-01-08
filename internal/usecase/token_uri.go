@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -175,34 +176,37 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		)
 
 		img, _, err := image.Decode(bytes.NewReader(buf))
-		if err != nil {
+		if err == nil {
+			croppedImg, err := cutter.Crop(img, cutter.Config{
+				Width:  960,
+				Height: 960,
+				Mode: cutter.Centered,
+			})
+	
+			buf1 := new(bytes.Buffer)
+			err = png.Encode(buf1, croppedImg)
+			
+			if err == nil {
+				bytesArr := buf1.Bytes()
+				image := helpers.Base64Encode(bytesArr)
+				image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+				// if err != nil {
+				// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
+				// 	return nil, err
+				// }
+				
+				tokenUri.ParsedImage = &image
+			}else{
+				log.Error("image.Decode", err.Error(), err)
+				return nil, err
+			}
+	
+		}else{
 			log.Error("image.Decode", err.Error(), err)
-			return nil, err
+			//return nil, err
 		}
 
-		croppedImg, err := cutter.Crop(img, cutter.Config{
-			Width:  960,
-			Height: 960,
-			Mode: cutter.Centered,
-		})
-
-		buf1 := new(bytes.Buffer)
-		err = png.Encode(buf1, croppedImg)
 		
-		if err != nil {
-			log.Error("image.Decode", err.Error(), err)
-			return nil, err
-		}
-
-		bytesArr := buf1.Bytes()
-		image := helpers.Base64Encode(bytesArr)
-		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-		// if err != nil {
-		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
-		// 	return nil, err
-		// }
-
-		tokenUri.ParsedImage = &image
 	}
 
 	if tokenUri.ProjectID == "" {
@@ -271,6 +275,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	log.SetData("isUpdate", isUpdate)
+
+	spew.Dump(tokenUri)
 	//isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
