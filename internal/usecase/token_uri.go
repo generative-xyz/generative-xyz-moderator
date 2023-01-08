@@ -1,10 +1,13 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"math/big"
 	"strconv"
 	"strings"
@@ -14,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
+	"github.com/oliamb/cutter"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -155,7 +159,10 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		tokenUri.ParsedAttributes = attrs
 	}
 
-	if tokenUri.ParsedImage == nil {
+	//TODO this condition is used for make sure all images are cropped to square
+	//it will be replaced soon
+	if true {
+	//if tokenUri.ParsedImage != nil {
 		isUpdate = true
 		var buf []byte
 		cctx, cancel := chromedp.NewContext(context.Background())
@@ -167,7 +174,28 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			chromedp.CaptureScreenshot(&buf),
 		)
 
-		image := helpers.Base64Encode(buf)
+		img, _, err := image.Decode(bytes.NewReader(buf))
+		if err != nil {
+			log.Error("image.Decode", err.Error(), err)
+			return nil, err
+		}
+
+		croppedImg, err := cutter.Crop(img, cutter.Config{
+			Width:  960,
+			Height: 960,
+			Mode: cutter.Centered,
+		})
+
+		buf1 := new(bytes.Buffer)
+		err = png.Encode(buf1, croppedImg)
+		
+		if err != nil {
+			log.Error("image.Decode", err.Error(), err)
+			return nil, err
+		}
+
+		bytesArr := buf1.Bytes()
+		image := helpers.Base64Encode(bytesArr)
 		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
 		// if err != nil {
 		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
@@ -253,7 +281,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("updated", updated)
 	}
 
-	log.SetData("tokenUri.Inserted", tokenUri)
+	//log.SetData("tokenUri.Inserted", tokenUri)
 	// err = u.Repo.CreateTokenURI(dataObject)
 	// if err != nil {
 	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
