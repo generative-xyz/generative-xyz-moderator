@@ -160,10 +160,9 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		tokenUri.ParsedAttributes = attrs
 	}
 
-	//TODO this condition is used for make sure all images are cropped to square
-	//it will be replaced soon
-	if true {
-	//if tokenUri.ParsedImage != nil {
+
+	//if true {
+	if tokenUri.ParsedImage != nil {
 		isUpdate = true
 		var buf []byte
 		cctx, cancel := chromedp.NewContext(context.Background())
