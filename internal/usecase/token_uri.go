@@ -275,7 +275,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 	log.SetData("isUpdate", isUpdate)
 
-	spew.Dump(tokenUri)
+	spew.Dump(tokenUri.ParsedImage)
 	//isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
