@@ -31,6 +31,7 @@ type TokenUri struct {
 	Attributes string `bson:"attributes" json:"attributes"`
 	ParsedAttributes []TokenUriAttr `bson:"parsed_attributes" json:"parsed_attributes"`
 	ProjectID string `bson:"project_id" json:"project_id"`
+	ProjectIDInt int64 `bson:"project_id_int" json:"project_id_int"`
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
 	GenNFTAddr string `bson:"gen_nft_addrress"`

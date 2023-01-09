@@ -283,8 +283,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 	log.SetData("isUpdate", isUpdate)
 
-	spew.Dump(tokenUri.ParsedImage)
-	//isUpdate = true
+	//spew.Dump(tokenUri.ParsedImage)
+	 isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
@@ -393,6 +393,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	dataObject.TokenID = req.TokenID
 	dataObject.ProjectID = projectID.String()
+	dataObject.ProjectIDInt = projectID.Int64()
 
 	log.SetData("dataObject", dataObject)
 	return dataObject, nil
