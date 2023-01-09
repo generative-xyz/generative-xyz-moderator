@@ -1,5 +1,24 @@
 package utils
 
+type QuerySort struct {
+	Sort int
+	SortBy string 
+} 
+
+func ParseSort(key string) QuerySort {
+	sortParams := make(map[string]QuerySort)
+	sortParams["created_at-desc"] = QuerySort{Sort: -1, SortBy:  "created_at"}
+	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy:  "price"}
+	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy:  "minted_time"}
+
+	sort, ok := sortParams[key]
+	if !ok {
+		return sortParams["created_at-desc"]
+	}
+
+	return sort
+}
+
 const (
 	API_KEY string = "Api-Key"
 	//AUTH_TOKEN           string = "Authorization" //token will be save in this variable

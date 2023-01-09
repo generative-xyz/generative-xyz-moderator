@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -190,7 +189,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 				Mode: cutter.Centered,
 			})
 
-			spew.Dump("croppedImg", croppedImg)
+			//spew.Dump("croppedImg", croppedImg)
 			buf1 := new(bytes.Buffer)
 			err = png.Encode(buf1, croppedImg)
 			
@@ -508,7 +507,7 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 	span, log := u.StartSpan("GetTokensByContract", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	
+	//TODO use redis schedule instead of crontab or routine to get data.
 	// if filter.GenNFTAddr != nil {
 	// 	go func (rootSpan opentracing.Span, genNftAddress string) {
 	// 		span, log := u.StartSpan("GetTokensByContract.Live.Process", rootSpan)

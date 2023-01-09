@@ -236,7 +236,7 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	//h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
@@ -276,7 +276,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	//h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 
 }

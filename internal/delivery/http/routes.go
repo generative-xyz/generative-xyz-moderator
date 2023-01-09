@@ -10,6 +10,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/tracer"
 
 	"github.com/opentracing/opentracing-go"
@@ -157,7 +158,6 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 
 	limitInt := 10
 	pageInt := 1
-	sortInt := -1 //desc
 	var err error
 
 	limit := r.URL.Query().Get("limit")
@@ -176,26 +176,11 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 		}
 	}
 
-	sort := r.URL.Query().Get("sort")
-	if sort != "" {
-		sortInt, err = strconv.Atoi(sort)
-		if err != nil {
-			return nil, err
-		}
-	}
-	
-	cursor := r.URL.Query().Get("cursor")
-	if cursor != "" {
-		f.Cursor = cursor
-	}
+	sortQuery := r.URL.Query().Get("sort")
+	sortObject := utils.ParseSort(sortQuery)
 
-	sortBy := "created_at"
-	if r.URL.Query().Get("sort_by") != "" {
-		sortBy = r.URL.Query().Get("sort_by")
-	}
-	
-	f.SortBy = sortBy
-	f.Sort = sortInt
+	f.SortBy = sortObject.SortBy
+	f.Sort = sortObject.Sort
 	f.Page = int64(pageInt)
 	f.Limit = int64(limitInt)
 
