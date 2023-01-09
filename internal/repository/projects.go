@@ -96,11 +96,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	f := r.FilterProjects(filter)
 	filter.SortBy = "tokenIDInt"
 	filter.Sort = -1
-	if filter.WalletAddress != nil {
-		if *filter.WalletAddress != "" {
-			f["creatorAddress"] = *filter.WalletAddress
-		}
-	}
+	
 
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
 	if err != nil {
@@ -187,6 +183,18 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
+
+	if filter.WalletAddress != nil {
+		if *filter.WalletAddress != "" {
+			f["creatorAddress"] = *filter.WalletAddress
+		}
+	}
+
+	if filter.Name != nil {
+		if *filter.Name != "" {
+			f["$text"] =  bson.M{"$search": *filter.Name}
+		}
+	}
 	return f
 }
 

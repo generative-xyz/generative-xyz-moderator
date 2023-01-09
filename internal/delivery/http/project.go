@@ -115,6 +115,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param contractAddress query string false "Filter project via contract address"
+// @Param name query string false "filter project via name"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
@@ -127,6 +128,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
 
+	name := r.URL.Query().Get("name")
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
@@ -136,6 +138,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
+	f.Name = &name
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)

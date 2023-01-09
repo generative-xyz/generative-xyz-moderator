@@ -39,6 +39,7 @@ func (r Repository) CreateProjectIndexModel() ([]string, error) {
 		{ Keys: bson.M{"creatorName": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"creatorAddress": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"genNFTAddr": -1,}, Options: nil,} ,
+		{ Keys: bson.M{"name": "text",}, Options: nil,} ,
 	}
 
 	return r.CreateIndexes(collection, models)

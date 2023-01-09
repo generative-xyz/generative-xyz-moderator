@@ -204,6 +204,7 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Tags Project
 // @Accept  json
 // @Produce  json
+// @Param tokenID path string false "Filter via tokenID"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Param genNFTAddr path string true "This is provided from Project Detail API"
@@ -228,6 +229,10 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	}
 
 	f.BaseFilters = *bf
+	tokenID := r.URL.Query().Get("tokenID")
+	if tokenID != "" {
+		f.TokenIDs = append(f.TokenIDs, tokenID)
+	}
 	
 	resp, err := h.getTokens(span, f)
 	if err != nil {
@@ -246,6 +251,7 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 // @Tags Profile
 // @Accept  json
 // @Produce  json
+// @Param tokenID path string false "Filter via tokenID"
 // @Param walletAddress path string true "Wallet address"
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /profile/wallet/{walletAddress}/nfts [GET]
@@ -268,6 +274,10 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 	}
 
 	f.BaseFilters = *bf
+	tokenID := r.URL.Query().Get("tokenID")
+	if tokenID != "" {
+		f.TokenIDs = append(f.TokenIDs, tokenID)
+	}
 	
 	resp, err := h.getTokens(span, f)
 	if err != nil {
@@ -285,8 +295,6 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTokens) (*response.PaginationResponse, error) {
 	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
 	defer h.Tracer.FinishSpan(span, log )
-	
-
 	pag, err := h.Usecase.FilterTokens(span, f)
 	if err != nil {
 		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
