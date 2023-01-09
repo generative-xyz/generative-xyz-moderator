@@ -1426,6 +1426,12 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "description": "newest",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "The cursor returned in the previous response (used for getting the next page).",
                         "name": "cursor",
                         "in": "query"
@@ -1640,6 +1646,12 @@ var doc = `{
                         "description": "Filter via tokenID",
                         "name": "tokenID",
                         "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, minted-newest",
+                        "name": "sort",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
