@@ -205,6 +205,7 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Accept  json
 // @Produce  json
 // @Param tokenID path string false "Filter via tokenID"
+// @Param sort query string false "newest, minted-newest"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Param genNFTAddr path string true "This is provided from Project Detail API"

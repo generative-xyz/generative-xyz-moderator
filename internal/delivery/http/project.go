@@ -117,6 +117,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Param contractAddress query string false "Filter project via contract address"
 // @Param name query string false "filter project via name"
 // @Param limit query int false "limit"
+// @Param sort query string false "newest"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]

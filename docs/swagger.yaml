@@ -1175,6 +1175,10 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: newest
+        in: query
+        name: sort
+        type: string
       - description: The cursor returned in the previous response (used for getting
           the next page).
         in: query
@@ -1246,6 +1250,10 @@ paths:
       - description: Filter via tokenID
         in: path
         name: tokenID
+        type: string
+      - description: newest, minted-newest
+        in: query
+        name: sort
         type: string
       - description: limit
         in: query
