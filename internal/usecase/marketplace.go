@@ -186,6 +186,12 @@ func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.Fil
 		}
 
 		listingItem.Token = *tok
+
+		p, err  := u.Repo.FindUserByWalletAddress(listingItem.Seller)
+		if err ==  nil {
+			listingItem.SellerInfo =  *p
+		}
+
 		listingResp =append(listingResp, listingItem)
 	}
 	
@@ -224,6 +230,11 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 			continue
 		}
 
+		p, err  := u.Repo.FindUserByWalletAddress(offer.Buyer)
+		if err ==  nil {
+			offer.BuyerInfo =  *p
+		}
+		
 		offer.Token = *tok
 		offersResp =append(offersResp, offer)
 	}

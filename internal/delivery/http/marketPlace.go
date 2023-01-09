@@ -325,6 +325,12 @@ func (h *httpDelivery) mkListingToResp(input *entity.MarketplaceListings) (*resp
 	if err != nil {
 		return nil, err
 	}
+
+	pResp, err := h.profileToResp(&input.SellerInfo)
+	if err == nil {
+		resp.SellerInfo = *pResp
+	}
+
 	return resp, nil
 }
 
@@ -372,6 +378,12 @@ func (h *httpDelivery) mkOfferToResp(input *entity.MarketplaceOffers) (*response
 	if err != nil {
 		return nil, err
 	}
+
+	pResp, err := h.profileToResp(&input.BuyerInfo)
+	if err == nil {
+		resp.BuyerInfo = *pResp
+	}
+
 	return resp, nil
 }
 
