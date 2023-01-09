@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -55,6 +54,6 @@ func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexMod
 		return nil, err
 	}
 
-	spew.Dump(ind)
+	//spew.Dump(ind)
 	return ind, nil
 }

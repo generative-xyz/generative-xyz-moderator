@@ -119,9 +119,11 @@ func (t *tracer) LogObject(key string, value interface{}) log.Field {
 		return log.String(key, "")
 	}
 
-	t.logger.Info("LogObject", zap.Any(key, value))
-
 	jsonMessage := string(bytesArray)
+	if len(jsonMessage) <= 150{
+		t.logger.Info("LogObject", zap.Any(key, value))
+	}
+
 	return log.Object(key, jsonMessage)
 }
 
