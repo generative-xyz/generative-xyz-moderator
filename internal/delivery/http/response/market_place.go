@@ -13,6 +13,7 @@ type MarketplaceListing struct {
 	Finished           bool   `json:"finished"`
 	DurationTime       string `json:"durationTime"`
 	Token InternalTokenURIResp `json:"token"`
+	SellerInfo ProfileResponse `json:"sellerInfo"`
 }
 
 type MarketplaceOffer struct {
@@ -28,6 +29,7 @@ type MarketplaceOffer struct {
 	Finished           bool   `json:"finished"`
 	DurationTime       string `json:"durationTime"`
 	Token InternalTokenURIResp `json:"token"`
+	BuyerInfo ProfileResponse `json:"buyerInfo"`
 }
 
 type MarketplaceStatResp struct {
