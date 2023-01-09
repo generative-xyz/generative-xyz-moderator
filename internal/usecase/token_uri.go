@@ -321,9 +321,11 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 				log.Error("u.GetLiveToken", err.Error(), err)
 				return nil, err
 			}
-			log.SetData("live.tokenUri", tokenUri.TokenID)
-			log.SetData("tokenID", tokenUri.TokenID)
+			log.SetData("live.tokenUri", token.TokenID)
+			log.SetData("tokenID", token.TokenID)
 			return token, nil
+		}else{
+			return nil, err
 		}
 	}
 
