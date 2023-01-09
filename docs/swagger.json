@@ -1343,6 +1343,12 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Filter via tokenID",
+                        "name": "tokenID",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
                         "description": "Wallet address",
                         "name": "walletAddress",
                         "in": "path",
@@ -1389,6 +1395,12 @@
                         "type": "string",
                         "description": "Filter project via contract address",
                         "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via name",
+                        "name": "name",
                         "in": "query"
                     },
                     {
@@ -1608,6 +1620,12 @@
                 ],
                 "summary": "get project's tokens",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter via tokenID",
+                        "name": "tokenID",
+                        "in": "path"
+                    },
                     {
                         "type": "integer",
                         "description": "limit",

@@ -1133,6 +1133,10 @@ paths:
       - application/json
       description: User profile's nft
       parameters:
+      - description: Filter via tokenID
+        in: path
+        name: tokenID
+        type: string
       - description: Wallet address
         in: path
         name: walletAddress
@@ -1162,6 +1166,10 @@ paths:
       - description: Filter project via contract address
         in: query
         name: contractAddress
+        type: string
+      - description: filter project via name
+        in: query
+        name: name
         type: string
       - description: limit
         in: query
@@ -1235,6 +1243,10 @@ paths:
       - application/json
       description: get tokens by project address
       parameters:
+      - description: Filter via tokenID
+        in: path
+        name: tokenID
+        type: string
       - description: limit
         in: query
         name: limit

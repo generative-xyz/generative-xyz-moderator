@@ -3,6 +3,7 @@ package structure
 type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
+	Name *string
 }
 
 type CreateProjectReq struct {
