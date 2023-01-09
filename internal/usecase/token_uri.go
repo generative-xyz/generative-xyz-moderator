@@ -284,7 +284,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetData("isUpdate", isUpdate)
 
 	//spew.Dump(tokenUri.ParsedImage)
-	 isUpdate = true
+	isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
@@ -306,6 +306,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+	log.SetData("req", req)
 
 	go u.GetLiveToken(span, req, captureTimeout)
 
@@ -321,12 +322,14 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 				log.Error("u.GetLiveToken", err.Error(), err)
 				return nil, err
 			}
-			log.SetData("live.tokenUri", tokenUri)
+			log.SetData("live.tokenUri", tokenUri.TokenID)
+			log.SetData("tokenID", tokenUri.TokenID)
 			return token, nil
 		}
 	}
 
-	log.SetData("tokenUri", tokenUri)
+	///log.SetData("tokenUri", tokenUri)
+	log.SetData("tokenID", tokenUri.TokenID)
 	return tokenUri, nil
 }
 
@@ -395,7 +398,17 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
 
-	log.SetData("dataObject", dataObject)
+	log.SetData("dataObject.ContractAddress", dataObject.ContractAddress)
+	log.SetData("dataObject.Creator", dataObject.Creator)
+	log.SetData("dataObject.OwnerAddr", dataObject.OwnerAddr)
+	log.SetData("dataObject.TokenID", dataObject.TokenID)
+	log.SetData("dataObject.ProjectID", dataObject.ProjectID)
+	
+	log.SetTag("contractAddress", dataObject.ContractAddress)
+	log.SetTag("creator", dataObject.Creator)
+	log.SetTag("ownerAddr", dataObject.OwnerAddr)
+	log.SetTag("tokenID", dataObject.TokenID)
+	log.SetTag("projectID", dataObject.ProjectID)
 	return dataObject, nil
 }
 
