@@ -40,7 +40,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	contractAddress := strings.ToLower(req.ContractAddress) 
 	tokenID := strings.ToLower(req.TokenID)
 	
-	tokenUri, err := u.Repo.FindTokenByWithoutCache(contractAddress, tokenID)
+	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -189,7 +189,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 				Height: min,
 				Mode: cutter.Centered,
 			})
-			
+
 			spew.Dump("croppedImg", croppedImg)
 			buf1 := new(bytes.Buffer)
 			err = png.Encode(buf1, croppedImg)
