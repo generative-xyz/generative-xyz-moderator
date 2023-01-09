@@ -116,6 +116,17 @@ func startServer() {
 		logger.Error("Can not init repository", err)
 		return
 	}
+
+	_, err = repo.CreateTokenURIIndexModel()
+	if err != nil {
+		logger.Error("LoadUsecases - Cannot create CreateTokenURIIndexModel", err)
+		return
+	}
+	_, err = repo.CreateProjectIndexModel()
+	if err != nil {
+		logger.Error("LoadUsecases - Can not init CreateProjectIndexModel", err)
+		return
+	}
 	
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {

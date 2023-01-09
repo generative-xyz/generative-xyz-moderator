@@ -151,13 +151,16 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 
 func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
 	inputData.SetUpdatedAt()
+	inputData.SetCreatedAt()
 	bData, _ := inputData.ToBson()
 	filter := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
 	update := bson.D{{"$set",  bData}}
-	opts := options.Update().SetUpsert(true)
+	updateOpts := options.Update().SetUpsert(true)
+	//indexOpts := options.CreateIndexes().SetMaxTime(10 * time.Second)
+
 
 	//id := fmt.Sprintf("%s%s", contractAddress, tokenID)
-	result, err := r.DB.Collection(inputData.TableName()).UpdateOne( context.TODO(), filter, update, opts)
+	result, err := r.DB.Collection(inputData.TableName()).UpdateOne( context.TODO(), filter, update, updateOpts)
 	if err != nil {
 		return nil, err
 	}
