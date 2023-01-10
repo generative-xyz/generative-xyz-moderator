@@ -17,6 +17,27 @@ func (u Usecase) GetAllRedis(rootSpan opentracing.Span) ([]string, error) {
 	return res, err
 }
 
+func (u Usecase) DeleteAllRedis(rootSpan opentracing.Span) ([]string, error) {
+	span, log := u.StartSpan("DeleteAllRedis", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	//var res *string
+	var err error
+
+	res, err := u.Cache.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range res {
+		err = u.Cache.Delete(key)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return res, err
+}
+
 func (u Usecase) GetRedis(rootSpan opentracing.Span, key string) (*string, error) {
 	span, log := u.StartSpan("GetRedis", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)

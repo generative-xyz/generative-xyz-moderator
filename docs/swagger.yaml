@@ -335,6 +335,25 @@ info:
   version: 1.0.0
 paths:
   /admin/redis:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Delete Redis
+      tags:
+      - Admin
     get:
       consumes:
       - application/json

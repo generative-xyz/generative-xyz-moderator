@@ -124,3 +124,27 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
 }
+
+
+// UserCredits godoc
+// @Summary Delete Redis
+// @Description Delete Redis
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.JsonResponse{data=string}
+// @Router /admin/redis [DELETE]
+func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("deleteAllRedis", r)
+	defer h.Tracer.FinishSpan(span, log )
+	res, err := h.Usecase.DeleteAllRedis(span)
+
+	if err != nil {
+		log.Error("h.Usecase.DeleteRedis", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+}
