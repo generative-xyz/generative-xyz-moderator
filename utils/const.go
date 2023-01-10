@@ -57,7 +57,7 @@ const (
 	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30           //a month (second)
 	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360          //a year (second)
 	DB_CACHE_EXPIRED_TIME            int    = 86400                //a week
-	DB_CACHE_KEY                     string = "object_cache_%s_%s" //a week
+	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
 	KEY_UUID             string = "uuid"

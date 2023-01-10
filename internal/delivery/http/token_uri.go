@@ -292,6 +292,62 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 
 }
 
+// UserCredits godoc
+// @Summary get  projects by wallet
+// @Description get  projects by wallet
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string false "Filter project via wallet address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /profile/wallet/{walletAddress}/projects [GET]
+func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getProjectsByWallet", r)
+	defer h.Tracer.FinishSpan(span, log )
+	
+	var err error
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]
+	span.SetTag("walletAddress", walletAddress)
+	
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f := structure.FilterProjects{}
+	f.BaseFilters = *baseF
+	f.WalletAddress = &walletAddress
+	
+	uProjects, err := h.Usecase.GetProjects(span, f)
+	if err != nil {
+		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	pResp :=  []response.ProjectResp{}
+	iProjects := uProjects.Result
+	projects := iProjects.([]entity.Projects)
+	for _, project := range projects {
+
+		p, err := h.projectToResp(&project)
+		if err != nil {
+			log.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *p)
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}
 
 func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTokens) (*response.PaginationResponse, error) {
 	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")

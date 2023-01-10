@@ -26,23 +26,23 @@ func NftFromMoralisKey(contractAddr string, tokenID string) string {
 }
 
 func GenerateCachedProfileKey(accessToken string) string {
-	return fmt.Sprintf("%s_%s", utils.REDIS_PROFILE, GenerateMd5String(accessToken))
+	return fmt.Sprintf("profile.%s.%s", utils.REDIS_PROFILE, GenerateMd5String(accessToken))
 }
 
 func GenerateUserKey(accessToken string) string {
-	return fmt.Sprintf("%s_%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
+	return fmt.Sprintf("userKey.%s.s%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
 }
 
 func ProjectDetailKey(contractAddr string, tokenID string) string {
-	return fmt.Sprintf("project_detail_%s_%s",contractAddr, tokenID)
+	return fmt.Sprintf("project.detail.%s.%s",contractAddr, tokenID)
 }
 
 func ProjectDetailgenNftAddrrKey(genNftAddrr string) string {
-	return fmt.Sprintf("project_detail_gen_addrr_key_%s",genNftAddrr)
+	return fmt.Sprintf("project.detail.GenNFTAddrKey.%s",genNftAddrr)
 }
 
 func ProjectRandomKey() string {
-	return fmt.Sprintf("project_random")
+	return fmt.Sprintf("project.random")
 }
 
 func ProfileSelingKey(sellerAddress string) (string, string, string) {
@@ -50,10 +50,10 @@ func ProfileSelingKey(sellerAddress string) (string, string, string) {
 }
 
 func TokenURIKey(contractAddress string, tokenID string) string {
-	return fmt.Sprintf("%s.%s.%s", utils.COLLECTION_TOKEN_URI, contractAddress, tokenID)
+	return fmt.Sprintf("tokenUri.%s.%s.%s", utils.COLLECTION_TOKEN_URI, contractAddress, tokenID)
 }
 
 func TokenURIByGenNftAddrKey(gennftAddr string, tokenID string) string {
-	return fmt.Sprintf("%s.genNftAddrr.%s.%s", utils.COLLECTION_TOKEN_URI, gennftAddr, tokenID)
+	return fmt.Sprintf("tokenUri.genNftAddrr.%s.%s.%s", utils.COLLECTION_TOKEN_URI, gennftAddr, tokenID)
 }
 
