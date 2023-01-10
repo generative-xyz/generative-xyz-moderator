@@ -21,6 +21,10 @@ func ParseCache(cached *string, resp interface{}) error {
 	return nil
 }
 
+func NftFromMoralisKey(contractAddr string, tokenID string) string {
+	return fmt.Sprintf("nft.contract.%s.tokenID.%s", contractAddr, tokenID)
+}
+
 func GenerateCachedProfileKey(accessToken string) string {
 	return fmt.Sprintf("%s_%s", utils.REDIS_PROFILE, GenerateMd5String(accessToken))
 }

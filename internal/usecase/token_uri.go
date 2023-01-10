@@ -1,13 +1,10 @@
 package usecase
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
-	"image/png"
 	"math/big"
 	"strconv"
 	"strings"
@@ -17,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
-	"github.com/oliamb/cutter"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -82,9 +78,10 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, err
 	}
 
-	if nft.Owner != tokenUri.OwnerAddr {
-		tokenUri.OwnerAddr =  nft.Owner
+	if tokenUri.OwnerAddr == "" || strings.ToLower(nft.Owner)  != strings.ToLower(tokenUri.OwnerAddr)  {
+		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
 		isUpdate = true
+		log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
 	}
 
 	log.SetData("nft", nft)
@@ -126,13 +123,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetData("creatorProfileResp", creatorProfileResp)
 
 	tokenUri.TokenIDInt = tokenIDInt
-
-	if tokenUri.OwnerAddr == "" {
-		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
-		isUpdate = true
-		log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
-	}
-
 	if tokenUri.ParsedAttributes == nil {
 		isUpdate = true
 		cctx, cancel := chromedp.NewContext(context.Background())
@@ -169,51 +159,57 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		defer cancel()
 
 		err = chromedp.Run(cctx,
+			chromedp.EmulateViewport(960, 960),
 			chromedp.Navigate(tokenUri.AnimationURL),
 			chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 			chromedp.CaptureScreenshot(&buf),
 		)
 
-		img, _, err := image.Decode(bytes.NewReader(buf))
-		if err == nil {
-			min := img.Bounds().Dx()
-			if img.Bounds().Dy() < min {
-				min = img.Bounds().Dy()
-			}
-			if min > 960 {
-				min = 960
-			}
-
-			croppedImg, err := cutter.Crop(img, cutter.Config{
-				Width:  min,
-				Height: min,
-				Mode: cutter.Centered,
-			})
-
-			//spew.Dump("croppedImg", croppedImg)
-			buf1 := new(bytes.Buffer)
-			err = png.Encode(buf1, croppedImg)
-			
-			if err == nil {
-				bytesArr := buf1.Bytes()
-				image := helpers.Base64Encode(bytesArr)
-				image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-				// if err != nil {
-				// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
-				// 	return nil, err
-				// }
+		image := helpers.Base64Encode(buf)
+		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+		tokenUri.ParsedImage = &image
+		log.SetData("tokenUri.ParsedImage.Updated", "true")
 				
-				tokenUri.ParsedImage = &image
-				log.SetData("tokenUri.ParsedImage.Updated", "true")
-			}else{
-				log.Error("image.Decode", err.Error(), err)
-				return nil, err
-			}
+		// img, _, err := image.Decode(bytes.NewReader(buf))
+		// if err == nil {
+		// 	min := img.Bounds().Dx()
+		// 	if img.Bounds().Dy() < min {
+		// 		min = img.Bounds().Dy()
+		// 	}
+		// 	if min > 960 {
+		// 		min = 960
+		// 	}
+
+		// 	croppedImg, err := cutter.Crop(img, cutter.Config{
+		// 		Width:  min,
+		// 		Height: min,
+		// 		Mode: cutter.Centered,
+		// 	})
+
+		// 	//spew.Dump("croppedImg", croppedImg)
+		// 	buf1 := new(bytes.Buffer)
+		// 	err = png.Encode(buf1, croppedImg)
+			
+		// 	if err == nil {
+		// 		bytesArr := buf1.Bytes()
+		// 		image := helpers.Base64Encode(bytesArr)
+		// 		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+		// 		// if err != nil {
+		// 		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
+		// 		// 	return nil, err
+		// 		// }
+				
+		// 		tokenUri.ParsedImage = &image
+		// 		log.SetData("tokenUri.ParsedImage.Updated", "true")
+		// 	}else{
+		// 		log.Error("image.Decode", err.Error(), err)
+		// 		return nil, err
+		// 	}
 	
-		}else{
-			log.Error("image.Decode", err.Error(), err)
-			//return nil, err
-		}
+		// }else{
+		// 	log.Error("image.Decode", err.Error(), err)
+		// 	//return nil, err
+		// }
 
 	}
 
@@ -280,7 +276,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("tokenUri.GenNFTAddr.Creator", tokenUri.Creator)
 	}
 	
-	if tokenUri.Project == nil  {
+	if tokenUri.Project == nil || tokenUri.Project.Stats != project.Stats  {
 		isUpdate = true
 		tokenUri.Project = project
 		log.SetData("tokenUri.GenNFTAddr.project", project.GenNFTAddr)
