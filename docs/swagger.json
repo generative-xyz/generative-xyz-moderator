@@ -1446,6 +1446,49 @@
                 }
             }
         },
+        "/profile/wallet/{walletAddress}/projects": {
+            "get": {
+                "description": "get  projects by wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "get  projects by wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via wallet address",
+                        "name": "walletAddress",
+                        "in": "path"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",

@@ -1197,6 +1197,35 @@ paths:
       summary: User profile's nft
       tags:
       - Profile
+  /profile/wallet/{walletAddress}/projects:
+    get:
+      consumes:
+      - application/json
+      description: get  projects by wallet
+      parameters:
+      - description: Filter project via wallet address
+        in: path
+        name: walletAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get  projects by wallet
+      tags:
+      - Profile
   /project:
     get:
       consumes:
