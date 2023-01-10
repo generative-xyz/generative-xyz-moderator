@@ -87,6 +87,7 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	}
 
 	_ = r.Cache.SetData(helpers.ProjectDetailKey(data.ContractAddress, data.TokenID), data)
+	_ = r.Cache.SetData(helpers.ProjectDetailgenNftAddrrKey(data.GenNFTAddr), data)
 	return result, nil
 }
 
@@ -201,6 +202,14 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {
 	genNFTAddr = strings.ToLower(genNFTAddr)
 	resp := &entity.Projects{}
+	cached, err := r.Cache.GetData(helpers.ProjectDetailgenNftAddrrKey(genNFTAddr))
+	if err == nil && cached != nil {
+		err := helpers.ParseCache(cached, resp)
+		if err == nil {
+			return resp, nil
+		}
+	}
+	
 	prj, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "genNFTAddr", Value: genNFTAddr}})
 	if err != nil {
 		return nil, err

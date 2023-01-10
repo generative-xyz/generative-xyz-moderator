@@ -15,6 +15,31 @@ import (
 // @Tags Admin
 // @Accept  json
 // @Produce  json
+// @Success 200 {object} response.JsonResponse{data=[]response.RedisResponse}
+// @Router /admin/redis [GET]
+func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getRedisKeys", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	res, err := h.Usecase.GetAllRedis(span)
+
+	if err != nil {
+		log.Error("h.Usecase.GetRedis", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+}
+
+
+// UserCredits godoc
+// @Summary Get Redis
+// @Description Get Redis
+// @Tags Admin
+// @Accept  json
+// @Produce  json
 // @Param key path string true "Redis key"
 // @Success 200 {object} response.JsonResponse{data=response.RedisResponse}
 // @Router /admin/redis/{key} [GET]

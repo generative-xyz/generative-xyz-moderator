@@ -56,7 +56,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		}
 	}
 
-	log.SetData("tokenUri", tokenUri)
+	
 	if tokenUri.ProjectID == "" {
 		tokenUri, err = u.getTokenInfo(span, req)
 		if err != nil {
@@ -130,6 +130,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	if tokenUri.OwnerAddr == "" {
 		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
 		isUpdate = true
+		log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
 	}
 
 	if tokenUri.ParsedAttributes == nil {
@@ -157,8 +158,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			attrs = append(attrs, attr)
 		}
 		tokenUri.ParsedAttributes = attrs
+		log.SetData("tokenUri.ParsedAttributes.Updated", tokenUri.ParsedAttributes)
 	}
-
 
 	//if true {
 	if tokenUri.ParsedImage == nil {
@@ -203,6 +204,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 				// }
 				
 				tokenUri.ParsedImage = &image
+				log.SetData("tokenUri.ParsedImage.Updated", "true")
 			}else{
 				log.Error("image.Decode", err.Error(), err)
 				return nil, err
@@ -263,21 +265,25 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	if tokenUri.GenNFTAddr == ""  {
 		isUpdate = true
 		tokenUri.GenNFTAddr = project.GenNFTAddr
+		log.SetData("tokenUri.GenNFTAddr.Updated", tokenUri.GenNFTAddr)
 	}
 	
 	if tokenUri.Owner == nil  {
 		isUpdate = true
 		tokenUri.Owner = ownerProfileResp.Data
+		log.SetData("tokenUri.GenNFTAddr.Owner", tokenUri.Owner)
 	}
 	
 	if tokenUri.Creator == nil  {
 		isUpdate = true
 		tokenUri.Creator = creatorProfileResp.Data
+		log.SetData("tokenUri.GenNFTAddr.Creator", tokenUri.Creator)
 	}
 	
 	if tokenUri.Project == nil  {
 		isUpdate = true
 		tokenUri.Project = project
+		log.SetData("tokenUri.GenNFTAddr.project", project.GenNFTAddr)
 	}
 
 	log.SetData("isUpdate", isUpdate)
@@ -443,7 +449,12 @@ func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
 		return err
 	}
 
+	log.SetData("tokens.Count", len(tokens))
 	for _, token := range tokens {
+		span, log := u.StartSpan("UpdateTokensFromChain.loop", span)
+
+		log.SetTag("tokenID", token.TokenID)
+		log.SetTag("genNFTAddr", token.GenNFTAddr)
 		
 		_, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
 		if err != nil {

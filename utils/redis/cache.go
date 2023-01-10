@@ -13,6 +13,7 @@ import (
 )
 
 type IRedisCache interface {
+	GetAll() ([]string, error)
 	Exists(key string) (*bool, error)
 	SetData(key string, value interface{}) error
 	SetStringData(key string, value string) error
@@ -113,4 +114,21 @@ func (r *redisCache) Exists(key string) (*bool, error) {
 	}
 	res := value > 0
 	return &res, nil
+}
+
+func (r *redisCache) GetAll() ([]string, error) {
+	var keys []string
+	var err error
+	//ctx := context.Background()
+	c := 0
+	keys, _, err = r.client.Scan(uint64(c), "*", 100000).Result()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, key := range keys {
+		keys = append(keys, key)
+	}
+
+	return  keys, err
 }

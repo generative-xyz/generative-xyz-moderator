@@ -335,6 +335,27 @@ info:
   version: 1.0.0
 paths:
   /admin/redis:
+    get:
+      consumes:
+      - application/json
+      description: Get Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.RedisResponse'
+                  type: array
+              type: object
+      summary: Get Redis
+      tags:
+      - Admin
     post:
       consumes:
       - application/json

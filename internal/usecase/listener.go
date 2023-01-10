@@ -192,8 +192,6 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	log.SetData("chainLog", chainLog)
 	topics := chainLog.Topics
 
-	
-	
 	tokenIDStr :=  helpers.HexaNumberToInteger(topics[3].String())
 	tokenID, _ := strconv.Atoi(tokenIDStr)
 	tokenIDStr = fmt.Sprintf("%d",tokenID)
@@ -354,7 +352,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		//return nil, err
 	}else{
 		projectDetail := projectDetailFChan.Data
-		log.SetData("projectDetail", projectDetail)
+		//log.SetData("projectDetail", projectDetail)
 		project.IsSynced = true
 		project.Name = projectDetail.ProjectDetail.Name
 		project.CreatorName = projectDetail.ProjectDetail.Creator
@@ -439,7 +437,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		log.Error(" u.UpdateProject", err.Error(), err)
 		return nil, err
 	}
-
+	log.SetData("projectUUID", project.UUID)
 	log.SetData("updated",updated)
 	return  project, nil
 }
@@ -455,15 +453,16 @@ func (u Usecase) GetProjectsFromChain(rootSpan opentracing.Span) error {
 		return err
 	}
 
-	log.SetData("mProjects", mProjects)
+	log.SetData("contractAddress", contractAddress)
+	log.SetTag("contractAddress", contractAddress)
 	for _, mProject := range mProjects.Result {
-		p, err := u.UpdateProjectFromChain(span, contractAddress, mProject.TokenID)
+		_, err := u.UpdateProjectFromChain(span, contractAddress, mProject.TokenID)
 		if err != nil {
 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return err
 		}
 		//resp = append(resp, *p)
-		log.SetData("p", *p)
+		//log.SetData("p", *p)
 	}
 
 	return nil
