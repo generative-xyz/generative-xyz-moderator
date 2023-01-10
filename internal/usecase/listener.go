@@ -47,6 +47,7 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(rootSpan opentracing.Span, cha
 		return err
 	}
 
+	log.SetTag("offeringId", event.OfferingId)
 	log.SetData("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.ListToken(span, event)
@@ -72,6 +73,7 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent(rootSpan opentracing.Span,
 		return err
 	}
 
+	log.SetTag("offeringId", event.OfferingId)
 	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.PurchaseToken(span, event)
@@ -97,6 +99,7 @@ func (u Usecase) ResolveMarketplaceMakeOffer(rootSpan opentracing.Span, chainLog
 		return err
 	}
 
+	log.SetTag("offeringId", event.OfferingId)
 	log.SetData("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.MakeOffer(span, event)
@@ -123,7 +126,7 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(rootSpan opentracing.Span, c
 	}
 
 	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-
+	log.SetTag("offeringId", event.OfferingId)
 	err = u.AcceptMakeOffer(span, event)
 
 	if err != nil {
@@ -148,7 +151,7 @@ func (u Usecase) ResolveMarketplaceCancelListing(rootSpan opentracing.Span, chai
 	}
 
 	log.SetData("resolved-cancel-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-
+	log.SetTag("offeringId", event.OfferingId)
 	err = u.CancelListing(span, event)
 
 	if err != nil {
@@ -173,7 +176,7 @@ func (u Usecase) ResolveMarketplaceCancelOffer(rootSpan opentracing.Span, chainL
 	}
 
 	log.SetData("resolved-cancel-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-
+	log.SetTag("offeringId", event.OfferingId)
 	err = u.CancelOffer(span, event)
 
 	if err != nil {
@@ -182,7 +185,6 @@ func (u Usecase) ResolveMarketplaceCancelOffer(rootSpan opentracing.Span, chainL
 
 	return nil
 }
-
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()

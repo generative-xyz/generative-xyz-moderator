@@ -382,7 +382,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
 	span, log := u.StartSpan("getProjectDetailFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
+	contractDataKey := helpers.ProjectDetailKey(req.ContractAddress, req.ProjectID)
 
 	//u.Cache.Delete(contractDataKey)
 	data, err := u.Cache.GetData(contractDataKey)

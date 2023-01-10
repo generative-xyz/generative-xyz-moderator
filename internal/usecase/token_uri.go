@@ -65,7 +65,13 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	isUpdate := false
 
 	// find project by projectID and contract address
-	project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: tokenUri.ProjectID})
+	// project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: tokenUri.ProjectID})
+	// if err != nil {
+	// 	log.Error("u.GetProjectDetail", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	project, err := u.Repo.FindProjectBy(contractAddress, tokenUri.ProjectID)
 	if err != nil {
 		log.Error("u.GetProjectDetail", err.Error(), err)
 		return nil, err
@@ -472,7 +478,7 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 }
 
 func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.FilterTokens) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetTokensByContract", rootSpan)
+	span, log := u.StartSpan("FilterTokens", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	//TODO use redis schedule instead of crontab or routine to get data.
@@ -487,6 +493,8 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 	// }
 
 	pe := &entity.FilterTokenUris{}
+
+	log.SetData("log", log)
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
@@ -498,6 +506,6 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 		log.Error("u.Repo.FilterTokenUri", err.Error(), err)
 		return nil, err
 	}
-	
+	log.SetData("tokens", tokens.Total)
 	return tokens, nil
 }
