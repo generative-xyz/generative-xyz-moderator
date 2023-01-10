@@ -187,10 +187,9 @@ func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.Fil
 		tok, err := u.Repo.FindTokenByGenNftAddr(listingItem.CollectionContract, listingItem.TokenId)
 		if err != nil  {
 			log.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
-			continue
+		}else{
+			listingItem.Token = *tok
 		}
-
-		listingItem.Token = *tok
 
 		p, err  := u.Repo.FindUserByWalletAddress(listingItem.Seller)
 		if err ==  nil {
@@ -232,7 +231,9 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 		tok, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
 		if err != nil  {
 			log.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
-			continue
+			//continue
+		}else{
+			offer.Token = *tok
 		}
 
 		p, err  := u.Repo.FindUserByWalletAddress(offer.Buyer)
@@ -240,7 +241,7 @@ func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.Filt
 			offer.BuyerInfo =  *p
 		}
 		
-		offer.Token = *tok
+		
 		offersResp =append(offersResp, offer)
 	}
 
