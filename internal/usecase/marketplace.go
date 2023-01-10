@@ -29,7 +29,7 @@ func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketpl
 		Finished: false,
 		DurationTime: event.Data.DurationTime.String(),
 	}
-
+	log.SetTag("offeringID", listing.OfferingId)
 	// check if listing is created or not
 	_, err := u.Repo.FindListingByOfferingID(listing.OfferingId)
 	if err != nil {
@@ -60,6 +60,7 @@ func (u Usecase) PurchaseToken(rootSpan opentracing.Span, event *generative_mark
 	defer u.Tracer.FinishSpan(span, log)
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	log.SetData("purchase token offeringId", offeringID)
+	log.SetTag("offeringID", offeringID)
 	err := u.Repo.PurchaseTokenByOfferingID(offeringID)
 	if err != nil {
 		return err
@@ -85,6 +86,7 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 		DurationTime: event.Data.DurationTime.String(),
 	}
 
+	log.SetTag("offeringID", offer.OfferingId)
 	// check if listing is created or not
 	_, err := u.Repo.FindOfferByOfferingID(offer.OfferingId)
 	if err != nil {
@@ -98,7 +100,7 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 			}
 
 			// TODO: @dac add update collection stats here
-
+			
 			return nil
 		} else {
 			return err
@@ -115,6 +117,7 @@ func (u Usecase) AcceptMakeOffer(rootSpan opentracing.Span, event *generative_ma
 	defer u.Tracer.FinishSpan(span, log)
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	log.SetData("accept make offer offeringId", offeringID)
+	log.SetTag("offeringID", offeringID)
 	err := u.Repo.AcceptOfferByOfferingID(offeringID)
 	if err != nil {
 		return err
@@ -130,6 +133,7 @@ func (u Usecase) CancelListing(rootSpan opentracing.Span, event *generative_mark
 	defer u.Tracer.FinishSpan(span, log)
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	log.SetData("cancel listing offeringId", offeringID)
+	log.SetTag("offeringID", offeringID)
 	err := u.Repo.CancelListingByOfferingID(offeringID)
 	if err != nil {
 		return err
@@ -145,6 +149,7 @@ func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_market
 	defer u.Tracer.FinishSpan(span, log)
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	log.SetData("cancel make offer offeringId", offeringID)
+	log.SetTag("offeringID", offeringID)
 	err := u.Repo.CancelOfferByOfferingID(offeringID)
 	if err != nil {
 		return err
