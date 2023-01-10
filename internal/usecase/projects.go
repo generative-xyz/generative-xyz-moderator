@@ -153,20 +153,20 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	span, log := u.StartSpan("GetProjectDetail", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	defer func  ()  {
-		//alway update project in a separated process
-		go func(rootSpan opentracing.Span) {
-			span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
-			defer u.Tracer.FinishSpan(span, log)
+	// defer func  ()  {
+	// 	//alway update project in a separated process
+	// 	go func(rootSpan opentracing.Span) {
+	// 		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
+	// 		defer u.Tracer.FinishSpan(span, log)
 
-			_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
-			if err != nil {
-				log.Error("u.Repo.FindProjectBy", err.Error(), err)
-				return
-			}
+	// 		_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
+	// 		if err != nil {
+	// 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
+	// 			return
+	// 		}
 
-		}(span)	
-	}()
+	// 	}(span)	
+	// }()
 
 	log.SetTag("ProjectID", req.ProjectID)
 	log.SetTag("ContractAddress", req.ContractAddress)
@@ -368,7 +368,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 	if !ok {
 		return nil, errors.New("cannot convert tokenID")
 	}
-	contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
+	contractDetail, err := u.getNftContractDetailInternal(span, client, addr, *projectID)
 	if err != nil {
 		log.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err
@@ -402,7 +402,7 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 		if !ok {
 			return nil, errors.New("cannot convert tokenID")
 		}
-		contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
+		contractDetail, err := u.getNftContractDetailInternal(span, client, addr, *projectID)
 		if err != nil {
 			log.Error("u.getNftContractDetail", err.Error(), err)
 			return nil, err
@@ -424,9 +424,16 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 }
 
 // Internal get project detail
-func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
+func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
+	span, log := u.StartSpan("getNftContractDetailInternal", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag("contractAddress", contractAddr)
+	log.SetTag("projectID", projectID)
+	
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
+		log.Error("generative_project_contract.NewGenerativeProjectContract", err.Error(), err)
 		return nil, err
 	}
 
@@ -503,15 +510,18 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 	}
 
 	if statusFromChain.Err != nil {
+		log.Error("statusFromChain.Err", statusFromChain.Err.Error(), statusFromChain.Err)
 		return nil, statusFromChain.Err
 	}
 
 	if tokenFromChain.Err != nil {
+		log.Error("tokenFromChain.Err", tokenFromChain.Err.Error(), tokenFromChain.Err)
 		return nil, tokenFromChain.Err
 	}
 
 	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
 	if err != nil {
+		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
 		return nil, err
 	}
 
@@ -558,6 +568,7 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		NftTokenUri:   *tokenFromChain.TokenURI,
 	}
 
+	log.SetData("resp", resp)
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
 		resp.NftProjectDetail = *dataFromNftPChan.Data
 	} else {
@@ -570,5 +581,6 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 		}
 	}
 
+	log.SetData("resp", resp)
 	return resp, nil
 }

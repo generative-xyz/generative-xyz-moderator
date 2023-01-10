@@ -235,7 +235,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			}
 		}()
 
-		project, err = u.Repo.FindProjectWithoutCache(contractAddr, tokenIDStr)
+		project, err = u.Repo.FindProjectBy(contractAddr, tokenIDStr)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				project = &entity.Projects{}

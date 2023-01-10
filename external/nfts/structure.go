@@ -121,3 +121,8 @@ type CovalentGetNftTransactionData struct {
 		} `json:"items"`
 		Pagination interface{} `json:"pagination"`
 	} 
+
+type MoralisMessage struct {
+	Message string `json:"message"`
+	Err error
+}

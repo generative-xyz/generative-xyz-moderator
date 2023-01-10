@@ -72,9 +72,9 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	// find owner address on moralis
-	nft, err := u.MoralisNft.GetNftByContractAndTokenID(project.GenNFTAddr, tokenID)
+	nft, err := u.MoralisNft.GetNftByContractAndTokenIDNoCahe(project.GenNFTAddr, tokenID)
 	if err != nil {
-		log.Error(" u.MoralisNft.GetNftByContractAndTokenID", err.Error(), err)
+		log.Error(" u.MoralisNft.GetNftByContractAndTokenIDNoCahe", err.Error(), err)
 		return nil, err
 	}
 
@@ -170,47 +170,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		tokenUri.ParsedImage = &image
 		log.SetData("tokenUri.ParsedImage.Updated", "true")
 				
-		// img, _, err := image.Decode(bytes.NewReader(buf))
-		// if err == nil {
-		// 	min := img.Bounds().Dx()
-		// 	if img.Bounds().Dy() < min {
-		// 		min = img.Bounds().Dy()
-		// 	}
-		// 	if min > 960 {
-		// 		min = 960
-		// 	}
-
-		// 	croppedImg, err := cutter.Crop(img, cutter.Config{
-		// 		Width:  min,
-		// 		Height: min,
-		// 		Mode: cutter.Centered,
-		// 	})
-
-		// 	//spew.Dump("croppedImg", croppedImg)
-		// 	buf1 := new(bytes.Buffer)
-		// 	err = png.Encode(buf1, croppedImg)
-			
-		// 	if err == nil {
-		// 		bytesArr := buf1.Bytes()
-		// 		image := helpers.Base64Encode(bytesArr)
-		// 		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-		// 		// if err != nil {
-		// 		// 	log.Error("chromedp.ParsedImage.Run", err.Error(), err)
-		// 		// 	return nil, err
-		// 		// }
-				
-		// 		tokenUri.ParsedImage = &image
-		// 		log.SetData("tokenUri.ParsedImage.Updated", "true")
-		// 	}else{
-		// 		log.Error("image.Decode", err.Error(), err)
-		// 		return nil, err
-		// 	}
-	
-		// }else{
-		// 	log.Error("image.Decode", err.Error(), err)
-		// 	//return nil, err
-		// }
-
 	}
 
 	if tokenUri.ProjectID == "" {
