@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -50,17 +51,43 @@ func (h ScronHandler) StartServer() {
 		log.SetData("dispatch", disPatchOn)
 		log.SetData("time", time.Now().UTC())
 
-		err := h.Usecase.GetProjectsFromChain(span)
-		if err != nil {
-			log.Error("h.Usecase.UpdateProductPrice", err.Error(), err)
-		}
+		chanDone := make(chan bool, 2)
 		
-		err = h.Usecase.UpdateTokensFromChain(span)
-		if err != nil {
-			log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
-		}
+		go func (chanDone chan bool)  {
+			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.tokens")
+			defer span.Finish()
+
+			defer func() {
+				chanDone <- true
+			}()
+
+			err := h.Usecase.UpdateTokensFromChain(span)
+			if err != nil {
+				log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
+			}
+
+
+		}(chanDone)
+		
+		go func (chanDone chan bool)  {
+			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.project")
+			defer span.Finish()
+
+			defer func() {
+				chanDone <- true
+			}()
+
+			err := h.Usecase.GetProjectsFromChain(span)
+			if err != nil {
+				log.Error("h.Usecase.GetProjectsFromChain", err.Error(), err)
+			}
+		}(chanDone)
+		
+
+		spew.Dump(<- chanDone)
+		
 
 	})
-
+	
 	c.Start()
 }

@@ -33,6 +33,10 @@ func ProjectDetailKey(contractAddr string, tokenID string) string {
 	return fmt.Sprintf("project_detail_%s_%s",contractAddr, tokenID)
 }
 
+func ProjectDetailgenNftAddrrKey(genNftAddrr string) string {
+	return fmt.Sprintf("project_detail_gen_addrr_key_%s",genNftAddrr)
+}
+
 func ProjectRandomKey() string {
 	return fmt.Sprintf("project_random")
 }

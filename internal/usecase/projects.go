@@ -370,7 +370,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 	}
 	contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
 	if err != nil {
-		log.Error("u.getNftContractDetail", err.Error(), err)
+		log.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err
 	}
 	log.SetData("contractDetail", contractDetail)
