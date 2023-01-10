@@ -10,10 +10,10 @@ func ParseSort(key string) QuerySort {
 	sortParams["newest"] = QuerySort{Sort: -1, SortBy:  "created_at"}
 	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy:  "price"}
 	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy:  "minted_time"}
-
+	
 	sort, ok := sortParams[key]
 	if !ok {
-		return sortParams["created_at-desc"]
+		return sortParams["newest"]
 	}
 
 	return sort
