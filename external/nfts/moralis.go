@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -174,23 +175,30 @@ func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string,f MoralisFilter
 func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisToken, error) {
 	url := fmt.Sprintf("%s/%s", URLNft, "getMultipleNFTs")
 	fullUrl := m.generateUrl(url, &MoralisFilter{Chain: f.Chain})
-	
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(f.ReqBody)
 	if err != nil {
 			return nil, err
 	}
+
 	data, err := m.request(fullUrl, "POST", nil, &buf)
 	if err != nil {
 		return nil, err
 	}
-	
-	resp := make([]MoralisToken, 0);
+
+	spew.Dump("resp.Data", data)
+	resp := []MoralisToken{}
 	err = json.Unmarshal(data, &resp)
 	if err != nil {
-		return nil, err
+		messageResp := &MoralisMessage{}
+		err = json.Unmarshal(data, &messageResp)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(messageResp.Message)
 	}
 
+	spew.Dump("resp.Data.Parsed", resp)
 	return resp, nil
 }
 
@@ -238,30 +246,24 @@ func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID str
 }
 
 func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, tokenID string) (*MoralisToken, error) {
-	key :=  helpers.NftFromMoralisKey(contractAddr, tokenID)
-	liveReload := func(contractAddr string, tokenID string) (*MoralisToken, error) {
-		nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
-			Chain: nil,
-			ReqBody: MoralisGetMultipleNftsReqBody{
-				Tokens: []NftFilter{
-					{
-						TokenAddress: contractAddr,
-						TokenId: tokenID,
-					},
+	nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
+		Chain: nil,
+		ReqBody: MoralisGetMultipleNftsReqBody{
+			Tokens: []NftFilter{
+				{
+					TokenAddress: contractAddr,
+					TokenId: tokenID,
 				},
 			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(nfts) != 1 {
-			return nil, errors.New("cannot find moralis token") 
-		} else {
-
-			nft := nfts[0]
-			m.cache.SetData(key, nft)
-			return &nft, nil
-		}
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
-	return liveReload(contractAddr, tokenID)
+	if len(nfts) != 1 {
+		return nil, errors.New("cannot find moralis token") 
+	} 
+	
+	nft := nfts[0]
+	return &nft, nil
 }

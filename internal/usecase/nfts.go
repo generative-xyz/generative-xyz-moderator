@@ -32,6 +32,7 @@ func (u Usecase) GetNftMintedTime(rootSpan opentracing.Span, req structure.GetNf
 	// try to get block number minted and minted time from moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
 	if err != nil {
+		log.Error("u.GetNftMintedTime.MoralisNft.GetNftByContractAndTokenID", err.Error(), err)
 		return nil, err
 	}
 	blockNumber := nft.BlockNumberMinted
