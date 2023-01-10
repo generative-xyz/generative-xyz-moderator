@@ -33,6 +33,10 @@ func GenerateUserKey(accessToken string) string {
 	return fmt.Sprintf("userKey.%s.s%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
 }
 
+func GenerateUserWalletAddressKey(walletAddress string) string {
+	return fmt.Sprintf("userKey.walletAddress.%s", walletAddress)
+}
+
 func ProjectDetailKey(contractAddr string, tokenID string) string {
 	return fmt.Sprintf("project.detail.%s.%s",contractAddr, tokenID)
 }
