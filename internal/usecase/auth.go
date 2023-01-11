@@ -236,6 +236,10 @@ func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, da
 		user.DisplayName = *data.DisplayName
 	}
 	
+	if data.Avatar != nil && *data.Avatar != "" {
+		user.Avatar = *data.Avatar
+	}
+	
 	if data.Bio != nil {
 		user.Bio = *data.Bio
 	}
