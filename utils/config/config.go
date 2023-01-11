@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"rederinghub.io/utils/slack"
 )
 
 type Config struct {
@@ -28,6 +29,7 @@ type Config struct {
 	TxConsumerConfig TxConsumerConfig
 	MarketplaceEvents MarketplaceEvents
 	TimeResyncProjectStat int32
+	Slack slack.Config
 }
 
 type MQTTConfig struct {
@@ -210,6 +212,11 @@ func NewConfig() (*Config, error) {
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
+		Slack: slack.Config{
+			Token:     os.Getenv("SLACK_TOKEN"),
+			ChannelId:    os.Getenv("SLACK_CHANNEL_ID"),
+			Env:       os.Getenv("ENV"),
+		},
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")

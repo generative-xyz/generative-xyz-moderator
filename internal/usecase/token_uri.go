@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -229,7 +230,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("tokenUri.GenNFTAddr.Updated", tokenUri.GenNFTAddr)
 	}
 	
-	if tokenUri.Owner == nil  {
+	if tokenUri.Owner == nil || !reflect.DeepEqual(ownerProfileResp.Data, tokenUri.Owner)  {
 		isUpdate = true
 		tokenUri.Owner = ownerProfileResp.Data
 		log.SetData("tokenUri.GenNFTAddr.Owner", tokenUri.Owner)

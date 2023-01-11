@@ -30,6 +30,21 @@ func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketpl
 		Finished: false,
 		DurationTime: event.Data.DurationTime.String(),
 	}
+
+	sendMessage := func(rootSpan opentracing.Span, listing entity.MarketplaceListings) {
+		span, log := u.StartSpan("MakeListing.sendMessage", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		preText := fmt.Sprintf("[ListingID %s] has been created by %s", listing.OfferingId, listing.Seller)
+		content := fmt.Sprintf("TokenID: %s, collection: %s", listing.TokenId, listing.CollectionContract)
+		title := fmt.Sprintf("User %s create listing with %s",listing.Seller, listing.Price)
+
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		}
+	
+	}
+
 	log.SetTag("offeringID", listing.OfferingId)
 	// check if listing is created or not
 	_, err := u.Repo.FindListingByOfferingID(listing.OfferingId)
@@ -42,6 +57,8 @@ func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketpl
 				log.Error("error when create marketplace listing", "", err)
 				return err
 			}
+
+			sendMessage(span, listing)
 
 			// TODO: @dac add update collection stats here
 
@@ -82,13 +99,12 @@ func (u Usecase) PurchaseToken(rootSpan opentracing.Span, event *generative_mark
 		return token, nil
 	}
 
-	err = u.UpdateTokenOnwer(span, offeringID,  getToken, event.Buyer)
+	
+	err = u.UpdateTokenOnwer(span, "purchased", offeringID,  getToken, event.Buyer)
 	if err != nil {
 		log.Error("u.PurchaseToken.UpdateTokenOnwer", err.Error(), err)
 		return err
 	}
-
-	// TODO: @dac add update collection stats here
 
 	return nil
 }
@@ -108,6 +124,20 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 		DurationTime: event.Data.DurationTime.String(),
 	}
 
+	sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {
+		span, log := u.StartSpan("MakeOffer.sendMessage", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
+		content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
+		title := fmt.Sprintf("User %s made offer with %s",offer.Buyer, offer.Price)
+
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		}
+	
+	}
+
 	log.SetTag("offeringID", offer.OfferingId)
 	// check if listing is created or not
 	_, err := u.Repo.FindOfferByOfferingID(offer.OfferingId)
@@ -117,21 +147,26 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 			err := u.Repo.CreateMarketplaceOffer(&offer)
 	
 			if err != nil {
-				log.Error("error when create marketplace offer", "", err)
+				log.Error("makeOffer.Repo.CreateMarketplaceOffer", "", err)
 				return err
 			}
 
+			sendMessage(span, offer)
 			// TODO: @dac add update collection stats here
-			
 			return nil
 		} else {
+			log.Error("makeOffer.Repo.FindOfferByOfferingID", "", err)
 			return err
 		}
 	} else {
+		
+		err := errors.New("offer is already created")
 		// listing is already created
-		log.SetData("offer token offeringId", offer.OfferingId)
-		return errors.New("offer is already created")
+		log.Error("offer token offeringId", err.Error(), err)
+		return err
 	}
+
+	return nil
 }
 
 func (u Usecase) AcceptMakeOffer(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibAcceptMakeOffer) error {
@@ -161,7 +196,7 @@ func (u Usecase) AcceptMakeOffer(rootSpan opentracing.Span, event *generative_ma
 		return token, nil
 	}
 	
-	err = u.UpdateTokenOnwer(span, offeringID, getToken,event.Buyer)
+	err = u.UpdateTokenOnwer(span,"accepted", offeringID, getToken,event.Buyer)
 	if err != nil {
 		log.Error("u.UpdateTokenOnwer.UpdateTokenOnwer", err.Error(), err)
 		return err
@@ -194,11 +229,25 @@ func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_market
 	log.SetTag("offeringID", offeringID)
 	err := u.Repo.CancelOfferByOfferingID(offeringID)
 	if err != nil {
+		log.Error("s.Repo.CancelOfferByOfferingID", err.Error(), err)
 		return err
 	}
 
-	// TODO: @dac add update collection stats here
+	offer, err := u.Repo.FindOfferByOfferingID(offeringID)
+	if err != nil {
+		log.Error("s.Repo.FindOfferByOfferingID", err.Error(), err)
+		return err
+	}
 
+	preText := fmt.Sprintf("[OfferID %s] has been cancelled by %s", offer.OfferingId, offer.Buyer)
+	content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
+	title := fmt.Sprintf("User %s cancelled offer %s",offer.Buyer, offeringID)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
+
+	// TODO: @dac add update collection stats here
 	return nil
 }
 
@@ -370,7 +419,7 @@ func (u Usecase) GetListingBySeller(rootSpan opentracing.Span, sellerAddress str
 	return listings, contractIDS, tokenIDS, nil
 }
 
-func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span, offeringID string , fn func(offeringID string) (*entity.TokenUri, error), buyer common.Address) error {
+func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span,event string, offeringID string , fn func(offeringID string) (*entity.TokenUri, error), buyer common.Address) error {
 	span, log := u.StartSpan("UpdateTokenOnwer", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -391,6 +440,7 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span, offeringID string ,
 		return err
 	}
 
+	oldOwner := token.OwnerAddr
 	log.SetData("token.Owner", owner)
 	log.SetData(utils.WALLET_ADDRESS_TAG, owner)
 	token.Owner = profile
@@ -403,5 +453,18 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span, offeringID string ,
 	}
 
 	log.SetData("updated",updated)
+
+	//slack
+	preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
+	content := fmt.Sprintf("From address: %s - to address: %s", oldOwner, owner)
+	title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
+
+	// TODO: @dac add update collection stats here
+	
+
 	return nil
 }
