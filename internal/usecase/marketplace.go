@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -63,6 +64,27 @@ func (u Usecase) PurchaseToken(rootSpan opentracing.Span, event *generative_mark
 	log.SetTag("offeringID", offeringID)
 	err := u.Repo.PurchaseTokenByOfferingID(offeringID)
 	if err != nil {
+		log.Error("u.PurchaseToken.AcceptOfferByOfferingID", err.Error(), err)
+		return err
+	}
+
+	getToken := func(offeringID string) (*entity.TokenUri, error) {
+		listing, err := u.Repo.FindListingByOfferingID(offeringID)
+		if err != nil {
+			return nil, err
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
+		if err != nil {
+			return nil, err
+		}
+
+		return token, nil
+	}
+
+	err = u.UpdateTokenOnwer(span, offeringID,  getToken, event.Buyer)
+	if err != nil {
+		log.Error("u.PurchaseToken.UpdateTokenOnwer", err.Error(), err)
 		return err
 	}
 
@@ -120,11 +142,32 @@ func (u Usecase) AcceptMakeOffer(rootSpan opentracing.Span, event *generative_ma
 	log.SetTag("offeringID", offeringID)
 	err := u.Repo.AcceptOfferByOfferingID(offeringID)
 	if err != nil {
+		log.Error("u.AcceptMakeOffer.AcceptOfferByOfferingID", err.Error(), err)
+		return err
+	}
+
+	getToken := func(offeringID string) (*entity.TokenUri, error) {
+		
+		listing, err := u.Repo.FindOfferByOfferingID(offeringID)
+		if err != nil {
+			return nil, err
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
+		if err != nil {
+			return nil, err
+		}
+
+		return token, nil
+	}
+	
+	err = u.UpdateTokenOnwer(span, offeringID, getToken,event.Buyer)
+	if err != nil {
+		log.Error("u.UpdateTokenOnwer.UpdateTokenOnwer", err.Error(), err)
 		return err
 	}
 
 	// TODO: @dac add update collection stats here
-
 	return nil
 }
 
@@ -140,7 +183,6 @@ func (u Usecase) CancelListing(rootSpan opentracing.Span, event *generative_mark
 	}
 
 	// TODO: @dac add update collection stats here
-
 	return nil
 }
 
@@ -326,4 +368,40 @@ func (u Usecase) GetListingBySeller(rootSpan opentracing.Span, sellerAddress str
 	log.SetData("contractIDS", contractIDS)
 	log.SetData("tokenIDS", tokenIDS)
 	return listings, contractIDS, tokenIDS, nil
+}
+
+func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span, offeringID string , fn func(offeringID string) (*entity.TokenUri, error), buyer common.Address) error {
+	span, log := u.StartSpan("UpdateTokenOnwer", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	owner := strings.ToLower(buyer.String())
+	token, err := fn(offeringID)
+	if err != nil {
+		log.Error("UpdateTokenOnwer.fn", err.Error(), err)
+		return err
+	}
+
+	log.SetData("tokenID", token.TokenID)
+	log.SetTag("tokenID", token.TokenID)
+	log.SetTag("contractAddress", token.GenNFTAddr)
+
+	profile, err := u.Repo.FindUserByWalletAddress(owner)
+	if err != nil {
+		log.Error("UpdateTokenOnwer.FindUserByWalletAddress", err.Error(), err)
+		return err
+	}
+
+	log.SetData("token.Owner", owner)
+	log.SetData(utils.WALLET_ADDRESS_TAG, owner)
+	token.Owner = profile
+	token.OwnerAddr = owner
+
+	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
+	if err != nil {
+		log.Error("UpdateTokenOnwer.UpdateOrInsertTokenUri", err.Error(), err)
+		return err
+	}
+
+	log.SetData("updated",updated)
+	return nil
 }

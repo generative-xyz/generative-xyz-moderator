@@ -26,6 +26,7 @@ var (
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
+	_ = abi.ConvertType
 )
 
 // MarketplaceListingTokenData is an auto generated low-level Go binding around an user-defined struct.
@@ -33,6 +34,17 @@ type MarketplaceListingTokenData struct {
 	CollectionContract common.Address
 	TokenId            *big.Int
 	Seller             common.Address
+	Erc20Token         common.Address
+	Price              *big.Int
+	Closed             bool
+	DurationTime       *big.Int
+}
+
+// MarketplaceMakeOfferCollectionData is an auto generated low-level Go binding around an user-defined struct.
+type MarketplaceMakeOfferCollectionData struct {
+	CollectionContract common.Address
+	TokenIds           []*big.Int
+	Buyer              common.Address
 	Erc20Token         common.Address
 	Price              *big.Int
 	Closed             bool
@@ -52,7 +64,7 @@ type MarketplaceMakeOfferData struct {
 
 // GenerativeMarketplaceMetaData contains all meta data concerning the GenerativeMarketplace contract.
 var GenerativeMarketplaceMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"_admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_allowableERC20MakeListToken\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_allowableERC20MakeOffer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_arrayListingId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_arrayMakeOfferId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_listingTokenDataMapping\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_listingTokenIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"_listingTokens\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_makeOfferDataMapping\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_makeOfferTokenIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"_makeOfferTokens\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_parameterAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"}],\"name\":\"acceptMakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_offeringId\",\"type\":\"bytes32\"}],\"name\":\"cancelListing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"}],\"name\":\"cancelMakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdm\",\"type\":\"address\"}],\"name\":\"changeAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeParamAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"admin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"parameterControl\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"internalType\":\"structMarketplace.ListingTokenData\",\"name\":\"listingData\",\"type\":\"tuple\"}],\"name\":\"listToken\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"internalType\":\"structMarketplace.MakeOfferData\",\"name\":\"makeOfferData\",\"type\":\"tuple\"}],\"name\":\"makeOffer\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offeringId\",\"type\":\"bytes32\"}],\"name\":\"purchaseToken\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allow\",\"type\":\"bool\"}],\"name\":\"setApproveERC20ListToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allow\",\"type\":\"bool\"}],\"name\":\"setApproveERC20MakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"erc20Addr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"_admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_allowableERC20MakeListToken\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_allowableERC20MakeOffer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_arrayListingId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_arrayMakeOfferId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_listingTokenDataMapping\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_listingTokenIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"_listingTokens\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_makeOfferDataMapping\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"_makeOfferTokenIds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"_makeOfferTokens\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_parameterAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"}],\"name\":\"acceptMakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_offeringId\",\"type\":\"bytes32\"}],\"name\":\"cancelListing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"}],\"name\":\"cancelMakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdm\",\"type\":\"address\"}],\"name\":\"changeAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeParamAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"admin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"parameterControl\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_seller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"internalType\":\"structMarketplace.ListingTokenData\",\"name\":\"listingData\",\"type\":\"tuple\"}],\"name\":\"listToken\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"internalType\":\"structMarketplace.MakeOfferData\",\"name\":\"makeOfferData\",\"type\":\"tuple\"}],\"name\":\"makeOffer\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_collectionContract\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"_tokenIds\",\"type\":\"uint256[]\"},{\"internalType\":\"address\",\"name\":\"_buyer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_erc20Token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_closed\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"_durationTime\",\"type\":\"uint256\"}],\"internalType\":\"structMarketplace.MakeOfferCollectionData\",\"name\":\"makeOfferCollectionData\",\"type\":\"tuple\"}],\"name\":\"makeOfferCollection\",\"outputs\":[{\"internalType\":\"bytes32[]\",\"name\":\"result\",\"type\":\"bytes32[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offeringId\",\"type\":\"bytes32\"}],\"name\":\"purchaseToken\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allow\",\"type\":\"bool\"}],\"name\":\"setApproveERC20ListToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"erc20\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allow\",\"type\":\"bool\"}],\"name\":\"setApproveERC20MakeOffer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32[]\",\"name\":\"offers\",\"type\":\"bytes32[]\"}],\"name\":\"sweep\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"updateListingPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"offerId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"updateMakeOfferPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"erc20Addr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // GenerativeMarketplaceABI is the input ABI used to generate the binding from.
@@ -156,11 +168,11 @@ func NewGenerativeMarketplaceFilterer(address common.Address, filterer bind.Cont
 
 // bindGenerativeMarketplace binds a generic wrapper to an already deployed contract.
 func bindGenerativeMarketplace(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(GenerativeMarketplaceABI))
+	parsed, err := GenerativeMarketplaceMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -897,6 +909,27 @@ func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) MakeOffer(
 	return _GenerativeMarketplace.Contract.MakeOffer(&_GenerativeMarketplace.TransactOpts, makeOfferData)
 }
 
+// MakeOfferCollection is a paid mutator transaction binding the contract method 0x2670ab0f.
+//
+// Solidity: function makeOfferCollection((address,uint256[],address,address,uint256,bool,uint256) makeOfferCollectionData) returns(bytes32[] result)
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactor) MakeOfferCollection(opts *bind.TransactOpts, makeOfferCollectionData MarketplaceMakeOfferCollectionData) (*types.Transaction, error) {
+	return _GenerativeMarketplace.contract.Transact(opts, "makeOfferCollection", makeOfferCollectionData)
+}
+
+// MakeOfferCollection is a paid mutator transaction binding the contract method 0x2670ab0f.
+//
+// Solidity: function makeOfferCollection((address,uint256[],address,address,uint256,bool,uint256) makeOfferCollectionData) returns(bytes32[] result)
+func (_GenerativeMarketplace *GenerativeMarketplaceSession) MakeOfferCollection(makeOfferCollectionData MarketplaceMakeOfferCollectionData) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.MakeOfferCollection(&_GenerativeMarketplace.TransactOpts, makeOfferCollectionData)
+}
+
+// MakeOfferCollection is a paid mutator transaction binding the contract method 0x2670ab0f.
+//
+// Solidity: function makeOfferCollection((address,uint256[],address,address,uint256,bool,uint256) makeOfferCollectionData) returns(bytes32[] result)
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) MakeOfferCollection(makeOfferCollectionData MarketplaceMakeOfferCollectionData) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.MakeOfferCollection(&_GenerativeMarketplace.TransactOpts, makeOfferCollectionData)
+}
+
 // PurchaseToken is a paid mutator transaction binding the contract method 0x3ac1089a.
 //
 // Solidity: function purchaseToken(bytes32 offeringId) payable returns()
@@ -958,6 +991,69 @@ func (_GenerativeMarketplace *GenerativeMarketplaceSession) SetApproveERC20MakeO
 // Solidity: function setApproveERC20MakeOffer(address erc20, bool allow) returns()
 func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) SetApproveERC20MakeOffer(erc20 common.Address, allow bool) (*types.Transaction, error) {
 	return _GenerativeMarketplace.Contract.SetApproveERC20MakeOffer(&_GenerativeMarketplace.TransactOpts, erc20, allow)
+}
+
+// Sweep is a paid mutator transaction binding the contract method 0x6852168a.
+//
+// Solidity: function sweep(bytes32[] offers) payable returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactor) Sweep(opts *bind.TransactOpts, offers [][32]byte) (*types.Transaction, error) {
+	return _GenerativeMarketplace.contract.Transact(opts, "sweep", offers)
+}
+
+// Sweep is a paid mutator transaction binding the contract method 0x6852168a.
+//
+// Solidity: function sweep(bytes32[] offers) payable returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceSession) Sweep(offers [][32]byte) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.Sweep(&_GenerativeMarketplace.TransactOpts, offers)
+}
+
+// Sweep is a paid mutator transaction binding the contract method 0x6852168a.
+//
+// Solidity: function sweep(bytes32[] offers) payable returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) Sweep(offers [][32]byte) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.Sweep(&_GenerativeMarketplace.TransactOpts, offers)
+}
+
+// UpdateListingPrice is a paid mutator transaction binding the contract method 0x3e93d0cd.
+//
+// Solidity: function updateListingPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactor) UpdateListingPrice(opts *bind.TransactOpts, offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.contract.Transact(opts, "updateListingPrice", offerId, price)
+}
+
+// UpdateListingPrice is a paid mutator transaction binding the contract method 0x3e93d0cd.
+//
+// Solidity: function updateListingPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceSession) UpdateListingPrice(offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.UpdateListingPrice(&_GenerativeMarketplace.TransactOpts, offerId, price)
+}
+
+// UpdateListingPrice is a paid mutator transaction binding the contract method 0x3e93d0cd.
+//
+// Solidity: function updateListingPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) UpdateListingPrice(offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.UpdateListingPrice(&_GenerativeMarketplace.TransactOpts, offerId, price)
+}
+
+// UpdateMakeOfferPrice is a paid mutator transaction binding the contract method 0x9c9b62aa.
+//
+// Solidity: function updateMakeOfferPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactor) UpdateMakeOfferPrice(opts *bind.TransactOpts, offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.contract.Transact(opts, "updateMakeOfferPrice", offerId, price)
+}
+
+// UpdateMakeOfferPrice is a paid mutator transaction binding the contract method 0x9c9b62aa.
+//
+// Solidity: function updateMakeOfferPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceSession) UpdateMakeOfferPrice(offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.UpdateMakeOfferPrice(&_GenerativeMarketplace.TransactOpts, offerId, price)
+}
+
+// UpdateMakeOfferPrice is a paid mutator transaction binding the contract method 0x9c9b62aa.
+//
+// Solidity: function updateMakeOfferPrice(bytes32 offerId, uint256 price) returns()
+func (_GenerativeMarketplace *GenerativeMarketplaceTransactorSession) UpdateMakeOfferPrice(offerId [32]byte, price *big.Int) (*types.Transaction, error) {
+	return _GenerativeMarketplace.Contract.UpdateMakeOfferPrice(&_GenerativeMarketplace.TransactOpts, offerId, price)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0xd9caed12.

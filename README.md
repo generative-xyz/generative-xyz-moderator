@@ -18,10 +18,10 @@ abigen --pkg generative_project_data --abi  ./artifacts/contracts/data/Generativ
 ```
 
 ```
-abigen --pkg generative_marketplace --abi  ./artifacts/contracts/services/AdvanceMarketplaceService.sol/AdvanceMarketplaceService.json --out /Users/dacdodinh/projects/generative-xyz-moderator/utils/contracts/generative_marketplace/GenerativeMarketplace.go
+abigen --pkg generative_marketplace --abi  ./artifacts/contracts/services/AdvanceMarketplaceService.sol/AdvanceMarketplaceService.json --out /Users/autonomous/go/src/rendering-hub/utils/contracts/generative_marketplace/GenerativeMarketplace.go
 ```
 
 ```
-abigen --pkg generative_marketplace_lib --abi  ./artifacts/contracts/libs/structs/Marketplace.sol/Marketplace.json --out /Users/dacdodinh/projects/generative-xyz-moderator/utils/contracts/generative_marketplace_lib/GenerativeMarketplaceLib.go
+abigen --pkg generative_marketplace_lib --abi  ./artifacts/contracts/libs/structs/Marketplace.sol/Marketplace.json --out /Users/autonomous/go/src/rendering-hub/utils/contracts/generative_marketplace_lib/GenerativeMarketplaceLib.go
 ```
  
