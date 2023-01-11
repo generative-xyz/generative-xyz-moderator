@@ -128,13 +128,18 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		return err
 	}
 
+	log.SetData("logs", logs)
 	for _, _log := range logs {
 		// marketplace logs
+		log.SetData("_log.Address.String()", _log.Address.String())
+		log.SetData("c.Config.MarketplaceEvents.Contract", c.Config.MarketplaceEvents.Contract)
+		
 		if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
 			topic :=  strings.ToLower(_log.Topics[0].String())
 			log.SetData("topic", topic)
 			log.SetData("topic tx hash", _log.TxHash)
 			log.SetData("topic block number", _log.BlockNumber)
+			
 			switch topic {
 			case c.Config.MarketplaceEvents.ListToken:
 				log.SetTag("event", "ListToken")
