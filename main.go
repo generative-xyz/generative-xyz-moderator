@@ -19,6 +19,7 @@ import (
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/slack"
 	"rederinghub.io/utils/tracer"
 
 	"github.com/gorilla/mux"
@@ -94,6 +95,7 @@ func startServer() {
 
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
 	covalent := nfts.NewCovalentNfts(conf);
+	slack := slack.NewSlack(conf.Slack)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -109,6 +111,7 @@ func startServer() {
 		MoralisNFT: *moralis,
 		CovalentNFT: *covalent,
 		Blockchain: *ethClient,
+		Slack: *slack,
 	}
 
 	repo, err := repository.NewRepository(&g)

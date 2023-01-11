@@ -9,6 +9,7 @@ import (
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/slack"
 	"rederinghub.io/utils/tracer"
 
 	"github.com/gorilla/mux"
@@ -28,4 +29,5 @@ type Global struct {
 	MoralisNFT nfts.MoralisNfts
 	CovalentNFT nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
+	Slack slack.Slack
 }

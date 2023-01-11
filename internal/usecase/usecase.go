@@ -11,6 +11,7 @@ import (
 	"rederinghub.io/utils/mqttClient"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/slack"
 	"rederinghub.io/utils/tracer"
 
 	"github.com/opentracing/opentracing-go"
@@ -30,6 +31,7 @@ type Usecase struct {
 	MoralisNft nfts.MoralisNfts
 	CovalentNft nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
+	Slack slack.Slack
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -45,6 +47,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.MoralisNft = global.MoralisNFT
 	u.CovalentNft = global.CovalentNFT
 	u.Blockchain = global.Blockchain
+	u.Slack = global.Slack
 	return u, nil
 }
 
