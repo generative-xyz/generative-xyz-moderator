@@ -35,6 +35,7 @@ type UpdateProfile struct {
 	DisplayName *string 
 	Bio *string 
 	ProfileSocial ProfileSocial
+	Avatar *string
 }
 
 type ProfileSocial  struct{
