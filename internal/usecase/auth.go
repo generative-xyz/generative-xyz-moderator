@@ -264,6 +264,14 @@ func  (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, da
 		user.ProfileSocial.Web = *data.ProfileSocial.Web
 	}
 	
+	if data.ProfileSocial.Instagram != nil {
+		user.ProfileSocial.Instagram = *data.ProfileSocial.Instagram
+	}
+	
+	if data.ProfileSocial.EtherScan != nil {
+		user.ProfileSocial.EtherScan = *data.ProfileSocial.EtherScan
+	}
+	
 	updated, err := u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
 		log.Error("u.Repo.UpdateUserByID", err.Error(), err)

@@ -2076,6 +2076,9 @@ var doc = `{
                 "discord": {
                     "type": "string"
                 },
+                "etherScan": {
+                    "type": "string"
+                },
                 "instagram": {
                     "type": "string"
                 },
