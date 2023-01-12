@@ -154,7 +154,7 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 
 		preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
 		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-		title := fmt.Sprintf("User %s create listing with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
+		title := fmt.Sprintf("User %s made offer with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
