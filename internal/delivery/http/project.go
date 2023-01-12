@@ -286,6 +286,24 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		BestMakeOfferPrice: input.Stats.BestMakeOfferPrice,
 		ListedPercent: input.Stats.ListedPercent,
 	}
+	if input.TraitsStat != nil {
+		traitStat := make([]response.TraitStat, 0)
+		for _, v := range input.TraitsStat {
+			traitValueStats := make([]response.TraitValueStat, 0)
+			for _, vv := range v.TraitValuesStat {
+				traitValueStats = append(traitValueStats, response.TraitValueStat{
+					Value: vv.Value,
+					Rarity: vv.Rarity,
+				})
+			}
+			traitStat = append(traitStat, response.TraitStat{
+				TraitName: v.TraitName,
+				TraitValuesStat: traitValueStats,
+			})
+		}
+		resp.TraitStat = traitStat
+	}
+
 
 	profileResp, err  := h.profileToResp(&input.CreatorProfile)
 	if err == nil {

@@ -2,6 +2,15 @@ package response
 
 import "time"
 
+type TraitValueStat struct {
+	Value  string `json:"value"`
+	Rarity int32  `json:"rarity"`
+}
+
+type TraitStat struct {
+	TraitName       string           `json:"traitName"`
+	TraitValuesStat []TraitValueStat `json:"traitValuesStat"`
+}
 
 type ProjectResp struct{
 	BaseResponse
@@ -32,6 +41,7 @@ type ProjectResp struct{
 	BlockNumberMinted *string           `json:"blockNumberMinted"`
 	MintedTime       *time.Time        `json:"mintedTime"`
 	Stats ProjectStatResp `json:"stats"`
+	TraitStat []TraitStat `json:"traitStat"`
 }
 
 type ProjectStatResp struct {

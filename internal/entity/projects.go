@@ -8,14 +8,24 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type TraitValueStat struct {
+	Value  string `bson:"value" json:"value"`
+	Rarity int32  `bson:"rarity" json:"rarity"`
+}
+
+type TraitStat struct {
+	TraitName       string           `bson:"traitName" json:"traitName"`
+	TraitValuesStat []TraitValueStat `bson:"traitValuesStat" json:"traitValuesStat"`
+}
+
 type ProjectStat struct {
 	LastTimeSynced   *time.Time `bson:"lastTimeSynced" json:"lastTimeSynced"`
 	UniqueOwnerCount uint32     `bson:"uniqueOwnerCount" json:"uniqueOwnerCount"`
 	// TODO add other stats here
-	TotalTradingVolumn string `bson:"totalTradingVolumn" json:"totalTradingVolumn"`
-	FloorPrice         string `bson:"floorPrice" json:"floorPrice"`
-	BestMakeOfferPrice string `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
-	ListedPercent      int32  `bson:"listedPercent" json:"listedPercent"`
+	TotalTradingVolumn string      `bson:"totalTradingVolumn" json:"totalTradingVolumn"`
+	FloorPrice         string      `bson:"floorPrice" json:"floorPrice"`
+	BestMakeOfferPrice string      `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
+	ListedPercent      int32       `bson:"listedPercent" json:"listedPercent"`
 }
 
 type Projects struct {
@@ -60,6 +70,7 @@ type Projects struct {
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"`
 	Stats                 ProjectStat        `bson:"stats"`
+	TraitsStat         []TraitStat `bson:"traitsStat" json:"traitsStat"`
 }
 
 type	ProjectMintingInfo struct {
