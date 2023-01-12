@@ -35,6 +35,7 @@ type TokenUri struct {
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
 	GenNFTAddr string `bson:"gen_nft_addrress"`
+	Thumbnail string `bson:"thumbnail"`
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`
