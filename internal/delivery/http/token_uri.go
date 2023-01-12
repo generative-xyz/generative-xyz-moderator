@@ -2,9 +2,7 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -419,7 +417,7 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 		}
 	}
 
-	resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
+	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
 
 	return resp, nil
 }
@@ -489,52 +487,3 @@ func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
-// UserCredits godoc
-// @Summary get token uri data
-// @Description get token uri data
-// @Tags Token for Opensea
-// @Accept  json
-// @Produce  json
-// @Param contractAddress path string true "contract address"
-// @Param tokenID path string true "token ID"
-// @Param captureTimeout query integer false "Capture timeout"
-// @Success 200 {object} response.JsonResponse{data=response.TokenURIResp}
-// @Router /thumbnail/{contractAddress}/{tokenID} [GET]
-func (h *httpDelivery) tokenThumbnail(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenURI", r)
-	defer h.Tracer.FinishSpan(span, log)
-
-	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
-
-	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
-
-	captureTimeout := r.URL.Query().Get("captureTimeout")
-	log.SetData("captureTimeout", captureTimeout)
-	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
-	if errT != nil {
-		captureTimeoutInt = 5
-	}
-
-	tok, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
-		ContractAddress: contractAddress,
-		TokenID:         tokenID,
-	}, captureTimeoutInt)
-
-	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	fileBytes := []byte(*tok.ParsedImage)
-	header := fmt.Sprintf("attachment; filename=%s", tok.TokenID)
-	w.Header().Set("Content-Disposition", header)
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.WriteHeader(http.StatusOK)
-	//w.Header().Set("Content-Length", fmt.Sprintf("%d", firmware.FileSize))
-	w.Write(fileBytes)
-
-	http.ServeFile(w, r, tok.TokenID)
-}
