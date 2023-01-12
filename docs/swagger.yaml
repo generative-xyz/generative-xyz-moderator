@@ -41,6 +41,8 @@ definitions:
     properties:
       discord:
         type: string
+      etherScan:
+        type: string
       instagram:
         type: string
       medium:

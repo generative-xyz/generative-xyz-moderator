@@ -129,8 +129,8 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 		defer u.Tracer.FinishSpan(span, log)
 
 		preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
-		content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
-		title := fmt.Sprintf("User %s made offer with %s",offer.Buyer, offer.Price)
+		content := fmt.Sprintf("TokenID: %s, collection: %s, amount: %s", offer.TokenId, offer.CollectionContract, offer.Price)
+		title := fmt.Sprintf("User %s made offer",offer.Buyer)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
@@ -215,6 +215,20 @@ func (u Usecase) CancelListing(rootSpan opentracing.Span, event *generative_mark
 	err := u.Repo.CancelListingByOfferingID(offeringID)
 	if err != nil {
 		return err
+	}
+
+	offer, err := u.Repo.FindListingByOfferingID(offeringID)
+	if err != nil {
+		log.Error("cancelListing.FindListingByOfferingID", err.Error(), err)
+		return err
+	}
+
+	preText := fmt.Sprintf("[OfferID %s] has been cancelled by %s", offer.OfferingId, offer.Seller)
+	content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
+	title := fmt.Sprintf("User %s cancelled offer %s",offer.Seller, offeringID)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 	}
 
 	// TODO: @dac add update collection stats here

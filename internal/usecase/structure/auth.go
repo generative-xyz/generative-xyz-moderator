@@ -44,6 +44,7 @@ type ProfileSocial  struct{
     Discord *string 
     Medium *string 
 	Instagram *string 
+	EtherScan *string 
 }
 
 type ProfileChan struct {
