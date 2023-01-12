@@ -34,6 +34,7 @@ type ProfileSocial  struct{
     Discord string `json:"discord"`;
     Medium string `json:"medium"`;
 	Instagram string `json:"instagram"`;
+	EtherScan string `json:"etherScan"`;
 }
 
 
