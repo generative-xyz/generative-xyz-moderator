@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -331,6 +332,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, err
 	}
 
+	spew.Dump(nftProjectDetail)
 	nftProject := nftProjectDetail.ProjectDetail
 	parentAddr := nftProject.GenNFTAddr
 	
@@ -344,7 +346,8 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	log.SetData("parentAddr", parentAddr)
-
+	log.SetData("tokenUriData", tokenUriData)
+	
 	base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 	data, err := helpers.Base64Decode(base64Str)
 	if err != nil {
@@ -352,8 +355,19 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, err
 	}
 
+	stringData := string(data)
+	stringData = strings.ReplaceAll(stringData, "\n", "\\n")
+	stringData = strings.ReplaceAll(stringData, "\b", "\\b")
+	stringData = strings.ReplaceAll(stringData, "\f", "\\f")
+	stringData = strings.ReplaceAll(stringData, "\r", "\\r")
+	stringData = strings.ReplaceAll(stringData, "\t", "\\t")
+
+	spew.Dump(stringData)
+	log.SetData("base64Str", base64Str)
+	log.SetData("stringData", stringData)
+
 	dataObject := &entity.TokenUri{}
-	err = json.Unmarshal(data, dataObject)
+	err = json.Unmarshal([]byte(stringData), dataObject)
 	if err != nil {
 		log.Error("json.Unmarshal", err.Error(), err)
 		return nil, err
