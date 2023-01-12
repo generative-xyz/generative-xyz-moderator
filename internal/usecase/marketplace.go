@@ -35,9 +35,21 @@ func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketpl
 		span, log := u.StartSpan("MakeListing.sendMessage", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
+		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
+		if err != nil {
+			log.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
+			return 
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
+		if err != nil {
+			log.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
+			return 
+		}
+
 		preText := fmt.Sprintf("[ListingID %s] has been created by %s", listing.OfferingId, listing.Seller)
-		content := fmt.Sprintf("TokenID: %s, collection: %s", listing.TokenId, listing.CollectionContract)
-		title := fmt.Sprintf("User %s create listing with %s",listing.Seller, listing.Price)
+		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("User %s create listing with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), listing.Price)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
@@ -128,9 +140,21 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 		span, log := u.StartSpan("MakeOffer.sendMessage", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
+		profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
+		if err != nil {
+			log.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
+			return 
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
+		if err != nil {
+			log.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
+			return 
+		}
+
 		preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
-		content := fmt.Sprintf("TokenID: %s, collection: %s, amount: %s", offer.TokenId, offer.CollectionContract, offer.Price)
-		title := fmt.Sprintf("User %s made offer",offer.Buyer)
+		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("User %s create listing with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
@@ -217,19 +241,41 @@ func (u Usecase) CancelListing(rootSpan opentracing.Span, event *generative_mark
 		return err
 	}
 
-	offer, err := u.Repo.FindListingByOfferingID(offeringID)
-	if err != nil {
-		log.Error("cancelListing.FindListingByOfferingID", err.Error(), err)
-		return err
-	}
+	done := make(chan bool)
+	go func (rootSpan opentracing.Span, done chan bool)  {
+		span, log := u.StartSpan("CancelListing.sendMessage", rootSpan)
+		defer func ()  {
+			done <- true
+		}()
+		defer u.Tracer.FinishSpan(span, log)
 
-	preText := fmt.Sprintf("[OfferID %s] has been cancelled by %s", offer.OfferingId, offer.Seller)
-	content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
-	title := fmt.Sprintf("User %s cancelled offer %s",offer.Seller, offeringID)
+		listing, err := u.Repo.FindListingByOfferingID(offeringID)
+		if err != nil {
+			log.Error("cancelListing.FindListingByOfferingID", err.Error(), err)
+			return 
+		}
 
-	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
-	}
+		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
+		if err != nil {
+			log.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
+			return 
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
+		if err != nil {
+			log.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
+			return 
+		}
+
+		preText := fmt.Sprintf("[Listing %s] has been cancelled by %s", listing.OfferingId, listing.Seller)
+		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName) , offeringID)
+
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		}	
+	}(span, done)
+	<- done
 
 	// TODO: @dac add update collection stats here
 	return nil
@@ -247,19 +293,44 @@ func (u Usecase) CancelOffer(rootSpan opentracing.Span, event *generative_market
 		return err
 	}
 
-	offer, err := u.Repo.FindOfferByOfferingID(offeringID)
-	if err != nil {
-		log.Error("s.Repo.FindOfferByOfferingID", err.Error(), err)
-		return err
-	}
+	done := make(chan bool)
+	go func (rootSpan opentracing.Span, done chan bool)  {
+		span, log := u.StartSpan("CancelOffer.sendMessage", rootSpan)
+		defer func ()  {
+			done <- true
+		}()
+		defer u.Tracer.FinishSpan(span, log)
 
-	preText := fmt.Sprintf("[OfferID %s] has been cancelled by %s", offer.OfferingId, offer.Buyer)
-	content := fmt.Sprintf("TokenID: %s, collection: %s", offer.TokenId, offer.CollectionContract)
-	title := fmt.Sprintf("User %s cancelled offer %s",offer.Buyer, offeringID)
+		offer, err := u.Repo.FindOfferByOfferingID(offeringID)
+		if err != nil {
+			log.Error("s.Repo.FindOfferByOfferingID", err.Error(), err)
+			return 
+		}
 
-	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
-	}
+		profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
+		if err != nil {
+			log.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
+			return 
+		}
+
+		token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
+		if err != nil {
+			log.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
+			return 
+		}
+
+		preText := fmt.Sprintf("[Listing %s] has been cancelled by %s", offer.OfferingId, offer.Buyer)
+		content := fmt.Sprintf("TokenID: %s",  helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName) , offeringID)
+
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		}	
+
+	}(span, done)
+	<- done
+
+	
 
 	// TODO: @dac add update collection stats here
 	return nil
@@ -306,7 +377,6 @@ func (u Usecase) FilterMKListing(rootSpan opentracing.Span, filter structure.Fil
 	
 	ml.Result = listingResp
 	return ml, nil
-	
 }
 
 func (u Usecase) FilterMKOffers(rootSpan opentracing.Span, filter structure.FilterMkOffers) (*entity.Pagination, error) {
@@ -454,7 +524,6 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span,event string, offeri
 		return err
 	}
 
-	oldOwner := token.OwnerAddr
 	log.SetData("token.Owner", owner)
 	log.SetData(utils.WALLET_ADDRESS_TAG, owner)
 	token.Owner = profile
@@ -470,7 +539,7 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span,event string, offeri
 
 	//slack
 	preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
-	content := fmt.Sprintf("From address: %s - to address: %s", oldOwner, owner)
+	content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner,  profile.DisplayName),  helpers.CreateTokenLink( token.ProjectID, token.TokenID,  token.Name))
 	title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {

@@ -5,11 +5,11 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
-	"rederinghub.io/utils/identicon"
-
 	"go.mongodb.org/mongo-driver/bson"
+	"rederinghub.io/utils/identicon"
 )
 
 func GenerateMd5String(input string) string {
@@ -96,4 +96,14 @@ func HexaNumberToInteger(hexaString string) string {
 
 func CreateIcon(name *string) string {
 	return identicon.CreateIcon(name)
+}
+
+func CreateProfileLink(walletAdress string, displayName string) string {
+	link := fmt.Sprintf("%s/profile/%s",os.Getenv("DOMAIN"),walletAdress)
+	return fmt.Sprintf("<%s|%s>", link, displayName)
+}
+
+func CreateTokenLink( projectID string, tokenID string, tokenName string) string {
+	link := fmt.Sprintf("%s/generative/%s/%s",os.Getenv("DOMAIN"),projectID, tokenID)
+	return fmt.Sprintf("<%s|%s>", link, tokenName)
 }
