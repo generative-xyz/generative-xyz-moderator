@@ -204,22 +204,22 @@ func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure
 	return projects, nil
 }
 
-func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, error) {
+func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat,error) {
 	span, log := u.StartSpan("SyncProjectStats", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// do not resync
 	if project.Stats.LastTimeSynced != nil && project.Stats.LastTimeSynced.Unix() + int64(u.Config.TimeResyncProjectStat) > time.Now().Unix() {
-		return &project.Stats, nil
+		return &project.Stats, project.TraitsStat,nil
 	}
 
 	allTokenFromDb, err := u.Repo.GetAllTokensByProjectID(project.TokenID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	owners := make(map[string]bool)
 	for _, token := range allTokenFromDb {
@@ -232,13 +232,13 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	allListings, err = u.Repo.GetAllListingByCollectionContract(project.GenNFTAddr)
 	if err != nil {
 		log.Error("u.Repo.GetAllListingByCollectionContract", err.Error(), err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	allOffers, err = u.Repo.GetAllOfferByCollectionContract(project.GenNFTAddr)
 	if err != nil {
 		log.Error("u.Repo.GetAllOfferByCollectionContract", err.Error(), err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	var totalTradingVolumn *big.Int
@@ -271,15 +271,19 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 			}
 			totalTradingVolumn.Add(totalTradingVolumn, price)
 		}
-		// update floor price
+		// update listing percent
 		if !listing.Closed && (time.Now().Unix() < durationTime || durationTime == 0) {
+			listingSet[listing.TokenId] = true
+		}
+
+		// update floor price
+		if listing.Finished {
 			if floorPrice == nil {
 				floorPrice = price
 			} else {
 				if floorPrice.Cmp(price) > 0 {
 					floorPrice = price
 				}
-				listingSet[listing.CollectionContract] = true
 			}
 		}
 	}
@@ -317,6 +321,16 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 			}
 		}
 
+		// update floor price
+		if offer.Finished {
+			if floorPrice == nil {
+				floorPrice = price
+			} else {
+				if floorPrice.Cmp(price) > 0 {
+					floorPrice = price
+				}
+			}
+		}
 	}
 
 	if len(allTokenFromDb) > 0 {
@@ -336,7 +350,36 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		bestMakeOfferPrice = new(big.Int)
 	}
 
+	// update trait stats
+	traitToCnt := make(map[string]int32)
+	traitValueToCnt := make(map[string]map[string]int32)
+	for _, token := range allTokenFromDb {
+		for _, attribute := range token.ParsedAttributes {
+			traitToCnt[attribute.TraitType] += 1
+			if traitValueToCnt[attribute.TraitType] == nil {
+				traitValueToCnt[attribute.TraitType] = make(map[string]int32)
+			}
+			traitValueToCnt[attribute.TraitType][fmt.Sprintf("%v", attribute.Value)] += 1
+		}
+	}
+
+	traitsStat := make([]entity.TraitStat, 0)
+	for k, cnt := range traitToCnt {
+		traitValueStat := make([]entity.TraitValueStat, 0)
+		for value, cntValue := range traitValueToCnt[k] {
+			traitValueStat = append(traitValueStat, entity.TraitValueStat{
+				Value: value,
+				Rarity: int32(cntValue * 100 / cnt),
+			})
+		}
+		traitsStat = append(traitsStat, entity.TraitStat{
+			TraitName: k,
+			TraitValuesStat: traitValueStat,
+		})
+	}
+
 	now := time.Now()
+
 	return &entity.ProjectStat{
 		LastTimeSynced: &now,
 		UniqueOwnerCount: uint32(len(owners)),
@@ -344,7 +387,7 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		FloorPrice: floorPrice.String(),
 		BestMakeOfferPrice: bestMakeOfferPrice.String(),
 		ListedPercent: listedPercent,
-	}, nil
+	}, traitsStat, nil
 }
 
 

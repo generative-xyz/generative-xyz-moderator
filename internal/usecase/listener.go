@@ -29,6 +29,7 @@ type projectDetailChan struct {
 
 type projectStatChan struct {
 	Data *entity.ProjectStat
+	DataTrait []entity.TraitStat
 	Err error
 }
 
@@ -289,16 +290,18 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		span, log := u.StartSpan("GetProjectDetail.ProjectStat", rootSpan)
 		defer u.Tracer.FinishSpan(span, log )
 		projectStat := &entity.ProjectStat{}
+		traitStat := make([]entity.TraitStat, 0)
 		var err error
 
 		defer func  ()  {
 			pDChan <- projectStatChan {
 				Data: projectStat,
+				DataTrait: traitStat,
 				Err:  err,
 			}
 		}()
 
-		projectStat, err = u.GetUpdatedProjectStats(span, structure.GetProjectReq{
+		projectStat, traitStat, err = u.GetUpdatedProjectStats(span, structure.GetProjectReq{
 			ContractAddr: contractAddr,
 			TokenID: tokenIDStr,
 		})
@@ -432,6 +435,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		log.Error("projectStatFChan.Err", projectStatFChan.Err.Error(), projectStatFChan.Err)
 	} else {
 		project.Stats = *projectStatFChan.Data
+		project.TraitsStat = projectStatFChan.DataTrait
 	}
 
 	log.SetData("project",project)
