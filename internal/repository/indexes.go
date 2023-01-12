@@ -22,6 +22,8 @@ func (r Repository) CreateTokenURIIndexModel() ([]string, error) {
 		{ Keys: bson.M{"project_id_int":  -1,}, Options:  options.Index().SetName("project_id_int_desc") ,} ,
 		{ Keys: bson.M{"owner_addrress":  -1,}, Options:  options.Index().SetName("owner_addrress_desc") ,} ,		
 		{ Keys: bson.M{"creator_address":  -1,}, Options:  options.Index().SetName("creator_address_desc") ,} ,
+		{ Keys: bson.M{"created_at":  -1,}, Options:  options.Index().SetName("created_at_desc") ,} ,
+		{ Keys: bson.M{"minted_time":  -1,}, Options:  options.Index().SetName("minted_time_desc") ,} ,
 		
 		{ Keys: bson.D{ {Key: "gen_nft_addrress", Value: -1}, {Key: "token_id", Value: -1} }, Options: options.Index().SetUnique(true),} ,
 		{ Keys: bson.D{ {Key: "contract_address", Value: -1}, {Key: "token_id", Value: -1} }, Options: options.Index().SetUnique(true),} ,
@@ -39,9 +41,26 @@ func (r Repository) CreateProjectIndexModel() ([]string, error) {
 		{ Keys: bson.M{"creatorName": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"creatorAddress": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"genNFTAddr": -1,}, Options: nil,} ,
+		{ Keys: bson.M{"created_at": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"name": "text",}, Options: nil,} ,
 	}
 
+	return r.CreateIndexes(collection, models)
+}
+
+func (r Repository) CreateMarketplaceListingsIndexModel() ([]string, error) {
+	collection := entity.MarketplaceListings{}.TableName()
+ 	models :=  []mongo.IndexModel{
+		{ Keys: bson.M{"created_at": -1,}, Options: nil,} ,
+	}
+	return r.CreateIndexes(collection, models)
+}
+
+func (r Repository) CreateMarketplaceOffersIndexModel() ([]string, error) {
+	collection := entity.MarketplaceOffers{}.TableName()
+ 	models :=  []mongo.IndexModel{
+		{ Keys: bson.M{"created_at": -1,}, Options: nil,} ,
+	}
 	return r.CreateIndexes(collection, models)
 }
 

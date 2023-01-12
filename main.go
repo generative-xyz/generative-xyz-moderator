@@ -131,6 +131,18 @@ func startServer() {
 		return
 	}
 	
+	_, err = repo.CreateMarketplaceListingsIndexModel()
+	if err != nil {
+		logger.Error("LoadUsecases - Can not init CreateMarketplaceListingsIndexModel", err)
+		return
+	}
+	
+	_, err = repo.CreateMarketplaceOffersIndexModel()
+	if err != nil {
+		logger.Error("LoadUsecases - Can not init CreateMarketplaceListingsIndexModel", err)
+		return
+	}
+	
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
 		logger.Error("LoadUsecases - Can not init usecase", err)

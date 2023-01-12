@@ -519,13 +519,15 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 
 	//TODO use redis schedule instead of crontab or routine to get data.
 	if filter.GenNFTAddr != nil {
-		go func (rootSpan opentracing.Span, genNftAddress string) {
-			span, log := u.StartSpan("GetTokensByContract.Live.Process", rootSpan)
-			defer u.Tracer.FinishSpan(span, log)
-			
-			u.GetTokensByContract(span, genNftAddress, nfts.MoralisFilter{})
-	
-		}(span, *filter.GenNFTAddr)
+		defer func ()  {
+			go func (rootSpan opentracing.Span, genNftAddress string) {
+				span, log := u.StartSpan("GetTokensByContract.Live.Process", rootSpan)
+				defer u.Tracer.FinishSpan(span, log)
+				
+				u.GetTokensByContract(span, genNftAddress, nfts.MoralisFilter{})
+		
+			}(span, *filter.GenNFTAddr)
+		}()
 	}
 	
 	pe := &entity.FilterTokenUris{}
