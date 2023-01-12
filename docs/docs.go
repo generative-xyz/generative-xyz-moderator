@@ -1852,6 +1852,79 @@ var doc = `{
                 }
             }
         },
+        "/tokens": {
+            "get": {
+                "description": "get tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "get tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract_address",
+                        "name": "contract_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "gen_nft_address",
+                        "name": "gen_nft_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "owner_address",
+                        "name": "owner_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "creator_address",
+                        "name": "creator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter via tokenID",
+                        "name": "tokenID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, minted-newest",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tokens/traits/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token's traits",
@@ -2297,6 +2370,9 @@ var doc = `{
             "type": "object",
             "properties": {
                 "discord": {
+                    "type": "string"
+                },
+                "etherScan": {
                     "type": "string"
                 },
                 "instagram": {

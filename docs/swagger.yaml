@@ -186,6 +186,8 @@ definitions:
     properties:
       discord:
         type: string
+      etherScan:
+        type: string
       instagram:
         type: string
       medium:
@@ -1458,6 +1460,55 @@ paths:
       summary: get token uri data
       tags:
       - Token for Opensea
+  /tokens:
+    get:
+      consumes:
+      - application/json
+      description: get tokens
+      parameters:
+      - description: contract_address
+        in: query
+        name: contract_address
+        type: string
+      - description: gen_nft_address
+        in: query
+        name: gen_nft_address
+        type: string
+      - description: owner_address
+        in: query
+        name: owner_address
+        type: string
+      - description: creator_address
+        in: query
+        name: creator_address
+        type: string
+      - description: Filter via tokenID
+        in: query
+        name: tokenID
+        type: string
+      - description: newest, minted-newest
+        in: query
+        name: sort
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get tokens
+      tags:
+      - Tokens
   /tokens/{contractAddress}/{tokenID}:
     get:
       consumes:
