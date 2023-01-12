@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -249,10 +250,30 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("tokenUri.GenNFTAddr.project", project.GenNFTAddr)
 	}
 
+	if  tokenUri.Thumbnail == "" {
+		base64Image := *tokenUri.ParsedImage
+		i := strings.Index(base64Image, ",")
+		if i >= 0 {
+			name := fmt.Sprintf("thumb/%s-%s.png", tokenUri.ContractAddress, tokenUri.TokenID)
+			base64Image = base64Image[i+1:]
+			uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
+			if err != nil {
+				
+				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+			}
+			log.SetData("uploaded", uploaded)
+			tokenUri.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+			isUpdate = true
+
+		}
+		// pass reader to NewDecoder
+	}
+	
+	
 	log.SetData("isUpdate", isUpdate)
 
 	//spew.Dump(tokenUri.ParsedImage)
-	isUpdate = true
+	//isUpdate = true
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
