@@ -99,8 +99,12 @@ func CreateIcon(name *string) string {
 }
 
 func CreateProfileLink(walletAdress string, displayName string) string {
+	name := walletAdress
+	if displayName != ""{
+		name = displayName
+	}
 	link := fmt.Sprintf("%s/profile/%s",os.Getenv("DOMAIN"),walletAdress,)
-	return fmt.Sprintf("<%s|%s>", link, displayName)
+	return fmt.Sprintf("<%s|%s>", link, name)
 }
 
 func CreateTokenLink( projectID string, tokenID string, tokenName string) string {
