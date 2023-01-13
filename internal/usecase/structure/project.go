@@ -14,19 +14,9 @@ type CreateProjectReq struct {
 }
 
 type UpdateProjectReq struct {
-	MaxSupply int `bson:"maxSupply"`
-	LimitSupply int `bson:"limitSupply"`
-	MintPrice string `bson:"mintPrice"`
-	Name string `bson:"name"`
-	CreatorName string `bson:"creatorName"`
-	Description string `bson:"description"`
-	Thumbnail string `bson:"thumbnail"`
-	ThirdPartyScripts []string `bson:"thirdPartyScripts"`
-	Scripts []string `bson:"scripts"`
-	ReservationList []string `bson:"reservationList"`
-	MintFee int `bson:"mintFee"`
-	OpenMintUnixTimestamp int `bson:"openMintUnixTimestamp"`
-	TokenDescription string `bson:"tokenDescription"`
+	TokenID string `json:"tokenID"`
+	Priority *int `json:"priority"`
+	ContracAddress string `json:"contractAddress"`
 }
 
 type GetProjectReq struct {

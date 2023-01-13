@@ -30,6 +30,7 @@ type InternalTokenURIResp struct{
 	Project *ProjectResp `json:"project"`
 	Creator *ProfileResponse `json:"creator"`
 	Thumbnail string `json:"thumbnail"`
+	Priority  int `json:"priority"`
 }
 
 type InternalTokenTraitsResp struct{

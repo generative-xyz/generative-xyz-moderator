@@ -8,5 +8,5 @@ type CreateProjectReq struct {
 }
 
 type UpdateProjectReq struct {
-	
+	Priority *int `json:"priority"`
 }
