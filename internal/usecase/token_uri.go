@@ -274,6 +274,19 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 	//spew.Dump(tokenUri.ParsedImage)
 	//isUpdate = true
+
+	if tokenUri.Priority ==  nil {
+		priority  := 0
+		tokenUri.Priority = &priority
+		isUpdate =  true
+	}
+	
+	if tokenUri.TokenIDMini ==  nil {
+		tokIdMini  := tokenUri.TokenIDInt %  100000
+		tokenUri.TokenIDMini = &tokIdMini
+		isUpdate =  true
+	}
+
 	if isUpdate {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
 		if err != nil {
@@ -283,15 +296,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("updated", updated)
 	}
 
-	if tokenUri.Priority ==  nil {
-		priority  := 0
-		tokenUri.Priority = &priority
-	}
 	
-	if tokenUri.TokenIDMini ==  nil {
-		tokIdMini  := tokenUri.TokenIDInt %  100000
-		tokenUri.TokenIDMini = &tokIdMini
-	}
 
 	//log.SetData("tokenUri.Inserted", tokenUri)
 	// err = u.Repo.CreateTokenURI(dataObject)
