@@ -206,7 +206,11 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Tags Project
 // @Accept  json
 // @Produce  json
-// @Param tokenID path string false "Filter via tokenID"
+// @Param contract_address query string false "contract_address"
+// @Param gen_nft_address query string false "gen_nft_address"
+// @Param owner_address query string false "owner_address"
+// @Param creator_address query string false "creator_address"
+// @Param tokenID query string false "Filter via tokenID"
 // @Param sort query string false "newest, minted-newest"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
@@ -222,8 +226,8 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	log.SetData("genNFTAddr",genNFTAddr)
 	log.SetTag(utils.GEN_NFT_ADDRESS_TAG, genNFTAddr)
 	f := structure.FilterTokens{}
+	f.CreateFilter(r)
 	f.GenNFTAddr = &genNFTAddr
-
 	bf, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
@@ -256,6 +260,12 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 // @Produce  json
 // @Param tokenID path string false "Filter via tokenID"
 // @Param walletAddress path string true "Wallet address"
+// @Param contract_address query string false "contract_address"
+// @Param gen_nft_address query string false "gen_nft_address"
+// @Param owner_address query string false "owner_address"
+// @Param creator_address query string false "creator_address"
+// @Param tokenID query string false "Filter via tokenID"
+// @Param sort query string false "newest, minted-newest, priority-asc, priority-desc"
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /profile/wallet/{walletAddress}/nfts [GET]
 func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) {
@@ -267,6 +277,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 	log.SetData("walletAddress",walletAddress)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
 	f := structure.FilterTokens{}
+	f.CreateFilter(r)
 	f.OwnerAddr = &walletAddress
 
 	bf, err := h.BaseFilters(r)
@@ -444,40 +455,15 @@ func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.Tokens", r)
 	defer h.Tracer.FinishSpan(span, log )
 	f := structure.FilterTokens{}
+	f.CreateFilter(r)
+	
 	bf, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("h.Tokens.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-
-	contractAddress := r.URL.Query().Get("contract_address")
-	geNftAddr := r.URL.Query().Get("gen_nft_address")
-	ownerAddress := r.URL.Query().Get("owner_address")
-	creatorAddress := r.URL.Query().Get("creator_address")
-
 	f.BaseFilters = *bf
-	tokenID := r.URL.Query().Get("tokenID")
-	if tokenID != "" {
-		f.TokenIDs = append(f.TokenIDs, tokenID)
-	}
-	
-	if contractAddress != "" {
-		f.ContractAddress = &contractAddress
-	}
-	
-	if geNftAddr != "" {
-		f.GenNFTAddr = &geNftAddr
-	}
-	
-	if ownerAddress != "" {
-		f.OwnerAddr = &ownerAddress
-	}
-	
-	if creatorAddress != "" {
-		f.CreatorAddr = &creatorAddress
-	}
-	
 	resp, err := h.getTokens(span, f)
 	if err != nil {
 		log.Error("h.Tokens.getTokens", err.Error(), err)

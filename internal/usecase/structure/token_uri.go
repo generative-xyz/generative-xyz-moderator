@@ -2,6 +2,7 @@ package structure
 
 import (
 	"math/big"
+	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
 	"rederinghub.io/utils/contracts/generative_project_contract"
@@ -90,6 +91,35 @@ type FilterTokens struct {
 	GenNFTAddr *string
 	CollectionIDs []string
 	TokenIDs []string
+}
+
+func (f *FilterTokens) CreateFilter(r *http.Request) {
+	contractAddress := r.URL.Query().Get("contract_address")
+	geNftAddr := r.URL.Query().Get("gen_nft_address")
+	ownerAddress := r.URL.Query().Get("owner_address")
+	creatorAddress := r.URL.Query().Get("creator_address")
+
+
+	tokenID := r.URL.Query().Get("tokenID")
+	if tokenID != "" {
+		f.TokenIDs = append(f.TokenIDs, tokenID)
+	}
+	
+	if contractAddress != "" {
+		f.ContractAddress = &contractAddress
+	}
+	
+	if geNftAddr != "" {
+		f.GenNFTAddr = &geNftAddr
+	}
+	
+	if ownerAddress != "" {
+		f.OwnerAddr = &ownerAddress
+	}
+	
+	if creatorAddress != "" {
+		f.CreatorAddr = &creatorAddress
+	}
 }
 
 type FilterMkListing struct {
