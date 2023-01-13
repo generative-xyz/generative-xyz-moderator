@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"time"
 
@@ -95,6 +96,16 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProj
 func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, error) {
 	span, log := u.StartSpan("GetRandomProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
+	caddr := os.Getenv("RANDOM_PR_CONTRACT")
+	pID := os.Getenv("RANDOM_PR_PROJECT")
+
+	if caddr != "" && pID != "" {
+		return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+			ContractAddress: caddr,
+			ProjectID:       pID,
+		})
+	}
 
 	key := helpers.ProjectRandomKey()
 
