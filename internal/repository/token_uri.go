@@ -101,6 +101,12 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		}
  	}
 	
+	if filter.Keyword != nil {
+		if *filter.Keyword != "" {
+			f["token_id_mini"] = *filter.Keyword
+		}
+ 	}
+	
 	if filter.OwnerAddr != nil {
 		if *filter.OwnerAddr != "" {
 			f["owner_addrress"] = *filter.OwnerAddr

@@ -51,7 +51,8 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdatePr
 	}
 
 	if req.Priority != nil {
-		p.Priority = *req.Priority
+		priority  := 0
+		p.Priority = &priority
 	}
 	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)

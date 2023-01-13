@@ -357,6 +357,8 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		log.Error("projectDetailFChan.Err ", err.Error(), err)
 		//return nil, err
 	}else{
+
+		
 		projectDetail := projectDetailFChan.Data
 		//log.SetData("projectDetail", projectDetail)
 		project.IsSynced = true
@@ -392,6 +394,10 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 				Index: projectDetail.NftProjectDetail.Index.Int64(),
 				IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
 			}
+		}
+
+		if project.Priority ==  nil {
+			*project.Priority = 0
 		}
 	}
 
