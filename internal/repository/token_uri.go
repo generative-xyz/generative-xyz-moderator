@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strconv"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -103,7 +104,13 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	
 	if filter.Keyword != nil {
 		if *filter.Keyword != "" {
-			f["token_id_mini"] = *filter.Keyword
+			kwInt, err := strconv.Atoi(*filter.Keyword)
+			if err == nil {
+				f["token_id_mini"] = kwInt
+			}else{
+				f["token_id_mini"] = *filter.Keyword
+			}
+			
 		}
  	}
 	
