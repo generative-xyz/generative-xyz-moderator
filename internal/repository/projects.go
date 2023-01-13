@@ -95,7 +95,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
-	filter.SortBy = "tokenIDInt"
+	filter.SortBy = "priority"
 	filter.Sort = -1
 	
 

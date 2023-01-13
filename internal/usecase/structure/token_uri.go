@@ -85,6 +85,7 @@ type GetNftTransactionsReq struct {
 
 type FilterTokens struct {
 	BaseFilters
+	Keyword *string
 	ContractAddress *string
 	OwnerAddr *string
 	CreatorAddr *string
@@ -98,6 +99,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) {
 	geNftAddr := r.URL.Query().Get("gen_nft_address")
 	ownerAddress := r.URL.Query().Get("owner_address")
 	creatorAddress := r.URL.Query().Get("creator_address")
+	keyword := r.URL.Query().Get("keyword")
 
 
 	tokenID := r.URL.Query().Get("tokenID")
@@ -119,6 +121,10 @@ func (f *FilterTokens) CreateFilter(r *http.Request) {
 	
 	if creatorAddress != "" {
 		f.CreatorAddr = &creatorAddress
+	}
+	
+	if keyword != "" {
+		f.Keyword = &keyword
 	}
 }
 

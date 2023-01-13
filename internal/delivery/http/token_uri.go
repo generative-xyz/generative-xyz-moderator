@@ -236,11 +236,6 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	}
 
 	f.BaseFilters = *bf
-	tokenID := r.URL.Query().Get("tokenID")
-	if tokenID != "" {
-		f.TokenIDs = append(f.TokenIDs, tokenID)
-	}
-	
 	resp, err := h.getTokens(span, f)
 	if err != nil {
 		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)

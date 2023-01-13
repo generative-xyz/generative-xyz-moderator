@@ -14,6 +14,7 @@ type FilterTokenUris struct {
 	OwnerAddr *string
 	CreatorAddr *string
 	GenNFTAddr *string
+	Keyword *string
 	CollectionIDs []string
 	TokenIDs []string
 }
@@ -22,6 +23,7 @@ type TokenUri struct {
 	BaseEntityNoID `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
 	TokenIDInt int `bson:"token_id_int" json:"token_id_int"`
+	TokenIDMini *int `bson:"token_id_mini" json:"token_id_mini"`
 	ContractAddress string `bson:"contract_address" json:"contract_address"`
 	Name string `bson:"name" json:"name"`
 	Description string `bson:"description" json:"description"`
@@ -39,7 +41,7 @@ type TokenUri struct {
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`
-	Priority int `bson:"priority"`
+	Priority *int `bson:"priority"`
 
 	//accept duplicated data to query more faster
 	Owner *Users `bson:"owner"`
