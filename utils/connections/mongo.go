@@ -3,6 +3,8 @@ package connections
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
+	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -15,8 +17,31 @@ type mongoCN struct {
 
 func NewMongo(dsn string) (*mongoCN, error) {
 	p := new(mongoCN)
+	cmdMonitor := &event.CommandMonitor{
+		Started: func(ctx context.Context, evt *event.CommandStartedEvent) {
+			spew.Dump(evt.Command)
+		},
+		Succeeded:  func(ctx context.Context, evt *event.CommandSucceededEvent) {
+			spew.Dump(evt.DurationNanos)
+		},
+		Failed:    func(ctx context.Context, evt *event.CommandFailedEvent) {
+			spew.Dump(evt.Failure)
+		},
+	}
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dsn))
+	isLoadbalanced := false
+	maxPoolSize := uint64(10000)
+	minPoolSize := uint64(1)
+	clientOption := &options.ClientOptions{
+		LoadBalanced: &isLoadbalanced,
+		MaxPoolSize:  &maxPoolSize,
+		MinPoolSize:  &minPoolSize,
+	}
+
+	clientOption.ApplyURI(dsn)
+	clientOption.Monitor = cmdMonitor
+
+	client, err := mongo.Connect(context.TODO(),clientOption)
     if err != nil {
 		return nil, err
 	}	

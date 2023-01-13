@@ -150,6 +150,8 @@ definitions:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
         type: string
+      priority:
+        type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
       thumbnail:
@@ -247,6 +249,8 @@ definitions:
         $ref: '#/definitions/response.NftMintingDetail'
       name:
         type: string
+      priority:
+        type: integer
       projectURI:
         type: string
       reservers:
@@ -1280,7 +1284,7 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: newest
+      - description: newest, priority-asc, priority-desc
         in: query
         name: sort
         type: string
@@ -1550,7 +1554,7 @@ paths:
         in: query
         name: tokenID
         type: string
-      - description: newest, minted-newest
+      - description: newest, minted-newest, priority-asc, priority-desc
         in: query
         name: sort
         type: string

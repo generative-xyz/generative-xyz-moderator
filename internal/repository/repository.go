@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Repository struct {
@@ -34,12 +35,21 @@ type PaginationKey struct {
 }
 
 func NewRepository(g *global.Global) (*Repository, error) {
+
+	clientOption := &options.ClientOptions{}
+	opt := &options.DatabaseOptions{
+		ReadConcern:    clientOption.ReadConcern,
+		WriteConcern:   clientOption.WriteConcern,
+		ReadPreference: clientOption.ReadPreference,
+		Registry:       clientOption.Registry,
+	}
+
 	r := new(Repository)
 	connection := g.DBConnection.GetType()
 	r.Connection = connection.(*mongo.Client)
 	r.Logger = g.Logger
 	r.Cache = g.Cache
-	r.DB = r.Connection.Database(g.Conf.Databases.Mongo.Name)
+	r.DB = r.Connection.Database(g.Conf.Databases.Mongo.Name, opt)
 	return r, nil
 }
 

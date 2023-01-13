@@ -1538,7 +1538,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "newest",
+                        "description": "newest, priority-asc, priority-desc",
                         "name": "sort",
                         "in": "query"
                     },
@@ -1946,7 +1946,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "newest, minted-newest",
+                        "description": "newest, minted-newest, priority-asc, priority-desc",
                         "name": "sort",
                         "in": "query"
                     },
@@ -2423,6 +2423,9 @@ var doc = `{
                 "ownerAddr": {
                     "type": "string"
                 },
+                "priority": {
+                    "type": "integer"
+                },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
                 },
@@ -2570,6 +2573,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "projectURI": {
                     "type": "string"
