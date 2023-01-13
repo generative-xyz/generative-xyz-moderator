@@ -397,7 +397,8 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 		}
 
 		if project.Priority ==  nil {
-			*project.Priority = 0
+			priority := 0
+			project.Priority =  &priority
 		}
 	}
 
