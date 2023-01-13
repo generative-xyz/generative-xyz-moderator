@@ -101,7 +101,6 @@ func (f *FilterTokens) CreateFilter(r *http.Request) {
 	creatorAddress := r.URL.Query().Get("creator_address")
 	keyword := r.URL.Query().Get("keyword")
 
-
 	tokenID := r.URL.Query().Get("tokenID")
 	if tokenID != "" {
 		f.TokenIDs = append(f.TokenIDs, tokenID)

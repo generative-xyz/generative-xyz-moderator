@@ -95,10 +95,11 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
-	filter.SortBy = "priority"
-	filter.Sort = -1
 	
-
+	filter.Sort = -1
+	if filter.SortBy == "" {
+		filter.SortBy = "priority"
+	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
 	if err != nil {
 		return nil, err
@@ -147,6 +148,10 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 		return nil, err
 	}
 
+	filter.Sort = -1
+	if filter.SortBy == "" {
+		filter.SortBy = "priority"
+	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
 	if err != nil {
 		return nil, err
@@ -169,6 +174,10 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 		return nil, err
 	}
 
+	filter.Sort = -1
+	if filter.SortBy == "" {
+		filter.SortBy = "priority"
+	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
 	if err != nil {
 		return nil, err

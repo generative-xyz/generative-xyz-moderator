@@ -7,6 +7,7 @@ type QuerySort struct {
 
 func ParseSort(key string) QuerySort {
 	sortParams := make(map[string]QuerySort)
+	sortParams["custom"] = QuerySort{Sort: -1, SortBy:  ""}
 	sortParams["newest"] = QuerySort{Sort: -1, SortBy:  "created_at"}
 	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy:  "priority"}
 	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy:  "priority"}
@@ -15,7 +16,7 @@ func ParseSort(key string) QuerySort {
 	
 	sort, ok := sortParams[key]
 	if !ok {
-		return sortParams["newest"]
+		return sortParams["custom"]
 	}
 
 	return sort
