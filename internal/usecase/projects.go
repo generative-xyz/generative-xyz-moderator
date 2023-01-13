@@ -44,9 +44,24 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreatePr
 func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("UpdateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	resp := &entity.Projects{}
+	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
+	if err != nil {
+		log.Error("UpdateProject.FindProjectBy", err.Error(), err)
+		return nil, err
+	}
 
-	return resp, nil
+	if req.Priority != nil {
+		p.Priority = *req.Priority
+	}
+	
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		log.Error("UpdateProject.UpdateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return p, nil
 }
 
 func (u Usecase) GetProjectByGenNFTAddr(rootSpan opentracing.Span, genNFTAddr string) (*entity.Projects, error) {

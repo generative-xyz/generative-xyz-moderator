@@ -39,6 +39,7 @@ type TokenUri struct {
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`
+	Priority int `bson:"priority"`
 
 	//accept duplicated data to query more faster
 	Owner *Users `bson:"owner"`

@@ -1,12 +1,14 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -433,7 +435,7 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 // @Param owner_address query string false "owner_address"
 // @Param creator_address query string false "creator_address"
 // @Param tokenID query string false "Filter via tokenID"
-// @Param sort query string false "newest, minted-newest"
+// @Param sort query string false "newest, minted-newest, priority-asc, priority-desc"
 // @Param limit query int false "limit"
 // @Param page query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
@@ -487,3 +489,61 @@ func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
+
+// UserCredits godoc
+// @Summary get token uri data
+// @Description get token uri data
+// @Tags Tokens
+// @Accept  json
+// @Produce  json
+// @Param contractAddress path string true "contract address"
+// @Param tokenID path string true "token ID"
+// @Param request body request.UpdateTokentReq true "Request body"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /tokens/{contractAddress}/{tokenID} [PUT]
+func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("updatetokenURIWithResp", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	contractAddress := vars["contractAddress"]
+	span.SetTag("contractAddress", contractAddress)
+
+	tokenID := vars["tokenID"]
+	span.SetTag("tokenID", tokenID)
+
+	var reqBody request.UpdateTokentReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	token, err := h.Usecase.UpdateToken(span, structure.UpdateTokenReq{
+		ContracAddress: contractAddress,
+		TokenID:         tokenID,
+		Priority: reqBody.Priority,
+	})
+	
+
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("h.Usecase.GetToken", token)
+	resp, err := h.tokenToResp(token)
+	if err != nil {
+		err := errors.New( "Cannot parse products")
+		log.Error("tokenToResp",  err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("resp.token", token)
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}

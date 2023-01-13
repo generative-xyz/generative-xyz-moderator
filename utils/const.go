@@ -8,6 +8,8 @@ type QuerySort struct {
 func ParseSort(key string) QuerySort {
 	sortParams := make(map[string]QuerySort)
 	sortParams["newest"] = QuerySort{Sort: -1, SortBy:  "created_at"}
+	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy:  "priority"}
+	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy:  "priority"}
 	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy:  "price"}
 	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy:  "minted_time"}
 	

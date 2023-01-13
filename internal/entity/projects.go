@@ -71,6 +71,7 @@ type Projects struct {
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"`
 	Stats                 ProjectStat        `bson:"stats"`
 	TraitsStat         []TraitStat `bson:"traitsStat" json:"traitsStat"`
+	Priority int `bson:"priority"`
 }
 
 type	ProjectMintingInfo struct {

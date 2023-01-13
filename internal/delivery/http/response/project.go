@@ -42,6 +42,7 @@ type ProjectResp struct{
 	MintedTime       *time.Time        `json:"mintedTime"`
 	Stats ProjectStatResp `json:"stats"`
 	TraitStat []TraitStat `json:"traitStat"`
+	Priority  int `json:"priority"`
 }
 
 type ProjectStatResp struct {

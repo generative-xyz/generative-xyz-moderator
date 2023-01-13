@@ -111,3 +111,9 @@ type FilterMkOffers struct {
 	Closed             *bool  
 	Finished           *bool  
 }
+
+type UpdateTokenReq struct {
+	TokenID string `json:"tokenID"`
+	Priority *int `json:"priority"`
+	ContracAddress string `json:"contractAddress"`
+}

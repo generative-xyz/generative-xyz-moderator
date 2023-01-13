@@ -63,6 +63,16 @@ definitions:
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
     type: object
+  request.UpdateProjectReq:
+    properties:
+      priority:
+        type: integer
+    type: object
+  request.UpdateTokentReq:
+    properties:
+      priority:
+        type: integer
+    type: object
   request.UpsertRedisRequest:
     properties:
       key:
@@ -142,6 +152,8 @@ definitions:
         type: string
       project:
         $ref: '#/definitions/response.ProjectResp'
+      thumbnail:
+        type: string
       tokenID:
         type: string
     type: object
@@ -260,6 +272,10 @@ definitions:
         type: string
       tokenID:
         type: string
+      traitStat:
+        items:
+          $ref: '#/definitions/response.TraitStat'
+        type: array
     type: object
   response.ProjectStatResp:
     properties:
@@ -300,6 +316,22 @@ definitions:
       image:
         type: string
       name:
+        type: string
+    type: object
+  response.TraitStat:
+    properties:
+      traitName:
+        type: string
+      traitValuesStat:
+        items:
+          $ref: '#/definitions/response.TraitValueStat'
+        type: array
+    type: object
+  response.TraitValueStat:
+    properties:
+      rarity:
+        type: integer
+      value:
         type: string
     type: object
   response.VerifyResponse:
@@ -1288,6 +1320,38 @@ paths:
       summary: Create project
       tags:
       - Project
+  /project/{contractAddress}/{projectID}:
+    put:
+      consumes:
+      - application/json
+      description: Update projects
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProjectReq'
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID adress
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Update project
+      tags:
+      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
@@ -1529,6 +1593,42 @@ paths:
         in: query
         name: captureTimeout
         type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: get token uri data
+      tags:
+      - Tokens
+    put:
+      consumes:
+      - application/json
+      description: get token uri data
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateTokentReq'
       produces:
       - application/json
       responses:

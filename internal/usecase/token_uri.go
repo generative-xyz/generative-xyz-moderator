@@ -547,3 +547,26 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 	log.SetData("tokens", tokens.Total)
 	return tokens, nil
 }
+
+func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateTokenReq) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("UpdateToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)
+	if err != nil {
+		log.Error("UpdateProject.FindTokenBy", err.Error(), err)
+		return nil, err
+	}
+
+	if req.Priority != nil {
+		p.Priority = *req.Priority
+	}
+	
+	updated, err := u.Repo.UpdateOrInsertTokenUri(req.ContracAddress, req.TokenID, p)
+	if err != nil {
+		log.Error("UpdateProject.UpdateOrInsertTokenUri", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return p, nil
+}

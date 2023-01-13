@@ -1739,6 +1739,54 @@ var doc = `{
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}": {
+            "put": {
+                "description": "Update projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project",
+                "parameters": [
+                    {
+                        "description": "Create profile request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateProjectReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract adress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -2031,6 +2079,64 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "get token uri data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "get token uri data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateTokentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
             }
         },
         "/trait/{contractAddress}/{tokenID}": {
@@ -2183,6 +2289,22 @@ var doc = `{
                 }
             }
         },
+        "request.UpdateProjectReq": {
+            "type": "object",
+            "properties": {
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.UpdateTokentReq": {
+            "type": "object",
+            "properties": {
+                "priority": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.UpsertRedisRequest": {
             "type": "object",
             "properties": {
@@ -2303,6 +2425,9 @@ var doc = `{
                 },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
+                },
+                "thumbnail": {
+                    "type": "string"
                 },
                 "tokenID": {
                     "type": "string"
@@ -2482,6 +2607,12 @@ var doc = `{
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "traitStat": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TraitStat"
+                    }
                 }
             }
         },
@@ -2544,6 +2675,31 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TraitStat": {
+            "type": "object",
+            "properties": {
+                "traitName": {
+                    "type": "string"
+                },
+                "traitValuesStat": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TraitValueStat"
+                    }
+                }
+            }
+        },
+        "response.TraitValueStat": {
+            "type": "object",
+            "properties": {
+                "rarity": {
+                    "type": "integer"
+                },
+                "value": {
                     "type": "string"
                 }
             }
