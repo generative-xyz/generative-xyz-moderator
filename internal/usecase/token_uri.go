@@ -80,20 +80,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, err
 	}
 
-	// find owner address on moralis
-	nft, err := u.MoralisNft.GetNftByContractAndTokenIDNoCahe(project.GenNFTAddr, tokenID)
-	if err != nil {
-		log.Error(" u.MoralisNft.GetNftByContractAndTokenIDNoCahe", err.Error(), err)
-		return nil, err
-	}
-
-	if tokenUri.OwnerAddr == "" || strings.ToLower(nft.Owner)  != strings.ToLower(tokenUri.OwnerAddr)  {
-		tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
-		isUpdate = true
-		log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
-	}
-
-	log.SetData("nft", nft)
 	getProfile := func(rootSpan opentracing.Span, c chan structure.ProfileChan, address string) {
 		span, log := u.StartSpan("GetToken.Profile", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
@@ -117,18 +103,37 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			return
 		}
 	}
-
-	ownerProfileChan := make(chan structure.ProfileChan, 1) 
 	creatorProfileChan := make(chan structure.ProfileChan, 1) 
 
-	go getProfile(span, ownerProfileChan, nft.Owner)
-	go getProfile(span, creatorProfileChan, project.CreatorAddrr)
+	// find owner address on moralis
+	nft, err := u.MoralisNft.GetNftByContractAndTokenIDNoCahe(project.GenNFTAddr, tokenID)
+	if err == nil {
+		if tokenUri.OwnerAddr == "" || strings.ToLower(nft.Owner)  != strings.ToLower(tokenUri.OwnerAddr)  {
+			tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
+			isUpdate = true
+			log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
+		}
 
-	ownerProfileResp := <-ownerProfileChan
+		ownerProfileChan := make(chan structure.ProfileChan, 1) 
+		go getProfile(span, ownerProfileChan, nft.Owner)
+		ownerProfileResp := <-ownerProfileChan
+		
+		log.SetData("ownerProfileResp", ownerProfileResp)
+		if tokenUri.Owner == nil || !reflect.DeepEqual(ownerProfileResp.Data, tokenUri.Owner)  {
+			isUpdate = true
+			tokenUri.Owner = ownerProfileResp.Data
+			log.SetData("tokenUri.GenNFTAddr.Owner", tokenUri.Owner)
+		}
+		//return nil, err
+	}else{
+		log.Error(" u.MoralisNft.GetNftByContractAndTokenIDNoCahe", err.Error(), err)
+	}
+
+	log.SetData("nft", nft)
+	go getProfile(span, creatorProfileChan, project.CreatorAddrr)
+	
 	creatorProfileResp := <-creatorProfileChan
 	tokenIDInt, _ := strconv.Atoi(tokenID)
-
-	log.SetData("ownerProfileResp", ownerProfileResp)
 	log.SetData("creatorProfileResp", creatorProfileResp)
 
 	tokenUri.TokenIDInt = tokenIDInt
@@ -232,12 +237,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("tokenUri.GenNFTAddr.Updated", tokenUri.GenNFTAddr)
 	}
 	
-	if tokenUri.Owner == nil || !reflect.DeepEqual(ownerProfileResp.Data, tokenUri.Owner)  {
-		isUpdate = true
-		tokenUri.Owner = ownerProfileResp.Data
-		log.SetData("tokenUri.GenNFTAddr.Owner", tokenUri.Owner)
-	}
-	
 	if tokenUri.Creator == nil  {
 		isUpdate = true
 		tokenUri.Creator = creatorProfileResp.Data
@@ -269,9 +268,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		// pass reader to NewDecoder
 	}
 	
-	
 	log.SetData("isUpdate", isUpdate)
-
 	//spew.Dump(tokenUri.ParsedImage)
 	//isUpdate = true
 
