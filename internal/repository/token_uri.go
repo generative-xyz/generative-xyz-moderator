@@ -82,7 +82,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
 	}
-	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &tokens)
+	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, []Sort{}, &tokens)
 	if err != nil {
 		return nil, err
 	}
