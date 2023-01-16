@@ -72,7 +72,5 @@ func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexMod
 	if err != nil {
 		return nil, err
 	}
-
-	//spew.Dump(ind)
 	return ind, nil
 }

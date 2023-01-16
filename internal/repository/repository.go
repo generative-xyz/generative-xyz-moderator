@@ -196,7 +196,7 @@ func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error)
 	return result, nil
 }
 
-func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {	
+func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {	
 	paginatedData := New(r.DB.Collection(dbName)).
 		Context(context.TODO()).
 		Limit(int64(limit)).
@@ -213,7 +213,9 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 		paginatedData.Sort("created_at", entity.SORT_DESC)
 	}
 		
-	data, err :=	paginatedData.Filter(filter).
+	data, err :=	paginatedData.
+		Select(selectFields).
+		Filter(filter).
 		Decode(returnData).
 		Find()
 

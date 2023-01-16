@@ -34,7 +34,6 @@ func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*en
 		if err != nil {
 			return nil, err
 		}
-		//spew.Dump("FindTokenUriWithtCache", filter, token)
 		r.Cache.SetData(key, token)
 		return token, nil
 	}
@@ -82,7 +81,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
 	}
-	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, []Sort{}, &tokens)
+	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields() , []Sort{}, &tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -205,4 +204,22 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	}
 
 	return tokens, nil
+}
+
+func (r Repository) SelectedTokenFields() bson.D {
+	f := bson.D{
+		{"token_id", 1},
+		{"gen_nft_addrress", 1},
+		{"contract_address", 1},
+		{"thumbnail", 1},
+		{"description", 1},
+		{"name", 1},
+		{"price", 1},
+		{"owner_addrress", 1},
+		{"creator_address", 1},
+		{"project_id", 1},
+		{"minted_time", 1},
+		{"priority", 1},
+	}
+	return f
 }

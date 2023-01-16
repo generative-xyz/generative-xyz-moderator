@@ -98,7 +98,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	
 	
 	s := r.SortProjects()
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 	}
 
 	s := r.SortProjects()
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f , r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	}
 
 	s := r.SortProjects()
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -228,4 +228,33 @@ func (r Repository)SortProjects () []Sort {
 	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })
 	s = append(s, Sort{SortBy:"created_at", Sort: entity.SORT_DESC })
 	return s
+}
+
+func (r Repository)SelectedProjectFields () bson.D {
+	f := bson.D{
+		{"id", 1},
+		{"contractAddress", 1},
+		{"tokenid", 1},
+		{"maxSupply", 1},
+		{"limitSupply", 1},
+		{"mintPrice", 1},
+		{"name", 1},
+		{"creatorName", 1},
+		{"creatorAddress", 1},
+		{"thumbnail", 1},
+		{"mintFee", 1},
+		{"openMintUnixTimestamp", 1},
+		{"genNFTAddr", 1},
+		{"mintTokenAddress", 1},
+		{"minted_time", 1},
+		{"license", 1},
+		{"description", 1},
+		{"stats", 1},
+		{"status", 1},
+		{"tokenDescription", 1},
+		{"index", 1},
+		{"indexReverse", 1},
+
+	}
+	return f
 }
