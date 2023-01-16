@@ -205,7 +205,7 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 }
 
 func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr string, tokenIDStr string) (*entity.Projects, error) {
-	span, log := u.StartSpan("UpdateProjectWithListener.GetProjectDetail", rootSpan)
+	span, log := u.StartSpan("UpdateProjectFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
 	pChan := make(chan projectChan, 1)
@@ -218,12 +218,12 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	log.SetTag("tokenIDStr", tokenIDStr)
 	tokenIDInt, err := strconv.Atoi(tokenIDStr)
 	if err != nil {
-		log.Error("strconv.Atoi.tokenIDStr", err.Error(), err)
+		log.Error("UpdateProjectFromChain.Atoi.tokenIDStr", err.Error(), err)
 		return nil, err
 	}
 
 	go func(rootSpan opentracing.Span, pChan chan projectChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("GetProjectDetail.Project", rootSpan)
+		span, log := u.StartSpan("UpdateProjectFromChain.GetProjectDetail", rootSpan)
 		defer u.Tracer.FinishSpan(span, log )
 
 		log.SetTag("contractAddr",contractAddr)
@@ -248,12 +248,12 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 
 				err = u.Repo.CreateProject(project)
 				if err != nil {
-					log.Error("u.Repo.CreateProject", err.Error(), err)
+					log.Error("UpdateProjectFromChain.CreateProject", err.Error(), err)
 					return
 				}
 
 		}else{
-			log.Error("u.Repo.FindProjectBy", err.Error(), err)
+			log.Error("UpdateProjectFromChain.FindProjectBy", err.Error(), err)
 			return
 		}
 	}
@@ -261,7 +261,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	}(span, pChan, contractAddr, tokenIDStr)
 
 	go func(rootSpan opentracing.Span, pDChan chan projectDetailChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("GetProjectDetail.Project", rootSpan)
+		span, log := u.StartSpan("UpdateProjectFromChain.getProjectDetailFromChainWithoutCache", rootSpan)
 		defer u.Tracer.FinishSpan(span, log )
 		
 		projectDetail := &structure.ProjectDetail{}
@@ -279,7 +279,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			ProjectID:  tokenIDStr,
 		})
 		if err != nil {
-			log.Error(" u.GetProjectDetail", err.Error(), err)
+			log.Error("UpdateProjectFromChain.getProjectDetailFromChainWithoutCache.GetProjectDetail", err.Error(), err)
 			return
 		}
 	
@@ -287,7 +287,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 	}(span, pDChan, contractAddr, tokenIDStr)
 
 	go func(rootSpan opentracing.Span, pDChan chan projectStatChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("GetProjectDetail.ProjectStat", rootSpan)
+		span, log := u.StartSpan("UpdateProjectFromChain.GetUpdatedProjectStats", rootSpan)
 		defer u.Tracer.FinishSpan(span, log )
 		projectStat := &entity.ProjectStat{}
 		traitStat := make([]entity.TraitStat, 0)
@@ -306,7 +306,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			TokenID: tokenIDStr,
 		})
 		if err != nil {
-			log.Error(" u.SyncProjectStats", err.Error(), err)
+			log.Error("UpdateProjectFromChain.GetUpdatedProjectStats.error", err.Error(), err)
 			return
 		}
 	}(span, pSChan, contractAddr, tokenIDStr)
