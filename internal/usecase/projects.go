@@ -443,7 +443,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 		log.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("contractDetail", contractDetail)
+	//log.SetData("contractDetail", contractDetail)
 	u.Cache.SetData(contractDataKey, contractDetail)
 	return contractDetail, nil
 }
