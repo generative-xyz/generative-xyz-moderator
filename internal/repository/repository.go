@@ -206,7 +206,7 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 		for _, sort := range sorts {
 			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
 				//sortValue := bson.D{{"created_at", -1}}
-				paginatedData.Sort(sort.SortBy, sort)
+				paginatedData.Sort(sort.SortBy, sort.Sort)
 			}	
 		}
 	}else{
