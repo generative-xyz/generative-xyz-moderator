@@ -41,7 +41,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.SetData("u.getTokenInfo.mongo.ErrNoDocuments", "true")
+			log.Error("u.getTokenInfo.mongo.ErrNoDocuments", err.Error(), err)
 			tokenUri, err = u.getTokenInfo(span, req)
 			if err != nil {
 				log.Error("u.getTokenInfo", err.Error(), err)
@@ -147,10 +147,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 		)
 
-		// if err != nil {
-		// 	log.Error("chromedp.Run", err.Error(), err)
-		// 	return nil, err
-		// }
+		log.SetData("traits",traits)
+		log.SetData("chromedp.Run.err.generativeTraits",err)
 
 		attrs := []entity.TokenUriAttr{}
 		for key, item := range traits {
@@ -160,6 +158,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 			attrs = append(attrs, attr)
 		}
+
 		tokenUri.ParsedAttributes = attrs
 		log.SetData("tokenUri.ParsedAttributes.Updated", tokenUri.ParsedAttributes)
 	}
@@ -177,6 +176,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 			chromedp.CaptureScreenshot(&buf),
 		)
+
+		log.SetData("chromedp.Run.err", err)
 
 		image := helpers.Base64Encode(buf)
 		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
@@ -289,14 +290,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("updated", updated)
 	}
 
-	
-
-	//log.SetData("tokenUri.Inserted", tokenUri)
-	// err = u.Repo.CreateTokenURI(dataObject)
-	// if err != nil {
-	// 	log.Error("u.Repo.CreateTokenURI", err.Error(), err)
-	// 	return nil, err
-	// }
 	return tokenUri, nil
 }
 
