@@ -143,7 +143,7 @@ func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, er
 		filter1["user_type"] = *filter.UserType
 	}
 	
-	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, []Sort{}, &users)
+	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1,bson.D{}, []Sort{}, &users)
 	if err != nil {
 		return nil, err
 	}

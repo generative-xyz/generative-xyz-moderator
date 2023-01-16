@@ -15,7 +15,6 @@ import (
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -186,7 +185,6 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 		return nil, err
 	}
 
-	spew.Dump("resp.Data", data)
 	resp := []MoralisToken{}
 	err = json.Unmarshal(data, &resp)
 	if err != nil {
@@ -198,7 +196,6 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 		return nil, errors.New(messageResp.Message)
 	}
 
-	spew.Dump("resp.Data.Parsed", resp)
 	return resp, nil
 }
 

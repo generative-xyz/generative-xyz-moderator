@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -81,11 +80,7 @@ func (h ScronHandler) StartServer() {
 			if err != nil {
 				log.Error("h.Usecase.GetProjectsFromChain", err.Error(), err)
 			}
-		}(chanDone)
-		
-
-		spew.Dump(<- chanDone)
-		
+		}(chanDone)		
 
 	})
 	

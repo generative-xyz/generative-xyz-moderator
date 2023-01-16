@@ -128,7 +128,7 @@ func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceLis
 	resp := &entity.Pagination{}
 	f := r.filterListings(filter)
 
-	p, err := r.Paginate(utils.COLLECTION_MARKETPLACE_LISTINGS, filter.Page, filter.Limit, f, []Sort{}, &confs)
+	p, err := r.Paginate(utils.COLLECTION_MARKETPLACE_LISTINGS, filter.Page, filter.Limit, f,bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}

@@ -46,7 +46,7 @@ func (r Repository) ListConfigs(filter entity.FilterConfigs) (*entity.Pagination
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(utils.COLLECTION_CONFIGS, filter.Page, filter.Limit, f, []Sort{}, &confs)
+	p, err := r.Paginate(utils.COLLECTION_CONFIGS, filter.Page, filter.Limit, f,bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
