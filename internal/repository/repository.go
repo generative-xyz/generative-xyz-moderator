@@ -34,6 +34,11 @@ type PaginationKey struct {
 	Order entity.SortType
 }
 
+type Sort struct {
+	SortBy string
+	Sort entity.SortType
+}
+
 func NewRepository(g *global.Global) (*Repository, error) {
 
 	clientOption := &options.ClientOptions{}
@@ -191,19 +196,21 @@ func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error)
 	return result, nil
 }
 
-func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, sortBy string, sortOrder  entity.SortType, returnData interface{}) (*PaginatedData, error) {	
+func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {	
 	paginatedData := New(r.DB.Collection(dbName)).
 		Context(context.TODO()).
 		Limit(int64(limit)).
 		Page(int64(page))
 
-	if 	sortBy != "" {
-		if sortOrder == entity.SORT_ASC || sortOrder == entity.SORT_DESC {
-			//sortValue := bson.D{{"created_at", -1}}
-			paginatedData = paginatedData.Sort(sortBy, sortOrder)
-		}	
+	if 	len(sorts) > 0 {
+		for _, sort := range sorts {
+			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
+				//sortValue := bson.D{{"created_at", -1}}
+				paginatedData.Sort(sort.SortBy, sort)
+			}	
+		}
 	}else{
-		paginatedData = paginatedData.Sort("created_at", entity.SORT_DESC)
+		paginatedData.Sort("created_at", entity.SORT_DESC)
 	}
 		
 	data, err :=	paginatedData.Filter(filter).

@@ -96,11 +96,9 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
 	
-	filter.Sort = -1
-	if filter.SortBy == "" {
-		filter.SortBy = "priority"
-	}
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	
+	s := r.SortProjects()
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +146,8 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 		return nil, err
 	}
 
-	filter.Sort = -1
-	if filter.SortBy == "" {
-		filter.SortBy = "priority"
-	}
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	s := r.SortProjects()
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -174,11 +169,8 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 		return nil, err
 	}
 
-	filter.Sort = -1
-	if filter.SortBy == "" {
-		filter.SortBy = "priority"
-	}
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, filter.SortBy, filter.Sort, &confs)
+	s := r.SortProjects()
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, s, &confs)
 	if err != nil {
 		return nil, err
 	}
@@ -229,4 +221,11 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository)SortProjects () []Sort {
+	s := []Sort{}
+	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })
+	s = append(s, Sort{SortBy:"created_at", Sort: entity.SORT_DESC })
+	return s
 }
