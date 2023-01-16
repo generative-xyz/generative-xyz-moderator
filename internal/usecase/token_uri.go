@@ -64,15 +64,8 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 		log.SetData("u.getTokenInfo.tokenUri.ProjectID.Token.Empty", "true")
 	}
+
 	isUpdate := false
-
-	// find project by projectID and contract address
-	// project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: contractAddress, ProjectID: tokenUri.ProjectID})
-	// if err != nil {
-	// 	log.Error("u.GetProjectDetail", err.Error(), err)
-	// 	return nil, err
-	// }
-
 	project, err := u.Repo.FindProjectBy(contractAddress, tokenUri.ProjectID)
 	if err != nil {
 		log.Error("u.GetProjectDetail", err.Error(), err)
@@ -99,11 +92,12 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 
 		profile, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
 		if err != nil {
+			log.Error("u.GetUserProfileByWalletAddress",err.Error(), err)
 			return
 		}
 	}
-	creatorProfileChan := make(chan structure.ProfileChan, 1) 
 
+	creatorProfileChan := make(chan structure.ProfileChan, 1) 
 	// find owner address on moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenIDNoCahe(project.GenNFTAddr, tokenID)
 	if err == nil {
@@ -148,19 +142,22 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		)
 
 		log.SetData("traits",traits)
-		log.SetData("chromedp.Run.err.generativeTraits",err)
-
-		attrs := []entity.TokenUriAttr{}
-		for key, item := range traits {
-			attr := entity.TokenUriAttr{}
-			attr.TraitType = key
-			attr.Value = item
-
-			attrs = append(attrs, attr)
+		if err == nil {
+			attrs := []entity.TokenUriAttr{}
+			for key, item := range traits {
+				attr := entity.TokenUriAttr{}
+				attr.TraitType = key
+				attr.Value = item
+	
+				attrs = append(attrs, attr)
+			}
+	
+			tokenUri.ParsedAttributes = attrs
+			log.SetData("tokenUri.ParsedAttributes.Updated", tokenUri.ParsedAttributes)
+		}else{
+			log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
 		}
-
-		tokenUri.ParsedAttributes = attrs
-		log.SetData("tokenUri.ParsedAttributes.Updated", tokenUri.ParsedAttributes)
+		
 	}
 
 	//if true {
@@ -177,13 +174,14 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			chromedp.CaptureScreenshot(&buf),
 		)
 
-		log.SetData("chromedp.Run.err", err)
-
-		image := helpers.Base64Encode(buf)
-		image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-		tokenUri.ParsedImage = &image
-		log.SetData("tokenUri.ParsedImage.Updated", "true")
-				
+		if err == nil {
+			image := helpers.Base64Encode(buf)
+			image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+			tokenUri.ParsedImage = &image
+			log.SetData("tokenUri.ParsedImage.Updated", "true")
+		}else{
+			log.Error("chromedp.Run.err", err.Error(), err)
+		}				
 	}
 
 	if tokenUri.ProjectID == "" {
@@ -218,6 +216,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 				TokenID: req.TokenID,
 			})
 			if err != nil {
+				log.Error(" u.GetNftMintedTime", err.Error(), err)
 				return err
 			}
 
@@ -225,6 +224,7 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			tokenUri.MintedTime = nftMintedTime.MintedTime
 			isUpdate = true
 			return nil
+
 		}()
 		if err != nil {
 			log.Error("error update token uri block number minted", err.Error(), err)
@@ -259,11 +259,11 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 			if err != nil {
 				
 				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+			}else{
+				log.SetData("uploaded", uploaded)
+				tokenUri.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+				isUpdate = true
 			}
-			log.SetData("uploaded", uploaded)
-			tokenUri.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
-			isUpdate = true
-
 		}
 		// pass reader to NewDecoder
 	}
