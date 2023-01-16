@@ -220,6 +220,8 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"project_id", 1},
 		{"minted_time", 1},
 		{"priority", 1},
+		{"parsed_image", 1},
+		{"image", 1},
 	}
 	return f
 }

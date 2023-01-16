@@ -22,10 +22,10 @@ func NewMongo(dsn string) (*mongoCN, error) {
 			spew.Dump(evt.Command)
 		},
 		Succeeded:  func(ctx context.Context, evt *event.CommandSucceededEvent) {
-			spew.Dump(evt.DurationNanos)
+			//spew.Dump(evt.DurationNanos)
 		},
 		Failed:    func(ctx context.Context, evt *event.CommandFailedEvent) {
-			spew.Dump(evt.Failure)
+			//spew.Dump(evt.Failure)
 		},
 	}
 
