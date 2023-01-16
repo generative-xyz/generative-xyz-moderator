@@ -254,6 +254,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"tokenDescription", 1},
 		{"index", 1},
 		{"indexReverse", 1},
+		{"creatorProfile", 1},
 
 	}
 	return f
