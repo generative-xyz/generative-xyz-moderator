@@ -353,7 +353,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		log.Error("u.getNftContractDetail", err.Error(), err)
 		return nil, err
 	}
-
 	nftProject := nftProjectDetail.ProjectDetail
 	parentAddr := nftProject.GenNFTAddr
 	
