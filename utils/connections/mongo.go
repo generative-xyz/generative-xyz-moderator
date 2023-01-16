@@ -3,7 +3,6 @@ package connections
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -19,7 +18,7 @@ func NewMongo(dsn string) (*mongoCN, error) {
 	p := new(mongoCN)
 	cmdMonitor := &event.CommandMonitor{
 		Started: func(ctx context.Context, evt *event.CommandStartedEvent) {
-			spew.Dump(evt.Command)
+			//spew.Dump(evt.Command)
 		},
 		Succeeded:  func(ctx context.Context, evt *event.CommandSucceededEvent) {
 			//spew.Dump(evt.DurationNanos)
