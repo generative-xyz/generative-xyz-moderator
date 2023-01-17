@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -49,7 +50,6 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) {
 	span, log := u.StartSpan("RunAndCap", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-
 	if token == nil {
 		return
 	}
@@ -91,11 +91,31 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		strAttrs = append(strAttrs, strAttr)
 	}
 
+	image := helpers.Base64Encode(buf)
+	image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+
 	now := time.Now().UTC()
-	token.Thumbnail = helpers.Base64Encode(buf)
+	token.ParsedImage = &image
 	token.ParsedAttributes = attrs
 	token.ParsedAttributesStr = strAttrs
 	token.ThumbnailCapturedAt = &now
+
+	if  token.ParsedImage != nil {
+		base64Image := *token.ParsedImage
+		i := strings.Index(base64Image, ",")
+		if i >= 0 {
+			name := fmt.Sprintf("thumb/%s-%s.png", token.ContractAddress, token.TokenID)
+			base64Image = base64Image[i+1:]
+			uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
+			if err != nil {
+				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+			}else{
+				log.SetData("uploaded", uploaded)
+				token.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+			}
+		}
+		// pass reader to NewDecoder
+	}
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
 	if err != nil {
@@ -111,22 +131,30 @@ func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, token *entity.To
 	defer u.Tracer.FinishSpan(span, log)
 	attrs := []entity.TokenUriAttr{}
 	strAttrs := []entity.TokenUriAttrStr{}
+	resp := &structure.TokenAnimationURI{
+		Thumbnail: "",
+		Traits:  attrs,
+		TraitsStr: strAttrs,
+	}
 
+	if token.ParsedImage == nil {
+		go u.RunAndCap(span, token, captureTimeout)
+		return resp, nil
+	}
+	
 	if token.ThumbnailCapturedAt == nil {
 		go u.RunAndCap(span, token, captureTimeout)
+		return resp, nil
 	}
 	
 	if token.ThumbnailCapturedAt !=nil {
 	 	if token.ThumbnailCapturedAt.Add(time.Hour * 6).After(time.Now()) {
 			go u.RunAndCap(span, token, captureTimeout)
+			return resp, nil
 		}
 	}
 	
-	return &structure.TokenAnimationURI{
-		Thumbnail: "",
-		Traits:  attrs,
-		TraitsStr: strAttrs,
-	}, nil
+	return resp, nil
 }
 
 func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
