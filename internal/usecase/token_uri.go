@@ -1,12 +1,15 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
+	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -42,13 +45,75 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 	return tokenUri, nil
 }
 
-func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, animationURL string, captureTimeout int) (*structure.TokenAnimationURI,  error) {
-	span, log := u.StartSpan("CaptureImageToken", rootSpan)
+func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) {
+	span, log := u.StartSpan("RunAndCap", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	
+	var buf []byte
 	attrs := []entity.TokenUriAttr{}
 	strAttrs := []entity.TokenUriAttrStr{}
 
+	cctx, cancel := chromedp.NewContext(context.Background())
+	defer cancel()
+
+	traits := make(map[string]interface{})
+	err := chromedp.Run(cctx,
+		chromedp.EmulateViewport(960, 960),
+		chromedp.Navigate(token.AnimationURL),
+		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
+		chromedp.CaptureScreenshot(&buf),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+	)
+
+	if err != nil {
+		log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
+		return 
+	}
+
+	for key, item := range traits {
+		attr := entity.TokenUriAttr{}
+		attr.TraitType = key
+		attr.Value = item
+				
+		strAttr := entity.TokenUriAttrStr{}
+		strAttr.TraitType = key
+		strAttr.Value = fmt.Sprintf("%v", item)
+
+		attrs = append(attrs, attr)
+		strAttrs = append(strAttrs, strAttr)
+	}
+
+	now := time.Now().UTC()
+	token.Thumbnail = helpers.Base64Encode(buf)
+	token.ParsedAttributes = attrs
+	token.ParsedAttributesStr = strAttrs
+	token.ThumbnailCapturedAt = &now
+
+	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
+	if err != nil {
+		log.Error("runAndCap.UpdateOrInsertTokenUri",err.Error(), err)
+		return 
+	}
+
+	log.SetData("updated", updated)
+}
+
+func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI,  error) {
+	span, log := u.StartSpan("CaptureImageToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	attrs := []entity.TokenUriAttr{}
+	strAttrs := []entity.TokenUriAttrStr{}
+
+	if token.ThumbnailCapturedAt == nil {
+		go u.RunAndCap(span, token, captureTimeout)
+	}
+	
+	if token.ThumbnailCapturedAt !=nil {
+	 	if token.ThumbnailCapturedAt.Add(time.Hour * 6).After(time.Now()) {
+			go u.RunAndCap(span, token, captureTimeout)
+		}
+	}
+	
 	return &structure.TokenAnimationURI{
 		Thumbnail: "",
 		Traits:  attrs,
@@ -61,7 +126,9 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	defer u.Tracer.FinishSpan(span, log)
 	log.SetData("req", req)
 
-	u.GetLiveToken(span, req, captureTimeout)
+	defer func() {
+		go u.GetLiveToken(span, req, captureTimeout)
+	}()
 
 	contractAddress := strings.ToLower(req.ContractAddress) 
 	tokenID := strings.ToLower(req.TokenID)
@@ -180,8 +247,8 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 		token := tokenFromChan.Data
 
-		captureImage := 6
-		uriInfo, err = u.CaptureAnimationURI(span, token.AnimationURL, captureImage)
+		captureImageTime := 6
+		uriInfo, err = u.CaptureAnimationURI(span, token, captureImageTime)
 		uriInfo.Token = token
 
 	}(tokendatachan, tokenURIChan)
@@ -270,9 +337,9 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Description = tokenFChan.Data.Token.Description
 		dataObject.Image = tokenFChan.Data.Token.Image
 		dataObject.AnimationURL = tokenFChan.Data.Token.AnimationURL
-		dataObject.ParsedImage = &tokenFChan.Data.Thumbnail
-		dataObject.ParsedAttributes = tokenFChan.Data.Traits
-		dataObject.ParsedAttributesStr = tokenFChan.Data.TraitsStr
+		// dataObject.ParsedImage = &tokenFChan.Data.Thumbnail
+		// dataObject.ParsedAttributes = tokenFChan.Data.Traits
+		// dataObject.ParsedAttributesStr = tokenFChan.Data.TraitsStr
 	}
 
 	return dataObject, nil

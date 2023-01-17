@@ -40,11 +40,12 @@ type TokenUri struct {
 	MintedTime *time.Time `bson:"minted_time" json:"minted_time"` 
 	GenNFTAddr string `bson:"gen_nft_addrress"`
 	Thumbnail string `bson:"thumbnail"`
+	ThumbnailCapturedAt *time.Time `bson:"thumbnailCapturedAt"` 
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`
 	Priority *int `bson:"priority"`
-
+	
 	//accept duplicated data to query more faster
 	Owner *Users `bson:"owner"`
 	Project *Projects `bson:"project"`
