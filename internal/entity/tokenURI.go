@@ -17,6 +17,7 @@ type FilterTokenUris struct {
 	Keyword *string
 	CollectionIDs []string
 	TokenIDs []string
+	Attributes []TokenUriAttrStr
 }
 
 type TokenUri struct {

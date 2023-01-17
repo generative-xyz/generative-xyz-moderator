@@ -134,14 +134,32 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
  	}
 	
 	if len(filter.CollectionIDs) > 0 {
-		f["gen_nft_addrress"] = bson.D{ {"$in", filter.CollectionIDs} }
+		f["gen_nft_addrress"] = bson.D{ {Key: "$in", Value: filter.CollectionIDs} }
  	}
 	
 	if len(filter.TokenIDs) > 0 {
-		f["token_id"] =  bson.D{ {"$in", filter.TokenIDs} }
+		f["token_id"] =  bson.D{ {Key: "$in", Value: filter.TokenIDs} }
  	}
 
-	return f
+	andFilters := []bson.M{
+	f,
+	}
+
+	if filter.Attributes != nil && len(filter.Attributes) > 0 {
+		for _, attribute := range filter.Attributes {
+			andFilters = append(andFilters, bson.M{
+				"parsed_attributes_str": bson.M{
+					"$elemMatch": bson.M{
+						"trait_type": attribute.TraitType,
+						"value": attribute.Value,
+					},
+				},
+			})
+		}
+	} 
+	return bson.M{
+		"$and": andFilters,
+	}
 }
 
 func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {

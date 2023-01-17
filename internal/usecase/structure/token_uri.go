@@ -1,10 +1,13 @@
 package structure
 
 import (
+	"errors"
 	"math/big"
 	"net/http"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 )
 
@@ -92,14 +95,33 @@ type FilterTokens struct {
 	GenNFTAddr *string
 	CollectionIDs []string
 	TokenIDs []string
+	Attributes []entity.TokenUriAttrStr
 }
 
-func (f *FilterTokens) CreateFilter(r *http.Request) {
+func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	contractAddress := r.URL.Query().Get("contract_address")
 	geNftAddr := r.URL.Query().Get("gen_nft_address")
 	ownerAddress := r.URL.Query().Get("owner_address")
 	creatorAddress := r.URL.Query().Get("creator_address")
 	keyword := r.URL.Query().Get("keyword")
+
+	attributesRaw := r.URL.Query().Get("attributes")
+	if len(attributesRaw) > 0 {
+		attributesStrs := strings.Split(attributesRaw, ",")
+		attrs := []entity.TokenUriAttrStr{}
+		for _, attributesStr := range attributesStrs {
+			attr := entity.TokenUriAttrStr{}
+			parts := strings.Split(attributesStr, ":")
+			if len(parts) != 2 {
+				return errors.New("errors when parse attribute query")
+			}
+			attr.TraitType = parts[0]
+			attr.Value = parts[1]
+			attrs = append(attrs, attr)
+		}
+		f.Attributes = attrs
+	}
+	
 
 	tokenID := r.URL.Query().Get("tokenID")
 	if tokenID != "" {
@@ -125,6 +147,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) {
 	if keyword != "" {
 		f.Keyword = &keyword
 	}
+	return nil
 }
 
 type FilterMkListing struct {
