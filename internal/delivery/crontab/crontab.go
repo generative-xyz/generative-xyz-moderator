@@ -51,7 +51,6 @@ func (h ScronHandler) StartServer() {
 		log.SetData("time", time.Now().UTC())
 
 		chanDone := make(chan bool, 2)
-		
 		go func (chanDone chan bool)  {
 			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.tokens")
 			defer span.Finish()
@@ -60,10 +59,11 @@ func (h ScronHandler) StartServer() {
 				chanDone <- true
 			}()
 
-			err := h.Usecase.UpdateTokensFromChain(span)
-			if err != nil {
-				log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
-			}
+			//TO DO: this function will be improved
+			// err := h.Usecase.UpdateTokensFromChain(span)
+			// if err != nil {
+			// 	log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
+			// }
 
 
 		}(chanDone)
