@@ -93,10 +93,6 @@ type TokenAnimationURI struct {
 	TraitsStr []entity.TokenUriAttrStr
 }
 
-type TokenAnimationURIChan struct {
-	Data *TokenAnimationURI
-	Err error
-}
 
 type GetNftTransactionsReq struct {
 	Chain *string
