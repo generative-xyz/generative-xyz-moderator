@@ -30,6 +30,7 @@ type Config struct {
 	MarketplaceEvents MarketplaceEvents
 	TimeResyncProjectStat int32
 	Slack slack.Config
+	Crontab CronTabConfig
 }
 
 type MQTTConfig struct {
@@ -37,6 +38,10 @@ type MQTTConfig struct {
 	Port string
 	UserName       string
 	Password      string
+}
+
+type CronTabConfig struct {
+	Enabled  bool
 }
 
 type MoralisConfig struct {
@@ -145,6 +150,7 @@ func NewConfig() (*Config, error) {
 	addresses := strings.Split(os.Getenv("TX_CONSUMER_ADDRESSES"), ",")
 
 	timeResyncProjectStat, _ := strconv.Atoi(os.Getenv("TIME_RESYNC_PROJECT_STAT"))
+	crontabStart, _ := strconv.ParseBool(os.Getenv("CRONTAB_START"))
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -216,6 +222,9 @@ func NewConfig() (*Config, error) {
 			Token:     os.Getenv("SLACK_TOKEN"),
 			ChannelId:    os.Getenv("SLACK_CHANNEL_ID"),
 			Env:       os.Getenv("ENV"),
+		},
+		Crontab: CronTabConfig{
+			Enabled: crontabStart,
 		},
 	}
 

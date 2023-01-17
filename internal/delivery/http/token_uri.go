@@ -147,7 +147,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	log.SetData("h.Usecase.GetToken", token)
+	log.SetData("h.Usecase.GetToken", token.TokenID)
+	log.SetTag("tokenID", token.TokenID)
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New( "Cannot parse products")
@@ -156,7 +157,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	log.SetData("resp.token", token)
+	log.SetData("resp.token", token.TokenID)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

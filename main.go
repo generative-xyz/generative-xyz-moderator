@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"rederinghub.io/internal/delivery/crontab"
-
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/delivery/crontab"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/txconsumer"
@@ -167,11 +166,14 @@ func startServer() {
 		
 	}
 
-	cron := crontab.NewScronHandler(&g, *uc)
-	go func (cron *crontab.ScronHandler)  {
-		logger.Info("Cron is listening")
-		cron.StartServer()
-	}(cron)
+	if conf.Crontab.Enabled  {
+		cron := crontab.NewScronHandler(&g, *uc)
+		go func (cron *crontab.ScronHandler)  {
+			logger.Info("Cron is listening")
+			cron.StartServer()
+		}(cron)
+	}
+	
 
 	log.Println("started server and listening")
 	h.StartServer()
