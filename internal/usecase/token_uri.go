@@ -348,6 +348,8 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Description = tokenFChan.Data.Token.Description
 		dataObject.Image = tokenFChan.Data.Token.Image
 		dataObject.AnimationURL = tokenFChan.Data.Token.AnimationURL
+		dataObject.Attributes = tokenFChan.Data.Token.Attributes
+		dataObject.Image = tokenFChan.Data.Token.Image
 	}
 
 	return dataObject, nil
