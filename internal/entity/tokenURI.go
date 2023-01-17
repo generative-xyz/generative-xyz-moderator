@@ -32,6 +32,7 @@ type TokenUri struct {
 	AnimationURL string `bson:"animation_url" json:"animation_url"`
 	Attributes string `bson:"attributes" json:"attributes"`
 	ParsedAttributes []TokenUriAttr `bson:"parsed_attributes" json:"parsed_attributes"`
+	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
 	ProjectID string `bson:"project_id" json:"project_id"`
 	ProjectIDInt int64 `bson:"project_id_int" json:"project_id_int"`
 	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
@@ -52,6 +53,11 @@ type TokenUri struct {
 type TokenUriAttr struct {
 	TraitType string `bson:"trait_type" json:"trait_type"`
 	Value interface{} `bson:"value" json:"value"`
+}
+
+type TokenUriAttrStr struct {
+	TraitType string `bson:"trait_type" json:"trait_type"`
+	Value string `bson:"value" json:"value"`
 }
 
 func (u TokenUri) TableName() string { 
