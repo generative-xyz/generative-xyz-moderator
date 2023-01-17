@@ -162,7 +162,18 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetData("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
 
-	dataObject := &entity.TokenUri{}
+	dataObject, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
+	if err != nil {
+		log.Error("u.Repo.FindTokenBy", err.Error(), err)
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			dataObject = &entity.TokenUri{}
+
+		} else {
+			log.Error("u.Repo.FindTokenBy", err.Error(), err)
+			return nil, err
+		}
+	} 
+
 	mftMintedTimeChan := make(chan structure.NftMintedTimeChan, 1)
 	tokenURIChan := make(chan structure.TokenAnimationURIChan, 1)
 	tokendatachan := make(chan structure.TokenDataChan, 1)
@@ -328,7 +339,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Owner = owner
 
 	}else{
-		log.Error(" u.GetNftMintedTime", err.Error(), err)
+		log.Error(" u.GetNftMintedTime",  mftMintedTime.Err.Error(),  mftMintedTime.Err)
 	}
 
 	tokenFChan := <- tokenURIChan 
@@ -337,9 +348,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Description = tokenFChan.Data.Token.Description
 		dataObject.Image = tokenFChan.Data.Token.Image
 		dataObject.AnimationURL = tokenFChan.Data.Token.AnimationURL
-		// dataObject.ParsedImage = &tokenFChan.Data.Thumbnail
-		// dataObject.ParsedAttributes = tokenFChan.Data.Traits
-		// dataObject.ParsedAttributesStr = tokenFChan.Data.TraitsStr
 	}
 
 	return dataObject, nil
