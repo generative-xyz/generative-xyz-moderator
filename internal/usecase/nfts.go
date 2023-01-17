@@ -28,6 +28,8 @@ func (u Usecase) GetNftMintedTime(rootSpan opentracing.Span, req structure.GetNf
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("req", req);
+	log.SetTag("tokenID", req.TokenID);
+	log.SetTag("contractAddress", req.ContractAddress);
 	
 	// try to get block number minted and minted time from moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
@@ -51,5 +53,6 @@ func (u Usecase) GetNftMintedTime(rootSpan opentracing.Span, req structure.GetNf
 	return &structure.NftMintedTime{
 		BlockNumberMinted: &blockNumber,
 		MintedTime: &mintedTime,
+		Nft: nft,
 	}, nil
 }

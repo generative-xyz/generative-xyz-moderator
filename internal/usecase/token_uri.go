@@ -1,18 +1,12 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
-	"os"
-	"reflect"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -22,7 +16,6 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
 )
@@ -30,275 +23,37 @@ import (
 func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	span, log := u.StartSpan("GetLiveToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+	log.SetTag("tokenID", req.TokenID)
+	log.SetTag("contractAddress", req.ContractAddress)
 	
-	log.SetTag("contractAddress",req.ContractAddress)
-	log.SetTag("tokenID",req.TokenID)
-
-	contractAddress := strings.ToLower(req.ContractAddress) 
-	tokenID := strings.ToLower(req.TokenID)
-	
-	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
+	tokenUri, err := u.getTokenInfo(span, req)
 	if err != nil {
-		log.Error("u.Repo.FindTokenBy", err.Error(), err)
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			log.Error("u.getTokenInfo.mongo.ErrNoDocuments", err.Error(), err)
-			tokenUri, err = u.getTokenInfo(span, req)
-			if err != nil {
-				log.Error("u.getTokenInfo", err.Error(), err)
-				return nil, err
-			}
-
-		} else {
-			log.Error("u.Repo.FindTokenBy", err.Error(), err)
-			return nil, err
-		}
-	}
-
-	
-	if tokenUri.ProjectID == "" {
-		tokenUri, err = u.getTokenInfo(span, req)
-		if err != nil {
-			log.Error("u.getTokenInfo", err.Error(), err)
-			return nil, err
-		}
-
-		log.SetData("u.getTokenInfo.tokenUri.ProjectID.Token.Empty", "true")
-	}
-
-	isUpdate := false
-	project, err := u.Repo.FindProjectBy(contractAddress, tokenUri.ProjectID)
-	if err != nil {
-		log.Error("u.GetProjectDetail", err.Error(), err)
+		log.Error("u.getTokenInfo", err.Error(), err)
 		return nil, err
 	}
 
-	getProfile := func(rootSpan opentracing.Span, c chan structure.ProfileChan, address string) {
-		span, log := u.StartSpan("GetToken.Profile", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
-		
-		var profile *entity.Users
-		var err error
-		log.SetTag(utils.WALLET_ADDRESS_TAG, address)
-		
-		defer func() {
-			response :=  structure.ProfileChan{
-				Data:  profile,
-				Err:  err,
-			}
-
-			log.SetData("response", response)
-			c <- response
-		}()
-
-		profile, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
-		if err != nil {
-			log.Error("u.GetUserProfileByWalletAddress",err.Error(), err)
-			return
-		}
+	updated, err := u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
+	if err != nil {
+		log.Error("u.Repo.UpdateOne", err.Error(), err)
+		return nil, err
 	}
 
-	creatorProfileChan := make(chan structure.ProfileChan, 1) 
-	// find owner address on moralis
-	nft, err := u.MoralisNft.GetNftByContractAndTokenIDNoCahe(project.GenNFTAddr, tokenID)
-	if err == nil {
-		if tokenUri.OwnerAddr == "" || strings.ToLower(nft.Owner)  != strings.ToLower(tokenUri.OwnerAddr)  {
-			tokenUri.OwnerAddr = strings.ToLower(nft.Owner)
-			isUpdate = true
-			log.SetData("tokenUri.OwnerAddr.Updated", tokenUri.OwnerAddr)
-		}
-
-		ownerProfileChan := make(chan structure.ProfileChan, 1) 
-		go getProfile(span, ownerProfileChan, nft.Owner)
-		ownerProfileResp := <-ownerProfileChan
-		
-		log.SetData("ownerProfileResp", ownerProfileResp)
-		if tokenUri.Owner == nil || !reflect.DeepEqual(ownerProfileResp.Data, tokenUri.Owner)  {
-			isUpdate = true
-			tokenUri.Owner = ownerProfileResp.Data
-			log.SetData("tokenUri.GenNFTAddr.Owner", tokenUri.Owner)
-		}
-		//return nil, err
-	}else{
-		log.Error(" u.MoralisNft.GetNftByContractAndTokenIDNoCahe", err.Error(), err)
-	}
-
-	log.SetData("nft", nft)
-	go getProfile(span, creatorProfileChan, project.CreatorAddrr)
-	
-	creatorProfileResp := <-creatorProfileChan
-	tokenIDInt, _ := strconv.Atoi(tokenID)
-	log.SetData("creatorProfileResp", creatorProfileResp)
-
-	tokenUri.TokenIDInt = tokenIDInt
-	if tokenUri.ParsedAttributes == nil {
-		isUpdate = true
-		cctx, cancel := chromedp.NewContext(context.Background())
-		defer cancel()
-
-		traits := make(map[string]interface{})
-		err = chromedp.Run(cctx,
-			chromedp.Navigate(tokenUri.AnimationURL),
-			chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
-		)
-
-		log.SetData("traits",traits)
-		if err == nil {
-			attrs := []entity.TokenUriAttr{}
-			strAttrs := []entity.TokenUriAttrStr{}
-			for key, item := range traits {
-				attr := entity.TokenUriAttr{}
-				attr.TraitType = key
-				attr.Value = item
-				
-				strAttr := entity.TokenUriAttrStr{}
-				strAttr.TraitType = key
-				strAttr.Value = fmt.Sprintf("%v", item)
-
-				attrs = append(attrs, attr)
-				strAttrs = append(strAttrs, strAttr)
-			}
-	
-			tokenUri.ParsedAttributes = attrs
-			log.SetData("tokenUri.ParsedAttributes.Updated", tokenUri.ParsedAttributes)
-		}else{
-			log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
-		}
-		
-	}
-
-	//if true {
-	if tokenUri.ParsedImage == nil {
-		isUpdate = true
-		var buf []byte
-		cctx, cancel := chromedp.NewContext(context.Background())
-		defer cancel()
-
-		err = chromedp.Run(cctx,
-			chromedp.EmulateViewport(960, 960),
-			chromedp.Navigate(tokenUri.AnimationURL),
-			chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
-			chromedp.CaptureScreenshot(&buf),
-		)
-
-		if err == nil {
-			image := helpers.Base64Encode(buf)
-			image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
-			tokenUri.ParsedImage = &image
-			log.SetData("tokenUri.ParsedImage.Updated", "true")
-		}else{
-			log.Error("chromedp.Run.err", err.Error(), err)
-		}				
-	}
-
-	if tokenUri.ProjectID == "" {
-		err := func() error {
-			tokenID := new(big.Int)
-			tokenID, ok := tokenID.SetString(req.TokenID, 10)
-			if !ok {
-				return errors.New("cannot convert tokenID to big int")
-			}
-			projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
-
-			tokenUri.ProjectID = projectID.String()
-			isUpdate = true
-			return nil
-		}()
-		if err != nil {
-			log.Error("error update token uri project id", err.Error(), err)
-		}
-	}
-
-	if tokenUri.BlockNumberMinted == nil || tokenUri.MintedTime == nil {
-		err := func() error {
-			project, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{ContractAddress: req.ContractAddress, ProjectID: tokenUri.ProjectID})
-			if err != nil {
-				return err
-			}
-
-			log.SetData("project", project)
-
-			nftMintedTime, err := u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
-				ContractAddress: project.GenNFTAddr,
-				TokenID: req.TokenID,
-			})
-			if err != nil {
-				log.Error(" u.GetNftMintedTime", err.Error(), err)
-				return err
-			}
-
-			tokenUri.BlockNumberMinted = nftMintedTime.BlockNumberMinted
-			tokenUri.MintedTime = nftMintedTime.MintedTime
-			isUpdate = true
-			return nil
-
-		}()
-		if err != nil {
-			log.Error("error update token uri block number minted", err.Error(), err)
-		}
-	}
-	
-	if tokenUri.GenNFTAddr == ""  {
-		isUpdate = true
-		tokenUri.GenNFTAddr = project.GenNFTAddr
-		log.SetData("tokenUri.GenNFTAddr.Updated", tokenUri.GenNFTAddr)
-	}
-	
-	if tokenUri.Creator == nil  {
-		isUpdate = true
-		tokenUri.Creator = creatorProfileResp.Data
-		log.SetData("tokenUri.GenNFTAddr.Creator", tokenUri.Creator)
-	}
-	
-	if tokenUri.Project == nil || tokenUri.Project.Stats != project.Stats  {
-		isUpdate = true
-		tokenUri.Project = project
-		log.SetData("tokenUri.GenNFTAddr.project", project.GenNFTAddr)
-	}
-
-	if  tokenUri.Thumbnail == "" {
-		if  tokenUri.ParsedImage != nil {
-			base64Image := *tokenUri.ParsedImage
-			i := strings.Index(base64Image, ",")
-			if i >= 0 {
-				name := fmt.Sprintf("thumb/%s-%s.png", tokenUri.ContractAddress, tokenUri.TokenID)
-				base64Image = base64Image[i+1:]
-				uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
-				if err != nil {
-					
-					log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
-				}else{
-					log.SetData("uploaded", uploaded)
-					tokenUri.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
-					isUpdate = true
-				}
-			}
-			// pass reader to NewDecoder
-		}
-	}
-	
-	log.SetData("isUpdate", isUpdate)
-	if tokenUri.Priority ==  nil {
-		priority  := 0
-		tokenUri.Priority = &priority
-		isUpdate =  true
-	}
-	
-	if tokenUri.TokenIDMini ==  nil {
-		tokIdMini  := tokenUri.TokenIDInt %  100000
-		tokenUri.TokenIDMini = &tokIdMini
-		isUpdate =  true
-	}
-
-	if isUpdate {
-		updated, err := u.Repo.UpdateOrInsertTokenUri(contractAddress, tokenID, tokenUri)
-		if err != nil {
-			log.Error("u.Repo.UpdateOne", err.Error(), err)
-			return nil, err
-		}
-		log.SetData("updated", updated)
-	}
-
+	log.SetData("updated", updated)
 	return tokenUri, nil
+}
+
+func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, animationURL string, captureTimeout int) (*structure.TokenAnimationURI,  error) {
+	span, log := u.StartSpan("CaptureImageToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	attrs := []entity.TokenUriAttr{}
+	strAttrs := []entity.TokenUriAttrStr{}
+
+	return &structure.TokenAnimationURI{
+		Thumbnail: "",
+		Traits:  attrs,
+		TraitsStr: strAttrs,
+	}, nil
 }
 
 func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
@@ -306,7 +61,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	defer u.Tracer.FinishSpan(span, log)
 	log.SetData("req", req)
 
-	go u.GetLiveToken(span, req, captureTimeout)
+	u.GetLiveToken(span, req, captureTimeout)
 
 	contractAddress := strings.ToLower(req.ContractAddress) 
 	tokenID := strings.ToLower(req.TokenID)
@@ -340,6 +95,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetData("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
 
+	dataObject := &entity.TokenUri{}
+	mftMintedTimeChan := make(chan structure.NftMintedTimeChan, 1)
+	tokenURIChan := make(chan structure.TokenAnimationURIChan, 1)
+	tokendatachan := make(chan structure.TokenDataChan, 1)
+
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
 	if err != nil {
@@ -361,52 +121,105 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		log.Error("u.getNftContractDetail", err.Error(), err)
 		return nil, err
 	}
+
 	nftProject := nftProjectDetail.ProjectDetail
 	parentAddr := nftProject.GenNFTAddr
+
+
+	go func(tokenDataChan chan structure.TokenDataChan, parentAddr common.Address, tokenID string) {
+		var err error
+		tok := &entity.TokenUri{}
+
+		tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
+		
+		defer func ()  {
+			tokenDataChan <- structure.TokenDataChan{
+				Data:  tok,
+				Err:  err,
+			}
+		}()
+
+		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
+		data, err := helpers.Base64Decode(base64Str)
+		if err != nil {
+			return 
+		}
+
+		stringData := string(data)
+		stringData = strings.ReplaceAll(stringData, "\n", "\\n")
+		stringData = strings.ReplaceAll(stringData, "\b", "\\b")
+		stringData = strings.ReplaceAll(stringData, "\f", "\\f")
+		stringData = strings.ReplaceAll(stringData, "\r", "\\r")
+		stringData = strings.ReplaceAll(stringData, "\t", "\\t")
+
+		err = json.Unmarshal([]byte(stringData), tok)
+		if err != nil {
+			return 
+		}
+
+	}(tokendatachan, parentAddr, req.TokenID)
+
+
+	go func(tokendatachan chan structure.TokenDataChan, tokenURIChan chan structure.TokenAnimationURIChan) {
+		
+		uriInfo :=  &structure.TokenAnimationURI{}
+		var err error
+
+		defer func ()  {
+			tokenURIChan <- structure.TokenAnimationURIChan{
+				Data:  uriInfo,
+				Err:  err,
+			}
+		}()
+
+		tokenFromChan := <- tokendatachan
+		if tokenFromChan.Err != nil {
+			err = tokenFromChan.Err
+			return 
+		}
+
+		token := tokenFromChan.Data
+
+		captureImage := 6
+		uriInfo, err = u.CaptureAnimationURI(span, token.AnimationURL, captureImage)
+		uriInfo.Token = token
+
+	}(tokendatachan, tokenURIChan)
+
+
+	go func(mftMintedTimeChan chan structure.NftMintedTimeChan, genNFTAddr string) {
+		nftMintedTime :=  &structure.NftMintedTime{}
+		var err error
+
+		defer func ()  {
+			mftMintedTimeChan <- structure.NftMintedTimeChan{
+				NftMintedTime:  nftMintedTime,
+				Err:  err,
+			}
+		}()
+
+		nftMintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+			ContractAddress: genNFTAddr,
+			TokenID: req.TokenID,
+		})
+	}(mftMintedTimeChan, strings.ToLower(parentAddr.String()))
+	
 	
 	log.SetData("nftProject", nftProject)
 	log.SetData("parentAddr", parentAddr)
-	
-	tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
-	if err != nil {
-		log.Error("u.getNftProjectTokenUri", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("parentAddr", parentAddr)
-	log.SetData("tokenUriData", tokenUriData)
-	
-	base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
-	data, err := helpers.Base64Decode(base64Str)
-	if err != nil {
-		log.Error("helpers.Base64Decode", err.Error(), err)
-		return nil, err
-	}
-
-	stringData := string(data)
-	stringData = strings.ReplaceAll(stringData, "\n", "\\n")
-	stringData = strings.ReplaceAll(stringData, "\b", "\\b")
-	stringData = strings.ReplaceAll(stringData, "\f", "\\f")
-	stringData = strings.ReplaceAll(stringData, "\r", "\\r")
-	stringData = strings.ReplaceAll(stringData, "\t", "\\t")
-
-	log.SetData("base64Str", base64Str)
-	log.SetData("stringData", stringData)
-
-	dataObject := &entity.TokenUri{}
-	err = json.Unmarshal([]byte(stringData), dataObject)
-	if err != nil {
-		log.Error("json.Unmarshal", err.Error(), err)
-		return nil, err
-	}
+	//log.SetData("tokenUriData", tokenUriData)
 
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.CreatorAddr = strings.ToLower(nftProject.Creator)
 	dataObject.OwnerAddr = strings.ToLower(nftProject.Creator)
+	dataObject.GenNFTAddr = strings.ToLower(parentAddr.String())
 
 	dataObject.TokenID = req.TokenID
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
+
+	tokIdMini  := dataObject.TokenIDInt %  100000
+	dataObject.TokenIDMini = &tokIdMini
 
 	log.SetData("dataObject.ContractAddress", dataObject.ContractAddress)
 	log.SetData("dataObject.Creator", dataObject.Creator)
@@ -419,6 +232,49 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetTag("ownerAddr", dataObject.OwnerAddr)
 	log.SetTag("tokenID", dataObject.TokenID)
 	log.SetTag("projectID", dataObject.ProjectID)
+
+	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
+	if err != nil {
+		log.Error("u.GetProjectDetail", err.Error(), err)
+		return nil, err
+	}
+
+	dataObject.Project = project
+	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
+	if err != nil {
+		log.Error("u.Repo.FindUserByWalletAddress.creator", err.Error(), err)
+		return nil, err
+	}
+	dataObject.Creator = creator
+	
+
+	mftMintedTime := <- mftMintedTimeChan
+	if mftMintedTime.Err == nil {
+		dataObject.BlockNumberMinted = mftMintedTime.NftMintedTime.BlockNumberMinted
+		dataObject.MintedTime = mftMintedTime.NftMintedTime.MintedTime
+		nft := mftMintedTime.NftMintedTime.Nft
+		owner, err := u.Repo.FindUserByWalletAddress(nft.Owner)
+		if err != nil {
+			log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
+			return nil, err
+		}
+		dataObject.Owner = owner
+
+	}else{
+		log.Error(" u.GetNftMintedTime", err.Error(), err)
+	}
+
+	tokenFChan := <- tokenURIChan 
+	if tokenFChan.Err == nil {
+		dataObject.Name = tokenFChan.Data.Token.Name
+		dataObject.Description = tokenFChan.Data.Token.Description
+		dataObject.Image = tokenFChan.Data.Token.Image
+		dataObject.AnimationURL = tokenFChan.Data.Token.AnimationURL
+		dataObject.ParsedImage = &tokenFChan.Data.Thumbnail
+		dataObject.ParsedAttributes = tokenFChan.Data.Traits
+		dataObject.ParsedAttributesStr = tokenFChan.Data.TraitsStr
+	}
+
 	return dataObject, nil
 }
 

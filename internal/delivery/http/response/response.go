@@ -106,7 +106,7 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 		defer span.Finish()
 
 		span.LogFields(
-			h.Tracer.LogObject("response.Json", jsr),
+			//h.Tracer.LogObject("response.Json", jsr),
 			h.Tracer.LogInt("response.code", code),
 		)
 	}
@@ -127,9 +127,9 @@ func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode i
 		span := h.Tracer.StartSpanFromRoot(h.RootSpan, "respondWithJSON")
 		defer span.Finish()
 
-		span.LogFields(
-			h.Tracer.LogObject("response.Json", payload),
-		)
+		// span.LogFields(
+		// 	h.Tracer.LogObject("response.Json", payload),
+		// )
 	}
 
 	response, _ := json.Marshal(payload)

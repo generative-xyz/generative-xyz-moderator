@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 )
@@ -77,6 +78,23 @@ type RoyaltyChan struct {
 
 type NftProjectDetailChan struct {
 	Data *NftProjectDetail
+	Err error
+}
+
+type NftMoralisChan struct {
+	Data *nfts.MoralisToken
+	Err error
+}
+
+type TokenAnimationURI struct {
+	Token *entity.TokenUri
+	Thumbnail string
+	Traits []entity.TokenUriAttr
+	TraitsStr []entity.TokenUriAttrStr
+}
+
+type TokenAnimationURIChan struct {
+	Data *TokenAnimationURI
 	Err error
 }
 
