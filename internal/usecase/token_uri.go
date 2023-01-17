@@ -61,8 +61,12 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	attrs := []entity.TokenUriAttr{}
 	strAttrs := []entity.TokenUriAttrStr{}
 
-	cctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+        chromedp.Flag("headless", true), 
+    )
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+    cctx, _ := chromedp.NewContext(allocCtx)
+	//defer cancel()
 
 	traits := make(map[string]interface{})
 	err := chromedp.Run(cctx,
@@ -388,7 +392,9 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
 	span, log := u.StartSpan("Usecase.UpdateTokensFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-	
+
+
+	//TODO - we will use pagination instead of all
 	tokens, err := u.Repo.GetAllTokens()
 	if err != nil {
 		log.Error("GetAllTokens", err.Error(), err)
