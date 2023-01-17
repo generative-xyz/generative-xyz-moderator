@@ -81,7 +81,9 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
 	}
-	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields() , []Sort{}, &tokens)
+
+
+	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields() , r.SortToken(filter), &tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -245,4 +247,10 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"creator", 1},
 	}
 	return f
+}
+
+func (r Repository) SortToken (filter entity.FilterTokenUris) []Sort {
+	s := []Sort{}
+	s = append(s, Sort{SortBy: filter.SortBy, Sort: filter.Sort })
+	return s
 }
