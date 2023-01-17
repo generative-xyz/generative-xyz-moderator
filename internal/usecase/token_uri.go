@@ -144,12 +144,18 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 		log.SetData("traits",traits)
 		if err == nil {
 			attrs := []entity.TokenUriAttr{}
+			strAttrs := []entity.TokenUriAttrStr{}
 			for key, item := range traits {
 				attr := entity.TokenUriAttr{}
 				attr.TraitType = key
 				attr.Value = item
-	
+				
+				strAttr := entity.TokenUriAttrStr{}
+				strAttr.TraitType = key
+				strAttr.Value = fmt.Sprintf("%v", item)
+
 				attrs = append(attrs, attr)
+				strAttrs = append(strAttrs, strAttr)
 			}
 	
 			tokenUri.ParsedAttributes = attrs
