@@ -1222,6 +1222,30 @@ paths:
         name: walletAddress
         required: true
         type: string
+      - description: contract_address
+        in: query
+        name: contract_address
+        type: string
+      - description: gen_nft_address
+        in: query
+        name: gen_nft_address
+        type: string
+      - description: owner_address
+        in: query
+        name: owner_address
+        type: string
+      - description: creator_address
+        in: query
+        name: creator_address
+        type: string
+      - description: Filter via tokenID
+        in: query
+        name: tokenID
+        type: string
+      - description: newest, minted-newest, priority-asc, priority-desc
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -1388,9 +1412,29 @@ paths:
       - application/json
       description: get tokens by project address
       parameters:
+      - description: contract_address
+        in: query
+        name: contract_address
+        type: string
+      - description: gen_nft_address
+        in: query
+        name: gen_nft_address
+        type: string
+      - description: owner_address
+        in: query
+        name: owner_address
+        type: string
+      - description: creator_address
+        in: query
+        name: creator_address
+        type: string
       - description: Filter via tokenID
-        in: path
+        in: query
         name: tokenID
+        type: string
+      - description: attributes
+        in: query
+        name: attributes
         type: string
       - description: newest, minted-newest
         in: query

@@ -1422,6 +1422,42 @@
                         "name": "walletAddress",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract_address",
+                        "name": "contract_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "gen_nft_address",
+                        "name": "gen_nft_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "owner_address",
+                        "name": "owner_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "creator_address",
+                        "name": "creator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter via tokenID",
+                        "name": "tokenID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, minted-newest, priority-asc, priority-desc",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1788,9 +1824,39 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "contract_address",
+                        "name": "contract_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "gen_nft_address",
+                        "name": "gen_nft_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "owner_address",
+                        "name": "owner_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "creator_address",
+                        "name": "creator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Filter via tokenID",
                         "name": "tokenID",
-                        "in": "path"
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "attributes",
+                        "name": "attributes",
+                        "in": "query"
                     },
                     {
                         "type": "string",
