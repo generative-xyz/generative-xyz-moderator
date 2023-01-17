@@ -222,6 +222,9 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"priority", 1},
 		{"parsed_image", 1},
 		{"image", 1},
+		{"project", 1},
+		{"owner", 1},
+		{"creator", 1},
 	}
 	return f
 }
