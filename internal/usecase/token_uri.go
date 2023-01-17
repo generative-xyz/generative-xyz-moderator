@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,6 +49,13 @@ func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenM
 func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) {
 	span, log := u.StartSpan("RunAndCap", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
+	if token == nil {
+		return
+	}
+
+	log.SetTag("tokenID", token.TokenID)
+	log.SetTag("contractAddress", token.ContractAddress)
 	
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
@@ -175,7 +183,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	} 
 
 	mftMintedTimeChan := make(chan structure.NftMintedTimeChan, 1)
-	tokenURIChan := make(chan structure.TokenAnimationURIChan, 1)
 	tokendatachan := make(chan structure.TokenDataChan, 1)
 
 	// call to contract to get emotion
@@ -237,34 +244,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	}(tokendatachan, parentAddr, req.TokenID)
 
-
-	go func(tokendatachan chan structure.TokenDataChan, tokenURIChan chan structure.TokenAnimationURIChan) {
-		
-		uriInfo :=  &structure.TokenAnimationURI{}
-		var err error
-
-		defer func ()  {
-			tokenURIChan <- structure.TokenAnimationURIChan{
-				Data:  uriInfo,
-				Err:  err,
-			}
-		}()
-
-		tokenFromChan := <- tokendatachan
-		if tokenFromChan.Err != nil {
-			err = tokenFromChan.Err
-			return 
-		}
-
-		token := tokenFromChan.Data
-
-		captureImageTime := 6
-		uriInfo, err = u.CaptureAnimationURI(span, token, captureImageTime)
-		uriInfo.Token = token
-
-	}(tokendatachan, tokenURIChan)
-
-
 	go func(mftMintedTimeChan chan structure.NftMintedTimeChan, genNFTAddr string) {
 		nftMintedTime :=  &structure.NftMintedTime{}
 		var err error
@@ -292,12 +271,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	dataObject.OwnerAddr = strings.ToLower(nftProject.Creator)
 	dataObject.GenNFTAddr = strings.ToLower(parentAddr.String())
 
+	tokenIDint, _ := strconv.Atoi(req.TokenID)
+
 	dataObject.TokenID = req.TokenID
+	dataObject.TokenIDInt = tokenIDint
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
-
-	tokIdMini  := dataObject.TokenIDInt %  100000
-	dataObject.TokenIDMini = &tokIdMini
 
 	log.SetData("dataObject.ContractAddress", dataObject.ContractAddress)
 	log.SetData("dataObject.Creator", dataObject.Creator)
@@ -324,8 +303,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, err
 	}
 	dataObject.Creator = creator
-	
-
 	mftMintedTime := <- mftMintedTimeChan
 	if mftMintedTime.Err == nil {
 		dataObject.BlockNumberMinted = mftMintedTime.NftMintedTime.BlockNumberMinted
@@ -342,16 +319,21 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		log.Error(" u.GetNftMintedTime",  mftMintedTime.Err.Error(),  mftMintedTime.Err)
 	}
 
-	tokenFChan := <- tokenURIChan 
+	tokenFChan := <- tokendatachan 
 	if tokenFChan.Err == nil {
-		dataObject.Name = tokenFChan.Data.Token.Name
-		dataObject.Description = tokenFChan.Data.Token.Description
-		dataObject.Image = tokenFChan.Data.Token.Image
-		dataObject.AnimationURL = tokenFChan.Data.Token.AnimationURL
-		dataObject.Attributes = tokenFChan.Data.Token.Attributes
-		dataObject.Image = tokenFChan.Data.Token.Image
+		dataObject.Name = tokenFChan.Data.Name
+		dataObject.Description = tokenFChan.Data.Description
+		dataObject.Image = tokenFChan.Data.Image
+		dataObject.AnimationURL = tokenFChan.Data.AnimationURL
+		dataObject.Attributes = tokenFChan.Data.Attributes
+		dataObject.Image = tokenFChan.Data.Image
+		
 	}
 
+	tokIdMini  := dataObject.TokenIDInt %  100000
+	dataObject.TokenIDMini = &tokIdMini
+
+	u.CaptureAnimationURI(span, dataObject, 6)
 	return dataObject, nil
 }
 
