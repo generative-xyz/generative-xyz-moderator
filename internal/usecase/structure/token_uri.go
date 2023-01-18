@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"rederinghub.io/external/nfts"
@@ -87,10 +88,16 @@ type NftMoralisChan struct {
 }
 
 type TokenAnimationURI struct {
-	Token *entity.TokenUri
 	Thumbnail string
+	ParsedImage string
 	Traits []entity.TokenUriAttr
 	TraitsStr []entity.TokenUriAttrStr
+	CapturedAt *time.Time
+}
+
+type TokenAnimationURIChan struct {
+	Data *TokenAnimationURI
+	Err error
 }
 
 
