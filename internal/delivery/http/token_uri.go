@@ -63,7 +63,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 		Attributes:   message.ParsedAttributes,
 	}
 
-	log.SetData("resp.message", message)
+	log.SetData("resp.message", message.TokenID)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
