@@ -13,36 +13,9 @@ services:
     command:
       - server
     working_dir: /app
-    environment:
-       ENV: ${ENV}
-       swagger_domain: ${swagger_domain}
-       SERVICE_PORT: ${SERVICE_PORT}
-       DEBUG: ${DEBUG}
-       CONTEXT_TIMEOUT: ${CONTEXT_TIMEOUT}
-       JAEGER_SERVICE_NAME: ${JAEGER_SERVICE_NAME}
-       JAEGER_REPORTER_LOG_SPANS: ${JAEGER_REPORTER_LOG_SPANS}
-       JAEGER_AGENT_HOST: ${JAEGER_AGENT_HOST}
-       JAEGER_AGENT_PORT: ${JAEGER_AGENT_PORT}
-       AUTH_SECRET_KEY: ${AUTH_SECRET_KEY}
-       MONGO_USER: ${MONGO_USER}
-       MONGO_PASSWORD: ${MONGO_PASSWORD}
-       MONGO_HOST: ${MONGO_HOST}
-       MONGO_PORT: ${MONGO_PORT}
-       MONGO_DB: ${rendering-hub}
-       MQTT_ADDR: ${MQTT_ADDR}
-       MQTT_PORT: ${MQTT_PORT}
-       MQTT_USERNAME:  ${MQTT_USERNAME}
-       MQTT_PASSWORD: ${MQTT_PASSWORD}
-       REDIS_ADDR: ${REDIS_ADDR}
-       REDIS_PASSWORD: ${REDIS_PASSWORD}
-       REDIS_DB: ${REDIS_DB}
-       REDIS_ENV: ${REDIS_ENV}
-       CHAIN_URL: ${CHAIN_URL}
-       GCS_DOMAIN: ${GCS_DOMAIN}
-       GCS_PROJECT_ID: ${GCS_PROJECT_ID}
-       GCS_BUCKET: ${GCS_BUCKET}
-       GCS_AUTH: ${GCS_AUTH}
-
+    env_file:
+      - .env
+      
   api_redis_service:
     restart: always
     container_name: api_redis_service
