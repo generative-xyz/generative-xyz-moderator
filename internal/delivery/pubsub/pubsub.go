@@ -52,7 +52,6 @@ func (h PubsubHandler) StartServer() {
 		case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
 			h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
 			break
-		
 		}	
 	}
 	<-ch
