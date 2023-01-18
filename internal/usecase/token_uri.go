@@ -54,16 +54,22 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 
 	log.SetTag("tokenID", token.TokenID)
 	log.SetTag("contractAddress", token.ContractAddress)
+
+	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	if err != nil {
+		log.Error("RunAndCap.ParseBool", err.Error(), err)
+		return nil, err
+	}
 	
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-        chromedp.Flag("headless", true), 
+        chromedp.Flag("headless", eCH), 
     )
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
     cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	traits := make(map[string]interface{})
-	err := chromedp.Run(cctx,
+	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(token.AnimationURL),
 		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
