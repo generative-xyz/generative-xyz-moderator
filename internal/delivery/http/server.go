@@ -64,8 +64,6 @@ func (h *httpDelivery) StartServer() {
 
 	h.registerRoutes()
 	h.Handler.NotFoundHandler = h.Handler.NewRoute().HandlerFunc(http.NotFound).GetHandler()
-	h.Handler.Use(h.MiddleWare.LoggingMiddleware)
-
 	credentials := handlers.AllowCredentials()
 	methods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS", "DELETE"})
 	origins := handlers.AllowedOrigins([]string{"*"})

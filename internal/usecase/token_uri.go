@@ -65,8 +65,8 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
         chromedp.Flag("headless", true), 
     )
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-    cctx, _ := chromedp.NewContext(allocCtx)
-	//defer cancel()
+    cctx, cancel := chromedp.NewContext(allocCtx)
+	defer cancel()
 
 	traits := make(map[string]interface{})
 	err := chromedp.Run(cctx,
@@ -146,17 +146,12 @@ func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, token *entity.To
 		return resp, nil
 	}
 	
-	if token.ThumbnailCapturedAt == nil {
-		go u.RunAndCap(span, token, captureTimeout)
-		return resp, nil
-	}
-	
-	if token.ThumbnailCapturedAt !=nil {
-	 	if token.ThumbnailCapturedAt.Add(time.Hour * 6).After(time.Now()) {
-			go u.RunAndCap(span, token, captureTimeout)
-			return resp, nil
-		}
-	}
+	// if token.ThumbnailCapturedAt !=nil {
+	//  	if token.ThumbnailCapturedAt.Add(time.Hour * 6).After(time.Now()) {
+	// 		go u.RunAndCap(span, token, captureTimeout)
+	// 		return resp, nil
+	// 	}
+	// }
 	
 	return resp, nil
 }
@@ -367,7 +362,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	tokIdMini  := dataObject.TokenIDInt %  100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	u.CaptureAnimationURI(span, dataObject, 6)
+	u.CaptureAnimationURI(span, dataObject, 20)
 	return dataObject, nil
 }
 
