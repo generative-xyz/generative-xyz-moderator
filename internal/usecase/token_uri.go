@@ -202,7 +202,9 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	log.SetData("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
 
-	dataObject, err := u.Repo.FindTokenBy(req.ContractAddress, req.TokenID)
+	fAddr := strings.ToLower(req.ContractAddress)
+	
+	dataObject, err := u.Repo.FindTokenBy(fAddr, req.TokenID)
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
