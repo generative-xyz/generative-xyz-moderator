@@ -93,6 +93,7 @@ type TokenAnimationURI struct {
 	Traits []entity.TokenUriAttr
 	TraitsStr []entity.TokenUriAttrStr
 	CapturedAt *time.Time
+	IsUpdated bool
 }
 
 type TokenAnimationURIChan struct {
