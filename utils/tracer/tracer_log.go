@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/logger"
 
 	"github.com/getsentry/sentry-go"
@@ -29,7 +30,9 @@ func NewTraceLog() *TraceLog {
 	t := new(TraceLog)
 	t.data = make(map[string]string)
 	t.tags = make(map[string]string)
+	l := logger.NewLogger()
 
+	t.log = l
 	t.ignoreFields = []string{"diagram"}
 	return t
 }
@@ -39,9 +42,8 @@ func (t *TraceLog) SetData(key string, value interface{}) {
 	t.data[key] = string(parsedValue)
 
 	if t.log != nil {
-		if len(parsedValue) <= 500 {
-			t.log.Info(t.data[key])
-		}
+		f := zap.Any(key, value)
+		t.log.Info(key, f)
 	}
 }
 
@@ -58,7 +60,7 @@ func (t *TraceLog) Error(key string, value string, err error) {
 	t.error = &err
 
 	if t.log != nil {
-		//t.log.Errorf("%s, %v", key, value, err)
+		t.log.Error("%s, %v", key, value, err)
 	}
 }
 

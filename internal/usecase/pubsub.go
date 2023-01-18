@@ -23,7 +23,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 	log.SetData("tokenURI", tokenURI.TokenID)
-	log.SetTag("tokenURI", tokenURI.TokenID)
+	log.SetTag("TokenID", tokenURI.TokenID)
 
 	resp, err := u.RunAndCap(span, tokenURI, 20)
 	if err != nil {
