@@ -352,6 +352,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	imageChan := <- tokenImageChan
 	if imageChan.Err == nil {
+		log.SetData("mageChan.Data.Traits", imageChan.Data.Traits)
+		log.SetData("mageChan.Data.TraitsStr", imageChan.Data.TraitsStr)
+		log.SetData("mageChan.Data.Thumbnail", imageChan.Data.Thumbnail)
+		log.SetData("mageChan.Data.CapturedAt", imageChan.Data.CapturedAt)
+		log.SetData("mageChan.Data.IsUpdated", imageChan.Data.IsUpdated)
+
 		dataObject.ParsedAttributes = imageChan.Data.Traits
 		dataObject.ParsedAttributesStr = imageChan.Data.TraitsStr
 		dataObject.ParsedImage = &imageChan.Data.ParsedImage

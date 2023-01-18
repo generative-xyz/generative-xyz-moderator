@@ -174,7 +174,8 @@ func startServer() {
 		}(cron)
 	}
 	
-
-	log.Println("started server and listening")
-	h.StartServer()
+	if conf.StartHTTP {
+		log.Println("started server and listening")
+		h.StartServer()
+	}
 }
