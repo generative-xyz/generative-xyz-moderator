@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	Debug     bool
+	StartHTTP     bool
 	Context   *Context
 	Databases *Databases
 	Sentry    *Sentry
@@ -137,6 +138,7 @@ func NewConfig() (*Config, error) {
 	godotenv.Load()
 	services := make(map[string]string)
 	isDebug,  _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	isStartHTTP,  _ := strconv.ParseBool(os.Getenv("START_HTTP"))
 	timeOut, err := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
 	if err != nil {
 		panic(err)
@@ -155,6 +157,7 @@ func NewConfig() (*Config, error) {
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
+		StartHTTP: isStartHTTP,
 		Context:         &Context{
 			TimeOut: timeOut,
 		},
