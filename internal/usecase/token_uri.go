@@ -37,6 +37,8 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		return nil, errors.New("Token is empty")
 	}
 
+	log.SetTag("tokenID", token.TokenID)
+	log.SetTag("contractAddress", token.ContractAddress)
 	resp := &structure.TokenAnimationURI{}
 	
 	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)

@@ -41,6 +41,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 	token.Thumbnail = resp.Thumbnail
 	token.ParsedAttributes = resp.Traits
 	token.ParsedAttributesStr = resp.TraitsStr
+	token.ThumbnailCapturedAt = resp.CapturedAt
 
 	log.SetData("resp",resp.CapturedAt)
 	log.SetData("IsUpdated",resp.IsUpdated)
