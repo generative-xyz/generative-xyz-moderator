@@ -14,6 +14,7 @@ import (
 type Config struct {
 	Debug     bool
 	StartHTTP     bool
+	StartPubsub     bool
 	Context   *Context
 	Databases *Databases
 	Sentry    *Sentry
@@ -139,6 +140,8 @@ func NewConfig() (*Config, error) {
 	services := make(map[string]string)
 	isDebug,  _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	isStartHTTP,  _ := strconv.ParseBool(os.Getenv("START_HTTP"))
+	isStartPubsub,  _ := strconv.ParseBool(os.Getenv("START_PUBSUB"))
+
 	timeOut, err := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
 	if err != nil {
 		panic(err)
@@ -158,6 +161,7 @@ func NewConfig() (*Config, error) {
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
 		StartHTTP: isStartHTTP,
+		StartPubsub: isStartPubsub,
 		Context:         &Context{
 			TimeOut: timeOut,
 		},
