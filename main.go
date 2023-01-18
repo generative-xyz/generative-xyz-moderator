@@ -96,7 +96,7 @@ func startServer() {
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
 	covalent := nfts.NewCovalentNfts(conf);
 	slack := slack.NewSlack(conf.Slack)
-	rPubsub := redis.NewPubsubClient(conf.Redis)
+	rPubsub := redis.NewPubsubClient(conf.Redis, t)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()

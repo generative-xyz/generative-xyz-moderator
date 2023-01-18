@@ -386,7 +386,10 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	//capture image
 	payload := redis.PubSubPayload{Data: dataObject}
-	u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL , payload)
+	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL , payload)
+	if err != nil {
+		log.Error("ProducerWithTrace", err.Error(), err)
+	}
 
 	return dataObject, nil
 }
