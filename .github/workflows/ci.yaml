@@ -2,6 +2,7 @@ name: Docker Image CI
 
 on:
   push:
+    # Allow gpu branches build
     branches: [ "staging", "develop", "gpu-staging", "gpu-develop"]
     tags:
       - 'v**'
@@ -31,4 +32,4 @@ jobs:
           image_tag: latest,${{ env.IMAGE_TAG }}
           dockerfile: ./Dockerfile
           context: ./
-          
+
