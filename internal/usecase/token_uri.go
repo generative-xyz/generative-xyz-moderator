@@ -36,8 +36,9 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	}
 
 	resp := &structure.TokenAnimationURI{}
-	if token.ThumbnailCapturedAt != nil {
-		
+	
+	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
+	if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
 			Thumbnail: token.Thumbnail,
@@ -46,7 +47,8 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 			CapturedAt: token.ThumbnailCapturedAt,
 			IsUpdated: false,
 		}
-		
+
+		log.SetData("thumbnailCapturedAt.resp", resp)
 		return resp, nil
 	}
 
@@ -54,7 +56,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	log.SetTag("contractAddress", token.ContractAddress)
 	
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-        chromedp.Flag("headless", false), 
+        chromedp.Flag("headless", true), 
     )
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
     cctx, cancel := chromedp.NewContext(allocCtx)
@@ -93,7 +95,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	thumbnail := ""
 	now := time.Now().UTC()
 	if  image != "" {
-		base64Image := *token.ParsedImage
+		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
 			name := fmt.Sprintf("thumb/%s-%s.png", token.ContractAddress, token.TokenID)
@@ -118,6 +120,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		IsUpdated: true,
 	}
 
+	log.SetData("resp", resp)
 	return resp, nil
 }
 
