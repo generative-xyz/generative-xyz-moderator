@@ -7,6 +7,7 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/crontab"
 	httpHandler "rederinghub.io/internal/delivery/http"
+	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/txconsumer"
 	"rederinghub.io/internal/usecase"
@@ -95,6 +96,7 @@ func startServer() {
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
 	covalent := nfts.NewCovalentNfts(conf);
 	slack := slack.NewSlack(conf.Slack)
+	rPubsub := redis.NewPubsubClient(conf.Redis)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -111,6 +113,7 @@ func startServer() {
 		CovalentNFT: *covalent,
 		Blockchain: *ethClient,
 		Slack: *slack,
+		Pubsub: rPubsub,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -174,6 +177,14 @@ func startServer() {
 		}(cron)
 	}
 	
+	if conf.StartPubsub  {
+		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+		go func (ph *pubsub.PubsubHandler)  {
+			
+			ph.StartServer()
+		}(ph)
+	}
+
 	if conf.StartHTTP {
 		log.Println("started server and listening")
 		h.StartServer()

@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/utils/tracer"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 type Usecase struct {
@@ -67,6 +68,16 @@ func (uc *Usecase) StartSpan(name string,  rootSpan opentracing.Span) (opentraci
 
 func (uc *Usecase) StartSpanWithoutRoot(name string) (opentracing.Span, *tracer.TraceLog) {
 	span := uc.Tracer.StartSpan(name)
+	log := tracer.NewTraceLog()
+	return span, log
+}
+
+func (uc *Usecase) StartSpanFromInjecttion(tracingInjection map[string]string, name string) (opentracing.Span, *tracer.TraceLog) {
+	spanCtx, _ := uc.Tracer.GetTrace().Extract(opentracing.TextMap, opentracing.TextMapCarrier(tracingInjection))
+	span := uc.Tracer.GetTrace().StartSpan(name, ext.RPCServerOption(spanCtx))
+
+	defer span.Finish()
+
 	log := tracer.NewTraceLog()
 	return span, log
 }

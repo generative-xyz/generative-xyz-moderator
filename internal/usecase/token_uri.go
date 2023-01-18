@@ -21,8 +21,10 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/redis"
 )
 
 func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI,  error) {
@@ -47,8 +49,6 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 			CapturedAt: token.ThumbnailCapturedAt,
 			IsUpdated: false,
 		}
-
-		log.SetData("thumbnailCapturedAt.resp", resp)
 		return resp, nil
 	}
 
@@ -73,7 +73,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 
 	if err != nil {
 		log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
-		return nil, err
+		//return nil, err
 	}
 
 	for key, item := range traits {
@@ -120,7 +120,6 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		IsUpdated: true,
 	}
 
-	log.SetData("resp", resp)
 	return resp, nil
 }
 
@@ -184,7 +183,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	mftMintedTimeChan := make(chan structure.NftMintedTimeChan, 1)
 	tokendatachan := make(chan structure.TokenDataChan, 1)
-	tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
+	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
@@ -263,21 +262,21 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		})
 	}(mftMintedTimeChan, strings.ToLower(parentAddr.String()))
 
-	//capture image
-	go func (rootSpan opentracing.Span, tokenImageChan chan structure.TokenAnimationURIChan)  {
-		data := &structure.TokenAnimationURI{}
-		var err error
 
-		defer func ()  {
-			tokenImageChan <- structure.TokenAnimationURIChan{
-				Data: data,
-				Err:  err,
-			}
-		}()
+	// go func (rootSpan opentracing.Span, tokenImageChan chan structure.TokenAnimationURIChan)  {
+	// 	data := &structure.TokenAnimationURI{}
+	// 	var err error
 
-		data, err = u.RunAndCap(span, dataObject, 20)
+	// 	defer func ()  {
+	// 		tokenImageChan <- structure.TokenAnimationURIChan{
+	// 			Data: data,
+	// 			Err:  err,
+	// 		}
+	// 	}()
+
+	// 	data, err = u.RunAndCap(span, dataObject, 20)
 		
-	}(span, tokenImageChan)
+	// }(span, tokenImageChan)
 	
 	log.SetData("nftProject", nftProject)
 	log.SetData("parentAddr", parentAddr)
@@ -353,24 +352,24 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		log.Error("tokenFChan.Err", tokenFChan.Err.Error(), tokenFChan.Err)
 	}
 
-	imageChan := <- tokenImageChan
-	if imageChan.Err == nil {
-		log.SetData("mageChan.Data.Traits", imageChan.Data.Traits)
-		log.SetData("mageChan.Data.TraitsStr", imageChan.Data.TraitsStr)
-		log.SetData("mageChan.Data.Thumbnail", imageChan.Data.Thumbnail)
-		log.SetData("mageChan.Data.CapturedAt", imageChan.Data.CapturedAt)
-		log.SetData("mageChan.Data.IsUpdated", imageChan.Data.IsUpdated)
+	// imageChan := <- tokenImageChan
+	// if imageChan.Err == nil {
+	// 	log.SetData("mageChan.Data.Traits", imageChan.Data.Traits)
+	// 	log.SetData("mageChan.Data.TraitsStr", imageChan.Data.TraitsStr)
+	// 	log.SetData("mageChan.Data.Thumbnail", imageChan.Data.Thumbnail)
+	// 	log.SetData("mageChan.Data.CapturedAt", imageChan.Data.CapturedAt)
+	// 	log.SetData("mageChan.Data.IsUpdated", imageChan.Data.IsUpdated)
 
-		dataObject.ParsedAttributes = imageChan.Data.Traits
-		dataObject.ParsedAttributesStr = imageChan.Data.TraitsStr
-		dataObject.ParsedImage = &imageChan.Data.ParsedImage
-		dataObject.Thumbnail = imageChan.Data.Thumbnail
-		dataObject.ThumbnailCapturedAt = imageChan.Data.CapturedAt
-		isUpdated =  imageChan.Data.IsUpdated
+	// 	dataObject.ParsedAttributes = imageChan.Data.Traits
+	// 	dataObject.ParsedAttributesStr = imageChan.Data.TraitsStr
+	// 	dataObject.ParsedImage = &imageChan.Data.ParsedImage
+	// 	dataObject.Thumbnail = imageChan.Data.Thumbnail
+	// 	dataObject.ThumbnailCapturedAt = imageChan.Data.CapturedAt
+	// 	isUpdated =  imageChan.Data.IsUpdated
 
-	}else{
-		log.Error("imageChan.Err", imageChan.Err.Error(), imageChan.Err)
-	}
+	// }else{
+	// 	log.Error("imageChan.Err", imageChan.Err.Error(), imageChan.Err)
+	// }
 
 	tokIdMini  := dataObject.TokenIDInt %  100000
 	dataObject.TokenIDMini = &tokIdMini
@@ -384,6 +383,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		}
 		log.SetData("updated", updated)
 	}
+
+	//capture image
+	payload := redis.PubSubPayload{Data: dataObject}
+	u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL , payload)
+
 	return dataObject, nil
 }
 
