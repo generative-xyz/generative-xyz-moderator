@@ -25,42 +25,22 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) GetLiveToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetLiveToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-	log.SetTag("tokenID", req.TokenID)
-	log.SetTag("contractAddress", req.ContractAddress)
-	
-	tokenUri, err := u.getTokenInfo(span, req)
-	if err != nil {
-		log.Error("u.getTokenInfo", err.Error(), err)
-		return nil, err
-	}
-
-	updated, err := u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
-	if err != nil {
-		log.Error("u.Repo.UpdateOne", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("updated", updated)
-	return tokenUri, nil
-}
-
-func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) {
+func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI,  error) {
 	span, log := u.StartSpan("RunAndCap", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
+	var buf []byte
+	attrs := []entity.TokenUriAttr{}
+	strAttrs := []entity.TokenUriAttrStr{}
+
+
 	if token == nil {
-		return
+		return nil, errors.New("Token is empty")
 	}
 
 	log.SetTag("tokenID", token.TokenID)
 	log.SetTag("contractAddress", token.ContractAddress)
 	
-	var buf []byte
-	attrs := []entity.TokenUriAttr{}
-	strAttrs := []entity.TokenUriAttrStr{}
-
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
         chromedp.Flag("headless", true), 
     )
@@ -79,7 +59,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 
 	if err != nil {
 		log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
-		return 
+		return nil, err
 	}
 
 	for key, item := range traits {
@@ -98,13 +78,9 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	image := helpers.Base64Encode(buf)
 	image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
 
+	thumbnail := ""
 	now := time.Now().UTC()
-	token.ParsedImage = &image
-	token.ParsedAttributes = attrs
-	token.ParsedAttributesStr = strAttrs
-	token.ThumbnailCapturedAt = &now
-
-	if  token.ParsedImage != nil {
+	if  image != "" {
 		base64Image := *token.ParsedImage
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
@@ -115,44 +91,20 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
 			}else{
 				log.SetData("uploaded", uploaded)
-				token.Thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
 		// pass reader to NewDecoder
 	}
 
-	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
-	if err != nil {
-		log.Error("runAndCap.UpdateOrInsertTokenUri",err.Error(), err)
-		return 
-	}
-
-	log.SetData("updated", updated)
-}
-
-func (u Usecase) CaptureAnimationURI(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI,  error) {
-	span, log := u.StartSpan("CaptureImageToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-	attrs := []entity.TokenUriAttr{}
-	strAttrs := []entity.TokenUriAttrStr{}
 	resp := &structure.TokenAnimationURI{
-		Thumbnail: "",
+		ParsedImage: image,
+		Thumbnail: thumbnail,
 		Traits:  attrs,
 		TraitsStr: strAttrs,
+		CapturedAt: &now,
 	}
 
-	if token.ParsedImage == nil {
-		go u.RunAndCap(span, token, captureTimeout)
-		return resp, nil
-	}
-	
-	// if token.ThumbnailCapturedAt !=nil {
-	//  	if token.ThumbnailCapturedAt.Add(time.Hour * 6).After(time.Now()) {
-	// 		go u.RunAndCap(span, token, captureTimeout)
-	// 		return resp, nil
-	// 	}
-	// }
-	
 	return resp, nil
 }
 
@@ -162,7 +114,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	log.SetData("req", req)
 
 	defer func() {
-		go u.GetLiveToken(span, req, captureTimeout)
+		go u.getTokenInfo(span, req)
 	}()
 
 	contractAddress := strings.ToLower(req.ContractAddress) 
@@ -172,7 +124,7 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			token, err := u.GetLiveToken(span, req, captureTimeout)
+			token, err := u.getTokenInfo(span, req)
 			if err != nil { 
 				log.Error("u.GetLiveToken", err.Error(), err)
 				return nil, err
@@ -196,15 +148,15 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	log.SetData("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
-
 	fAddr := strings.ToLower(req.ContractAddress)
+	isUpdated := false
 	
 	dataObject, err := u.Repo.FindTokenBy(fAddr, req.TokenID)
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			dataObject = &entity.TokenUri{}
-
+			isUpdated = true
 		} else {
 			log.Error("u.Repo.FindTokenBy", err.Error(), err)
 			return nil, err
@@ -213,6 +165,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	mftMintedTimeChan := make(chan structure.NftMintedTimeChan, 1)
 	tokendatachan := make(chan structure.TokenDataChan, 1)
+	tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
@@ -289,7 +242,21 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 			TokenID: req.TokenID,
 		})
 	}(mftMintedTimeChan, strings.ToLower(parentAddr.String()))
-	
+
+	go func (rootSpan opentracing.Span, tokenImageChan chan structure.TokenAnimationURIChan)  {
+		data := &structure.TokenAnimationURI{}
+		var err error
+
+		defer func ()  {
+			tokenImageChan <- structure.TokenAnimationURIChan{
+				Data: data,
+				Err:  err,
+			}
+		}()
+
+		data, err = u.RunAndCap(span, dataObject, 20)
+		
+	}(span, tokenImageChan)
 	
 	log.SetData("nftProject", nftProject)
 	log.SetData("parentAddr", parentAddr)
@@ -342,8 +309,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 			log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
 			return nil, err
 		}
-		dataObject.Owner = owner
 
+		if nft.Owner != dataObject.OwnerAddr {
+			dataObject.Owner = owner
+			isUpdated = true
+		}
+	
 	}else{
 		log.Error(" u.GetNftMintedTime",  mftMintedTime.Err.Error(),  mftMintedTime.Err)
 	}
@@ -357,12 +328,33 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Attributes = tokenFChan.Data.Attributes
 		dataObject.Image = tokenFChan.Data.Image
 		
+	}else{
+		log.Error("tokenFChan.Err", tokenFChan.Err.Error(), tokenFChan.Err)
+	}
+
+	imageChan := <- tokenImageChan
+	if imageChan.Err == nil {
+		dataObject.ParsedAttributes = imageChan.Data.Traits
+		dataObject.ParsedAttributesStr = imageChan.Data.TraitsStr
+		dataObject.ParsedImage = &imageChan.Data.ParsedImage
+		dataObject.Thumbnail = imageChan.Data.Thumbnail
+		dataObject.ThumbnailCapturedAt = imageChan.Data.CapturedAt
+	}else{
+		log.Error("imageChan.Err", imageChan.Err.Error(), imageChan.Err)
 	}
 
 	tokIdMini  := dataObject.TokenIDInt %  100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	u.CaptureAnimationURI(span, dataObject, 20)
+	isUpdated = true
+	if isUpdated == true {
+		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
+		if err != nil {
+			log.Error("u.Repo.UpdateOne", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("updated", updated)
+	}
 	return dataObject, nil
 }
 
