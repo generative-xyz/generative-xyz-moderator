@@ -510,19 +510,6 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 	span, log := u.StartSpan("FilterTokens", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	//TODO use redis schedule instead of crontab or routine to get data.
-	// if filter.GenNFTAddr != nil {
-	// 	defer func ()  {
-	// 		go func (rootSpan opentracing.Span, genNftAddress string) {
-	// 			span, log := u.StartSpan("GetTokensByContract.Live.Process", rootSpan)
-	// 			defer u.Tracer.FinishSpan(span, log)
-				
-	// 			u.GetTokensByContract(span, genNftAddress, nfts.MoralisFilter{})
-		
-	// 		}(span, *filter.GenNFTAddr)
-	// 	}()
-	// }
-	
 	pe := &entity.FilterTokenUris{}
 
 	log.SetData("log", log)
@@ -532,13 +519,40 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 		return nil, err
 	}
 
-	tokens, err := u.Repo.FilterTokenUri(*pe)
+	getToken := func (rootSpan opentracing.Span, redisKey string, filter structure.FilterTokens)   (*entity.Pagination, error) {
+		span, log := u.StartSpan("FilterTokens.getToken", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+		
+		tokens, err := u.Repo.FilterTokenUri(*pe)
+		if err != nil {
+			log.Error("u.Repo.FilterTokenUri", err.Error(), err)
+			return nil, err
+		}
+		u.Cache.SetData(redisKey, tokens)
+		log.SetData("tokens", tokens.Total)
+		return tokens, nil
+	}
+
+	bytes, err := json.Marshal(pe)
+	if err != nil {
+		log.Error("json.Marshal", err.Error(), err)
+	}
+	key := helpers.GenerateMd5String(string(bytes))
+
+	go getToken(span, key, filter)
+	cached, err := u.Cache.GetData(key)
+	if err != nil {
+		return getToken(span, key, filter)
+	}
+
+	resp := &entity.Pagination{}
+	err = helpers.ParseCache(cached, resp)
 	if err != nil {
 		log.Error("u.Repo.FilterTokenUri", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("tokens", tokens.Total)
-	return tokens, nil
+	
+	return resp, nil
 }
 
 func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateTokenReq) (*entity.TokenUri, error) {
