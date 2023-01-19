@@ -520,8 +520,13 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span,event string, offeri
 
 	profile, err := u.Repo.FindUserByWalletAddress(owner)
 	if err != nil {
-		log.Error("UpdateTokenOnwer.FindUserByWalletAddress", err.Error(), err)
-		return err
+		// if can not find user profile in db, set owner to nil
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			profile = nil
+		} else {
+			log.Error("UpdateTokenOnwer.FindUserByWalletAddress", err.Error(), err)
+			return err
+		}
 	}
 
 	log.SetData("token.Owner", owner)

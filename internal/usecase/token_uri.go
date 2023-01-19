@@ -340,6 +340,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 		if nft.Owner != dataObject.OwnerAddr {
 			dataObject.Owner = owner
+			dataObject.OwnerAddr = nft.Owner
 			isUpdated = true
 		}
 	
