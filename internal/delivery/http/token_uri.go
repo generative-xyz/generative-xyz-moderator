@@ -374,15 +374,24 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 	}
 
 	respItems := []response.InternalTokenURIResp{}
+	tokens := []entity.TokenUri{}
 	iTokensData := pag.Result
-	tokensData, ok := (iTokensData).([]entity.TokenUri)
-	if !ok {
-		err := errors.New( "Cannot parse products")
-		log.Error("ctx.Value.Token",  err.Error(), err)
+
+	bytes, err := json.Marshal(iTokensData)
+	if err  != nil {
+		err := errors.New( "Cannot parse respItems")
+		log.Error("respItems",  err.Error(), err)
 		return nil, err
 	}
 
-	for _, token := range tokensData {	
+	err = json.Unmarshal(bytes, &tokens)
+	if err != nil {
+		err := errors.New( "Cannot Unmarshal")
+		log.Error("Unmarshal",  err.Error(), err)
+		return nil, err
+	}
+
+	for _, token := range tokens {	
 		resp, err := h.tokenToResp(&token)
 		if err != nil {
 			err := errors.New( "Cannot parse products")
