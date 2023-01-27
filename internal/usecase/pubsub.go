@@ -22,15 +22,20 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		log.Error("PubSubCreateTokenThumbnai.json.Unmarshal", err.Error(), err)
 		return
 	}
-	log.SetData("tokenURI", tokenURI.TokenID)
-	log.SetTag("TokenID", tokenURI.TokenID)
 
-	token, err := u.Repo.FindTokenBy(tokenURI.ContractAddress, tokenURI.TokenID)
+	log.SetData("payload", tokenURI)
+	log.SetData("tokenID", tokenURI.TokenID)
+	log.SetTag("tokenID", tokenURI.TokenID)
+
+	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
 		log.Error("PubSubCreateTokenThumbnai.FindTokenBy", err.Error(), err)
 		return
 	}
-
+	
+	log.SetTag("found.tokenID", token.TokenID)
+	log.SetTag("found.tokenID.thumbnail", token.Thumbnail)
+	
 	resp, err := u.RunAndCap(span, token, 20)
 	if err != nil {
 		log.Error("PubSubCreateTokenThumbnai.RunAndCap", err.Error(), err)
