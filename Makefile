@@ -43,8 +43,6 @@ lint:
 .PHONY: clean install unittest build docker run stop vendor lint-prepare lint
 
 build-staging:
-	git checkout main
-	git pull origin main
-	git merge develop
-	git push origin main
+	git checkout staging && git pull origin staging && git merge develop && git push origin staging
+	git checkout gpu-staging && git pull origin gpu-staging && git merge staging && git push origin gpu-staging
 	git checkout develop
