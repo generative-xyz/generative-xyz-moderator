@@ -177,7 +177,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	fAddr := strings.ToLower(req.ContractAddress)
 	isUpdated := false
 	
-	dataObject, err := u.Repo.FindTokenBy(fAddr, req.TokenID)
+	dataObject, err := u.Repo.FindTokenByWithoutCache(fAddr, req.TokenID)
 	if err != nil {
 		log.Error("u.Repo.FindTokenBy", err.Error(), err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
