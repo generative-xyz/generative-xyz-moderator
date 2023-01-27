@@ -328,9 +328,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 	dataObject.Creator = creator
 	mftMintedTime := <- mftMintedTimeChan
-	if mftMintedTime.Err == nil {
-		dataObject.BlockNumberMinted = mftMintedTime.NftMintedTime.BlockNumberMinted
-		dataObject.MintedTime = mftMintedTime.NftMintedTime.MintedTime
+	if mftMintedTime.Err == nil {		
 		nft := mftMintedTime.NftMintedTime.Nft
 		owner, err := u.Repo.FindUserByWalletAddress(nft.Owner)
 		if err != nil {
@@ -341,6 +339,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		if nft.Owner != dataObject.OwnerAddr {
 			dataObject.Owner = owner
 			dataObject.OwnerAddr = nft.Owner
+			isUpdated = true
+		}
+		
+		if mftMintedTime.NftMintedTime.MintedTime != dataObject.MintedTime {
+			dataObject.BlockNumberMinted = mftMintedTime.NftMintedTime.BlockNumberMinted
+			dataObject.MintedTime = mftMintedTime.NftMintedTime.MintedTime
 			isUpdated = true
 		}
 	
@@ -360,25 +364,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}else{
 		log.Error("tokenFChan.Err", tokenFChan.Err.Error(), tokenFChan.Err)
 	}
-
-	// imageChan := <- tokenImageChan
-	// if imageChan.Err == nil {
-	// 	log.SetData("mageChan.Data.Traits", imageChan.Data.Traits)
-	// 	log.SetData("mageChan.Data.TraitsStr", imageChan.Data.TraitsStr)
-	// 	log.SetData("mageChan.Data.Thumbnail", imageChan.Data.Thumbnail)
-	// 	log.SetData("mageChan.Data.CapturedAt", imageChan.Data.CapturedAt)
-	// 	log.SetData("mageChan.Data.IsUpdated", imageChan.Data.IsUpdated)
-
-	// 	dataObject.ParsedAttributes = imageChan.Data.Traits
-	// 	dataObject.ParsedAttributesStr = imageChan.Data.TraitsStr
-	// 	dataObject.ParsedImage = &imageChan.Data.ParsedImage
-	// 	dataObject.Thumbnail = imageChan.Data.Thumbnail
-	// 	dataObject.ThumbnailCapturedAt = imageChan.Data.CapturedAt
-	// 	isUpdated =  imageChan.Data.IsUpdated
-
-	// }else{
-	// 	log.Error("imageChan.Err", imageChan.Err.Error(), imageChan.Err)
-	// }
 
 	tokIdMini  := dataObject.TokenIDInt %  100000
 	dataObject.TokenIDMini = &tokIdMini
