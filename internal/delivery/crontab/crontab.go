@@ -60,11 +60,10 @@ func (h ScronHandler) StartServer() {
 			}()
 
 			//TO DO: this function will be improved
-			// err := h.Usecase.UpdateTokensFromChain(span)
+			// err := h.Usecase.GetTokensOfAProjectFromChain(span)
 			// if err != nil {
 			// 	log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
 			// }
-
 
 		}(chanDone)
 		

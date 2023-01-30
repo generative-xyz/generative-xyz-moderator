@@ -44,7 +44,7 @@ func init() {
 	l := _logger.NewLogger()
 
 
-	mongoCnn := fmt.Sprintf("mongodb://%s:%s@%s:%s/", c.Databases.Mongo.User,c.Databases.Mongo.Pass, c.Databases.Mongo.Host, c.Databases.Mongo.Port )
+	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority",c.Databases.Mongo.Scheme, c.Databases.Mongo.User,c.Databases.Mongo.Pass, c.Databases.Mongo.Host )
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
 	if err != nil {
 		log.Println("Can not connect mongoDB ", err)

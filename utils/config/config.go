@@ -74,6 +74,7 @@ type DBConnection struct {
 	Pass    string
 	Name    string
 	Sslmode string
+	Scheme string
 }
 
 type Mongo struct {
@@ -174,6 +175,7 @@ func NewConfig() (*Config, error) {
 				User:     os.Getenv("MONGO_USER"), 
 				Pass:     os.Getenv("MONGO_PASSWORD"),    
 				Name :     os.Getenv("MONGO_DB"),   
+				Scheme :     os.Getenv("MONGO_SCHEME"),   
 			},
 		},
 		Redis: RedisConfig{

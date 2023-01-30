@@ -2,7 +2,9 @@
 .vscode/
 *.iml
 .env
+.env.docker
 .env.local
+.env.*
 docker-compose.override.yml
 cover.out
 reports

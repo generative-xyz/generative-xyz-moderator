@@ -14,7 +14,7 @@ services:
       - server
     working_dir: /app
     env_file:
-      - .env
+      - .env.docker
       
   api_redis_service:
     restart: always
@@ -26,8 +26,6 @@ services:
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
     ports:
       - "6379:6379"
-    volumes:
-      - "./datadir/redis:/bitnami/redis/data"
 
   api_jaeger:
     container_name: api_jaeger
@@ -55,10 +53,11 @@ services:
       - "16686:16686"
 
   api_xserver:
-    image: suchja/x11server
+    container_name: api_xserver
+    build:
+      dockerfile: ./GUIDockerfileUbuntu
+    env_file:
+      - .env.docker-gpu
     ports:
-      - 5900:5900
-    environment:
-      VNC_PASSWORD: xserver123456789
-      XFB_SCREEN: 1280x800x24
-      XFB_SCREEN_DPI: 150
+      - "6080:80"
+      - "5900:5900"
