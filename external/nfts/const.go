@@ -15,4 +15,5 @@ const (
 
 var ChainToChainID = map[string]string{
 	"mumbai": "80001",
+	"goerli": "5",
 }
