@@ -212,7 +212,7 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Param owner_address query string false "owner_address"
 // @Param creator_address query string false "creator_address"
 // @Param tokenID query string false "Filter via tokenID"
-// @Param attributes query string false "attributes"
+// @Param attributes query []string false "attributes"
 // @Param sort query string false "newest, minted-newest"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."

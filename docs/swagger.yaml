@@ -1434,8 +1434,10 @@ paths:
         type: string
       - description: attributes
         in: query
+        items:
+          type: string
         name: attributes
-        type: string
+        type: array
       - description: newest, minted-newest
         in: query
         name: sort
