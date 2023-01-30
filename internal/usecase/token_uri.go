@@ -81,7 +81,15 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 
 	if err != nil {
 		log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
-		//return nil, err
+		resp = &structure.TokenAnimationURI{
+			ParsedImage: "",
+			Thumbnail: "",
+			Traits: attrs,
+			TraitsStr: strAttrs,
+			CapturedAt: nil,
+			IsUpdated: false,
+		}
+		return resp, nil
 	}
 
 	for key, item := range traits {
