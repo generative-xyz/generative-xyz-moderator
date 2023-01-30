@@ -153,7 +153,9 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 				"parsed_attributes_str": bson.M{
 					"$elemMatch": bson.M{
 						"trait_type": attribute.TraitType,
-						"value": attribute.Value,
+						"value": bson.M {
+							"$in" : attribute.Values,
+						},
 					},
 				},
 			})

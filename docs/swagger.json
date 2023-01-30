@@ -1853,7 +1853,10 @@
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
                         "description": "attributes",
                         "name": "attributes",
                         "in": "query"

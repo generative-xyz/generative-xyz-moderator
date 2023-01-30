@@ -8,6 +8,11 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type TokenUriAttrFilter struct {
+	TraitType string
+	Values []string
+}
+
 type FilterTokenUris struct {
 	BaseFilters
 	ContractAddress *string
@@ -17,7 +22,7 @@ type FilterTokenUris struct {
 	Keyword *string
 	CollectionIDs []string
 	TokenIDs []string
-	Attributes []TokenUriAttrStr
+	Attributes []TokenUriAttrFilter
 }
 
 type TokenUri struct {

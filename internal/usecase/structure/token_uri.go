@@ -108,6 +108,11 @@ type GetNftTransactionsReq struct {
 	TokenID string
 }
 
+type TokenUriAttrReq struct {
+	TraitType string
+	Values []string
+}
+
 type FilterTokens struct {
 	BaseFilters
 	Keyword *string
@@ -117,7 +122,7 @@ type FilterTokens struct {
 	GenNFTAddr *string
 	CollectionIDs []string
 	TokenIDs []string
-	Attributes []entity.TokenUriAttrStr
+	Attributes []TokenUriAttrReq
 }
 
 func (f *FilterTokens) CreateFilter(r *http.Request) error {
@@ -130,16 +135,26 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	attributesRaw := r.URL.Query().Get("attributes")
 	if len(attributesRaw) > 0 {
 		attributesStrs := strings.Split(attributesRaw, ",")
-		attrs := []entity.TokenUriAttrStr{}
+		attrs := []TokenUriAttrReq{}
 		for _, attributesStr := range attributesStrs {
-			attr := entity.TokenUriAttrStr{}
 			parts := strings.Split(attributesStr, ":")
 			if len(parts) != 2 {
 				return errors.New("errors when parse attribute query")
 			}
-			attr.TraitType = parts[0]
-			attr.Value = parts[1]
-			attrs = append(attrs, attr)
+
+			added := false
+			for i := 0; i < len(attrs); i++ {
+				if attrs[i].TraitType == parts[0] {
+					attrs[i].Values = append(attrs[i].Values, parts[1])
+					added = true
+				}
+			}
+			if !added {
+				attrs = append(attrs, TokenUriAttrReq{
+					TraitType: parts[0],
+					Values: []string {parts[1]},
+				})
+			}
 		}
 		f.Attributes = attrs
 	}
