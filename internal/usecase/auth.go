@@ -26,7 +26,7 @@ func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.Gener
 
 	addrr := data.Address
 	addrr = strings.ToLower(addrr)
-	log.SetTag("wallet_address", addrr)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, addrr)
 
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
@@ -122,7 +122,9 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
+	log.SetData("token", token)
 	tokenMd5 := helpers.GenerateMd5String(token)
+	log.SetData("tokenMd5", tokenMd5)
 	err = u.Cache.SetDataWithExpireTime(tokenMd5, userID, int(utils.TOKEN_CACHE_EXPIRED_TIME))
 	if  err != nil {
 		log.Error("Login.Redis.SetData", err.Error(), err)
@@ -301,7 +303,8 @@ func  (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken str
 	defer u.Tracer.FinishSpan(span, log )
 
 	tokenMd5 := helpers.GenerateMd5String(accessToken)
-	
+	log.SetData("tokenMd5", tokenMd5)
+
 	userID, err := u.Cache.GetData(tokenMd5)
 	if err != nil {
 		err = errors.New("Access token is invaild")

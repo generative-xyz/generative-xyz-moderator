@@ -46,3 +46,6 @@ build-staging:
 	git checkout staging && git pull origin staging && git merge develop && git push origin staging
 	git checkout gpu-staging && git pull origin gpu-staging && git merge staging && git push origin gpu-staging
 	git checkout develop
+
+start-docker:
+	docker-compose stop api_service && docker-compose up -d api_service
