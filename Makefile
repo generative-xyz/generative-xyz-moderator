@@ -48,4 +48,13 @@ build-staging:
 	git checkout develop
 
 start-docker:
-	docker-compose stop api_service && docker-compose up -d api_service
+	docker-compose stop api_service && docker-compose up -d api_service && docker logs -f api_service
+	
+reload-docker:
+	docker-compose stop api_service && docker-compose build api_service  && docker-compose up -d api_service && docker logs -f api_service
+
+exec-docker:
+	docker exec -it api_service bash 
+
+start-xserver:
+	docker-compose stop api_xserver && docker-compose build api_xserver && docker-compose up -d api_xserver

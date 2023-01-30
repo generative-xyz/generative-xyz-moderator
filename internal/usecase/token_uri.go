@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -42,17 +43,18 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	resp := &structure.TokenAnimationURI{}
 	
 	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
-	if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail: token.Thumbnail,
-			Traits:  token.ParsedAttributes,
-			TraitsStr: token.ParsedAttributesStr,
-			CapturedAt: token.ThumbnailCapturedAt,
-			IsUpdated: false,
-		}
-		return resp, nil
-	}
+	
+	// if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
+	// 	resp = &structure.TokenAnimationURI{
+	// 		ParsedImage: *token.ParsedImage,
+	// 		Thumbnail: token.Thumbnail,
+	// 		Traits:  token.ParsedAttributes,
+	// 		TraitsStr: token.ParsedAttributesStr,
+	// 		CapturedAt: token.ThumbnailCapturedAt,
+	// 		IsUpdated: false,
+	// 	}
+	// 	return resp, nil
+	// }
 
 	log.SetTag("tokenID", token.TokenID)
 	log.SetTag("contractAddress", token.ContractAddress)
@@ -64,7 +66,10 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	}
 	
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath("google-chrome"),
         chromedp.Flag("headless", eCH), 
+        chromedp.Flag("disable-gpu", false), 
+        chromedp.Flag("no-first-run", true), 
     )
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
     cctx, cancel := chromedp.NewContext(allocCtx)
@@ -81,15 +86,6 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 
 	if err != nil {
 		log.Error("chromedp.Run.err.generativeTraits",err.Error(), err)
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: "",
-			Thumbnail: "",
-			Traits: attrs,
-			TraitsStr: strAttrs,
-			CapturedAt: nil,
-			IsUpdated: false,
-		}
-		return resp, nil
 	}
 
 	for key, item := range traits {
@@ -136,6 +132,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		IsUpdated: true,
 	}
 
+	log.SetData("structure.TokenAnimationURI.IsUpdated", resp.IsUpdated)
 	return resp, nil
 }
 
@@ -231,8 +228,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		var err error
 		tok := &entity.TokenUri{}
 
-		tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
-		
 		defer func ()  {
 			tokenDataChan <- structure.TokenDataChan{
 				Data:  tok,
@@ -240,6 +235,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 			}
 		}()
 
+		tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
+		if err != nil {
+			return 
+		}
+		
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 		data, err := helpers.Base64Decode(base64Str)
 		if err != nil {
@@ -569,4 +569,28 @@ func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateToke
 
 	log.SetData("updated", updated)
 	return p, nil
+}
+
+func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, contractAddres string, genAddress string)  error {
+	span, log := u.StartSpan("GetTokensOfAProjectFromChain", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	chain := os.Getenv("MORALIS_CHAIN")
+	nfts, err := u.MoralisNft.GetNftByContract(genAddress, nfts.MoralisFilter{Chain: &chain})
+	if err != nil {
+		log.Error("GetTokensOfAProjectFromChain.GetNftByContract", err.Error(), err)
+		return  err
+	}
+
+	tokens := nfts.Result
+	for _, token := range tokens {
+		spew.Dump(token)
+
+		u.GetToken(span, structure.GetTokenMessageReq{
+			ContractAddress: contractAddres,
+			TokenID: token.TokenID,
+		}, 10)
+	}
+	
+	return nil
 }
