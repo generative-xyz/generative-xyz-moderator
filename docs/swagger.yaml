@@ -1052,6 +1052,35 @@ paths:
       summary: User profile's selling nft
       tags:
       - MarketPlace
+  /nfts/{contractAddress}/nft_holders:
+    get:
+      consumes:
+      - application/json
+      description: get token holder
+      parameters:
+      - description: contract address
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get token holder
+      tags:
+      - Blockchain
   /nfts/{contractAddress}/transactions/{tokenID}:
     get:
       consumes:
@@ -1077,7 +1106,7 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       summary: get nft transactions
       tags:
-      - Nfts
+      - Blockchain
   /profile:
     get:
       consumes:

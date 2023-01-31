@@ -97,6 +97,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//nfts
 	nfts := api.PathPrefix("/nfts").Subrouter()
 	nfts.HandleFunc("/{contractAddress}/transactions/{tokenID}", h.getNftTransactions).Methods("GET")
+	nfts.HandleFunc("/{contractAddress}/nft_holders", h.getTokenHolder).Methods("GET")
 
 	//admin
 	admin := api.PathPrefix("/admin").Subrouter()

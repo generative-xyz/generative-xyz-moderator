@@ -69,3 +69,25 @@ func (c CovalentNfts) GetNftTransactions(f CovalentNftTransactionFilter) (*Coval
 	}
 	return resp, nil
 }
+
+func (c CovalentNfts) GetTokenHolder(f CovalentGetTokenHolderRequest) (*CovalentGetTokenHolderResponse, error) {
+	var chain string
+	if f.Chain == nil {
+		chain = c.conf.Covalent.Chain
+	} else {
+		chain = *f.Chain
+	}
+	chainID := ChainToChainID[chain]
+	url := fmt.Sprintf("%s/%v/tokens/%s/token_holders/?quote-currency=USD&format=JSON&page-number=%v&page-size=%v", c.serverURL, chainID, f.ContractAddress, f.Page, f.Limit);
+	data, err := c.request(url, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &CovalentGetTokenHolderResponse{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
