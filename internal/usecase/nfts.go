@@ -96,7 +96,7 @@ func (u Usecase) GetTokenHolders(rootSpan opentracing.Span, req structure.GetTok
 		if !ok {
 			rhs = big.NewInt(0)
 		}
-		return lhs.Cmp(rhs) < 0
+		return lhs.Cmp(rhs) > 0
 	})
 	total, ok := covalentResp.Data.Pagination.TotalCount.(int)
 	if !ok {
