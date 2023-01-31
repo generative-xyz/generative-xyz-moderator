@@ -1143,6 +1143,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/nfts/{contractAddress}/nft_holders": {
+            "get": {
+                "description": "get token holder",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Blockchain"
+                ],
+                "summary": "get token holder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract address",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/nfts/{contractAddress}/transactions/{tokenID}": {
             "get": {
                 "description": "get nft transactions",
@@ -1153,7 +1197,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Nfts"
+                    "Blockchain"
                 ],
                 "summary": "get nft transactions",
                 "parameters": [

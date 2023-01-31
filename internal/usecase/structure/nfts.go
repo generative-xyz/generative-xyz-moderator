@@ -7,6 +7,27 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
+type GetTokenHolderRequest struct {
+	Chain *string
+	ContractAddress string
+	Page int32
+	Limit int32
+}
+
+type TokenHolder struct {
+	ContractDecimals     int           
+	ContractName         string        
+	ContractTickerSymbol string        
+	ContractAddress      string        
+	SupportsErc          interface{}   
+	LogoURL              string        
+	Address              string        
+	Balance              string        
+	TotalSupply          string        
+	BlockHeight          int           
+	Profile              *entity.Users 
+}
+
 type GetNftMintedTimeReq struct {
 	ContractAddress string
 	TokenID string
