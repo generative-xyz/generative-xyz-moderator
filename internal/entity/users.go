@@ -22,24 +22,24 @@ type FilterUsers struct {
 }
 
 type Users struct {
-	BaseEntity`bson:",inline"`
-	ID string `bson:"id"`
-	WalletAddress string `bson:"wallet_address"`
-	DisplayName string `bson:"display_name"`
-	Bio string `bson:"bio"`
-	Avatar string `bson:"avatar"`
-	CreatedAt *time.Time `bson:"created_at"`
-	ProfileSocial ProfileSocial
+	BaseEntity    `bson:",inline" json:"-"`
+	ID            string        `bson:"id" json:"id,omitempty"`
+	WalletAddress string        `bson:"wallet_address" json:"wallet_address,omitempty"`
+	DisplayName   string        `bson:"display_name" json:"display_name,omitempty"`
+	Bio           string        `bson:"bio" json:"bio,omitempty"`
+	Avatar        string        `bson:"avatar" json:"avatar,omitempty"`
+	CreatedAt     *time.Time    `bson:"created_at" json:"created_at,omitempty"`
+	ProfileSocial ProfileSocial `json:"profile_social,omitempty"`
 }
 
 
 type ProfileSocial  struct{
-    Web string `bson:"web"`;
-    Twitter string `bson:"twitter"`;
-    Discord string `bson:"discord"`;
-    Medium string `bson:"medium"`;
-	Instagram string `bson:"instagram"`;
-	EtherScan string `bson:"etherScan"`;
+	Web       string `bson:"web" json:"web,omitempty"`
+	Twitter   string `bson:"twitter" json:"twitter,omitempty"`
+	Discord   string `bson:"discord" json:"discord,omitempty"`
+	Medium    string `bson:"medium" json:"medium,omitempty"`
+	Instagram string `bson:"instagram" json:"instagram,omitempty"`
+	EtherScan string `bson:"etherScan" json:"ether_scan,omitempty"`
 }
 
 

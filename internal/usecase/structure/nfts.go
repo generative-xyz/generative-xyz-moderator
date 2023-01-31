@@ -15,17 +15,17 @@ type GetTokenHolderRequest struct {
 }
 
 type TokenHolder struct {
-	ContractDecimals     int           
-	ContractName         string        
-	ContractTickerSymbol string        
-	ContractAddress      string        
-	SupportsErc          interface{}   
-	LogoURL              string        
-	Address              string        
-	Balance              string        
-	TotalSupply          string        
-	BlockHeight          int           
-	Profile              *entity.Users 
+	ContractDecimals     int           `json:"contract_decimals,omitempty"`
+	ContractName         string        `json:"contract_name,omitempty"`
+	ContractTickerSymbol string        `json:"contract_ticker_symbol,omitempty"`
+	ContractAddress      string        `json:"contract_address,omitempty"`
+	SupportsErc          interface{}   `json:"supports_erc,omitempty"`
+	LogoURL              string        `json:"logo_url,omitempty"`
+	Address              string        `json:"address,omitempty"`
+	Balance              string        `json:"balance,omitempty"`
+	TotalSupply          string        `json:"total_supply,omitempty"`
+	BlockHeight          int           `json:"block_height,omitempty"`
+	Profile              *entity.Users `json:"profile,omitempty"`
 }
 
 type GetNftMintedTimeReq struct {

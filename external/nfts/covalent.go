@@ -78,6 +78,8 @@ func (c CovalentNfts) GetTokenHolder(f CovalentGetTokenHolderRequest) (*Covalent
 		chain = *f.Chain
 	}
 	chainID := ChainToChainID[chain]
+	// make covalent api index from 1
+	f.Page -= 1
 	url := fmt.Sprintf("%s/%v/tokens/%s/token_holders/?quote-currency=USD&format=JSON&page-number=%v&page-size=%v", c.serverURL, chainID, f.ContractAddress, f.Page, f.Limit);
 	data, err := c.request(url, "GET", nil, nil)
 	if err != nil {
