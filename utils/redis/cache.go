@@ -83,7 +83,7 @@ func (r *redisCache) SetDataWithExpireTime(key string, value interface{}, exipre
 	if err != nil {
 		return err
 	}
-	timeD := time.Duration(rand.Int31n(int32(exipredIn))) * time.Second
+	timeD := time.Duration(int32(exipredIn)) * time.Second
 	err = r.client.Set(key, valueByte, timeD).Err()
 	if err != nil {
 		return err
