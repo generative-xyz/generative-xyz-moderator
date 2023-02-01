@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -59,11 +61,28 @@ func (h ScronHandler) StartServer() {
 				chanDone <- true
 			}()
 
-			//TO DO: this function will be improved
-			// err := h.Usecase.GetTokensOfAProjectFromChain(span)
-			// if err != nil {
-			// 	log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
-			// }
+			projects, err :=  h.Usecase.Repo.GetAllProjects(entity.FilterProjects{})
+			if err != nil {
+				log.Error("h.Usecase.GetAllProjects", err.Error(), err)
+			}
+
+			processed := 0
+			for _, project := range projects {
+				
+				if processed % 5 == 0 {
+					time.Sleep(10 * time.Second)
+				}
+
+				go func(span opentracing.Span, project entity.Projects) {
+					//TO DO: this function will be improved
+					err := h.Usecase.GetTokensOfAProjectFromChain(span, project)
+					if err != nil {
+						log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
+					}
+				}(span, project)
+				processed ++
+			}
+			
 
 		}(chanDone)
 		

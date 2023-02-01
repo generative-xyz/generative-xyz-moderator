@@ -14,7 +14,7 @@ func (r Repository) CreateTokenURIIndexModel() ([]string, error) {
 
  	models :=  []mongo.IndexModel{
 		{ Keys: bson.M{"gen_nft_addrress":  -1,}, Options:  options.Index().SetName("gen_nft_addrress_desc") ,} ,
-		{ Keys: bson.M{"gen_nft_addrress":  "text",}, Options:  options.Index().SetName("gen_nft_addrress_i_text") ,} ,
+		//{ Keys: bson.M{"gen_nft_addrress":  "text",}, Options:  options.Index().SetName("gen_nft_addrress_i_text") ,} ,
 		
 		{ Keys: bson.M{"project_id":  -1,}, Options:  options.Index().SetName("project_id_desc") ,} ,
 		{ Keys: bson.M{"project_id_int":  -1,}, Options:  options.Index().SetName("project_id_int_desc") ,} ,
@@ -41,7 +41,7 @@ func (r Repository) CreateProjectIndexModel() ([]string, error) {
 		{ Keys: bson.M{"genNFTAddr": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"created_at": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"priority": -1,},   Options: options.Index().SetName("pr_priority_desc"),} ,
-		{ Keys: bson.M{"name": "text",}, Options: nil,} ,
+		//{ Keys: bson.M{"name": "text",}, Options: nil,} ,
 	}
 
 	return r.CreateIndexes(collection, models)

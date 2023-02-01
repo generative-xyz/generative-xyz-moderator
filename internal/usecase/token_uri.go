@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -544,25 +543,36 @@ func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateToke
 	return p, nil
 }
 
-func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, contractAddres string, genAddress string)  error {
+func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project entity.Projects)  error {
 	span, log := u.StartSpan("GetTokensOfAProjectFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+	contractAddres := project.ContractAddress
+	genAddress := project.GenNFTAddr
+	// projectID := project.TokenID
+	// ProjectIDInt := project.TokenIDInt
+
 	chain := os.Getenv("MORALIS_CHAIN")
 	nfts, err := u.MoralisNft.GetNftByContract(genAddress, nfts.MoralisFilter{Chain: &chain})
 	if err != nil {
 		log.Error("GetTokensOfAProjectFromChain.GetNftByContract", err.Error(), err)
 		return  err
 	}
-
+	
+	processed := 0
 	tokens := nfts.Result
 	for _, token := range tokens {
-		spew.Dump(token)
+		if processed % 5 == 0 {
+			time.Sleep(10 * time.Second)
+		}
 
-		u.GetToken(span, structure.GetTokenMessageReq{
-			ContractAddress: contractAddres,
-			TokenID: token.TokenID,
-		}, 10)
+		go func (span opentracing.Span, contractAddres string, tokenID string )  {
+			u.GetToken(span, structure.GetTokenMessageReq{
+				ContractAddress: contractAddres,
+				TokenID: tokenID,
+			},20)
+		}(span, contractAddres, token.TokenID)
+
+		processed ++
 	}
 	
 	return nil
