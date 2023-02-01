@@ -256,3 +256,19 @@ func (r Repository) SortToken (filter entity.FilterTokenUris) []Sort {
 	s = append(s, Sort{SortBy: filter.SortBy, Sort: filter.Sort })
 	return s
 }
+
+func (r Repository) CreateToken(data *entity.TokenUri) error {
+	data.SetCreatedAt()
+	bData, err := data.ToBson()
+	if err != nil {
+		return  err
+	}
+
+	inserted , err := r.DB.Collection(data.TableName()).InsertOne(context.TODO(), &bData)
+	if err != nil {
+		return err
+	}
+
+	_ = inserted
+	return  nil
+}

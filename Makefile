@@ -61,3 +61,9 @@ exec-docker:
 
 start-xserver:
 	docker-compose stop api_xserver && docker-compose build api_xserver && docker-compose up -d api_xserver
+
+connect-xserver-staging:
+	k port-forward service/generative-moderator-gpu -n staging 6080:6080
+
+connect-xserver-develop:
+	k port-forward service/generative-moderator-gpu -n develop 6080:6080
