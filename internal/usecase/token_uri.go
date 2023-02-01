@@ -44,17 +44,17 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	
 	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
 	
-	// if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
-	// 	resp = &structure.TokenAnimationURI{
-	// 		ParsedImage: *token.ParsedImage,
-	// 		Thumbnail: token.Thumbnail,
-	// 		Traits:  token.ParsedAttributes,
-	// 		TraitsStr: token.ParsedAttributesStr,
-	// 		CapturedAt: token.ThumbnailCapturedAt,
-	// 		IsUpdated: false,
-	// 	}
-	// 	return resp, nil
-	// }
+	if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
+		resp = &structure.TokenAnimationURI{
+			ParsedImage: *token.ParsedImage,
+			Thumbnail: token.Thumbnail,
+			Traits:  token.ParsedAttributes,
+			TraitsStr: token.ParsedAttributesStr,
+			CapturedAt: token.ThumbnailCapturedAt,
+			IsUpdated: false,
+		}
+		return resp, nil
+	}
 
 	log.SetTag("tokenID", token.TokenID)
 	log.SetTag("contractAddress", token.ContractAddress)
@@ -504,48 +504,21 @@ func (u Usecase) FilterTokens(rootSpan opentracing.Span,  filter structure.Filte
 	defer u.Tracer.FinishSpan(span, log)
 
 	pe := &entity.FilterTokenUris{}
-
 	log.SetData("log", log)
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-
-	getToken := func (rootSpan opentracing.Span, redisKey string, filter structure.FilterTokens)   (*entity.Pagination, error) {
-		span, log := u.StartSpan("FilterTokens.getToken", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
 		
-		tokens, err := u.Repo.FilterTokenUri(*pe)
-		if err != nil {
-			log.Error("u.Repo.FilterTokenUri", err.Error(), err)
-			return nil, err
-		}
-		u.Cache.SetData(redisKey, tokens)
-		log.SetData("tokens", tokens.Total)
-		return tokens, nil
-	}
-
-	bytes, err := json.Marshal(pe)
-	if err != nil {
-		log.Error("json.Marshal", err.Error(), err)
-	}
-	key := helpers.GenerateMd5String(string(bytes))
-
-	go getToken(span, key, filter)
-	cached, err := u.Cache.GetData(key)
-	if err != nil {
-		return getToken(span, key, filter)
-	}
-
-	resp := &entity.Pagination{}
-	err = helpers.ParseCache(cached, resp)
+	tokens, err := u.Repo.FilterTokenUri(*pe)
 	if err != nil {
 		log.Error("u.Repo.FilterTokenUri", err.Error(), err)
 		return nil, err
 	}
-	
-	return resp, nil
+		
+	log.SetData("tokens", tokens.Total)
+	return tokens, nil
 }
 
 func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateTokenReq) (*entity.TokenUri, error) {
