@@ -161,8 +161,19 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		f["token_id"] =  bson.D{ {Key: "$in", Value: filter.TokenIDs} }
  	}
 
-	if filter.HasPrice != nil && *filter.HasPrice {
-		f["stats.price_int"] = bson.M{"$exists": true}
+	if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
+		priceFilter := bson.M{}
+		if filter.HasPrice != nil {
+			priceFilter["$exists"] = *filter.HasPrice
+			priceFilter["$ne"] = nil
+		}
+		if filter.FromPrice != nil {
+			priceFilter["$gte"] = *filter.FromPrice
+		}
+		if filter.ToPrice != nil {
+			priceFilter["$lte"] = *filter.ToPrice
+		}
+		f["stats.price_int"] = priceFilter
 	}
 
 	andFilters := []bson.M{
