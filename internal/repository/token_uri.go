@@ -13,6 +13,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func (r Repository) FindTokenUrisWithoutCache(f bson.M) ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+	
+	f[utils.KEY_DELETED_AT] = nil
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
 func (r Repository) FindTokenUriWithoutCache(filter bson.D) (*entity.TokenUri, error) {
 	resp := &entity.TokenUri{}
 	usr, err := r.FilterOne(entity.TokenUri{}.TableName(), filter)
@@ -280,4 +296,36 @@ func (r Repository) CreateToken(data *entity.TokenUri) error {
 
 	_ = inserted
 	return  nil
+}
+
+func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.price": price,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) UnsetTokenPriceByTokenId(tokenId string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$unset": bson.M{
+			"stats.price": true,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
 }

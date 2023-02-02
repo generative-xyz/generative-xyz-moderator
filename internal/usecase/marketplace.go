@@ -16,7 +16,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken) error {
+func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
 	span, log := u.StartSpan("ListToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	listing := entity.MarketplaceListings{
@@ -27,6 +27,7 @@ func (u Usecase) ListToken(rootSpan opentracing.Span, event *generative_marketpl
 		Erc20Token: strings.ToLower(event.Data.Erc20Token.String()),
 		Price: event.Data.Price.String(),
 		Closed: event.Data.Closed,
+		BlockNumber: blocknumber,
 		Finished: false,
 		DurationTime: event.Data.DurationTime.String(),
 	}
@@ -121,7 +122,7 @@ func (u Usecase) PurchaseToken(rootSpan opentracing.Span, event *generative_mark
 	return nil
 }
 
-func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer) error {
+func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer, blocknumber uint64) error {
 	span, log := u.StartSpan("MakeOffer", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	offer := entity.MarketplaceOffers{
@@ -134,6 +135,7 @@ func (u Usecase) MakeOffer(rootSpan opentracing.Span, event *generative_marketpl
 		Closed: event.Data.Closed,
 		Finished: false,
 		DurationTime: event.Data.DurationTime.String(),
+		BlockNumber: blocknumber,
 	}
 
 	sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {

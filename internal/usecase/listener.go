@@ -42,6 +42,7 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(rootSpan opentracing.Span, cha
 		return err
 	}
 	event, err := marketplaceContract.ParseListingToken(chainLog)
+	blocknumber := chainLog.BlockNumber
 
 	if err != nil {
 		log.Error("cannot parse list token event", "", err)
@@ -51,7 +52,7 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(rootSpan opentracing.Span, cha
 	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 	log.SetData("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
-	err = u.ListToken(span, event)
+	err = u.ListToken(span, event, blocknumber)
 
 	if err != nil {
 		log.Error("fail when resolve list token event", "", err)
@@ -95,6 +96,8 @@ func (u Usecase) ResolveMarketplaceMakeOffer(rootSpan opentracing.Span, chainLog
 		return err
 	}
 	event, err := marketplaceContract.ParseMakeOffer(chainLog)
+	blocknumber := chainLog.BlockNumber
+
 	if err != nil {
 		log.Error("cannot parse make offer event", "", err)
 		return err
@@ -103,7 +106,7 @@ func (u Usecase) ResolveMarketplaceMakeOffer(rootSpan opentracing.Span, chainLog
 	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 	log.SetData("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
-	err = u.MakeOffer(span, event)
+	err = u.MakeOffer(span, event, blocknumber)
 
 	if err != nil {
 		log.Error("fail when resolve make offer event", "", err)

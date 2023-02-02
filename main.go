@@ -168,7 +168,7 @@ func startServer() {
 		}(txConsumer)
 		
 	}
-
+	
 	if conf.Crontab.Enabled  {
 		cron := crontab.NewScronHandler(&g, *uc)
 		go func (cron *crontab.ScronHandler)  {
