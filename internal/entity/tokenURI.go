@@ -25,6 +25,10 @@ type FilterTokenUris struct {
 	Attributes []TokenUriAttrFilter
 }
 
+type TokenStats struct {
+	Price string
+}
+
 type TokenUri struct {
 	BaseEntityNoID `bson:",inline"`
 	TokenID string `bson:"token_id" json:"token_id"`
@@ -46,6 +50,8 @@ type TokenUri struct {
 	GenNFTAddr string `bson:"gen_nft_addrress"`
 	Thumbnail string `bson:"thumbnail"`
 	ThumbnailCapturedAt *time.Time `bson:"thumbnailCapturedAt"` 
+
+	Stats TokenStats `bson:"stats" json:"stats"`
 
 	OwnerAddr string `bson:"owner_addrress"`
 	CreatorAddr string `bson:"creator_address"`

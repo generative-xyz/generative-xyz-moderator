@@ -158,3 +158,22 @@ func (r Repository) GetAllOfferByCollectionContract(contract string) ([]entity.M
 
 	return offers, nil
 } 
+
+func (r Repository) GetAllActiveOffers() ([]entity.MarketplaceOffers, error) {
+	offers := []entity.MarketplaceOffers{}
+	f := bson.D{{
+		Key: "closed",
+		Value: false,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_OFFERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &offers); err != nil {
+		return nil, err
+	}
+
+	return offers, nil
+} 
