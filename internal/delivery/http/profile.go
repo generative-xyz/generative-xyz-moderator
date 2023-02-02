@@ -260,12 +260,10 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(span, walletAddress)
 	if err != nil {
 		log.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
-		return
+		profile = &entity.Users{}
 	}
 
 	log.SetData("profile", profile)
-	
 	resp, err := h.profileToResp(profile)
 	if err != nil {
 		log.Error("h.profileToResp", err.Error(), err)
