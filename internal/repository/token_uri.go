@@ -91,6 +91,8 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	resp.Result = tokens
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
+	resp.PageSize = filter.Limit
+	//resp.PageSize = filter.Limit
 	return resp, nil
 }
 
@@ -248,8 +250,12 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"project.contractAddress", 1},
 		{"project.name", 1},
 		//{"project", 1},
-		{"owner", 1},
-		{"creator", 1},
+		{"owner.wallet_address", 1},
+		{"owner.display_name", 1},
+		{"owner.avatar", 1},
+		{"creator.wallet_address", 1},
+		{"creator.display_name", 1},
+		{"creator.avatar", 1},
 	}
 	return f
 }

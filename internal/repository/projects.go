@@ -106,6 +106,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
 }
 
@@ -155,6 +156,7 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
 }
 
@@ -178,6 +180,7 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
 }
 

@@ -52,7 +52,7 @@ func (h ScronHandler) StartServer() {
 		log.SetData("dispatch", disPatchOn)
 		log.SetData("time", time.Now().UTC())
 
-		chanDone := make(chan bool, 2)
+		chanDone := make(chan bool, 3)
 		go func (chanDone chan bool)  {
 			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.tokens")
 			defer span.Finish()
@@ -99,6 +99,19 @@ func (h ScronHandler) StartServer() {
 				log.Error("h.Usecase.GetProjectsFromChain", err.Error(), err)
 			}
 		}(chanDone)		
+
+		go func (chanDone chan bool)  {
+			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.UpdateAvatar")
+			defer span.Finish()
+
+			defer func() {
+				chanDone <- true
+			}()
+
+			h.Usecase.UpdateUserAvatars(span)
+			
+
+		}(chanDone)
 
 	})
 	

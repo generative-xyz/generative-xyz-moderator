@@ -136,6 +136,7 @@ func (r Repository) FilterMarketplaceOffers(filter entity.FilterMarketplaceOffer
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
 }
 
