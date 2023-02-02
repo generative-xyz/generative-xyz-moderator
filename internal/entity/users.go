@@ -19,6 +19,7 @@ type FilterUsers struct {
 	Email *string
 	WalletAddress *string
 	UserType *UserType
+	IsUpdatedAvatar *bool
 }
 
 type Users struct {
@@ -28,8 +29,10 @@ type Users struct {
 	DisplayName   string        `bson:"display_name" json:"display_name,omitempty"`
 	Bio           string        `bson:"bio" json:"bio,omitempty"`
 	Avatar        string        `bson:"avatar" json:"avatar,omitempty"`
+	IsUpdatedAvatar       *bool        `bson:"is_updated_avatar" json:"is_updated_avatar,omitempty"`
 	CreatedAt     *time.Time    `bson:"created_at" json:"created_at,omitempty"`
 	ProfileSocial ProfileSocial `json:"profile_social,omitempty"`
+
 }
 
 

@@ -161,9 +161,15 @@ func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, er
 	return resp, nil
 }
 
-func (r Repository) GetAllUsers() ([]entity.Users, error)  {
+func (r Repository) GetAllUsers(filter entity.FilterUsers) ([]entity.Users, error)  {
 	users := []entity.Users{}
 	f := bson.M{}
+	if filter.IsUpdatedAvatar != nil {
+		f["is_updated_avatar"] = *filter.IsUpdatedAvatar
+	}else{
+		f["is_updated_avatar"] = nil
+	}
+
 	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err

@@ -132,17 +132,6 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	if user.Avatar == "" {
-		user.Avatar = helpers.CreateIcon(&user.WalletAddress)
-		uploaded, err := u.UploadUserAvatar(span, *user)
-		if err != nil {
-			log.Error("Login.UploadUserAvatar", err.Error(), err)
-			
-		}else{
-			user.Avatar = *uploaded
-		}
-	}
-	
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
 		log.Error("u.Repo.UpdateUserByWalletAddress", err.Error(), err)
@@ -367,29 +356,30 @@ func  (u Usecase) UserProfileByWallet(rootSpan opentracing.Span, walletAddress s
 func (u Usecase) UploadUserAvatar(rootSpan opentracing.Span, user entity.Users) (*string, error) {
 	span, log := u.StartSpan("UploadUserAvatar", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-
 	thumbnail := ""
 	base64Image := user.Avatar
 	i := strings.Index(base64Image, ",")
-	base64Image = base64Image[i+1:]
-	name := fmt.Sprintf("thumb/%s.png", user.WalletAddress)
-	uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
-	if err != nil {
-		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
-		return nil, err
-	}else{
-		log.SetData("uploaded", uploaded)
-		thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+	if i > -1 {
+		base64Image = base64Image[i+1:]
+		name := fmt.Sprintf("thumb/%s.png", user.WalletAddress)
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
+		if err != nil {
+			log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+			return nil, err
+		}else{
+			log.SetData("uploaded", uploaded)
+			thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+		}
+	
+		return &thumbnail, nil
 	}
-
-	return &thumbnail, nil
+	return &user.Avatar, nil
 }
 
 func (u Usecase) UpdateUserAvatars(rootSpan opentracing.Span) error {
 	span, log := u.StartSpan("UpdateUserAvatars", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-
-	users, err := u.Repo.GetAllUsers()
+	users, err := u.Repo.GetAllUsers(entity.FilterUsers{IsUpdatedAvatar: nil})
 	if err != nil {
 		log.Error("UpdateUserAvatars.GetAllUsers", err.Error(), err)
 		return  err
@@ -400,20 +390,23 @@ func (u Usecase) UpdateUserAvatars(rootSpan opentracing.Span) error {
 			user.Avatar = helpers.CreateIcon(&user.WalletAddress)
 		}
 
-		uploadedAvatar, err := u.UploadUserAvatar(span, user)
-		if err != nil {
-			log.Error("UpdateUserAvatars.UploadUserAvatar", err.Error(), err)
-			continue
-		}
+		if true {
+			uploadedAvatar, err := u.UploadUserAvatar(span, user)
+			if err != nil {
+				log.Error("UpdateUserAvatars.UploadUserAvatar", err.Error(), err)
+				continue
+			}
 
-		user.Avatar = *uploadedAvatar
-		updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, &user)
-		if err != nil {
-			log.Error("UpdateUserAvatars.UpdateUserByWalletAddress", err.Error(), err)
-			continue
+			aUpdated := true
+			user.Avatar = *uploadedAvatar
+			user.IsUpdatedAvatar = &aUpdated
+			updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, &user)
+			if err != nil {
+				log.Error("UpdateUserAvatars.UpdateUserByWalletAddress", err.Error(), err)
+				continue
+			}
+			log.SetData("updated", updated)
 		}
-		log.SetData("updated", updated)
 	}
-
 	return nil
 }
