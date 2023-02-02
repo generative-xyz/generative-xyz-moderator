@@ -54,6 +54,7 @@ func (r Repository) ListCategories(filter entity.FilterCategories) (*entity.Pagi
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
 }
 

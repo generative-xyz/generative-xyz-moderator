@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -155,5 +157,21 @@ func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, er
 	// resp.Prev = p.Pagination.Prev
 	// resp.TotalPage = p.Pagination.TotalPage
 	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
 	return resp, nil
+}
+
+func (r Repository) GetAllUsers() ([]entity.Users, error)  {
+	users := []entity.Users{}
+	f := bson.M{}
+	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
