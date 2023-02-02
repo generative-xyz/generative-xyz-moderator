@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,6 +124,7 @@ type FilterTokens struct {
 	CollectionIDs []string
 	TokenIDs []string
 	Attributes []TokenUriAttrReq
+	HasPrice *bool
 }
 
 func (f *FilterTokens) CreateFilter(r *http.Request) error {
@@ -131,6 +133,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	ownerAddress := r.URL.Query().Get("owner_address")
 	creatorAddress := r.URL.Query().Get("creator_address")
 	keyword := r.URL.Query().Get("keyword")
+	hasPrice := r.URL.Query().Get("has_price")
 
 	attributesRaw := r.URL.Query().Get("attributes")
 	if len(attributesRaw) > 0 {
@@ -184,6 +187,14 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	if keyword != "" {
 		f.Keyword = &keyword
 	}
+
+	if hasPrice != "" {
+		hPrice, err := strconv.ParseBool(hasPrice)
+		if err == nil {
+			f.HasPrice = &hPrice
+		}
+	}
+
 	return nil
 }
 

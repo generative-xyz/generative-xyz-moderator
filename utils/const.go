@@ -12,7 +12,10 @@ func ParseSort(key string) QuerySort {
 	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy:  "priority"}
 	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy:  "priority"}
 	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy:  "price"}
+	sortParams["price-desc"] = QuerySort{Sort: -1, SortBy:  "price"}
 	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy:  "minted_time"}
+	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy:  "stats.price_int"}
+	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy:  "stats.price_int"}
 	
 	sort, ok := sortParams[key]
 	if !ok {

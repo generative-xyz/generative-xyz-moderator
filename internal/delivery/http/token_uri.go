@@ -213,7 +213,8 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Param creator_address query string false "creator_address"
 // @Param tokenID query string false "Filter via tokenID"
 // @Param attributes query []string false "attributes"
-// @Param sort query string false "newest, minted-newest"
+// @Param has_price query bool false "has_price"
+// @Param sort query string false "newest, minted-newest, token-price-asc, token-price-desc"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Param genNFTAddr path string true "This is provided from Project Detail API"
@@ -442,6 +443,13 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 		// }
 
 		resp.Project = projectResp
+		// resp.Stats.Price = input.Stats.PriceInt
+		if input.Stats.PriceInt == nil {
+			resp.Stats.Price = nil
+		} else {
+			x := strconv.Itoa(int(*input.Stats.PriceInt))
+			resp.Stats.Price = &x
+		}
 	}
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)

@@ -14,6 +14,9 @@ type TokenTraitsResp struct{
 	Attributes interface{} `json:"attributes"`
 }
 
+type TokenStat struct {
+	Price *string `json:"price,omitempty"`
+}
 
 type InternalTokenURIResp struct{
 	BaseResponse
@@ -31,6 +34,7 @@ type InternalTokenURIResp struct{
 	Creator *ProfileResponse `json:"creator"`
 	Thumbnail string `json:"thumbnail"`
 	Priority  int `json:"priority"`
+	Stats TokenStat `json:"stats"`
 }
 
 type InternalTokenTraitsResp struct{

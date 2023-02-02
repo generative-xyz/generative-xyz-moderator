@@ -154,6 +154,8 @@ definitions:
         type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
+      stats:
+        $ref: '#/definitions/response.TokenStat'
       thumbnail:
         type: string
       tokenID:
@@ -304,6 +306,11 @@ definitions:
       code:
         type: integer
       message:
+        type: string
+    type: object
+  response.TokenStat:
+    properties:
+      price:
         type: string
     type: object
   response.TokenTraitsResp:
@@ -1467,7 +1474,11 @@ paths:
           type: string
         name: attributes
         type: array
-      - description: newest, minted-newest
+      - description: has_price
+        in: query
+        name: has_price
+        type: boolean
+      - description: newest, minted-newest, token-price-asc, token-price-desc
         in: query
         name: sort
         type: string

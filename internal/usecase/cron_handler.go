@@ -61,14 +61,18 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 	}
 	
 	// map from token id to price
-	fromTokenIdToPrice := make(map[string]string)
+	fromTokenIdToPrice := make(map[string]int64)
 	for _, listing := range listings {
 		if _, ok := fromTokenIdToPrice[listing.TokenId]; !ok && !listing.Closed {
-			fromTokenIdToPrice[listing.TokenId] = listing.Price
+			price, err := strconv.ParseInt(listing.Price, 10, 64)
+			if err != nil {
+				return err
+			}
+			fromTokenIdToPrice[listing.TokenId] = price
 		}
 	}
 
-	tokenWithPrices, err := u.Repo.FindTokenUrisWithoutCache(bson.M{"stats.price": bson.M{"$exists": true}})
+	tokenWithPrices, err := u.Repo.FindTokenUrisWithoutCache(bson.M{"stats.price_int": bson.M{"$exists": true}})
 	// set of tokens that currently has price
 	tokenWithPricesSet := make(map[string]bool)
 	for _, token := range tokenWithPrices {
@@ -83,7 +87,7 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 		if err != nil {
 			return nil
 		}
-		if token.Stats.Price != v {
+		if token.Stats.PriceInt == nil || *token.Stats.PriceInt != v {
 			log.SetData(fmt.Sprintf("setTokenPrice%s", k), v)
 			u.Repo.UpdateTokenPriceByTokenId(k, v)
 		}
