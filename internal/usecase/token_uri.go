@@ -283,7 +283,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.CreatorAddr = strings.ToLower(nftProject.Creator)
-	dataObject.OwnerAddr = strings.ToLower(nftProject.Creator)
 	dataObject.GenNFTAddr = strings.ToLower(parentAddr.String())
 
 	tokenIDint, _ := strconv.Atoi(req.TokenID)
@@ -295,7 +294,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 	log.SetData("dataObject.ContractAddress", dataObject.ContractAddress)
 	log.SetData("dataObject.Creator", dataObject.Creator)
-	log.SetData("dataObject.OwnerAddr", dataObject.OwnerAddr)
 	log.SetData("dataObject.TokenID", dataObject.TokenID)
 	log.SetData("dataObject.ProjectID", dataObject.ProjectID)
 	
@@ -319,17 +317,25 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 	dataObject.Creator = creator
 	mftMintedTime := <- mftMintedTimeChan
+
 	if mftMintedTime.Err == nil {		
 		nft := mftMintedTime.NftMintedTime.Nft
-		owner, err := u.Repo.FindUserByWalletAddress(dataObject.OwnerAddr)
-		if err != nil {
-			log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
-			return nil, err
-		}
-
-		if nft.Owner != dataObject.OwnerAddr {
+		//onwer
+		if  nft.Owner != dataObject.OwnerAddr ||  (dataObject.Owner != nil &&  nft.Owner != dataObject.Owner.WalletAddress )   {
+			
+			ownerAddr := strings.ToLower(nft.Owner)
+		
+			log.SetData("dataObject.OwnerAddr.old",  dataObject.OwnerAddr)
+			log.SetData("dataObject.OwnerAddr.new", ownerAddr)
+			owner, err := u.Repo.FindUserByWalletAddress(ownerAddr)
+			if err != nil {
+				log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
+				//return nil, err
+				owner = &entity.Users{}
+			}
+	
 			dataObject.Owner = owner
-			dataObject.OwnerAddr = nft.Owner
+			dataObject.OwnerAddr = ownerAddr
 			isUpdated = true
 		}
 		
