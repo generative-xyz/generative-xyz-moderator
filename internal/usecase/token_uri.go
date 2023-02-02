@@ -277,22 +277,6 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		})
 	}(mftMintedTimeChan, strings.ToLower(parentAddr.String()))
 
-
-	// go func (rootSpan opentracing.Span, tokenImageChan chan structure.TokenAnimationURIChan)  {
-	// 	data := &structure.TokenAnimationURI{}
-	// 	var err error
-
-	// 	defer func ()  {
-	// 		tokenImageChan <- structure.TokenAnimationURIChan{
-	// 			Data: data,
-	// 			Err:  err,
-	// 		}
-	// 	}()
-
-	// 	data, err = u.RunAndCap(span, dataObject, 20)
-		
-	// }(span, tokenImageChan)
-	
 	log.SetData("nftProject", nftProject)
 	log.SetData("parentAddr", parentAddr)
 	//log.SetData("tokenUriData", tokenUriData)
@@ -337,7 +321,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	mftMintedTime := <- mftMintedTimeChan
 	if mftMintedTime.Err == nil {		
 		nft := mftMintedTime.NftMintedTime.Nft
-		owner, err := u.Repo.FindUserByWalletAddress(nft.Owner)
+		owner, err := u.Repo.FindUserByWalletAddress(dataObject.OwnerAddr)
 		if err != nil {
 			log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
 			return nil, err
