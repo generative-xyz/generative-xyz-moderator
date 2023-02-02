@@ -24,6 +24,8 @@ type FilterTokenUris struct {
 	TokenIDs []string
 	Attributes []TokenUriAttrFilter
 	HasPrice *bool
+	FromPrice *int64
+	ToPrice *int64
 }
 
 type TokenStats struct {

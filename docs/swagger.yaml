@@ -1478,6 +1478,14 @@ paths:
         in: query
         name: has_price
         type: boolean
+      - description: from_price
+        in: query
+        name: from_price
+        type: string
+      - description: to_price
+        in: query
+        name: to_price
+        type: string
       - description: newest, minted-newest, token-price-asc, token-price-desc
         in: query
         name: sort

@@ -125,6 +125,8 @@ type FilterTokens struct {
 	TokenIDs []string
 	Attributes []TokenUriAttrReq
 	HasPrice *bool
+	FromPrice *int64
+	ToPrice *int64
 }
 
 func (f *FilterTokens) CreateFilter(r *http.Request) error {
@@ -134,6 +136,8 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	creatorAddress := r.URL.Query().Get("creator_address")
 	keyword := r.URL.Query().Get("keyword")
 	hasPrice := r.URL.Query().Get("has_price")
+	fromPrice := r.URL.Query().Get("from_price")
+	toPrice := r.URL.Query().Get("to_price")
 
 	attributesRaw := r.URL.Query().Get("attributes")
 	if len(attributesRaw) > 0 {
@@ -190,9 +194,26 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 
 	if hasPrice != "" {
 		hPrice, err := strconv.ParseBool(hasPrice)
-		if err == nil {
-			f.HasPrice = &hPrice
+		if err != nil {
+			return err
 		}
+		f.HasPrice = &hPrice
+	}
+
+	if fromPrice != "" {
+		fPrice, err := strconv.ParseInt(fromPrice, 10, 64)
+		if err != nil {
+			return err
+		}
+		f.FromPrice = &fPrice
+	}
+
+	if toPrice != "" {
+		tPrice, err := strconv.ParseInt(toPrice, 10, 64)
+		if err != nil {
+			return err
+		}
+		f.ToPrice = &tPrice
 	}
 
 	return nil

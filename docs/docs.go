@@ -1921,6 +1921,18 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "from_price",
+                        "name": "from_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "to_price",
+                        "name": "to_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "newest, minted-newest, token-price-asc, token-price-desc",
                         "name": "sort",
                         "in": "query"
