@@ -23,10 +23,11 @@ type FilterTokenUris struct {
 	CollectionIDs []string
 	TokenIDs []string
 	Attributes []TokenUriAttrFilter
+	HasPrice *bool
 }
 
 type TokenStats struct {
-	Price string
+	PriceInt *int64 `bson:"price_int,omitempty" json:"price_int,omitempty"`
 }
 
 type TokenUri struct {

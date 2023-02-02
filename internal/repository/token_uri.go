@@ -161,6 +161,10 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		f["token_id"] =  bson.D{ {Key: "$in", Value: filter.TokenIDs} }
  	}
 
+	if filter.HasPrice != nil && *filter.HasPrice {
+		f["stats.price_int"] = bson.M{"$exists": true}
+	}
+
 	andFilters := []bson.M{
 	f,
 	}
@@ -272,6 +276,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"creator.wallet_address", 1},
 		{"creator.display_name", 1},
 		{"creator.avatar", 1},
+		{"stats.price_int", 1},
 	}
 	return f
 }
@@ -298,13 +303,13 @@ func (r Repository) CreateToken(data *entity.TokenUri) error {
 	return  nil
 }
 
-func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price string) error {
+func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price int64) error {
 	filter := bson.D{
 		{Key: "token_id", Value: tokenId},
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"stats.price": price,
+			"stats.price_int": price,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
@@ -320,7 +325,7 @@ func (r Repository) UnsetTokenPriceByTokenId(tokenId string) error {
 	}
 	update := bson.M{
 		"$unset": bson.M{
-			"stats.price": true,
+			"stats.price_int": true,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)

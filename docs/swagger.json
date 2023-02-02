@@ -1906,8 +1906,14 @@
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "has_price",
+                        "name": "has_price",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
-                        "description": "newest, minted-newest",
+                        "description": "newest, minted-newest, token-price-asc, token-price-desc",
                         "name": "sort",
                         "in": "query"
                     },
@@ -2527,6 +2533,9 @@
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
                 },
+                "stats": {
+                    "$ref": "#/definitions/response.TokenStat"
+                },
                 "thumbnail": {
                     "type": "string"
                 },
@@ -2755,6 +2764,14 @@
                     "type": "integer"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TokenStat": {
+            "type": "object",
+            "properties": {
+                "price": {
                     "type": "string"
                 }
             }
