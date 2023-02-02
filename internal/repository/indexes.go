@@ -41,7 +41,6 @@ func (r Repository) CreateProjectIndexModel() ([]string, error) {
 		{ Keys: bson.M{"genNFTAddr": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"created_at": -1,}, Options: nil,} ,
 		{ Keys: bson.M{"priority": -1,},   Options: options.Index().SetName("pr_priority_desc"),} ,
-		//{ Keys: bson.M{"name": "text",}, Options: nil,} ,
 	}
 
 	return r.CreateIndexes(collection, models)
