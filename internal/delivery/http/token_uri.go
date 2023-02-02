@@ -416,10 +416,9 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	if input.ParsedImage  != nil {
 		resp.Image = *input.ParsedImage
 	}else{
-		resp.Image =  ""
+		resp.Image =  input.Thumbnail
 	}
 	
-
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)
 		if err == nil {
@@ -435,10 +434,14 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	}
 
 	if input.Project != nil {
-		projectResp, err := h.projectToResp(input.Project)
-		if err == nil {
-			resp.Project = projectResp
-		}
+		projectResp := &response.ProjectResp{}
+		response.CopyEntityToRes(projectResp, input.Project)
+		// projectResp, err := h.projectToResp(input.Project)
+		// if err == nil {
+			
+		// }
+
+		resp.Project = projectResp
 	}
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
