@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users, error) {
@@ -107,6 +108,21 @@ func (r Repository) UpdateUserByID(userID string, updateddUser *entity.Users) (*
 	return result, nil
 }
 
+func (r Repository) UpdateUserStats(walletAddress string, stats entity.UserStats) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: utils.KEY_WALLET_ADDRESS, Value: walletAddress}}
+	update := bson.M{
+		"$set": bson.M {
+			"stats": stats,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_USERS).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) FindUserByAutoUserID(autoUserID int32) (*entity.Users, error) {
 	resp := &entity.Users{}
 
@@ -171,6 +187,25 @@ func (r Repository) GetAllUsers(filter entity.FilterUsers) ([]entity.Users, erro
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// find all user profile, exclude avatar field for ease of optimization
+func (r Repository) GetAllUserProfiles() ([]entity.Users, error)  {
+	users := []entity.Users{}
+	f := bson.M{}
+
+	opts := options.Find().SetProjection(bson.D{{Key: "avatar", Value: 0}})
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}

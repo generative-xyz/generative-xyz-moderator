@@ -11,43 +11,94 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
-type gData struct {
-	AllListings []entity.MarketplaceListings
-	AllOffers []entity.MarketplaceOffers
-	AllTokens []entity.TokenUri
-}
-
-func (u Usecase) PrepareTokenAndMarketplaceData(rootSpan opentracing.Span) (*gData, error) {
+func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
 	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	allListings, err := u.Repo.GetAllListings()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	allOffers, err := u.Repo.GetAllOffers()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	allTokens, err := u.Repo.GetAllTokensSeletedFields()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &gData{
+	allProfiles, err := u.Repo.GetAllUserProfiles()
+	if err != nil {
+		return err
+	}
+	allProjects, err := u.Repo.GetAllProjectsWithSelectedFields()
+	if err != nil {
+		return err
+	}
+	u.gData = gData{
 		AllListings: allListings,
 		AllOffers: allOffers,
 		AllTokens: allTokens,
-	}, nil
+		AllProfile: allProfiles,
+		AllProjects: allProjects,
+	}
+	return nil
+}
+
+func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	addressToCollectionCreated := make(map[string]int32)
+	addressToNftMinted := make(map[string]int32)
+
+	for _, token := range u.gData.AllTokens {
+		if token.MinterAddress != nil {
+			addressToNftMinted[*token.MinterAddress]++
+		}
+	}
+
+	for _, project := range u.gData.AllProjects {
+		addressToCollectionCreated[project.CreatorAddrr]++
+	}
+
+	wg := new(sync.WaitGroup)
+
+	updateUserStats := func (wg *sync.WaitGroup, address string, stats entity.UserStats) {
+		defer wg.Done()
+		log.SetData(fmt.Sprintf("update user stats address=%s", address), stats)
+		u.Repo.UpdateUserStats(address, stats)
+	}
+
+	for _, user := range u.gData.AllProfile {
+		update := false
+		collectionCreated := addressToCollectionCreated[user.WalletAddress]
+		nftMinted := addressToNftMinted[user.WalletAddress]
+		if collectionCreated != user.Stats.CollectionCreated {
+			user.Stats.CollectionCreated = collectionCreated
+			update = true			
+		}
+		if nftMinted != user.Stats.NftMinted {
+			user.Stats.NftMinted = nftMinted
+			update = true
+		}
+		if update {
+			wg.Add(1)
+			go updateUserStats(wg, user.WalletAddress, user.Stats)
+		}
+	}
+
+	wg.Wait()
+
+	return nil
 }
 
 func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 	span, log := u.StartSpan("syncMarketplaceDurationAndTokenPrice", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	gData, err := u.PrepareTokenAndMarketplaceData(span)
+	gData := u.gData
 
-	if err != nil {
-		return err
-	}
+	var err error
 
 	errChan := make(chan error, 2)
 	wg := new(sync.WaitGroup)
@@ -55,13 +106,13 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
-		err := u.syncMarketplaceDurationAndTokenPrice(span, gData)
+		err := u.syncMarketplaceDurationAndTokenPrice(span, &gData)
 		errChan <- err
 	}(wg, errChan)
 	wg.Add(1)
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
-		err := u.syncMarketplaceOfferTokenOwner(span, gData)
+		err := u.syncMarketplaceOfferTokenOwner(span, &gData)
 		errChan <- err
 	}(wg, errChan)
 	
@@ -83,9 +134,9 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(rootSpan opentracing.Span,
 	span, log := u.StartSpan("syncMarketplaceDurationAndTokenPrice", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 
-	allListings := gData.AllListings
-	allOffers := gData.AllOffers
-	allTokens := gData.AllTokens
+	allListings := u.gData.AllListings
+	allOffers := u.gData.AllOffers
+	allTokens := u.gData.AllTokens
 
 	// update token price by marketplace data
 	activeListings := make([]entity.MarketplaceListings, 0)

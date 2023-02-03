@@ -11,6 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
@@ -114,6 +115,22 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 	projects := []entity.Projects{}
 	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r Repository) GetAllProjectsWithSelectedFields() ([]entity.Projects, error)  {
+	projects := []entity.Projects{}
+	f := bson.M{}
+	opts := options.Find().SetProjection(r.SelectedProjectFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}
