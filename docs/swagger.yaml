@@ -1028,6 +1028,11 @@ paths:
         name: walletAddress
         required: true
         type: string
+      - description: If is_nft_owner == true, get offer that offer to walletAddress's
+          nft
+        in: query
+        name: is_nft_owner
+        type: string
       - description: sort by field
         in: query
         name: sort_by

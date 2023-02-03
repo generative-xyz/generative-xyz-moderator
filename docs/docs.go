@@ -1099,6 +1099,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "If is_nft_owner == true, get offer that offer to walletAddress's nft",
+                        "name": "is_nft_owner",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "sort by field",
                         "name": "sort_by",
                         "in": "query"

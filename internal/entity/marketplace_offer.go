@@ -14,6 +14,7 @@ type FilterMarketplaceOffers struct {
 	BuyerAddress *string
 	Closed             *bool  
 	Finished           *bool  
+	OwnerAddress       *string
 }
 
 type MarketplaceOffers struct {
