@@ -29,6 +29,7 @@ type MarketplaceOffers struct {
 	Finished           bool   `bson:"finished"`
 	DurationTime       string `bson:"duration_time"`
 	BlockNumber   		 uint64 `bson:"block_number"`
+	OwnerAddress 			 *string `bson:"owner_address"`
 	Token TokenUri `bson:"-"`
 	BuyerInfo Users `bson:"-"`
 }

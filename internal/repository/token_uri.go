@@ -202,11 +202,27 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 	tokens := []entity.TokenUri{}
 
-
-	
 	f := bson.M{}
 	f[utils.KEY_DELETED_AT] = nil
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, )
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (r Repository) GetAllTokensSeletedFields() ([]entity.TokenUri, error)  {
+	tokens := []entity.TokenUri{}
+
+	f := bson.M{}
+	f[utils.KEY_DELETED_AT] = nil
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}
