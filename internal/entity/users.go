@@ -22,17 +22,23 @@ type FilterUsers struct {
 	IsUpdatedAvatar *bool
 }
 
-type Users struct {
-	BaseEntity    `bson:",inline" json:"-"`
-	ID            string        `bson:"id" json:"id,omitempty"`
-	WalletAddress string        `bson:"wallet_address" json:"wallet_address,omitempty"`
-	DisplayName   string        `bson:"display_name" json:"display_name,omitempty"`
-	Bio           string        `bson:"bio" json:"bio,omitempty"`
-	Avatar        string        `bson:"avatar" json:"avatar,omitempty"`
-	IsUpdatedAvatar       *bool        `bson:"is_updated_avatar" json:"is_updated_avatar,omitempty"`
-	CreatedAt     *time.Time    `bson:"created_at" json:"created_at,omitempty"`
-	ProfileSocial ProfileSocial `json:"profile_social,omitempty"`
+type UserStats struct {
+	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
+	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`
+} 
 
+
+type Users struct {
+	BaseEntity      `bson:",inline" json:"-"`
+	ID              string        `bson:"id" json:"id,omitempty"`
+	WalletAddress   string        `bson:"wallet_address" json:"wallet_address,omitempty"`
+	DisplayName     string        `bson:"display_name" json:"display_name,omitempty"`
+	Bio             string        `bson:"bio" json:"bio,omitempty"`
+	Avatar          string        `bson:"avatar" json:"avatar,omitempty"`
+	IsUpdatedAvatar *bool         `bson:"is_updated_avatar" json:"is_updated_avatar,omitempty"`
+	CreatedAt       *time.Time    `bson:"created_at" json:"created_at,omitempty"`
+	ProfileSocial   ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
+	Stats           UserStats     `bson:"stats" json:"stats"`
 }
 
 

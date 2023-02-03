@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
@@ -18,6 +19,15 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 )
 
+// global data to handle cronjob
+type gData struct {
+	AllListings []entity.MarketplaceListings
+	AllOffers []entity.MarketplaceOffers
+	AllTokens []entity.TokenUri
+	AllProfile []entity.Users
+	AllProjects []entity.Projects
+}
+
 type Usecase struct {
 	Repo          repository.Repository
 	Logger        logger.Ilogger
@@ -33,6 +43,7 @@ type Usecase struct {
 	CovalentNft nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
 	Slack slack.Slack
+	gData gData
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {

@@ -52,7 +52,13 @@ func (h ScronHandler) StartServer() {
 		log.SetData("dispatch", disPatchOn)
 		log.SetData("time", time.Now().UTC())
 
-		chanDone := make(chan bool, 4)
+		err := h.Usecase.PrepareData(span)
+		if err != nil {
+			log.Error("error when prepare data for crontab", err.Error(), err)
+			return
+		}
+
+		chanDone := make(chan bool, 5)
 		go func (chanDone chan bool)  {
 			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.tokens")
 			defer span.Finish()
@@ -82,8 +88,6 @@ func (h ScronHandler) StartServer() {
 				}(span, project)
 				processed ++
 			}
-			
-
 		}(chanDone)
 		
 		go func (chanDone chan bool)  {
@@ -111,7 +115,6 @@ func (h ScronHandler) StartServer() {
 			h.Usecase.UpdateUserAvatars(span)
 		}(chanDone)
 			
-
 		go func (chanDone chan bool) {
 			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncTokenAndMarketplaceData")
 			defer span.Finish()
@@ -123,6 +126,20 @@ func (h ScronHandler) StartServer() {
 			err := h.Usecase.SyncTokenAndMarketplaceData(span)
 			if err != nil {
 				log.Error("h.Usecase.SyncTokenAndMarketplaceData", err.Error(), err)
+			}
+		}(chanDone)
+
+		go func (chanDone chan bool) {
+			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncUserStats")
+			defer span.Finish()
+
+			defer func() {
+				chanDone <- true
+			}()
+			
+			err := h.Usecase.SyncUserStats(span)
+			if err != nil {
+				log.Error("h.Usecase.SyncUserStats", err.Error(), err)
 			}
 		}(chanDone)
 
