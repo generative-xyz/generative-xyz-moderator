@@ -744,6 +744,44 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "DAO list proposal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO"
+                ],
+                "summary": "DAO list proposal",
+                "parameters": [
+                    {
+                        "description": "Create proposal request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateProposalReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter by proposer",
+                        "name": "proposer",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/dao/proposals/{proposalID}": {
@@ -2455,6 +2493,26 @@ var doc = `{
                     }
                 },
                 "tokenID": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateProposalReq": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "receiverAddress": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tokenType": {
                     "type": "string"
                 }
             }

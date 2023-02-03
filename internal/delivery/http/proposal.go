@@ -1,10 +1,12 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -99,13 +101,62 @@ func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
 
+// UserCredits godoc
+// @Summary DAO list proposal
+// @Description DAO list proposal
+// @Tags DAO
+// @Accept  json
+// @Produce  json
+// @Param request body request.CreateProposalReq true "Create proposal request"
+// @Param proposer query string false "filter by proposer"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /dao/proposals [POST]
+func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.createDraftProposals", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	var reqBody request.CreateProposalReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.CreateProposaltReq{}
+	err = copier.Copy(reqUsecase, reqBody)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	uProposals, err := h.Usecase.CreateDraftProposal(span, *reqUsecase)
+	if err != nil {
+		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	log.SetData("uProposals", uProposals)
+	resp, err := h.proposalToResp(uProposals)
+	if err != nil {
+		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
 
 func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.ProposalResp, error) {
 	resp := &response.ProposalResp{}
-	err := copier.Copy(resp, input)
+	err := response.CopyEntityToRes(resp, input)
 	if err != nil {
 		return nil, err
 	}
-	
 	return resp, nil
 }

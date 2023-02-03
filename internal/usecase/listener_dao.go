@@ -66,12 +66,14 @@ func (u Usecase) ParseProposal(input  *generative_dao.GenerativeDaoProposalCreat
 		Proposer: strings.ToLower(input.Proposer.String()),
 		StartBlock: input.StartBlock.Int64(),
 		EndBlock: input.EndBlock.Int64(),
-		Description: input.Description,
+		Title: input.Description,
 		Targets: targets,
 		Values: values,
 		Signatures: input.Signatures,
 		Calldatas: input.Calldatas,
 		Raw:  u.ParseRaw(input.Raw),
+		ReceiverAddress: strings.ToLower(input.Proposer.String()),
+		IsDraft: false,
 	}
 	return createdProposal
 }

@@ -32,6 +32,19 @@ definitions:
       tokenID:
         type: string
     type: object
+  request.CreateProposalReq:
+    properties:
+      amount:
+        type: string
+      description:
+        type: string
+      receiverAddress:
+        type: string
+      title:
+        type: string
+      tokenType:
+        type: string
+    type: object
   request.GenerateMessageRequest:
     properties:
       address:
@@ -800,6 +813,31 @@ paths:
         in: query
         name: page
         type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: DAO list proposal
+      tags:
+      - DAO
+    post:
+      consumes:
+      - application/json
+      description: DAO list proposal
+      parameters:
+      - description: Create proposal request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateProposalReq'
+      - description: filter by proposer
+        in: query
+        name: proposer
+        type: string
       produces:
       - application/json
       responses:
