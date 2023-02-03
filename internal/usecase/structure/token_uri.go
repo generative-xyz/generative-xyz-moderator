@@ -237,6 +237,7 @@ type FilterMkOffers struct {
 	BuyerAddress *string
 	Closed             *bool  
 	Finished           *bool  
+	OwnerAddress *string
 }
 
 type UpdateTokenReq struct {

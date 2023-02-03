@@ -225,6 +225,7 @@ func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request)
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string true "Wallet address"
+// @Param is_nft_owner query string false "If is_nft_owner == true, get offer that offer to walletAddress's nft"
 // @Param sort_by query string false "sort by field"
 // @Param sort query int false "1: ASC, -1: DESC"
 // @Param limit query int false "limit default 10"
@@ -248,6 +249,7 @@ func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
 	
 	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
+	isNftOwner := r.URL.Query().Get("is_nft_owner")
 	f := structure.FilterMkOffers{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
@@ -268,8 +270,12 @@ func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
 		}
 		f.Finished = &finishedBool
 	}
+	if isNftOwner != "true" {
+		f.BuyerAddress = &walletAddress
+	} else {
+		f.OwnerAddress = &walletAddress
+	}
 	
-	f.BuyerAddress = &walletAddress
 	f.BaseFilters = *bf
 	
 	resp, err := h.getMkOffers(span, f)

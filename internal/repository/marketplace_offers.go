@@ -120,6 +120,10 @@ func (r Repository) filterOffers(filter entity.FilterMarketplaceOffers) bson.M {
 	if filter.Finished != nil {
 		f["finished"] = *filter.Finished
 	}
+
+	if filter.OwnerAddress != nil {
+		f["owner_address"] = filter.OwnerAddress
+	}
 	
 	return f
 }
