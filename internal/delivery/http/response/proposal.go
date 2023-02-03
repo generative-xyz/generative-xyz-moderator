@@ -13,6 +13,8 @@ type ProposalResp struct {
 	Description string `json:"description"`
 	Raw ProposalRaw `json:"raw"`
 	State uint `json:"state"`
+	ReceiverAddress string `json:"receiverAddress"`
+	IsDraft bool `bson:"isDraft" json:"isDraft"`
 }
 type ProposalRaw struct {
 	Address string `json:"address"`

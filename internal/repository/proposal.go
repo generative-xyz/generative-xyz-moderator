@@ -44,6 +44,7 @@ func (r Repository) filterProposal(filter entity.FilterProposals) bson.M {
 
 func (r Repository) SelectedProposalFields() bson.D {
 	f := bson.D{
+		{"uuid", 1},
 		{"proposalID", 1},
 		{"proposer", 1},
 		{"targets", 1},

@@ -118,6 +118,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
+	dao.HandleFunc("/proposals", h.createDraftProposals).Methods("POST")
 	dao.HandleFunc("/proposals/{proposalID}", h.getProposal).Methods("GET")
 	
 }

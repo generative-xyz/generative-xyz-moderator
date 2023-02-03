@@ -145,5 +145,10 @@ func (h ScronHandler) StartServer() {
 
 	})
 	
+	//alway a minute crontab
+	c.AddFunc("*/1 * * * *", func() {
+		
+	})
+
 	c.Start()
 }

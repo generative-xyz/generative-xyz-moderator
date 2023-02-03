@@ -17,6 +17,14 @@ type CreateProjectReq struct {
 	Categories []string `json:"categories"`
 }
 
+type CreateProposaltReq struct {
+	Title string `json:"title"`
+	Description string `json:"description"`
+	TokenType string `json:"tokenType"`
+	Amount string `json:"amount"`
+	ReceiverAddress string `json:"receiverAddress"`
+}
+
 type UpdateProjectReq struct {
 	TokenID string `json:"tokenID"`
 	Priority *int `json:"priority"`
