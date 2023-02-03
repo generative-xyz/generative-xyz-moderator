@@ -202,14 +202,12 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData
 	}
 
 	updateListingOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
-		wg.Add(1)
 		defer wg.Done()
 		log.SetData(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateListingOwnerAddress(offeringID, ownerAddress)
 	}
 
 	updateOfferOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
-		wg.Add(1)
 		defer wg.Done()
 		log.SetData(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateOfferOwnerAddress(offeringID, ownerAddress)
@@ -229,6 +227,7 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData
 			if counter % 20 == 0 {
 				time.Sleep(time.Second)
 			}
+			wg.Add(1)
 			go updateListingOwner(wg, listing.OfferingId, token.OwnerAddr)
 		}
 	}
@@ -243,6 +242,7 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData
 			if counter % 20 == 0 {
 				time.Sleep(time.Second)
 			}
+			wg.Add(1)
 			go updateOfferOwner(wg, offer.OfferingId, token.OwnerAddr)
 		}
 	}
