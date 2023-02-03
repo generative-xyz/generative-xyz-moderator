@@ -102,14 +102,15 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 
 	errChan := make(chan error, 2)
 	wg := new(sync.WaitGroup)
+	wg.Add(2)
 
-	wg.Add(1)
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
 		err := u.syncMarketplaceDurationAndTokenPrice(span, &gData)
 		errChan <- err
 	}(wg, errChan)
-	wg.Add(1)
+
+	
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
 		err := u.syncMarketplaceOfferTokenOwner(span, &gData)
@@ -117,7 +118,7 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 	}(wg, errChan)
 	
 	wg.Wait()
-	close(errChan)
+	//close(errChan)
 
 	for e := range errChan {
 		if e != nil {
