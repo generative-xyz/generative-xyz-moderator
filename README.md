@@ -24,4 +24,8 @@ abigen --pkg generative_marketplace --abi  ./artifacts/contracts/services/Advanc
 ```
 abigen --pkg generative_marketplace_lib --abi  ./artifacts/contracts/libs/structs/Marketplace.sol/Marketplace.json --out /Users/autonomous/go/src/rendering-hub/utils/contracts/generative_marketplace_lib/GenerativeMarketplaceLib.go
 ```
+
+```
+abigen --pkg generative_dao --abi  ./artifacts/contracts/governance/GenDAO.sol/GenDAO.json --out /Users/autonomous/go/src/rendering-hub/utils/contracts/generative_dao/GenerativeDAO.go
+```
  

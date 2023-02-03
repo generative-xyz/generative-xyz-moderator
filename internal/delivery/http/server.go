@@ -1,11 +1,8 @@
 package http
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 
 	"rederinghub.io/internal/delivery/http/middleware"
@@ -59,7 +56,7 @@ func NewHandler(global *global.Global, uc usecase.Usecase) (*httpDelivery, error
 }
 
 func (h *httpDelivery) StartServer() {
-	var wait time.Duration
+	
 	h.Logger.Info("httpDelivery.StartServer - Starting http-server")
 
 	h.registerRoutes()
@@ -80,35 +77,9 @@ func (h *httpDelivery) StartServer() {
 		ReadTimeout: time.Duration(timeOut) * time.Second,
 	}
 
-	c := make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-
-	// Run our server in a goroutine so that it doesn't block.
-	go func() {
-		h.Logger.Info(fmt.Sprintf("Server is listening at port %s ...",h.Config.ServicePort))
-		if err := srv.ListenAndServe(); err != nil {
-			h.Logger.Error("httpDelivery.StartServer - Can not start http server", err)
-		}
-	}()
-
-	// Block until we receive our signal.
-	<-c
-
-	// Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	// Doesn't block if no connections, but will otherwise wait
-	// until the timeout deadline.
-	err := srv.Shutdown(ctx)
-	if err != nil {
-		h.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
-		return
+	h.Logger.Info(fmt.Sprintf("Server is listening at port %s ...",h.Config.ServicePort))
+	if err := srv.ListenAndServe(); err != nil {
+		h.Logger.Error("httpDelivery.StartServer - Can not start http server", err)
 	}
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	// <-ctx.Done() if your application should wait for other services
-	// to finalize based on context cancellation.
-	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
-	os.Exit(0)
+
 }

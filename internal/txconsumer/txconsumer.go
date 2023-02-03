@@ -67,7 +67,6 @@ func (h *HttpTxConsumer) StartSpanWithoutRoot(name string) (opentracing.Span, *t
 	return span, log
 }
 
-
 func (c *HttpTxConsumer) getRedisKey() string {
 	return fmt.Sprintf("%s:lastest_processed", c.RedisKey)
 }
@@ -96,6 +95,7 @@ func (c *HttpTxConsumer) getLastProcessedBlock(rootSpan opentracing.Span) (int64
 		lastProcessedSavedOnRedis, err := strconv.ParseInt(*processed, 10, 64)
 		log.SetData("processed", processed)
 		log.SetData("lastProcessedSavedOnRedis", lastProcessedSavedOnRedis)
+		
 		if err != nil {
 			return 0, err
 		}
@@ -113,16 +113,21 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		log.Error("Error when get last processed block", err.Error(), err)
 		return err
 	}
+	log.SetTag("lastProcessedBlock", lastProcessedBlock)
 	fromBlock := lastProcessedBlock + 1
+	log.SetTag("fromBlock", fromBlock)
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
 		return err
 	}
+	log.SetTag("blockNumber", blockNumber)
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock + int64(c.BatchLogSize))))
+	log.SetTag("toBlock", toBlock)
 	c.Logger.Info(fmt.Sprintf("Searching log from %v to %v", fromBlock, toBlock))
 	log.SetData("from block", fromBlock)
 	log.SetData("to block", toBlock)
 	log.SetData("block number", blockNumber.Int64())
+
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		return err
@@ -134,12 +139,14 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		log.SetData("_log.Address.String()", _log.Address.String())
 		log.SetData("c.Config.MarketplaceEvents.Contract", c.Config.MarketplaceEvents.Contract)
 		
+		//MAKET PLACE
 		if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
 			topic :=  strings.ToLower(_log.Topics[0].String())
 			log.SetData("topic", topic)
 			log.SetData("topic tx hash", _log.TxHash)
 			log.SetData("topic block number", _log.BlockNumber)
-			
+			log.SetTag("blockNumber", _log.BlockNumber)
+
 			switch topic {
 			case c.Config.MarketplaceEvents.ListToken:
 				log.SetTag("event", "ListToken")
@@ -161,6 +168,22 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 				err = c.Usecase.ResolveMarketplaceCancelOffer(span, _log)
 			}
 		}
+		
+		//DAO
+		if strings.ToLower(_log.Address.String()) == c.Config.DAOEvents.Contract {
+			topic :=  strings.ToLower(_log.Topics[0].String())
+			log.SetData("topic", topic)
+			log.SetData("topic tx hash", _log.TxHash)
+			log.SetData("topic block number", _log.BlockNumber)
+			log.SetTag("blockNumber", _log.BlockNumber)
+			
+			switch topic {
+			case c.Config.DAOEvents.ProposalCreated:
+				log.SetTag("event", "ProposalCreated")
+				err = c.Usecase.DAOProposalCreated(span, _log)
+			}
+		}
+
 		// do switch case with log.Address and log.Topics
 		if _log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
 			c.Usecase.UpdateProjectWithListener(_log)
@@ -187,7 +210,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	return nil
 }
 
-func (c *HttpTxConsumer) StartListen() {
+func (c *HttpTxConsumer) StartServer() {
 	c.Logger.Info("Start listening")
 	for {
 		previousTime := time.Now()

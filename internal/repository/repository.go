@@ -266,3 +266,30 @@ func (r Repository) DeleteCache(dbName string, objID string) error {
 	}
 	return nil
 }
+
+func (r Repository) CreateCollectionIndexes()  error {
+	_, err := r.CreateTokenURIIndexModel()
+	if err != nil {
+		return err
+	}
+	_, err = r.CreateProjectIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateMarketplaceListingsIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateMarketplaceOffersIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateProposalIndexModel()
+	if err != nil {
+		return err
+	}
+	return nil
+}

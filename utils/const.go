@@ -83,6 +83,7 @@ const (
 	COLLECTION_CATEGORIES string = "categories"
 	COLLECTION_MARKETPLACE_LISTINGS string = "marketplace_listings"
 	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
+	COLLECTION_DAO_PROPOSAL string = "proposals"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS string = "0x0000000000000000000000000000000000000000"
