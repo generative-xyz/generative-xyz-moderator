@@ -25,6 +25,8 @@ type Proposal struct {
 	EndBlock int64 `bson:"endBlock" json:"endBlock"`
 	Title string `bson:"title" json:"title"`
 	Description string `bson:"description" json:"description"`
+	Amount string `bson:"amount" json:"amount"`
+	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`
 	IsDraft bool `bson:"isDraft" json:"isDraft"`
