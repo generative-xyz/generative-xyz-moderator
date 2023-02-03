@@ -826,17 +826,39 @@ paths:
     post:
       consumes:
       - application/json
-      description: DAO list proposal
+      description: DAO create a draft proposal
       parameters:
-      - description: Create proposal request
+      - description: Create a draft proposal request
         in: body
         name: request
         required: true
         schema:
           $ref: '#/definitions/request.CreateProposalReq'
-      - description: filter by proposer
-        in: query
-        name: proposer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: DAO create a draft proposal
+      tags:
+      - DAO
+  /dao/proposals/{ID}/{proposalID}:
+    put:
+      consumes:
+      - application/json
+      description: DAO off and onchain proposal
+      parameters:
+      - description: 'ID: the offChain ID'
+        in: path
+        name: ID
+        required: true
+        type: string
+      - description: 'proposalID: the onchain ID'
+        in: path
+        name: proposalID
+        required: true
         type: string
       produces:
       - application/json
@@ -845,7 +867,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
-      summary: DAO list proposal
+      summary: DAO map off and onchain proposal
       tags:
       - DAO
   /dao/proposals/{proposalID}:
@@ -854,7 +876,7 @@ paths:
       - application/json
       description: DAO proposal's detail
       parameters:
-      - description: proposalID
+      - description: 'proposalID: the onchain ID'
         in: path
         name: proposalID
         required: true

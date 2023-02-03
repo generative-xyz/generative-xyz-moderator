@@ -1,11 +1,14 @@
 package repository
 
 import (
+	"context"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagination, error) {
@@ -66,15 +69,29 @@ func (r Repository) SortProposal (filter entity.FilterProposals) []Sort {
 	return s
 }
 
-func (r Repository) CreateProposal(data *entity.Proposal) error {
+func (r Repository) CreateProposal(obj *entity.Proposal) error {
 
-	err := r.InsertOne(data.TableName(), data)
+	obj.SetID()
+	obj.SetCreatedAt()
+	obj.ProposalID = obj.UUID
+
+
+	bData, err := obj.ToBson()
+	if err != nil {
+		return  err
+	}
+
+	_ , err = r.DB.Collection(obj.TableName()).InsertOne(context.TODO(), &bData)
 	if err != nil {
 		return err
 	}
 
-	_ = r.Cache.SetData(helpers.ProposalDetailKey(data.ProposalID), data)
-	return nil
+	err = obj.Decode(bData)
+	if err != nil {
+		return  err
+	}
+
+	return  nil
 }
 
 func (r Repository) FindProposal(pID string) (*entity.Proposal, error) {
@@ -89,4 +106,28 @@ func (r Repository) FindProposal(pID string) (*entity.Proposal, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+
+func (r Repository) FindProposalByID(pID string) (*entity.Proposal, error) {
+	resp := &entity.Proposal{}
+	usr, err := r.FilterOne(entity.Proposal{}.TableName(), bson.D{{utils.KEY_UUID, pID}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) UpdateProposal(ID string, data *entity.Proposal) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	result, err := r.UpdateOne(entity.Proposal{}.TableName(), filter, data)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

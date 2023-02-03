@@ -71,7 +71,7 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 // @Tags DAO
 // @Accept  json
 // @Produce  json
-// @Param proposalID path string true "proposalID"
+// @Param proposalID path string true "proposalID: the onchain ID"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals/{proposalID} [GET]
 func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
@@ -102,13 +102,12 @@ func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
-// @Summary DAO list proposal
-// @Description DAO list proposal
+// @Summary DAO create a draft proposal
+// @Description DAO create a draft proposal
 // @Tags DAO
 // @Accept  json
 // @Produce  json
-// @Param request body request.CreateProposalReq true "Create proposal request"
-// @Param proposer query string false "filter by proposer"
+// @Param request body request.CreateProposalReq true "Create a draft proposal request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals [POST]
 func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +134,47 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 	uProposals, err := h.Usecase.CreateDraftProposal(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	log.SetData("uProposals", uProposals)
+	resp, err := h.proposalToResp(uProposals)
+	if err != nil {
+		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+
+// UserCredits godoc
+// @Summary DAO map off and onchain proposal
+// @Description DAO off and onchain proposal
+// @Tags DAO
+// @Accept  json
+// @Produce  json
+// @Param ID path string true "ID: the offChain ID"
+// @Param proposalID path string true "proposalID: the onchain ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /dao/proposals/{ID}/{proposalID} [PUT]
+func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.createDraftProposals", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	vars := mux.Vars(r)
+	iD := vars["ID"]
+	span.SetTag("iD", iD)
+
+	proposalID := vars["proposalID"]
+	span.SetTag("proposalID", proposalID)
+
+	uProposals, err := h.Usecase.MapOffToOnChainProposal(span, iD, proposalID)
+	if err != nil {
+		log.Error("h.Usecase.MapOffToOnChainProposal", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}

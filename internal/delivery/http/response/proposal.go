@@ -10,7 +10,10 @@ type ProposalResp struct {
 	Calldatas [][]byte `json:"calldatas"`
 	StartBlock int64 `json:"startBlock"`
 	EndBlock int64 `json:"endBlock"`
+	Title string `json:"title"`
 	Description string `json:"description"`
+	TokenType string `json:"tokenType"`
+	Amount string `json:"amount"`
 	Raw ProposalRaw `json:"raw"`
 	State uint `json:"state"`
 	ReceiverAddress string `json:"receiverAddress"`

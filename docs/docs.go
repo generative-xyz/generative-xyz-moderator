@@ -746,7 +746,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "DAO list proposal",
+                "description": "DAO create a draft proposal",
                 "consumes": [
                     "application/json"
                 ],
@@ -756,22 +756,55 @@ var doc = `{
                 "tags": [
                     "DAO"
                 ],
-                "summary": "DAO list proposal",
+                "summary": "DAO create a draft proposal",
                 "parameters": [
                     {
-                        "description": "Create proposal request",
+                        "description": "Create a draft proposal request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/request.CreateProposalReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dao/proposals/{ID}/{proposalID}": {
+            "put": {
+                "description": "DAO off and onchain proposal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO"
+                ],
+                "summary": "DAO map off and onchain proposal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID: the offChain ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
-                        "description": "filter by proposer",
-                        "name": "proposer",
-                        "in": "query"
+                        "description": "proposalID: the onchain ID",
+                        "name": "proposalID",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -800,7 +833,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "proposalID",
+                        "description": "proposalID: the onchain ID",
                         "name": "proposalID",
                         "in": "path",
                         "required": true
