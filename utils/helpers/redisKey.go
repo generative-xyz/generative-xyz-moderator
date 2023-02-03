@@ -41,6 +41,10 @@ func ProjectDetailKey(contractAddr string, tokenID string) string {
 	return fmt.Sprintf("project.detail.%s.%s",contractAddr, tokenID)
 }
 
+func ProposalDetailKey(proposalID string) string {
+	return fmt.Sprintf("proposal.detail.%s",proposalID)
+}
+
 func ProjectDetailgenNftAddrrKey(genNftAddrr string) string {
 	return fmt.Sprintf("project.detail.GenNFTAddrKey.%s",genNftAddrr)
 }

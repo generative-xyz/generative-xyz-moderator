@@ -682,6 +682,87 @@
                 }
             }
         },
+        "/dao/proposals": {
+            "get": {
+                "description": "DAO list proposal",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO"
+                ],
+                "summary": "DAO list proposal",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "filter by proposer",
+                        "name": "proposer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, minted-newest, token-price-asc, token-price-desc",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit default 10",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page start with 1",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/dao/proposals/{proposalID}": {
+            "get": {
+                "description": "DAO proposal's detail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO"
+                ],
+                "summary": "DAO proposal's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "proposalID",
+                        "name": "proposalID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/files": {
             "post": {
                 "security": [

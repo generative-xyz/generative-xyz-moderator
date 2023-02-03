@@ -46,6 +46,15 @@ func (r Repository) CreateProjectIndexModel() ([]string, error) {
 	return r.CreateIndexes(collection, models)
 }
 
+func (r Repository) CreateProposalIndexModel() ([]string, error) {
+	collection := entity.Proposal{}.TableName()
+ 	models :=  []mongo.IndexModel{
+		{ Keys: bson.M{"proposalID": -1,}, Options: options.Index().SetUnique(true).SetName("dao_proposalID_desc"),} ,
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
 func (r Repository) CreateMarketplaceListingsIndexModel() ([]string, error) {
 	collection := entity.MarketplaceListings{}.TableName()
  	models :=  []mongo.IndexModel{

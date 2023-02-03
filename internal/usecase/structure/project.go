@@ -6,6 +6,10 @@ type FilterProjects struct {
 	Name *string
 }
 
+type FilterProposal struct {
+	BaseFilters
+}
+
 type CreateProjectReq struct {
 	ContractAddress string `json:"contractAddress"`
 	TokenID string `json:"tokenID"`

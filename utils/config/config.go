@@ -30,6 +30,7 @@ type Config struct {
 	BlockchainConfig BlockchainConfig
 	TxConsumerConfig TxConsumerConfig
 	MarketplaceEvents MarketplaceEvents
+	DAOEvents DAOEvents
 	TimeResyncProjectStat int32
 	Slack slack.Config
 	Crontab CronTabConfig
@@ -134,6 +135,12 @@ type MarketplaceEvents struct {
 	AcceptMakeOffer string
 	CancelListing string
 	CancelMakeOffer string
+	
+}
+
+type DAOEvents struct {
+	Contract string
+	ProposalCreated string
 }
 
 func NewConfig() (*Config, error) {
@@ -225,6 +232,10 @@ func NewConfig() (*Config, error) {
 			AcceptMakeOffer: os.Getenv("MARKETPLACE_ACCEPT_MAKE_OFFER"),
 			CancelListing: os.Getenv("MARKETPLACE_CANCEL_LISTING"),
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
+		},
+		DAOEvents:  DAOEvents{
+			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
+			Contract: os.Getenv("DAO_PROPOSAL_CONTRACT"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{

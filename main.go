@@ -1,15 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
+	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
-	"rederinghub.io/internal/txconsumer"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
@@ -47,13 +52,13 @@ func init() {
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority",c.Databases.Mongo.Scheme, c.Databases.Mongo.User,c.Databases.Mongo.Pass, c.Databases.Mongo.Host )
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
 	if err != nil {
-		log.Println("Can not connect mongoDB ", err)
+		log.Println("Cannot connect mongoDB ", err)
 		panic(err)
 	}
 
 	ethClient, err = blockchain.NewBlockchain(c.BlockchainConfig)
 	if err != nil {
-		log.Println("Can not connect to eth client ", err)
+		log.Println("Cannot connect to eth client ", err)
 		panic(err)
 	}
 
@@ -89,7 +94,7 @@ func startServer() {
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
 	if err != nil {
-		logger.Error("Can not init gcs", err)
+		logger.Error("Cannot init gcs", err)
 		return
 	}
 
@@ -118,76 +123,87 @@ func startServer() {
 
 	repo, err := repository.NewRepository(&g)
 	if err != nil {
-		logger.Error("Can not init repository", err)
+		logger.Error("Cannot init repository", err)
 		return
 	}
 
-	_, err = repo.CreateTokenURIIndexModel()
+	err = repo.CreateCollectionIndexes()
 	if err != nil {
-		logger.Error("LoadUsecases - Cannot create CreateTokenURIIndexModel", err)
-		return
-	}
-	_, err = repo.CreateProjectIndexModel()
-	if err != nil {
-		logger.Error("LoadUsecases - Can not init CreateProjectIndexModel", err)
-		return
-	}
-	
-	_, err = repo.CreateMarketplaceListingsIndexModel()
-	if err != nil {
-		logger.Error("LoadUsecases - Can not init CreateMarketplaceListingsIndexModel", err)
-		return
-	}
-	
-	_, err = repo.CreateMarketplaceOffersIndexModel()
-	if err != nil {
-		logger.Error("LoadUsecases - Can not init CreateMarketplaceListingsIndexModel", err)
+		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
 		return
 	}
 	
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
-		logger.Error("LoadUsecases - Can not init usecase", err)
+		logger.Error("LoadUsecases - Cannot init usecase", err)
 		return
 	}
 
-	h, err := httpHandler.NewHandler(&g, *uc)
-	if err != nil {
-		logger.Error("Init handler failure", err)
-		return
+	h, _ := httpHandler.NewHandler(&g, *uc)
+	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+	cron := crontab.NewScronHandler(&g, *uc)
+	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+
+	servers := make(map[string]delivery.AddedServer)
+	servers["http"] =  delivery.AddedServer{
+		Server: h,
+		Enabled: conf.StartHTTP,
+	}
+	
+	servers["txconsumer"] =  delivery.AddedServer{
+		Server: txConsumer,
+		Enabled: conf.TxConsumerConfig.Enabled,
+	}
+	
+	servers["crontab"] =  delivery.AddedServer{
+		Server: cron,
+		Enabled: conf.Crontab.Enabled,
+	}
+	
+	servers["pubsub"] =  delivery.AddedServer{
+		Server: ph,
+		Enabled: conf.StartPubsub,
 	}
 
-	if (conf.TxConsumerConfig.Enabled) {
-		txConsumer, err := txconsumer.NewHttpTxConsumer(&g, *uc, *conf)
-		if err != nil {
-			logger.Error("Failed to init tx consumer")
-			return
+	//var wait time.Duration
+	c := make(chan os.Signal, 1)
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	signal.Notify(c, os.Interrupt)
+
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	signal.Notify(c, os.Interrupt)
+	// Run our server in a goroutine so that it doesn't block.
+
+	for  name, server := range servers {
+		if server.Enabled {
+			if server.Server != nil {
+				go server.Server.StartServer()
+			}
+			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+		}else{
+			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
-		go func (txConsumer *txconsumer.HttpTxConsumer)  {
-			txConsumer.StartListen()
-		}(txConsumer)
-		
 	}
 	
-	if conf.Crontab.Enabled  {
-		cron := crontab.NewScronHandler(&g, *uc)
-		go func (cron *crontab.ScronHandler)  {
-			logger.Info("Cron is listening")
-			cron.StartServer()
-		}(cron)
-	}
-	
-	if conf.StartPubsub  {
-		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-		go func (ph *pubsub.PubsubHandler)  {
-			
-			ph.StartServer()
-		}(ph)
-	}
-
-	if conf.StartHTTP {
-		log.Println("started server and listening")
-		h.StartServer()
-	}
+	// Block until we receive our signal.
+	<-c
+	wait := time.Second
+	// // Create a deadline to wait for.
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	// // Doesn't block if no connections, but will otherwise wait
+	// // until the timeout deadline.
+	// err := srv.Shutdown(ctx)
+	// if err != nil {
+	// 	h.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
+	// 	return
+	// }
+	// Optionally, you could run srv.Shutdown in a goroutine and block on
+	<-ctx.Done() //if your application should wait for other services
+	// to finalize based on context cancellation.
+	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	os.Exit(0)
 	
 }
