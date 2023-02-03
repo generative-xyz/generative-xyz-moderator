@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -159,6 +160,22 @@ func (r Repository) GetAllOfferByCollectionContract(contract string) ([]entity.M
 	return offers, nil
 } 
 
+func (r Repository) GetAllOffers() ([]entity.MarketplaceOffers, error) {
+	offers := []entity.MarketplaceOffers{}
+	f := bson.D{}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_OFFERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &offers); err != nil {
+		return nil, err
+	}
+
+	return offers, nil
+} 
+
 func (r Repository) GetAllActiveOffers() ([]entity.MarketplaceOffers, error) {
 	offers := []entity.MarketplaceOffers{}
 	f := bson.D{{
@@ -177,3 +194,22 @@ func (r Repository) GetAllActiveOffers() ([]entity.MarketplaceOffers, error) {
 
 	return offers, nil
 } 
+
+func (r Repository) UpdateOfferOwnerAddress(offeringID string, ownerAddress string) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{Key: "offering_id", Value: offeringID,},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"owner_address": ownerAddress,
+		},
+	}
+
+	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_OFFERS).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
