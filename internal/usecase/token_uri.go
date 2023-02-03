@@ -365,8 +365,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	tokIdMini  := dataObject.TokenIDInt %  100000
 	dataObject.TokenIDMini = &tokIdMini
 
+	if dataObject.MinterAddress == nil && dataObject.OwnerAddr != "" {
+		dataObject.MinterAddress = &dataObject.OwnerAddr
+		isUpdated = true
+	}
 	
-	if isUpdated == true {
+	if isUpdated {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
 		if err != nil {
 			log.Error("u.Repo.UpdateOne", err.Error(), err)
