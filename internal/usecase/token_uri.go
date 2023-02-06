@@ -109,7 +109,8 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
-			name := fmt.Sprintf("thumb/%s-%s.png", token.ContractAddress, token.TokenID)
+			now := time.Now().UTC().String()
+			name := fmt.Sprintf("thumb/%s-%s-%s.png", token.ContractAddress, token.TokenID, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image,  name)
 			if err != nil {
@@ -119,7 +120,6 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
-		// pass reader to NewDecoder
 	}
 
 	resp = &structure.TokenAnimationURI{

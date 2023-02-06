@@ -7,20 +7,17 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
-func (u Usecase) CreateDraftProposal(rootSpan opentracing.Span, req structure.CreateProposaltReq) (*entity.Proposal, error) {
+func (u Usecase) CreateDraftProposal(rootSpan opentracing.Span, req structure.CreateProposaltReq) (*entity.ProposalDetail, error) {
 	span, log := u.StartSpan("CreateDraftProposal", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	pe := &entity.Proposal{}
+	pe := &entity.ProposalDetail{}
 	err := copier.Copy(pe, req)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
-	
-	pe.IsDraft = true
-	//pe.ProposalID =  
-	err = u.Repo.CreateProposal(pe)
+	err = u.Repo.CreateProposalDetail(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
@@ -30,30 +27,25 @@ func (u Usecase) CreateDraftProposal(rootSpan opentracing.Span, req structure.Cr
 	return pe, nil
 }
 
-func (u Usecase) MapOffToOnChainProposal(rootSpan opentracing.Span, ID string, proposalID string) (*entity.Proposal, error) {
+func (u Usecase) MapOffToOnChainProposal(rootSpan opentracing.Span, ID string, proposalID string) (*entity.ProposalDetail, error) {
 	span, log := u.StartSpan("MapOffToOnChainProposal", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	
-	p, err := u.Repo.FindProposalByID(ID)
+	pD, err := u.Repo.FindProposalDetailByUUID(ID)
 	if err != nil {
 		log.Error("MapOffToOnChainProposal.FindProposalByID", err.Error(), err)
 		return nil, err
 	}
-
-	log.SetTag("proposalID", proposalID)
-	if p.ProposalID == p.UUID {
-		p.ProposalID = proposalID
-		updated, err := u.Repo.UpdateProposal(ID, p)
-		if err != nil {
-			log.Error("MapOffToOnChainProposal.UpdateProposal", err.Error(), err)
-			return nil, err
-		}
-		log.SetData("updated", updated)
-
-	}else{
-		log.SetData("Proposal.OnChainID.Existed", p.ProposalID)
+	
+	pD.ProposalID = proposalID
+	updated, err := u.Repo.UpdateProposalDetail(ID, pD)
+	if err != nil {
+		log.Error("MapOffToOnChainProposal.UpdateProposalDetail", err.Error(), err)
+		return nil, err
 	}
-	return p, nil
+
+	log.SetData("updated", updated)	
+	return pD, nil
 }
 
 func (u Usecase) GetProposals(rootSpan opentracing.Span, req structure.FilterProposal) (*entity.Pagination, error) {
@@ -76,7 +68,6 @@ func (u Usecase) GetProposals(rootSpan opentracing.Span, req structure.FilterPro
 	log.SetData("projects", proposals)
 	return proposals, nil
 }
-
 
 func (u Usecase) GetProposal(rootSpan opentracing.Span, proposalID string) (*entity.Proposal, error) {
 	span, log := u.StartSpan("GetProposal", rootSpan)

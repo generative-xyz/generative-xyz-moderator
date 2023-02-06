@@ -72,6 +72,7 @@ type Projects struct {
 	Stats                 ProjectStat        `bson:"stats"`
 	TraitsStat         []TraitStat `bson:"traitsStat" json:"traitsStat"`
 	Priority *int `bson:"priority"`
+	IsHidden bool `bson:"isHidden"`
 }
 
 type	ProjectMintingInfo struct {

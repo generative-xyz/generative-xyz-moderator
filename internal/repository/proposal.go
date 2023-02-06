@@ -94,9 +94,9 @@ func (r Repository) CreateProposal(obj *entity.Proposal) error {
 	return  nil
 }
 
-func (r Repository) FindProposal(pID string) (*entity.Proposal, error) {
+func (r Repository) FindProposal(proposalID string) (*entity.Proposal, error) {
 	resp := &entity.Proposal{}
-	usr, err := r.FilterOne(entity.Proposal{}.TableName(), bson.D{{"proposalID", pID}})
+	usr, err := r.FilterOne(entity.Proposal{}.TableName(), bson.D{{"proposalID", proposalID}})
 	if err != nil {
 		return nil, err
 	}
@@ -109,9 +109,9 @@ func (r Repository) FindProposal(pID string) (*entity.Proposal, error) {
 }
 
 
-func (r Repository) FindProposalByID(pID string) (*entity.Proposal, error) {
+func (r Repository) FindProposalByUUID(UUID string) (*entity.Proposal, error) {
 	resp := &entity.Proposal{}
-	usr, err := r.FilterOne(entity.Proposal{}.TableName(), bson.D{{utils.KEY_UUID, pID}})
+	usr, err := r.FilterOne(entity.Proposal{}.TableName(), bson.D{{utils.KEY_UUID, UUID}})
 	if err != nil {
 		return nil, err
 	}

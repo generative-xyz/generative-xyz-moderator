@@ -139,7 +139,7 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 	}
 
 	log.SetData("uProposals", uProposals)
-	resp, err := h.proposalToResp(uProposals)
+	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
@@ -180,7 +180,7 @@ func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.R
 	}
 
 	log.SetData("uProposals", uProposals)
-	resp, err := h.proposalToResp(uProposals)
+	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
@@ -193,6 +193,15 @@ func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.R
 
 
 func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.ProposalResp, error) {
+	resp := &response.ProposalResp{}
+	err := response.CopyEntityToRes(resp, input)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (h *httpDelivery) proposalDetailToResp(input *entity.ProposalDetail) (*response.ProposalResp, error) {
 	resp := &response.ProposalResp{}
 	err := response.CopyEntityToRes(resp, input)
 	if err != nil {
