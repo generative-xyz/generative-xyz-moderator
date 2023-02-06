@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -45,6 +46,7 @@ func (u Usecase) DAOProposalCreated(rootSpan opentracing.Span, chainLog types.Lo
 		return err
 	}
 
+	u.SendMessageProposal(span, *createdProposal)
 	log.SetData("createdProposal", createdProposal)
 	return nil
 }
@@ -73,7 +75,6 @@ func (u Usecase) ParseProposal(input  *generative_dao.GenerativeDaoProposalCreat
 		Calldatas: input.Calldatas,
 		Raw:  u.ParseRaw(input.Raw),
 		ReceiverAddress: strings.ToLower(input.Proposer.String()),
-		IsDraft: false,
 	}
 	return createdProposal
 }
@@ -89,4 +90,20 @@ func (u Usecase) ParseRaw(input  types.Log) entity.ProposalRaw {
 		r.LogIndex = input.Index
 		r.Removed = input.Removed
 		return r
+}
+
+func (u Usecase) SendMessageProposal(rootSpan opentracing.Span, createdProposal entity.Proposal) {
+	span, log := u.StartSpan("SendMessageProposal", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	//slack
+	preText := fmt.Sprintf("[Proposal %s] has been created by %s", createdProposal.ProposalID, createdProposal.Proposer)
+	//content := fmt.Sprintf("Title: %s. Token: %s", helpers.CreateProfileLink(owner,  profile.DisplayName),  helpers.CreateTokenLink( token.ProjectID, token.TokenID,  token.Name))
+	content := ""
+	title := ""
+	//title := fmt.Sprintf("Proposal:  %s is %s", createdProposal.ProposalID, event)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
 }

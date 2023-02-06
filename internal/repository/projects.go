@@ -205,6 +205,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
+	f["isHidden"] = nil
 
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {

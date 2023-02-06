@@ -11,6 +11,16 @@ type FilterProposals struct {
 	Proposer *string
 }
 
+const (
+	StatePending = iota
+	StateActivate
+	Canceled
+	Defeated
+	Successeded
+	Queued
+	Expired
+	Executed
+)
 
 type Proposal struct {
 	BaseEntity `bson:",inline"`
@@ -28,9 +38,7 @@ type Proposal struct {
 	Amount string `bson:"amount" json:"amount"`
 	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
-	State uint8 `bson:"state" json:"state"`
-	IsDraft bool `bson:"isDraft" json:"isDraft"`
-	
+	State uint8 `bson:"state" json:"state"`	
 }
 
 type ProposalRaw struct {
