@@ -9,6 +9,8 @@ import (
 type FilterProposals struct {
 	BaseFilters
 	Proposer *string
+	State *int
+	ProposalID *string
 }
 
 const (
@@ -39,6 +41,28 @@ type Proposal struct {
 	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
+	ProposalDetail `bson:"-" json:"proposalDetail"`	
+}
+
+type QueriedProposal struct {
+	BaseEntity `bson:",inline"`
+	ProposalID string `bson:"proposalID" json:"proposalID"`
+	Proposer string `bson:"proposer" json:"proposer"`
+	ReceiverAddress string `bson:"receiverAddress" json:"receiverAddress"`
+	Targets []string `bson:"targets" json:"targets"`
+	Values []int64 `bson:"values" json:"values"`
+	Signatures []string `bson:"signatures" json:"signatures"`
+	Calldatas [][]byte `bson:"calldatas" json:"calldatas"`
+	StartBlock int64 `bson:"startBlock" json:"startBlock"`
+	EndBlock int64 `bson:"endBlock" json:"endBlock"`
+	Title string `bson:"title" json:"title"`
+	Description string `bson:"description" json:"description"`
+	Amount string `bson:"amount" json:"amount"`
+	TokenType string `bson:"tokenType" json:"tokenType"`
+	Raw ProposalRaw `bson:"raw" json:"raw"`
+	State uint8 `bson:"state" json:"state"`	
+	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`	
+	
 }
 
 type ProposalRaw struct {
