@@ -17,8 +17,18 @@ type ProposalResp struct {
 	Raw ProposalRaw `json:"raw"`
 	State uint `json:"state"`
 	ReceiverAddress string `json:"receiverAddress"`
-	IsDraft bool `bson:"isDraft" json:"isDraft"`
+	IsDraft bool `json:"isDraft"`
+	Vote ProposalVote `json:"vote"`
 }
+
+type ProposalVote struct { 
+	For int `json:"for"`
+	Against int `json:"against"`
+	Total int `json:"total"`
+	PercentFor float32 `json:"percentFor"`
+	PercentAgainst float32 `json:"percentAgainst"`
+}
+
 type ProposalRaw struct {
 	Address string `json:"address"`
 	Topics []string `json:"topics"`
