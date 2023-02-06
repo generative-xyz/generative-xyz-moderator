@@ -73,6 +73,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		update := false
 		collectionCreated := addressToCollectionCreated[user.WalletAddress]
 		nftMinted := addressToNftMinted[user.WalletAddress]
+		log.SetData(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
 		if collectionCreated != user.Stats.CollectionCreated {
 			user.Stats.CollectionCreated = collectionCreated
 			update = true			
