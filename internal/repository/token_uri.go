@@ -304,6 +304,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"creator.display_name", 1},
 		{"creator.avatar", 1},
 		{"stats.price_int", 1},
+		{"minter_address", 1},
 	}
 	return f
 }
