@@ -45,7 +45,7 @@ func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
 }
 
 func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
+	span, log := u.StartSpan("SyncUserStats", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	addressToCollectionCreated := make(map[string]int32)
@@ -93,7 +93,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 }
 
 func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("syncMarketplaceDurationAndTokenPrice", rootSpan)
+	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	gData := u.gData
@@ -109,8 +109,7 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 		err := u.syncMarketplaceDurationAndTokenPrice(span, &gData)
 		errChan <- err
 	}(wg, errChan)
-
-	
+		
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
 		err := u.syncMarketplaceOfferTokenOwner(span, &gData)
@@ -118,7 +117,7 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 	}(wg, errChan)
 	
 	wg.Wait()
-	//close(errChan)
+	close(errChan)
 
 	for e := range errChan {
 		if e != nil {
