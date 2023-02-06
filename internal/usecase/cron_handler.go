@@ -2,13 +2,17 @@ package usecase
 
 import (
 	"fmt"
+	"math/big"
+	"os"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/contracts/generative_dao"
 )
 
 func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
@@ -300,6 +304,87 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData
 	}
 
 	wg.Wait()
+
+	return nil
+}
+
+func (u Usecase) GetTheCurrentBlockNumber(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.GetTheCurrentBlockNumber", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	block, err := u.Blockchain.GetBlockNumber()
+	if err != nil {
+		log.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		return err
+	}
+
+	log.SetData("block",block)
+	return nil
+}
+
+func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.UpdateProposalState", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	block, err := u.Blockchain.GetBlockNumber()
+	if err != nil {
+		log.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		return err
+	}
+
+	proposals, err := u.Repo.AllProposals(entity.FilterProposals{})
+	if err != nil {
+		log.Error("Usecase.GetTheCurrentBlockNumber.AllProposals",err.Error(), err)
+		return err
+	}
+
+	addr := common.HexToAddress(os.Getenv("DAO_PROPOSAL_CONTRACT"))
+	daoContract, err := generative_dao.NewGenerativeDao(addr, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init DAO contract", err.Error(), err)
+		return err
+	}
+
+	processed := 0
+	processChain := make(chan bool, len(proposals))
+	
+	for _, proposal := range proposals {
+		go func ( proposal entity.Proposal, processChain chan bool)  {
+			span, log := u.StartSpan("Usecase.UpdateProposalState.Routine", rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
+
+			defer func(){
+				processChain <- true
+			}()
+
+			n := new(big.Int)
+			n, ok := n.SetString(proposal.ProposalID, 10)
+			if ok {
+				state, err := daoContract.State(nil, n)
+				if err == nil {
+					proposal.State = state
+				}else{
+					log.Error("daoContract.State", err.Error(), err)
+				}
+			}
+	
+			proposal.CurrentBlock = block.Int64()
+			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
+			if err != nil {
+				log.Error("daoContract.State", err.Error(), err)
+			}
+			log.SetData("Updated", updated)
+			
+		}(proposal, processChain)
+
+		if processed % 10 == 0{
+			time.Sleep(2 * time.Second)
+		}
+	}
+
+	for i := 0; i< len(proposals) ; i ++ {
+		<- processChain
+	}
 
 	return nil
 }

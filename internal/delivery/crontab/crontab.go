@@ -147,6 +147,16 @@ func (h ScronHandler) StartServer() {
 	
 	//alway a minute crontab
 	c.AddFunc("*/1 * * * *", func() {
+		span := h.Tracer.StartSpan("DispatchCron.OneMinute")
+		defer span.Finish()
+
+		log := tracer.NewTraceLog()
+		defer log.ToSpan(span)
+
+		err := h.Usecase.UpdateProposalState(span)
+		if err != nil {
+			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+		}
 		
 	})
 

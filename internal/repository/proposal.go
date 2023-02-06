@@ -16,11 +16,11 @@ import (
 func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagination, error) {
 	pro := []entity.Proposal{}
 	resp := &entity.Pagination{}
-	
-	f := r.filterProposal(filter)
+
 	if filter.SortBy == "" {
 		filter.SortBy = "created_at"
 	}
+	f := r.filterProposal(filter)
 
 	t, err := r.AggregateData(entity.Proposal{}.TableName(), filter.Page, filter.Limit, f, r.SelectedProposalFields() , r.SortProposal(filter), &pro)
 	if err != nil {
@@ -51,6 +51,26 @@ func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagin
 	resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
 	return resp, nil
+}
+
+func (r Repository) AllProposals(filter entity.FilterProposals) ([]entity.Proposal, error) {
+	pro := []entity.Proposal{}
+	
+	if filter.SortBy == "" {
+		filter.SortBy = "created_at"
+	}
+
+	f := r.filterProposal(filter)
+	cursor, err := r.DB.Collection(utils.COLLECTION_DAO_PROPOSAL).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &pro); err != nil {
+		return nil, err
+	}
+
+	return pro, nil
 }
 
 func (r Repository) AggregateData(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
@@ -135,6 +155,7 @@ func (r Repository) SelectedProposalFields() bson.D {
 		{"calldatas", 1},
 		{"startBlock", 1},
 		{"endBlock", 1},
+		{"currentBlock", 1},
 		{"description", 1},
 		{"raw", 1},
 		{"state", 1},
