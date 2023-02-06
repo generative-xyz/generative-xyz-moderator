@@ -28,9 +28,6 @@ func (u Usecase) DAOProposalCreated(rootSpan opentracing.Span, chainLog types.Lo
 		return err
 	}
 	log.SetData("parsed.Data", parsedProposal)
-
-	
-
 	createdProposal := u.ParseProposal(parsedProposal)	
 
 	state, err := daoContract.State(nil, parsedProposal.ProposalId)
@@ -74,6 +71,8 @@ func (u Usecase) ParseProposal(input  *generative_dao.GenerativeDaoProposalCreat
 		Signatures: input.Signatures,
 		Calldatas: input.Calldatas,
 		Raw:  u.ParseRaw(input.Raw),
+		Amount: "0",
+		TokenType: "NATIVE",
 		ReceiverAddress: strings.ToLower(input.Proposer.String()),
 	}
 	return createdProposal
