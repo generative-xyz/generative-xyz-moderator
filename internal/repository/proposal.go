@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"context"
-
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -70,28 +68,12 @@ func (r Repository) SortProposal (filter entity.FilterProposals) []Sort {
 }
 
 func (r Repository) CreateProposal(obj *entity.Proposal) error {
-
-	obj.SetID()
-	obj.SetCreatedAt()
-	obj.ProposalID = obj.UUID
-
-
-	bData, err := obj.ToBson()
-	if err != nil {
-		return  err
-	}
-
-	_ , err = r.DB.Collection(obj.TableName()).InsertOne(context.TODO(), &bData)
+	err := r.InsertOne(obj.TableName(), obj)
 	if err != nil {
 		return err
 	}
 
-	err = obj.Decode(bData)
-	if err != nil {
-		return  err
-	}
-
-	return  nil
+	return nil
 }
 
 func (r Repository) FindProposal(proposalID string) (*entity.Proposal, error) {
