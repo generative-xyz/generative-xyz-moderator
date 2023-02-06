@@ -25,7 +25,8 @@ type FilterUsers struct {
 type UserStats struct {
 	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
 	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`
-} 
+	OutputMinted      int32 `bson:"output_minted" json:"output_minted"`
+}
 
 
 type Users struct {
