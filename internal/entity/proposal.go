@@ -34,6 +34,7 @@ type Proposal struct {
 	Signatures []string `bson:"signatures" json:"signatures"`
 	Calldatas [][]byte `bson:"calldatas" json:"calldatas"`
 	StartBlock int64 `bson:"startBlock" json:"startBlock"`
+	CurrentBlock int64 `bson:"currentBlock" json:"currentBlock"`
 	EndBlock int64 `bson:"endBlock" json:"endBlock"`
 	Title string `bson:"title" json:"title"`
 	Description string `bson:"description" json:"description"`

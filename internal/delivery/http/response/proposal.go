@@ -9,6 +9,7 @@ type ProposalResp struct {
 	Signatures []string `json:"signatures"`
 	Calldatas [][]byte `json:"calldatas"`
 	StartBlock int64 `json:"startBlock"`
+	CurrentBlock int64 `json:"currentBlock"`
 	EndBlock int64 `json:"endBlock"`
 	Title string `json:"title"`
 	Description string `json:"description"`
