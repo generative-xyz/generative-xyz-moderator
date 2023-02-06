@@ -54,10 +54,14 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 
 	addressToCollectionCreated := make(map[string]int32)
 	addressToNftMinted := make(map[string]int32)
+	addressToOutputMinted := make(map[string]int32)
 
 	for _, token := range u.gData.AllTokens {
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
+		}
+		if token.CreatorAddr != "" {
+			addressToOutputMinted[token.CreatorAddr]++
 		}
 	}
 
@@ -77,6 +81,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		update := false
 		collectionCreated := addressToCollectionCreated[user.WalletAddress]
 		nftMinted := addressToNftMinted[user.WalletAddress]
+		outputMinted := addressToOutputMinted[user.WalletAddress]
 		log.SetData(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
 		if collectionCreated != user.Stats.CollectionCreated {
 			user.Stats.CollectionCreated = collectionCreated
@@ -84,6 +89,10 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		}
 		if nftMinted != user.Stats.NftMinted {
 			user.Stats.NftMinted = nftMinted
+			update = true
+		}
+		if outputMinted != user.Stats.OutputMinted {
+			user.Stats.OutputMinted = outputMinted
 			update = true
 		}
 		if update {
