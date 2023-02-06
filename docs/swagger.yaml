@@ -801,6 +801,14 @@ paths:
         in: query
         name: proposer
         type: string
+      - description: filter by proposalID
+        in: query
+        name: proposalID
+        type: string
+      - description: filter by state
+        in: query
+        name: state
+        type: string
       - description: newest, minted-newest, token-price-asc, token-price-desc
         in: query
         name: sort

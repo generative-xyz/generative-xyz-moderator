@@ -17,6 +17,7 @@ func (u Usecase) CreateDraftProposal(rootSpan opentracing.Span, req structure.Cr
 		return nil, err
 	}
 
+	pe.IsDraft = true
 	err = u.Repo.CreateProposalDetail(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
@@ -38,6 +39,7 @@ func (u Usecase) MapOffToOnChainProposal(rootSpan opentracing.Span, ID string, p
 	}
 	
 	pD.ProposalID = proposalID
+	pD.IsDraft = false
 	updated, err := u.Repo.UpdateProposalDetail(ID, pD)
 	if err != nil {
 		log.Error("MapOffToOnChainProposal.UpdateProposalDetail", err.Error(), err)

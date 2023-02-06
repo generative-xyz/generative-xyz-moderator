@@ -14,6 +14,7 @@ type ProposalDetail struct {
 	Description string `bson:"description" json:"description"`
 	Amount string `bson:"amount" json:"amount"`
 	TokenType string `bson:"tokenType" json:"tokenType"`
+	IsDraft bool `bson:"isDraft" json:"isDraft"`
 }
 
 func (u ProposalDetail) TableName() string { 

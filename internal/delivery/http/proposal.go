@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -19,6 +20,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param proposer query string false "filter by proposer"
+// @Param proposalID query string false "filter by proposalID"
+// @Param state query string false "filter by state"
 // @Param sort query string false "newest, minted-newest, token-price-asc, token-price-desc"
 // @Param limit query int false "limit default 10"
 // @Param page query int false "page start with 1"
@@ -37,6 +40,25 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 
 	f := structure.FilterProposal{}
 	f.BaseFilters = *baseF
+
+	proposer := r.URL.Query().Get("proposer")
+	proposalID := r.URL.Query().Get("proposalID")
+	state := r.URL.Query().Get("state")
+
+	if proposer != "" {
+		f.Proposer = &proposer
+	}
+	
+	if proposalID != "" {
+		f.ProposalID = &proposalID
+	}
+	
+	if state != "" {
+		stateINT, err := strconv.Atoi(state)
+		if err ==   nil {
+			f.State = &stateINT
+		}
+	}
 
 	uProposals, err := h.Usecase.GetProposals(span, f)
 	if err != nil {
@@ -198,6 +220,12 @@ func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.Proposa
 	if err != nil {
 		return nil, err
 	}
+
+	resp.Amount = input.ProposalDetail.Amount
+	resp.Title = input.ProposalDetail.Title
+	resp.Description = input.ProposalDetail.Description
+	resp.TokenType = input.ProposalDetail.TokenType
+	resp.ReceiverAddress = input.ProposalDetail.ReceiverAddress
 	return resp, nil
 }
 

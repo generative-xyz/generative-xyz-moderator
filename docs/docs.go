@@ -719,6 +719,18 @@ var doc = `{
                     },
                     {
                         "type": "string",
+                        "description": "filter by proposalID",
+                        "name": "proposalID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter by state",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "newest, minted-newest, token-price-asc, token-price-desc",
                         "name": "sort",
                         "in": "query"

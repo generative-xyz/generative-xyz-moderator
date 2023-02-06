@@ -1,10 +1,14 @@
 package repository
 
 import (
+	"context"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
+	. "github.com/gobeam/mongo-go-pagination"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,16 +22,83 @@ func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagin
 		filter.SortBy = "created_at"
 	}
 
-	t, err := r.Paginate(entity.Proposal{}.TableName(), filter.Page, filter.Limit, f, r.SelectedProposalFields() , r.SortProposal(filter), &pro)
+	t, err := r.AggregateData(entity.Proposal{}.TableName(), filter.Page, filter.Limit, f, r.SelectedProposalFields() , r.SortProposal(filter), &pro)
 	if err != nil {
 		return nil, err
 	}
+
+	for _, raw := range t.Data {
+		p :=&entity.QueriedProposal{}
+		pResp :=&entity.Proposal{}
+		
+		marshallErr := bson.Unmarshal(raw, &p)
+		if marshallErr == nil {
+			err = copier.Copy(pResp, p)
+			if err == nil {
+				if len(p.ProposalDetail) > 0 {
+					d := p.ProposalDetail[0]
+					pResp.ProposalDetail = d
+				}
 	
+				pro = append(pro, *pResp)
+			}
+		}
+
+	}
+
 	resp.Result = pro
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
 	return resp, nil
+}
+
+func (r Repository) AggregateData(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
+
+	paginatedData := New(r.DB.Collection(dbName)).
+		Context(context.TODO()).
+		Limit(int64(limit)).
+		Page(int64(page))
+
+	if 	len(sorts) > 0 {
+		for _, sort := range sorts {
+			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
+				//sortValue := bson.D{{"created_at", -1}}
+				paginatedData.Sort(sort.SortBy, sort.Sort)
+			}	
+		}
+	}else{
+		paginatedData.Sort("created_at", entity.SORT_DESC)
+	}
+
+	lookUpStage := bson.M{
+		"$lookup": bson.M{
+			"from": "proposal_detail",
+			"let": bson.M{"proposalID": "$proposalID"},
+			"pipeline": bson.A{
+				bson.M{
+					"$match": bson.M{
+						"$expr": bson.M{"$eq": bson.A{"$proposalID",  "$$proposalID"}},
+					},
+				},
+			},
+			"as": "proposalDetail",
+		},
+	}
+
+	matchStage := bson.M{
+		"$match" : filter,
+	}
+
+	data, err :=	paginatedData.
+		Select(selectFields).
+		Aggregate(lookUpStage, matchStage)
+
+	if err != nil {
+		return nil, err
+	}
+	
+	return data, nil
 }
 
 func (r Repository) filterProposal(filter entity.FilterProposals) bson.M {
@@ -37,6 +108,16 @@ func (r Repository) filterProposal(filter entity.FilterProposals) bson.M {
 	if filter.Proposer != nil {
 		if *filter.Proposer  != "" {
 			f["proposer"] = *filter.Proposer
+		}
+	}
+	
+	if filter.State != nil {
+		f["state"] = *filter.State
+	}
+
+	if filter.ProposalID != nil {
+		if *filter.ProposalID  != "" {
+			f["proposalID"] = *filter.ProposalID
 		}
 	}
 
@@ -57,6 +138,10 @@ func (r Repository) SelectedProposalFields() bson.D {
 		{"description", 1},
 		{"raw", 1},
 		{"state", 1},
+		{"proposalDetail.amount", 1},
+		{"proposalDetail.receiverAddress", 1},
+		{"proposalDetail.title", 1},
+		{"proposalDetail.tokenType", 1},
 	}
 	return f
 }

@@ -8,6 +8,9 @@ type FilterProjects struct {
 
 type FilterProposal struct {
 	BaseFilters
+	Proposer *string
+	State *int
+	ProposalID *string
 }
 
 type CreateProjectReq struct {
