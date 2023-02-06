@@ -375,11 +375,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	if dataObject.MinterAddress != nil {
-		log.SetData(fmt.Sprintf("Minter address %v", dataObject.MinterAddress), true)
+		log.SetData(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), true)
 	}
 
 	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
-		log.SetData("Updata minter address", true)
+		log.SetData("Update minter address", true)
 		dataObject.MinterAddress = &dataObject.OwnerAddr
 		isUpdated = true
 	}
