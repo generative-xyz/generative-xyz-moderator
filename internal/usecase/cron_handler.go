@@ -57,6 +57,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 	addressToOutputMinted := make(map[string]int32)
 
 	for _, token := range u.gData.AllTokens {
+		log.SetData(fmt.Sprintf("tokenId=%s", token.TokenID), token)
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
 		}
