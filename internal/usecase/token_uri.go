@@ -313,7 +313,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
 	if err != nil {
 		log.Error("u.Repo.FindUserByWalletAddress.creator", err.Error(), err)
-		return nil, err
+		creator = &entity.Users{}
 	}
 	dataObject.Creator = creator
 	mftMintedTime := <- mftMintedTimeChan
