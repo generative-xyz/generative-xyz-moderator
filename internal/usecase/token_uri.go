@@ -366,7 +366,19 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	dataObject.TokenIDMini = &tokIdMini
 
 	log.SetData(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), true)
-	if (dataObject.MinterAddress == nil || *dataObject.MinterAddress == "") && dataObject.OwnerAddr != "" {
+
+	isAddress := func (s*string) bool {
+		if s == nil {
+			return false
+		}
+		return strings.HasPrefix(*s, "0x")
+	}
+
+	if dataObject.MinterAddress != nil {
+		log.SetData(fmt.Sprintf("Minter address %v", dataObject.MinterAddress), true)
+	}
+
+	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
 		log.SetData("Updata minter address", true)
 		dataObject.MinterAddress = &dataObject.OwnerAddr
 		isUpdated = true
