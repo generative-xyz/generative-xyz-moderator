@@ -6,9 +6,13 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type FilterTokenHolders struct {
+	BaseFilters
+}
+
 type TokenHolder struct {
-	BaseEntity           `bson:",inline" json:"base_entity"`
-	ID                   string      `bson:"id" json:"id"`
+	BaseEntity           `bson:",inline" json:"-"`
+	ID                   string      `bson:"id" json:"-"`
 	ContractDecimals     int         `bson:"contract_decimals" json:"contract_decimals"`
 	ContractName         string      `bson:"contract_name" json:"contract_name"`
 	ContractTickerSymbol string      `bson:"contract_ticker_symbol" json:"contract_ticker_symbol"`

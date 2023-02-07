@@ -11,7 +11,8 @@ import (
 func (r Repository) CreateTokenHolders(tokenHolders []entity.TokenHolder) error {
 	_tokenHolders := make([]entity.IEntity, 0, len(tokenHolders))
 	for _, tokenHolder := range tokenHolders {
-		_tokenHolders = append(_tokenHolders, &tokenHolder)
+		_tokenHolder := tokenHolder
+		_tokenHolders = append(_tokenHolders, &_tokenHolder)
 	}
 	err := r.InsertMany(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, _tokenHolders)
 	if err != nil {
@@ -41,3 +42,18 @@ func (r Repository) DeleteAllTokenHolders() error {
 	_, err := r.DeleteMany(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, bson.D{})
 	return err
 }
+
+func (r Repository) FilterTokenHolders(filter entity.FilterTokenHolders) (*entity.Pagination, error) {
+	confs := []entity.TokenHolder{}
+	resp := &entity.Pagination{}
+	p, err := r.Paginate(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, filter.Page, filter.Limit, bson.M{}, bson.M{}, []Sort{}, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
+} 
