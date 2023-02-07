@@ -85,6 +85,7 @@ const (
 	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL string = "proposals"
 	COLLECTION_DAO_PROPOSAL_DETAIL string = "proposal_detail"
+	COLLECTION_LEADERBOARD_TOKEN_HOLDER string = "token_holders"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS string = "0x0000000000000000000000000000000000000000"
