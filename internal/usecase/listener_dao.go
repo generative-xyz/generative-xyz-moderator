@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) DAOCastVote(rootSpan opentracing.Span, chainLog types.Log) error {
@@ -31,7 +32,8 @@ func (u Usecase) DAOCastVote(rootSpan opentracing.Span, chainLog types.Log) erro
 		ProposalID:  parsedCastVote.ProposalId.String(),
 		Voter:  strings.ToLower(parsedCastVote.Voter.String()),
 		Support: int(parsedCastVote.Support),
-		Weight: parsedCastVote.Weight.Uint64(),
+		WeightNum: helpers.ParseBigToFloat(parsedCastVote.Weight),
+		Weight: parsedCastVote.Weight.String(),
 		Reason: parsedCastVote.Reason,
 	}
 

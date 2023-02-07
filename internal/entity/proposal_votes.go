@@ -18,7 +18,8 @@ type ProposalVotes struct {
 	ProposalID string `bson:"proposalID" json:"proposalID"`
 	Voter string `bson:"voter" json:"voter"`
 	Support int `bson:"support" json:"support"`
-	Weight uint64 `bson:"weight" json:"weight"`
+	WeightNum float64 `bson:"weightNum" json:"weightNum"`
+	Weight string `bson:"weight" json:"weight"`
 	Reason string `bson:"reason" json:"reason"`
 	
 }
