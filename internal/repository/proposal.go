@@ -53,6 +53,31 @@ func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagin
 	return resp, nil
 }
 
+func (r Repository)  ProcessProposals() ([]entity.Proposal, error) {
+	pro := []entity.Proposal{}
+
+	f := bson.M{}
+	f[utils.KEY_DELETED_AT] = nil
+	f["state"] = bson.M{"$nin": bson.A{
+		entity.	PStateCanceled,
+		entity.PStateDefeated,
+		entity.PStateSuccesseded,
+		entity.PStateExpired,
+		entity.PStateExecuted,
+	}}
+	
+	cursor, err := r.DB.Collection(utils.COLLECTION_DAO_PROPOSAL).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &pro); err != nil {
+		return nil, err
+	}
+
+	return pro, nil
+}
+
 func (r Repository) AllProposals(filter entity.FilterProposals) ([]entity.Proposal, error) {
 	pro := []entity.Proposal{}
 	

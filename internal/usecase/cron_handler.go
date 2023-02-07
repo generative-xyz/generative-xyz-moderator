@@ -362,18 +362,18 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 		return err
 	}
 
-	processed := 0
-	processChain := make(chan bool, len(proposals))
+	//processed := 0
+	//processChain := make(chan bool, len(proposals))
 	
 	for _, proposal := range proposals {
 
-		go func ( proposal entity.Proposal, processChain chan bool)  {
+		func ( proposal entity.Proposal)  {
 			span, log := u.StartSpan("Usecase.UpdateProposalState.Routine", rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
-			defer func(){
-				processChain <- true
-			}()
+			// defer func(){
+			// 	processChain <- true
+			// }()
 
 			n := new(big.Int)
 			n, ok := n.SetString(proposal.ProposalID, 10)
@@ -425,16 +425,16 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 			}
 			log.SetData("Updated", updated)
 			
-		}(proposal, processChain)
+		}(proposal)
 
-		if processed % 10 == 0{
-			time.Sleep(5 * time.Second)
-		}
+		// if processed % 10 == 0{
+		// 	time.Sleep(5 * time.Second)
+		// }
 	}
 
-	for i := 0; i< len(proposals) ; i ++ {
-		<- processChain
-	}
+	// for i := 0; i< len(proposals) ; i ++ {
+	// 	<- processChain
+	// }
 
 	return nil
 }

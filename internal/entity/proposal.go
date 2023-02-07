@@ -14,14 +14,14 @@ type FilterProposals struct {
 }
 
 const (
-	StatePending = iota
-	StateActivate
-	Canceled
-	Defeated
-	Successeded
-	Queued
-	Expired
-	Executed
+	PStatePending = iota
+	PStateActivate
+	PStateCanceled
+	PStateDefeated
+	PStateSuccesseded
+	PStateQueued
+	PStateExpired
+	PStateExecuted
 )
 
 type Proposal struct {

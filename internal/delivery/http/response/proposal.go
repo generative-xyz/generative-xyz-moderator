@@ -1,5 +1,7 @@
 package response
 
+import "time"
+
 type ProposalResp struct {
 	BaseResponse
 	ProposalID string `json:"proposalID"`
@@ -20,6 +22,7 @@ type ProposalResp struct {
 	ReceiverAddress string `json:"receiverAddress"`
 	IsDraft bool `json:"isDraft"`
 	Vote ProposalVote `json:"vote"`
+	CreatedAt *time.Time `json:"createdAt"`
 }
 
 type ProposalVote struct { 
