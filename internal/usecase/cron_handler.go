@@ -78,6 +78,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		u.Repo.UpdateUserStats(address, stats)
 	}
 
+	processed := 0
 	for _, user := range u.gData.AllProfile {
 		update := false
 		collectionCreated := addressToCollectionCreated[user.WalletAddress]
@@ -98,7 +99,13 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		}
 		if update {
 			wg.Add(1)
+
 			go updateUserStats(wg, user.WalletAddress, user.Stats)
+			if processed % 5 == 0 {
+				time.Sleep(5 * time.Second)
+			}
+
+			processed ++
 		}
 	}
 
@@ -375,6 +382,14 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 					proposal.State = state
 				}else{
 					log.Error("daoContract.State", err.Error(), err)
+				}
+
+				vote, err := daoContract.Proposals(nil, n)
+				if err != nil {
+					log.Error("daoContract.Proposals.vote.Error", err.Error(), err)
+				}else{
+					//createdProposal.State = state
+					log.SetData("daoContract.Proposals.vote", vote)
 				}
 			}
 	

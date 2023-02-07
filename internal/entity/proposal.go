@@ -43,6 +43,15 @@ type Proposal struct {
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
 	ProposalDetail `bson:"-" json:"proposalDetail"`	
+	ProposalVote `bson:"vote" json:"vote"`	
+}
+
+type ProposalVote struct { 
+	For int `json:"for"`
+	Against int `json:"against"`
+	Total int `json:"total"`
+	PercentFor float32 `json:"percentFor"`
+	PercentAgainst float32 `json:"percentAgainst"`
 }
 
 type QueriedProposal struct {
