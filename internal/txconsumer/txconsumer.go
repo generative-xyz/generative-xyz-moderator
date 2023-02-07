@@ -188,9 +188,11 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		if _log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
 			c.Usecase.UpdateProjectWithListener(_log)
 		}
+
+
 		if err != nil {
 			log.Error("error resolve event", err.Error(), err)
-			return err
+			//return err
 		}
 	}
 
