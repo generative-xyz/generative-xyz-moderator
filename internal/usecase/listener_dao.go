@@ -10,6 +10,41 @@ import (
 	"rederinghub.io/utils/contracts/generative_dao"
 )
 
+func (u Usecase) DAOCastVote(rootSpan opentracing.Span, chainLog types.Log) error {
+	span, log := u.StartSpan("DAOCastVote", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	log.SetData("chainLog", chainLog.Data)
+
+	daoContract, err := generative_dao.NewGenerativeDao(chainLog.Address, u.Blockchain.GetClient())
+	if  err != nil {
+		log.Error("cannot init DAO contract", err.Error(), err)
+		return err
+	}
+
+	parsedCastVote, err := daoContract.ParseVoteCast(chainLog)
+	if err != nil {
+		log.Error("cannot parse parsedCastVote", err.Error(), err)
+		return err
+	}
+
+	obj := &entity.ProposalVotes{
+		ProposalID:  parsedCastVote.ProposalId.String(),
+		Voter:  strings.ToLower(parsedCastVote.Voter.String()),
+		Support: int(parsedCastVote.Support),
+		Weight: parsedCastVote.Weight.Uint64(),
+		Reason: parsedCastVote.Reason,
+	}
+
+	log.SetData("parsed.parsedCastVote", obj)
+	err = u.Repo.CreateProposalVotes(obj)	
+	if err != nil {
+		log.Error("cannot create CreateProposalVotes", err.Error(), err)
+		return err
+	}
+	
+	u.SendMessageProposalVote(span, *obj)
+	return nil
+}
 
 func (u Usecase) DAOProposalCreated(rootSpan opentracing.Span, chainLog types.Log) error {
 	span, log := u.StartSpan("DAOProposalCreated", rootSpan)
@@ -101,6 +136,21 @@ func (u Usecase) SendMessageProposal(rootSpan opentracing.Span, createdProposal 
 	content := ""
 	title := ""
 	//title := fmt.Sprintf("Proposal:  %s is %s", createdProposal.ProposalID, event)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
+}
+
+func (u Usecase) SendMessageProposalVote(rootSpan opentracing.Span, createdProposalVote entity.ProposalVotes) {
+	span, log := u.StartSpan("SendMessageProposalVote", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	//slack
+	preText := fmt.Sprintf("[Vote][Proposal %s] has been voted", createdProposalVote.ProposalID)
+	content := fmt.Sprintf("Support: %d. Weight: %d", createdProposalVote.Support, createdProposalVote.Weight)
+	title := fmt.Sprintf("Voter:  %s", createdProposalVote.Voter )
+	//title := ""
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)

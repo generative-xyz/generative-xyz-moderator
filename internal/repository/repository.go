@@ -324,5 +324,10 @@ func (r Repository) CreateCollectionIndexes()  error {
 	if err != nil {
 		return err
 	}
+	
+	_, err = r.CreateProposalVotesIndexModel()
+	if err != nil {
+		return err
+	}
 	return nil
 }

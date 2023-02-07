@@ -120,6 +120,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
 	dao.HandleFunc("/proposals", h.createDraftProposals).Methods("POST")
 	dao.HandleFunc("/proposals/{proposalID}", h.getProposal).Methods("GET")
+	dao.HandleFunc("/proposals/{proposalID}/votes", h.getProposalVotes).Methods("GET")
 	dao.HandleFunc("/proposals/{ID}/{proposalID}", h.mapOffAndOnChainProposal).Methods("PUT")
 	
 }

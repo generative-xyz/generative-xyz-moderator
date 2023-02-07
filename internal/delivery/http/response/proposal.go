@@ -47,3 +47,14 @@ type ProposalRaw struct {
 	LogIndex uint `json:"logIndex"`
 	Removed bool `json:"removed"`
 }
+
+type ProposalVotesResp struct {
+	BaseResponse 
+	ProposalID string `json:"proposalID"`
+	Voter string `json:"voter"`
+	Support int `json:"support"`
+	Weight uint64 `json:"weight"`
+	Reason string `json:"reason"`
+	CreatedAt string `json:"createdAt"`
+	
+}
