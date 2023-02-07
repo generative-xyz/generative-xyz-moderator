@@ -73,6 +73,12 @@ type CovalentGetTokenHolderRequest struct {
 	Limit int32	
 }
 
+type CovalentGetAllTokenHolderRequest struct {
+	ContractAddress string
+	Chain *string
+	Limit int32	
+}
+
 type CovalentGetTokenHolderData struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Items     []struct {

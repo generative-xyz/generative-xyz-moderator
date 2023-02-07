@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"rederinghub.io/utils/config"
 )
@@ -92,4 +93,40 @@ func (c CovalentNfts) GetTokenHolder(f CovalentGetTokenHolderRequest) (*Covalent
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c CovalentNfts) GetAllTokenHolder(f CovalentGetAllTokenHolderRequest) ([]CovalentGetTokenHolderResponse, error) {
+	var chain string
+	if f.Chain == nil {
+		chain = c.conf.Covalent.Chain
+	} else {
+		chain = *f.Chain
+	}
+	chainID := ChainToChainID[chain]
+
+	page := 0
+
+	resps := make([]CovalentGetTokenHolderResponse, 0)
+
+	for {
+		url := fmt.Sprintf("%s/%v/tokens/%s/token_holders/?quote-currency=USD&format=JSON&page-number=%v&page-size=%v", c.serverURL, chainID, f.ContractAddress, page, f.Limit);
+		data, err := c.request(url, "GET", nil, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		resp := &CovalentGetTokenHolderResponse{}
+		err = json.Unmarshal(data, &resp)
+		if err != nil {
+			return nil, err
+		}
+		resps = append(resps, *resp)
+		if !resp.Data.Pagination.HasMore {
+			break
+		}
+		page++
+		time.Sleep(1 * time.Second)
+	}
+	
+	return resps, nil
 }

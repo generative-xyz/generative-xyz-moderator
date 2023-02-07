@@ -438,3 +438,92 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 
 	return nil
 }
+
+func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SyncLeaderboard", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	allUsers := u.gData.AllProfile
+	addressToProfile := make(map[string]entity.Users)
+	for _, user := range allUsers {
+		addressToProfile[user.WalletAddress] = user
+	}
+
+	allTokenHolders, err := u.Repo.GetAllTokenHolders()
+	if err != nil {
+		return err
+	}
+
+	addressToOldRank := make(map[string]int32)
+	
+	for _, tokenHolder := range allTokenHolders {
+		addressToOldRank[tokenHolder.Address] = tokenHolder.CurrentRank
+	}
+
+	allNewTokenHolders, err := u.GetAllTokenHolder(span)
+	if err != nil {
+		return err
+	}
+
+	sort.SliceStable(allNewTokenHolders, func(i, j int) bool {
+		lhs := new(big.Int)
+		lhs, ok := lhs.SetString(allNewTokenHolders[i].Balance, 10)
+		if !ok {
+			lhs = big.NewInt(0)
+		}
+		rhs := new(big.Int)
+		rhs, ok = rhs.SetString(allNewTokenHolders[j].Balance, 10)
+		if !ok {
+			rhs = big.NewInt(0)
+		}
+		return lhs.Cmp(rhs) > 0
+	})
+
+	tokenHolders := make([]entity.TokenHolder, 0, len(allNewTokenHolders))
+
+	// add rank
+	for l, r := 0, 1; l < len(allNewTokenHolders); l = r {
+		for r < len(allNewTokenHolders) && allNewTokenHolders[r].Balance == allNewTokenHolders[l].Balance {
+			r++
+		}
+		for i := l; i < r; i++ {
+			_tokenHolder := &allNewTokenHolders[i]
+			oldRank, ok := addressToOldRank[_tokenHolder.Address]
+			pOldRank := &oldRank
+			if !ok {
+				pOldRank = nil
+			}
+			tokenHolder := entity.TokenHolder{
+				ContractDecimals: _tokenHolder.ContractDecimals,
+				ContractName: _tokenHolder.ContractName,
+				ContractTickerSymbol: _tokenHolder.ContractTickerSymbol,
+				ContractAddress: _tokenHolder.ContractAddress,
+				SupportsErc: _tokenHolder.SupportsErc,
+				LogoURL: _tokenHolder.LogoURL,
+				Address: _tokenHolder.Address,
+				Balance: _tokenHolder.Balance,
+				TotalSupply: _tokenHolder.TotalSupply,
+				BlockHeight: _tokenHolder.BlockHeight,
+				CurrentRank: int32(l + 1),
+				OldRank: pOldRank,
+			}
+			profile, ok := addressToProfile[_tokenHolder.Address]
+			pProfile := &profile
+			if !ok {
+				pProfile = nil
+			}
+			tokenHolder.Profile = pProfile
+			tokenHolders = append(tokenHolders, tokenHolder)
+		}
+	}
+
+	err = u.Repo.DeleteAllTokenHolders()
+
+	if err != nil {
+		return err
+	}
+
+	err = u.Repo.CreateTokenHolders(tokenHolders)
+
+	return err
+}

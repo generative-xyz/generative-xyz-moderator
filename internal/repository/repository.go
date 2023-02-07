@@ -58,6 +58,29 @@ func NewRepository(g *global.Global) (*Repository, error) {
 	return r, nil
 }
 
+func (r Repository) InsertMany(dbName string, objs []entity.IEntity) error {
+	bDatas := make([]interface{}, 0)
+
+	for i := 0; i < len(objs); i++ {
+		objs[i].SetID()
+		objs[i].SetCreatedAt()
+		bData, err := objs[i].ToBson()
+		if err != nil {
+			return err
+		}
+		bDatas = append(bDatas, *bData)
+	}
+
+	opts := options.InsertMany().SetOrdered(false)
+
+	_, err := r.DB.Collection(dbName).InsertMany(context.TODO(), bDatas, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r Repository) InsertOne(dbName string, obj entity.IEntity) error {
 	obj.SetID()
 	obj.SetCreatedAt()
@@ -168,6 +191,16 @@ func (r Repository) DeleteOne(dbName string, filter bson.D)  (*mongo.DeleteResul
 	id, ok := filterArr[utils.KEY_UUID]
 	if ok {
 		 r.DeleteCache(dbName, id.(string))
+	}
+
+	return result,  nil
+}
+
+// only delete in mongo
+func (r Repository) DeleteMany(dbName string, filter bson.D)  (*mongo.DeleteResult, error) {
+	result, err := r.DB.Collection(dbName).DeleteMany(context.TODO(), filter)
+	if err != nil {
+		return nil, err
 	}
 
 	return result,  nil

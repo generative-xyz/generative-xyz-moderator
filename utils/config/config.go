@@ -34,6 +34,7 @@ type Config struct {
 	TimeResyncProjectStat int32
 	Slack slack.Config
 	Crontab CronTabConfig
+	GENToken GENToken
 }
 
 type MQTTConfig struct {
@@ -143,6 +144,10 @@ type DAOEvents struct {
 	ProposalCreated string
 }
 
+type GENToken struct {
+	Contract string
+}
+
 func NewConfig() (*Config, error) {
 	godotenv.Load()
 	services := make(map[string]string)
@@ -245,6 +250,9 @@ func NewConfig() (*Config, error) {
 		},
 		Crontab: CronTabConfig{
 			Enabled: crontabStart,
+		},
+		GENToken: GENToken{
+			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
 		},
 	}
 

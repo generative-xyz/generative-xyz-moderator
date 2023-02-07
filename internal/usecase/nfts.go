@@ -26,6 +26,39 @@ func (u Usecase) GetNftTransactions(rootSpan opentracing.Span, req structure.Get
 	return resp, err
 }
 
+func (u Usecase) GetAllTokenHolder(rootSpan opentracing.Span) ([]structure.TokenHolder, error) {
+	span, log := u.StartSpan("GetAllTokenHolder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	covalentResps, err := u.CovalentNft.GetAllTokenHolder(nftStructure.CovalentGetAllTokenHolderRequest{
+		ContractAddress: u.Config.GENToken.Contract,
+		Limit:           100,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tokenHolders := make([]structure.TokenHolder, 0)
+	for _, resp := range covalentResps {
+		for _, item := range resp.Data.Items {
+			tokenHolders = append(tokenHolders, structure.TokenHolder{
+				ContractDecimals:     item.ContractDecimals,
+				ContractName:         item.ContractName,
+				ContractTickerSymbol: item.ContractTickerSymbol,
+				ContractAddress:      item.ContractAddress,
+				SupportsErc:          item.SupportsErc,
+				LogoURL:              item.LogoURL,
+				Address:              item.Address,
+				Balance:              item.Balance,
+				TotalSupply:          item.TotalSupply,
+				BlockHeight:          item.BlockHeight,
+			})
+		}
+	}
+
+	return tokenHolders, nil
+}
+
 func (u Usecase) GetTokenHolders(rootSpan opentracing.Span, req structure.GetTokenHolderRequest) (*entity.Pagination, error) {
 	span, log := u.StartSpan("GetTokenHolders", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
