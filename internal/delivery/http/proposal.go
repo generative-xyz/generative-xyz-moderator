@@ -226,16 +226,6 @@ func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.Proposa
 	resp.Description = input.ProposalDetail.Description
 	resp.TokenType = input.ProposalDetail.TokenType
 	resp.ReceiverAddress = input.ProposalDetail.ReceiverAddress
-
-	vote := response.ProposalVote{
-		For: 10,
-		Against: 5,
-		Total:  15,
-		PercentFor: (10 / 15) * 100,
-		PercentAgainst: (5 / 15) * 100,
-	}
-
-	resp.Vote = vote
 	return resp, nil
 }
 
@@ -245,15 +235,5 @@ func (h *httpDelivery) proposalDetailToResp(input *entity.ProposalDetail) (*resp
 	if err != nil {
 		return nil, err
 	}
-
-	vote := response.ProposalVote{
-		For: 10,
-		Against: 5,
-		Total:  15,
-		PercentFor: (10 / 15) * 100,
-		PercentAgainst: (5 / 15) * 100,
-	}
-
-	resp.Vote = vote
 	return resp, nil
 }

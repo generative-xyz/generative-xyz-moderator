@@ -107,12 +107,11 @@ func (r Repository) AggregateData(dbName string, page int64, limit int64, filter
 	}
 
 	matchStage := bson.M{
+		
 		"$match" : filter,
 	}
 
-	data, err :=	paginatedData.
-		Select(selectFields).
-		Aggregate(lookUpStage, matchStage)
+	data, err :=	paginatedData.Aggregate(lookUpStage, matchStage)
 
 	if err != nil {
 		return nil, err
@@ -159,6 +158,7 @@ func (r Repository) SelectedProposalFields() bson.D {
 		{"description", 1},
 		{"raw", 1},
 		{"state", 1},
+		{"vote", 1},
 		{"proposalDetail.amount", 1},
 		{"proposalDetail.receiverAddress", 1},
 		{"proposalDetail.title", 1},
