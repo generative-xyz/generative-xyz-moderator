@@ -76,12 +76,19 @@ func (u Usecase) GetProposal(rootSpan opentracing.Span, proposalID string) (*ent
 	defer u.Tracer.FinishSpan(span, log)
 	
 	
-	proposals, err := u.Repo.FindProposal(proposalID)
+	proposal, err := u.Repo.FindProposal(proposalID)
 	if err != nil {
 		log.Error("u.Repo.FilterProposal", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("projects", proposals)
-	return proposals, nil
+	pDetail, err := u.Repo.FindProposalDetail(proposalID)
+	if err == nil {
+		proposal.ProposalDetail = *pDetail
+	}else{
+		log.Error("u.Repo.FilterProposal", err.Error(), err)
+	}
+
+	log.SetData("proposal", proposal)
+	return proposal, nil
 }
