@@ -43,7 +43,7 @@ type Proposal struct {
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
 	ProposalDetail ProposalDetail `bson:"-" json:"proposalDetail"`	
-	Vote ProposalVote `bson:"-" json:"vote"`	
+	Vote ProposalVote `bson:"vote" json:"vote"`	
 }
 
 type ProposalVote struct { 
@@ -75,7 +75,7 @@ type QueriedProposal struct {
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
 	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`	
-	Vote ProposalVote `bson:"vote" json:"vote"  json:"proposalDetail"`	
+	Vote ProposalVote `bson:"vote" json:"vote"`	
 	
 }
 
