@@ -81,6 +81,13 @@ func init() {
 
 // @BasePath /rederinghub.io/v1
 func main() {
+	
+	defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered. Error:\n", r)
+        }
+    }()
+
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
 	startServer()

@@ -57,7 +57,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 	addressToOutputMinted := make(map[string]int32)
 
 	for _, token := range u.gData.AllTokens {
-		log.SetData(fmt.Sprintf("tokenId=%s", token.TokenID), token)
+		log.SetData(fmt.Sprintf("tokenId=%s", token.TokenID), token.TokenID)
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
 		}
@@ -74,7 +74,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 
 	updateUserStats := func (wg *sync.WaitGroup, address string, stats entity.UserStats) {
 		defer wg.Done()
-		log.SetData(fmt.Sprintf("update user stats address=%s", address), stats)
+		//log.SetData(fmt.Sprintf("update user stats address=%s", address), stats)
 		u.Repo.UpdateUserStats(address, stats)
 	}
 
