@@ -42,16 +42,18 @@ type Proposal struct {
 	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
-	ProposalDetail `bson:"-" json:"proposalDetail"`	
-	ProposalVote `bson:"vote" json:"vote"`	
+	ProposalDetail ProposalDetail `bson:"-" json:"proposalDetail"`	
+	Vote ProposalVote `bson:"-" json:"vote"`	
 }
 
 type ProposalVote struct { 
-	For int `json:"for"`
-	Against int `json:"against"`
-	Total int `json:"total"`
-	PercentFor float32 `json:"percentFor"`
-	PercentAgainst float32 `json:"percentAgainst"`
+	For uint64 `bson:"for"`
+	Against uint64 `bson:"against"`
+	Abstain uint64 `bson:"abstain"`
+	Total uint64 `bson:"total"`
+	PercentFor float64 `bson:"percentFor"`
+	PercentAgainst float64 `bson:"percentAgainst"`
+	PercentAbstain float64 `bson:"percentAbstain"`
 }
 
 type QueriedProposal struct {
@@ -65,6 +67,7 @@ type QueriedProposal struct {
 	Calldatas [][]byte `bson:"calldatas" json:"calldatas"`
 	StartBlock int64 `bson:"startBlock" json:"startBlock"`
 	EndBlock int64 `bson:"endBlock" json:"endBlock"`
+	CurrentBlock int64 `bson:"currentBlock" json:"currentBlock"`
 	Title string `bson:"title" json:"title"`
 	Description string `bson:"description" json:"description"`
 	Amount string `bson:"amount" json:"amount"`
@@ -72,6 +75,7 @@ type QueriedProposal struct {
 	Raw ProposalRaw `bson:"raw" json:"raw"`
 	State uint8 `bson:"state" json:"state"`	
 	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`	
+	Vote ProposalVote `bson:"vote" json:"vote"  json:"proposalDetail"`	
 	
 }
 

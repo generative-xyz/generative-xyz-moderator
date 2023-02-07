@@ -366,6 +366,7 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 	processChain := make(chan bool, len(proposals))
 	
 	for _, proposal := range proposals {
+
 		go func ( proposal entity.Proposal, processChain chan bool)  {
 			span, log := u.StartSpan("Usecase.UpdateProposalState.Routine", rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
@@ -391,6 +392,30 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 					//createdProposal.State = state
 					log.SetData("daoContract.Proposals.vote", vote)
 				}
+
+				forVote :=  vote.ForVotes.Uint64()
+				againstVote := vote.AgainstVotes.Uint64()
+				abstainVote := vote.AbstainVotes.Uint64()
+				percentFor := float64(0)
+				percentAgainst := float64(0)
+				percentAbstain := float64(0)
+
+				total := forVote + againstVote + abstainVote
+				if total != 0 {
+					percentFor =  float64((forVote / total ) * 100)
+					percentAgainst =  float64((againstVote / total ) * 100)
+					percentAbstain =  float64((abstainVote / total ) * 100)
+				}
+				
+				proposal.Vote = entity.ProposalVote{
+					For: forVote,
+					Against: againstVote,
+					Abstain: abstainVote,
+					Total: total,
+					PercentFor: percentFor,
+					PercentAgainst: percentAgainst,
+					PercentAbstain: percentAbstain,
+				}
 			}
 	
 			proposal.CurrentBlock = block.Int64()
@@ -403,7 +428,7 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 		}(proposal, processChain)
 
 		if processed % 10 == 0{
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 	}
 
