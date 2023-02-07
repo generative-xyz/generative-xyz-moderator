@@ -13,6 +13,13 @@ type FilterProposal struct {
 	ProposalID *string
 }
 
+type FilterProposalVote struct {
+	BaseFilters
+	Voter *string
+	Support *int
+	ProposalID *string
+}
+
 type CreateProjectReq struct {
 	ContractAddress string `json:"contractAddress"`
 	TokenID string `json:"tokenID"`

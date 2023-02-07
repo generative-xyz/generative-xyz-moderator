@@ -142,6 +142,7 @@ type MarketplaceEvents struct {
 type DAOEvents struct {
 	Contract string
 	ProposalCreated string
+	CastVote string
 }
 
 type GENToken struct {
@@ -241,6 +242,7 @@ func NewConfig() (*Config, error) {
 		DAOEvents:  DAOEvents{
 			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
 			Contract: os.Getenv("DAO_PROPOSAL_CONTRACT"),
+			CastVote: os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{

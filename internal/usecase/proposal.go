@@ -92,3 +92,25 @@ func (u Usecase) GetProposal(rootSpan opentracing.Span, proposalID string) (*ent
 	log.SetData("proposal", proposal)
 	return proposal, nil
 }
+
+func (u Usecase) GetProposalVotes(rootSpan opentracing.Span, filter structure.FilterProposalVote) (*entity.Pagination, error) {
+	span, log := u.StartSpan("GetProposalVotes", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	f := &entity.FilterProposalVotes{}
+	err := copier.Copy(f, filter)
+	if err != nil {
+		log.Error("filterProposalVotes.copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	proposalVotes, err := u.Repo.FilterProposalVotes(*f)
+	if err != nil {
+		log.Error("u.Repo.FilterProposalVotes", err.Error(), err)
+		return nil, err
+	}
+
+
+	log.SetData("proposalVotes", proposalVotes)
+	return proposalVotes, nil
+}

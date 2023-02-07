@@ -55,6 +55,19 @@ func (r Repository) CreateProposalIndexModel() ([]string, error) {
 	return r.CreateIndexes(collection, models)
 }
 
+func (r Repository) CreateProposalVotesIndexModel() ([]string, error) {
+	collection := entity.ProposalVotes{}.TableName()
+ 	models :=  []mongo.IndexModel{
+		
+		{ Keys: bson.M{"voter": -1,},  Options:  options.Index().SetName("pvotes_voter_desc") } ,
+		{ Keys: bson.M{"proposalID": -1,},  Options:  options.Index().SetName("pvotes_proposalID_desc") } ,
+		{ Keys: bson.M{"support": -1,},  Options:  options.Index().SetName("pvotes_support_desc") } ,
+		{ Keys: bson.D{ {Key: "proposalID", Value: -1}, {Key: "voter", Value: -1} }, Options: options.Index().SetUnique(true),} ,
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
 func (r Repository) CreateMarketplaceListingsIndexModel() ([]string, error) {
 	collection := entity.MarketplaceListings{}.TableName()
  	models :=  []mongo.IndexModel{

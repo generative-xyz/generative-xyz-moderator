@@ -86,6 +86,7 @@ const (
 	COLLECTION_DAO_PROPOSAL string = "proposals"
 	COLLECTION_DAO_PROPOSAL_DETAIL string = "proposal_detail"
 	COLLECTION_LEADERBOARD_TOKEN_HOLDER string = "token_holders"
+	COLLECTION_DAO_PROPOSAL_VOTES string = "proposal_votes"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS string = "0x0000000000000000000000000000000000000000"

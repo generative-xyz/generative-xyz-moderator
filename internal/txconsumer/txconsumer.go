@@ -181,7 +181,13 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			case c.Config.DAOEvents.ProposalCreated:
 				log.SetTag("event", "ProposalCreated")
 				err = c.Usecase.DAOProposalCreated(span, _log)
+
+			case c.Config.DAOEvents.CastVote:
+				log.SetTag("event", "CastVote")
+				err = c.Usecase.DAOCastVote(span, _log)
 			}
+		
+			
 		}
 
 		// do switch case with log.Address and log.Topics

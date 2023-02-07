@@ -124,6 +124,84 @@ func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary DAO proposal's votes
+// @Description DAO proposal's detail
+// @Tags DAO
+// @Accept  json
+// @Produce  json
+// @Param proposalID path string true "proposalID: the onchain ID"
+// @Param voter query string false "filter by voter"
+// @Param support query string false "filter by support"
+// @Param sort query string false "newest, minted-newest, token-price-asc, token-price-desc"
+// @Param limit query int false "limit default 10"
+// @Param page query int false "page start with 1"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /dao/proposals/{proposalID}/votes [GET]
+func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getProposalVotes", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	vars := mux.Vars(r)
+	proposalID := vars["proposalID"]
+	span.SetTag("proposalID", proposalID)
+
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	f := structure.FilterProposalVote{}
+	f.BaseFilters = *baseF
+
+	f.ProposalID = &proposalID
+	support := r.URL.Query().Get("support")
+	if support != "" {
+		supportInt, err := strconv.Atoi(support)
+		if err != nil {
+			log.Error("strconv.Atoi", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+		f.Support = &supportInt
+	}
+
+	voter := r.URL.Query().Get("voter")
+	if voter != "" {
+		f.Voter = &voter
+	}
+
+
+	paginationData, err := h.Usecase.GetProposalVotes(span, f)
+	if err != nil {
+		log.Error("h.Usecase.GetProposal", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	pResp :=  []response.ProposalVotesResp{}
+	iPro := paginationData.Result
+	pro := iPro.([]entity.ProposalVotes)
+	for _, proItem := range pro {
+		
+		tmp := &response.ProposalVotesResp{}
+		err := response.CopyEntityToRes(tmp, &proItem)
+		if err != nil {
+			log.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *tmp)
+	}
+	
+	//log.SetData("resp.Proposal", resp)
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp) , "")
+}
+
+// UserCredits godoc
 // @Summary DAO create a draft proposal
 // @Description DAO create a draft proposal
 // @Tags DAO
@@ -212,7 +290,6 @@ func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.R
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 
 func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.ProposalResp, error) {
 	resp := &response.ProposalResp{}
