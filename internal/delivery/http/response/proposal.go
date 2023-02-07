@@ -26,9 +26,9 @@ type ProposalResp struct {
 }
 
 type ProposalVote struct { 
-	For uint64 `json:"for"`
-	Against uint64 `json:"against"`
-	Abstain uint64 `json:"abstain"`
+	For string `json:"for"`
+	Against string `json:"against"`
+	Abstain string `json:"abstain"`
 
 	Total uint64 `json:"total"`
 	PercentFor float64 `json:"percentFor"`
@@ -53,7 +53,7 @@ type ProposalVotesResp struct {
 	ProposalID string `json:"proposalID"`
 	Voter string `json:"voter"`
 	Support int `json:"support"`
-	Weight uint64 `json:"weight"`
+	Weight string `json:"weight"`
 	Reason string `json:"reason"`
 	CreatedAt string `json:"createdAt"`
 	

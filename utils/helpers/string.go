@@ -5,7 +5,9 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
+	"strconv"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -110,4 +112,14 @@ func CreateProfileLink(walletAdress string, displayName string) string {
 func CreateTokenLink( projectID string, tokenID string, tokenName string) string {
 	link := fmt.Sprintf("%s/generative/%s/%s",os.Getenv("DOMAIN"),projectID, tokenID)
 	return fmt.Sprintf("<%s|%s>", link, tokenName)
+}
+
+func ParseBigToFloat(number *big.Int) float64 {
+	numStr := number.String()
+	
+	n, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0
+	}
+	return n
 }

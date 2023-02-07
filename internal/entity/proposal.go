@@ -47,10 +47,14 @@ type Proposal struct {
 }
 
 type ProposalVote struct { 
-	For uint64 `bson:"for"`
-	Against uint64 `bson:"against"`
-	Abstain uint64 `bson:"abstain"`
-	Total uint64 `bson:"total"`
+	ForNum float64 `bson:"forNum"`
+	For string `bson:"for"`
+	AgainstNum float64 `bson:"againstNum"`
+	Against string `bson:"against"`
+	AbstainNum float64 `bson:"abstainNum"`
+	Abstain string `bson:"abstain"`
+	Total string `bson:"total"`
+	TotalNum float64 `bson:"totalNum"`
 	PercentFor float64 `bson:"percentFor"`
 	PercentAgainst float64 `bson:"percentAgainst"`
 	PercentAbstain float64 `bson:"percentAbstain"`
@@ -76,7 +80,6 @@ type QueriedProposal struct {
 	State uint8 `bson:"state" json:"state"`	
 	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`	
 	Vote ProposalVote `bson:"vote" json:"vote"`	
-	
 }
 
 type ProposalRaw struct {

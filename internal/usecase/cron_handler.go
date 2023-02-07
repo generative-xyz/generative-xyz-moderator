@@ -9,10 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
@@ -393,9 +395,9 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 					log.SetData("daoContract.Proposals.vote", vote)
 				}
 
-				forVote :=  vote.ForVotes.Uint64()
-				againstVote := vote.AgainstVotes.Uint64()
-				abstainVote := vote.AbstainVotes.Uint64()
+				forVote :=  helpers.ParseBigToFloat(vote.ForVotes)
+				againstVote := helpers.ParseBigToFloat(vote.AgainstVotes)
+				abstainVote := helpers.ParseBigToFloat(vote.AbstainVotes)
 				percentFor := float64(0)
 				percentAgainst := float64(0)
 				percentAbstain := float64(0)
@@ -406,19 +408,28 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 					percentAgainst =  float64((againstVote / total ) * 100)
 					percentAbstain =  float64((abstainVote / total ) * 100)
 				}
-				
+
 				proposal.Vote = entity.ProposalVote{
-					For: forVote,
-					Against: againstVote,
-					Abstain: abstainVote,
-					Total: total,
+					For: vote.ForVotes.String(),
+					ForNum: forVote,
+					Against: vote.AgainstVotes.String(),
+					Abstain: vote.AbstainVotes.String(),
+					Total: fmt.Sprintf("%f", total),
+					TotalNum: total,
 					PercentFor: percentFor,
 					PercentAgainst: percentAgainst,
 					PercentAbstain: percentAbstain,
 				}
+
+				if proposal.ProposalID == "35751750717610809166312996604681477486540366891662940411672289868284123500445" {
+ 					test :=  helpers.ParseBigToFloat(vote.ForVotes)
+					spew.Dump(proposal.Vote)
+					_ = test
+				}
 			}
 	
 			proposal.CurrentBlock = block.Int64()
+			 
 			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
 			if err != nil {
 				log.Error("daoContract.State", err.Error(), err)
