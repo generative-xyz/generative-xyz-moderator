@@ -187,7 +187,7 @@ func (h ScronHandler) StartServer() {
 		}
 	})
 
-	c.AddFunc("*/1 * * * *", func() {
+	c.AddFunc("0 0 * * *", func() {
 		span := h.Tracer.StartSpan("DispatchCron.OneMinute")
 		defer span.Finish()
 
