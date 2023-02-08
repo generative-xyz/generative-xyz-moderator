@@ -22,10 +22,11 @@ type ProjectStat struct {
 	LastTimeSynced   *time.Time `bson:"lastTimeSynced" json:"lastTimeSynced"`
 	UniqueOwnerCount uint32     `bson:"uniqueOwnerCount" json:"uniqueOwnerCount"`
 	// TODO add other stats here
-	TotalTradingVolumn string      `bson:"totalTradingVolumn" json:"totalTradingVolumn"`
-	FloorPrice         string      `bson:"floorPrice" json:"floorPrice"`
-	BestMakeOfferPrice string      `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
-	ListedPercent      int32       `bson:"listedPercent" json:"listedPercent"`
+	TotalTradingVolumn string `bson:"totalTradingVolumn" json:"totalTradingVolumn"`
+	FloorPrice         string `bson:"floorPrice" json:"floorPrice"`
+	BestMakeOfferPrice string `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
+	ListedPercent      int32  `bson:"listedPercent" json:"listedPercent"`
+	MintedCount        int32  `bson:"minted_count" json:"minted_count"`
 }
 
 type Projects struct {

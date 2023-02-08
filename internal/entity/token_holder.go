@@ -25,7 +25,10 @@ type TokenHolder struct {
 	BlockHeight          int         `bson:"block_height" json:"block_height"`
 	Profile              *Users      `bson:"profile" json:"profile"`
 	CurrentRank          int32       `bson:"current_rank" json:"current_rank"`
-	OldRank              *int32       `bson:"old_rank" json:"old_rank"`
+	OldRank              *int32      `bson:"old_rank" json:"old_rank"`
+	Projects             []Projects  `bson:"projects" json:"projects"`
+	OwnerCount           int32       `bson:"owner_count" json:"owner_count"`
+	OldBalance           *string     `bson:"old_balance" json:"old_balance"`
 }
 
 func (u TokenHolder) TableName() string {
