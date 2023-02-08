@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -34,8 +36,11 @@ type Proposal struct {
 	Signatures []string `bson:"signatures" json:"signatures"`
 	Calldatas [][]byte `bson:"calldatas" json:"calldatas"`
 	StartBlock int64 `bson:"startBlock" json:"startBlock"`
+	StartBlockTime *time.Time `bson:"startBlockTime" json:"startBlockTime"`
 	CurrentBlock int64 `bson:"currentBlock" json:"currentBlock"`
+	CurrentBlockTime *time.Time `bson:"currentBlockTime" json:"currentBlockTime"`
 	EndBlock int64 `bson:"endBlock" json:"endBlock"`
+	EndBlockTime *time.Time `bson:"endBlockTime" json:"endBlockTime"`
 	Title string `bson:"title" json:"title"`
 	Description string `bson:"description" json:"description"`
 	Amount string `bson:"amount" json:"amount"`

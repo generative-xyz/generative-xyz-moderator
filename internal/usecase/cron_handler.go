@@ -345,7 +345,7 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 	span, log := u.StartSpan("Usecase.UpdateProposalState", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	block, err := u.Blockchain.GetBlockNumber()
+	block, err := u.Blockchain.GetBlock()
 	if err != nil {
 		log.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
 		return err
@@ -364,18 +364,18 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 		return err
 	}
 
-	//processed := 0
-	//processChain := make(chan bool, len(proposals))
+	processed := 0
+	processChain := make(chan bool, len(proposals))
 	
 	for _, proposal := range proposals {
 
-		func ( proposal entity.Proposal)  {
+		go func ( proposal entity.Proposal)  {
 			span, log := u.StartSpan("Usecase.UpdateProposalState.Routine", rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
-			// defer func(){
-			// 	processChain <- true
-			// }()
+			defer func(){
+				processChain <- true
+			}()
 
 			n := new(big.Int)
 			n, ok := n.SetString(proposal.ProposalID, 10)
@@ -428,8 +428,19 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 				}
 			}
 	
-			proposal.CurrentBlock = block.Int64()
-			 
+			proposal.CurrentBlock = block.Number.Int64()
+			proposal.CurrentBlockTime = helpers.ParseUintToUnixTime(block.Time) 
+
+			stB, err :=  u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.StartBlock))
+			if err == nil {
+				proposal.StartBlockTime = helpers.ParseUintToUnixTime(stB.Time()) 
+			}
+
+			eBB, err :=  u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.EndBlock))
+			if err == nil {
+				proposal.EndBlockTime = helpers.ParseUintToUnixTime(eBB.Time())
+			}
+				 
 			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
 			if err != nil {
 				log.Error("daoContract.State", err.Error(), err)
@@ -438,14 +449,14 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 			
 		}(proposal)
 
-		// if processed % 10 == 0{
-		// 	time.Sleep(5 * time.Second)
-		// }
+		if processed % 10 == 0{
+			time.Sleep(5 * time.Second)
+		}
 	}
 
-	// for i := 0; i< len(proposals) ; i ++ {
-	// 	<- processChain
-	// }
+	for i := 0; i< len(proposals) ; i ++ {
+		<- processChain
+	}
 
 	return nil
 }

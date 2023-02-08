@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils/identicon"
@@ -122,4 +123,9 @@ func ParseBigToFloat(number *big.Int) float64 {
 		return 0
 	}
 	return n
+}
+
+func ParseUintToUnixTime(number uint64) *time.Time {
+	t := time.Unix(int64(number), 0)
+	return &t
 }
