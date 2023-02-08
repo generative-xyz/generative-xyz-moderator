@@ -14,7 +14,9 @@ type BTCWalletAddress struct {
 	FileURI string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 	IsConfirm bool  `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID string `bson:"inscriptionID"` // tokenID in ETH
-	Mnemonic string `bson:"mnemonic"` // tokenID in ETH
+	Mnemonic string `bson:"mnemonic"` 
+	IsMinted bool  `bson:"isMinted"`//default: false. If InscriptionID exist which means token is minted, it's true
+	ProjectID string  `bson:"projectID"`//projectID
 }
 
 type FilterBTCWalletAddress struct {

@@ -316,6 +316,40 @@ var doc = `{
                 }
             }
         },
+        "/btc/mint": {
+            "post": {
+                "description": "mint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC"
+                ],
+                "summary": "BTC mint",
+                "parameters": [
+                    {
+                        "description": "Mint request via ORD_WALLET_ADDRESS",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateMintReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/btc/receive-address": {
             "post": {
                 "description": "Generate receive wallet address",
@@ -2592,6 +2626,9 @@ var doc = `{
         "request.CreateBtcWalletAddressReq": {
             "type": "object",
             "properties": {
+                "projectID": {
+                    "type": "string"
+                },
                 "walletAddress": {
                     "type": "string"
                 }
@@ -2619,6 +2656,15 @@ var doc = `{
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateMintReq": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "ord_walletaddress",
                     "type": "string"
                 }
             }

@@ -23,6 +23,20 @@ func (r Repository) FindBtcWalletAddress(key string) (*entity.BTCWalletAddress, 
 	return resp, nil
 }
 
+func (r Repository) FindBtcWalletAddressByOrd(ordAddress string) (*entity.BTCWalletAddress, error) {
+	resp := &entity.BTCWalletAddress{}
+	usr, err := r.FilterOne(entity.BTCWalletAddress{}.TableName(), bson.D{{"ordAddress", ordAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) DeleteBtcWalletAddress(id string) (*mongo.DeleteResult, error) {
 	filter := bson.D{{utils.KEY_UUID, id}}
 	result, err := r.DeleteOne(entity.BTCWalletAddress{}.TableName(), filter)

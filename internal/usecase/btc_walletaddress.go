@@ -57,8 +57,10 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	walletAddress.UserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	walletAddress.IsConfirm = false
+	walletAddress.IsMinted = false
 	walletAddress.FileURI = "" //find files from google store
 	walletAddress.InscriptionID = "" //find files from google store
+	walletAddress.ProjectID = input.ProjectID 
 
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
 	if err != nil {
@@ -69,41 +71,17 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	return walletAddress, nil
 }
 
-func (u Usecase) UpdateBTCWalletAddress(rootSpan opentracing.Span, input structure.ConfigData) (*entity.BTCWalletAddress, error) {
-	return nil, nil
-}
-
-func (u Usecase) GetBTCWalletAddress(rootSpan opentracing.Span, input string) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("GetBTCWalletAddress", rootSpan)
+func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("BTCMint", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
-
 	log.SetData("input", input)
+	log.SetTag("ordWalletaddress", input.Address)
 
-	config, err := u.Repo.FindBtcWalletAddress(input)
+	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error(" u.Repo.FindConfig", err.Error(), err)
+		log.Error("u.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
-
-	return config, nil
-}
-
-func (u Usecase) GetBTCWalletAddresses(rootSpan opentracing.Span, input structure.FilterConfigs) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetBTCWalletAddresses", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
-	f := &entity.FilterBTCWalletAddress{}
-	err := copier.Copy(f, input)
-	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
-		return nil, err
-	}
-
-	confs,  err := u.Repo.ListBtcWalletAddress(*f)
-	if err != nil {
-		log.Error(" u.Repo.ListBtcWalletAddress", err.Error(), err)
-		return nil, err
-	}
-
-	return confs, nil
-
+	
+	return btc, nil
 }
