@@ -408,6 +408,11 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 
 	now := time.Now()
 
+	project, err = u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return &entity.ProjectStat{
 		LastTimeSynced: &now,
 		UniqueOwnerCount: uint32(len(owners)),
@@ -415,6 +420,7 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		FloorPrice: floorPrice.String(),
 		BestMakeOfferPrice: bestMakeOfferPrice.String(),
 		ListedPercent: listedPercent,
+		MintedCount: project.Stats.MintedCount,
 	}, traitsStat, nil
 }
 
