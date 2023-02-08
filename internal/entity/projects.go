@@ -8,6 +8,8 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+const BITCOIN_PROJECT_ID_START_WITH = 1000001
+
 type TraitValueStat struct {
 	Value  string `bson:"value" json:"value"`
 	Rarity int32  `bson:"rarity" json:"rarity"`
