@@ -92,6 +92,22 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	return result, nil
 }
 
+func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.minted_count": mintedCount,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err	
+	}
+	
+	return result, nil
+}
+
 func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}

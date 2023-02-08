@@ -476,10 +476,12 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 		return err
 	}
 
-	addressToOldRank := make(map[string]int32)
+	addressToOldRank := make(map[string]*int32)
+	addressToOldBalance := make(map[string]*string)
 	
 	for _, tokenHolder := range allTokenHolders {
-		addressToOldRank[tokenHolder.Address] = tokenHolder.CurrentRank
+		addressToOldRank[tokenHolder.Address] = tokenHolder.OldRank
+		addressToOldBalance[tokenHolder.Address] = tokenHolder.OldBalance
 	}
 
 	allNewTokenHolders, err := u.GetAllTokenHolder(span)
@@ -503,6 +505,28 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 
 	tokenHolders := make([]entity.TokenHolder, 0, len(allNewTokenHolders))
 
+	addressToProjects := map[string][]entity.Projects{}
+	for _, project := range u.gData.AllProjects {
+		_, ok := addressToProjects[project.CreatorAddrr]
+		if !ok {
+			addressToProjects[project.CreatorAddrr] = []entity.Projects{}
+		}
+		addressToProjects[project.CreatorAddrr] = append(addressToProjects[project.CreatorAddrr], project) 
+	}
+
+	// map from user's address to set of owner of user's token
+	addressToOwners := map[string]map[string]bool{}
+	for _, token := range u.gData.AllTokens {
+		if token.OwnerAddr == "" {
+			continue
+		}
+		_, ok := addressToOwners[token.CreatorAddr]
+		if !ok {
+			addressToOwners[token.CreatorAddr] = map[string]bool{}
+		}
+		addressToOwners[token.CreatorAddr][token.OwnerAddr] = true
+	}
+
 	// add rank
 	for l, r := 0, 1; l < len(allNewTokenHolders); l = r {
 		for r < len(allNewTokenHolders) && allNewTokenHolders[r].Balance == allNewTokenHolders[l].Balance {
@@ -510,11 +534,6 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 		}
 		for i := l; i < r; i++ {
 			_tokenHolder := &allNewTokenHolders[i]
-			oldRank, ok := addressToOldRank[_tokenHolder.Address]
-			pOldRank := &oldRank
-			if !ok {
-				pOldRank = nil
-			}
 			tokenHolder := entity.TokenHolder{
 				ContractDecimals: _tokenHolder.ContractDecimals,
 				ContractName: _tokenHolder.ContractName,
@@ -527,7 +546,8 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 				TotalSupply: _tokenHolder.TotalSupply,
 				BlockHeight: _tokenHolder.BlockHeight,
 				CurrentRank: int32(l + 1),
-				OldRank: pOldRank,
+				OldRank: addressToOldRank[_tokenHolder.Address],
+				OldBalance: addressToOldBalance[_tokenHolder.Address],
 			}
 			profile, ok := addressToProfile[_tokenHolder.Address]
 			pProfile := &profile
@@ -535,6 +555,13 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 				pProfile = nil
 			}
 			tokenHolder.Profile = pProfile
+			tokenHolder.Projects = addressToProjects[tokenHolder.Address]
+			var ownerCount int32
+			_, ok = addressToOwners[tokenHolder.Address]
+			if ok {
+				ownerCount = int32(len(addressToOwners[tokenHolder.Address]))
+			}
+			tokenHolder.OwnerCount = ownerCount
 			tokenHolders = append(tokenHolders, tokenHolder)
 		}
 	}
@@ -548,4 +575,40 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 	err = u.Repo.CreateTokenHolders(tokenHolders)
 
 	return err
+}
+
+func (u Usecase) SnapShotOldRankAndOldBalance(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SnapShotOldRankAndOldBalance", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	_, err := u.Repo.SnapShotOldRankAndOldBalance()
+	return err
+}
+
+// Currently, this function only syncs projects' nft minted data
+// TODO: move all other stats to be synced in this function
+func (u Usecase) SyncProjectsStats(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SyncProjectsStats", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	allProjects := u.gData.AllProjects
+	allTokens := u.gData.AllTokens
+	projectIdToMintedCount := map[string]int32{}
+	for _, token := range allTokens {
+		projectIdToMintedCount[token.ProjectID]++
+	}
+	var processed int32
+	for _, project := range allProjects {
+		mintedCount := projectIdToMintedCount[project.TokenID]
+		if mintedCount != project.Stats.MintedCount {
+			processed++
+			_, err := u.Repo.UpdateProjectMintedCount(project.UUID, mintedCount)
+			if err != nil {
+				return err
+			}
+			if processed % 10 == 0 {
+				time.Sleep(1 * time.Second)
+			}			
+		}
+	}
+
+	return nil
 }

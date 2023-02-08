@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
@@ -57,3 +58,10 @@ func (r Repository) FilterTokenHolders(filter entity.FilterTokenHolders) (*entit
 	resp.PageSize = filter.Limit
 	return resp, nil
 } 
+
+func (r Repository) SnapShotOldRankAndOldBalance() (*mongo.UpdateResult, error) {
+	result, err := r.DB.Collection(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER).UpdateMany(context.TODO(), bson.M{}, []bson.M{
+		{"$set": bson.M{"old_rank": "$current_rank", "old_balance": "$balance"}},	
+	})
+	return result, err
+}
