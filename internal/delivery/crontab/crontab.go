@@ -153,12 +153,12 @@ func (h ScronHandler) StartServer() {
 			
 			err := h.Usecase.SyncLeaderboard(span)
 			if err != nil {
-				log.Error("h.Usecase.SyncUserStats", err.Error(), err)
+				log.Error("h.Usecase.SyncLeaderboard", err.Error(), err)
 			}
 		}(chanDone)
 
 		go func (chanDone chan bool) {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncLeaderboard")
+			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncProjectsStats")
 			defer span.Finish()
 
 			defer func() {

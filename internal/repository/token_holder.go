@@ -47,7 +47,7 @@ func (r Repository) DeleteAllTokenHolders() error {
 func (r Repository) FilterTokenHolders(filter entity.FilterTokenHolders) (*entity.Pagination, error) {
 	confs := []entity.TokenHolder{}
 	resp := &entity.Pagination{}
-	p, err := r.Paginate(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, filter.Page, filter.Limit, bson.M{}, bson.M{}, []Sort{}, &confs)
+	p, err := r.Paginate(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, filter.Page, filter.Limit, bson.M{}, bson.M{}, []Sort{{Sort: filter.Sort, SortBy: filter.SortBy}}, &confs)
 	if err != nil {
 		return nil, err
 	}
