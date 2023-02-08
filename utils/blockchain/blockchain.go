@@ -33,6 +33,11 @@ func (a *Blockchain) GetBlockNumber() (*big.Int, error) {
 	return header.Number, nil
 }
 
+
+func (a *Blockchain) GetBlock () (*types.Header, error) {
+	return a.client.HeaderByNumber(context.Background(), nil)
+}
+
 func (a *Blockchain) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses []common.Address) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: &fromBlock,

@@ -299,7 +299,10 @@ func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.Proposa
 	}
 
 	resp.Amount = input.ProposalDetail.Amount
-	resp.Title = input.ProposalDetail.Title
+	if resp.Title  == "" && input.ProposalDetail.Title != "" {
+		resp.Title = input.ProposalDetail.Title
+	}
+	
 	resp.Description = input.ProposalDetail.Description
 	resp.TokenType = input.ProposalDetail.TokenType
 	resp.ReceiverAddress = input.ProposalDetail.ReceiverAddress
