@@ -305,6 +305,7 @@ func (r Repository) CreateCollectionIndexes()  error {
 	if err != nil {
 		return err
 	}
+	
 	_, err = r.CreateProjectIndexModel()
 	if err != nil {
 		return err
@@ -329,5 +330,11 @@ func (r Repository) CreateCollectionIndexes()  error {
 	if err != nil {
 		return err
 	}
+	
+	_, err = r.CreateBTCWalletIndexModel()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
