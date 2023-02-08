@@ -28,54 +28,54 @@ type ProjectStat struct {
 	FloorPrice         string `bson:"floorPrice" json:"floorPrice"`
 	BestMakeOfferPrice string `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
 	ListedPercent      int32  `bson:"listedPercent" json:"listedPercent"`
-	MintedCount        int32  `bson:"minted_count" json:"minted_count"`
+	MintedCount        int32  `bson:"minted_count" json:"mintedCount"`
 }
 
 type Projects struct {
-	BaseEntity`bson:",inline"`
-	ContractAddress string `bson:"contractAddress"`
-	TokenID string `bson:"tokenid"`
-	TokenIDInt int64 `bson:"tokenIDInt"`
-	MaxSupply int64 `bson:"maxSupply"`
-	LimitSupply int64 `bson:"limitSupply"`
-	MintPrice string `bson:"mintPrice"`
-	Name string `bson:"name"`
-	CreatorName string `bson:"creatorName"`
-	CreatorAddrr string `bson:"creatorAddress"`
-	Description string `bson:"description"`
-	Thumbnail string `bson:"thumbnail"`
-	ThirdPartyScripts []string `bson:"thirdPartyScripts"`
-	Scripts []string `bson:"scripts"`
-	ReservationList []string `bson:"reservationList"`
-	MintFee int `bson:"mintFee"`
-	OpenMintUnixTimestamp int `bson:"openMintUnixTimestamp"`
-	TokenDescription string `bson:"tokenDescription"`
-	Styles string `bson:"styles"`
-	Royalty int `bson:"royalty"`
-	SocialWeb string `bson:"socialWeb"`
-	SocialTwitter string `bson:"socialTwitter"`
-	SocialDiscord string `bson:"socialDiscord"`
-	SocialMedium string `bson:"socialMedium"`
-	SocialInstagram string `bson:"socialInstagram"`
-	License string `bson:"license"`
-	GenNFTAddr string `bson:"genNFTAddr"`
-	MintTokenAddress string `bson:"mintTokenAddress"`
-	Hash string `bson:"hash"`
-	Tags []string `bson:"tags"`
-	Categories []string `bson:"categories"`
-	Status bool `bson:"status"`
-	NftTokenUri string `bson:"nftTokenUri"`
-	IsSynced bool `bson:"isSynced"`
-	MintingInfo ProjectMintingInfo `bson:",inline"`
-	CompleteTime int64  `bson:"completeTime"`
-	Reservers []string `bson:"reservers"`
-	CreatorProfile Users `bson:"creatorProfile"`
-	BlockNumberMinted *string `bson:"block_number_minted" json:"block_number_minted"`
-	MintedTime *time.Time `bson:"minted_time" json:"minted_time"`
-	Stats                 ProjectStat        `bson:"stats"`
-	TraitsStat         []TraitStat `bson:"traitsStat" json:"traitsStat"`
-	Priority *int `bson:"priority"`
-	IsHidden bool `bson:"isHidden"`
+	BaseEntity            `bson:",inline" json:"-"`
+	ContractAddress       string             `bson:"contractAddress" json:"contractAddress"`
+	TokenID               string             `bson:"tokenid" json:"tokenID"`
+	TokenIDInt            int64              `bson:"tokenIDInt" json:"tokenIDInt"`
+	MaxSupply             int64              `bson:"maxSupply" json:"maxSupply"`
+	LimitSupply           int64              `bson:"limitSupply" json:"limitSupply"`
+	MintPrice             string             `bson:"mintPrice" json:"mintPrice"`
+	Name                  string             `bson:"name" json:"name"`
+	CreatorName           string             `bson:"creatorName" json:"creatorName"`
+	CreatorAddrr          string             `bson:"creatorAddress" json:"creatorAddrr"`
+	Description           string             `bson:"description" json:"description"`
+	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
+	ThirdPartyScripts     []string           `bson:"thirdPartyScripts" json:"thirdPartyScripts"`
+	Scripts               []string           `bson:"scripts" json:"scripts"`
+	ReservationList       []string           `bson:"reservationList" json:"reservationList"`
+	MintFee               int                `bson:"mintFee" json:"mintFee"`
+	OpenMintUnixTimestamp int                `bson:"openMintUnixTimestamp" json:"openMintUnixTimestamp"`
+	TokenDescription      string             `bson:"tokenDescription" json:"tokenDescription"`
+	Styles                string             `bson:"styles" json:"styles"`
+	Royalty               int                `bson:"royalty" json:"royalty"`
+	SocialWeb             string             `bson:"socialWeb" json:"socialWeb"`
+	SocialTwitter         string             `bson:"socialTwitter" json:"socialTwitter"`
+	SocialDiscord         string             `bson:"socialDiscord" json:"socialDiscord"`
+	SocialMedium          string             `bson:"socialMedium" json:"socialMedium"`
+	SocialInstagram       string             `bson:"socialInstagram" json:"socialInstagram"`
+	License               string             `bson:"license" json:"license"`
+	GenNFTAddr            string             `bson:"genNFTAddr" json:"genNFTAddr"`
+	MintTokenAddress      string             `bson:"mintTokenAddress" json:"mintTokenAddress"`
+	Hash                  string             `bson:"hash" json:"hash"`
+	Tags                  []string           `bson:"tags" json:"tags"`
+	Categories            []string           `bson:"categories" json:"categories"`
+	Status                bool               `bson:"status" json:"status"`
+	NftTokenUri           string             `bson:"nftTokenUri" json:"nftTokenUri"`
+	IsSynced              bool               `bson:"isSynced" json:"isSynced"`
+	MintingInfo           ProjectMintingInfo `bson:",inline" json:"mintingInfo"`
+	CompleteTime          int64              `bson:"completeTime" json:"completeTime"`
+	Reservers             []string           `bson:"reservers" json:"reservers"`
+	CreatorProfile        Users              `bson:"creatorProfile" json:"creatorProfile"`
+	BlockNumberMinted     *string            `bson:"block_number_minted" json:"block_number_minted"`
+	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
+	Stats                 ProjectStat        `bson:"stats" json:"stats"`
+	TraitsStat            []TraitStat        `bson:"traitsStat" json:"traitsStat"`
+	Priority              *int               `bson:"priority" json:"priority"`
+	IsHidden              bool               `bson:"isHidden" json:"isHidden"`
 }
 
 type	ProjectMintingInfo struct {
