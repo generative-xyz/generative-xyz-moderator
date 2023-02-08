@@ -2,6 +2,7 @@ package global
 
 import (
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
@@ -28,6 +29,7 @@ type Global struct {
 	GCS           googlecloud.IGcstorage
 	MoralisNFT nfts.MoralisNfts
 	CovalentNFT nfts.CovalentNfts
+	OrdService *ord_service.BtcOrd
 	Blockchain blockchain.Blockchain
 	Slack slack.Slack
 }

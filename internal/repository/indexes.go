@@ -90,7 +90,6 @@ func (r Repository) CreateBTCWalletIndexModel() ([]string, error) {
  	models :=  []mongo.IndexModel{
 		{ Keys: bson.M{"user_address":  -1,}, Options:  options.Index().SetName("btc_user_address_desc") ,} ,
 		{ Keys: bson.M{"ordAddress":  -1,}, Options:  options.Index().SetName("btc_ordAddress_desc") ,} ,
-		{ Keys: bson.M{"inscriptionID":  -1,}, Options:  options.Index().SetName("btc_inscriptionID_desc").SetUnique(true) ,} ,
 	}
 
 	return r.CreateIndexes(collection, models)

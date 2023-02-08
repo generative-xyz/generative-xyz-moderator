@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/blockchain"
@@ -43,6 +44,7 @@ type Usecase struct {
 	CovalentNft nfts.CovalentNfts
 	Blockchain blockchain.Blockchain
 	Slack slack.Slack
+	OrdService *ord_service.BtcOrd
 	gData gData
 }
 
@@ -60,6 +62,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.CovalentNft = global.CovalentNFT
 	u.Blockchain = global.Blockchain
 	u.Slack = global.Slack
+	u.OrdService = global.OrdService
 	return u, nil
 }
 

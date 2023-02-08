@@ -316,6 +316,40 @@ var doc = `{
                 }
             }
         },
+        "/btc/receive-address": {
+            "post": {
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC"
+                ],
+                "summary": "BTC Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a btc wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBtcWalletAddressReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/categories": {
             "get": {
                 "description": "Get Categorys",
@@ -2555,6 +2589,14 @@ var doc = `{
         }
     },
     "definitions": {
+        "request.CreateBtcWalletAddressReq": {
+            "type": "object",
+            "properties": {
+                "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateCategoryRequest": {
             "type": "object",
             "required": [
