@@ -122,6 +122,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	dao.HandleFunc("/proposals/{proposalID}", h.getProposal).Methods("GET")
 	dao.HandleFunc("/proposals/{proposalID}/votes", h.getProposalVotes).Methods("GET")
 	dao.HandleFunc("/proposals/{ID}/{proposalID}", h.mapOffAndOnChainProposal).Methods("PUT")
+
+	//dao
+	btc := api.PathPrefix("/btc").Subrouter()
+	btc.HandleFunc("/mint", h.btcMint).Methods("POST")
 	
 }
 
