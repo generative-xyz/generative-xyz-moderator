@@ -85,3 +85,11 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	
 	return btc, nil
 }
+
+func (u Usecase) ReadGCSFolder(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("ReadGCSFolder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	log.SetData("input", input)
+	u.GCS.ReadFolder("btc-projects/project-1/")
+	return nil, nil
+}

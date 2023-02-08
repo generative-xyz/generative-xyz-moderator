@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/utils/config"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -27,6 +28,7 @@ type IGcstorage interface {
 	FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error)
 	ReadFileFromBucket(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
+	ReadFolder(name string) (*GcsUploadedObject, error)
 }
 
 type GcsUploadedObject struct {
@@ -389,4 +391,30 @@ func (g *gcstorage) deleFile(tmpFileName string) error {
 		return e
 	}
 	return nil
+}
+
+func (g gcstorage) ReadFolder(name string) ([]*storage.ObjectAttrs, error) {
+	resp := []*storage.ObjectAttrs{}
+	
+	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
+	defer cancel()
+
+	// create reader
+	obj := g.bucket.Objects(ctx, &storage.Query{Prefix: name, Delimiter: "/"})
+	for {
+        attrs, err := obj.Next()
+        if err == iterator.Done {
+            break
+        }
+        if err != nil {
+            return nil, err
+        }
+
+		if attrs.Name != name { // remove folder
+			resp = append(resp, attrs)
+		}
+		
+    }
+	return resp, nil
+
 }
