@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	httpHandler "rederinghub.io/internal/delivery/http"
@@ -106,6 +107,7 @@ func startServer() {
 	}
 
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
+	ord := ord_service.NewBtcOrd(conf, t, cache)
 	covalent := nfts.NewCovalentNfts(conf);
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis, t)
@@ -126,6 +128,7 @@ func startServer() {
 		Blockchain: *ethClient,
 		Slack: *slack,
 		Pubsub: rPubsub,
+		OrdService: ord,
 	}
 
 	repo, err := repository.NewRepository(&g)

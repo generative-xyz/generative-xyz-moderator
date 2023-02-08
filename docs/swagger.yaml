@@ -1,5 +1,10 @@
 basePath: /rederinghub.io/v1
 definitions:
+  request.CreateBtcWalletAddressReq:
+    properties:
+      walletAddress:
+        type: string
+    type: object
   request.CreateCategoryRequest:
     properties:
       name:
@@ -566,6 +571,28 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
+  /btc/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a btc wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBtcWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: BTC Generate receive wallet address
+      tags:
+      - BTC
   /categories:
     get:
       consumes:

@@ -125,7 +125,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//dao
 	btc := api.PathPrefix("/btc").Subrouter()
-	btc.HandleFunc("/mint", h.btcMint).Methods("POST")
+	btc.HandleFunc("/receive-address", h.btcGetReceiveWalletAddress).Methods("POST")
 	
 }
 

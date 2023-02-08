@@ -12,15 +12,15 @@ import (
 )
 
 // UserCredits godoc
-// @Summary BTC mint
-// @Description BTC mint
+// @Summary BTC Generate receive wallet address
+// @Description Generate receive wallet address
 // @Tags BTC
 // @Accept  json
 // @Produce  json
 // @Param request body request.CreateBtcWalletAddressReq true "Create a btc wallet address request"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /btc/mint [POST]
-func (h *httpDelivery) btcMint(w http.ResponseWriter, r *http.Request) {
+// @Router /btc/receive-address [POST]
+func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.btcMint", r)
 	defer h.Tracer.FinishSpan(span, log )
 
@@ -60,11 +60,9 @@ func (h *httpDelivery) btcMint(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) BtcWalletAddressToResp(input *entity.BTCWalletAddress) (*response.ProposalResp, error) {
-	resp := &response.ProposalResp{}
-	err := response.CopyEntityToRes(resp, input)
-	if err != nil {
-		return nil, err
-	}
+func (h *httpDelivery) BtcWalletAddressToResp(input *entity.BTCWalletAddress) (*response.BctReceiveWalletResp, error) {
+	resp := &response.BctReceiveWalletResp{}
+	resp.Address = input.OrdAddress
+	resp.Pricce = input.Amount
 	return resp, nil
 }

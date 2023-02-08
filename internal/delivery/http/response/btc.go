@@ -9,3 +9,10 @@ type BctWalletResp struct {
 	IsConfirm bool  `json:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID string `json:"inscriptionID"` // tokenID in ETH
 }
+
+type BctReceiveWalletResp struct {
+	
+	Address string `json:"address"` 
+	Pricce float64 `json:"price"`
+	
+}
