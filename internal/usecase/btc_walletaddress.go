@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -137,8 +136,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	btc.FileURI = fileURI
-	spew.Dump(fileURI)
-
 	//TODO - enable this
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
 		WalletName: "ord_master",
@@ -281,9 +278,15 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 
 		wg.Add(limit)
 		for _, item := range resp {
-			spew.Dump(item)
 			go func(wg *sync.WaitGroup, rootSpan opentracing.Span, item *entity.BTCWalletAddress) {
 				defer wg.Done()
+
+				if item == nil {
+					err = errors.New("processed.Item.Empty")
+					log.Error("item.Empty", err.Error(), err)
+					return
+
+				}
 
 				item, err := u.BalanceLogic(span, item)
 				if err != nil {
@@ -305,7 +308,7 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 				err = u.MqttClient.Publish(topicName, item)
 				if err != nil {
 					log.Error(fmt.Sprintf("WillBeProcessWTC.Mqtt.%s.Error", item.OrdAddress), err.Error(), err)
-					//return
+					return
 				}
 				
 
@@ -360,9 +363,16 @@ func (u Usecase) ListenTheMintedBTC(rootSpan opentracing.Span) ([]entity.BTCWall
 			go func(wg *sync.WaitGroup, rootSpan opentracing.Span, item *entity.BTCWalletAddress) {
 				defer wg.Done()
 
+				if item == nil {
+					err = errors.New("processed.Item.Empty")
+					log.Error("item.Empty", err.Error(), err)
+					return
+
+				}
+
 				sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription)
 				if err != nil {
-					//log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
 
