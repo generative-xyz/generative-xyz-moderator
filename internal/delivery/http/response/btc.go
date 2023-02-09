@@ -3,7 +3,7 @@ package response
 type BctWalletResp struct {
 	BaseResponse
 	UserAddress string `json:"user_address"` //user's wallet address from FE
-	Amount float64 `json:"amount"`
+	Amount string `bson:"amount"`
 	OrdAddress string `json:"ordAddress"` // address is generated from ORD service, which receive all amount
 	FileURI string `json:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 	IsConfirm bool  `json:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
@@ -13,6 +13,6 @@ type BctWalletResp struct {
 type BctReceiveWalletResp struct {
 	
 	Address string `json:"address"` 
-	Pricce float64 `json:"price"`
+	Pricce string `bson:"price"`
 	
 }

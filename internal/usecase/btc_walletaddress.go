@@ -53,7 +53,14 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	walletAddress.Amount = 0.01
+	p, err := u.Repo.FindProjectByTokenID(input.ProjectID )
+	if err != nil {
+		log.Error("u.CreateBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("found.Project", p)
+
+	walletAddress.Amount = p.MintPrice
 	walletAddress.UserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	walletAddress.IsConfirm = false
@@ -82,6 +89,8 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("u.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
+
+
 	
 	return btc, nil
 }

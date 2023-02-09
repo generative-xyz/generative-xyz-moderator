@@ -28,7 +28,7 @@ type IGcstorage interface {
 	FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error)
 	ReadFileFromBucket(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
-	ReadFolder(name string) (*GcsUploadedObject, error)
+	ReadFolder(name string) ([]*storage.ObjectAttrs, error)
 }
 
 type GcsUploadedObject struct {

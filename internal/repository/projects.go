@@ -28,6 +28,20 @@ func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenID( tokenID string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
+	if err != nil {
+		return nil, err
+	}
+	
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
