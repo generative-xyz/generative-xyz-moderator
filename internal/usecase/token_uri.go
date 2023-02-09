@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -74,6 +75,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
     cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
+	spew.Dump(token.AnimationURL)
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
@@ -619,14 +621,14 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	tokenUri.CreatorAddr = project.CreatorAddrr
 	tokenUri.Description = project.Description
 	tokenUri.GenNFTAddr = project.GenNFTAddr
-	tokenUri.Image = project.Thumbnail
+	//tokenUri.Image = project.Thumbnail
 	mintedTime := time.Now()
 	tokenUri.MintedTime = &mintedTime
 	tokenUri.Name = tokenID
 	tokenUri.Project = project
 	tokenUri.ProjectID = project.TokenID
 	tokenUri.ProjectIDInt = project.TokenIDInt
-	tokenUri.Thumbnail = project.Thumbnail
+	//tokenUri.Thumbnail = project.Thumbnail
 
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
@@ -641,6 +643,17 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
 	if err != nil {
 		return nil, err
+	}
+
+	//capture image
+	payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+		TokenID: pTokenUri.TokenID,
+		ContractAddress: pTokenUri.ContractAddress,
+	}}
+
+	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL , payload)
+	if err != nil {
+		log.Error("ProducerWithTrace", err.Error(), err)
 	}
 
 	return pTokenUri, nil
