@@ -64,7 +64,6 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.SetData("resp.message", message.TokenID)
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
@@ -103,7 +102,6 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 	resp := response.TokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
 	log.SetData("resp.message", message)
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
