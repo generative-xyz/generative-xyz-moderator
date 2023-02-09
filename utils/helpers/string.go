@@ -116,6 +116,10 @@ func CreateIcon(name *string) string {
 	return identicon.CreateIcon(name)
 }
 
+func CreateMqttChannel(ordAddress string) string {
+	return fmt.Sprintf("btc_mint_adderss_%s", ordAddress)
+}
+
 func CreateProfileLink(walletAdress string, displayName string) string {
 	name := walletAdress
 	if displayName != ""{

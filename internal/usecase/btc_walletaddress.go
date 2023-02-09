@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -41,9 +42,11 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	})
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
-		return nil, err
+		//return nil, err
+	}else{
+		walletAddress.Mnemonic = resp.Stdout
 	}
-	walletAddress.Mnemonic = resp.Stdout
+	
 
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
@@ -200,12 +203,6 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAd
 		return nil, err
 	}
 
-	if resp.Error != "" {
-		err = errors.New(resp.Error)
-		log.Error("BTCMint.Exec.balance.ErrorCode", err.Error(), err)
-		return nil, err
-	}
-
 	log.SetData("resp", resp)
 	balance := strings.ReplaceAll(resp.Stdout, "\n", "")
 	log.SetData("balance", balance)
@@ -281,12 +278,12 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 			go func(wg *sync.WaitGroup, rootSpan opentracing.Span, item *entity.BTCWalletAddress) {
 				defer wg.Done()
 
-				item, err := u.BalanceLogic(span, item)
-				if err != nil {
-					log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
-					return
-				}
-				log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), item)
+				// item, err := u.BalanceLogic(span, item)
+				// if err != nil {
+				// 	log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				// 	return
+				// }
+				// log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), item)
 		
 				updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, item)
 				if err != nil {
@@ -294,6 +291,16 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 					return
 				}
 				log.SetData("updated", updated)
+
+				bytes, err := json.Marshal(item)
+				if err != nil {
+					log.Error(fmt.Sprintf("WillBeProcessWTC.Marshal.%s.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+				
+				mqChan := helpers.CreateMqttChannel(item.OrdAddress)
+				log.SetData("mqChan", mqChan)
+				u.MqttClient.Publish(mqChan, string(bytes))
 
 			}(&wg, span, &item)
 		}

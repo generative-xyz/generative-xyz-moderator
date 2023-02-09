@@ -8,6 +8,7 @@ import (
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
+	"rederinghub.io/utils/mqttClient"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/slack"
@@ -32,4 +33,5 @@ type Global struct {
 	OrdService *ord_service.BtcOrd
 	Blockchain blockchain.Blockchain
 	Slack slack.Slack
+	MqttClient mqttClient.IDeviceMqtt
 }

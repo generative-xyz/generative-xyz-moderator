@@ -63,6 +63,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.Blockchain = global.Blockchain
 	u.Slack = global.Slack
 	u.OrdService = global.OrdService
+	u.MqttClient = global.MqttClient
 	return u, nil
 }
 
