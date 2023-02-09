@@ -146,7 +146,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl: fileURI,
-		FeeRate: 7,//temp
+		FeeRate: 15,//temp
 		DryRun: true,
 	})
 
