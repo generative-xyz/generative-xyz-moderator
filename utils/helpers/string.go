@@ -78,6 +78,21 @@ func Base64Decode(base64Str string) ([]byte, error) {
     return sDec, nil
 }
 
+func Base64DecodeRaw(base64Str string, object interface{}) error {
+	base64Str = strings.ReplaceAll(base64Str, "data:application/json;base64,", "")
+	sDec, err := b64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return  err
+	}
+
+	err = json.Unmarshal(sDec, &object)
+	if err != nil {
+		return err
+	}
+
+    return  nil
+}
+
 func Base64Encode(data []byte) string {
 	sDec := b64.StdEncoding.EncodeToString(data)
     return sDec

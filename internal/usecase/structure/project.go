@@ -45,3 +45,10 @@ type GetProjectReq struct {
 	ContractAddr string
 	TokenID string
 }
+
+type ProjectAnimationUrl struct {
+	Name string `json:"name"`
+	Description string `json:"description"`
+	Image string `json:"image"`
+	AnimationUrl string `json:"animation_url"`
+}
