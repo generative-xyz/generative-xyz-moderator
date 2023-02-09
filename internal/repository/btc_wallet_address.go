@@ -72,12 +72,37 @@ func (r Repository) ListBtcWalletAddress(filter entity.FilterBTCWalletAddress) (
 	return resp, nil
 }
 
-func (r Repository) UpdateBtcWalletAddress(key string, conf *entity.BTCWalletAddress) (*mongo.UpdateResult, error) {
-	filter := bson.D{{"key", key}}
+func (r Repository) UpdateBtcWalletAddressByOrdAddr(ordAddress string, conf *entity.BTCWalletAddress) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"ordAddress", ordAddress}}
 	result, err := r.UpdateOne(conf.TableName(), filter, conf)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func (r Repository) ListProcessingWalletAddress(page int, limit int) (*entity.Pagination, error)  {
+	confs := []entity.BTCWalletAddress{}
+	resp := &entity.Pagination{}
+	
+	filter := entity.FilterBTCWalletAddress{
+		
+	}
+	filter.Page = int64(page)
+	filter.Limit = int64(limit)
+	f := bson.M{}
+	f["isMinted"] = bson.M{"$not": bson.M{"$eq": true}}
+	f["isConfirm"] = bson.M{"$not": bson.M{"$eq": true}}
+
+	p, err := r.Paginate(entity.BTCWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
 }
