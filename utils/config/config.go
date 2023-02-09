@@ -46,6 +46,7 @@ type MQTTConfig struct {
 
 type CronTabConfig struct {
 	Enabled  bool
+	BTCEnabled  bool
 }
 
 type MoralisConfig struct {
@@ -170,6 +171,7 @@ func NewConfig() (*Config, error) {
 
 	timeResyncProjectStat, _ := strconv.Atoi(os.Getenv("TIME_RESYNC_PROJECT_STAT"))
 	crontabStart, _ := strconv.ParseBool(os.Getenv("CRONTAB_START"))
+	crontabBtcStart, _ := strconv.ParseBool(os.Getenv("BTC_CRONTAB_START"))
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -252,6 +254,7 @@ func NewConfig() (*Config, error) {
 		},
 		Crontab: CronTabConfig{
 			Enabled: crontabStart,
+			BTCEnabled: crontabBtcStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),

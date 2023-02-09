@@ -12,6 +12,7 @@ import (
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
+	"rederinghub.io/internal/delivery/crontab_btc"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/delivery/txserver"
@@ -152,6 +153,7 @@ func startServer() {
 	h, _ := httpHandler.NewHandler(&g, *uc)
 	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
 	cron := crontab.NewScronHandler(&g, *uc)
+	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
@@ -168,6 +170,11 @@ func startServer() {
 	servers["crontab"] =  delivery.AddedServer{
 		Server: cron,
 		Enabled: conf.Crontab.Enabled,
+	}
+	
+	servers["btc_crontab"] =  delivery.AddedServer{
+		Server: btcCron,
+		Enabled: conf.Crontab.BTCEnabled,
 	}
 	
 	servers["pubsub"] =  delivery.AddedServer{
