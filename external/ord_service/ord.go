@@ -13,7 +13,6 @@ import (
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go"
 )
 
@@ -60,7 +59,7 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error){
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(string(data))
+	
 	resp := &ExecRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
@@ -90,7 +89,7 @@ func (m BtcOrd) Mint(f MintRequest) (*MintRespose, error){
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(string(data))
+	
 	resp := &MintRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
