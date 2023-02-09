@@ -634,7 +634,10 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 		return nil, err
 	}
 	// after update, increase index field in project to 1
-	u.Repo.IncreaseProjectIndex(projectID)
+	err = u.Repo.IncreaseProjectIndex(projectID)
+	if err != nil {
+		return nil, err
+	}
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
 	if err != nil {
 		return nil, err
