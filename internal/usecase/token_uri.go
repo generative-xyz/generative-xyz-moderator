@@ -76,10 +76,19 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	defer cancel()
 
 	spew.Dump(token.AnimationURL)
+	imageURL := token.AnimationURL
+	htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
+	
+	uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
+	if err  == nil {
+		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
+		imageURL = fileURI
+	}
+
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
-		chromedp.Navigate(token.AnimationURL),
+		chromedp.Navigate(imageURL),
 		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 		chromedp.CaptureScreenshot(&buf),
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
