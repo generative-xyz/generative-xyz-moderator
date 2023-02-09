@@ -29,8 +29,14 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 
 func (h ScronBTCHandler) StartServer() {
+	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
+	defer span.Finish()
+
+	//h.Usecase.WaitingForMinted(span)
+	
+
 	c := cron.New()
-	c.AddFunc("*/1 * * * *", func() {
+	c.AddFunc("*/5 * * * *", func() {
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 		defer span.Finish()
 
@@ -38,12 +44,11 @@ func (h ScronBTCHandler) StartServer() {
 		defer log.ToSpan(span)
 
 		go func(){
-			h.Usecase.WillBeProcessWTC(span)
-			
+			h.Usecase.WaitingForBalancing(span)
 		}()
 		
 		go func(){
-			h.Usecase.ListenTheMintedBTC(span)
+			h.Usecase.WaitingForMinted(span)
 			
 		}()
 	

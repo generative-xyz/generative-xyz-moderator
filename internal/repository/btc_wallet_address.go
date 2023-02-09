@@ -1,12 +1,15 @@
 package repository
 
 import (
+	"context"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindBtcWalletAddress(key string) (*entity.BTCWalletAddress, error) {
@@ -82,51 +85,45 @@ func (r Repository) UpdateBtcWalletAddressByOrdAddr(ordAddress string, conf *ent
 	return result, nil
 }
 
-func (r Repository) ListProcessingWalletAddress(page int, limit int) (*entity.Pagination, error)  {
+func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, error)  {
 	confs := []entity.BTCWalletAddress{}
-	resp := &entity.Pagination{}
-	
-	filter := entity.FilterBTCWalletAddress{
-		
-	}
-	filter.Page = int64(page)
-	filter.Limit = int64(limit)
 	f := bson.M{}
-	f["isMinted"] = bson.M{"$not": bson.M{"$eq": true}}
-	f["isConfirm"] = bson.M{"$not": bson.M{"$eq": true}}
-
-	p, err := r.Paginate(entity.BTCWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	f["$or"] = []interface{}{
+		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}} ,
+		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}} ,
+	}
+	
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = confs
-	resp.Page = p.Pagination.Page
-	resp.Total = p.Pagination.Total
-	resp.PageSize = filter.Limit
-	return resp, nil
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
 }
 
-func (r Repository) ListBTCAddress(page int, limit int) (*entity.Pagination, error)  {
+func (r Repository) ListBTCAddress() ([]entity.BTCWalletAddress, error)  {
 	confs := []entity.BTCWalletAddress{}
-	resp := &entity.Pagination{}
 	
-	filter := entity.FilterBTCWalletAddress{
-		
-	}
-	filter.Page = int64(page)
-	filter.Limit = int64(limit)
 	f := bson.M{}
 	f["mintResponse"] = bson.M{"$not": bson.M{"$eq": nil}}
 	f["mintResponse.isSent"] = bson.M{"$not": bson.M{"$eq": true}}
-	p, err := r.Paginate(entity.BTCWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	f["mintResponse.inscription"] = bson.M{"$not": bson.M{"$eq": ""}}
+	
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
 	
-	resp.Result = confs
-	resp.Page = p.Pagination.Page
-	resp.Total = p.Pagination.Total
-	resp.PageSize = filter.Limit
-	return resp, nil
+
+	return confs, nil
 }
