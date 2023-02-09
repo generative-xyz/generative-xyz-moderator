@@ -106,3 +106,27 @@ func (r Repository) ListProcessingWalletAddress(page int, limit int) (*entity.Pa
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
+
+func (r Repository) ListBTCAddress(page int, limit int) (*entity.Pagination, error)  {
+	confs := []entity.BTCWalletAddress{}
+	resp := &entity.Pagination{}
+	
+	filter := entity.FilterBTCWalletAddress{
+		
+	}
+	filter.Page = int64(page)
+	filter.Limit = int64(limit)
+	f := bson.M{}
+	f["mintResponse"] = bson.M{"$not": bson.M{"$eq": nil}}
+	f["mintResponse.isSent"] = bson.M{"$not": bson.M{"$eq": true}}
+	p, err := r.Paginate(entity.BTCWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	if err != nil {
+		return nil, err
+	}
+	
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
+}

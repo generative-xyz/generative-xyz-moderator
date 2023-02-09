@@ -17,6 +17,15 @@ type BTCWalletAddress struct {
 	Mnemonic string `bson:"mnemonic"` 
 	IsMinted bool  `bson:"isMinted"`//default: false. If InscriptionID exist which means token is minted, it's true
 	ProjectID string  `bson:"projectID"`//projectID
+	MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
+}
+
+type MintStdoputResponse struct {
+	Commit string `json:"commit"`
+	Inscription string `json:"inscription"`
+	Reveal string `json:"reveal"`
+	Fees int `json:"fees"`
+	IsSent bool `json:"isSent"`
 }
 
 type FilterBTCWalletAddress struct {

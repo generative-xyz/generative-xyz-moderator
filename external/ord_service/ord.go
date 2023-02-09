@@ -75,6 +75,36 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error){
 	return resp, nil
 }
 
+
+func (m BtcOrd) Mint(f MintRequest) (*MintRespose, error){
+	url := fmt.Sprintf("%s", Inscribe)
+	fullUrl := m.generateUrl(url)
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(f)
+	if err != nil {
+			return nil, err
+	}
+
+	data, err := m.request(fullUrl, "POST", nil, &buf)
+	if err != nil {
+		return nil, err
+	}
+	spew.Dump(string(data))
+	resp := &MintRespose{}
+	err = json.Unmarshal(data, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Error != "" {
+		err = errors.New(resp.Error)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (m BtcOrd) request(fullUrl string, method string, headers map[string]string , reqBody io.Reader) ([]byte, error) {
 	req, err := http.NewRequest(method, fullUrl, reqBody)
 	if err != nil {
