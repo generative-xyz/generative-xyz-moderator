@@ -23,6 +23,7 @@ import (
 func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.btcGetReceiveWalletAddress", r)
 	defer h.Tracer.FinishSpan(span, log )
+	h.Response.SetLog(h.Tracer, span)
 
 	var reqBody request.CreateBtcWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
@@ -56,7 +57,7 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -72,6 +73,7 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 func (h *httpDelivery) mint(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.mint", r)
 	defer h.Tracer.FinishSpan(span, log )
+	h.Response.SetLog(h.Tracer, span)
 
 	var reqBody request.CreateMintReq
 	decoder := json.NewDecoder(r.Body)
@@ -104,8 +106,6 @@ func (h *httpDelivery) mint(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

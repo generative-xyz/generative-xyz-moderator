@@ -19,7 +19,8 @@ import (
 
 func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("CreateBTCWalletAddress", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
+	
 	log.SetData("input", input)
 	log.SetTag("btcUserWallet", input.WalletAddress)
 
@@ -46,8 +47,8 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	}else{
 		walletAddress.Mnemonic = resp.Stdout
 	}
-	log.SetData("CreateBTCWalletAddress.createdWallet", resp)
 
+	log.SetData("CreateBTCWalletAddress.createdWallet", resp)
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -56,19 +57,19 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 			"receive",
 		},
 	})
-
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
 		return nil, err
 	}
+
 	log.SetData("CreateBTCWalletAddress.receive", resp)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID )
 	if err != nil {
 		log.Error("u.CreateBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("found.Project", p)
-
+	
+	log.SetData("found.Project", p.ID)
 	walletAddress.Amount = p.MintPrice
 	walletAddress.UserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
@@ -337,7 +338,7 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		// 		"ord_master",
 		// 		fmt.Sprintf("%f", amout),
 		// 		"--fee-rate",
-		// 		"7",
+		// 		"15",
 		// 	},
 		// }
 
@@ -381,7 +382,7 @@ func (u Usecase) SendToken(receiveAddr string, inscriptionID string)  (*ord_serv
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			"7",
+			"15",
 		}})
 
 	if err != nil {
