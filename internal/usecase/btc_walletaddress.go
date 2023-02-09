@@ -205,6 +205,11 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAd
 	log.SetData("balance", balance)
 
 	//TODO logic of the checked balance here
+	if balance < btc.Amount {
+		err := errors.New("Not enough amount")
+		return nil, err
+	}
+
 	btc.IsConfirm = true
 	return btc, nil
 }
