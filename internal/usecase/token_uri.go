@@ -587,7 +587,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 }
 
 func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, tokenID string) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetTokensOfAProjectFromChain", rootSpan)
+	span, log := u.StartSpan("CreateBTCTokenURI", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	// find project by projectID
 	project, err := u.Repo.FindProjectByTokenID(projectID)

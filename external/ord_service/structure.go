@@ -21,7 +21,7 @@ type ExecRespose struct {
 
 type MintRespose struct {
 	Message string `json:"message"`
-	Stdout MintStdoputRespose `json:"stdout"`
+	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
 	ErrorCode string `json:"errorCode"`
 	Error string `json:"err"`
