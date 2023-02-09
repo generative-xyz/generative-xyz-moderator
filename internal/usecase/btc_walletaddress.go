@@ -115,7 +115,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	log.SetData("found.Project", p)
 	log.SetTag("projectID", p.TokenID)
 
-
 	//prepare data for mint
 	// - Get project.AnimationURL
 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
@@ -141,21 +140,20 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	spew.Dump(fileURI)
 
 	//TODO - enable this
-	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"inscriptions",
-	// 		"", //FILE URL
-	// 	},GCS_DOMAIN
-	// })
+	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+		WalletName: "ord_master",
+		FileUrl: fileURI,
+		FeeRate: 7,//temp
+		DryRun: true,
+	})
 
+	btc.MintResponse = entity.MintStdoputResponse(resp.Stdout)
 	btc, err = u.UpdateBtcMintedStatus(span, btc)
 	if err != nil {
 		log.Error("BTCMint.UpdateBtcMintedStatus", err.Error(), err)
 		return nil, err
 	}
+
 	return btc, nil
 }
 
@@ -277,12 +275,12 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 			go func(wg *sync.WaitGroup, rootSpan opentracing.Span, item *entity.BTCWalletAddress) {
 				defer wg.Done()
 
-				// item, err := u.BalanceLogic(span, item)
-				// if err != nil {
-				// 	log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
-				// 	return
-				// }
-				// log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), item)
+				item, err := u.BalanceLogic(span, item)
+				if err != nil {
+					log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+				log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), item)
 		
 				updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, item)
 				if err != nil {
@@ -309,4 +307,108 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 	}
 
 	return resp, nil
+}
+
+func (u Usecase) ListenTheMintedBTC(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("ListenBTC", rootSpan)
+	defer u.Tracer.FinishSpan(span, log )
+	
+	resp := []entity.BTCWalletAddress{}
+	page := 1
+	limit := 10
+
+	getAddrr :=  func(rootSpan opentracing.Span, page int, limit int) ( []entity.BTCWalletAddress, error) {
+		span, log := u.StartSpan("WillBeProcessWTC.GetAddresses", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		log.SetData("page", page)
+		log.SetData("limit", limit)
+		
+		addreses, err := u.Repo.ListBTCAddress(page, limit)
+		if err != nil {
+			log.Error("WillBeProcessWTC.ListBTCAddress", err.Error(), err)
+			return nil, err
+		}
+
+		iAddreses := addreses.Result 
+		ad := iAddreses.([]entity.BTCWalletAddress)
+		return ad, nil
+	}
+	
+	for {
+		var wg sync.WaitGroup
+		resp, err := getAddrr(span, page, limit)
+		if err != nil {
+			log.Error(fmt.Sprintf("ListenTheMintedBTC.page.%d.Error", page), err.Error(), err)
+			break
+		}
+		wg.Add(limit)
+		for _, item := range resp {
+			go func(wg *sync.WaitGroup, rootSpan opentracing.Span, item *entity.BTCWalletAddress) {
+				defer wg.Done()
+
+				sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+
+				log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+				item.MintResponse.IsSent = true
+				updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, item)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+				log.SetData("updated", updated)
+				
+				fundResp, err := u.OrdService.Exec(
+					ord_service.ExecRequest{
+						Args: []string{
+							"--wallet",
+							item.OrdAddress,
+							"send",
+							"--fee-rate",
+							"7",
+							"ord_master",
+							item.Amount,
+						},
+					})
+
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.ReFund.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+
+				log.SetData("fundResp", fundResp)
+				
+			}(&wg, span, &item)
+		}
+
+		wg.Wait()
+		time.Sleep(2 * time.Minute)
+	}
+
+	return resp, nil
+}
+
+func (u Usecase) SendToken(receiveAddr string, inscriptionID string)  (*ord_service.ExecRespose, error) {
+
+	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			"ord_master",
+			"wallet",
+			"send",
+			receiveAddr,
+			inscriptionID,
+		}})
+
+	if err != nil {
+		return nil, err
+	}
+
+
+	return resp, err
+	
 }

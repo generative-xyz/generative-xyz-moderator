@@ -37,10 +37,16 @@ func (h ScronBTCHandler) StartServer() {
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-		_, err := h.Usecase.WillBeProcessWTC(span)
-		if err != nil {
-			log.Error("DispatchCron.OneMinute.WillBeProcessWTC", err.Error(), err)
-		}
+		go func(){
+			h.Usecase.WillBeProcessWTC(span)
+			
+		}()
+		
+		go func(){
+			h.Usecase.ListenTheMintedBTC(span)
+			
+		}()
+	
 	})
 
 	c.Start()
