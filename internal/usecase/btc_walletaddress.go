@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -292,15 +291,15 @@ func (u Usecase) WillBeProcessWTC(rootSpan opentracing.Span) ([]entity.BTCWallet
 				}
 				log.SetData("updated", updated)
 
-				bytes, err := json.Marshal(item)
+		
+				topicName := helpers.CreateMqttTopic(item.OrdAddress)
+				log.SetData("topicName", topicName)
+				err = u.MqttClient.Publish(topicName, item)
 				if err != nil {
-					log.Error(fmt.Sprintf("WillBeProcessWTC.Marshal.%s.Error", item.OrdAddress), err.Error(), err)
-					return
+					log.Error(fmt.Sprintf("WillBeProcessWTC.Mqtt.%s.Error", item.OrdAddress), err.Error(), err)
+					//return
 				}
 				
-				mqChan := helpers.CreateMqttChannel(item.OrdAddress)
-				log.SetData("mqChan", mqChan)
-				u.MqttClient.Publish(mqChan, string(bytes))
 
 			}(&wg, span, &item)
 		}
