@@ -60,6 +60,13 @@ func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*ent
 	return resp, nil
 }
 
+func (r Repository) IncreaseProjectIndex(projectID string) (error) {
+	filter := bson.D{{Key: "tokenid", Value: projectID}}
+	update := bson.M{"$inc": bson.M{"index": 1}}
+	_, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
 func (r Repository) FindProjectWithoutCache( contractAddress string, tokenID string) (*entity.Projects, error) {
 	contractAddress = strings.ToLower(contractAddress)
 	return  r.findProjectBy(contractAddress, tokenID)
