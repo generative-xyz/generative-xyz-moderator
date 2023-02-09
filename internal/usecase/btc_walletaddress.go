@@ -322,16 +322,6 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		}
 
 		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
-		item.MintResponse.IsSent = true
-
-
-		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
-		
 		amout, err := strconv.ParseFloat(item.Amount, 10)
 		if err != nil {
 			log.Error("ListenTheMintedBTC.%s. strconv.ParseFloa.Error", err.Error(), err)
@@ -360,6 +350,14 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		}
 
 		log.SetData("fundResp", fundResp)
+		
+		item.MintResponse.IsSent = true
+		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
+		if err != nil {
+			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+			continue
+		}
+		log.SetData("updated", updated)
 
 		//TODO: - create entity.TokenURI
 		_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription)

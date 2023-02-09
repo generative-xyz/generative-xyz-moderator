@@ -111,7 +111,7 @@ func (r Repository) ListBTCAddress() ([]entity.BTCWalletAddress, error)  {
 	
 	f := bson.M{}
 	f["mintResponse"] = bson.M{"$not": bson.M{"$eq": nil}}
-	f["mintResponse.isSent"] = bson.M{"$not": bson.M{"$eq": true}}
+	f["mintResponse.issent"] = false
 	f["mintResponse.inscription"] = bson.M{"$not": bson.M{"$eq": ""}}
 	
 	opts := options.Find()
