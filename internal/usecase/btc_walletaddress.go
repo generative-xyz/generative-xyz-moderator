@@ -216,7 +216,8 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 		},
 	})
 
-	spew.Dump(userWallet)
+	log.SetData("userWallet", btc.UserAddress)
+	log.SetData("ordWalletAddress", btc.OrdAddress)
 	if err != nil {
 		log.Error("BTCMint.Exec.balance", err.Error(), err)
 		return nil, err
@@ -269,7 +270,8 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 	}
 
 	for _, item := range addreses {
-		log.SetTag("ordAddress", item.OrdAddress)
+		log.SetData("userWallet", item.UserAddress)
+		log.SetData("ordWalletAddress", item.OrdAddress)
 		newItem, err := u.BalanceLogic(span, item)
 		if err != nil {
 			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
@@ -315,7 +317,8 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	}
 	
 	for _, item := range addreses {
-		log.SetTag("ordAddress", item.OrdAddress)
+		log.SetData("userWallet", item.UserAddress)
+		log.SetData("ordWalletAddress", item.OrdAddress)
 		sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription)
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
