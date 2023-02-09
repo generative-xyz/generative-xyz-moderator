@@ -380,6 +380,11 @@ func (u Usecase) ListenTheMintedBTC(rootSpan opentracing.Span) ([]entity.BTCWall
 				item.MintResponse.IsSent = true
 
 				//TODO: - create entity.TokenURI
+				_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
 
 				updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, item)
 				if err != nil {

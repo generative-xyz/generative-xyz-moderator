@@ -585,3 +585,58 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 	
 	return nil
 }
+
+func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, tokenID string) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("GetTokensOfAProjectFromChain", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	// find project by projectID
+	project, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	nftTokenUri := project.NftTokenUri
+	base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
+
+	type Data struct {
+		AnimationUrl string `bson:"animation_url" json:"animation_url"`
+	}
+
+	var data Data
+
+	err = helpers.Base64DecodeRaw(base64Data, &data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenUri := entity.TokenUri{}
+	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.TokenID = tokenID
+	tokenUri.AnimationURL = data.AnimationUrl
+	blockNumberMinted := "31012412"
+	tokenUri.BlockNumberMinted = &blockNumberMinted
+	tokenUri.Creator = &project.CreatorProfile
+	tokenUri.CreatorAddr = project.CreatorAddrr
+	tokenUri.Description = project.Description
+	tokenUri.GenNFTAddr = project.GenNFTAddr
+	tokenUri.Image = project.Thumbnail
+	mintedTime := time.Now()
+	tokenUri.MintedTime = &mintedTime
+	tokenUri.Name = tokenID
+	tokenUri.Project = project
+	tokenUri.ProjectID = project.TokenID
+	tokenUri.ProjectIDInt = project.TokenIDInt
+	tokenUri.Thumbnail = project.Thumbnail
+
+	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
+	if err != nil {
+		log.Error("u.Repo.UpdateOrInsertTokenUri", err.Error(), err)
+		return nil, err
+	}
+	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	return pTokenUri, nil
+}
