@@ -3,6 +3,7 @@ package ord_service
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -63,6 +64,11 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error){
 	resp := &ExecRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
+		return nil, err
+	}
+
+	if resp.Error != "" {
+		err = errors.New(resp.Error)
 		return nil, err
 	}
 

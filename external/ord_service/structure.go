@@ -9,4 +9,5 @@ type ExecRespose struct {
 	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
 	ErrorCode string `json:"errorCode"`
+	Error string `json:"err"`
 }
