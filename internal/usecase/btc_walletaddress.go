@@ -1,8 +1,13 @@
 package usecase
 
 import (
+	"errors"
+	"fmt"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -86,12 +91,82 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error("u.FindBtcWalletAddressByOrd", err.Error(), err)
+		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
+		return nil, err
+	}
+
+	//if this was minted, skip it
+	if btc.IsMinted {
+		err = errors.New("This btc was minted")
+		log.Error("BTCMint.Minted", err.Error(), err)
 		return nil, err
 	}
 
 
-	
+	// get data from project
+	p, err := u.Repo.FindProjectByTokenID(btc.ProjectID)
+	if err != nil {
+		log.Error("BTCMint.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("found.Project", p)
+
+
+	//TODO - Check balance
+	// userWallet := helpers.CreateBTCOrdWallet(btc.UserAddress)
+	// resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"balance",
+	// 	},
+	// })
+
+	// if err != nil {
+	// 	log.Error("BTCMint.Exec.balance", err.Error(), err)
+	// 	return nil, err
+	// }
+	// log.SetData("resp", resp)
+
+	//TODO logic of the checked balance here
+
+
+	//prepare data for mint
+	// - Get project.AnimationURL
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		return nil, err
+	}
+
+	// - Upload the Animation URL to GCS
+	animation := projectNftTokenUri.AnimationUrl
+	animation = strings.ReplaceAll(animation,"data:text/html;base64,", "")
+
+	now := time.Now().UTC().Unix()
+	uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html",p.TokenID, now))
+	if err != nil {
+		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		return nil, err
+	}
+
+	fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	spew.Dump(fileURI)
+
+	//mint
+	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"inscriptions",
+	// 		"", //FILE URL
+	// 	},GCS_DOMAIN
+	// })
+
+
 	return btc, nil
 }
 
