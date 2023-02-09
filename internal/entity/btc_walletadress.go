@@ -9,7 +9,7 @@ import (
 type BTCWalletAddress struct {
 	BaseEntity`bson:",inline"`
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
-	Amount float64 `bson:"amount"`
+	Amount string `bson:"amount"`
 	OrdAddress string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
 	FileURI string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 	IsConfirm bool  `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
