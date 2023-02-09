@@ -115,7 +115,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("BTCMint.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("found.Project", p)
+	//log.SetData("found.Project", p)
 	log.SetTag("projectID", p.TokenID)
 
 	//prepare data for mint
@@ -294,13 +294,6 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 		}
 
 		_ = btc
-		topicName := helpers.CreateMqttTopic(newItem.OrdAddress)
-		log.SetData("topicName", topicName)
-		err = u.MqttClient.Publish(topicName, newItem)
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.Mqtt.%s.Error", newItem.OrdAddress), err.Error(), err)
-			continue
-		}
 	}
 
 	return nil, nil
