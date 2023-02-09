@@ -32,9 +32,6 @@ func (h ScronBTCHandler) StartServer() {
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 	defer span.Finish()
 
-	h.Usecase.WaitingForMinted(span)
-	
-
 	c := cron.New()
 	c.AddFunc("*/5 * * * *", func() {
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
