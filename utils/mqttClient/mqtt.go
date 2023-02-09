@@ -38,7 +38,7 @@ type deviceMqtt struct {
 
 type IDeviceMqtt interface {
 	Subscribe(channelName string) 
-	Publish(channelName string, data interface{}) 
+	Publish(channelName string, data interface{})  error
 	Disconnect() 
 	MessageHandler(client mqtt.Client, msg mqtt.Message) 
 	GetMessageChan()  (chan *MqttMessage, chan error)
@@ -119,8 +119,23 @@ func (m deviceMqtt)  MessageHandler(client mqtt.Client, msg mqtt.Message) {
 	msgObject.Status =  msgStatus
 }
 
-func (m deviceMqtt) Publish(channelName string,  data interface{})  {
-
+func (m deviceMqtt) Publish(topicName string,  msg interface{}) error  {
+	encodedMsg, ok := msg.([]byte)
+	if !ok {
+		encodedMsgByte, err := json.Marshal(msg)
+		if err != nil {
+			return err
+		}
+		encodedMsg = encodedMsgByte
+	}
+	
+	token := m.Mqtt.Publish(topicName, 0, false, encodedMsg)
+	token.Wait()
+	if token.Error() != nil {
+		e := token.Error()
+		return e
+	}
+	return nil
 }
 
 func (m deviceMqtt) connectLostHandler(client mqtt.Client, err error) {
