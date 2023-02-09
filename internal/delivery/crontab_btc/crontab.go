@@ -41,11 +41,11 @@ func (h ScronBTCHandler) StartServer() {
 		defer log.ToSpan(span)
 
 		go func(){
-			//h.Usecase.WaitingForBalancing(span)
+			h.Usecase.WaitingForBalancing(span)
 		}()
 		
 		go func(){
-			//h.Usecase.WaitingForMinted(span)
+			h.Usecase.WaitingForMinted(span)
 			
 		}()
 	
