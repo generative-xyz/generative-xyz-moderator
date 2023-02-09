@@ -147,7 +147,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		WalletName: "ord_master",
 		FileUrl: fileURI,
 		FeeRate: 15,//temp
-		DryRun: true,
+		DryRun: false,
 	})
 
 	if err != nil {
