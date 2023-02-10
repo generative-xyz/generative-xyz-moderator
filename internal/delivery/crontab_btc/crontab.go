@@ -64,7 +64,7 @@ func (h ScronBTCHandler) StartServer() {
 
 		}()
 		go func() {
-			// h.Usecase.BtcCheckBuyingNft(span)
+			// h.Usecase.BtcCheckReceivedBuyingNft(span)
 
 		}()
 
