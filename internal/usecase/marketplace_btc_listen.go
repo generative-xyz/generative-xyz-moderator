@@ -171,3 +171,61 @@ func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 
 	return nil
 }
+
+// send btc for buy order records:
+func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("BtcSendBTCForBuyOrder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+
+	// get list buy order status = sent nft:
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
+	if len(listTosendBtc) == 0 {
+		return nil
+	}
+
+	for _, item := range listTosendBtc {
+		if item.Status == entity.StatusBuy_SendingNFT {
+
+			// get amount nft:
+			nftListing, err := u.Repo.FindBtcNFTListingByNFTID(item.InscriptionID)
+			if err != nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - with err: %v", item.InscriptionID, err)
+				continue
+			}
+			if nftListing == nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - item nil", item.InscriptionID)
+				continue
+			}
+
+			var amount int = 0
+			// Todo cal amount to send user and master
+
+			// transfer now:
+
+			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
+				item.SegwitKey,
+				nftListing.SellOrdAddress,
+				item.SegwitAddress,
+				amount,
+				btc.PreferenceMedium,
+			)
+			if err != nil {
+				fmt.Printf("Could not SendTransactionWithPreferenceFromSegwitAddress btc: %s - with err: %v", item.InscriptionID, err)
+				continue
+			}
+
+			item.TxSendSendBTC = txID
+			item.ErrCount = 0 // reset error count!
+			// TODO: update item
+
+		}
+	}
+	return nil
+}

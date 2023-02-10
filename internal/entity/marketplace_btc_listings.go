@@ -20,7 +20,7 @@ import (
 
 type MarketplaceBTCListing struct {
 	BaseEntity     `bson:",inline"`
-	SellOrdAddress string    `bson:"seller_ord_address"` //user's wallet address from FE
+	SellOrdAddress string    `bson:"seller_ord_address"` //user's wallet address from FE // TODO: need replace SellerAddress (to receive btc from buyer)
 	HoldOrdAddress string    `bson:"hold_ord_address"`
 	Price          string    `bson:"amount"`
 	ServiceFee     string    `bson:"service_fee"`

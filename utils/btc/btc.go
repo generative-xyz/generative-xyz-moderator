@@ -1,12 +1,15 @@
 package btc
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net/http"
 
+	"github.com/blockcypher/gobcy/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -20,7 +23,55 @@ func NewBlockcypherService(chainEndpoint string, explorerEndPoint string, bcyTok
 		explorerEndPoint: explorerEndPoint,
 		bcyToken:         bcyToken,
 		network:          env,
+		chain:            gobcy.API{bcyToken, "btc", "main"},
 	}
+}
+
+// SendTX from Segwit address by lib gobcy, with preference, without manually setting fees :
+//send from segwit to legacy address |
+func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(secret string, from string, destination string, amount int,
+	preference string) (string, error) {
+	wif, err := btcutil.DecodeWIF(secret)
+	if err != nil {
+		return "", err
+	}
+
+	pkHex := hex.EncodeToString(wif.PrivKey.Serialize())
+	tx := gobcy.TempNewTX(from, destination, *big.NewInt(int64(amount)))
+	if len(preference) == 0 {
+		tx.Preference = PreferenceMedium
+	} else {
+		tx.Preference = preference
+	}
+	skel, err := bs.chain.NewTX(tx, false)
+
+	if err != nil {
+		log.Println("bs.chain.NewTX err: ", err, tx)
+		return "", err
+	}
+	log.Println("[SendTransactionWithPreference] fee", skel.Trans.Fees)
+	prikHexs := []string{}
+	for i := 0; i < len(skel.ToSign); i++ {
+		prikHexs = append(prikHexs, pkHex)
+	}
+
+	err = skel.Sign(prikHexs)
+	if err != nil {
+		log.Println("skel.Sign error: ", err)
+		return "", err
+	}
+
+	// add this one with segwit address:
+	for i, _ := range skel.Signatures {
+		skel.Signatures[i] = skel.Signatures[i] + "01"
+	}
+
+	skel, err = bs.chain.SendTX(skel)
+	if err != nil {
+		log.Println("bs.chain.SendTX err:", err)
+		return "", err
+	}
+	return skel.Trans.Hash, nil
 }
 
 func (bs *BlockcypherService) GetBalance(address string) (*big.Int, error) {

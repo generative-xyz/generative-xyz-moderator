@@ -115,6 +115,25 @@ func (r Repository) RetrieveBTCNFTPendingBuyOrders() ([]entity.MarketplaceBTCBuy
 
 	return resp, nil
 }
+
+func (r Repository) RetrieveBTCNFTBuyOrdersByStatus(status entity.BuyStatus) ([]entity.MarketplaceBTCBuyOrder, error) {
+	resp := []entity.MarketplaceBTCBuyOrder{}
+	filter := bson.M{
+		"status": status,
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
 
 	filter := bson.D{{"id", model.ID}}

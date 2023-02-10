@@ -33,6 +33,10 @@ type MarketplaceBTCBuyOrder struct {
 	ReceivedBalance string    `bson:"received_balance"`
 	SegwitKey       string    `bson:"segwit_key"`
 	ExpiredAt       time.Time `bson:"expired_at"`
+	RawData         string    `bson:"raw_data"` // raw data of sending btc (for retry)
+	UTXO            string    `bson:"utxo"`
+	TxSendNFT       string    `bson:"tx_send_nft"`
+	TxSendSendBTC   string    `bson:"tx_send_btc"`
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {
