@@ -139,6 +139,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-gen-order/{ID}", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 
+	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

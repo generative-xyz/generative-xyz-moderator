@@ -218,3 +218,10 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp), "")
 }
+
+func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
+
+	result := h.Usecase.BtcChecktListNft("bc1p88tdcfllrqxjp5uqq8kelzt0e3fhg74hj3j8evc4fp26flvgztjqcwm4tg")
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
