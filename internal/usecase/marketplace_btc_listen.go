@@ -37,7 +37,7 @@ func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, e
 	return rpcclient, bs, nil
 }
 
-// check nft of the nft:
+// check receive of the nft:
 func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 
 	span, log := u.StartSpan("BtcChecktListNft", rootSpan)
@@ -91,7 +91,7 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 	return nil
 }
 
-// check nft of the nft:
+// check receive buy the nft:
 func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 
 	span, log := u.StartSpan("BtcCheckBuyingNft", rootSpan)
