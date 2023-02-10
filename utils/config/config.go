@@ -39,7 +39,9 @@ type Config struct {
 	BTC_RPCUSER     string
 	BTC_RPCPASSWORD string
 	BTC_FULLNODE    string
-	BlockcypherAPI  string
+
+	BlockcypherAPI   string
+	BlockcypherToken string
 }
 
 type MQTTConfig struct {
@@ -258,8 +260,8 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:    crontabStart,
-			BTCEnabled: crontabBtcStart,
+			Enabled:      crontabStart,
+			BTCEnabled:   crontabBtcStart,
 			BTCV2Enabled: crontabBtcV2Start,
 		},
 		GENToken: GENToken{
