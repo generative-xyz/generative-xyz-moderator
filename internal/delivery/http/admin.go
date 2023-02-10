@@ -21,8 +21,6 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getRedisKeys", r)
 	defer h.Tracer.FinishSpan(span, log )
 
-	h.Usecase.GogoToken(span)
-
 	res, err := h.Usecase.GetAllRedis(span)
 
 	if err != nil {

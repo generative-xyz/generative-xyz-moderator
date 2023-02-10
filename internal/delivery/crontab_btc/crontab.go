@@ -1,13 +1,12 @@
 package crontab_btc
 
 import (
+	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
-
-	"gopkg.in/robfig/cron.v2"
 )
 
 type ScronBTCHandler struct {
@@ -29,6 +28,8 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 func (h ScronBTCHandler) StartServer() {
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 	defer span.Finish()
+
+	//h.Usecase.GogoToken(span)
 
 	c := cron.New()
 	c.AddFunc("*/5 * * * *", func() {

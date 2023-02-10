@@ -690,7 +690,8 @@ func (u Usecase) GogoToken(rootSpan opentracing.Span) {
 	span, log := u.StartSpan("GogoToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	tokens := []entity.TokenUri{}
-	cursor, err := u.Repo.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), bson.M{"project_id": "1000001"})
+	cursor, err := u.Repo.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), 
+	bson.M{"project_id": "1000001"})
 	if err != nil {
 		return
 	}
