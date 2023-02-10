@@ -1,6 +1,7 @@
 package btc
 
 import (
+	"github.com/blockcypher/gobcy/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 )
 
@@ -66,6 +67,7 @@ type BlockcypherService struct {
 	explorerEndPoint string
 	bcyToken         string
 	network          *chaincfg.Params
+	chain            gobcy.API
 }
 
 type TxInfo struct {
