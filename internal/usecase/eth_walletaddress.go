@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -48,7 +50,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	privKey, pubKey, address, err := ethClient.GenerateAddress()
 	if err != nil {
 		log.Error("ethClient.GenerateAddress", err.Error(), err)
-		//return nil, err
+		return nil, err
 	} else {
 		walletAddress.Mnemonic = privKey
 	}
