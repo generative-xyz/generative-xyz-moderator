@@ -37,7 +37,7 @@ jobs:
           gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }} # can be base64 encoded or plain text
           registry: gcr.io
           project_id: generative-365207
-          image_name: generative-moderator-xserver
+          image_name: generative-moderator
           image_tag: latest,${{ env.IMAGE_TAG }}
-          dockerfile: ./GUIDockerfileUbuntu
+          dockerfile: ./Dockerfile
           context: ./

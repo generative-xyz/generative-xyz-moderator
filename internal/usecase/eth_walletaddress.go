@@ -309,38 +309,42 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 	}
 
 	for _, item := range addreses {
-		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
-		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-		newItem, err := u.BalanceETHLogic(span, item)
-		if err != nil {
-			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
-
-		mintReps, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
-			continue
-		}
-
-		log.SetData("btc.Minted", mintReps)
-
-		newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
-		newItem.IsMinted = true
-		updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-
+		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log) 
+			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+			newItem, err := u.BalanceETHLogic(span, item)
+			if err != nil {
+				//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
+			u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData("updated", updated)
+	
+			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
+				return
+			}
+	
+			log.SetData("btc.Minted", mintReps)
+	
+			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
+			newItem.IsMinted = true
+			newItem.FileURI = *fileURI
+			updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+		}(span, item)
 	}
 
 	return nil, nil
@@ -357,32 +361,38 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	}
 
 	for _, item := range addreses {
-		log.SetData("userWallet", item.UserAddress)
-		log.SetData("ordWalletAddress", item.OrdAddress)
-		sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
+		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
 
-		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+			log.SetData("userWallet", item.UserAddress)
+			log.SetData("ordWalletAddress", item.OrdAddress)
+			sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 
-		//TODO - fund via ETH
+			log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
 
-		item.MintResponse.IsSent = true
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
+			//TODO - fund via ETH
 
-		//TODO: - create entity.TokenURI
-		_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
+			item.MintResponse.IsSent = true
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData("updated", updated)
+
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+		}(span, item)
+		
 	}
 
 	return nil, nil
