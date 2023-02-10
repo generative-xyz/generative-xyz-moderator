@@ -50,7 +50,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	privKey, pubKey, address, err := ethClient.GenerateAddress()
 	if err != nil {
 		log.Error("ethClient.GenerateAddress", err.Error(), err)
-		//return nil, err
+		return nil, err
 	} else {
 		walletAddress.Mnemonic = privKey
 	}
@@ -272,28 +272,6 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.BTCWal
 
 	return nil, nil
 }
-
-// func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-
-// 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-// 		Args: []string{
-// 			"--wallet",
-// 			"ord_master",
-// 			"wallet",
-// 			"send",
-// 			receiveAddr,
-// 			inscriptionID,
-// 			"--fee-rate",
-// 			"15",
-// 		}})
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return resp, err
-
-// }
 
 func convertBTCToETH(amount string) (string, error) {
 	amountMintBTC, err := strconv.ParseFloat(amount, 32)
