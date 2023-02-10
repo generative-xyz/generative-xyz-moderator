@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -26,6 +28,9 @@ type MarketplaceBTCBuyOrder struct {
 	InscriptionID string    `bson:"inscriptionID"` // tokenID in btc
 	Status        BuyStatus `bson:"status"`
 	ErrCount      int       `bson:"err_count"`
+	SegwitAddress string    `bson:"segwit_address"`
+	SegwitKey     string    `bson:"segwit_key"`
+	ExpiredAt     time.Time `bson:"expired_at"`
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {

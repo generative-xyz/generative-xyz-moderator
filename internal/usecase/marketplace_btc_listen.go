@@ -1,29 +1,17 @@
 package usecase
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/utils/btc"
 )
 
-type Txs struct {
-	Tx    string `json:"tx_hash"`
-	Value string `json:"value" binding:"required"`
-}
-
-type Txo struct {
-	Address string `json:"address"`
-	Txs     []Txs  `json:"txrefs"`
-}
-
-func (u Usecase) buildBTCClient() (*rpcclient.Client, error) {
+func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, error) {
 	host := u.Config.BTC_FULLNODE
 	user := u.Config.BTC_RPCUSER
 	pass := u.Config.BTC_RPCPASSWORD
@@ -35,7 +23,10 @@ func (u Usecase) buildBTCClient() (*rpcclient.Client, error) {
 		HTTPPostMode: true,  // Bitcoin core only supports HTTP POST mode
 		DisableTLS:   false, //!(os.Getenv("BTC_NODE_HTTPS") == "true"), // Bitcoin core does not provide TLS by default
 	}
-	return rpcclient.New(connCfg, nil)
+
+	bs := btc.NewBlockcypherService(u.Config.BlockcypherAPI, "", u.Config.BlockcypherToken, &chaincfg.MainNetParams)
+
+	return rpcclient.New(connCfg, nil), bs, nil
 }
 
 // check nft of the nft:
@@ -95,6 +86,8 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 // check nft of the nft:
 func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 
+	bs := btc.NewBlockcypherService()
+
 	span, log := u.StartSpan("BtcCheckBuyingNft", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -146,55 +139,4 @@ func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 	}
 
 	return nil
-}
-
-func (u *Usecase) getLastTxs(address string) ([]Txs, error) {
-
-	var txs []Txs
-
-	// get last tx:
-	url := u.Config.BlockcypherAPI + "addrs/" + address
-	fmt.Println("url", url)
-
-	req, err := http.NewRequest("GET", url, nil)
-	var (
-		result *Txo
-	)
-
-	if err != nil {
-		fmt.Println("eth get list txs failed", address, err.Error())
-		return txs, err
-	}
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		fmt.Println("Call eth get list txs failed", err.Error())
-		return txs, err
-	}
-
-	defer func(r *http.Response) {
-		err := r.Body.Close()
-		if err != nil {
-			fmt.Println("Close body failed", err.Error())
-		}
-	}(res)
-
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
-
-	if res.StatusCode != http.StatusOK {
-		return txs, errors.New("get eth list txs Response status != 200")
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	json.Unmarshal(body, &result)
-	if err != nil {
-		fmt.Println("Read body failed", err.Error())
-		return txs, errors.New("Read body failed")
-	}
-
-	return result.Txs, nil
-
 }
