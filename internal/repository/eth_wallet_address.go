@@ -12,9 +12,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (r Repository) FindBtcWalletAddress(key string) (*entity.BTCWalletAddress, error) {
-	resp := &entity.BTCWalletAddress{}
-	usr, err := r.FilterOne(entity.BTCWalletAddress{}.TableName(), bson.D{{utils.KEY_UUID, key}})
+func (r Repository) FindEthWalletAddress(key string) (*entity.ETHWalletAddress, error) {
+	resp := &entity.ETHWalletAddress{}
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{utils.KEY_UUID, key}})
 	if err != nil {
 		return nil, err
 	}
@@ -26,9 +26,9 @@ func (r Repository) FindBtcWalletAddress(key string) (*entity.BTCWalletAddress, 
 	return resp, nil
 }
 
-func (r Repository) FindBtcWalletAddressByOrd(ordAddress string) (*entity.BTCWalletAddress, error) {
-	resp := &entity.BTCWalletAddress{}
-	usr, err := r.FilterOne(entity.BTCWalletAddress{}.TableName(), bson.D{{"ordAddress", ordAddress}})
+func (r Repository) FindEthWalletAddressByOrd(ordAddress string) (*entity.ETHWalletAddress, error) {
+	resp := &entity.ETHWalletAddress{}
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"ordAddress", ordAddress}})
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +40,9 @@ func (r Repository) FindBtcWalletAddressByOrd(ordAddress string) (*entity.BTCWal
 	return resp, nil
 }
 
-func (r Repository) DeleteBtcWalletAddress(id string) (*mongo.DeleteResult, error) {
+func (r Repository) DeleteEthWalletAddress(id string) (*mongo.DeleteResult, error) {
 	filter := bson.D{{utils.KEY_UUID, id}}
-	result, err := r.DeleteOne(entity.BTCWalletAddress{}.TableName(), filter)
+	result, err := r.DeleteOne(entity.ETHWalletAddress{}.TableName(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (r Repository) DeleteBtcWalletAddress(id string) (*mongo.DeleteResult, erro
 	return result, nil
 }
 
-func (r Repository) InsertBtcWalletAddress(data *entity.BTCWalletAddress) error {
+func (r Repository) InsertEthWalletAddress(data *entity.ETHWalletAddress) error {
 	err := r.InsertOne(data.TableName(), data)
 	if err != nil {
 		return err
@@ -58,16 +58,16 @@ func (r Repository) InsertBtcWalletAddress(data *entity.BTCWalletAddress) error 
 	return nil
 }
 
-func (r Repository) ListBtcWalletAddress(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error)  {
-	confs := []entity.BTCWalletAddress{}
+func (r Repository) ListEthWalletAddress(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error) {
+	confs := []entity.ETHWalletAddress{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(entity.BTCWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	p, err := r.Paginate(entity.ETHWalletAddress{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
@@ -75,7 +75,7 @@ func (r Repository) ListBtcWalletAddress(filter entity.FilterBTCWalletAddress) (
 	return resp, nil
 }
 
-func (r Repository) UpdateBtcWalletAddressByOrdAddr(ordAddress string, conf *entity.BTCWalletAddress) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateEthWalletAddressByOrdAddr(ordAddress string, conf *entity.ETHWalletAddress) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"ordAddress", ordAddress}}
 	result, err := r.UpdateOne(conf.TableName(), filter, conf)
 	if err != nil {
@@ -85,14 +85,14 @@ func (r Repository) UpdateBtcWalletAddressByOrdAddr(ordAddress string, conf *ent
 	return result, nil
 }
 
-func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, error)  {
-	confs := []entity.BTCWalletAddress{}
+func (r Repository) ListProcessingETHWalletAddress() ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
 	f := bson.M{}
 	f["$or"] = []interface{}{
-		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}} ,
-		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}} ,
+		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}},
+		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}},
 	}
-	
+
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -106,14 +106,14 @@ func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, er
 	return confs, nil
 }
 
-func (r Repository) ListBTCAddress() ([]entity.BTCWalletAddress, error)  {
-	confs := []entity.BTCWalletAddress{}
-	
+func (r Repository) ListETHAddress() ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+
 	f := bson.M{}
 	f["mintResponse"] = bson.M{"$not": bson.M{"$eq": nil}}
 	f["mintResponse.issent"] = false
 	f["mintResponse.inscription"] = bson.M{"$not": bson.M{"$eq": ""}}
-	
+
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -123,7 +123,6 @@ func (r Repository) ListBTCAddress() ([]entity.BTCWalletAddress, error)  {
 	if err = cursor.All(context.TODO(), &confs); err != nil {
 		return nil, err
 	}
-	
 
 	return confs, nil
 }

@@ -34,7 +34,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 		return
 	}
 
-	reqUsecase := &structure.BctWalletAddressData{}
+	reqUsecase := &structure.EthWalletAddressData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
@@ -42,15 +42,15 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 		return
 	}
 
-	btcWallet, err := h.Usecase.CreateBTCWalletAddress(span, *reqUsecase)
+	ethWallet, err := h.Usecase.CreateETHWalletAddress(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateBTCWalletAddress", err.Error(), err)
+		log.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcWallet", btcWallet)
-	resp, err := h.BtcWalletAddressToResp(btcWallet)
+	log.SetData("ethWallet", ethWallet)
+	resp, err := h.EthWalletAddressToResp(ethWallet)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -83,7 +83,7 @@ func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqUsecase := &structure.BctMintData{}
+	reqUsecase := &structure.EthMintData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
@@ -91,15 +91,15 @@ func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	btcWallet, err := h.Usecase.BTCMint(span, *reqUsecase)
+	ethWallet, err := h.Usecase.ETHMint(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateBTCWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcWallet", btcWallet)
-	resp, err := h.BtcToResp(btcWallet)
+	log.SetData("ethWallet", ethWallet)
+	resp, err := h.EthToResp(ethWallet)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -108,15 +108,15 @@ func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) EthWalletAddressToResp(input *entity.BTCWalletAddress) (*response.BctReceiveWalletResp, error) {
-	resp := &response.BctReceiveWalletResp{}
+func (h *httpDelivery) EthWalletAddressToResp(input *entity.ETHWalletAddress) (*response.EthReceiveWalletResp, error) {
+	resp := &response.EthReceiveWalletResp{}
 	resp.Address = input.OrdAddress
 	resp.Pricce = input.Amount
 	return resp, nil
 }
 
-func (h *httpDelivery) EthToResp(input *entity.BTCWalletAddress) (*response.BctWalletResp, error) {
-	resp := &response.BctWalletResp{}
+func (h *httpDelivery) EthToResp(input *entity.ETHWalletAddress) (*response.EthWalletResp, error) {
+	resp := &response.EthWalletResp{}
 	err := copier.Copy(resp, input)
 	if err != nil {
 		return nil, err
