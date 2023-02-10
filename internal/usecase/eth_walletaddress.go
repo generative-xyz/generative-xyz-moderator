@@ -22,6 +22,7 @@ import (
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/helpers"
 )
@@ -259,6 +260,8 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 
 	ethEntity.IsConfirm = true
 
+	//TODO - save balance
+
 	return &ethEntity, nil
 }
 
@@ -295,8 +298,8 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 	}
 
 	for _, item := range addreses {
-		log.SetData("userWallet", item.UserAddress)
-		log.SetData("ordWalletAddress", item.OrdAddress)
+		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 		newItem, err := u.BalanceETHLogic(span, item)
 		if err != nil {
 			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
@@ -317,7 +320,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			continue
 		}
 
-		_ = btc
+		log.SetData("btc.Minted", btc)
 	}
 
 	return nil, nil
@@ -343,35 +346,9 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 		}
 
 		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
-		// amout, err := strconv.ParseFloat(item.Amount, 10)
-		// if err != nil {
-		// 	log.Error("ListenTheMintedBTC.%s. strconv.ParseFloa.Error", err.Error(), err)
-		// 	continue
-		// }
-		// amout = amout * 0.9
-
-		// fundData := ord_service.ExecRequest{
-		// 	Args: []string{
-		// 		"--wallet",
-		// 		item.OrdAddress,
-		// 		"send",
-		// 		"ord_master",
-		// 		fmt.Sprintf("%f", amout),
-		// 		"--fee-rate",
-		// 		"15",
-		// 	},
-		// }
-
-		// log.SetData("fundData", fundData)
-		// fundResp, err := u.OrdService.Exec(fundData)
-
-		// if err != nil {
-		// 	log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.ReFund.Error", item.OrdAddress), err.Error(), err)
-		// 	continue
-		// }
-
-		// log.SetData("fundResp", fundResp)
-
+		
+		//TODO - fund via ETH 
+		
 		item.MintResponse.IsSent = true
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
 		if err != nil {

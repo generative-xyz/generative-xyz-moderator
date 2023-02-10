@@ -313,6 +313,8 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"index", 1},
 		{"indexReverse", 1},
 		{"creatorProfile", 1},
+		{"images", 1},
+		{"mintedImages", 1},
 	}
 	return f
 }
