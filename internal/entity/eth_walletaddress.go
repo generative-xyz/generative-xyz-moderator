@@ -30,7 +30,7 @@ type FilterETHWalletAddress struct {
 }
 
 func (u ETHWalletAddress) TableName() string {
-	return utils.COLLECTION_BTC_WALLET_ADDRESS
+	return utils.COLLECTION_ETH_WALLET_ADDRESS
 }
 
 func (u ETHWalletAddress) ToBson() (*bson.D, error) {

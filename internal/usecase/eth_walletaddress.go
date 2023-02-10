@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,38 +36,41 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			userWallet,
-			"wallet",
-			"create",
-		},
-	})
+	// userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
+	// resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"create",
+	// 	},
+	// })
 
+	ethClient := eth.NewClient(nil)
+
+	privKey, pubKey, address, err := ethClient.GenerateAddress()
 	if err != nil {
-		log.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
+		log.Error("ethClient.GenerateAddress", err.Error(), err)
 		//return nil, err
 	} else {
-		walletAddress.Mnemonic = resp.Stdout
+		walletAddress.Mnemonic = privKey
 	}
 
-	log.SetData("CreateETHWalletAddress.createdWallet", resp)
-	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			userWallet,
-			"wallet",
-			"receive",
-		},
-	})
-	if err != nil {
-		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-		return nil, err
-	}
+	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
+	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"receive",
+	// 	},
+	// })
+	// if err != nil {
+	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+	// 	return nil, err
+	// }
 
-	log.SetData("CreateETHWalletAddress.receive", resp)
+	log.SetData("CreateETHWalletAddress.receive", address)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
 		log.Error("u.CreateETHWalletAddress.FindProjectByTokenID", err.Error(), err)
@@ -71,9 +78,14 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("found.Project", p.ID)
-	walletAddress.Amount = p.MintPrice
+	mintPrice, err := convertBTCToETH(p.MintPrice)
+	if err != nil {
+		log.Error("convertBTCToETH", err.Error(), err)
+		return nil, err
+	}
+	walletAddress.Amount = mintPrice
 	walletAddress.UserAddress = input.WalletAddress
-	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
+	walletAddress.OrdAddress = strings.ReplaceAll(address, "\n", "")
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
 	walletAddress.FileURI = ""       //find files from google store
@@ -81,9 +93,9 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	walletAddress.ProjectID = input.ProjectID
 
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
-	err = u.Repo.InsertBtcWalletAddress(walletAddress)
+	err = u.Repo.InsertEthWalletAddress(walletAddress)
 	if err != nil {
-		log.Error("u.CreateETHWalletAddress.InsertBtcWalletAddress", err.Error(), err)
+		log.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
@@ -94,15 +106,22 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	span, log := u.StartSpan("BalanceETHLogic", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	// check eth balance:
-	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
+	log.SetData("input", input)
+	log.SetTag("ordWalletaddress", input.Address)
+
+	eth, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
 	if err != nil {
+		log.Error("ETHMint.FindEthWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
 	ethClient := eth.NewClient(ethClientWrap)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	//mint logic
+	eth, err = u.MintLogic(span, eth)
+	if err != nil {
+		log.Error("ETHMint.MintLogic", err.Error(), err)
+		return nil, err
+	}
 
 	balance, err := ethClient.GetBalance(ctx, ethEntity.OrdAddress)
 	if err != nil {
@@ -136,23 +155,71 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("MintLogicETH", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+	log.SetData("input", btcWallet)
+	btcWallet.IsMinted = true
+
+	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btcWallet.OrdAddress, btcWallet)
+	if err != nil {
+		log.Error("ETHMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return btcWallet, nil
+}
+
+func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, eth entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("BalanceETHLogic", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// check eth balance:
+	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
+	if err != nil {
+		return nil, err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
+
+	log.SetData("userWallet", btc.UserAddress)
+	log.SetData("ordWalletAddress", btc.OrdAddress)
+	if err != nil {
+		log.Error("BTCMint.Exec.balance", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("resp", resp)
+	balance := strings.ReplaceAll(resp.Stdout, "\n", "")
+	log.SetData("balance", balance)
+
+	//TODO logic of the checked balance here
+	if balance < btc.Amount {
+		err := errors.New("Not enough amount")
+		return nil, err
+	}
+
+	btc.IsConfirm = true
+	return &btc, nil
+}
+
+func (u Usecase) MintETHLogic(rootSpan opentracing.Span, eth *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("MintLogic", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
 	var err error
 
 	//if this was minted, skip it
-	if ethEntity.IsMinted {
-		err = errors.New("This btc was minted")
+	if eth.IsMinted {
+		err = errors.New("This eth was minted")
 		log.Error("ETHMint.Minted", err.Error(), err)
 		return nil, err
 	}
 
-	if !ethEntity.IsConfirm {
-		err = errors.New("This btc must be IsConfirmed")
+	if !eth.IsConfirm {
+		err = errors.New("This eth must be IsConfirmed")
 		log.Error("ETHMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("ethEntity", ethEntity)
-	return ethEntity, nil
+	log.SetData("eth", eth)
+	return eth, nil
 }
 
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
@@ -282,4 +349,66 @@ func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_servi
 
 	return resp, err
 
+}
+
+func convertBTCToETH(amount string) (string, error) {
+	amountMintBTC, err := strconv.ParseFloat(amount, 32)
+	if err != nil {
+		return "", err
+	}
+	btcPrice, err := getExternalPrice("BTC")
+	if err != nil {
+		return "", err
+	}
+	ethPrice, err := getExternalPrice("BTC")
+	if err != nil {
+		return "", err
+	}
+
+	btcToETH := btcPrice / ethPrice
+	amountMintETH := amountMintBTC * btcToETH
+	return fmt.Sprintf("%f", amountMintETH), nil
+}
+
+func getExternalPrice(tokenSymbol string) (float64, error) {
+	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
+	var price struct {
+		Symbol string `json:"symbol"`
+		Price  string `json:"price"`
+	}
+	var jsonErr struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+	}
+	retryTimes := 0
+retry:
+	retryTimes++
+	if retryTimes > 2 {
+		return 0, nil
+	}
+	tk := strings.ToUpper(tokenSymbol)
+	resp, err := http.Get(binancePriceURL + tk + "USDT")
+	if err != nil {
+		log.Println(err)
+		goto retry
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = json.Unmarshal(body, &price)
+	if err != nil {
+		err = json.Unmarshal(body, &jsonErr)
+		if err != nil {
+			log.Println(err)
+			goto retry
+		}
+	}
+	resp.Body.Close()
+	value, err := strconv.ParseFloat(price.Price, 32)
+	if err != nil {
+		log.Println("getExternalPrice", tokenSymbol, err)
+		return 0, nil
+	}
+	return value, nil
 }
