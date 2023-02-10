@@ -114,7 +114,7 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 }
 
 func (u Usecase) CheckbalanceWalletAddressV2(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
+	span, log := u.StartSpan("CheckbalanceWalletAddressV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
@@ -134,7 +134,7 @@ func (u Usecase) CheckbalanceWalletAddressV2(rootSpan opentracing.Span, input st
 }
 
 func (u Usecase) BTCMintV2(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("BTCMint", rootSpan)
+	span, log := u.StartSpan("BTCMintV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
@@ -214,7 +214,7 @@ func (u Usecase) ReadGCSFolderV2(rootSpan opentracing.Span, input structure.BctW
 }
 
 func (u Usecase) UpdateBtcMintedStatusV2(rootSpan opentracing.Span, btcWallet *entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("UpdateBtcMintedStatus", rootSpan)
+	span, log := u.StartSpan("UpdateBtcMintedStatusV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	log.SetData("input", btcWallet)
 
@@ -280,7 +280,7 @@ func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletA
 }
 
 func (u Usecase) BalanceLogicV2(rootSpan opentracing.Span, btc entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("BalanceLogic", rootSpan)
+	span, log := u.StartSpan("BalanceLogicV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 	balance, err := u.CheckBalanceV2(span, btc)
 	if err != nil {
@@ -436,7 +436,7 @@ func (u Usecase) WaitingForMintedV2(rootSpan opentracing.Span) ([]entity.BTCWall
 }
 
 func (u Usecase) SendTokenV2(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan("SendToken", rootSpan)
+	span, log := u.StartSpan("SendTokenV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData(utils.TOKEN_ID_TAG, inscriptionID)
