@@ -1,22 +1,22 @@
 package utils
 
 type QuerySort struct {
-	Sort int
-	SortBy string 
-} 
+	Sort   int
+	SortBy string
+}
 
 func ParseSort(key string) QuerySort {
 	sortParams := make(map[string]QuerySort)
-	sortParams["custom"] = QuerySort{Sort: -1, SortBy:  ""}
-	sortParams["newest"] = QuerySort{Sort: -1, SortBy:  "created_at"}
-	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy:  "priority"}
-	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy:  "priority"}
-	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy:  "price"}
-	sortParams["price-desc"] = QuerySort{Sort: -1, SortBy:  "price"}
-	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy:  "minted_time"}
-	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy:  "stats.price_int"}
-	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy:  "stats.price_int"}
-	
+	sortParams["custom"] = QuerySort{Sort: -1, SortBy: ""}
+	sortParams["newest"] = QuerySort{Sort: -1, SortBy: "created_at"}
+	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy: "priority"}
+	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy: "priority"}
+	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy: "price"}
+	sortParams["price-desc"] = QuerySort{Sort: -1, SortBy: "price"}
+	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy: "minted_time"}
+	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy: "stats.price_int"}
+	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy: "stats.price_int"}
+
 	sort, ok := sortParams[key]
 	if !ok {
 		return sortParams["custom"]
@@ -48,8 +48,8 @@ const (
 	MODIFIED_TOKEN      string = "modified-token-%s"
 	VERIFY_TOKEN        string = "verify-token-%s"
 
-	EMAIL_TAG          string = "email"
-	WALLET_ADDRESS_TAG string = "wallet_address"
+	EMAIL_TAG           string = "email"
+	WALLET_ADDRESS_TAG  string = "wallet_address"
 	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"
 
 	PubsubCreateDeviceType           string = "Device:PubsubCreateDeviceType"
@@ -60,9 +60,9 @@ const (
 	PUBSUB_REGISTER                  string = "WorkspaceGateway::PubsubRegister"
 	PUBSUB_FORGOT_PASSWORD           string = "Hybrid:ResetPasswordEmail"
 	NFT_CACHE_EXPIRED_TIME           int    = 86400
-	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30           //a month (second)
-	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360          //a year (second)
-	DB_CACHE_EXPIRED_TIME            int    = 86400                //a week
+	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30       //a month (second)
+	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360      //a year (second)
+	DB_CACHE_EXPIRED_TIME            int    = 86400            //a week
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
@@ -72,26 +72,27 @@ const (
 	KEY_AUTO_USERID      string = "user_id"
 	KEY_WALLET_ADDRESS   string = "wallet_address"
 	KEY_DELETED_AT       string = "deleted_at"
-	KEY_PROJECT_ID			 string = "project_id"
+	KEY_PROJECT_ID       string = "project_id"
 	KEY_LISTING_CONTRACT string = "collection_contract"
 
-	COLLECTION_USERS string = "users"
-	COLLECTION_TOKEN_URI string = "token_uri"
-	COLLECTION_FILES string = "files"
-	COLLECTION_PROJECTS string = "projects"
-	COLLECTION_CONFIGS string = "configs"
-	COLLECTION_CATEGORIES string = "categories"
-	COLLECTION_MARKETPLACE_LISTINGS string = "marketplace_listings"
-	COLLECTION_MARKETPLACE_OFFERS string = "marketplace_offers"
-	COLLECTION_DAO_PROPOSAL string = "proposals"
-	COLLECTION_DAO_PROPOSAL_DETAIL string = "proposal_detail"
+	COLLECTION_USERS                    string = "users"
+	COLLECTION_TOKEN_URI                string = "token_uri"
+	COLLECTION_FILES                    string = "files"
+	COLLECTION_PROJECTS                 string = "projects"
+	COLLECTION_CONFIGS                  string = "configs"
+	COLLECTION_CATEGORIES               string = "categories"
+	COLLECTION_MARKETPLACE_LISTINGS     string = "marketplace_listings"
+	COLLECTION_MARKETPLACE_OFFERS       string = "marketplace_offers"
+	COLLECTION_DAO_PROPOSAL             string = "proposals"
+	COLLECTION_DAO_PROPOSAL_DETAIL      string = "proposal_detail"
 	COLLECTION_LEADERBOARD_TOKEN_HOLDER string = "token_holders"
-	COLLECTION_DAO_PROPOSAL_VOTES string = "proposal_votes"
-	COLLECTION_BTC_WALLET_ADDRESS string = "btc_wallet_address"
+	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
+	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
+	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
-	EVM_NULL_ADDRESS string = "0x0000000000000000000000000000000000000000"
-	PUBSUB_TOKEN_THUMBNAIL string = "token_thumbnail"
+	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
+	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
 )
 
 type PubSubSendOtp struct {
