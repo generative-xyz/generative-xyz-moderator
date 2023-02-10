@@ -46,11 +46,11 @@ func (h ScronBTCHandler) StartServer() {
 			h.Usecase.WaitingForBalancing(span) // BTC
 		}()
 		go func() {
-			 h.Usecase.WaitingForETHBalancing(span) // ETH
+			h.Usecase.WaitingForETHBalancing(span) // ETH
 		}()
 
 		go func() {
-			 h.Usecase.WaitingForMinted(span)
+			h.Usecase.WaitingForMinted(span)
 
 		}()
 
@@ -61,6 +61,15 @@ func (h ScronBTCHandler) StartServer() {
 		}()
 		go func() {
 			// h.Usecase.BtcChecktListNft(span)
+
+		}()
+		go func() {
+			// h.Usecase.BtcCheckBuyingNft(span)
+
+		}()
+
+		go func() {
+			// h.Usecase.BtcSendBTCForBuyOrder(span)
 
 		}()
 
