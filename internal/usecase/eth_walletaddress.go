@@ -9,16 +9,20 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
@@ -99,6 +103,119 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	return walletAddress, nil
+}
+
+func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("ETHMint", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetData("input", input)
+	log.SetTag("ordWalletaddress", input.Address)
+
+	ethAddress, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
+	if err != nil {
+		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
+		return nil, err
+	}
+
+	//mint logic
+	ethAddress, err = u.MintLogicETH(span, ethAddress)
+	if err != nil {
+		log.Error("ETHMint.MintLogic", err.Error(), err)
+		return nil, err
+	}
+
+	// get data from project
+	p, err := u.Repo.FindProjectByTokenID(ethAddress.ProjectID)
+	if err != nil {
+		log.Error("ETHMint.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	//log.SetData("found.Project", p)
+	log.SetTag("projectID", p.TokenID)
+
+	//prepare data for mint
+	// - Get project.AnimationURL
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		log.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
+		return nil, err
+	}
+
+	// - Upload the Animation URL to GCS
+	animation := projectNftTokenUri.AnimationUrl
+	animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
+
+	now := time.Now().UTC().Unix()
+	uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
+	if err != nil {
+		log.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
+		return nil, err
+	}
+
+	fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	ethAddress.FileURI = fileURI
+
+	//TODO - enable this
+	spew.Dump(fileURI)
+	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+		WalletName: "ord_master",
+		FileUrl:    fileURI,
+		FeeRate:    15, //temp
+		DryRun:     false,
+	})
+
+	if err != nil {
+		log.Error("ETHMint.Mint", err.Error(), err)
+		return nil, err
+	}
+
+	tmpText := resp.Stdout
+	//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
+	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+	btcMintResp := &ord_service.MintStdoputRespose{}
+
+	bytes := []byte(jsonStr)
+	err = json.Unmarshal(bytes, btcMintResp)
+	if err != nil {
+		log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+		return nil, err
+	}
+
+	ethAddress.MintResponse = entity.MintStdoputResponse(*btcMintResp)
+	ethAddress, err = u.UpdateEthMintedStatus(span, ethAddress)
+	if err != nil {
+		log.Error("ETHMint.UpdateBtcMintedStatus", err.Error(), err)
+		return nil, err
+	}
+
+	return ethAddress, nil
+}
+
+func (u Usecase) ReadGCSFolderETH(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("ReadGCSFolderETH", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	log.SetData("input", input)
+	u.GCS.ReadFolder("btc-projects/project-1/")
+	return nil, nil
+}
+
+func (u Usecase) UpdateEthMintedStatus(rootSpan opentracing.Span, ethWallet *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("UpdateBtcMintedStatus", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	log.SetData("input", ethWallet)
+	ethWallet.IsMinted = true
+
+	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethWallet.OrdAddress, ethWallet)
+	if err != nil {
+		log.Error("BTCMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return ethWallet, nil
 }
 
 func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
@@ -205,8 +322,8 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 	return nil, nil
 }
 
-func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForMinted", rootSpan)
+func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("WaitingForETHMinted", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListETHAddress()
