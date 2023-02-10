@@ -2,12 +2,13 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -15,11 +16,9 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
-	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/eth"
-	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
@@ -106,22 +105,15 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	span, log := u.StartSpan("BalanceETHLogic", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	log.SetData("input", input)
-	log.SetTag("ordWalletaddress", input.Address)
-
-	eth, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
+	// check eth balance:
+	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
 	if err != nil {
-		log.Error("ETHMint.FindEthWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
 	ethClient := eth.NewClient(ethClientWrap)
 
-	//mint logic
-	eth, err = u.MintLogic(span, eth)
-	if err != nil {
-		log.Error("ETHMint.MintLogic", err.Error(), err)
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	balance, err := ethClient.GetBalance(ctx, ethEntity.OrdAddress)
 	if err != nil {
@@ -155,71 +147,23 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("MintLogicETH", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	log.SetData("input", btcWallet)
-	btcWallet.IsMinted = true
-
-	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btcWallet.OrdAddress, btcWallet)
-	if err != nil {
-		log.Error("ETHMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("updated", updated)
-	return btcWallet, nil
-}
-
-func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, eth entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
-	span, log := u.StartSpan("BalanceETHLogic", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	// check eth balance:
-	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
-	if err != nil {
-		return nil, err
-	}
-	ethClient := eth.NewClient(ethClientWrap)
-
-	log.SetData("userWallet", btc.UserAddress)
-	log.SetData("ordWalletAddress", btc.OrdAddress)
-	if err != nil {
-		log.Error("BTCMint.Exec.balance", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("resp", resp)
-	balance := strings.ReplaceAll(resp.Stdout, "\n", "")
-	log.SetData("balance", balance)
-
-	//TODO logic of the checked balance here
-	if balance < btc.Amount {
-		err := errors.New("Not enough amount")
-		return nil, err
-	}
-
-	btc.IsConfirm = true
-	return &btc, nil
-}
-
-func (u Usecase) MintETHLogic(rootSpan opentracing.Span, eth *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
-	span, log := u.StartSpan("MintLogic", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
 	var err error
 
 	//if this was minted, skip it
-	if eth.IsMinted {
-		err = errors.New("This eth was minted")
+	if ethEntity.IsMinted {
+		err = errors.New("This btc was minted")
 		log.Error("ETHMint.Minted", err.Error(), err)
 		return nil, err
 	}
 
-	if !eth.IsConfirm {
-		err = errors.New("This eth must be IsConfirmed")
+	if !ethEntity.IsConfirm {
+		err = errors.New("This btc must be IsConfirmed")
 		log.Error("ETHMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("eth", eth)
-	return eth, nil
+	log.SetData("ethEntity", ethEntity)
+	return ethEntity, nil
 }
 
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
@@ -329,27 +273,27 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.BTCWal
 	return nil, nil
 }
 
-func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+// func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
 
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			"ord_master",
-			"wallet",
-			"send",
-			receiveAddr,
-			inscriptionID,
-			"--fee-rate",
-			"15",
-		}})
+// 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+// 		Args: []string{
+// 			"--wallet",
+// 			"ord_master",
+// 			"wallet",
+// 			"send",
+// 			receiveAddr,
+// 			inscriptionID,
+// 			"--fee-rate",
+// 			"15",
+// 		}})
 
-	if err != nil {
-		return nil, err
-	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return resp, err
+// 	return resp, err
 
-}
+// }
 
 func convertBTCToETH(amount string) (string, error) {
 	amountMintBTC, err := strconv.ParseFloat(amount, 32)
