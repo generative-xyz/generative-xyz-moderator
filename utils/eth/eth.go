@@ -4,20 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"encoding/base64"
 	"fmt"
-	"log"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/light"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
@@ -140,162 +134,6 @@ func (c *Client) TransactionsByBlockNumber(ctx context.Context, number *big.Int)
 
 const ADDRESS_0 = "0x0000000000000000000000000000000000000000"
 
-func (c *Client) GetProof(txHash common.Hash) (*big.Int, string, uint, []string, error) {
-
-	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
-
-	chainID, err := c.GetClient().ChainID(ctx)
-
-	if err != nil {
-		return nil, "", 0, nil, err
-	}
-
-	ctx, _ = context.WithTimeout(context.Background(), 60*time.Second)
-	// Get tx content
-	txReceipt, err := c.TransactionReceipt(ctx, txHash)
-	if err != nil {
-		return nil, "", 0, nil, errors.Wrap(err, "c.TransactionReceipt")
-	}
-
-	// time.Sleep(time.Second * 1)
-
-	// return error when:
-	// 1. currentReceipt.Status != types.ReceiptStatusSuccessful
-	// 2. currentReceipt.BlockNumber + 15 <= result returns from api eth_blockNumber
-
-	blockHashStr := txReceipt.BlockHash.String()
-	txIndex := txReceipt.TransactionIndex
-	blockNumber := txReceipt.BlockNumber
-
-	ctx, _ = context.WithTimeout(context.Background(), 60*time.Second)
-	blockHeader, err := c.BlockByHash(ctx, common.HexToHash(blockHashStr))
-	if err != nil {
-		return nil, "", 0, nil, errors.Wrap(err, "c.BlockByHash")
-	}
-
-	siblingTxs := blockHeader.Transactions()
-
-	// Constructing the receipt trie (source: go-ethereum/core/types/derive_sha.go)
-	keybuf := new(bytes.Buffer)
-	receiptTrie := new(trie.Trie)
-	receipts := make([]*types.Receipt, 0)
-
-	for i, tx := range siblingTxs {
-
-		log.Println("sleep 300ms...")
-		time.Sleep(300 * time.Millisecond)
-
-		ctx, _ = context.WithTimeout(context.Background(), 60*time.Second)
-		siblingReceipt, err := c.TransactionReceipt(ctx, tx.Hash())
-
-		if err != nil {
-
-			log.Println("get proof err at TransactionReceipt: ", err)
-
-			// if polygon, ignore the last tx if not found!
-			if (chainID.Uint64() == 137 || chainID.Uint64() == 80001) && i == len(siblingTxs)-1 {
-				continue
-			}
-			return nil, "", 0, nil, errors.Wrap(err, "can't get tx vs TransactionReceipt: "+tx.Hash().String()+" at index "+fmt.Sprintf("%v", i))
-		}
-		if i == len(siblingTxs)-1 {
-			ctx, _ = context.WithTimeout(context.Background(), 60*time.Second)
-			txInfo, _, err := c.TransactionByHash(ctx, tx.Hash())
-
-			if err != nil {
-				return nil, "", 0, nil, err
-
-			}
-
-			s := types.NewLondonSigner(chainID)
-			from, err := s.Sender(txInfo)
-
-			if err != nil {
-				return nil, "", 0, nil, err
-			}
-
-			// if txinfo.To() == nil {
-			// 	return nil, "", 0, nil, errors.New("to nil")
-			// }
-
-			// log.Println("txinfo.To(): ", txinfo.To())
-			// log.Println("from: ", from)
-
-			// if txinfo.To().String() == ADDRESS_0 && from.String() == ADDRESS_0 {
-			// 	break
-			// }
-
-			if from.String() == ADDRESS_0 {
-				break
-			}
-		}
-		receipts = append(receipts, siblingReceipt)
-	}
-
-	receiptList := types.Receipts(receipts)
-	receiptTrie.Reset()
-
-	valueBuf := encodeBufferPool.Get().(*bytes.Buffer)
-	defer encodeBufferPool.Put(valueBuf)
-
-	// StackTrie requires values to be inserted in increasing hash order, which is not the
-	// order that `list` provides hashes in. This insertion sequence ensures that the
-	// order is correct.
-	var indexBuf []byte
-	for i := 1; i < receiptList.Len() && i <= 0x7f; i++ {
-		indexBuf = rlp.AppendUint64(indexBuf[:0], uint64(i))
-		value := c.encodeForDerive(receiptList, i, valueBuf)
-		receiptTrie.Update(indexBuf, value)
-	}
-	if receiptList.Len() > 0 {
-		indexBuf = rlp.AppendUint64(indexBuf[:0], 0)
-		value := c.encodeForDerive(receiptList, 0, valueBuf)
-		receiptTrie.Update(indexBuf, value)
-	}
-	for i := 0x80; i < receiptList.Len(); i++ {
-		indexBuf = rlp.AppendUint64(indexBuf[:0], uint64(i))
-		value := c.encodeForDerive(receiptList, i, valueBuf)
-		receiptTrie.Update(indexBuf, value)
-	}
-
-	trieHash := receiptTrie.Hash()
-	fmt.Println("trieHash", trieHash)
-
-	ethReceiptHash := types.DeriveSha(receiptList, trie.NewStackTrie(nil))
-	fmt.Println("ethReceiptHash", ethReceiptHash)
-
-	// Constructing the proof for the current receipt (source: go-ethereum/trie/proof.go)
-	proof := light.NewNodeSet()
-	keybuf.Reset()
-	rlp.Encode(keybuf, uint(txIndex))
-	err = receiptTrie.Prove(keybuf.Bytes(), 0, proof)
-	if err != nil {
-		return nil, "", 0, nil, err
-	}
-
-	nodeList := proof.NodeList()
-	encNodeList := make([]string, 0)
-	for _, node := range nodeList {
-		str := base64.StdEncoding.EncodeToString(node)
-		encNodeList = append(encNodeList, str)
-	}
-
-	ethHeader, err := c.getEthHeader(common.HexToHash(blockHashStr))
-	if err != nil {
-		fmt.Printf("Header Error +%v \n", err)
-		return nil, "", 0, nil, err
-	}
-
-	val, err := trie.VerifyProof(ethHeader.ReceiptHash, keybuf.Bytes(), proof)
-	if err != nil {
-		fmt.Printf("WARNING: ETH proof verification failed: %v", err)
-		return nil, "", 0, nil, err
-	}
-	fmt.Printf("Verify result: +%v", val)
-
-	return blockNumber, blockHashStr, uint(txIndex), encNodeList, nil
-}
-
 func (c *Client) getEthHeader(
 	blockHash common.Hash,
 ) (*types.Header, error) {
@@ -323,23 +161,6 @@ func (c *Client) encodeForDerive(list types.DerivableList, i int, buf *bytes.Buf
 	// StackTrie holds onto the values until Hash is called, so the values
 	// written to it must not alias.
 	return common.CopyBytes(buf.Bytes())
-}
-
-func (c *Client) GetNonceByPrivateKey(senderPrivKey string) (uint64, error) {
-	privateKey, err := crypto.HexToECDSA(senderPrivKey)
-	if err != nil {
-		return 0, errors.Wrap(err, "crypto.HexToECDSA")
-	}
-	publicKey := privateKey.Public()
-	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return 0, errors.Wrap(err, "s.ethClient.PendingNonceAt")
-	}
-
-	return nonce, nil
 }
 
 func (c *Client) GetNonce(txs []string, ctx context.Context) (*big.Int, error) {
@@ -499,7 +320,7 @@ func (c *Client) TransferFastest(senderPrivKey, receiverAddress string, amount *
 	}
 
 	gasLimit := uint64(100000)
-	logger, err := zap.NewProduction()
+
 	if err != nil {
 		return "", errors.Wrap(err, "zap.NewProduction")
 	}
@@ -614,4 +435,8 @@ func (c *Client) GetInfoErc20(txID string) (*big.Int, string, error) {
 	add := common.HexToAddress(hexAddress)
 
 	return intAmount, add.Hex(), nil
+}
+
+func ConvertWeiFromEther(val float64) *big.Int {
+	return new(big.Int).Mul(big.NewInt(int64(val*1e3)), big.NewInt(1e15))
 }
