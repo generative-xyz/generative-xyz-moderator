@@ -81,7 +81,7 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		"isConfirm": true,
+		"isConfirm": false,
 		"isSold":    false,
 	}
 
@@ -114,6 +114,16 @@ func (r Repository) RetrieveBTCNFTPendingBuyOrders() ([]entity.MarketplaceBTCBuy
 	}
 
 	return resp, nil
+}
+func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{{"id", model.ID}}
+	result, err := r.UpdateOne(model.TableName(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // func (r Repository) FindListingByOfferingID(offeringID string) (*entity.MarketplaceListings, error) {

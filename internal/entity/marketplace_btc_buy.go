@@ -12,7 +12,7 @@ type BuyStatus int
 
 const (
 	StatusBuy_Pending         BuyStatus = iota // 0: pending: waiting for fund
-	StatusBuy_ReceiveFund                      // 1: received fund from user (buyer)
+	StatusBuy_ReceivedFund                     // 1: received fund from user (buyer)
 	StatusBuy_SendingNFT                       // 2: sending nft
 	StatusBuy_SentNFT                          // 3: send nft success
 	StatusBuy_SendingBTC                       // 4: send nft to buyer success

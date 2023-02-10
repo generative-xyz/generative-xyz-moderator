@@ -21,6 +21,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		ServiceFee:     listingInfo.ServiceFee,
 		IsConfirm:      false,
 		IsSold:         false,
+		ExpiredAt:      time.Now().Add(time.Hour * 6),
 	}
 	holdOrdAddress := ""
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
@@ -36,7 +37,6 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		return "", err
 	}
 	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
-	//TODO: gen holdOrdAddress
 	listing.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {
 	// 	span, log := u.StartSpan("MakeOffer.sendMessage", rootSpan)
