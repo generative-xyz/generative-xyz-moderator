@@ -365,7 +365,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			continue
 		}
 		log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received BTC %d from [user_address] %s", item.OrdAddress, item.Balance, item.UserAddress))
+		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received BTC %s from [user_address] %s", item.OrdAddress, item.Balance, item.UserAddress))
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, newItem)
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
@@ -379,7 +379,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			continue
 		}
 
-		newItem.MintResponse = entity.MintStdoputResponse(*minResp) 
+		newItem.MintResponse = entity.MintStdoputResponse(*minResp)
 		newItem.IsMinted = true
 		updated, err = u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, newItem)
 		if err != nil {

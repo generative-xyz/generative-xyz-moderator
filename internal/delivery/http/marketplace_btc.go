@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -67,6 +66,7 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 			Name:          nft.Name,
 			Description:   nft.Description,
 			Price:         nft.Price,
+			OrderID:       nft.UUID,
 		}
 		result = append(result, nftInfo)
 	}
@@ -200,7 +200,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 }
 
 func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.btcMarketplaceCreateBuyOrder", r)
+	span, log := h.StartSpan("httpDelivery.ethGetReceiveWalletAddress", r)
 	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
@@ -213,27 +213,21 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		return
 	}
 
-	reqUsecase := &structure.EthWalletAddressData{}
-	err = copier.Copy(reqUsecase, reqBody)
+	reqUsecase := structure.MarketplaceBTC_BuyOrderInfo{
+		InscriptionID: reqBody.InscriptionID,
+		OrderID:       reqBody.OrderID,
+		BuyOrdAddress: reqBody.WalletAddress,
+	}
+
+	depositAddress, err := h.Usecase.BTCMarketplaceBuyOrder(span, reqUsecase)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	ethWallet, err := h.Usecase.CreateETHWalletAddress(span, *reqUsecase)
-	if err != nil {
-		log.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	log.SetData("ethWallet", ethWallet)
-	resp, err := h.EthWalletAddressToResp(ethWallet)
-	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
+	resp := response.CreateMarketplaceBTCListing{
+		ReceiveAddress: depositAddress,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
