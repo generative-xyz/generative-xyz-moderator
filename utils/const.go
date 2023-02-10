@@ -53,7 +53,7 @@ const (
 	PROJECT_ID_TAG          string = "projectID"
 	WALLET_ADDRESS_TAG string = "wallet_address"
 	ORD_WALLET_ADDRESS_TAG string = "ord_wallet_address"
-	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"
+	GEN_NFT_ADDRESS_TAG    string = "gen_nft_address"
 
 	PubsubCreateDeviceType           string = "Device:PubsubCreateDeviceType"
 	PubsubUpdateDeviceType           string = "Device:PubsubUpdateDeviceType"
@@ -93,6 +93,7 @@ const (
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
 	COLLECTION_BTC_WALLET_ADDRESS_V2       string = "btc_wallet_address_v2"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
+	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
