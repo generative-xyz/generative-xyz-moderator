@@ -1,13 +1,12 @@
 package crontab_btc
 
 import (
+	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
-
-	"gopkg.in/robfig/cron.v2"
 )
 
 type ScronBTCHandler struct {
@@ -33,7 +32,7 @@ func (h ScronBTCHandler) StartServer() {
 
 	//h.Usecase.WaitingForETHMinted(span)
 
-	h.Usecase.WaitingForETHBalancing(span)
+	//h.Usecase.WaitingForETHBalancing(span)
 
 	c := cron.New()
 	c.AddFunc("*/1 * * * *", func() {
@@ -44,20 +43,20 @@ func (h ScronBTCHandler) StartServer() {
 		defer log.ToSpan(span)
 
 		go func() {
-			// h.Usecase.WaitingForBalancing(span) // BTC
+			h.Usecase.WaitingForBalancing(span) // BTC
 		}()
 		go func() {
-			// h.Usecase.WaitingForETHBalancing(span) // ETH
+			 h.Usecase.WaitingForETHBalancing(span) // ETH
 		}()
 
 		go func() {
-			// h.Usecase.WaitingForMinted(span)
+			 h.Usecase.WaitingForMinted(span)
 
 		}()
 
 		//TODO mint with ETH payment?
 		go func() {
-			// h.Usecase.WaitingForETHMinted(span)
+			h.Usecase.WaitingForETHMinted(span)
 
 		}()
 

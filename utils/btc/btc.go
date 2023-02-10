@@ -1,16 +1,16 @@
 package btc
 
 import (
-	"github.com/incognito-core-libs/btcd/btcec"
-	"github.com/incognito-core-libs/btcd/chaincfg"
-	"github.com/incognito-core-libs/btcutil"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/pkg/errors"
 )
 
 // gen a segwit address:
 func GenerateAddressSegwit() (privKey, pubKey, addressSegwit string, err error) {
 
-	secret, err := btcec.NewPrivateKey(btcec.S256())
+	secret, err := btcec.NewPrivateKey()
 	if err != nil {
 		err = errors.Wrap(err, "c.GenerateAddressSegwit")
 		return
