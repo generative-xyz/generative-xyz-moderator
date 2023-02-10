@@ -111,7 +111,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 func (h *httpDelivery) EthWalletAddressToResp(input *entity.ETHWalletAddress) (*response.EthReceiveWalletResp, error) {
 	resp := &response.EthReceiveWalletResp{}
 	resp.Address = input.OrdAddress
-	resp.Pricce = input.Amount
+	resp.Price = input.Amount
 	return resp, nil
 }
 

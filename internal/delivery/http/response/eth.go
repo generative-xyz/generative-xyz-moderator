@@ -12,5 +12,5 @@ type EthWalletResp struct {
 
 type EthReceiveWalletResp struct {
 	Address string `json:"address"`
-	Pricce  string `bson:"price"`
+	Price  string `bson:"price"`
 }
