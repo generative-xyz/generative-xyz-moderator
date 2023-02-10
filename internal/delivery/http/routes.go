@@ -132,7 +132,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// eth.HandleFunc("/mint", h.mintETH).Methods("POST")
 
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
-	
+
+	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
+	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
+	marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
+	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
+	marketplaceBTC.HandleFunc("/nft-gen-order/{ID}", h.btcMarketplaceCreateBuyOrder).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
