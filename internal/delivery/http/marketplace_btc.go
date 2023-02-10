@@ -54,129 +54,106 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getProposalVotes", r)
+	span, log := h.StartSpan("btcMarketplaceListNFTs", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	vars := mux.Vars(r)
-	proposalID := vars["proposalID"]
-	span.SetTag("proposalID", proposalID)
-
-	baseF, err := h.BaseFilters(r)
+	nfts, err := h.Usecase.BTCMarketplaceListNFT(span)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	f := structure.FilterProposalVote{}
-	f.BaseFilters = *baseF
-
-	f.ProposalID = &proposalID
-	support := r.URL.Query().Get("support")
-	if support != "" {
-		supportInt, err := strconv.Atoi(support)
-		if err != nil {
-			log.Error("strconv.Atoi", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
+	result := []response.MarketplaceNFTDetail{}
+	for _, nft := range nfts {
+		nftInfo := response.MarketplaceNFTDetail{
+			InscriptionID: nft.InscriptionID,
+			Name:          nft.Name,
+			Description:   nft.Description,
+			Price:         nft.Price,
 		}
-		f.Support = &supportInt
+		result = append(result, nftInfo)
 	}
+	// baseF, err := h.BaseFilters(r)
+	// if err != nil {
+	// 	log.Error("BaseFilters", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	voter := r.URL.Query().Get("voter")
-	if voter != "" {
-		f.Voter = &voter
-	}
+	// h.Usecase.FindBtcNFTListingByNFTID()
+	// f := structure.FilterProposalVote{}
+	// f.BaseFilters = *baseF
 
-	paginationData, err := h.Usecase.GetProposalVotes(span, f)
-	if err != nil {
-		log.Error("h.Usecase.GetProposal", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// f.ProposalID = &proposalID
+	// support := r.URL.Query().Get("support")
+	// if support != "" {
+	// 	supportInt, err := strconv.Atoi(support)
+	// 	if err != nil {
+	// 		log.Error("strconv.Atoi", err.Error(), err)
+	// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 		return
+	// 	}
+	// 	f.Support = &supportInt
+	// }
 
-	pResp := []response.ProposalVotesResp{}
-	iPro := paginationData.Result
-	pro := iPro.([]entity.ProposalVotes)
-	for _, proItem := range pro {
+	// voter := r.URL.Query().Get("voter")
+	// if voter != "" {
+	// 	f.Voter = &voter
+	// }
 
-		tmp := &response.ProposalVotesResp{}
-		err := response.CopyEntityToRes(tmp, &proItem)
-		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
+	// paginationData, err := h.Usecase.GetProposalVotes(span, f)
+	// if err != nil {
+	// 	log.Error("h.Usecase.GetProposal", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-		pResp = append(pResp, *tmp)
-	}
+	// pResp := []response.ProposalVotesResp{}
+	// iPro := paginationData.Result
+	// pro := iPro.([]entity.ProposalVotes)
+	// for _, proItem := range pro {
 
-	//log.SetData("resp.Proposal", resp)
+	// 	tmp := &response.ProposalVotesResp{}
+	// 	err := response.CopyEntityToRes(tmp, &proItem)
+	// 	if err != nil {
+	// 		log.Error("copier.Copy", err.Error(), err)
+	// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 		return
+	// 	}
+
+	// 	pResp = append(pResp, *tmp)
+	// }
+
+	// //log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp), "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
 func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getProposalVotes", r)
+	span, log := h.StartSpan("btcMarketplaceNFTDetail", r)
 	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
-	proposalID := vars["proposalID"]
-	span.SetTag("proposalID", proposalID)
+	inscriptionID := vars["ID"]
+	span.SetTag("ID", inscriptionID)
 
-	baseF, err := h.BaseFilters(r)
+	nft, err := h.Usecase.Repo.FindBtcNFTListingByNFTID(inscriptionID)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	f := structure.FilterProposalVote{}
-	f.BaseFilters = *baseF
-
-	f.ProposalID = &proposalID
-	support := r.URL.Query().Get("support")
-	if support != "" {
-		supportInt, err := strconv.Atoi(support)
-		if err != nil {
-			log.Error("strconv.Atoi", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-		f.Support = &supportInt
+	nftInfo := response.MarketplaceNFTDetail{
+		InscriptionID: nft.InscriptionID,
+		Name:          nft.Name,
+		Description:   nft.Description,
+		Price:         nft.Price,
 	}
-
-	voter := r.URL.Query().Get("voter")
-	if voter != "" {
-		f.Voter = &voter
-	}
-
-	paginationData, err := h.Usecase.GetProposalVotes(span, f)
-	if err != nil {
-		log.Error("h.Usecase.GetProposal", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	pResp := []response.ProposalVotesResp{}
-	iPro := paginationData.Result
-	pro := iPro.([]entity.ProposalVotes)
-	for _, proItem := range pro {
-
-		tmp := &response.ProposalVotesResp{}
-		err := response.CopyEntityToRes(tmp, &proItem)
-		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-
-		pResp = append(pResp, *tmp)
-	}
-
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp), "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
 }
 
 func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *http.Request) {

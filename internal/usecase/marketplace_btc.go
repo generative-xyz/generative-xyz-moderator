@@ -1,0 +1,90 @@
+package usecase
+
+import (
+	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
+)
+
+func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (string, error) {
+	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	listing := entity.MarketplaceBTCListing{
+		SellOrdAddress: listingInfo.SellOrdAddress,
+		HoldOrdAddress: "",
+		Price:          listingInfo.Price,
+		ServiceFee:     listingInfo.ServiceFee,
+		IsConfirm:      false,
+		IsSold:         false,
+	}
+	holdOrdAddress := ""
+
+	//TODO: gen holdOrdAddress
+	listing.HoldOrdAddress = holdOrdAddress
+	// sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {
+	// 	span, log := u.StartSpan("MakeOffer.sendMessage", rootSpan)
+	// 	defer u.Tracer.FinishSpan(span, log)
+
+	// 	profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
+	// 	if err != nil {
+	// 		log.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
+	// 		return
+	// 	}
+
+	// 	token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
+	// 	if err != nil {
+	// 		log.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
+	// 		return
+	// 	}
+
+	// 	preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
+	// 	content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+	// 	title := fmt.Sprintf("User %s made offer with %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
+
+	// 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+	// 		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	// 	}
+
+	// }
+
+	log.SetTag("inscriptionID", listingInfo.InscriptionID)
+	// check if listing is created or not
+	err := u.Repo.CreateMarketplaceListingBTC(&listing)
+	if err != nil {
+		log.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
+		return "", err
+	}
+	return holdOrdAddress, nil
+}
+
+func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.MarketplaceBTCListing, error) {
+	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	result := []entity.MarketplaceBTCListing{}
+
+	test1 := entity.MarketplaceBTCListing{
+		InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
+		Name:          "Test1",
+		Description:   "test1 blah blah blah",
+		Price:         "1234567",
+	}
+
+	test2 := entity.MarketplaceBTCListing{
+		InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
+		Name:          "Test2",
+		Description:   "test2 blah blah blah",
+		Price:         "1234567",
+	}
+
+	test3 := entity.MarketplaceBTCListing{
+		InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
+		Name:          "Test3",
+		Description:   "test3 blah blah blah",
+		Price:         "1234567",
+	}
+
+	result = append(result, test1)
+	result = append(result, test2)
+	result = append(result, test3)
+	return result, nil
+}
