@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -150,28 +149,57 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, err
 	}
 
+	fileURI := ""
 	// - Upload the Animation URL to GCS
 	animation := projectNftTokenUri.AnimationUrl
-	animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
+	if animation != "" {
+		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
+	
 
-	now := time.Now().UTC().Unix()
-	uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
-	if err != nil {
-		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
-		return nil, err
+		now := time.Now().UTC().Unix()
+		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
+		if err != nil {
+			log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+			return nil, err
+		}
+	
+		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+		btc.FileURI = fileURI
+	
+	}else{
+		images := p.Images
+		if len(images) > 0 {
+			fileURI = images[0]
+			newImages := []string {}
+
+			//remove the project's image out of the current projects
+			for i := 1; i < len(images); i++ {
+				newImages = append(newImages, images[i])
+			}
+			p.Images = newImages
+			p.ProcessingImages = append(p.ProcessingImages, fileURI)
+
+			//update project
+			updated, err := u.Repo.UpdateProject(p.UUID, p)
+			if err != nil {
+				log.Error("BTCMint.UpdateProject", err.Error(), err)
+				return nil, err
+			}
+
+			log.SetData("updated", updated)
+		}
 	}
-
-	fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-	btc.FileURI = fileURI
-
-	//TODO - enable this
-	spew.Dump(fileURI)
-	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+	//end Animation URL
+	
+	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl:    fileURI,
 		FeeRate:    15, //temp
 		DryRun:     false,
-	})
+	}
+
+	log.SetData("mintData", mintData)
+	resp, err := u.OrdService.Mint(mintData)
 
 	if err != nil {
 		log.Error("BTCMint.Mint", err.Error(), err)
@@ -411,6 +439,8 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		// }
 
 		// log.SetData("fundResp", fundResp)
+
+		//TODO - 
 
 		item.MintResponse.IsSent = true
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)

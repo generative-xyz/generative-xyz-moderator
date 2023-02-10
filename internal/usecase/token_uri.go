@@ -603,25 +603,33 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	if err != nil {
 		return nil, err
 	}
+
 	nftTokenUri := project.NftTokenUri
-	base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
+	imageURI := ""
+	if nftTokenUri != "" {
+		base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
 
-	type Data struct {
-		AnimationUrl string `bson:"animation_url" json:"animation_url"`
+		type Data struct {
+			AnimationUrl string `bson:"animation_url" json:"animation_url"`
+		}
+	
+		var data Data
+	
+		err = helpers.Base64DecodeRaw(base64Data, &data)
+	
+		if err != nil {
+			return nil, err
+		}
+
+		imageURI = data.AnimationUrl
+	}else{
+
 	}
-
-	var data Data
-
-	err = helpers.Base64DecodeRaw(base64Data, &data)
-
-	if err != nil {
-		return nil, err
-	}
-
+	
 	tokenUri := entity.TokenUri{}
 	tokenUri.ContractAddress = project.ContractAddress
 	tokenUri.TokenID = tokenID
-	tokenUri.AnimationURL = data.AnimationUrl
+	tokenUri.AnimationURL = imageURI
 	blockNumberMinted := "31012412"
 	tokenUri.BlockNumberMinted = &blockNumberMinted
 	tokenUri.Creator = &project.CreatorProfile
