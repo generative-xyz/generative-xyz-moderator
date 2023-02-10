@@ -91,7 +91,7 @@ const (
 	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
-	COLLECTION_MARKETPLACE_BTC_LISTINGS string = "marketplace_btc_listings"
+	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"

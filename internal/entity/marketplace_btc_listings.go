@@ -23,7 +23,7 @@ type MarketplaceBTCBuyOrder struct {
 	InscriptionID string `bson:"inscriptionID"` // tokenID in btc
 }
 
-type MarketplaceBTCListings struct {
+type MarketplaceBTCListing struct {
 	BaseEntity     `bson:",inline"`
 	SellOrdAddress string `bson:"seller_ord_address"` //user's wallet address from FE
 	HoldOrdAddress string `bson:"hold_ord_address"`
@@ -31,19 +31,15 @@ type MarketplaceBTCListings struct {
 	ServiceFee     string `bson:"service_fee"`
 	IsConfirm      bool   `bson:"isConfirm"`
 	IsSold         bool   `bson:"isSold"`
-	MarketplaceBTCNftDetail
+	InscriptionID  string `bson:"inscriptionID"` // tokenID in btc
+	Name           string `bson:"name"`
+	Description    string `bson:"description"`
 }
 
-type MarketplaceBTCNftDetail struct {
-	InscriptionID string `bson:"inscriptionID"` // tokenID in btc
-	Name          string `bson:"name"`
-	Description   string `bson:"description"`
+func (u MarketplaceBTCListing) TableName() string {
+	return utils.COLLECTION_MARKETPLACE_BTC_LISTING
 }
 
-func (u MarketplaceBTCListings) TableName() string {
-	return utils.COLLECTION_MARKETPLACE_BTC_LISTINGS
-}
-
-func (u MarketplaceBTCListings) ToBson() (*bson.D, error) {
+func (u MarketplaceBTCListing) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
