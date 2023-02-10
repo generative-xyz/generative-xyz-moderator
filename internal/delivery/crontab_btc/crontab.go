@@ -44,19 +44,21 @@ func (h ScronBTCHandler) StartServer() {
 		defer log.ToSpan(span)
 
 		go func() {
-			h.Usecase.WaitingForBalancing(span) // BTC
+			// h.Usecase.WaitingForBalancing(span) // BTC
 		}()
 		go func() {
-			h.Usecase.WaitingForETHBalancing(span) // ETH
+			// h.Usecase.WaitingForETHBalancing(span) // ETH
 		}()
 
 		go func() {
-			h.Usecase.WaitingForMinted(span) // BTC
+			// h.Usecase.WaitingForMinted(span)
+
 		}()
 
 		//TODO mint with ETH payment?
 		go func() {
-			h.Usecase.WaitingForETHMinted(span) //ETH
+			// h.Usecase.WaitingForETHMinted(span)
+
 		}()
 
 	})

@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -18,15 +20,16 @@ import (
 
 type MarketplaceBTCListing struct {
 	BaseEntity     `bson:",inline"`
-	SellOrdAddress string `bson:"seller_ord_address"` //user's wallet address from FE
-	HoldOrdAddress string `bson:"hold_ord_address"`
-	Price          string `bson:"amount"`
-	ServiceFee     string `bson:"service_fee"`
-	IsConfirm      bool   `bson:"isConfirm"`
-	IsSold         bool   `bson:"isSold"`
-	InscriptionID  string `bson:"inscriptionID"` // tokenID in btc
-	Name           string `bson:"name"`
-	Description    string `bson:"description"`
+	SellOrdAddress string    `bson:"seller_ord_address"` //user's wallet address from FE
+	HoldOrdAddress string    `bson:"hold_ord_address"`
+	Price          string    `bson:"amount"`
+	ServiceFee     string    `bson:"service_fee"`
+	IsConfirm      bool      `bson:"isConfirm"`
+	IsSold         bool      `bson:"isSold"`
+	InscriptionID  string    `bson:"inscriptionID"` // tokenID in btc
+	Name           string    `bson:"name"`
+	Description    string    `bson:"description"`
+	ExpiredAt      time.Time `bson:"expired_at"`
 }
 
 func (u MarketplaceBTCListing) TableName() string {
