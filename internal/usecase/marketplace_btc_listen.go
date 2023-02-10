@@ -229,3 +229,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	}
 	return nil
 }
+
+func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
+	return nil
+}
