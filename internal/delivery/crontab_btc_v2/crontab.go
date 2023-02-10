@@ -29,42 +29,23 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 func (h ScronBTCHandler) StartServer() {
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 	defer span.Finish()
-	//h.Usecase.WaitingForETHBalancing(span) // ETH
-
-	//h.Usecase.WaitingForETHMinted(span)
-
-	h.Usecase.WaitingForETHBalancing(span)
 
 	c := cron.New()
-	c.AddFunc("*/1 * * * *", func() {
-		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
+	c.AddFunc("*/5 * * * *", func() {
+		span := h.Tracer.StartSpan("ScronBTCHandlerV2.DispatchCron.OneMinute")
 		defer span.Finish()
 
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
 		go func() {
-			// h.Usecase.WaitingForBalancing(span) // BTC
-		}()
-		go func() {
-			// h.Usecase.WaitingForETHBalancing(span) // ETH
+			h.Usecase.WaitingForBalancingV2(span) // BTC
 		}()
 
 		go func() {
-			// h.Usecase.WaitingForMinted(span)
+			h.Usecase.WaitingForMintedV2(span)
 
 		}()
-
-		//TODO mint with ETH payment?
-		go func() {
-			// h.Usecase.WaitingForETHMinted(span)
-
-		}()
-		go func() {
-			// h.Usecase.BtcChecktListNft(span)
-
-		}()
-
 	})
 
 	c.Start()

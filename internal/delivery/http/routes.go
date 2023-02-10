@@ -126,6 +126,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	btc.HandleFunc("/receive-address", h.btcGetReceiveWalletAddress).Methods("POST")
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
+	btcV2 := api.PathPrefix("/btc-v2").Subrouter()
+	btcV2.HandleFunc("/receive-address", h.btcGetReceiveWalletAddressV2).Methods("POST")
+
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
 	eth.HandleFunc("/receive-address", h.ethGetReceiveWalletAddress).Methods("POST")
@@ -137,7 +140,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
 	marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
-	marketplaceBTC.HandleFunc("/nft-gen-order/{ID}", h.btcMarketplaceCreateBuyOrder).Methods("POST")
+	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 
 	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
