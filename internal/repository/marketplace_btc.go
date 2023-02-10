@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -36,6 +38,36 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) RetrieveBTCNFTPendingListings() ([]entity.MarketplaceBTCListing, error) {
+	resp := []entity.MarketplaceBTCListing{}
+	filter := bson.M{
+		"isConfirm":  false,
+		"expired_at": bson.M{"$gte": time.Now().UTC().Format("2006-01-02 15:04:05")},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCListing) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{{"id", model.ID}}
+	result, err := r.UpdateOne(model.TableName(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
