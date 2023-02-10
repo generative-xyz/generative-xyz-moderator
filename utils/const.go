@@ -48,11 +48,11 @@ const (
 	MODIFIED_TOKEN      string = "modified-token-%s"
 	VERIFY_TOKEN        string = "verify-token-%s"
 
-	EMAIL_TAG          string = "email"
-	TOKEN_ID_TAG          string = "tokenID"
-	WALLET_ADDRESS_TAG string = "wallet_address"
+	EMAIL_TAG              string = "email"
+	TOKEN_ID_TAG           string = "tokenID"
+	WALLET_ADDRESS_TAG     string = "wallet_address"
 	ORD_WALLET_ADDRESS_TAG string = "ord_wallet_address"
-	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"
+	GEN_NFT_ADDRESS_TAG    string = "gen_nft_address"
 
 	PubsubCreateDeviceType           string = "Device:PubsubCreateDeviceType"
 	PubsubUpdateDeviceType           string = "Device:PubsubUpdateDeviceType"
@@ -91,6 +91,7 @@ const (
 	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
+	COLLECTION_MARKETPLACE_BTC_LISTINGS string = "marketplace_btc_listings"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
