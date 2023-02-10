@@ -248,7 +248,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
-		wallet.Balance =  balance.String()
+		wallet.Balance = balance.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
 		if err != nil {
 			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
@@ -334,14 +334,14 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 
 		log.SetData("btc.Minted", mintReps)
 
-		newItem.MintResponse = entity.MintStdoputResponse(*mintReps) 
+		newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
 		newItem.IsMinted = true
 		updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 			continue
 		}
-		
+
 	}
 
 	return nil, nil
@@ -407,8 +407,8 @@ func convertBTCToETH(amount string) (string, error) {
 	btcToETH := btcPrice / ethPrice
 
 	amountMintETH := amountMintBTC * btcToETH
-	amountMintETHInt := uint64(math.Floor(amountMintETH * math.Pow10(18)))
-	return fmt.Sprintf("%d", amountMintETHInt), nil
+	amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
+	return fmt.Sprintf("%.f", amountMintETH), nil
 }
 
 func getExternalPrice(tokenSymbol string) (float64, error) {

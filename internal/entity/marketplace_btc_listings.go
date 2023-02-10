@@ -16,13 +16,6 @@ import (
 // 	Finished           *bool
 // }
 
-type MarketplaceBTCBuyOrder struct {
-	BaseEntity    `bson:",inline"`
-	OrdAddress    string `bson:"ord_address"`
-	ItemID        string `bson:"item_id"`
-	InscriptionID string `bson:"inscriptionID"` // tokenID in btc
-}
-
 type MarketplaceBTCListing struct {
 	BaseEntity     `bson:",inline"`
 	SellOrdAddress string `bson:"seller_ord_address"` //user's wallet address from FE
