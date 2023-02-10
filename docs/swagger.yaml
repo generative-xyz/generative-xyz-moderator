@@ -1,5 +1,10 @@
 basePath: /rederinghub.io/v1
 definitions:
+  request.CheckBalanceAddressReq:
+    properties:
+      address:
+        type: string
+    type: object
   request.CreateBtcWalletAddressReq:
     properties:
       projectID:
@@ -23,12 +28,6 @@ definitions:
     required:
     - key
     - value
-    type: object
-  request.CreateMintReq:
-    properties:
-      address:
-        description: ord_walletaddress
-        type: string
     type: object
   request.CreateProjectReq:
     properties:
@@ -579,18 +578,18 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
-  /btc/mint:
+  /btc/balance:
     post:
       consumes:
       - application/json
       description: mint
       parameters:
-      - description: Mint request via ORD_WALLET_ADDRESS
+      - description: Check balance of ORD_WALLET_ADDRESS
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request.CreateMintReq'
+          $ref: '#/definitions/request.CheckBalanceAddressReq'
       produces:
       - application/json
       responses:

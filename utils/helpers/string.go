@@ -146,6 +146,7 @@ func ParseUintToUnixTime(number uint64) *time.Time {
 	return &t
 }
 
-func CreateBTCOrdWallet(userWallet string) string {
-	return fmt.Sprintf("%s_%s", "USER", userWallet)
+func CreateBTCOrdWallet( userWallet string) string {
+	now := time.Now().UTC().Unix()
+	return fmt.Sprintf("%s_%s_%d","USER", userWallet, now)
 }

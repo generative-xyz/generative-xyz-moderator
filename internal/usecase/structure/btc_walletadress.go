@@ -12,4 +12,8 @@ type FilterBctWalletAddresses struct {
 	BaseFilters
 }
 
+type CheckBalance struct {
+	Address string `json:"address"`
+}
+
 
