@@ -92,9 +92,9 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 }
 
 // check receive buy the nft:
-func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
+func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
-	span, log := u.StartSpan("BtcCheckBuyingNft", rootSpan)
+	span, log := u.StartSpan("BtcCheckReceivedBuyingNft", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	_, bs, err := u.buildBTCClient()
