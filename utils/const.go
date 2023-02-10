@@ -48,8 +48,10 @@ const (
 	MODIFIED_TOKEN      string = "modified-token-%s"
 	VERIFY_TOKEN        string = "verify-token-%s"
 
-	EMAIL_TAG           string = "email"
-	WALLET_ADDRESS_TAG  string = "wallet_address"
+	EMAIL_TAG          string = "email"
+	TOKEN_ID_TAG          string = "tokenID"
+	WALLET_ADDRESS_TAG string = "wallet_address"
+	ORD_WALLET_ADDRESS_TAG string = "ord_wallet_address"
 	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"
 
 	PubsubCreateDeviceType           string = "Device:PubsubCreateDeviceType"

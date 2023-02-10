@@ -67,24 +67,24 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 // @Tags BTC
 // @Accept  json
 // @Produce  json
-// @Param request body request.CreateMintReq true "Mint request via ORD_WALLET_ADDRESS"
+// @Param request body request.CheckBalanceAddressReq true "Check balance of ORD_WALLET_ADDRESS"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /btc/mint [POST]
-func (h *httpDelivery) mint(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.mint", r)
+// @Router /btc/balance [POST]
+func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.checkBalance", r)
 	defer h.Tracer.FinishSpan(span, log )
 	h.Response.SetLog(h.Tracer, span)
 
-	var reqBody request.CreateMintReq
+	var reqBody request.CheckBalanceAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		log.Error("httpDelivery.checkBalance.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	reqUsecase := &structure.BctMintData{}
+	reqUsecase := &structure.CheckBalance{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
@@ -92,9 +92,9 @@ func (h *httpDelivery) mint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	btcWallet, err := h.Usecase.BTCMint(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CheckbalanceWalletAddress(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateBTCWalletAddress", err.Error(), err)
+		log.Error("h.Usecase.CheckbalanceWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}

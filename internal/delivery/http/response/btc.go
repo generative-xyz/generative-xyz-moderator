@@ -8,6 +8,7 @@ type BctWalletResp struct {
 	FileURI string `json:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 	IsConfirm bool  `json:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID string `json:"inscriptionID"` // tokenID in ETH
+	Balance string `json:"balance"` // balance after check
 }
 
 type BctReceiveWalletResp struct {
