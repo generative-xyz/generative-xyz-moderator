@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -272,28 +270,6 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.BTCWal
 
 	return nil, nil
 }
-
-// func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-
-// 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-// 		Args: []string{
-// 			"--wallet",
-// 			"ord_master",
-// 			"wallet",
-// 			"send",
-// 			receiveAddr,
-// 			inscriptionID,
-// 			"--fee-rate",
-// 			"15",
-// 		}})
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return resp, err
-
-// }
 
 func convertBTCToETH(amount string) (string, error) {
 	amountMintBTC, err := strconv.ParseFloat(amount, 32)
