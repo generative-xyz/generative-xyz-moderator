@@ -3,12 +3,14 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/btc"
 )
 
@@ -124,6 +126,32 @@ func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 		}
 
 		if balance.Uint64() == 0 {
+			continue
+		}
+
+		// get amount nft:
+		nftListing, err := u.Repo.FindBtcNFTListingByNFTID(item.InscriptionID)
+		if err != nil {
+			fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - with err: %v", item.InscriptionID, err)
+			continue
+		}
+		if nftListing == nil {
+			fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - item nil", item.InscriptionID)
+			continue
+		}
+
+		amount, _ := big.NewInt(0).SetString(nftListing.Price, 10)
+
+		if r := balance.Cmp(amount); r == -1 {
+			err := errors.New("Not enough amount")
+			return err
+
+		}
+
+		item.Status = entity.StatusBuy_ReceivedFund
+		_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+		if err != nil {
+			fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
 			continue
 		}
 
