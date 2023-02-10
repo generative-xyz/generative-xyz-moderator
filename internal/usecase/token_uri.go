@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"rederinghub.io/external/nfts"
@@ -44,17 +45,17 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	
 	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
 	
-	if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail: token.Thumbnail,
-			Traits:  token.ParsedAttributes,
-			TraitsStr: token.ParsedAttributesStr,
-			CapturedAt: token.ThumbnailCapturedAt,
-			IsUpdated: false,
-		}
-		return resp, nil
-	}
+	// if token.ThumbnailCapturedAt != nil &&  token.ParsedImage != nil {
+	// 	resp = &structure.TokenAnimationURI{
+	// 		ParsedImage: *token.ParsedImage,
+	// 		Thumbnail: token.Thumbnail,
+	// 		Traits:  token.ParsedAttributes,
+	// 		TraitsStr: token.ParsedAttributesStr,
+	// 		CapturedAt: token.ThumbnailCapturedAt,
+	// 		IsUpdated: false,
+	// 	}
+	// 	return resp, nil
+	// }
 
 	log.SetTag("tokenID", token.TokenID)
 	log.SetTag("contractAddress", token.ContractAddress)
@@ -66,7 +67,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	}
 	
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
+		// chromedp.ExecPath("google-chrome"),
         chromedp.Flag("headless", eCH), 
         chromedp.Flag("disable-gpu", false), 
         chromedp.Flag("no-first-run", true), 
@@ -666,4 +667,43 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	}
 
 	return pTokenUri, nil
+}
+
+func (u Usecase) GogoToken(rootSpan opentracing.Span) {
+	span, log := u.StartSpan("GogoToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	tokens := []entity.TokenUri{}
+	cursor, err := u.Repo.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), bson.M{"project_id": "1000001"})
+	if err != nil {
+		return
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return
+	}
+
+	for _, token := range tokens {
+		fmt.Printf("Start token %s", token.TokenID)
+		_token := token
+		resp, err := u.RunAndCap(span, &_token, 10) 
+		if err != nil {
+			fmt.Println("error happaned")
+		}
+		if resp.IsUpdated {
+			fmt.Printf("Update token %s", token.TokenID)
+			token.ParsedImage = &resp.ParsedImage
+			token.Thumbnail = resp.Thumbnail
+			token.ParsedAttributes = resp.Traits
+			token.ParsedAttributesStr = resp.TraitsStr
+			token.ThumbnailCapturedAt = resp.CapturedAt
+
+			updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, &token)
+			if err != nil {
+				log.Error("PubSubCreateTokenThumbnai.UpdateOrInsertTokenUri", err.Error(), err)
+			}
+			log.SetData("updated", updated)
+			fmt.Printf("Done token %s", token.TokenID)
+		}
+	}
+
 }
