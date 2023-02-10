@@ -8,6 +8,12 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type TokenPaidType string
+const (
+	ETH TokenPaidType = "eth"
+	BIT TokenPaidType = "bit"
+)
+
 type TokenUriAttrFilter struct {
 	TraitType string
 	Values []string
@@ -66,6 +72,7 @@ type TokenUri struct {
 	Owner *Users `bson:"owner"`
 	Project *Projects `bson:"project"`
 	Creator *Users `bson:"creator"`
+	PaidType TokenPaidType `bson:"paidType"` 
 }
 
 type TokenUriAttr struct {

@@ -451,7 +451,7 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		log.SetData("updated", updated)
 
 		//TODO: - create entity.TokenURI
-		_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription)
+		_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
 			continue
