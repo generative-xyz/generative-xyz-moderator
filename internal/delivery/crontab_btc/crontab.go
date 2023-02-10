@@ -10,23 +10,21 @@ import (
 	"gopkg.in/robfig/cron.v2"
 )
 
-
 type ScronBTCHandler struct {
-	Logger   logger.Ilogger
-	Tracer   tracer.ITracer
-	Cache    redis.IRedisCache
-	Usecase    usecase.Usecase
+	Logger  logger.Ilogger
+	Tracer  tracer.ITracer
+	Cache   redis.IRedisCache
+	Usecase usecase.Usecase
 }
 
 func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHandler {
 	return &ScronBTCHandler{
-		Logger: global.Logger,
-		Tracer: global.Tracer,
-		Cache: global.Cache,
+		Logger:  global.Logger,
+		Tracer:  global.Tracer,
+		Cache:   global.Cache,
 		Usecase: uc,
 	}
 }
-
 
 func (h ScronBTCHandler) StartServer() {
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
@@ -40,15 +38,20 @@ func (h ScronBTCHandler) StartServer() {
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-		go func(){
-			h.Usecase.WaitingForBalancing(span)
+		go func() {
+			h.Usecase.WaitingForBalancing(span) // BTC
 		}()
-		
-		go func(){
+		go func() {
+			h.Usecase.WaitingForETHBalancing(span) // ETH
+		}()
+
+		go func() {
 			h.Usecase.WaitingForMinted(span)
-			
+
 		}()
-	
+
+		//TODO mint with ETH payment?
+
 	})
 
 	c.Start()
