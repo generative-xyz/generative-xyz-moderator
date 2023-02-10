@@ -110,17 +110,27 @@ func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input stru
 	return blance, nil
 }
 
-func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddress, error) {
+func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData) (*ord_service.MintStdoputRespose, error) {
 	span, log := u.StartSpan("BTCMint", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, input.Address)
+	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
-		return nil, err
+
+		btc = &entity.BTCWalletAddress{}
+		eth, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
+		if err != nil {
+			return nil, err
+		}
+
+		err = copier.Copy(btc, eth)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//mint logic
@@ -152,14 +162,12 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	animation := projectNftTokenUri.AnimationUrl
 	if animation != "" {
 		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
-
 		now := time.Now().UTC().Unix()
 		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
 		if err != nil {
 			log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
 			return nil, err
 		}
-
 		btc.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 
 	} else {
@@ -167,25 +175,28 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		if len(images) > 0 {
 			btc.FileURI = images[0]
 			newImages := []string{}
-
+			processingImages := p.ProcessingImages
 			//remove the project's image out of the current projects
 			for i := 1; i < len(images); i++ {
 				newImages = append(newImages, images[i])
 			}
+			processingImages = append(p.ProcessingImages, btc.FileURI)
 			p.Images = newImages
-			p.ProcessingImages = append(p.ProcessingImages, btc.FileURI)
-
-			//update project
+			p.ProcessingImages = processingImages
 			updated, err := u.Repo.UpdateProject(p.UUID, p)
 			if err != nil {
 				log.Error("BTCMint.UpdateProject", err.Error(), err)
 				return nil, err
 			}
-
 			log.SetData("updated", updated)
 		}
 	}
 	//end Animation URL
+	if btc.FileURI == "" {
+		err = errors.New("There is no file uri to mint")
+		log.Error("fileURI.empty", err.Error(), err)
+		return nil, err
+	}
 
 	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
@@ -215,14 +226,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, err
 	}
 
-	btc.MintResponse = entity.MintStdoputResponse(*btcMintResp)
-	btc, err = u.UpdateBtcMintedStatus(span, btc)
-	if err != nil {
-		log.Error("BTCMint.UpdateBtcMintedStatus", err.Error(), err)
-		return nil, err
-	}
-
-	return btc, nil
+	return btcMintResp, nil
 }
 
 func (u Usecase) ReadGCSFolder(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
@@ -369,13 +373,20 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 		}
 		log.SetData("updated", updated)
 
-		btc, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+		minResp, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
 			continue
 		}
 
-		log.SetData("btc.Minted", btc)
+		newItem.MintResponse = entity.MintStdoputResponse(*minResp) 
+		newItem.IsMinted = true
+		updated, err = u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, newItem)
+		if err != nil {
+			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+			continue
+		}
+		log.SetData("btc.Minted", minResp)
 	}
 
 	return nil, nil

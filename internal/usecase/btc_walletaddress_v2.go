@@ -205,7 +205,7 @@ func (u Usecase) BTCMintV2(rootSpan opentracing.Span, input structure.BctMintDat
 }
 
 func (u Usecase) ReadGCSFolderV2(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("ReadGCSFolder", rootSpan)
+	span, log := u.StartSpan("ReadGCSFolderV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	log.SetData("input", input)
 	u.GCS.ReadFolder("btc-projects/project-1/")
@@ -297,7 +297,7 @@ func (u Usecase) BalanceLogicV2(rootSpan opentracing.Span, btc entity.BTCWalletA
 }
 
 func (u Usecase) MintLogicV2(rootSpan opentracing.Span, btc *entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("MintLogic", rootSpan)
+	span, log := u.StartSpan("MintLogicV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	var err error
 
@@ -322,7 +322,7 @@ func (u Usecase) MintLogicV2(rootSpan opentracing.Span, btc *entity.BTCWalletAdd
 }
 
 func (u Usecase) WaitingForBalancingV2(rootSpan opentracing.Span) ([]entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("WaitingForBalancing", rootSpan)
+	span, log := u.StartSpan("WaitingForBalancingV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListProcessingWalletAddressV2()
