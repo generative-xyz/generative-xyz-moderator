@@ -142,13 +142,25 @@ func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 
 		amount, _ := big.NewInt(0).SetString(nftListing.Price, 10)
 
+		if amount.Uint64() == 0 {
+			err := errors.New("balance is zero")
+			fmt.Printf("buy order id: %s err: %v", item.InscriptionID, err)
+			continue
+		}
+
 		if r := balance.Cmp(amount); r == -1 {
 			err := errors.New("Not enough amount")
-			return err
-
+			fmt.Printf("buy order id: %s err: %v", item.InscriptionID, err)
+			item.Status = entity.StatusBuy_NotEnoughBalance
+			u.Repo.UpdateBTCNFTBuyOrder(&item)
+			continue
 		}
 
 		item.Status = entity.StatusBuy_ReceivedFund
+
+		log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
+		u.Notify(rootSpan, "WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+
 		_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 		if err != nil {
 			fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
