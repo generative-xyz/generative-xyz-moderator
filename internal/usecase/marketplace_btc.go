@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"strings"
+	"time"
 
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -121,6 +122,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		InscriptionID: orderInfo.InscriptionID,
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
+		ExpiredAt:     time.Now().Add(time.Hour * 6),
 	}
 
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
