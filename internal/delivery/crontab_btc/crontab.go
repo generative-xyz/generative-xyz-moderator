@@ -51,6 +51,10 @@ func (h ScronBTCHandler) StartServer() {
 		}()
 
 		//TODO mint with ETH payment?
+		go func() {
+			h.Usecase.WaitingForETHMinted(span)
+
+		}()
 
 	})
 
