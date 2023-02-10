@@ -491,7 +491,8 @@ func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscri
 	span, log := u.StartSpan("SendToken", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	log.SetData(utils.TOKEN_ID_TAG, inscriptionID)
+	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
 	sendTokenReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
