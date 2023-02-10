@@ -301,6 +301,40 @@
                 }
             }
         },
+        "/btc-v2/receive-address": {
+            "post": {
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC"
+                ],
+                "summary": "BTC Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a btc wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBtcWalletAddressReqV2"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/btc/balance": {
             "post": {
                 "description": "mint",
@@ -964,6 +998,40 @@
                         "description": "page start with 1",
                         "name": "page",
                         "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/eth/receive-address": {
+            "post": {
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH"
+                ],
+                "summary": "ETH Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a eth wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateEthWalletAddressReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2627,6 +2695,23 @@
                 }
             }
         },
+        "request.CreateBtcWalletAddressReqV2": {
+            "type": "object",
+            "properties": {
+                "fee_rate": {
+                    "type": "integer"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateCategoryRequest": {
             "type": "object",
             "required": [
@@ -2649,6 +2734,17 @@
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateEthWalletAddressReq": {
+            "type": "object",
+            "properties": {
+                "projectID": {
+                    "type": "string"
+                },
+                "walletAddress": {
                     "type": "string"
                 }
             }
@@ -2981,6 +3077,9 @@
                 "blockNumberMinted": {
                     "type": "string"
                 },
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
+                },
                 "completeTime": {
                     "type": "integer"
                 },
@@ -3031,6 +3130,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
                 },
                 "priority": {
                     "type": "integer"

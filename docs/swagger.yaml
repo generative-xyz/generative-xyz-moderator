@@ -12,6 +12,17 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.CreateBtcWalletAddressReqV2:
+    properties:
+      fee_rate:
+        type: integer
+      file:
+        type: string
+      name:
+        type: string
+      walletAddress:
+        type: string
+    type: object
   request.CreateCategoryRequest:
     properties:
       name:
@@ -28,6 +39,13 @@ definitions:
     required:
     - key
     - value
+    type: object
+  request.CreateEthWalletAddressReq:
+    properties:
+      projectID:
+        type: string
+      walletAddress:
+        type: string
     type: object
   request.CreateProjectReq:
     properties:
@@ -242,6 +260,8 @@ definitions:
     properties:
       blockNumberMinted:
         type: string
+      closeMintUnixTimestamp:
+        type: integer
       completeTime:
         type: integer
       contractAddress:
@@ -276,6 +296,8 @@ definitions:
         $ref: '#/definitions/response.NftMintingDetail'
       name:
         type: string
+      openMintUnixTimestamp:
+        type: integer
       priority:
         type: integer
       projectURI:
@@ -578,6 +600,28 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
+  /btc-v2/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a btc wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBtcWalletAddressReqV2'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: BTC Generate receive wallet address
+      tags:
+      - BTC
   /btc/balance:
     post:
       consumes:
@@ -996,6 +1040,28 @@ paths:
       summary: DAO proposal's votes
       tags:
       - DAO
+  /eth/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateEthWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: ETH Generate receive wallet address
+      tags:
+      - ETH
   /files:
     post:
       description: Upload file

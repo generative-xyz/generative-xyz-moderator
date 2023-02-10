@@ -19,6 +19,14 @@ func (r Repository) CreateMarketplaceListingBTC(listing *entity.MarketplaceBTCLi
 	return nil
 }
 
+func (r Repository) CreateMarketplaceBuyOrder(order *entity.MarketplaceBTCBuyOrder) error {
+	err := r.InsertOne(order.TableName(), order)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
