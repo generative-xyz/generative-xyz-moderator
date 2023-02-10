@@ -244,6 +244,20 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		return nil, err
 	}
 
+	go func(rootSpan opentracing.Span, wallet *entity.ETHWalletAddress, balance *big.Int) {
+		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		wallet.Amount =  balance.String()
+		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
+		if err != nil {
+			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+			return
+		}
+		log.SetData("updated", updated)
+
+	}(span, &ethEntity, balance)
+
 	// check total amount = received amount?
 	amount, _ := big.NewInt(0).SetString(ethEntity.Amount, 10)
 
