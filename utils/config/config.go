@@ -35,6 +35,11 @@ type Config struct {
 	Slack                 slack.Config
 	Crontab               CronTabConfig
 	GENToken              GENToken
+
+	BTC_RPCUSER     string
+	BTC_RPCPASSWORD string
+	BTC_FULLNODE    string
+	BlockcypherAPI  string
 }
 
 type MQTTConfig struct {
@@ -260,6 +265,12 @@ func NewConfig() (*Config, error) {
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
 		},
+
+		BTC_RPCUSER:     os.Getenv("BTC_RPCUSER"),
+		BTC_RPCPASSWORD: os.Getenv("BTC_RPCPASSWORD"),
+		BTC_FULLNODE:    os.Getenv("BTC_FULLNODE"),
+
+		BlockcypherAPI: os.Getenv("BlockcypherAPI"),
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")

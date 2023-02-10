@@ -7,6 +7,7 @@ import (
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/btc"
 )
 
 func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (string, error) {
@@ -121,21 +122,15 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
 	}
-	holdOrdAddress := ""
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			"ord_master",
-			"wallet",
-			"receive",
-		},
-	})
+
+	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
 		return "", err
 	}
-	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
-	//TODO: gen holdOrdAddress
+	order.SegwitAddress = addressSegwit
+	order.SegwitKey = privKey
+
 	// order.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {
 	// 	span, log := u.StartSpan("MakeOffer.sendMessage", rootSpan)
@@ -171,5 +166,5 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		log.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
 		return "", err
 	}
-	return holdOrdAddress, nil
+	return addressSegwit, nil
 }
