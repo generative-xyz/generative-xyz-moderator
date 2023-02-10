@@ -18,6 +18,7 @@ type BTCWalletAddress struct {
 	IsMinted bool  `bson:"isMinted"`//default: false. If InscriptionID exist which means token is minted, it's true
 	ProjectID string  `bson:"projectID"`//projectID
 	MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
+	Balance string `bson:"balance"` // balance after check
 }
 
 type MintStdoputResponse struct {

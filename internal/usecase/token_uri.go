@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -75,7 +74,6 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
     cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	spew.Dump(token.AnimationURL)
 	imageURL := token.AnimationURL
 	htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
 	

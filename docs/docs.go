@@ -316,7 +316,7 @@ var doc = `{
                 }
             }
         },
-        "/btc/mint": {
+        "/btc/balance": {
             "post": {
                 "description": "mint",
                 "consumes": [
@@ -331,12 +331,12 @@ var doc = `{
                 "summary": "BTC mint",
                 "parameters": [
                     {
-                        "description": "Mint request via ORD_WALLET_ADDRESS",
+                        "description": "Check balance of ORD_WALLET_ADDRESS",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.CreateMintReq"
+                            "$ref": "#/definitions/request.CheckBalanceAddressReq"
                         }
                     }
                 ],
@@ -2623,6 +2623,14 @@ var doc = `{
         }
     },
     "definitions": {
+        "request.CheckBalanceAddressReq": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateBtcWalletAddressReq": {
             "type": "object",
             "properties": {
@@ -2656,15 +2664,6 @@ var doc = `{
                     "type": "string"
                 },
                 "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "request.CreateMintReq": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "description": "ord_walletaddress",
                     "type": "string"
                 }
             }
