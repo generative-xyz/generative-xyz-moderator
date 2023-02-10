@@ -317,6 +317,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"thumbnail", 1},
 		{"mintFee", 1},
 		{"openMintUnixTimestamp", 1},
+		{"closeMintUnixTimestamp", 1},
 		{"genNFTAddr", 1},
 		{"mintTokenAddress", 1},
 		{"minted_time", 1},

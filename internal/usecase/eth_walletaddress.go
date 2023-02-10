@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"math/big"
 	"net/http"
 	"os"
@@ -390,25 +389,27 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 }
 
 func convertBTCToETH(amount string) (string, error) {
-	amountMintBTC, err := strconv.ParseFloat(amount, 32)
-	if err != nil {
-		return "", err
-	}
-	btcPrice, err := getExternalPrice("BTC")
-	if err != nil {
-		return "", err
-	}
-	ethPrice, err := getExternalPrice("ETH")
-	if err != nil {
-		return "", err
-	}
-	amountMintBTC = amountMintBTC / math.Pow10(8)
+	// amountMintBTC, err := strconv.ParseFloat(amount, 32)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// btcPrice, err := getExternalPrice("BTC")
+	// if err != nil {
+	// 	return "", err
+	// }
+	// ethPrice, err := getExternalPrice("ETH")
+	// if err != nil {
+	// 	return "", err
+	// }
+	// amountMintBTC = amountMintBTC / math.Pow10(8)
 
-	btcToETH := btcPrice / ethPrice
+	// btcToETH := btcPrice / ethPrice
 
-	amountMintETH := amountMintBTC * btcToETH
-	amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
-	return fmt.Sprintf("%.f", amountMintETH), nil
+	// amountMintETH := amountMintBTC * btcToETH
+	// amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
+	// return fmt.Sprintf("%.f", amountMintETH), nil
+
+	return fmt.Sprintf("1500000000000000000"), nil
 }
 
 func getExternalPrice(tokenSymbol string) (float64, error) {
