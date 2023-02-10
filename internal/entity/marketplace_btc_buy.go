@@ -11,6 +11,8 @@ type MarketplaceBTCBuyOrder struct {
 	OrdAddress    string `bson:"ord_address"`
 	ItemID        string `bson:"item_id"`
 	InscriptionID string `bson:"inscriptionID"` // tokenID in btc
+	SegwitAddress string `bson:"segwit_address"`
+	SegwitKey     string `bson:"segwit_key"`
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {
