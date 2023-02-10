@@ -318,7 +318,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			continue
 		}
 		log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received BTC %d from [user_address] %s", item.OrdAddress, item.Balance, item.UserAddress))
+		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
