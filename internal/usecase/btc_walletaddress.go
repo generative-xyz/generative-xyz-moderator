@@ -148,7 +148,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, err
 	}
 
-	fileURI := ""
+
 	// - Upload the Animation URL to GCS
 	animation := projectNftTokenUri.AnimationUrl
 	if animation != "" {
@@ -161,13 +161,13 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 			return nil, err
 		}
 
-		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-		btc.FileURI = fileURI
+		btc.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	
 
 	} else {
 		images := p.Images
 		if len(images) > 0 {
-			fileURI = images[0]
+			btc.FileURI = images[0]
 			newImages := []string{}
 
 			//remove the project's image out of the current projects
@@ -175,7 +175,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 				newImages = append(newImages, images[i])
 			}
 			p.Images = newImages
-			p.ProcessingImages = append(p.ProcessingImages, fileURI)
+			p.ProcessingImages = append(p.ProcessingImages, btc.FileURI)
 
 			//update project
 			updated, err := u.Repo.UpdateProject(p.UUID, p)
@@ -191,7 +191,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
-		FileUrl:    fileURI,
+		FileUrl:    btc.FileURI,
 		FeeRate:    15, //temp
 		DryRun:     false,
 	}
