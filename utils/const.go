@@ -50,6 +50,7 @@ const (
 
 	EMAIL_TAG          string = "email"
 	TOKEN_ID_TAG          string = "tokenID"
+	PROJECT_ID_TAG          string = "projectID"
 	WALLET_ADDRESS_TAG string = "wallet_address"
 	ORD_WALLET_ADDRESS_TAG string = "ord_wallet_address"
 	GEN_NFT_ADDRESS_TAG string = "gen_nft_address"

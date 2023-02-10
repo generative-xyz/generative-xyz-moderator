@@ -595,16 +595,39 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, tokenID string) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
+	
 	span, log := u.StartSpan("CreateBTCTokenURI", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	// find project by projectID
+	log.SetData(utils.TOKEN_ID_TAG, tokenID)
+	log.SetData(utils.PROJECT_ID_TAG, projectID)
 	project, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
+		log.Error("CreateBTCTokenURI.Project", err.Error(), err)
 		return nil, err
 	}
 
+	tokenUri := entity.TokenUri{}
+	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.TokenID = tokenID
+	blockNumberMinted := "31012412"
+	tokenUri.BlockNumberMinted = &blockNumberMinted
+	tokenUri.Creator = &project.CreatorProfile
+	tokenUri.CreatorAddr = project.CreatorAddrr
+	tokenUri.Description = project.Description
+	tokenUri.GenNFTAddr = project.GenNFTAddr
+	
+	mintedTime := time.Now()
+	tokenUri.MintedTime = &mintedTime
+	tokenUri.Name = tokenID
+	tokenUri.Project = project
+	tokenUri.ProjectID = project.TokenID
+	tokenUri.ProjectIDInt = project.TokenIDInt
+	tokenUri.PaidType = paidType
+
 	nftTokenUri := project.NftTokenUri
+	
 	imageURI := ""
 	if nftTokenUri != "" {
 		base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
@@ -623,28 +646,16 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 
 		imageURI = data.AnimationUrl
 	}else{
-
+		now := time.Now().UTC()
+		imageURI = mintedURL
+		tokenUri.Thumbnail = mintedURL
+		tokenUri.Image = mintedURL
+		tokenUri.ParsedImage = &mintedURL
+		tokenUri.ThumbnailCapturedAt = &now
 	}
-	
-	tokenUri := entity.TokenUri{}
-	tokenUri.ContractAddress = project.ContractAddress
-	tokenUri.TokenID = tokenID
-	tokenUri.AnimationURL = imageURI
-	blockNumberMinted := "31012412"
-	tokenUri.BlockNumberMinted = &blockNumberMinted
-	tokenUri.Creator = &project.CreatorProfile
-	tokenUri.CreatorAddr = project.CreatorAddrr
-	tokenUri.Description = project.Description
-	tokenUri.GenNFTAddr = project.GenNFTAddr
-	//tokenUri.Image = project.Thumbnail
-	mintedTime := time.Now()
-	tokenUri.MintedTime = &mintedTime
-	tokenUri.Name = tokenID
-	tokenUri.Project = project
-	tokenUri.ProjectID = project.TokenID
-	tokenUri.ProjectIDInt = project.TokenIDInt
-	//tokenUri.Thumbnail = project.Thumbnail
 
+	tokenUri.AnimationURL = imageURI
+	
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
 		log.Error("u.Repo.UpdateOrInsertTokenUri", err.Error(), err)
