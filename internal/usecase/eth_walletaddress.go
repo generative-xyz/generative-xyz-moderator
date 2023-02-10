@@ -336,7 +336,7 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	for _, item := range addreses {
 		log.SetData("userWallet", item.UserAddress)
 		log.SetData("ordWalletAddress", item.OrdAddress)
-		sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
+		sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 			continue

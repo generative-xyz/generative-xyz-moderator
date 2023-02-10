@@ -74,6 +74,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	log.SetData("found.Project", p.ID)
 	walletAddress.Amount = p.MintPrice
 	walletAddress.UserAddress = userWallet
+	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
@@ -369,7 +370,13 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	for _, item := range addreses {
 		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-		sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription)
+		
+		addr := item.OriginUserAddress
+		if addr == "" {
+			addr = item.UserAddress
+		}
+	
+		sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 			continue
@@ -424,9 +431,12 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	return nil, nil
 }
 
-func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+	span, log := u.StartSpan("SendToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
 
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+	log.SetData(utils.TOKEN_ID_TAG, inscriptionID)
+	sendTokenReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
 			"ord_master",
@@ -436,12 +446,17 @@ func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_servi
 			inscriptionID,
 			"--fee-rate",
 			"15",
-		}})
+		}}
+
+	log.SetData("sendTokenReq", sendTokenReq)
+	resp, err := u.OrdService.Exec(sendTokenReq)
 
 	if err != nil {
+		log.Error("u.OrdService.Exec", err.Error(), err)
 		return nil, err
 	}
 
+	log.SetData("sendTokenRes", resp)
 	return resp, err
 
 }

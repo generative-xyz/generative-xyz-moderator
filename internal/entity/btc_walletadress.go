@@ -9,6 +9,7 @@ import (
 type BTCWalletAddress struct {
 	BaseEntity`bson:",inline"`
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
+	OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
 	Amount string `bson:"amount"`
 	OrdAddress string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
 	FileURI string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
