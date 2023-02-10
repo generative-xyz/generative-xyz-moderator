@@ -248,7 +248,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
-		wallet.Amount = balance.String()
+		wallet.Balance =  balance.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
 		if err != nil {
 			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
@@ -326,13 +326,22 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 		}
 		log.SetData("updated", updated)
 
-		btc, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+		mintReps, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
 			continue
 		}
 
-		log.SetData("btc.Minted", btc)
+		log.SetData("btc.Minted", mintReps)
+
+		newItem.MintResponse = entity.MintStdoputResponse(*mintReps) 
+		newItem.IsMinted = true
+		updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+		if err != nil {
+			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+			continue
+		}
+		
 	}
 
 	return nil, nil

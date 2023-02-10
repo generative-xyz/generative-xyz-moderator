@@ -101,15 +101,30 @@ func (r Repository) CreateProject(data *entity.Projects) error {
 	return nil
 }
 
+func (r Repository) UpdateProjectImages(ID string, images []string, processingImages []string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	update := bson.M{
+		"$set": bson.M{
+			"images": images,
+			"processingImages": processingImages,
+		},
+	}
+	
+	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err	
+	}
+	
+	return result, nil
+}
+
 func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, ID}}
 	result, err := r.UpdateOne(entity.Projects{}.TableName(), filter, data)
 	if err != nil {
 		return nil, err
 	}
-
-	_ = r.Cache.SetData(helpers.ProjectDetailKey(data.ContractAddress, data.TokenID), data)
-	_ = r.Cache.SetData(helpers.ProjectDetailgenNftAddrrKey(data.GenNFTAddr), data)
 	return result, nil
 }
 
