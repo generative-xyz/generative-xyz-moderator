@@ -105,12 +105,14 @@ func (u Usecase) BtcCheckBuyingNft(rootSpan opentracing.Span) error {
 		return err
 	}
 
-	listPending, _ := u.Repo.RetrieveBTCNFTPendingListings()
+	listPending, _ := u.Repo.RetrieveBTCNFTPendingBuyOrders()
 	if len(listPending) == 0 {
 		return nil
 	}
 
 	for _, item := range listPending {
+
+		// check balance:
 
 		txs, _ := u.getLastTxs(item.HoldOrdAddress)
 
