@@ -40,7 +40,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 			"create",
 		},
 	})
-	u.Notify(rootSpan, "Mint for", walletAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", walletAddress.UserAddress, resp.Stdout))
+
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
 		//return nil, err
@@ -148,7 +148,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, err
 	}
 
-
 	// - Upload the Animation URL to GCS
 	animation := projectNftTokenUri.AnimationUrl
 	if animation != "" {
@@ -162,7 +161,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		}
 
 		btc.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-	
 
 	} else {
 		images := p.Images

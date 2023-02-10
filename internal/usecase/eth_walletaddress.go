@@ -165,7 +165,7 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 		FeeRate:    15, //temp
 		DryRun:     false,
 	})
-
+	u.Notify(rootSpan, "Mint for", ethAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", ethAddress.UserAddress, resp.Stdout))
 	if err != nil {
 		log.Error("ETHMint.Mint", err.Error(), err)
 		return nil, err
@@ -248,7 +248,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
-		wallet.Amount =  balance.String()
+		wallet.Amount = balance.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
 		if err != nil {
 			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
