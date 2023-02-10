@@ -27,7 +27,6 @@ type BitcoinTokenMintFee struct {
 }
 
 const (
-	FEE_RATE = 15
 	SENT_TOKEN_FEE = 0
 )
 
@@ -37,7 +36,7 @@ func calculateMintPrice(input structure.BctWalletAddressDataV2) BitcoinTokenMint
 	base64String = strings.ReplaceAll(base64String, "data:image/png;base64,", "")
 	dec, _ := base64.StdEncoding.DecodeString(base64String)
 	fileSize := len([]byte(dec))
-	mintFee := fileSize / 4 * FEE_RATE
+	mintFee := int32(fileSize) / 4 * input.FeeRate
 	return BitcoinTokenMintFee{
 		Amount: strconv.FormatInt(int64(mintFee + SENT_TOKEN_FEE), 10),
 		MintFee: strconv.FormatInt(int64(mintFee), 10),

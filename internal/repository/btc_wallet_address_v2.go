@@ -126,3 +126,21 @@ func (r Repository) ListBTCAddressV2() ([]entity.BTCWalletAddressV2, error)  {
 
 	return confs, nil
 }
+
+// func (r Repository) FilterActiveBitcoinAddressV2(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error)  {
+// 	confs := []entity.BTCWalletAddressV2{}
+// 	resp := &entity.Pagination{}
+// 	f := bson.M{}
+// 	f["inscriptionID"] = bson.M{"$ne": ""}
+
+// 	p, err := r.Paginate(entity.BTCWalletAddressV2{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+	
+// 	resp.Result = confs
+// 	resp.Page = p.Pagination.Page
+// 	resp.Total = p.Pagination.Total
+// 	resp.PageSize = filter.Limit
+// 	return resp, nil
+// }

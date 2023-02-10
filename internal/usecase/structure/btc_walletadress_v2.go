@@ -4,6 +4,7 @@ type BctWalletAddressDataV2 struct {
 	WalletAddress string `json:"walletAddress"`
 	Name string
 	File string
+	FeeRate int32
 }
 type BctMintDataV2 struct {
 	Address string `json:"address"` //ord_walletaddress
