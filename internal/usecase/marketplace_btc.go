@@ -1,7 +1,10 @@
 package usecase
 
 import (
+	"strings"
+
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
@@ -18,7 +21,19 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		IsSold:         false,
 	}
 	holdOrdAddress := ""
-
+	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			"ord_master",
+			"wallet",
+			"receive",
+		},
+	})
+	if err != nil {
+		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+		return "", err
+	}
+	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	//TODO: gen holdOrdAddress
 	listing.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func(rootSpan opentracing.Span, offer entity.MarketplaceOffers) {
@@ -49,7 +64,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 
 	log.SetTag("inscriptionID", listingInfo.InscriptionID)
 	// check if listing is created or not
-	err := u.Repo.CreateMarketplaceListingBTC(&listing)
+	err = u.Repo.CreateMarketplaceListingBTC(&listing)
 	if err != nil {
 		log.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
 		return "", err
@@ -67,6 +82,9 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 		Name:          "Test1",
 		Description:   "test1 blah blah blah",
 		Price:         "1234567",
+		BaseEntity: entity.BaseEntity{
+			UUID: "1",
+		},
 	}
 
 	test2 := entity.MarketplaceBTCListing{
@@ -74,6 +92,9 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 		Name:          "Test2",
 		Description:   "test2 blah blah blah",
 		Price:         "1234567",
+		BaseEntity: entity.BaseEntity{
+			UUID: "2",
+		},
 	}
 
 	test3 := entity.MarketplaceBTCListing{
@@ -81,6 +102,9 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 		Name:          "Test3",
 		Description:   "test3 blah blah blah",
 		Price:         "1234567",
+		BaseEntity: entity.BaseEntity{
+			UUID: "3",
+		},
 	}
 
 	result = append(result, test1)
