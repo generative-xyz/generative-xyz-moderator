@@ -28,7 +28,7 @@ type BitcoinTokenMintFee struct {
 
 const (
 	FEE_RATE = 15
-	SENT_TOKEN_FEE = 1000000
+	SENT_TOKEN_FEE = 0
 )
 
 func calculateMintPrice(input structure.BctWalletAddressDataV2) BitcoinTokenMintFee {
