@@ -129,7 +129,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
 	eth.HandleFunc("/receive-address", h.ethGetReceiveWalletAddress).Methods("POST")
-	eth.HandleFunc("/mint", h.mintETH).Methods("POST")
+	// eth.HandleFunc("/mint", h.mintETH).Methods("POST")
 
 }
 
