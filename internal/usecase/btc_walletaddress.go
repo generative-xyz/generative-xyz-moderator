@@ -22,7 +22,6 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
-	
 
 	walletAddress := &entity.BTCWalletAddress{}
 	err := copier.Copy(walletAddress, input)
@@ -41,7 +40,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 			"create",
 		},
 	})
-
+	u.Notify(rootSpan, "Mint for", walletAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", walletAddress.UserAddress, resp.Stdout))
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
 		//return nil, err
@@ -94,14 +93,14 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
 		log.Error("u.Repo.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
-	
+
 	blance, err := u.CheckBlance(span, *btc)
 	if err != nil {
 		log.Error("u.BalanceLogic", err.Error(), err)
@@ -154,7 +153,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	animation := projectNftTokenUri.AnimationUrl
 	if animation != "" {
 		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
-	
 
 		now := time.Now().UTC().Unix()
 		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
@@ -162,15 +160,15 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 			log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
 			return nil, err
 		}
-	
+
 		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 		btc.FileURI = fileURI
-	
-	}else{
+
+	} else {
 		images := p.Images
 		if len(images) > 0 {
 			fileURI = images[0]
-			newImages := []string {}
+			newImages := []string{}
 
 			//remove the project's image out of the current projects
 			for i := 1; i < len(images); i++ {
@@ -190,7 +188,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		}
 	}
 	//end Animation URL
-	
+
 	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl:    fileURI,
@@ -205,7 +203,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("BTCMint.Mint", err.Error(), err)
 		return nil, err
 	}
-
+	u.Notify(rootSpan, "Mint for", btc.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
 	tmpText := resp.Stdout
 	//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
@@ -256,14 +254,14 @@ func (u Usecase) UpdateBtcMintedStatus(rootSpan opentracing.Span, btcWallet *ent
 	log.SetData("updated", updated)
 	return btcWallet, nil
 }
- 
-func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error)  {
+
+func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("CheckBlance", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
-	
+	defer u.Tracer.FinishSpan(span, log)
+
 	log.SetData(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
 	log.SetData(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
-	
+
 	balanceRequest := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -289,7 +287,7 @@ func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddr
 
 	go func(rootSpan opentracing.Span, balance *entity.BTCWalletAddress) {
 		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
+		defer u.Tracer.FinishSpan(span, log)
 
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(balance.OrdAddress, balance)
 		if err != nil {
@@ -305,13 +303,13 @@ func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddr
 
 func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("BalanceLogic", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	balance, err := u.CheckBlance(span, btc)
 	if err != nil {
 		log.Error("u.CheckBlance", err.Error(), err)
 		return nil, err
 	}
-	
+
 	//TODO logic of the checked balance here
 	if balance.Balance < btc.Amount {
 		err := errors.New("Not enough amount")
@@ -365,7 +363,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			continue
 		}
 		log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-
+		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received BTC %d from [user_address] %s", item.OrdAddress, item.Balance, item.UserAddress))
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, newItem)
 		if err != nil {
 			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
@@ -398,12 +396,12 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	for _, item := range addreses {
 		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-		
+
 		addr := item.OriginUserAddress
 		if addr == "" {
 			addr = item.UserAddress
 		}
-	
+
 		sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
@@ -440,7 +438,7 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 
 		// log.SetData("fundResp", fundResp)
 
-		//TODO - 
+		//TODO -
 
 		item.MintResponse.IsSent = true
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
@@ -485,8 +483,21 @@ func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscri
 		log.Error("u.OrdService.Exec", err.Error(), err)
 		return nil, err
 	}
-
+	u.Notify(rootSpan, "SendToken", receiveAddr, inscriptionID)
 	log.SetData("sendTokenRes", resp)
 	return resp, err
 
+}
+
+func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress string, content string) {
+	span, log := u.StartSpan("SendMessageMint", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	//slack
+	preText := fmt.Sprintf("User address: %s", userAddress)
+	c := fmt.Sprintf("%s", content)
+
+	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
 }
