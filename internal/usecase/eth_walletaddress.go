@@ -259,7 +259,7 @@ func (u Usecase) MintLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAddre
 	return btc, nil
 }
 
-func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
+func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
