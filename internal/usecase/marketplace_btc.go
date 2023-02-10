@@ -112,6 +112,15 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 	result = append(result, test1)
 	result = append(result, test2)
 	result = append(result, test3)
+
+	nftList, err := u.Repo.RetrieveBTCNFTListings()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, nft := range nftList {
+		result = append(result, nft)
+	}
 	return result, nil
 }
 
