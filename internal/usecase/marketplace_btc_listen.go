@@ -231,5 +231,6 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 }
 
 func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
+	// TODO
 	return nil
 }
