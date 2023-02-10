@@ -17,17 +17,17 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("CreateBTCWalletAddress", rootSpan)
+func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("CreateETHWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
 	log.SetTag("btcUserWallet", input.WalletAddress)
 
-	walletAddress := &entity.BTCWalletAddress{}
+	walletAddress := &entity.ETHWalletAddress{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.Copy", err.Error(), err)
+		log.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
 		return nil, err
 	}
 
@@ -48,7 +48,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 		walletAddress.Mnemonic = resp.Stdout
 	}
 
-	log.SetData("CreateBTCWalletAddress.createdWallet", resp)
+	log.SetData("CreateETHWalletAddress.createdWallet", resp)
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -62,10 +62,10 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	log.SetData("CreateBTCWalletAddress.receive", resp)
+	log.SetData("CreateETHWalletAddress.receive", resp)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		log.Error("u.CreateETHWalletAddress.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
 
@@ -82,15 +82,15 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.InsertBtcWalletAddress", err.Error(), err)
+		log.Error("u.CreateETHWalletAddress.InsertBtcWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
 	return walletAddress, nil
 }
 
-func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("BTCMint", rootSpan)
+func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("ETHMint", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
@@ -98,21 +98,21 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
+		log.Error("ETHMint.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
 
 	//mint logic
 	btc, err = u.MintLogic(span, btc)
 	if err != nil {
-		log.Error("BTCMint.MintLogic", err.Error(), err)
+		log.Error("ETHMint.MintLogic", err.Error(), err)
 		return nil, err
 	}
 
 	// get data from project
 	p, err := u.Repo.FindProjectByTokenID(btc.ProjectID)
 	if err != nil {
-		log.Error("BTCMint.FindProjectByTokenID", err.Error(), err)
+		log.Error("ETHMint.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
 	//log.SetData("found.Project", p)
@@ -123,7 +123,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
 	err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
 	if err != nil {
-		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		log.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
 		return nil, err
 	}
 
@@ -134,7 +134,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	now := time.Now().UTC().Unix()
 	uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
 	if err != nil {
-		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		log.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
 		return nil, err
 	}
 
@@ -151,7 +151,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	})
 
 	if err != nil {
-		log.Error("BTCMint.Mint", err.Error(), err)
+		log.Error("ETHMint.Mint", err.Error(), err)
 		return nil, err
 	}
 
@@ -164,14 +164,14 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
-		log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+		log.Error("ETHMint.helpers.JsonTransform", err.Error(), err)
 		return nil, err
 	}
 
 	btc.MintResponse = entity.MintStdoputResponse(*btcMintResp)
 	btc, err = u.UpdateBtcMintedStatus(span, btc)
 	if err != nil {
-		log.Error("BTCMint.UpdateBtcMintedStatus", err.Error(), err)
+		log.Error("ETHMint.UpdateBtcMintedStatus", err.Error(), err)
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func (u Usecase) UpdateBtcMintedStatus(rootSpan opentracing.Span, btcWallet *ent
 
 	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btcWallet.OrdAddress, btcWallet)
 	if err != nil {
-		log.Error("BTCMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+		log.Error("ETHMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
 		return nil, err
 	}
 
@@ -219,7 +219,7 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 	log.SetData("userWallet", btc.UserAddress)
 	log.SetData("ordWalletAddress", btc.OrdAddress)
 	if err != nil {
-		log.Error("BTCMint.Exec.balance", err.Error(), err)
+		log.Error("ETHMint.Exec.balance", err.Error(), err)
 		return nil, err
 	}
 
@@ -245,13 +245,13 @@ func (u Usecase) MintLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAddre
 	//if this was minted, skip it
 	if btc.IsMinted {
 		err = errors.New("This btc was minted")
-		log.Error("BTCMint.Minted", err.Error(), err)
+		log.Error("ETHMint.Minted", err.Error(), err)
 		return nil, err
 	}
 
 	if !btc.IsConfirm {
 		err = errors.New("This btc must be IsConfirmed")
-		log.Error("BTCMint.IsConfirmed", err.Error(), err)
+		log.Error("ETHMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
 

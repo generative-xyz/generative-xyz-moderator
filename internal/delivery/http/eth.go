@@ -25,7 +25,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
-	var reqBody request.CreateBtcWalletAddressReq
+	var reqBody request.CreateEthWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
@@ -61,16 +61,16 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 }
 
 // UserCredits godoc
-// @Summary BTC mint
+// @Summary ETH mint
 // @Description mint
-// @Tags BTC
+// @Tags ETH
 // @Accept  json
 // @Produce  json
 // @Param request body request.CreateMintReq true "Mint request via ORD_WALLET_ADDRESS"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /btc/mint [POST]
+// @Router /eth/mint [POST]
 func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.mint", r)
+	span, log := h.StartSpan("httpDelivery.mintEth", r)
 	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
