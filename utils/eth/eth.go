@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -374,10 +373,6 @@ func (c *Client) TransferToken(senderPrivKey, receiverAddress, tokenContract str
 	}
 
 	value := big.NewInt(0) // eth amount
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return "", errors.Wrap(err, "zap.NewProduction")
-	}
 
 	gasPrice, err := c.SuggestGasPrice(context.Background())
 	if err != nil {
