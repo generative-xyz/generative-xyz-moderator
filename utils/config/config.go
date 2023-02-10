@@ -12,52 +12,52 @@ import (
 )
 
 type Config struct {
-	Debug     bool
-	StartHTTP     bool
-	StartPubsub     bool
-	Context   *Context
-	Databases *Databases
-	Sentry    *Sentry
-	Redis     RedisConfig
-	ENV string
-	ServicePort string
-	SigningKey string
-	Services map[string]string
-	MQTTConfig     MQTTConfig
-	Gcs       *GCS
-	Moralis MoralisConfig
-	Covalent CovalentConfig
-	BlockchainConfig BlockchainConfig
-	TxConsumerConfig TxConsumerConfig
-	MarketplaceEvents MarketplaceEvents
-	DAOEvents DAOEvents
+	Debug                 bool
+	StartHTTP             bool
+	StartPubsub           bool
+	Context               *Context
+	Databases             *Databases
+	Sentry                *Sentry
+	Redis                 RedisConfig
+	ENV                   string
+	ServicePort           string
+	SigningKey            string
+	Services              map[string]string
+	MQTTConfig            MQTTConfig
+	Gcs                   *GCS
+	Moralis               MoralisConfig
+	Covalent              CovalentConfig
+	BlockchainConfig      BlockchainConfig
+	TxConsumerConfig      TxConsumerConfig
+	MarketplaceEvents     MarketplaceEvents
+	DAOEvents             DAOEvents
 	TimeResyncProjectStat int32
-	Slack slack.Config
-	Crontab CronTabConfig
-	GENToken GENToken
+	Slack                 slack.Config
+	Crontab               CronTabConfig
+	GENToken              GENToken
 }
 
 type MQTTConfig struct {
 	Address  string
-	Port string
-	UserName       string
-	Password      string
+	Port     string
+	UserName string
+	Password string
 }
 
 type CronTabConfig struct {
-	Enabled  bool
-	BTCEnabled  bool
+	Enabled    bool
+	BTCEnabled bool
 }
 
 type MoralisConfig struct {
-	Key  string
-	URL string
+	Key   string
+	URL   string
 	Chain string
 }
 
 type CovalentConfig struct {
-	Key  string
-	URL string
+	Key   string
+	URL   string
 	Chain string
 }
 
@@ -67,7 +67,7 @@ type Context struct {
 
 type Databases struct {
 	Postgres *DBConnection
-	Mongo *DBConnection
+	Mongo    *DBConnection
 }
 
 type DBConnection struct {
@@ -77,7 +77,7 @@ type DBConnection struct {
 	Pass    string
 	Name    string
 	Sslmode string
-	Scheme string
+	Scheme  string
 }
 
 type Mongo struct {
@@ -108,13 +108,12 @@ type RedisConfig struct {
 	ENV      string
 }
 
-
 type Chain struct {
-	ID  int
-	Name string
-	FullName string
-	Currency       string
-	CurrencyLogo       string
+	ID           int
+	Name         string
+	FullName     string
+	Currency     string
+	CurrencyLogo string
 }
 
 type BlockchainConfig struct {
@@ -122,28 +121,27 @@ type BlockchainConfig struct {
 }
 
 type TxConsumerConfig struct {
-	Enabled bool
-	StartBlock int64
+	Enabled       bool
+	StartBlock    int64
 	CronJobPeriod int32
-	BatchLogSize int32
-	Addresses []string
+	BatchLogSize  int32
+	Addresses     []string
 }
 
 type MarketplaceEvents struct {
-	Contract string
-	ListToken string
-	PurchaseToken string
-	MakeOffer string
+	Contract        string
+	ListToken       string
+	PurchaseToken   string
+	MakeOffer       string
 	AcceptMakeOffer string
-	CancelListing string
+	CancelListing   string
 	CancelMakeOffer string
-	
 }
 
 type DAOEvents struct {
-	Contract string
+	Contract        string
 	ProposalCreated string
-	CastVote string
+	CastVote        string
 }
 
 type GENToken struct {
@@ -153,9 +151,9 @@ type GENToken struct {
 func NewConfig() (*Config, error) {
 	godotenv.Load()
 	services := make(map[string]string)
-	isDebug,  _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	isStartHTTP,  _ := strconv.ParseBool(os.Getenv("START_HTTP"))
-	isStartPubsub,  _ := strconv.ParseBool(os.Getenv("START_PUBSUB"))
+	isDebug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	isStartHTTP, _ := strconv.ParseBool(os.Getenv("START_HTTP"))
+	isStartPubsub, _ := strconv.ParseBool(os.Getenv("START_PUBSUB"))
 
 	timeOut, err := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
 	if err != nil {
@@ -176,84 +174,84 @@ func NewConfig() (*Config, error) {
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
-		StartHTTP: isStartHTTP,
+		StartHTTP:   isStartHTTP,
 		StartPubsub: isStartPubsub,
-		Context:         &Context{
+		Context: &Context{
 			TimeOut: timeOut,
 		},
-		Debug:        isDebug ,
+		Debug:       isDebug,
 		ServicePort: os.Getenv("SERVICE_PORT"),
 		Databases: &Databases{
 			Mongo: &DBConnection{
-				Host:     os.Getenv("MONGO_HOST"),
-				Port:     os.Getenv("MONGO_PORT"),
-				User:     os.Getenv("MONGO_USER"), 
-				Pass:     os.Getenv("MONGO_PASSWORD"),    
-				Name :     os.Getenv("MONGO_DB"),   
-				Scheme :     os.Getenv("MONGO_SCHEME"),   
+				Host:   os.Getenv("MONGO_HOST"),
+				Port:   os.Getenv("MONGO_PORT"),
+				User:   os.Getenv("MONGO_USER"),
+				Pass:   os.Getenv("MONGO_PASSWORD"),
+				Name:   os.Getenv("MONGO_DB"),
+				Scheme: os.Getenv("MONGO_SCHEME"),
 			},
 		},
 		Redis: RedisConfig{
-			Address:     os.Getenv("REDIS_ADDR"),
+			Address:  os.Getenv("REDIS_ADDR"),
 			Password: os.Getenv("REDIS_PASSWORD"),
 			DB:       os.Getenv("REDIS_DB"),
-			ENV:       os.Getenv("REDIS_ENV"),
+			ENV:      os.Getenv("REDIS_ENV"),
 		},
 		SigningKey: os.Getenv("AUTH_SECRET_KEY"),
-		Services: services,
+		Services:   services,
 		MQTTConfig: MQTTConfig{
-			Address:     os.Getenv("MQTT_ADDR"),
+			Address:  os.Getenv("MQTT_ADDR"),
 			Port:     os.Getenv("MQTT_PORT"),
-			UserName:     os.Getenv("MQTT_USERNAME"),
-			Password:     os.Getenv("MQTT_PASSWORD"),
+			UserName: os.Getenv("MQTT_USERNAME"),
+			Password: os.Getenv("MQTT_PASSWORD"),
 		},
 		Gcs: &GCS{
 			ProjectId: os.Getenv("GCS_PROJECT_ID"),
-			Bucket: os.Getenv("GCS_BUCKET"),
-			Auth: os.Getenv("GCS_AUTH"),
+			Bucket:    os.Getenv("GCS_BUCKET"),
+			Auth:      os.Getenv("GCS_AUTH"),
 		},
 		Moralis: MoralisConfig{
-			Key: os.Getenv("MORALIS_KEY"),
-			URL: os.Getenv("MORALIS_API_URL"),
+			Key:   os.Getenv("MORALIS_KEY"),
+			URL:   os.Getenv("MORALIS_API_URL"),
 			Chain: os.Getenv("MORALIS_CHAIN"),
 		},
 		Covalent: CovalentConfig{
-			Key: os.Getenv("COVALENT_KEY"),
-			URL: os.Getenv("COVALENT_API_URL"),
+			Key:   os.Getenv("COVALENT_KEY"),
+			URL:   os.Getenv("COVALENT_API_URL"),
 			Chain: os.Getenv("COVALENT_CHAIN"),
 		},
 		BlockchainConfig: BlockchainConfig{
 			ETHEndpoint: os.Getenv("ETH_ENDPOINT"),
 		},
 		TxConsumerConfig: TxConsumerConfig{
-			Enabled: enabled,
-			StartBlock: int64(startBlock),
+			Enabled:       enabled,
+			StartBlock:    int64(startBlock),
 			CronJobPeriod: int32(cronJobPeriod),
-			BatchLogSize: int32(batchLogSize),
-			Addresses: addresses,
+			BatchLogSize:  int32(batchLogSize),
+			Addresses:     addresses,
 		},
 		MarketplaceEvents: MarketplaceEvents{
-			Contract: os.Getenv("MARKETPLACE_CONTRACT"),
-			ListToken: os.Getenv("MARKETPLACE_LIST_TOKEN"),
-			PurchaseToken: os.Getenv("MARKETPLACE_PURCHASE_TOKEN"),
-			MakeOffer: os.Getenv("MARKETPLACE_MAKE_OFFER"),
+			Contract:        os.Getenv("MARKETPLACE_CONTRACT"),
+			ListToken:       os.Getenv("MARKETPLACE_LIST_TOKEN"),
+			PurchaseToken:   os.Getenv("MARKETPLACE_PURCHASE_TOKEN"),
+			MakeOffer:       os.Getenv("MARKETPLACE_MAKE_OFFER"),
 			AcceptMakeOffer: os.Getenv("MARKETPLACE_ACCEPT_MAKE_OFFER"),
-			CancelListing: os.Getenv("MARKETPLACE_CANCEL_LISTING"),
+			CancelListing:   os.Getenv("MARKETPLACE_CANCEL_LISTING"),
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
-		DAOEvents:  DAOEvents{
+		DAOEvents: DAOEvents{
 			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
-			Contract: os.Getenv("DAO_PROPOSAL_CONTRACT"),
-			CastVote: os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
+			Contract:        os.Getenv("DAO_PROPOSAL_CONTRACT"),
+			CastVote:        os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{
 			Token:     os.Getenv("SLACK_TOKEN"),
-			ChannelId:    os.Getenv("SLACK_CHANNEL_ID"),
+			ChannelId: os.Getenv("SLACK_CHANNEL_ID"),
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled: crontabStart,
+			Enabled:    crontabStart,
 			BTCEnabled: crontabBtcStart,
 		},
 		GENToken: GENToken{

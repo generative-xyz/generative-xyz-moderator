@@ -19,29 +19,29 @@ func GenerateMd5String(input string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(input)))
 }
 
-func ToDoc (v interface{}) (*bson.D, error) {
-    data, err := bson.Marshal(v)
-    if err != nil {
-        return nil, err
-    }
+func ToDoc(v interface{}) (*bson.D, error) {
+	data, err := bson.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
 
 	doc := &bson.D{}
-    err = bson.Unmarshal(data, doc)
+	err = bson.Unmarshal(data, doc)
 	if err != nil {
-        return nil, err
-    }
-    return doc, nil
+		return nil, err
+	}
+	return doc, nil
 }
 
 func Transform(from interface{}, to interface{}) error {
 	bytes, err := bson.Marshal(from)
 	if err != nil {
-		return   err
+		return err
 	}
 
 	err = bson.Unmarshal(bytes, to)
 	if err != nil {
-		return   err
+		return err
 	}
 
 	return nil
@@ -50,39 +50,36 @@ func Transform(from interface{}, to interface{}) error {
 func JsonTransform(from interface{}, to interface{}) error {
 	bytes, err := json.Marshal(from)
 	if err != nil {
-		return   err
+		return err
 	}
 
 	err = json.Unmarshal(bytes, to)
 	if err != nil {
-		return   err
+		return err
 	}
 
 	return nil
 }
 
-
- 
 func GenerateKey(key string) string {
 	key = strings.ToUpper(key)
 	key = strings.ReplaceAll(key, " ", "_")
 	return key
 }
 
-
 func Base64Decode(base64Str string) ([]byte, error) {
 	sDec, err := b64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
 		return nil, err
 	}
-    return sDec, nil
+	return sDec, nil
 }
 
 func Base64DecodeRaw(base64Str string, object interface{}) error {
 	base64Str = strings.ReplaceAll(base64Str, "data:application/json;base64,", "")
 	sDec, err := b64.StdEncoding.DecodeString(base64Str)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	err = json.Unmarshal(sDec, &object)
@@ -90,12 +87,12 @@ func Base64DecodeRaw(base64Str string, object interface{}) error {
 		return err
 	}
 
-    return  nil
+	return nil
 }
 
 func Base64Encode(data []byte) string {
 	sDec := b64.StdEncoding.EncodeToString(data)
-    return sDec
+	return sDec
 }
 
 func ReplaceToken(token string) string {
@@ -106,10 +103,10 @@ func ReplaceToken(token string) string {
 }
 
 func HexaNumberToInteger(hexaString string) string {
-    // replace 0x or 0X with empty String  
-    numberStr := strings.Replace(hexaString, "0x", "", -1)
-    numberStr = strings.Replace(numberStr, "0X", "", -1)
-    return numberStr
+	// replace 0x or 0X with empty String
+	numberStr := strings.Replace(hexaString, "0x", "", -1)
+	numberStr = strings.Replace(numberStr, "0X", "", -1)
+	return numberStr
 }
 
 func CreateIcon(name *string) string {
@@ -122,21 +119,21 @@ func CreateMqttTopic(ordAddress string) string {
 
 func CreateProfileLink(walletAdress string, displayName string) string {
 	name := walletAdress
-	if displayName != ""{
+	if displayName != "" {
 		name = displayName
 	}
-	link := fmt.Sprintf("%s/profile/%s",os.Getenv("DOMAIN"),walletAdress,)
+	link := fmt.Sprintf("%s/profile/%s", os.Getenv("DOMAIN"), walletAdress)
 	return fmt.Sprintf("<%s|%s>", link, name)
 }
 
-func CreateTokenLink( projectID string, tokenID string, tokenName string) string {
-	link := fmt.Sprintf("%s/generative/%s/%s",os.Getenv("DOMAIN"),projectID, tokenID)
+func CreateTokenLink(projectID string, tokenID string, tokenName string) string {
+	link := fmt.Sprintf("%s/generative/%s/%s", os.Getenv("DOMAIN"), projectID, tokenID)
 	return fmt.Sprintf("<%s|%s>", link, tokenName)
 }
 
 func ParseBigToFloat(number *big.Int) float64 {
 	numStr := number.String()
-	
+
 	n, err := strconv.ParseFloat(numStr, 64)
 	if err != nil {
 		return 0
@@ -149,6 +146,6 @@ func ParseUintToUnixTime(number uint64) *time.Time {
 	return &t
 }
 
-func CreateBTCOrdWallet( userWallet string) string {
-	return fmt.Sprintf("%s_%s","USER", userWallet)
+func CreateBTCOrdWallet(userWallet string) string {
+	return fmt.Sprintf("%s_%s", "USER", userWallet)
 }
