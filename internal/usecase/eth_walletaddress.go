@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -282,14 +283,17 @@ func convertBTCToETH(amount string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ethPrice, err := getExternalPrice("BTC")
+	ethPrice, err := getExternalPrice("ETH")
 	if err != nil {
 		return "", err
 	}
+	amountMintBTC = amountMintBTC / math.Pow10(8)
 
 	btcToETH := btcPrice / ethPrice
+
 	amountMintETH := amountMintBTC * btcToETH
-	return fmt.Sprintf("%f", amountMintETH), nil
+	amountMintETHInt := uint64(math.Floor(amountMintETH * math.Pow10(18)))
+	return fmt.Sprintf("%d", amountMintETHInt), nil
 }
 
 func getExternalPrice(tokenSymbol string) (float64, error) {
