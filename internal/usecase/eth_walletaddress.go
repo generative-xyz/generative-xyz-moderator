@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -202,24 +203,21 @@ func (u Usecase) UpdateBtcMintedStatus(rootSpan opentracing.Span, btcWallet *ent
 	return btcWallet, nil
 }
 
-func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("BalanceLogic", rootSpan)
+func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, eth entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("BalanceETHLogic", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	userWallet := helpers.CreateBTCOrdWallet(btc.UserAddress)
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			userWallet,
-			"wallet",
-			"balance",
-		},
-	})
+	// check eth balance:
+	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
+	if err != nil {
+		return nil, err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
 
 	log.SetData("userWallet", btc.UserAddress)
 	log.SetData("ordWalletAddress", btc.OrdAddress)
 	if err != nil {
-		log.Error("ETHMint.Exec.balance", err.Error(), err)
+		log.Error("BTCMint.Exec.balance", err.Error(), err)
 		return nil, err
 	}
 
@@ -272,7 +270,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 	for _, item := range addreses {
 		log.SetData("userWallet", item.UserAddress)
 		log.SetData("ordWalletAddress", item.OrdAddress)
-		newItem, err := u.BalanceLogic(span, item)
+		newItem, err := u.BalanceETHLogic(span, item)
 		if err != nil {
 			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
 			continue

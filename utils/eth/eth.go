@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/light"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/inc-backend/crypto-libs/eth/bridge"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
@@ -105,24 +104,6 @@ func (c *Client) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
 
 func (c *Client) NetworkID(ctx context.Context) (*big.Int, error) {
 	return c.eth.NetworkID(ctx)
-}
-
-func (c *Client) GetEstimatedGasPrice(preference string) (*big.Int, error) {
-	minGasPrice := big.NewInt(int64(1e9)) // 1 GWei
-	gasPrice, err := bridge.GetGasPriceFromUpvest(preference)
-
-	if err != nil {
-		gasPrice, err = c.SuggestGasPrice(context.Background())
-		if err != nil {
-			gasPrice = big.NewInt(0)
-		}
-	}
-
-	if gasPrice.Cmp(minGasPrice) < 0 {
-		gasPrice = minGasPrice
-	}
-
-	return gasPrice, nil
 }
 
 func (c *Client) SendTransaction(ctx context.Context, tx *types.Transaction) error {
@@ -522,11 +503,11 @@ func (c *Client) TransferFastest(senderPrivKey, receiverAddress string, amount *
 	if err != nil {
 		return "", errors.Wrap(err, "zap.NewProduction")
 	}
-	gasPrice := bridge.GetSafeGasPrice(c.eth, logger)
-	//gasPrice, err := c.SuggestGasPrice(context.Background())
-	//if err != nil {
-	//	return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
-	//}
+
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
+	}
 
 	fee := new(big.Int)
 	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
@@ -576,11 +557,11 @@ func (c *Client) TransferToken(senderPrivKey, receiverAddress, tokenContract str
 	if err != nil {
 		return "", errors.Wrap(err, "zap.NewProduction")
 	}
-	gasPrice := bridge.GetSafeGasPrice(c.eth, logger)
-	//gasPrice, err := c.SuggestGasPrice(context.Background())
-	//if err != nil {
-	//	return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
-	//}
+
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
+	}
 
 	toAddress := common.HexToAddress(receiverAddress)
 	tokenAddress := common.HexToAddress(tokenContract)
