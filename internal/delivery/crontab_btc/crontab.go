@@ -55,6 +55,10 @@ func (h ScronBTCHandler) StartServer() {
 			// h.Usecase.WaitingForETHMinted(span)
 
 		}()
+		go func() {
+			// h.Usecase.BtcChecktListNft(span)
+
+		}()
 
 	})
 
