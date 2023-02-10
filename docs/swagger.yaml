@@ -14,6 +14,8 @@ definitions:
     type: object
   request.CreateBtcWalletAddressReqV2:
     properties:
+      fee_rate:
+        type: integer
       file:
         type: string
       name:

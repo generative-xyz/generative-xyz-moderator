@@ -17,7 +17,7 @@ import (
 // @Tags BTC
 // @Accept  json
 // @Produce  json
-// @Param request body request.CreateBtcWalletAddressReq true "Create a btc wallet address request"
+// @Param request body request.CreateBtcWalletAddressReqV2 true "Create a btc wallet address request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /btc-v2/receive-address [POST]
 func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *http.Request) {

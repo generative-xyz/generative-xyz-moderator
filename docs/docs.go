@@ -2706,6 +2706,9 @@ const docTemplate = `{
         "request.CreateBtcWalletAddressReqV2": {
             "type": "object",
             "properties": {
+                "fee_rate": {
+                    "type": "integer"
+                },
                 "file": {
                     "type": "string"
                 },
