@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/pkg/errors"
@@ -146,7 +146,7 @@ func (bs *BlockcypherService) GetLastTxs(address string) ([]Txs, error) {
 // gen a segwit address:
 func GenerateAddressSegwit() (privKey, pubKey, addressSegwit string, err error) {
 
-	secret, err := btcec.NewPrivateKey(btcec.S256())
+	secret, err := btcec.NewPrivateKey()
 	if err != nil {
 		err = errors.Wrap(err, "c.GenerateAddressSegwit")
 		return

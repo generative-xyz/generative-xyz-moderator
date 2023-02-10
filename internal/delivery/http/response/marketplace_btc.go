@@ -9,9 +9,9 @@ type MarketplaceNFTDetail struct {
 }
 
 type CreateMarketplaceBTCBuyOrder struct {
-	ReceiveAddress string `json:"receiveAddress`
+	ReceiveAddress string `json:"receiveAddress"`
 }
 
 type CreateMarketplaceBTCListing struct {
-	ReceiveAddress string `json:"receiveAddress`
+	ReceiveAddress string `json:"receiveAddress"`
 }
