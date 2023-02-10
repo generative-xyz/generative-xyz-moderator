@@ -31,15 +31,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	api := h.Handler.PathPrefix("/generative/api").Subrouter()
 	api.HandleFunc("/token/{contractAddress}/{tokenID}", h.tokenURI).Methods("GET")
 	api.HandleFunc("/trait/{contractAddress}/{tokenID}", h.tokenTrait).Methods("GET")
-	
+
 	//api
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
-	
-	
+
 	//v1 := api.PathPrefix("/v1").Subrouter()
 	api.HandleFunc("/", h.healthCheck).Methods("GET")
 
@@ -53,13 +52,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	files.HandleFunc("/deflate", h.deflate).Methods("POST")
-	
+
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
-	
+
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
 	singedIn.HandleFunc("", h.profile).Methods("GET")
@@ -77,15 +76,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
-	
-	
+
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
 	config.HandleFunc("", h.getConfigs).Methods("GET")
 	config.HandleFunc("", h.createConfig).Methods("POST")
 	config.HandleFunc("/{key}", h.getConfig).Methods("GET")
 	config.HandleFunc("/{key}", h.deleteConfig).Methods("DELETE")
-	
+
 	//categories
 	categories := api.PathPrefix("/categories").Subrouter()
 	categories.HandleFunc("", h.getCategories).Methods("GET")
@@ -123,11 +121,16 @@ func (h *httpDelivery) RegisterV1Routes() {
 	dao.HandleFunc("/proposals/{proposalID}/votes", h.getProposalVotes).Methods("GET")
 	dao.HandleFunc("/proposals/{ID}/{proposalID}", h.mapOffAndOnChainProposal).Methods("PUT")
 
-	//dao
+	//btc
 	btc := api.PathPrefix("/btc").Subrouter()
 	btc.HandleFunc("/receive-address", h.btcGetReceiveWalletAddress).Methods("POST")
 	btc.HandleFunc("/mint", h.mint).Methods("POST")
-	
+
+	//btc
+	eth := api.PathPrefix("/eth").Subrouter()
+	eth.HandleFunc("/receive-address", h.ethGetReceiveWalletAddress).Methods("POST")
+	eth.HandleFunc("/mint", h.mint).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
@@ -151,7 +154,7 @@ func (h *httpDelivery) StartSpan(name string, r *http.Request) (opentracing.Span
 }
 
 func (h *httpDelivery) StartSpanFromRoot(rootSpan opentracing.Span, optName string) (opentracing.Span, *tracer.TraceLog) {
-	span := h.Tracer.StartSpanFromRoot( rootSpan, optName)
+	span := h.Tracer.StartSpanFromRoot(rootSpan, optName)
 	log := tracer.NewTraceLog()
 	return span, log
 }
