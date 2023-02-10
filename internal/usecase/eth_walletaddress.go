@@ -89,7 +89,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	return walletAddress, nil
 }
 
-func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddress, error) {
+func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.EthMintData) (*entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("ETHMint", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
