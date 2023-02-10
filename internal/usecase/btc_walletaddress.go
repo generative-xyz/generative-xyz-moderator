@@ -181,9 +181,9 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 				newImages = append(newImages, images[i])
 			}
 			processingImages = append(p.ProcessingImages, btc.FileURI)
-			//update project: fail
-
-			updated, err := u.Repo.UpdateProjectImages(p.UUID, newImages, processingImages)
+			p.Images = newImages
+			p.ProcessingImages = processingImages
+			updated, err := u.Repo.UpdateProject(p.UUID, p)
 			if err != nil {
 				log.Error("BTCMint.UpdateProject", err.Error(), err)
 				return nil, err
@@ -192,6 +192,11 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		}
 	}
 	//end Animation URL
+	if btc.FileURI == "" {
+		err = errors.New("There is no file uri to mint")
+		log.Error("fileURI.empty", err.Error(), err)
+		return nil, err
+	}
 
 	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
