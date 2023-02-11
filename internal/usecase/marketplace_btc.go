@@ -21,7 +21,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		ServiceFee:     listingInfo.ServiceFee,
 		IsConfirm:      false,
 		IsSold:         false,
-		ExpiredAt:      time.Now().Add(time.Minute * 30),
+		ExpiredAt:      time.Now().Add(time.Hour * 6),
 		Name:           listingInfo.Name,
 		Description:    listingInfo.Description,
 		InscriptionID:  listingInfo.InscriptionID,
