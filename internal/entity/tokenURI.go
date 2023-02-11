@@ -73,6 +73,7 @@ type TokenUri struct {
 	Project *Projects `bson:"project"`
 	Creator *Users `bson:"creator"`
 	PaidType TokenPaidType `bson:"paidType"` 
+	IsOnchain bool `bson:"isOnchain"` 
 }
 
 type TokenUriAttr struct {
