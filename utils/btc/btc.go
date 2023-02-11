@@ -38,12 +38,15 @@ func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(sec
 
 	pkHex := hex.EncodeToString(wif.PrivKey.Serialize())
 	tx := gobcy.TempNewTX(from, destination, *big.NewInt(int64(amount)))
+
+	//tx := gobcy.TX{//fields} // send multi: TODO support
+
 	if len(preference) == 0 {
 		tx.Preference = PreferenceMedium
 	} else {
 		tx.Preference = preference
 	}
-	skel, err := bs.chain.NewTX(tx, false)
+	skel, err := bs.chain.NewTX(tx, false) // gobcy.TX
 
 	if err != nil {
 		log.Println("bs.chain.NewTX err: ", err, tx)

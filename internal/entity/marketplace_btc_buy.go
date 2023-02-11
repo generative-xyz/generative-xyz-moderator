@@ -20,6 +20,7 @@ const (
 	StatusBuy_TxSendNFTFailed                   // 6: tx send nft to buyer failed
 	StatusBuy_TxSendBTCFailed                   // 7: tx send btc to seller failed
 	StatusBuy_NotEnoughBalance                  // 8: balance not enough
+	StatusBuy_NeedToRefund                      // 9: Need to refund BTC
 )
 
 type MarketplaceBTCBuyOrder struct {
