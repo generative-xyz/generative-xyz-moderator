@@ -79,14 +79,11 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
-	
+
 	projectID := vars["projectID"]
 	span.SetTag("projectID", projectID)
 
 	project, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
-		ContractAddress: contractAddress,
 		ProjectID: projectID,
 	})
 

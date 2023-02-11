@@ -21,7 +21,6 @@ type GetTokenMessageReq struct {
 }
 
 type GetProjectDetailMessageReq struct {
-	ContractAddress string
 	ProjectID string
 }
 

@@ -196,7 +196,6 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	// }()
 
 	log.SetTag("ProjectID", req.ProjectID)
-	log.SetTag("ContractAddress", req.ContractAddress)
 
 	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {

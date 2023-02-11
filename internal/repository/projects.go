@@ -42,12 +42,11 @@ func (r Repository) FindProjectByTokenID( tokenID string) (*entity.Projects, err
 	return resp, nil
 }
 
-func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
+func (r Repository) FindProjectBy(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
-	contractAddress = strings.ToLower(contractAddress)
 	go r.findProjectBy(contractAddress, tokenID)
 	
-	p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
+	p, err := r.Cache.GetData(helpers.ProjectDetailKey(tokenID))
 	if err != nil {
 		return r.findProjectBy(contractAddress, tokenID)
 	}
@@ -69,13 +68,12 @@ func (r Repository) IncreaseProjectIndex(projectID string) (error) {
 
 func (r Repository) FindProjectWithoutCache( contractAddress string, tokenID string) (*entity.Projects, error) {
 	contractAddress = strings.ToLower(contractAddress)
-	return  r.findProjectBy(contractAddress, tokenID)
+	return  r.findProjectBy(tokenID)
 }
 
-func (r Repository) findProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
-	contractAddress = strings.ToLower(contractAddress)
+func (r Repository) findProjectBy( tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
-	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"contractAddress", contractAddress}, {"tokenid", tokenID}})
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +83,7 @@ func (r Repository) findProjectBy( contractAddress string, tokenID string) (*ent
 		return nil, err
 	}
 	
-	r.Cache.SetData(helpers.ProjectDetailKey(contractAddress, tokenID), resp)
+	r.Cache.SetData(helpers.ProjectDetailKey(tokenID), resp)
 	return resp, nil
 }
 
@@ -96,7 +94,7 @@ func (r Repository) CreateProject(data *entity.Projects) error {
 		return err
 	}
 
-	_ = r.Cache.SetData(helpers.ProjectDetailKey(data.ContractAddress, data.TokenID), data)
+	_ = r.Cache.SetData(helpers.ProjectDetailKey(data.TokenID), data)
 
 	return nil
 }
