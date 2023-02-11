@@ -240,13 +240,6 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 			}
 			continue
 		}
-		// update isSold
-		nftListing.IsSold = true
-		_, err = u.Repo.UpdateBTCNFTConfirmListings(nftListing)
-		if err != nil {
-			fmt.Printf("Could not UpdateBTCNFTConfirmListings id %s - with err: %v", item.ID, err)
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "UpdateBTCNFTConfirmListings IsSold = true err", err.Error())
-		}
 
 		amount, _ := big.NewInt(0).SetString(nftListing.Price, 10)
 
@@ -275,10 +268,13 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		// err = u.Repo.UpdateBTCNFTListingSoldStatus(item.ItemID)
-		// if err != nil {
-		// 	fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-		// }
+		// update isSold
+		nftListing.IsSold = true
+		_, err = u.Repo.UpdateBTCNFTConfirmListings(nftListing)
+		if err != nil {
+			fmt.Printf("Could not UpdateBTCNFTConfirmListings id %s - with err: %v", item.ID, err)
+			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "UpdateBTCNFTConfirmListings IsSold = true err", err.Error())
+		}
 
 		go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
 		log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
