@@ -27,10 +27,6 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 func (h ScronBTCHandler) StartServer() {
 
-	if true {
-		return
-	}
-
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 	defer span.Finish()
 
