@@ -121,8 +121,12 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 		return nil, err
 	}
 
-	for _, nft := range nftList {
-		result = append(result, nft)
+	for _, listing := range nftList {
+		_, err := u.Repo.CheckBTCListingHaveOngoingOrder(listing.UUID)
+		if err != nil {
+			continue
+		}
+		result = append(result, listing)
 	}
 	return result, nil
 }
