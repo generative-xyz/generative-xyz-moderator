@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -204,22 +203,22 @@ func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (
 	return result, nil
 }
 
-func (r Repository) UpdateBTCNFTListingSoldStatus(id string) error {
-	filter := bson.D{{Key: "uuid", Value: id}}
-	update := bson.M{
-		"$set": bson.M{
-			"isSold": true,
-		},
-	}
-	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return err
-	}
-	if result.MatchedCount == 0 {
-		return fmt.Errorf("not found listing %v", id)
-	}
-	return err
-}
+// func (r Repository) UpdateBTCNFTListingSoldStatus(id string) error {
+// 	filter := bson.D{{Key: "uuid", Value: id}}
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"isSold": true,
+// 		},
+// 	}
+// 	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if result.MatchedCount == 0 {
+// 		return fmt.Errorf("not found listing %v", id)
+// 	}
+// 	return err
+// }
 
 func (r Repository) CreateMarketplaceBTCLog(listing *entity.MarketplaceBTCLogs) error {
 	err := r.InsertOne(listing.TableName(), listing)
