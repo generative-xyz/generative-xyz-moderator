@@ -79,7 +79,7 @@ type TxInfo struct {
 
 type Txs struct {
 	Tx    string `json:"tx_hash"`
-	Value string `json:"value" binding:"required"`
+	Value uint64 `json:"value" binding:"required"`
 }
 
 type Txo struct {

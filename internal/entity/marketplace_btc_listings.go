@@ -26,6 +26,7 @@ type MarketplaceBTCListing struct {
 	ServiceFee     string    `bson:"service_fee"`
 	IsConfirm      bool      `bson:"isConfirm"`
 	IsSold         bool      `bson:"isSold"`
+	TxNFT          string    `bson:"tx_nft"`
 	InscriptionID  string    `bson:"inscriptionID"` // tokenID in btc
 	Name           string    `bson:"name"`
 	Description    string    `bson:"description"`
