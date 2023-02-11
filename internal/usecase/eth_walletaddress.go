@@ -449,7 +449,8 @@ func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (stri
 	// amountMintBTCBigInt := web3.FloatAsInt(amountMintBTC, 8)
 
 	log.SetData("amountMintBTC", amountMintBTC.String())
-	btcToETH := btcPrice / ethPrice
+	//btcToETH := btcPrice / ethPrice
+	btcToETH := 14.27
 	
 	rate := new(big.Float)
 	rate.SetFloat64(btcToETH)
