@@ -287,7 +287,7 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			}
 			if txResponse.Confirmations >= 1 {
 				// send btc ok now:
-				item.Status = entity.StatusBuy_SentNFT
+				item.Status = entity.StatusBuy_SentBTC
 				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 				if err != nil {
 					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
