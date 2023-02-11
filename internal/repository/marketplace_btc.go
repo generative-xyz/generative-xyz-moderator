@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -139,7 +140,6 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		//TODO: lam uncomment this
 		"isConfirm": true,
 		"isSold":    false,
 	}
@@ -195,13 +195,30 @@ func (r Repository) RetrieveBTCNFTBuyOrdersByStatus(status entity.BuyStatus) ([]
 
 func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
 
-	filter := bson.D{{"uuid", model.UUID}}
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 	result, err := r.UpdateOne(model.TableName(), filter, model)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func (r Repository) UpdateBTCNFTListingSoldStatus(id string) error {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{
+			"isSold": true,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("not found listing %v", id)
+	}
+	return err
 }
 
 func (r Repository) CreateMarketplaceBTCLog(listing *entity.MarketplaceBTCLogs) error {
