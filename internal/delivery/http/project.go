@@ -309,6 +309,8 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	if err == nil {
 		resp.CreatorProfile = *profileResp
 	}
+
+	resp.MintPriceEth = input.MintPriceEth
 	
 	return resp, nil
 }

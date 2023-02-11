@@ -39,6 +39,7 @@ type Projects struct {
 	MaxSupply             int64              `bson:"maxSupply" json:"maxSupply"`
 	LimitSupply           int64              `bson:"limitSupply" json:"limitSupply"`
 	MintPrice             string             `bson:"mintPrice" json:"mintPrice"`
+	MintPriceEth					string
 	Name                  string             `bson:"name" json:"name"`
 	CreatorName           string             `bson:"creatorName" json:"creatorName"`
 	CreatorAddrr          string             `bson:"creatorAddress" json:"creatorAddrr"`

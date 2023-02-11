@@ -208,6 +208,16 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 		// return p, nil
 		return nil, errors.New("project is not found")
 	}
+	mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	ethPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt) / 1e8))
+	if err != nil {
+		return nil, err
+	}
+	c.MintPriceEth = ethPrice
+
 	return c, nil
 }
 
