@@ -337,6 +337,13 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 		return nil, err
 	}
 	btc.IsConfirm = true
+	
+	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, &btc)
+	if err != nil {
+		log.Error("u.CheckBlance.updatedStatus", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("updated", updated)
 	return &btc, nil
 }
 
@@ -386,7 +393,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			
 			newItem, err := u.BalanceLogic(span, item)
 			if err != nil {
-				//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 			log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
@@ -398,11 +405,27 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			}
 			log.SetData("updated", updated)
 
+			if item.MintResponse.Inscription != "" {
+				err = errors.New("Token is being minted")
+				log.Error("Token.minted",err.Error(), err)
+				return 
+			}
+
 			minResp, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
 				return
 			}
+
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				TokenID: minResp.Inscription,
+				Commit: minResp.Commit,
+				Reveal: minResp.Reveal,
+				Fees: minResp.Fees,
+				MinterAddress: "ord_master",
+				Owner: "",
+				Action: entity.MINT,
+			})
 
 			newItem.MintResponse = entity.MintStdoputResponse(*minResp)
 			newItem.IsMinted = true
@@ -537,6 +560,17 @@ func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscri
 		log.Error("u.OrdService.Exec", err.Error(), err)
 		return nil, err
 	}
+
+	u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+		TokenID: inscriptionID,
+		Commit: "",
+		Reveal: "",
+		Fees: 0,
+		MinterAddress: "ord_master",
+		Owner: inscriptionID,
+		Action: entity.SENT,
+	})
+
 	u.Notify(rootSpan, "SendToken", receiveAddr, inscriptionID)
 	log.SetData("sendTokenRes", resp)
 	return resp, err
