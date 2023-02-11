@@ -187,10 +187,16 @@ func (bs *BlockcypherService) GetLastTxs(address string) ([]Txs, error) {
 
 	body, err := ioutil.ReadAll(res.Body)
 
-	json.Unmarshal(body, &result)
 	if err != nil {
 		fmt.Println("Read body failed", err.Error())
 		return txs, errors.New("Read body failed")
+	}
+
+	err = json.Unmarshal(body, &result)
+
+	if err != nil {
+		fmt.Println("Unmarshaly failed", err.Error())
+		return txs, errors.New("Unmarshal failed")
 	}
 
 	return result.Txs, nil
