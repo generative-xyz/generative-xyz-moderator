@@ -34,8 +34,6 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 
 	f := bson.D{
 		{Key: "inscriptionID", Value: inscriptionID},
-		{Key: "isConfirm", Value: false},
-		{Key: "isSold", Value: false},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
