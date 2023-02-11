@@ -5,6 +5,7 @@ type MarketplaceBTC_ListingInfo struct {
 	Name           string `bson:"name"`
 	Description    string `bson:"description"`
 	SellOrdAddress string `bson:"seller_ord_address"` //user's wallet address from FE
+	SellerAddress  string `json:"seller_address"`
 	Price          string `bson:"amount"`
 	ServiceFee     string `bson:"service_fee"`
 }

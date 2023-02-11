@@ -16,6 +16,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	defer u.Tracer.FinishSpan(span, log)
 	listing := entity.MarketplaceBTCListing{
 		SellOrdAddress: listingInfo.SellOrdAddress,
+		SellerAddress:  listingInfo.SellerAddress,
 		HoldOrdAddress: "",
 		Price:          listingInfo.Price,
 		ServiceFee:     listingInfo.ServiceFee,

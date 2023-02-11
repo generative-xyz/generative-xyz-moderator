@@ -326,7 +326,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			// transfer now:
 			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
 				item.SegwitKey,
-				nftListing.SellOrdAddress,
+				nftListing.SellerAddress,
 				item.SegwitAddress,
 				amountWithChargee,
 				btc.PreferenceMedium,
