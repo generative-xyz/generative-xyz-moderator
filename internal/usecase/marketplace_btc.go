@@ -21,7 +21,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		ServiceFee:     listingInfo.ServiceFee,
 		IsConfirm:      false,
 		IsSold:         false,
-		ExpiredAt:      time.Now().Add(time.Hour * 6),
+		ExpiredAt:      time.Now().Add(time.Minute * 30),
 		Name:           listingInfo.Name,
 		Description:    listingInfo.Description,
 		InscriptionID:  listingInfo.InscriptionID,
@@ -134,7 +134,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		InscriptionID: orderInfo.InscriptionID,
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
-		ExpiredAt:     time.Now().Add(time.Hour * 6),
+		ExpiredAt:     time.Now().Add(time.Minute * 30),
 	}
 
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
