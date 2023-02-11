@@ -23,8 +23,21 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 
 	log.SetData("input", input)
 
+	// find Project and make sure index < max supply
+	projectID := input.ProjectID
+	project, err := u.Repo.FindProjectByProjectIdWithoutCache(projectID)
+	if err != nil {
+		log.Error("u.Repo.FindProjectByProjectIdWithoutCache", err.Error(), err)
+		return nil, err
+	}
+	if project.MintingInfo.Index >= project.MaxSupply {
+		err = fmt.Errorf("project %s is minted out", projectID)
+		log.Error("projectIsMintedOut", err.Error(), err)
+		return nil, err
+	}
+
 	walletAddress := &entity.BTCWalletAddress{}
-	err := copier.Copy(walletAddress, input)
+	err = copier.Copy(walletAddress, input)
 	if err != nil {
 		log.Error("u.CreateBTCWalletAddress.Copy", err.Error(), err)
 		return nil, err
