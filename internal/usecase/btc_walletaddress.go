@@ -424,7 +424,10 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 				Fees: minResp.Fees,
 				MinterAddress: "ord_master",
 				Owner: "",
+				ProjectID: item.ProjectID,
 				Action: entity.MINT,
+				Type: entity.BIT,
+				TraceID: u.Tracer.TraceID(span),
 			})
 
 			newItem.MintResponse = entity.MintStdoputResponse(*minResp)
@@ -504,6 +507,19 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 			// 	continue
 			// }
 
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				TokenID: item.MintResponse.Inscription,
+				Commit: item.MintResponse.Commit,
+				Reveal: item.MintResponse.Reveal,
+				Fees: item.MintResponse.Fees,
+				MinterAddress: "ord_master",
+				Owner: item.UserAddress,
+				Action: entity.SENT,
+				ProjectID: item.ProjectID,
+				Type: entity.BIT,
+				TraceID: u.Tracer.TraceID(span),
+			})
+
 			// log.SetData("fundResp", fundResp
 			item.MintResponse.IsSent = true
 			updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
@@ -561,16 +577,6 @@ func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscri
 		return nil, err
 	}
 
-	u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-		TokenID: inscriptionID,
-		Commit: "",
-		Reveal: "",
-		Fees: 0,
-		MinterAddress: "ord_master",
-		Owner: inscriptionID,
-		Action: entity.SENT,
-	})
-
 	u.Notify(rootSpan, "SendToken", receiveAddr, inscriptionID)
 	log.SetData("sendTokenRes", resp)
 	return resp, err
@@ -582,7 +588,7 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	defer u.Tracer.FinishSpan(span, log)
 
 	//slack
-	preText := fmt.Sprintf("User address: %s", userAddress)
+	preText := fmt.Sprintf("User address: %s, traceID %s", userAddress, u.Tracer.TraceID(span))
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {

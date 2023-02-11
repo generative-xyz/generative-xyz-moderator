@@ -357,7 +357,10 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				Fees: mintReps.Fees,
 				MinterAddress: "ord_master",
 				Owner: "",
+				ProjectID: item.ProjectID,
 				Action: entity.MINT,
+				Type: entity.ETH,
+				TraceID: u.Tracer.TraceID(span),
 			})
 
 	
@@ -402,6 +405,20 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 				log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				TokenID: item.MintResponse.Inscription,
+				Commit: item.MintResponse.Commit,
+				Reveal: item.MintResponse.Reveal,
+				Fees: item.MintResponse.Fees,
+				MinterAddress: "ord_master",
+				Owner: item.UserAddress,
+				Action: entity.SENT,
+				ProjectID: item.ProjectID,
+				Type: entity.ETH,
+				TraceID: u.Tracer.TraceID(span),
+			})
+		
 
 			log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
 
