@@ -257,14 +257,14 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			txHash, err := chainhash.NewHashFromStr(item.TxSendBTC)
 			if err != nil {
 				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
-				return err
+				continue
 			}
 
 			txResponse, err := btcClient.GetTransaction(txHash)
 
 			if err != nil {
 				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-				return err
+				continue
 			}
 			if txResponse.Confirmations >= 1 {
 				// send btc ok now:
