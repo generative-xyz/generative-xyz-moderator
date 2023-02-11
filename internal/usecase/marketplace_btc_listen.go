@@ -275,10 +275,10 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		err = u.Repo.UpdateBTCNFTListingSoldStatus(item.ItemID)
-		if err != nil {
-			fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-		}
+		// err = u.Repo.UpdateBTCNFTListingSoldStatus(item.ItemID)
+		// if err != nil {
+		// 	fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+		// }
 
 		go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
 		log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
