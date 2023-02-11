@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/big"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -407,15 +406,24 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 }
 
 func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
+	
 	span, log := u.StartSpan("convertBTCToETH", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+	//amount = "0.1"
+	powIntput := math.Pow10(8)
+	powIntputBig := new(big.Float)
+	powIntputBig.SetFloat64(powIntput)
+
+
 	log.SetData("amount", amount)
-	amountMintBTC, err := strconv.ParseFloat(amount, 32)
-	if err != nil {
-		log.Error("strconv.ParseFloat", err.Error(), err)
-		return "", err
-	}
+	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
+	amountMintBTC.Mul(amountMintBTC, powIntputBig)
+	// if err != nil {
+	// 	log.Error("strconv.ParseFloat", err.Error(), err)
+	// 	return "", err
+	// }
+
+	_ = amountMintBTC
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
 		log.Error("strconv.getExternalPrice", err.Error(), err)
@@ -428,20 +436,31 @@ func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (stri
 		log.Error("strconv.getExternalPrice", err.Error(), err)
 		return "", err
 	}
-
 	log.SetData("ethPrice", ethPrice)
-	amountMintBTC = amountMintBTC / math.Pow10(8)
 
-	log.SetData("amountMintBTC", amountMintBTC)
+	// amountMintBTCBigInt := web3.FloatAsInt(amountMintBTC, 8)
+
+	log.SetData("amountMintBTC", amountMintBTC.String())
 	btcToETH := btcPrice / ethPrice
-
+	
+	rate := new(big.Float)
+	rate.SetFloat64(btcToETH)
+	log.SetData("rate", rate.String())
+	
+	amountMintBTC.Mul(amountMintBTC, rate)
 	log.SetData("btcToETH", btcToETH)
-	amountMintETH := amountMintBTC * btcToETH
-	amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
 
-	log.SetData("amountMintETH", amountMintETH)
-	return fmt.Sprintf("%.f", amountMintETH), nil
+	pow := math.Pow10(10)
+	powBig := new(big.Float)
+	powBig.SetFloat64(pow)
+	
+	amountMintBTC.Mul(amountMintBTC, powBig)
+	log.SetData("amountMintBTC.Mul", btcToETH)
 
-	//return fmt.Sprintf("1500000000000000000"), nil
+	result := new(big.Int)
+	amountMintBTC.Int(result)
+	
+
+	return result.String(), nil
 }
 

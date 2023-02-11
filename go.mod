@@ -40,6 +40,15 @@ require (
 require github.com/blockcypher/gobcy/v2 v2.0.5
 
 require (
+	github.com/allegro/bigcache v1.2.1 // indirect
+	github.com/cespare/xxhash v1.1.0 // indirect
+	github.com/edsrzf/mmap-go v1.1.0 // indirect
+	github.com/gochain/gochain/v4 v4.1.0 // indirect
+	github.com/gochain/web3 v0.2.92 // indirect
+	github.com/shopspring/decimal v1.3.1 // indirect
+)
+
+require (
 	cloud.google.com/go v0.105.0 // indirect
 	cloud.google.com/go/compute v1.13.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.2 // indirect
@@ -87,7 +96,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
@@ -117,7 +126,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.24.2 // indirect
 	github.com/prometheus/tsdb v0.7.1 // indirect
-	github.com/rjeczalik/notify v0.9.1 // indirect
+	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
