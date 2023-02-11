@@ -31,6 +31,7 @@ type ITracer interface {
 	CtxWithSpan(ctx context.Context, span opentracing.Span) context.Context
 	StartSpanFromContext(ctx context.Context, name string) opentracing.Span
 	FinishSpan(span opentracing.Span, log *TraceLog)
+	TraceID(span opentracing.Span) string
 }
 
 type tracer struct {
@@ -173,4 +174,11 @@ func (t *tracer) FinishSpan(span opentracing.Span, log *TraceLog) {
 	log.ToSpan(span)
 
 	span.Finish()
+}
+
+
+func (t *tracer) TraceID(span opentracing.Span) string {
+
+	traceContext := span.Context().(jaeger.SpanContext)
+	return	 traceContext.TraceID().String()
 }

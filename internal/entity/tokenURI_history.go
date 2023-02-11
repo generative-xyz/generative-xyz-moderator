@@ -27,7 +27,10 @@ type TokenUriHistories struct {
 	Action TokenHistoryType `bson:"action"`
 	Commit string `bson:"commit"`
 	Reveal string `bson:"reveal"`
-	Fees int `bson:"reveal"`
+	Fees int `bson:"fees"`
+	ProjectID string `bson:"projectID"`
+	Type TokenPaidType `bson:"type"`
+	TraceID string `bson:"traceID"`
 }
 
 func (u TokenUriHistories) TableName() string { 
