@@ -77,27 +77,33 @@ func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(sec
 	return skel.Trans.Hash, nil
 }
 
-func (bs *BlockcypherService) GetBalance(address string) (*big.Int, error) {
+func (bs *BlockcypherService) GetBalance(address string) (*big.Int, int, error) {
 
 	b := new(big.Int)
 
+	confirm := 0
+
 	btcAddrInfo, err := bs.BTCGetAddrInfo(address)
 	if err != nil {
-		return nil, errors.Wrap(err, "c.btc.BalanceAt")
+		return nil, confirm, errors.Wrap(err, "c.btc.BalanceAt")
 	}
 	// check confirmations number: 6
 	if len(btcAddrInfo.TxRefs) > 0 {
 		for _, tx := range btcAddrInfo.TxRefs {
 			fmt.Println("btcAddrInfo.TxRefs[0].Confirmations ", tx.Confirmations)
-			if tx.Confirmations < 6 {
-				return b, nil
-			}
+			confirm = tx.Confirmations
+			break
+			// if tx.Confirmations < 6 {
+			// 	return b, nil
+			// } else {
+			// 	return b, errors.Errorf("need 6 confirm, current confirm %d", tx.Confirmations)
+			// }
 		}
 
 	}
 
 	b.SetUint64(btcAddrInfo.Balance)
-	return b, nil
+	return b, confirm, nil
 }
 
 // BTCGetAddrInfo :
@@ -151,7 +157,7 @@ func (bs *BlockcypherService) GetLastTxs(address string) ([]Txs, error) {
 	var txs []Txs
 
 	// get last tx:
-	url := bs.chainEndpoint + "addrs/" + address + "?token=" + bs.bcyToken
+	url := bs.chainEndpoint + "/" + address + "?token=" + bs.bcyToken
 	fmt.Println("url", url)
 
 	req, err := http.NewRequest("GET", url, nil)
