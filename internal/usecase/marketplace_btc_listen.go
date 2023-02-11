@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -10,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
@@ -319,14 +321,27 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				log.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 				continue
 			}
+			tmpText := sentTokenResp.Stdout
+			//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
+			jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
+			jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+			btcMintResp := &ord_service.MintStdoputRespose{}
+
+			bytes := []byte(jsonStr)
+			err = json.Unmarshal(bytes, btcMintResp)
+			if err != nil {
+				log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", err.Error(), err)
+				continue
+			}
 
 			log.SetData(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
-			item.TxSendNFT = ""
+			item.TxSendNFT = btcMintResp.Commit
 			item.Status = entity.StatusBuy_SendingNFT
 			item.ErrCount = 0 // reset error count!
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
-				fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
 			}
 		}
 	}
