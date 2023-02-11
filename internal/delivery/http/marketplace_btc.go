@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -167,13 +166,13 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		OrderID:       reqBody.OrderID,
 		BuyOrdAddress: reqBody.WalletAddress,
 	}
-
-	_, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(reqBody.InscriptionID)
-	if err != nil {
-		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
-		return
-	}
+	//TODO: lam uncomment
+	// _, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(reqBody.InscriptionID)
+	// if err != nil {
+	// 	log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
+	// 	return
+	// }
 
 	depositAddress, err := h.Usecase.BTCMarketplaceBuyOrder(span, reqUsecase)
 	if err != nil {

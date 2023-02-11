@@ -532,7 +532,7 @@ func (u Usecase) UpdateTokenOnwer(rootSpan opentracing.Span,event string, offeri
 	}
 
 	log.SetData("token.Owner", owner)
-	log.SetData(utils.WALLET_ADDRESS_TAG, owner)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, owner)
 	token.Owner = profile
 	token.OwnerAddr = owner
 
