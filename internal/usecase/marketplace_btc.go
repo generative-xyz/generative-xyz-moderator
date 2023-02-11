@@ -27,7 +27,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
-			"ord_master",
+			"ord_marketplace_master",
 			"wallet",
 			"receive",
 		},
