@@ -602,6 +602,8 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	// find project by projectID
 	log.SetData(utils.TOKEN_ID_TAG, tokenID)
 	log.SetData(utils.PROJECT_ID_TAG, projectID)
+	log.SetData("mintedURL", mintedURL)
+	
 	project, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
 		log.Error("CreateBTCTokenURI.Project", err.Error(), err)
@@ -625,11 +627,21 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	tokenUri.ProjectID = project.TokenID
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.PaidType = paidType
+	tokenUri.IsOnchain = false
 
 	nftTokenUri := project.NftTokenUri
+	log.SetData("nftTokenUri", nftTokenUri)
+
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err = helpers.Base64DecodeRaw(project.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		return nil, err
+	}
 	
 	imageURI := ""
-	if nftTokenUri != "" {
+	if projectNftTokenUri.AnimationUrl != ""  {
+		log.SetData("nftTokenUri", len(nftTokenUri))
 		base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
 
 		type Data struct {
@@ -652,6 +664,7 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 		tokenUri.Image = mintedURL
 		tokenUri.ParsedImage = &mintedURL
 		tokenUri.ThumbnailCapturedAt = &now
+		log.SetData("mintedURL", mintedURL)
 	}
 
 	tokenUri.AnimationURL = imageURI

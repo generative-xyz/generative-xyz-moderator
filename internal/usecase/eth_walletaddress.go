@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"math"
 	"math/big"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -81,7 +79,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("found.Project", p.ID)
-	mintPrice, err := convertBTCToETH(p.MintPrice)
+	mintPrice, err := u.convertBTCToETH(span, p.MintPrice)
 	if err != nil {
 		log.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
@@ -114,7 +112,7 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	ethAddress, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
+		log.Error("ETHMint.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
 
@@ -301,7 +299,7 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-
+	
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
 		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
@@ -309,38 +307,52 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 	}
 
 	for _, item := range addreses {
-		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
-		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-		newItem, err := u.BalanceETHLogic(span, item)
-		if err != nil {
-			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-		u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
+		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log) 
+			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+			newItem, err := u.BalanceETHLogic(span, item)
+			if err != nil {
+				//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
+			u.Notify(rootSpan, "WaitingForBalancing", item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData("updated", updated)
+	
+			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
+				return
+			}
+	
+			log.SetData("btc.Minted", mintReps)
+	
+			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
+			newItem.IsMinted = true
+			newItem.FileURI = *fileURI
+			updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			if err != nil {
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 
-		mintReps, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
-			continue
-		}
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, newItem.ProjectID, item.MintResponse.Inscription, newItem.FileURI, entity.ETH)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 
-		log.SetData("btc.Minted", mintReps)
+		}(span, item)
 
-		newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
-		newItem.IsMinted = true
-		updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
-		if err != nil {
-			log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
@@ -357,100 +369,79 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	}
 
 	for _, item := range addreses {
-		log.SetData("userWallet", item.UserAddress)
-		log.SetData("ordWalletAddress", item.OrdAddress)
-		sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
+		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
 
-		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+			log.SetData("userWallet", item.UserAddress)
+			log.SetData("ordWalletAddress", item.OrdAddress)
+			sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 
-		//TODO - fund via ETH
+			log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
 
-		item.MintResponse.IsSent = true
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
+			//TODO - fund via ETH
 
-		//TODO: - create entity.TokenURI
-		_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
+			item.MintResponse.IsSent = true
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			log.SetData("updated", updated)
+
+			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+
+		}(span, item)
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
 }
 
-func convertBTCToETH(amount string) (string, error) {
-	// amountMintBTC, err := strconv.ParseFloat(amount, 32)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// btcPrice, err := getExternalPrice("BTC")
-	// if err != nil {
-	// 	return "", err
-	// }
-	// ethPrice, err := getExternalPrice("ETH")
-	// if err != nil {
-	// 	return "", err
-	// }
-	// amountMintBTC = amountMintBTC / math.Pow10(8)
+func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
+	span, log := u.StartSpan("convertBTCToETH", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	log.SetData("amount", amount)
+	amountMintBTC, err := strconv.ParseFloat(amount, 32)
+	if err != nil {
+		log.Error("strconv.ParseFloat", err.Error(), err)
+		return "", err
+	}
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		log.Error("strconv.getExternalPrice", err.Error(), err)
+		return "", err
+	}
 
-	// btcToETH := btcPrice / ethPrice
+	log.SetData("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		log.Error("strconv.getExternalPrice", err.Error(), err)
+		return "", err
+	}
 
-	// amountMintETH := amountMintBTC * btcToETH
-	// amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
-	// return fmt.Sprintf("%.f", amountMintETH), nil
+	log.SetData("ethPrice", ethPrice)
+	amountMintBTC = amountMintBTC / math.Pow10(8)
 
-	return fmt.Sprintf("1500000000000000000"), nil
+	log.SetData("amountMintBTC", amountMintBTC)
+	btcToETH := btcPrice / ethPrice
+
+	log.SetData("btcToETH", btcToETH)
+	amountMintETH := amountMintBTC * btcToETH
+	amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
+
+	log.SetData("amountMintETH", amountMintETH)
+	return fmt.Sprintf("%.f", amountMintETH), nil
+
+	//return fmt.Sprintf("1500000000000000000"), nil
 }
 
-func getExternalPrice(tokenSymbol string) (float64, error) {
-	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
-	var price struct {
-		Symbol string `json:"symbol"`
-		Price  string `json:"price"`
-	}
-	var jsonErr struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-	}
-	retryTimes := 0
-retry:
-	retryTimes++
-	if retryTimes > 2 {
-		return 0, nil
-	}
-	tk := strings.ToUpper(tokenSymbol)
-	resp, err := http.Get(binancePriceURL + tk + "USDT")
-	if err != nil {
-		log.Println(err)
-		goto retry
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	err = json.Unmarshal(body, &price)
-	if err != nil {
-		err = json.Unmarshal(body, &jsonErr)
-		if err != nil {
-			log.Println(err)
-			goto retry
-		}
-	}
-	resp.Body.Close()
-	value, err := strconv.ParseFloat(price.Price, 32)
-	if err != nil {
-		log.Println("getExternalPrice", tokenSymbol, err)
-		return 0, nil
-	}
-	return value, nil
-}
