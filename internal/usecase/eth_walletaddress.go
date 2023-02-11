@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"math"
 	"math/big"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -81,7 +79,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("found.Project", p.ID)
-	mintPrice, err := convertBTCToETH(p.MintPrice)
+	mintPrice, err := u.convertBTCToETH(span, p.MintPrice)
 	if err != nil {
 		log.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
@@ -408,69 +406,42 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	return nil, nil
 }
 
-func convertBTCToETH(amount string) (string, error) {
-	// amountMintBTC, err := strconv.ParseFloat(amount, 32)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// btcPrice, err := getExternalPrice("BTC")
-	// if err != nil {
-	// 	return "", err
-	// }
-	// ethPrice, err := getExternalPrice("ETH")
-	// if err != nil {
-	// 	return "", err
-	// }
-	// amountMintBTC = amountMintBTC / math.Pow10(8)
+func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
+	span, log := u.StartSpan("convertBTCToETH", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	log.SetData("amount", amount)
+	amountMintBTC, err := strconv.ParseFloat(amount, 32)
+	if err != nil {
+		log.Error("strconv.ParseFloat", err.Error(), err)
+		return "", err
+	}
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		log.Error("strconv.getExternalPrice", err.Error(), err)
+		return "", err
+	}
 
-	// btcToETH := btcPrice / ethPrice
+	log.SetData("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		log.Error("strconv.getExternalPrice", err.Error(), err)
+		return "", err
+	}
 
-	// amountMintETH := amountMintBTC * btcToETH
-	// amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
-	// return fmt.Sprintf("%.f", amountMintETH), nil
+	log.SetData("ethPrice", ethPrice)
+	amountMintBTC = amountMintBTC / math.Pow10(8)
 
-	return fmt.Sprintf("1500000000000000000"), nil
+	log.SetData("amountMintBTC", amountMintBTC)
+	btcToETH := btcPrice / ethPrice
+
+	log.SetData("btcToETH", btcToETH)
+	amountMintETH := amountMintBTC * btcToETH
+	amountMintETH = math.Floor(amountMintETH * math.Pow10(18))
+
+	log.SetData("amountMintETH", amountMintETH)
+	return fmt.Sprintf("%.f", amountMintETH), nil
+
+	//return fmt.Sprintf("1500000000000000000"), nil
 }
 
-func getExternalPrice(tokenSymbol string) (float64, error) {
-	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
-	var price struct {
-		Symbol string `json:"symbol"`
-		Price  string `json:"price"`
-	}
-	var jsonErr struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-	}
-	retryTimes := 0
-retry:
-	retryTimes++
-	if retryTimes > 2 {
-		return 0, nil
-	}
-	tk := strings.ToUpper(tokenSymbol)
-	resp, err := http.Get(binancePriceURL + tk + "USDT")
-	if err != nil {
-		log.Println(err)
-		goto retry
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	err = json.Unmarshal(body, &price)
-	if err != nil {
-		err = json.Unmarshal(body, &jsonErr)
-		if err != nil {
-			log.Println(err)
-			goto retry
-		}
-	}
-	resp.Body.Close()
-	value, err := strconv.ParseFloat(price.Price, 32)
-	if err != nil {
-		log.Println("getExternalPrice", tokenSymbol, err)
-		return 0, nil
-	}
-	return value, nil
-}
