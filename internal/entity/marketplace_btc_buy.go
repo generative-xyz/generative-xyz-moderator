@@ -36,7 +36,7 @@ type MarketplaceBTCBuyOrder struct {
 	RawData         string    `bson:"raw_data"` // raw data of sending btc (for retry)
 	UTXO            string    `bson:"utxo"`
 	TxSendNFT       string    `bson:"tx_send_nft"`
-	TxSendSendBTC   string    `bson:"tx_send_btc"`
+	TxSendBTC       string    `bson:"tx_send_btc"`
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {
