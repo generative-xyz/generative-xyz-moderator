@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -194,12 +195,12 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		BuyOrdAddress: reqBody.WalletAddress,
 	}
 	//TODO: lam uncomment
-	// _, err = h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
-	// if err != nil {
-	// 	log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
-	// 	return
-	// }
+	_, err = h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
+		return
+	}
 
 	depositAddress, err := h.Usecase.BTCMarketplaceBuyOrder(span, reqUsecase)
 	if err != nil {
