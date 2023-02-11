@@ -37,7 +37,7 @@ require (
 	gorm.io/gorm v1.23.9
 )
 
-require github.com/blockcypher/gobcy/v2 v2.0.4
+require github.com/blockcypher/gobcy/v2 v2.0.5
 
 require (
 	cloud.google.com/go v0.105.0 // indirect

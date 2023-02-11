@@ -412,7 +412,16 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 				return
 			}
 			log.SetData("btc.Minted", minResp)
+
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, newItem.ProjectID, newItem.MintResponse.Inscription, newItem.FileURI, entity.BIT)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 		}(span, item)
+
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
@@ -487,21 +496,23 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 			}
 			log.SetData("updated", updated)
 
-			//TODO: - create entity.TokenURI
-			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
+			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
 			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+			
+
 		}(span, item)
-		
+
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
 }
 
 func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan("SendToken", rootSpan)
+	span, log := u.StartSpan(fmt.Sprintf("SendToken.%s", inscriptionID), rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
