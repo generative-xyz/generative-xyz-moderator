@@ -121,43 +121,43 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	// 		"inscriptionID": "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
 	var nft *entity.MarketplaceBTCListing
 	var err error
-	switch inscriptionID {
-	case "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0":
-		nft = &entity.MarketplaceBTCListing{
-			InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
-			Name:          "Test1",
-			Description:   "test1 blah blah blah",
-			Price:         "1234567",
-			BaseEntity: entity.BaseEntity{
-				UUID: "1",
-			},
-		}
-	case "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0":
-		nft = &entity.MarketplaceBTCListing{
-			InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
-			Name:          "Test2",
-			Description:   "test2 blah blah blah",
-			Price:         "1234567", BaseEntity: entity.BaseEntity{
-				UUID: "2",
-			},
-		}
-	case "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0":
-		nft = &entity.MarketplaceBTCListing{
-			InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
-			Name:          "Test3",
-			Description:   "test3 blah blah blah",
-			Price:         "1234567", BaseEntity: entity.BaseEntity{
-				UUID: "3",
-			},
-		}
-	default:
-		nft, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(inscriptionID)
-		if err != nil {
-			log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
+	// switch inscriptionID {
+	// case "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0":
+	// 	nft = &entity.MarketplaceBTCListing{
+	// 		InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
+	// 		Name:          "Test1",
+	// 		Description:   "test1 blah blah blah",
+	// 		Price:         "1234567",
+	// 		BaseEntity: entity.BaseEntity{
+	// 			UUID: "1",
+	// 		},
+	// 	}
+	// case "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0":
+	// 	nft = &entity.MarketplaceBTCListing{
+	// 		InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
+	// 		Name:          "Test2",
+	// 		Description:   "test2 blah blah blah",
+	// 		Price:         "1234567", BaseEntity: entity.BaseEntity{
+	// 			UUID: "2",
+	// 		},
+	// 	}
+	// case "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0":
+	// 	nft = &entity.MarketplaceBTCListing{
+	// 		InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
+	// 		Name:          "Test3",
+	// 		Description:   "test3 blah blah blah",
+	// 		Price:         "1234567", BaseEntity: entity.BaseEntity{
+	// 			UUID: "3",
+	// 		},
+	// 	}
+	// default:
+	nft, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(inscriptionID)
+	if err != nil {
+		log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
+	// }
 
 	nftInfo := response.MarketplaceNFTDetail{
 		InscriptionID: nft.InscriptionID,
