@@ -272,7 +272,8 @@ func NewConfig() (*Config, error) {
 		BTC_RPCPASSWORD: os.Getenv("BTC_RPCPASSWORD"),
 		BTC_FULLNODE:    os.Getenv("BTC_FULLNODE"),
 
-		BlockcypherAPI: os.Getenv("BlockcypherAPI"),
+		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
+		BlockcypherToken: os.Getenv("BlockcypherToken"),
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")
