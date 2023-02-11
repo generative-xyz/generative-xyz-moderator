@@ -82,39 +82,39 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 	defer u.Tracer.FinishSpan(span, log)
 	result := []entity.MarketplaceBTCListing{}
 
-	test1 := entity.MarketplaceBTCListing{
-		InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
-		Name:          "Test1",
-		Description:   "test1 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "1",
-		},
-	}
+	// test1 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
+	// 	Name:          "Test1",
+	// 	Description:   "test1 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "1",
+	// 	},
+	// }
 
-	test2 := entity.MarketplaceBTCListing{
-		InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
-		Name:          "Test2",
-		Description:   "test2 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "2",
-		},
-	}
+	// test2 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
+	// 	Name:          "Test2",
+	// 	Description:   "test2 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "2",
+	// 	},
+	// }
 
-	test3 := entity.MarketplaceBTCListing{
-		InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
-		Name:          "Test3",
-		Description:   "test3 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "3",
-		},
-	}
+	// test3 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
+	// 	Name:          "Test3",
+	// 	Description:   "test3 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "3",
+	// 	},
+	// }
 
-	result = append(result, test1)
-	result = append(result, test2)
-	result = append(result, test3)
+	// result = append(result, test1)
+	// result = append(result, test2)
+	// result = append(result, test3)
 
 	nftList, err := u.Repo.RetrieveBTCNFTListings()
 	if err != nil {
