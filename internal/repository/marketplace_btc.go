@@ -27,6 +27,7 @@ func (r Repository) CreateMarketplaceBuyOrder(order *entity.MarketplaceBTCBuyOrd
 	return nil
 }
 
+// get item valid + unsold:
 func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
@@ -34,6 +35,27 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 		{Key: "inscriptionID", Value: inscriptionID},
 		{Key: "isConfirm", Value: true},
 		{Key: "isSold", Value: false},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// get item valid to get info:
+func (r Repository) FindBtcNFTListingByNFTIDValid(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "isConfirm", Value: true},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
@@ -95,6 +117,54 @@ func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, er
 	}
 
 	return resp, nil
+}
+
+func (r Repository) RetrieveBTCNFTPendingBuyOrders() ([]entity.MarketplaceBTCBuyOrder, error) {
+	resp := []entity.MarketplaceBTCBuyOrder{}
+	filter := bson.M{
+		"status":     entity.StatusBuy_Pending,
+		"expired_at": bson.M{"$gte": time.Now().UTC().Format("2006-01-02 15:04:05")},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) RetrieveBTCNFTBuyOrdersByStatus(status entity.BuyStatus) ([]entity.MarketplaceBTCBuyOrder, error) {
+	resp := []entity.MarketplaceBTCBuyOrder{}
+	filter := bson.M{
+		"status": status,
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{{"id", model.ID}}
+	result, err := r.UpdateOne(model.TableName(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // func (r Repository) FindListingByOfferingID(offeringID string) (*entity.MarketplaceListings, error) {
