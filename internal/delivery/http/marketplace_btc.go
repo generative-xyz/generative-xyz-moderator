@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
@@ -207,8 +208,9 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		return
 	}
 
-	resp := response.CreateMarketplaceBTCListing{
+	resp := response.CreateMarketplaceBTCBuyOrder{
 		ReceiveAddress: depositAddress,
+		TimeoutAt:      time.Now().Add(time.Minute * 15).UTC().Format("2017.09.07 17:06:06"),
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
