@@ -413,12 +413,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 			}
 			log.SetData("btc.Minted", minResp)
 
-			//TODO: - create entity.TokenURI
-			_, err = u.CreateBTCTokenURI(span, newItem.ProjectID, newItem.MintResponse.Inscription, newItem.FileURI, entity.BIT)
-			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
+			
 		}(span, item)
 
 		time.Sleep(5 * time.Second)
@@ -484,14 +479,18 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 			// 	continue
 			// }
 
-			// log.SetData("fundResp", fundResp)
-
-			//TODO -
-
+			// log.SetData("fundResp", fundResp
 			item.MintResponse.IsSent = true
 			updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
 			if err != nil {
 				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+			
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 			log.SetData("updated", updated)
