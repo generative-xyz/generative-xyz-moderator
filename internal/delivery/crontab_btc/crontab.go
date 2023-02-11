@@ -60,16 +60,31 @@ func (h ScronBTCHandler) StartServer() {
 
 		}()
 		go func() {
-			// h.Usecase.BtcChecktListNft(span)
+			h.Usecase.BtcChecktListNft(span)
 
 		}()
 		go func() {
-			// h.Usecase.BtcCheckReceivedBuyingNft(span)
+			h.Usecase.BtcCheckReceivedBuyingNft(span)
 
 		}()
 
 		go func() {
-			// h.Usecase.BtcSendBTCForBuyOrder(span)
+			h.Usecase.BtcSendBTCForBuyOrder(span)
+
+		}()
+
+		go func() {
+			h.Usecase.BtcCheckSendBTCForBuyOrder(span)
+
+		}()
+
+		go func() {
+			h.Usecase.BtcSendNFTForBuyOrder(span)
+
+		}()
+
+		go func() {
+			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
 
 		}()
 
