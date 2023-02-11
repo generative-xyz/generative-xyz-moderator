@@ -91,6 +91,7 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 			Description:   nft.Description,
 			Price:         nft.Price,
 			OrderID:       nft.UUID,
+			IsConfirmed:   nft.IsConfirm,
 		}
 		result = append(result, nftInfo)
 	}

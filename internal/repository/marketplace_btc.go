@@ -123,8 +123,8 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		"isConfirm": false,
-		"isSold":    false,
+		// "isConfirm": false,
+		"isSold": false,
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
