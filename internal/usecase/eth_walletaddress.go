@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,7 +79,12 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("found.Project", p.ID)
-	mintPrice, err := u.convertBTCToETH(span, p.MintPrice)
+	mintPriceInt, err := strconv.ParseInt(p.MintPrice, 10, 64)
+	if err != nil {
+		log.Error("convertBTCToInt", err.Error(), err)
+		return nil, err
+	}
+	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt) / 1e8))
 	if err != nil {
 		log.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
