@@ -49,6 +49,27 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 	return resp, nil
 }
 
+func (r Repository) FindBtcNFTListingByOrderID(id string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "uuid", Value: id},
+		{Key: "isConfirm", Value: true},
+		{Key: "isSold", Value: false},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 // get item valid to get info:
 func (r Repository) FindBtcNFTListingByNFTIDValid(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}

@@ -2,7 +2,10 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
@@ -12,7 +15,7 @@ import (
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.ethGetReceiveWalletAddress", r)
+	span, log := h.StartSpan("httpDelivery.btcMarketplaceListing", r)
 	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
@@ -20,13 +23,34 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	inscriptionID := strings.Split(reqBody.InscriptionID, "https://ordinals.com/inscription/")
+
+	if len(inscriptionID) != 2 {
+		err := fmt.Errorf("invalid ordinals link")
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if reqBody.Name == "" {
+		err := fmt.Errorf("invalid name")
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	// if strings.Contains(reqBody.ReceiveAddress)
+	if _, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
+		err := fmt.Errorf("invalid price")
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	reqUsecase := structure.MarketplaceBTC_ListingInfo{
-		InscriptionID:  reqBody.InscriptionID,
+		InscriptionID:  inscriptionID[1],
 		Name:           reqBody.Name,
 		Description:    reqBody.Description,
 		SellOrdAddress: reqBody.ReceiveAddress,
@@ -167,7 +191,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		BuyOrdAddress: reqBody.WalletAddress,
 	}
 	//TODO: lam uncomment
-	// _, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(reqBody.InscriptionID)
+	// _, err = h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
 	// if err != nil {
 	// 	log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
