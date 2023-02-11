@@ -237,14 +237,14 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			// send user first:
 			receiveAmount, _ := big.NewInt(0).SetString(item.ReceivedBalance, 10)
 			// charge 10% total amount:
-			AmountWithChargee := int(receiveAmount.Uint64() * utils.BUY_NFT_CHARGE / 100)
+			amountWithChargee := int(receiveAmount.Uint64()) - int(receiveAmount.Uint64()*utils.BUY_NFT_CHARGE/100)
 
 			// transfer now:
 			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
 				item.SegwitKey,
 				nftListing.SellOrdAddress,
 				item.SegwitAddress,
-				AmountWithChargee,
+				amountWithChargee,
 				btc.PreferenceMedium,
 			)
 			if err != nil {

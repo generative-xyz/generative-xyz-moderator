@@ -26,10 +26,14 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 }
 
 func (h ScronBTCHandler) StartServer() {
+
+	if true {
+		return
+	}
+
 	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 	defer span.Finish()
 
-	
 	c := cron.New()
 	c.AddFunc("*/1 * * * *", func() {
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
@@ -43,7 +47,7 @@ func (h ScronBTCHandler) StartServer() {
 		go func() {
 			span := h.Tracer.StartSpan("ScronBTCHandler.WaitingForBalancing")
 			defer span.Finish()
-			
+
 			h.Usecase.WaitingForBalancing(span) // BTC
 		}()
 		go func() {
@@ -67,7 +71,7 @@ func (h ScronBTCHandler) StartServer() {
 
 			span := h.Tracer.StartSpan("ScronBTCHandler.WaitingForETHMinted")
 			defer span.Finish()
-			
+
 			h.Usecase.WaitingForETHMinted(span)
 
 		}()
@@ -96,16 +100,22 @@ func (h ScronBTCHandler) StartServer() {
 		}()
 
 		go func() {
+			span := h.Tracer.StartSpan("ScronBTCHandler.BtcCheckSendBTCForBuyOrder")
+			defer span.Finish()
 			h.Usecase.BtcCheckSendBTCForBuyOrder(span)
 
 		}()
 
 		go func() {
+			span := h.Tracer.StartSpan("ScronBTCHandler.BtcSendNFTForBuyOrder")
+			defer span.Finish()
 			h.Usecase.BtcSendNFTForBuyOrder(span)
 
 		}()
 
 		go func() {
+			span := h.Tracer.StartSpan("ScronBTCHandler.BtcCheckSendNFTForBuyOrder")
+			defer span.Finish()
 			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
 
 		}()
