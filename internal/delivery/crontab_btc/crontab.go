@@ -1,7 +1,6 @@
 package crontab_btc
 
 import (
-	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -27,11 +26,7 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 func (h ScronBTCHandler) StartServer() {
 
-	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
-	defer span.Finish()
-
-	c := cron.New()
-	c.AddFunc("*/1 * * * *", func() {
+	for {
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
 		defer span.Finish()
 
@@ -46,6 +41,7 @@ func (h ScronBTCHandler) StartServer() {
 
 			h.Usecase.WaitingForBalancing(span) // BTC
 		}()
+		
 		go func() {
 			span := h.Tracer.StartSpan("ScronBTCHandler.WaitingForETHBalancing")
 			defer span.Finish()
@@ -115,8 +111,6 @@ func (h ScronBTCHandler) StartServer() {
 			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
 
 		}()
-
-	})
-
-	c.Start()
+		
+	}
 }

@@ -311,6 +311,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 		return nil, err
 	}
 
+	log.SetData("addreses", addreses)
 	for _, item := range addreses {
 		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
@@ -367,7 +368,8 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 		log.Error("WillBeProcessWTC.ListETHAddress", err.Error(), err)
 		return nil, err
 	}
-
+	
+	log.SetData("addreses", addreses)
 	for _, item := range addreses {
 		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
