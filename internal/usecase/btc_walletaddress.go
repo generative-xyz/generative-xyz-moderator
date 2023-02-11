@@ -375,6 +375,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 		return nil, err
 	}
 
+	log.SetData("addreses", addreses)
 	for _, item := range addreses {
 		func (rootSpan opentracing.Span, item entity.BTCWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
@@ -432,6 +433,7 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 		return nil, err
 	}
 
+	log.SetData("addreses", addreses)
 	for _, item := range addreses {
 		func (rootSpan opentracing.Span, item entity.BTCWalletAddress) { 
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
