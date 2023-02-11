@@ -114,7 +114,7 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	ethAddress, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
 	if err != nil {
-		log.Error("BTCMint.FindBtcWalletAddressByOrd", err.Error(), err)
+		log.Error("ETHMint.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
 
@@ -301,7 +301,7 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-
+	
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
 		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
@@ -344,7 +344,17 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, newItem.ProjectID, item.MintResponse.Inscription, newItem.FileURI, entity.ETH)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
+
 		}(span, item)
+
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
@@ -385,14 +395,14 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 			}
 			log.SetData("updated", updated)
 
-			//TODO: - create entity.TokenURI
-			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
+			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
 			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+
 		}(span, item)
-		
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil, nil
