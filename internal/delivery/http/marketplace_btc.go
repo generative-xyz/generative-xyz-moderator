@@ -55,7 +55,8 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		InscriptionID:  inscriptionID[1],
 		Name:           reqBody.Name,
 		Description:    reqBody.Description,
-		SellOrdAddress: reqBody.ReceiveAddress,
+		SellOrdAddress: reqBody.ReceiveOrdAddress,
+		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
 		ServiceFee:     "10", //10%
 	}
