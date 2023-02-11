@@ -95,6 +95,7 @@ const (
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
+	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
 
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
