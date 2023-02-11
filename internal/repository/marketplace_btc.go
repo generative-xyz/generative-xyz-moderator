@@ -69,6 +69,22 @@ func (r Repository) FindBtcNFTListingByOrderID(id string) (*entity.MarketplaceBT
 	return resp, nil
 }
 
+func (r Repository) CheckBTCListingHaveOngoingOrder(id string) (*entity.MarketplaceBTCBuyOrder, error) {
+	resp := entity.MarketplaceBTCBuyOrder{}
+	filter := bson.M{
+		"status":  bson.M{"$nin": []entity.BuyStatus{entity.StatusBuy_Pending, entity.StatusBuy_NotEnoughBalance}},
+		"item_id": id,
+	}
+
+	cursor := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).FindOne(context.TODO(), filter)
+	if cursor.Err() != nil {
+		return nil, cursor.Err()
+	}
+
+	cursor.Decode(&resp)
+	return &resp, nil
+}
+
 // get item valid to get info:
 func (r Repository) FindBtcNFTListingByNFTIDValid(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
@@ -124,8 +140,8 @@ func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, er
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
 		//TODO: lam uncomment this
-		// "isConfirm": false,
-		"isSold": false,
+		"isConfirm": true,
+		"isSold":    false,
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
