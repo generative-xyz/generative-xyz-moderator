@@ -225,7 +225,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	defer u.Tracer.FinishSpan(span, log)
 
 	// check eth balance:
-	ethClientWrap, err := ethclient.Dial(u.Config.Moralis.URL)
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -348,12 +348,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				return
 			}
 
-			//TODO: - create entity.TokenURI
-			_, err = u.CreateBTCTokenURI(span, newItem.ProjectID, item.MintResponse.Inscription, newItem.FileURI, entity.ETH)
-			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
+			
 
 		}(span, item)
 
@@ -397,6 +392,13 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 				return
 			}
 			log.SetData("updated", updated)
+
+			//TODO: - create entity.TokenURI
+			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
+			if err != nil {
+				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+				return
+			}
 
 			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
 			if err != nil {
