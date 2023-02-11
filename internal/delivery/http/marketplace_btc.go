@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -31,7 +32,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		Description:    reqBody.Description,
 		SellOrdAddress: reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     "10000", //10% 100000/10000
+		ServiceFee:     "10000", //10% 10000/10000
 	}
 
 	depositAddress, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
@@ -70,58 +71,6 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 		}
 		result = append(result, nftInfo)
 	}
-	// baseF, err := h.BaseFilters(r)
-	// if err != nil {
-	// 	log.Error("BaseFilters", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
-
-	// h.Usecase.FindBtcNFTListingByNFTID()
-	// f := structure.FilterProposalVote{}
-	// f.BaseFilters = *baseF
-
-	// f.ProposalID = &proposalID
-	// support := r.URL.Query().Get("support")
-	// if support != "" {
-	// 	supportInt, err := strconv.Atoi(support)
-	// 	if err != nil {
-	// 		log.Error("strconv.Atoi", err.Error(), err)
-	// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 		return
-	// 	}
-	// 	f.Support = &supportInt
-	// }
-
-	// voter := r.URL.Query().Get("voter")
-	// if voter != "" {
-	// 	f.Voter = &voter
-	// }
-
-	// paginationData, err := h.Usecase.GetProposalVotes(span, f)
-	// if err != nil {
-	// 	log.Error("h.Usecase.GetProposal", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
-
-	// pResp := []response.ProposalVotesResp{}
-	// iPro := paginationData.Result
-	// pro := iPro.([]entity.ProposalVotes)
-	// for _, proItem := range pro {
-
-	// 	tmp := &response.ProposalVotesResp{}
-	// 	err := response.CopyEntityToRes(tmp, &proItem)
-	// 	if err != nil {
-	// 		log.Error("copier.Copy", err.Error(), err)
-	// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 		return
-	// 	}
-
-	// 	pResp = append(pResp, *tmp)
-	// }
-
-	// //log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
@@ -217,6 +166,13 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		InscriptionID: reqBody.InscriptionID,
 		OrderID:       reqBody.OrderID,
 		BuyOrdAddress: reqBody.WalletAddress,
+	}
+
+	_, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(reqBody.InscriptionID)
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
+		return
 	}
 
 	depositAddress, err := h.Usecase.BTCMarketplaceBuyOrder(span, reqUsecase)
