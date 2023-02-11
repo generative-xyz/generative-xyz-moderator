@@ -22,6 +22,9 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		IsConfirm:      false,
 		IsSold:         false,
 		ExpiredAt:      time.Now().Add(time.Hour * 6),
+		Name:           listingInfo.Name,
+		Description:    listingInfo.Description,
+		InscriptionID:  listingInfo.InscriptionID,
 	}
 	holdOrdAddress := ""
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
