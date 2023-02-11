@@ -61,6 +61,10 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 
 	for _, item := range listPending {
 
+		if len(item.InscriptionID) == 0 {
+			continue
+		}
+
 		txs, _ := bs.GetLastTxs(item.HoldOrdAddress)
 
 		if len(txs) == 0 {
