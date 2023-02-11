@@ -89,6 +89,21 @@ func (r Repository) findProjectBy( contractAddress string, tokenID string) (*ent
 	return resp, nil
 }
 
+func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	
+	return resp, nil
+}
+
 func (r Repository) CreateProject(data *entity.Projects) error {
 	data.ContractAddress = strings.ToLower(data.ContractAddress)
 	err := r.InsertOne(data.TableName(), data)
