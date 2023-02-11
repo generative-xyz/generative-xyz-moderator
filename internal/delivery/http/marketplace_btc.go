@@ -31,7 +31,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		Description:    reqBody.Description,
 		SellOrdAddress: reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     "5000", //5% 50000/10000
+		ServiceFee:     "10000", //10% 100000/10000
 	}
 
 	depositAddress, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
