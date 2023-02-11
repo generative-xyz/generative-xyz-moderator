@@ -102,6 +102,7 @@ const (
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
+	BUY_NFT_CHARGE           = 10
 )
 
 type PubSubSendOtp struct {

@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 )
 
@@ -137,6 +138,16 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 		}
 		if nftListing == nil {
 			fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - item nil", item.InscriptionID)
+
+			// update StatusBuy_NeedToRefund now for listing:
+			item.Status = entity.StatusBuy_ReceivedFund
+			log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
+			u.Notify(rootSpan, "WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+
+			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+			}
 			continue
 		}
 
@@ -204,16 +215,18 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 
-			var amount int = 0
 			// Todo cal amount to send user and master
+			// send user first:
+			receiveAmount, _ := big.NewInt(0).SetString(item.ReceivedBalance, 10)
+			// charge 10% total amount:
+			AmountWithChargee := int(receiveAmount.Uint64() * utils.BUY_NFT_CHARGE / 100)
 
 			// transfer now:
-
 			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
 				item.SegwitKey,
 				nftListing.SellOrdAddress,
 				item.SegwitAddress,
-				amount,
+				AmountWithChargee,
 				btc.PreferenceMedium,
 			)
 			if err != nil {
@@ -273,7 +286,21 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				if err != nil {
 					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
 				}
-
+			}
+			// update isSold
+			nftListing, err := u.Repo.FindBtcNFTListingByNFTID(item.InscriptionID)
+			if err != nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - with err: %v", item.InscriptionID, err)
+				continue
+			}
+			if nftListing == nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - item nil", item.InscriptionID)
+				continue
+			}
+			nftListing.IsSold = true
+			_, err = u.Repo.UpdateBTCNFTConfirmListings(nftListing)
+			if err != nil {
+				fmt.Printf("Could not UpdateBTCNFTConfirmListings id %s - with err: %v", item.ID, err)
 			}
 		}
 	}
