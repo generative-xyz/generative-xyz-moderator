@@ -95,6 +95,21 @@ func (h ScronBTCHandler) StartServer() {
 
 		}()
 
+		go func() {
+			h.Usecase.BtcCheckSendBTCForBuyOrder(span)
+
+		}()
+
+		go func() {
+			h.Usecase.BtcSendNFTForBuyOrder(span)
+
+		}()
+
+		go func() {
+			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
+
+		}()
+
 	})
 
 	c.Start()

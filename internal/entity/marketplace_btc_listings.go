@@ -39,3 +39,21 @@ func (u MarketplaceBTCListing) TableName() string {
 func (u MarketplaceBTCListing) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+type MarketplaceBTCLogs struct {
+	BaseEntity  `bson:",inline"`
+	RecordID    string      `bson:"record_id"`
+	Table       string      `bson:"table"`
+	Name        string      `bson:"name"`
+	Status      interface{} `bson:"status"`
+	RequestMsg  interface{} `bson:"request_msg"`
+	ResponseMsg interface{} `bson:"response_msg"`
+}
+
+func (u MarketplaceBTCLogs) TableName() string {
+	return utils.COLLECTION_MARKETPLACE_BTC_LOGS
+}
+
+func (u MarketplaceBTCLogs) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
