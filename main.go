@@ -24,7 +24,6 @@ import (
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
-	"rederinghub.io/utils/mqttClient"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/slack"
@@ -113,7 +112,6 @@ func startServer() {
 	covalent := nfts.NewCovalentNfts(conf);
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis, t)
-	mqttClient, err := mqttClient.NewDeviceMqtt(conf.MQTTConfig, t)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -132,7 +130,6 @@ func startServer() {
 		Slack: *slack,
 		Pubsub: rPubsub,
 		OrdService: ord,
-		MqttClient: mqttClient,
 	}
 
 	repo, err := repository.NewRepository(&g)

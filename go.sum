@@ -45,6 +45,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/blockcypher/gobcy/v2 v2.0.4 h1:FE+AU9Sf7oAC/ltvguqmPyOLRYVzwus8KHzIqxGVcAk=
 github.com/blockcypher/gobcy/v2 v2.0.4/go.mod h1:EivqTBwDxipuLv6ZbA/EP16+aa+NR6OPJSDaZWPOjvA=
+github.com/blockcypher/gobcy/v2 v2.0.5 h1:xCebsc886aGPl8StjcF69HESKEHK2yxykC+sfP00yF4=
+github.com/blockcypher/gobcy/v2 v2.0.5/go.mod h1:nx47q9T0qeQfYdIDnzmQhuTcck9Jwa7f+xp8UO4WRpg=
 github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btcd v0.22.0-beta.0.20220111032746-97732e52810c/go.mod h1:tjmYdS6MLJ5/s0Fj4DbLgSbDHbEqLJrtnHecBFkdz5M=
 github.com/btcsuite/btcd v0.23.0/go.mod h1:0QJIIN1wwIXF/3G/m87gIwGniDMDQqjVn4SZgnFpsYY=
