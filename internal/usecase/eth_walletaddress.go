@@ -275,6 +275,12 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	ethEntity.IsConfirm = true
 
 	//TODO - save balance
+	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
+	if err != nil {
+		log.Error("u.CheckBlance.updatedStatus", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("updated", updated)
 
 	return &ethEntity, nil
 }
@@ -330,16 +336,32 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+
 			log.SetData("updated", updated)
+			if item.MintResponse.Inscription != "" {
+				err = errors.New("Token is being minted")
+				log.Error("Token.minted",err.Error(), err)
+				return 
+			}
 	
 			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
 				return
 			}
+
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				TokenID: mintReps.Inscription,
+				Commit: mintReps.Commit,
+				Reveal: mintReps.Reveal,
+				Fees: mintReps.Fees,
+				MinterAddress: "ord_master",
+				Owner: "",
+				Action: entity.MINT,
+			})
+
 	
 			log.SetData("btc.Minted", mintReps)
-	
 			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
 			newItem.IsMinted = true
 			newItem.FileURI = *fileURI
@@ -348,8 +370,6 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-
-			
 
 		}(span, item)
 
