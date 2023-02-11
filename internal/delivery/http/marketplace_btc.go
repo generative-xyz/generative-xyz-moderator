@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -191,16 +190,16 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	// span, log := h.StartSpan("btcTestListen", r)
-	// defer h.Tracer.FinishSpan(span, log)
+	span, log := h.StartSpan("BtcChecktListNft", r)
+	defer h.Tracer.FinishSpan(span, log)
 
 	// result := h.Usecase.BtcChecktListNft(span)
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
-	result, _ := h.Usecase.Repo.RetrieveBTCNFTPendingListings()
+	err := h.Usecase.BtcChecktListNft(span)
 
-	fmt.Println("len result", len(result))
+	// fmt.Println("len result", len(result))
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
 }

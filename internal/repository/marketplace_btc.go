@@ -92,7 +92,7 @@ func (r Repository) RetrieveBTCNFTPendingListings() ([]entity.MarketplaceBTCList
 
 func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCListing) (*mongo.UpdateResult, error) {
 
-	filter := bson.D{{"id", model.ID}}
+	filter := bson.D{{"uuid", model.UUID}}
 	result, err := r.UpdateOne(model.TableName(), filter, model)
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (r Repository) RetrieveBTCNFTBuyOrdersByStatus(status entity.BuyStatus) ([]
 
 func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
 
-	filter := bson.D{{"id", model.ID}}
+	filter := bson.D{{"uuid", model.UUID}}
 	result, err := r.UpdateOne(model.TableName(), filter, model)
 	if err != nil {
 		return nil, err

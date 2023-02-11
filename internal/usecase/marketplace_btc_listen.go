@@ -40,6 +40,37 @@ func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, e
 	return rpcclient, bs, nil
 }
 
+func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.MarketplaceBTCListing) (string, bool, error) {
+
+	txOut := ""
+
+	detail, err := chainhash.NewHashFromStr(tx)
+	if err != nil {
+		fmt.Println("can not NewHashFromStr with err:", err)
+		go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "chainhash.NewHashFromStr- with err", err.Error())
+		return txOut, false, err
+	}
+	result, err := btcClient.GetRawTransactionVerboseAsync(detail).Receive()
+	if err != nil {
+		fmt.Println("can not GetRawTransactionVerboseAsync with err:", err)
+		go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "GetRawTransactionVerboseAsync- with err", err.Error())
+		return txOut, false, err
+	}
+
+	for _, vin := range result.Vin {
+		fmt.Println("vin==>", vin.Txid)
+		fmt.Println("item.InscriptionID==>", item.InscriptionID)
+
+		txOut = vin.Txid
+
+		if strings.Contains(item.InscriptionID, txOut) {
+			return txOut, true, nil
+		}
+	}
+
+	return txOut, false, nil
+}
+
 // check receive of the nft:
 func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 
@@ -68,9 +99,12 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 		txs, _ := bs.GetLastTxs(item.HoldOrdAddress)
 
 		if len(txs) == 0 {
+			go u.trackHistory("", "GetLastTxs", "", "", "len(txs) ", "[]")
 			continue
 		}
+
 		found := false
+
 		for _, tx := range txs {
 			detail, err := chainhash.NewHashFromStr(tx.Tx)
 			if err != nil {
@@ -78,17 +112,57 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 				go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "chainhash.NewHashFromStr- with err", err.Error())
 				continue
 			}
-			result, _ := btcClient.GetRawTransactionVerboseAsync(detail).Receive()
+			result, err := btcClient.GetRawTransactionVerboseAsync(detail).Receive()
+			if err != nil {
+				fmt.Println("can not GetRawTransactionVerboseAsync with err:", err)
+				go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "GetRawTransactionVerboseAsync- with err", err.Error())
+				continue
+			}
 
 			for _, vin := range result.Vin {
-				if strings.Contains(vin.Txid, item.InscriptionID) {
+				fmt.Println("vin==>", vin.Txid)
+				fmt.Println("item.InscriptionID==>", item.InscriptionID)
+				if strings.Contains(item.InscriptionID, vin.Txid) {
 					found = true
 					item.IsConfirm = true
+					item.TxNFT = vin.Txid
 					_, err := u.Repo.UpdateBTCNFTConfirmListings(&item)
 					if err != nil {
 						go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "UpdateBTCNFTConfirmListings - with err", err.Error())
 					}
 					break
+				} else {
+
+					tx := vin.Txid
+
+					for i := 0; i < 20; i++ {
+
+						fmt.Println("count: ", i+1, "tx: ", tx)
+
+						hash, f, err := u.loopGetTx(btcClient, tx, &item)
+
+						if err != nil {
+							go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "loopGetTx - with err", err.Error())
+							break
+						}
+						if f {
+							fmt.Println("found nft for listing: ", "tx: ", hash)
+							found = true
+							item.IsConfirm = true
+							item.TxNFT = hash
+							updated, err := u.Repo.UpdateBTCNFTConfirmListings(&item)
+							fmt.Println("UpdateBTCNFTConfirmListings updated: ", updated)
+							if err != nil {
+								fmt.Println("can not UpdateBTCNFTConfirmListings err ", err)
+								go u.trackHistory(item.ID.String(), "BtcChecktListNft", item.TableName(), item.IsConfirm, "UpdateBTCNFTConfirmListings - with err", err.Error())
+							}
+							break
+						}
+						if len(hash) == 0 {
+							break
+						}
+						tx = hash
+					}
 				}
 			}
 			if found {
