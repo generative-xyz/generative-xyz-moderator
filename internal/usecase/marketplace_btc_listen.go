@@ -221,9 +221,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 
-			item.TxSendSendBTC = txID
+			item.TxSendBTC = txID
 			item.ErrCount = 0 // reset error count!
 			// TODO: update item
+			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+			}
 
 		}
 	}
@@ -231,6 +235,48 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 }
 
 func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
-	// TODO
+
+	span, log := u.StartSpan("BtcCheckSendBTCForBuyOrder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	btcClient, _, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+
+	// get list buy order status = sent nft:
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
+	if len(listTosendBtc) == 0 {
+		return nil
+	}
+
+	for _, item := range listTosendBtc {
+		if item.Status == entity.StatusBuy_SendingBTC {
+			txHash, err := chainhash.NewHashFromStr(item.TxSendBTC)
+			if err != nil {
+				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+				return err
+			}
+
+			txResponse, err := btcClient.GetTransaction(txHash)
+
+			if err != nil {
+				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+				return err
+			}
+			if txResponse.Confirmations >= 1 {
+				// send btc ok now:
+				item.Status = entity.StatusBuy_SentNFT
+				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+				if err != nil {
+					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				}
+
+			}
+		}
+	}
+
 	return nil
 }
