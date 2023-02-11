@@ -165,6 +165,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		Description:   nft.Description,
 		Price:         nft.Price,
 		OrderID:       nft.UUID,
+		IsConfirmed:   nft.IsConfirm,
 	}
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
