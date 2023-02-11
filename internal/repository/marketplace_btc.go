@@ -124,7 +124,7 @@ func (r Repository) RetrieveBTCNFTPendingBuyOrders() ([]entity.MarketplaceBTCBuy
 	resp := []entity.MarketplaceBTCBuyOrder{}
 	filter := bson.M{
 		"status":     entity.StatusBuy_Pending,
-		"expired_at": bson.M{"$gte": time.Now().UTC().Format("2006-01-02 15:04:05")},
+		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).Find(context.TODO(), filter)

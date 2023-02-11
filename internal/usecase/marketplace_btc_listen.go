@@ -177,6 +177,8 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 // check receive buy the nft:
 func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
+	fmt.Printf("go BtcCheckReceivedBuyingNft....")
+
 	span, log := u.StartSpan("BtcCheckReceivedBuyingNft", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -189,6 +191,7 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
 	listPending, _ := u.Repo.RetrieveBTCNFTPendingBuyOrders()
 	if len(listPending) == 0 {
+		fmt.Printf("RetrieveBTCNFTPendingBuyOrders list empty")
 		return nil
 	}
 
@@ -196,7 +199,9 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
 		// check balance:
 
-		balance, err := bs.GetBalance(item.SegwitAddress)
+		balance, confirm, err := bs.GetBalance(item.SegwitAddress)
+
+		fmt.Println("GetBalance response: ", balance, confirm, err)
 
 		if err != nil {
 			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
