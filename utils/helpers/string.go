@@ -5,7 +5,10 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/big"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -149,4 +152,47 @@ func ParseUintToUnixTime(number uint64) *time.Time {
 func CreateBTCOrdWallet( userWallet string) string {
 	now := time.Now().UTC().Unix()
 	return fmt.Sprintf("%s_%s_%d","USER", userWallet, now)
+}
+
+func GetExternalPrice(tokenSymbol string) (float64, error) {
+	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
+	var price struct {
+		Symbol string `json:"symbol"`
+		Price  string `json:"price"`
+	}
+	var jsonErr struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+	}
+	retryTimes := 0
+retry:
+	retryTimes++
+	if retryTimes > 2 {
+		return 0, nil
+	}
+	tk := strings.ToUpper(tokenSymbol)
+	resp, err := http.Get(binancePriceURL + tk + "USDT")
+	if err != nil {
+		log.Println(err)
+		goto retry
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = json.Unmarshal(body, &price)
+	if err != nil {
+		err = json.Unmarshal(body, &jsonErr)
+		if err != nil {
+			log.Println(err)
+			goto retry
+		}
+	}
+	resp.Body.Close()
+	value, err := strconv.ParseFloat(price.Price, 32)
+	if err != nil {
+		log.Println("getExternalPrice", tokenSymbol, err)
+		return 0, nil
+	}
+	return value, nil
 }

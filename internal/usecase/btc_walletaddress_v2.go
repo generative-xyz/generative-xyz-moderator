@@ -236,8 +236,8 @@ func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletA
 	span, log := u.StartSpan("CheckBlanceV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log )
 	
-	log.SetData(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
-	log.SetData(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
+	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
 	
 	balanceRequest := ord_service.ExecRequest{
 		Args: []string{
@@ -301,8 +301,8 @@ func (u Usecase) MintLogicV2(rootSpan opentracing.Span, btc *entity.BTCWalletAdd
 	defer u.Tracer.FinishSpan(span, log)
 	var err error
 
-	log.SetData(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
-	log.SetData(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
+	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
 
 	//if this was minted, skip it
 	if btc.IsMinted {
@@ -332,8 +332,8 @@ func (u Usecase) WaitingForBalancingV2(rootSpan opentracing.Span) ([]entity.BTCW
 	}
 
 	for _, item := range addreses {
-		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
-		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+		log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+		log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 		newItem, err := u.BalanceLogicV2(span, item)
 		if err != nil {
 			//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
@@ -371,8 +371,8 @@ func (u Usecase) WaitingForMintedV2(rootSpan opentracing.Span) ([]entity.BTCWall
 	}
 
 	for _, item := range addreses {
-		log.SetData(utils.WALLET_ADDRESS_TAG, item.UserAddress)
-		log.SetData(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+		log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+		log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 		
 		addr := item.OriginUserAddress
 		if addr == "" {
