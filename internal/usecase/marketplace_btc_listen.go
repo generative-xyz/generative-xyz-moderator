@@ -280,3 +280,103 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 
 	return nil
 }
+
+// send nft for buy order records:
+func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("BtcSendBTCForBuyOrder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// _, bs, err := u.buildBTCClient()
+
+	// if err != nil {
+	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+	// 	return err
+	// }
+
+	// get list buy order status = StatusBuy_ReceivedFund:
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_ReceivedFund)
+	if len(listTosendBtc) == 0 {
+		return nil
+	}
+
+	for _, item := range listTosendBtc {
+		if item.Status == entity.StatusBuy_ReceivedFund {
+
+			// get amount nft:
+			nftListing, err := u.Repo.FindBtcNFTListingByNFTID(item.InscriptionID)
+			if err != nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - with err: %v", item.InscriptionID, err)
+				continue
+			}
+			if nftListing == nil {
+				fmt.Printf("Could not FindBtcNFTListingByNFTID nftID: %s - item nil", item.InscriptionID)
+				continue
+			}
+
+			// transfer now:
+
+			sentTokenResp, err := u.SendToken(rootSpan, item.OrdAddress, item.InscriptionID)
+			if err != nil {
+				log.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+				continue
+			}
+
+			log.SetData(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
+			item.TxSendNFT = ""
+			item.Status = entity.StatusBuy_SendingNFT
+			item.ErrCount = 0 // reset error count!
+			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
+
+	span, log := u.StartSpan("BtcCheckSendNFTForBuyOrder", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	btcClient, _, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+
+	// get list buy order status = sent nft:
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
+	if len(listTosendBtc) == 0 {
+		return nil
+	}
+
+	for _, item := range listTosendBtc {
+		if item.Status == entity.StatusBuy_SendingNFT {
+			txHash, err := chainhash.NewHashFromStr(item.TxSendNFT)
+			if err != nil {
+				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+				continue
+			}
+
+			txResponse, err := btcClient.GetTransaction(txHash)
+
+			if err != nil {
+				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+				continue
+			}
+			if txResponse.Confirmations >= 1 {
+				// send nft ok now:
+				item.Status = entity.StatusBuy_SentNFT
+				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+				if err != nil {
+					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				}
+			}
+
+		}
+	}
+
+	return nil
+}
