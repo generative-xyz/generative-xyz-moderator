@@ -167,6 +167,14 @@ func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (
 	return result, nil
 }
 
+func (r Repository) CreateMarketplaceBTCLog(listing *entity.MarketplaceBTCLogs) error {
+	err := r.InsertOne(listing.TableName(), listing)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // func (r Repository) FindListingByOfferingID(offeringID string) (*entity.MarketplaceListings, error) {
 // 	resp := &entity.MarketplaceListings{}
 
