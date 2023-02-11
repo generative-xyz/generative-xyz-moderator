@@ -55,7 +55,7 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 
 	listPending, _ := u.Repo.RetrieveBTCNFTPendingListings()
 	if len(listPending) == 0 {
-		go u.trackHistory("", "BtcChecktListNft", "", "", "RetrieveBTCNFTPendingListings", "[]")
+		// go u.trackHistory("", "BtcChecktListNft", "", "", "RetrieveBTCNFTPendingListings", "[]")
 		return nil
 	}
 
