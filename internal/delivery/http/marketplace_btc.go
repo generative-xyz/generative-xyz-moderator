@@ -123,7 +123,25 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 			return
 		}
 	}
-	// }
+
+	buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
+	if err != nil {
+		log.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
+	}
+	currentTime := time.Now()
+	for _, order := range buyOrders {
+		expireTime := order.ExpiredAt
+		// not expired yet still waiting for btc
+		if expireTime.Before(currentTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+			isBuyable = false
+			break
+		}
+		// could be expired but received btc
+		if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+			isBuyable = false
+			break
+		}
+	}
 
 	nftInfo := response.MarketplaceNFTDetail{
 		InscriptionID: nft.InscriptionID,
