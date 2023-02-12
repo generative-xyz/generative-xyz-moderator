@@ -227,24 +227,26 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
 
-	span, log := h.StartSpan("btcTestTransfer", r)
-	defer h.Tracer.FinishSpan(span, log)
+	// span, log := h.StartSpan("btcTestTransfer", r)
+	// defer h.Tracer.FinishSpan(span, log)
 
-	var reqBody request.SendNFT
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		log.Error("httpDelivery.btcTestTransfer.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// var reqBody request.SendNFT
+	// decoder := json.NewDecoder(r.Body)
+	// err := decoder.Decode(&reqBody)
+	// if err != nil {
+	// 	log.Error("httpDelivery.btcTestTransfer.Decode", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	resp, err := h.Usecase.SendTokenMKPTest(span, reqBody.WalletName, reqBody.ReceiveOrdAddress, reqBody.InscriptionID)
+	// resp, err := h.Usecase.SendTokenMKPTest(span, reqBody.WalletName, reqBody.ReceiveOrdAddress, reqBody.InscriptionID)
 
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// if err != nil {
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
