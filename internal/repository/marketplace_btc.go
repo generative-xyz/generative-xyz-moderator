@@ -52,7 +52,7 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 }
 
 // get item valid:
-func (r Repository) FindBtcNFTListingSoldByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+func (r Repository) FindBtcNFTListingLastSoldByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
 	f := bson.D{
