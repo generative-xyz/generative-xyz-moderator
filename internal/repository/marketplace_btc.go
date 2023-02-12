@@ -54,6 +54,7 @@ func (r Repository) FindBtcNFTListingUnsoldByNFTID(inscriptionID string) (*entit
 
 	f := bson.D{
 		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "isConfirm", Value: true},
 		{Key: "isSold", Value: false},
 	}
 
