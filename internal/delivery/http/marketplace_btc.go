@@ -120,7 +120,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 
 	resp := response.CreateMarketplaceBTCListing{
 		ReceiveAddress: listing.HoldOrdAddress,
-		TimeoutAt:      fmt.Sprintf("%d", listing.ExpiredAt.Unix()),
+		TimeoutAt:      fmt.Sprintf("%d", time.Now().Add(time.Minute*90).Unix()),
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
