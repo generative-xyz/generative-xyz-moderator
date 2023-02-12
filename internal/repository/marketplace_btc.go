@@ -75,8 +75,6 @@ func (r Repository) FindBtcNFTListingByOrderID(id string) (*entity.MarketplaceBT
 
 	f := bson.D{
 		{Key: "uuid", Value: id},
-		{Key: "isConfirm", Value: true},
-		{Key: "isSold", Value: false},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
@@ -109,11 +107,11 @@ func (r Repository) CheckBTCListingHaveOngoingOrder(id string) error {
 }
 
 // get item valid to get info:
-func (r Repository) FindBtcNFTListingByNFTIDValid(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+func (r Repository) FindBtcNFTListingByOrderIDValid(uuid string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
 	f := bson.D{
-		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "uuid", Value: uuid},
 		{Key: "isConfirm", Value: true},
 	}
 

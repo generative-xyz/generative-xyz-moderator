@@ -159,9 +159,18 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		BuyOrdAddress: reqBody.WalletAddress,
 	}
 	//TODO: lam uncomment
-	_, err = h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
+	listing, err := h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
+		return
+	}
+	if !listing.IsConfirm {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
+		return
+	}
+
+	if listing.IsSold {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
 		return
 	}
