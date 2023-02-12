@@ -78,7 +78,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 
 	// check price:
 	if priceNumber < utils.MIN_BTC_TO_LIST_BTC {
-		err := fmt.Errorf("invalid price, min btc is: %.2f ", float64(priceNumber/1e8))
+		err := fmt.Errorf("invalid price, min btc is: %.2f ", float64(utils.MIN_BTC_TO_LIST_BTC/1e8))
 		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
