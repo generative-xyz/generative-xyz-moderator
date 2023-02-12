@@ -14,7 +14,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +43,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
-  
+
 	// if strings.Contains(reqBody.ReceiveAddress)
 	if _, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
 		err := fmt.Errorf("invalid price")
@@ -62,8 +61,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     utils.BUY_NFT_CHARGE,
-		Min:            utils.MIN_BTC_TO_LIST_BTC,
+		ServiceFee:     "2.5",
 	}
 
 	listing, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
