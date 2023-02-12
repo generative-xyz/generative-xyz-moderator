@@ -92,6 +92,8 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	walletAddress.FileURI = ""       //find files from google store
 	walletAddress.InscriptionID = "" //find files from google store
 	walletAddress.ProjectID = input.ProjectID
+	walletAddress.Balance = "0"
+	walletAddress.BalanceCheckTime = 0
 
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, walletAddress.OrdAddress)
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
