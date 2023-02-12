@@ -303,19 +303,9 @@ func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddr
 	log.SetData("balance", balance)
 
 	btc.Balance = balance
-
-	go func(rootSpan opentracing.Span, balance *entity.BTCWalletAddress) {
-		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
-
-		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(balance.OrdAddress, balance)
-		if err != nil {
-			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
-			return
-		}
-		log.SetData("updated", updated)
-
-	}(span, &btc)
+	btc.BalanceCheckTime = btc.BalanceCheckTime + 1
+	updated, _ := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, &btc)
+	log.SetData("updated", updated)
 
 	return &btc, nil
 }
@@ -440,7 +430,7 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 
 		}(span, item)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return nil, nil
@@ -585,7 +575,7 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	defer u.Tracer.FinishSpan(span, log)
 
 	//slack
-	preText := fmt.Sprintf("[traceID %s] - User address: %s, ", u.Tracer.TraceID(span), userAddress)
+	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ",os.Getenv("JAEGER_SERVICE_NAME"), u.Tracer.TraceID(span), userAddress)
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {

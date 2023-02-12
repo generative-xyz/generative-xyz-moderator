@@ -89,9 +89,10 @@ func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, er
 	confs := []entity.BTCWalletAddress{}
 	f := bson.M{}
 	f["$or"] = []interface{}{
-		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}} ,
-		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}} ,
+		bson.M{"isMinted": false} ,
+		bson.M{"isConfirm": false} ,
 	}
+	f["balanceCheckTime"] = bson.M{"$lt": utils.MAX_CHECK_BALANCE}
 	
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)

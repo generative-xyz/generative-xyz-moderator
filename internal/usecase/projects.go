@@ -89,7 +89,7 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProj
 		return nil, err
 	}
 
-	log.SetData("projects", projects)
+	log.SetData("projects", projects.Total)
 	return projects, nil
 }
 
@@ -172,7 +172,7 @@ func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span, req structure.F
 		return nil, err
 	}
 
-	log.SetData("projects", projects)
+	log.SetData("projects", projects.Total)
 	return projects, nil
 }
 
@@ -238,7 +238,7 @@ func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure
 		return nil, err
 	}
 
-	log.SetData("projects", projects)
+	log.SetData("projects", projects.Total)
 	return projects, nil
 }
 

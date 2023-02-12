@@ -273,7 +273,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	log.SetData("ordWalletAddress", ethEntity.OrdAddress)
 
 	ethEntity.IsConfirm = true
-
+	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
 	//TODO - save balance
 	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 	if err != nil {
