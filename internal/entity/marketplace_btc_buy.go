@@ -25,19 +25,20 @@ const (
 
 type MarketplaceBTCBuyOrder struct {
 	BaseEntity      `bson:",inline"`
-	OrdAddress      string    `bson:"ord_address"`
-	ItemID          string    `bson:"item_id"`
-	InscriptionID   string    `bson:"inscriptionID"` // tokenID in btc
-	Status          BuyStatus `bson:"status"`
-	ErrCount        int       `bson:"err_count"`
-	SegwitAddress   string    `bson:"segwit_address"`
-	ReceivedBalance string    `bson:"received_balance"`
-	SegwitKey       string    `bson:"segwit_key"`
-	ExpiredAt       time.Time `bson:"expired_at"`
-	RawData         string    `bson:"raw_data"` // raw data of sending btc (for retry)
-	UTXO            string    `bson:"utxo"`
-	TxSendNFT       string    `bson:"tx_send_nft"`
-	TxSendBTC       string    `bson:"tx_send_btc"`
+	OrdAddress      string      `bson:"ord_address"`
+	ItemID          string      `bson:"item_id"`
+	InscriptionID   string      `bson:"inscriptionID"` // tokenID in btc
+	Status          BuyStatus   `bson:"status"`
+	ErrCount        int         `bson:"err_count"`
+	SegwitAddress   string      `bson:"segwit_address"`
+	ReceivedBalance string      `bson:"received_balance"`
+	SegwitKey       string      `bson:"segwit_key"`
+	ExpiredAt       time.Time   `bson:"expired_at"`
+	RawData         string      `bson:"raw_data"` // raw data of sending btc (for retry)
+	UTXO            string      `bson:"utxo"`
+	TxSendNFT       string      `bson:"tx_send_nft"`
+	TxSendBTC       string      `bson:"tx_send_btc"`
+	OutputSendNFT   interface{} `bson:"output_send_nft"`
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {
