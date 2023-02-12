@@ -77,57 +77,7 @@ func (h ScronBTCHandler) StartServer() {
 
 		}(span, &wg)
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcChecktListNft")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.BtcChecktListNft(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcCheckReceivedBuyingNft")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.BtcCheckReceivedBuyingNft(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcSendBTCForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.BtcSendBTCForBuyOrder(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcCheckSendBTCForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcCheckSendBTCForBuyOrder(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcSendNFTForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcSendNFTForBuyOrder(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronBTCHandler.BtcCheckSendNFTForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
-
-		}(span, &wg)
-
+	
 		log.SetData("wait", "wait")
 		wg.Wait()
 		time.Sleep(1 * time.Minute)
