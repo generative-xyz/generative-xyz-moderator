@@ -108,6 +108,10 @@ func (bs *BlockcypherService) GetBalance(address string) (*big.Int, int, error) 
 	return b, confirm, nil
 }
 
+func (bs *BlockcypherService) GetEnpointURL() string {
+	return bs.chainEndpoint
+}
+
 // BTCGetAddrInfo :
 func (bs *BlockcypherService) BTCGetAddrInfo(address string) (*AddrInfo, error) {
 	url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, address, bs.bcyToken)
