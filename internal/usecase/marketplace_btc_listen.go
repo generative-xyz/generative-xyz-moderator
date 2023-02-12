@@ -412,10 +412,10 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 		if item.Status == entity.StatusBuy_ReceivedFund {
 
 			// transfer now:
-			sentTokenResp, err := u.SendToken(rootSpan, item.OrdAddress, item.InscriptionID)
+			sentTokenResp, err := u.SendTokenMKP(rootSpan, item.OrdAddress, item.InscriptionID)
 			if err != nil {
-				log.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
-				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendToken", err.Error())
+				log.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP", err.Error())
 				continue
 			}
 			tmpText := sentTokenResp.Stdout
