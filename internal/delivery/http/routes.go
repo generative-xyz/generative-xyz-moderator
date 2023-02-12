@@ -144,6 +144,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
+	marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
