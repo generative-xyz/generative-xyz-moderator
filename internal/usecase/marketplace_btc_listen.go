@@ -349,6 +349,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			item.FeeChargeBTCBuyer = fee
 			item.AmountBTCSentSeller = amountWithChargee
 			item.TxSendBTC = txID
+			item.Status = entity.StatusBuy_SendingBTC
 			item.ErrCount = 0 // reset error count!
 			// TODO: update item
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
