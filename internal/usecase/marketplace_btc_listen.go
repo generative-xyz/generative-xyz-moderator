@@ -174,7 +174,7 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 	return nil
 }
 
-// check receive buy the nft:
+// check receive BTC for buying the nft:
 func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
 	fmt.Printf("go BtcCheckReceivedBuyingNft....")
@@ -469,7 +469,9 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 			// Update status first if none err:
 			item.Status = entity.StatusBuy_SendingNFT
 			item.ErrCount = 0 // reset error count!
+
 			item.OutputSendNFT = sentTokenResp
+
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err.Error())
@@ -478,23 +480,12 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 
-			tmpText := sentTokenResp.Stdout
-			//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
-			jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
-			jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
-			btcMintResp := &ord_service.MintStdoputRespose{}
-
-			bytes := []byte(jsonStr)
-			err = json.Unmarshal(bytes, btcMintResp)
-			if err != nil {
-				log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", err.Error(), err)
-				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.JsonTransform", err.Error())
-				continue
-			}
+			txResp := sentTokenResp.Stdout
+			//txResp := `fd31946b855cbaaf91df4b2c432f9b173e053e65a9879ac909bad028e21b950e\n`
+			txResp = strings.TrimSuffix(txResp, `\n`)
 
 			// update tx:
-			log.SetData(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
-			item.TxSendNFT = btcMintResp.Commit
+			item.TxSendNFT = txResp
 			item.ErrCount = 0 // reset error count!
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
@@ -502,6 +493,8 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				log.Error("BtcSendNFTForBuyOrder.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
 				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "u.Repo.UpdateBTCNFTBuyOrder", err.Error())
 			}
+			// save log:
+			log.SetData(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
 		}
 	}
 	return nil

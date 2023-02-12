@@ -80,7 +80,7 @@ const (
 
 	COLLECTION_USERS                    string = "users"
 	COLLECTION_TOKEN_URI                string = "token_uri"
-	COLLECTION_TOKEN_URI_HISTORIES               string = "token_uri_histories"
+	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
@@ -104,7 +104,8 @@ const (
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
-	BUY_NFT_CHARGE           = 10
+	BUY_NFT_CHARGE           = 2.5
+	MIN_BTC_TO_LIST_BTC      = 200000
 )
 
 type PubSubSendOtp struct {

@@ -7,7 +7,8 @@ type MarketplaceBTC_ListingInfo struct {
 	SellOrdAddress string `bson:"seller_ord_address"` //user's wallet address from FE
 	SellerAddress  string `json:"seller_address"`
 	Price          string `bson:"amount"`
-	ServiceFee     string `bson:"service_fee"`
+	float64        int    `bson:"service_fee"`
+	Min            int    `bson:"service_fee"`
 }
 
 type MarketplaceBTC_BuyOrderInfo struct {
