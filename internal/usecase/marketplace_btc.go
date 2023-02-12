@@ -123,11 +123,28 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 	}
 
 	for _, listing := range nftList {
-		// err := u.Repo.CheckBTCListingHaveOngoingOrder(listing.UUID)
-		// if err != nil {
-		// 	continue
-		// }
-		result = append(result, listing)
+		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
+		if err != nil {
+			continue
+		}
+		currentTime := time.Now()
+		isAvailable := true
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if expireTime.Before(currentTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isAvailable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isAvailable = false
+				break
+			}
+		}
+		if isAvailable {
+			result = append(result, listing)
+		}
 	}
 	return result, nil
 }
