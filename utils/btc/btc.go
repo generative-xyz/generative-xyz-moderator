@@ -249,7 +249,7 @@ func ValidateAddress(crypto, address string) (bool, error) {
 	crypto = strings.ToLower(crypto)
 
 	var cryptoRegexMap = map[string]string{
-		"btc":   "^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$",
+		"btc":   "^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$",
 		"btg":   "^([GA])[a-zA-HJ-NP-Z0-9]{24,34}$",
 		"dash":  "^([X7])[a-zA-Z0-9]{33}$",
 		"dgb":   "^(D)[a-zA-Z0-9]{24,33}$",
