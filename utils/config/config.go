@@ -54,6 +54,7 @@ type MQTTConfig struct {
 type CronTabConfig struct {
 	Enabled      bool
 	BTCEnabled   bool
+	MarketPlaceEnabled   bool
 	BTCV2Enabled bool
 }
 
@@ -179,6 +180,7 @@ func NewConfig() (*Config, error) {
 	crontabStart, _ := strconv.ParseBool(os.Getenv("CRONTAB_START"))
 	crontabBtcStart, _ := strconv.ParseBool(os.Getenv("BTC_CRONTAB_START"))
 	crontabBtcV2Start, _ := strconv.ParseBool(os.Getenv("BTC_CRONTAB_START_V2"))
+	crontabMKStart, _ := strconv.ParseBool(os.Getenv("MAKETPLACE_CRONTAB_START"))
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -263,6 +265,7 @@ func NewConfig() (*Config, error) {
 			Enabled:      crontabStart,
 			BTCEnabled:   crontabBtcStart,
 			BTCV2Enabled: crontabBtcV2Start,
+			MarketPlaceEnabled: crontabMKStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
