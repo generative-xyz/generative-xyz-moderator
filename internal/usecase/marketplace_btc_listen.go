@@ -485,7 +485,7 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 
 			txResp := sentTokenResp.Stdout
 			//txResp := `fd31946b855cbaaf91df4b2c432f9b173e053e65a9879ac909bad028e21b950e\n`
-			txResp = strings.TrimSuffix(txResp, `\n`)
+			txResp = strings.ReplaceAll(txResp, "\n", "")
 
 			// update tx:
 			item.TxSendNFT = txResp
@@ -518,6 +518,7 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 	// get list buy order status = sent nft:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
 	if len(listTosendBtc) == 0 {
+		fmt.Printf("BtcCheckSendNFTForBuyOrder empty")
 		return nil
 	}
 
@@ -531,7 +532,7 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 
 			txHash, err := chainhash.NewHashFromStr(item.TxSendNFT)
 			if err != nil {
-				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with tx: %v err: %v", item.TxSendNFT, err)
 				continue
 			}
 
