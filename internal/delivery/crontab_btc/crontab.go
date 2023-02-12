@@ -33,7 +33,7 @@ func (h ScronBTCHandler) StartServer() {
 	var wg sync.WaitGroup
 
 	for {
-		wg.Add(10)
+		wg.Add(4)
 
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron")
 		defer span.Finish()
