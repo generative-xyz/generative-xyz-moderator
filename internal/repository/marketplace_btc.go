@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -69,8 +70,8 @@ func (r Repository) FindBtcNFTListingByOrderID(id string) (*entity.MarketplaceBT
 	return resp, nil
 }
 
-func (r Repository) CheckBTCListingHaveOngoingOrder(id string) (*entity.MarketplaceBTCBuyOrder, error) {
-	resp := entity.MarketplaceBTCBuyOrder{}
+func (r Repository) CheckBTCListingHaveOngoingOrder(id string) error {
+	// resp := entity.MarketplaceBTCBuyOrder{}
 	filter := bson.M{
 		"status":  bson.M{"$nin": []entity.BuyStatus{entity.StatusBuy_Pending, entity.StatusBuy_NotEnoughBalance}},
 		"item_id": id,
@@ -78,11 +79,12 @@ func (r Repository) CheckBTCListingHaveOngoingOrder(id string) (*entity.Marketpl
 
 	cursor := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).FindOne(context.TODO(), filter)
 	if cursor.Err() != nil {
-		return nil, cursor.Err()
+		if cursor.Err() == mongo.ErrNoDocuments || cursor.Err() == mongo.ErrNilDocument {
+			return nil
+		}
+		return cursor.Err()
 	}
-
-	cursor.Decode(&resp)
-	return &resp, nil
+	return errors.New("have ongoing order")
 }
 
 // get item valid to get info:
