@@ -9,7 +9,7 @@ type MarketplaceNFTDetail struct {
 	IsConfirmed   bool   `json:"isConfirmed"`
 	Buyable       bool   `json:"buyable"`
 	IsCompleted   bool   `json:"isCompleted"` //last order is completed
-	LastPrice     int64  `json:"lastPrice"`
+	// LastPrice     int64  `json:"lastPrice"`
 }
 
 type CreateMarketplaceBTCBuyOrder struct {

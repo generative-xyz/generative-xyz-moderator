@@ -124,23 +124,23 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	var err error
 	isBuyable := true
 	isCompleted := false
-	lastPrice := int64(0)
+	// lastPrice := int64(0)
 	nft, err = h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
 	if err != nil {
 		isBuyable = false
-		nft, err = h.Usecase.Repo.FindBtcNFTListingSoldByNFTID(inscriptionID)
+		nft, err = h.Usecase.Repo.FindBtcNFTListingLastSoldByNFTID(inscriptionID)
 		if err != nil {
 			log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-		priceInt, err := strconv.ParseInt(nft.Price, 10, 64)
-		if err != nil {
-			log.Error("h.btcMarketplaceNFTDetail.strconv.ParseInt", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-		lastPrice = priceInt
+		// priceInt, err := strconv.ParseInt(nft.Price, 10, 64)
+		// if err != nil {
+		// 	log.Error("h.btcMarketplaceNFTDetail.strconv.ParseInt", err.Error(), err)
+		// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		// 	return
+		// }
+		// lastPrice = priceInt
 		isCompleted = true
 	}
 
@@ -174,7 +174,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		IsConfirmed:   nft.IsConfirm,
 		Buyable:       isBuyable,
 		IsCompleted:   isCompleted,
-		LastPrice:     lastPrice,
+		// LastPrice:     lastPrice,
 	}
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
