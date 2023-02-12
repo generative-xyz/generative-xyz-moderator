@@ -60,8 +60,8 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	inscriptionID = strings.TrimSuffix(inscriptionID, suffix)
-	_, err = chainhash.NewHashFromStr(inscriptionID)
+	txHash := strings.TrimSuffix(inscriptionID, suffix)
+	_, err = chainhash.NewHashFromStr(txHash)
 	if err != nil {
 		err := fmt.Errorf("invalid inscriptionID")
 		log.Error("httpDelivery.btcMarketplaceListing.NewHashFromStr", err.Error(), err)
