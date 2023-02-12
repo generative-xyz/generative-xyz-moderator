@@ -96,10 +96,14 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		txs, _ := bs.GetLastTxs(item.HoldOrdAddress)
+		txs, err := bs.GetLastTxs(item.HoldOrdAddress)
+
+		if err != nil {
+			go u.trackHistory("", "BtcChecktListNft", "", "", "bs.GetLastTxs at "+bs.GetEnpointURL(), err.Error())
+		}
 
 		if len(txs) == 0 {
-			go u.trackHistory("", "GetLastTxs", "", "", "len(txs) ", "[]")
+			go u.trackHistory("", "GetLastTxs", "", "", "len(txs) from "+bs.GetEnpointURL(), "[]")
 			continue
 		}
 
