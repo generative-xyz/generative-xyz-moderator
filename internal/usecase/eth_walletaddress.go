@@ -97,6 +97,8 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	walletAddress.FileURI = ""       //find files from google store
 	walletAddress.InscriptionID = "" //find files from google store
 	walletAddress.ProjectID = input.ProjectID
+	walletAddress.Balance = "0"
+	walletAddress.BalanceCheckTime = 0
 
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
