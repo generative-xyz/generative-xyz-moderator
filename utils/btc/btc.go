@@ -8,6 +8,8 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/blockcypher/gobcy/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -241,4 +243,35 @@ func GenerateAddressSegwit() (privKey, pubKey, addressSegwit string, err error) 
 
 func (bs *BlockcypherService) CheckTx(tx string) (gobcy.TX, error) {
 	return bs.chain.GetTX(tx, nil)
+}
+
+func ValidateAddress(crypto, address string) (bool, error) {
+	crypto = strings.ToLower(crypto)
+
+	var cryptoRegexMap = map[string]string{
+		"btc":   "^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$",
+		"btg":   "^([GA])[a-zA-HJ-NP-Z0-9]{24,34}$",
+		"dash":  "^([X7])[a-zA-Z0-9]{33}$",
+		"dgb":   "^(D)[a-zA-Z0-9]{24,33}$",
+		"eth":   "^(0x)[a-zA-Z0-9]{40}$",
+		"smart": "^(S)[a-zA-Z0-9]{33}$",
+		"xrp":   "^(r)[a-zA-Z0-9]{33}$",
+		"zcr":   "^(Z)[a-zA-Z0-9]{33}$",
+		"zec":   "^(t)[a-zA-Z0-9]{34}$",
+		"ltc":   "^L[a-km-zA-HJ-NP-Z1-9]{26,33}$",
+		"ltc2":  "^(ltc1|[LM])[a-zA-HJ-NP-Z0-9]{26,40}$",
+		"doge":  "^D{1}[5-9A-HJ-NP-U]{1}[1-9A-HJ-NP-Za-km-z]{32}$",
+		"dot":   "^(1)[a-zA-Z0-9]{47}$",
+		"near":  "^(([a-z\\d]+[\\-_])*[a-z\\d]+\\.)*([a-z\\d]+[\\-_])*[a-z\\d]+$",
+	}
+
+	regex, ok := cryptoRegexMap[crypto]
+	if !ok {
+		return false, fmt.Errorf("Cryptocurrency not available: %s ", crypto)
+	}
+
+	re := regexp.MustCompile(regex)
+
+	return re.MatchString(address), nil
+
 }

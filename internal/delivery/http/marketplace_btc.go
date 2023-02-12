@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +64,23 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	_, err = chainhash.NewHashFromStr(inscriptionID)
 	if err != nil {
 		err := fmt.Errorf("invalid inscriptionID")
-		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		log.Error("httpDelivery.btcMarketplaceListing.NewHashFromStr", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	// check btc address:
+	ok, _ := btc.ValidateAddress("btc", reqBody.ReceiveAddress)
+	if !ok {
+		err := fmt.Errorf("invalid ReceiveAddress")
+		log.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	ok, _ = btc.ValidateAddress("btc", reqBody.ReceiveOrdAddress)
+	if !ok {
+		err := fmt.Errorf("invalid ReceiveOrdAddress")
+		log.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -202,6 +219,15 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	err := decoder.Decode(&reqBody)
 	if err != nil {
 		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	// check btc address:
+	ok, _ := btc.ValidateAddress("btc", reqBody.WalletAddress)
+	if !ok {
+		err := fmt.Errorf("invalid WalletAddress")
+		log.Error("httpDelivery.btcMarketplaceListing.WalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
