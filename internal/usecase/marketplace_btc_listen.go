@@ -508,7 +508,7 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 	span, log := u.StartSpan("BtcCheckSendNFTForBuyOrder", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	btcClient, _, err := u.buildBTCClient()
+	btcClient, bs, err := u.buildBTCClient()
 
 	if err != nil {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
@@ -535,19 +535,41 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 
+			fmt.Println("txHash: ", txHash)
+
 			txResponse, err := btcClient.GetTransaction(txHash)
 
-			if err != nil {
+			fmt.Println("txResponse of GetTransaction: ", txResponse)
+
+			if err == nil {
+				if txResponse.Confirmations >= 1 {
+					// send nft ok now:
+					item.Status = entity.StatusBuy_SentNFT
+					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+					if err != nil {
+						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+					}
+				}
+			} else {
 				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
 				go u.trackHistory(item.ID.String(), "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendBTC, err.Error())
-				continue
-			}
-			if txResponse.Confirmations >= 1 {
-				// send nft ok now:
-				item.Status = entity.StatusBuy_SentNFT
-				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+
+				go u.trackHistory(item.ID.String(), "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, "Begin check tx via api.")
+
+				// check with api:
+				txInfo, err := bs.CheckTx(item.TxSendNFT)
 				if err != nil {
-					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+					fmt.Printf("Could not bs - with err: %v", err)
+					go u.trackHistory(item.ID.String(), "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, err.Error())
+				}
+				if txInfo.Confirmations >= 1 {
+					go u.trackHistory(item.ID.String(), "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendNFT, txInfo.Confirmations)
+					// send nft ok now:
+					item.Status = entity.StatusBuy_SentNFT
+					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+					if err != nil {
+						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+					}
 				}
 			}
 
