@@ -221,16 +221,16 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("BtcChecktListNft", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	// result := h.Usecase.BtcChecktListNft(span)
+	result := h.Usecase.BtcChecktListNft(span)
 
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
-	// err := h.Usecase.BtcSendBTCForBuyOrder(span)
+	err := h.Usecase.BtcCheckSendNFTForBuyOrder(span)
 
 	// fmt.Println("len result", len(result))
 
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
