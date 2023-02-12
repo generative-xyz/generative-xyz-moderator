@@ -19,7 +19,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		SellerAddress:  listingInfo.SellerAddress,
 		HoldOrdAddress: "",
 		Price:          listingInfo.Price,
-		ServiceFee:     listingInfo.ServiceFee,
+		//ServiceFee:     listingInfo.ServiceFee, //Tri comment: ServiceFee is not existed
 		IsConfirm:      false,
 		IsSold:         false,
 		ExpiredAt:      time.Now().Add(time.Hour * 2),

@@ -61,7 +61,10 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     "2.5",
+
+		//TODO - Tri comment code, becasue type of utils.BUY_NFT_CHARGE and tils.MIN_BTC_TO_LIST_BTC are not defined 
+		// ServiceFee:     utils.BUY_NFT_CHARGE, 
+		// Min:            utils.MIN_BTC_TO_LIST_BTC,
 	}
 
 	listing, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)

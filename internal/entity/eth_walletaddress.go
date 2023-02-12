@@ -19,6 +19,7 @@ type ETHWalletAddress struct {
 	ProjectID     string              `bson:"projectID"`    //projectID
 	MintResponse  MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	Balance       string              `bson:"balance"`      // balance after check
+	BalanceCheckTime int `bson:"balanceCheckTime"` // Total balance check time
 }
 
 type FilterETHWalletAddress struct {

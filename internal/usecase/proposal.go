@@ -67,7 +67,7 @@ func (u Usecase) GetProposals(rootSpan opentracing.Span, req structure.FilterPro
 		return nil, err
 	}
 
-	log.SetData("projects", proposals)
+	log.SetData("proposals", proposals.Total)
 	return proposals, nil
 }
 
