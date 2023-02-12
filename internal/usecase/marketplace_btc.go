@@ -11,17 +11,21 @@ import (
 	"rederinghub.io/utils/btc"
 )
 
-func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (string, error) {
+func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (*entity.MarketplaceBTCListing, error) {
 	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	listing := entity.MarketplaceBTCListing{
 		SellOrdAddress: listingInfo.SellOrdAddress,
+		SellerAddress:  listingInfo.SellerAddress,
 		HoldOrdAddress: "",
 		Price:          listingInfo.Price,
 		ServiceFee:     listingInfo.ServiceFee,
 		IsConfirm:      false,
 		IsSold:         false,
-		ExpiredAt:      time.Now().Add(time.Hour * 6),
+		ExpiredAt:      time.Now().Add(time.Hour * 2),
+		Name:           listingInfo.Name,
+		Description:    listingInfo.Description,
+		InscriptionID:  listingInfo.InscriptionID,
 	}
 	holdOrdAddress := ""
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
@@ -34,7 +38,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	})
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-		return "", err
+		return &listing, err
 	}
 	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	listing.HoldOrdAddress = holdOrdAddress
@@ -69,9 +73,9 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	err = u.Repo.CreateMarketplaceListingBTC(&listing)
 	if err != nil {
 		log.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
-		return "", err
+		return &listing, err
 	}
-	return holdOrdAddress, nil
+	return &listing, nil
 }
 
 func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.MarketplaceBTCListing, error) {
@@ -79,47 +83,51 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 	defer u.Tracer.FinishSpan(span, log)
 	result := []entity.MarketplaceBTCListing{}
 
-	test1 := entity.MarketplaceBTCListing{
-		InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
-		Name:          "Test1",
-		Description:   "test1 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "1",
-		},
-	}
+	// test1 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
+	// 	Name:          "Test1",
+	// 	Description:   "test1 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "1",
+	// 	},
+	// }
 
-	test2 := entity.MarketplaceBTCListing{
-		InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
-		Name:          "Test2",
-		Description:   "test2 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "2",
-		},
-	}
+	// test2 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
+	// 	Name:          "Test2",
+	// 	Description:   "test2 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "2",
+	// 	},
+	// }
 
-	test3 := entity.MarketplaceBTCListing{
-		InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
-		Name:          "Test3",
-		Description:   "test3 blah blah blah",
-		Price:         "1234567",
-		BaseEntity: entity.BaseEntity{
-			UUID: "3",
-		},
-	}
+	// test3 := entity.MarketplaceBTCListing{
+	// 	InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
+	// 	Name:          "Test3",
+	// 	Description:   "test3 blah blah blah",
+	// 	Price:         "1234567",
+	// 	BaseEntity: entity.BaseEntity{
+	// 		UUID: "3",
+	// 	},
+	// }
 
-	result = append(result, test1)
-	result = append(result, test2)
-	result = append(result, test3)
+	// result = append(result, test1)
+	// result = append(result, test2)
+	// result = append(result, test3)
 
 	nftList, err := u.Repo.RetrieveBTCNFTListings()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, nft := range nftList {
-		result = append(result, nft)
+	for _, listing := range nftList {
+		// err := u.Repo.CheckBTCListingHaveOngoingOrder(listing.UUID)
+		// if err != nil {
+		// 	continue
+		// }
+		result = append(result, listing)
 	}
 	return result, nil
 }
@@ -131,7 +139,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		InscriptionID: orderInfo.InscriptionID,
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
-		ExpiredAt:     time.Now().Add(time.Hour * 6),
+		ExpiredAt:     time.Now().Add(time.Minute * 30),
 	}
 
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()

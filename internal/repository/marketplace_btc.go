@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,12 +29,52 @@ func (r Repository) CreateMarketplaceBuyOrder(order *entity.MarketplaceBTCBuyOrd
 	return nil
 }
 
-// get item valid + unsold:
+// get item valid:
 func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
 	f := bson.D{
 		{Key: "inscriptionID", Value: inscriptionID},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// get item valid + unsold:
+func (r Repository) FindBtcNFTListingUnsoldByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "isSold", Value: false},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindBtcNFTListingByOrderID(id string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "uuid", Value: id},
 		{Key: "isConfirm", Value: true},
 		{Key: "isSold", Value: false},
 	}
@@ -48,6 +89,23 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) CheckBTCListingHaveOngoingOrder(id string) error {
+	// resp := entity.MarketplaceBTCBuyOrder{}
+	filter := bson.M{
+		"status":  bson.M{"$nin": []entity.BuyStatus{entity.StatusBuy_Pending, entity.StatusBuy_NotEnoughBalance}},
+		"item_id": id,
+	}
+
+	cursor := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_BUY).FindOne(context.TODO(), filter)
+	if cursor.Err() != nil {
+		if cursor.Err() == mongo.ErrNoDocuments || cursor.Err() == mongo.ErrNilDocument {
+			return nil
+		}
+		return cursor.Err()
+	}
+	return errors.New("have ongoing order")
 }
 
 // get item valid to get info:
@@ -104,7 +162,7 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		"isConfirm": false,
+		"isConfirm": true,
 		"isSold":    false,
 	}
 
@@ -159,7 +217,7 @@ func (r Repository) RetrieveBTCNFTBuyOrdersByStatus(status entity.BuyStatus) ([]
 
 func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (*mongo.UpdateResult, error) {
 
-	filter := bson.D{{"uuid", model.UUID}}
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 	result, err := r.UpdateOne(model.TableName(), filter, model)
 	if err != nil {
 		return nil, err
@@ -167,6 +225,23 @@ func (r Repository) UpdateBTCNFTBuyOrder(model *entity.MarketplaceBTCBuyOrder) (
 
 	return result, nil
 }
+
+// func (r Repository) UpdateBTCNFTListingSoldStatus(id string) error {
+// 	filter := bson.D{{Key: "uuid", Value: id}}
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"isSold": true,
+// 		},
+// 	}
+// 	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if result.MatchedCount == 0 {
+// 		return fmt.Errorf("not found listing %v", id)
+// 	}
+// 	return err
+// }
 
 func (r Repository) CreateMarketplaceBTCLog(listing *entity.MarketplaceBTCLogs) error {
 	err := r.InsertOne(listing.TableName(), listing)

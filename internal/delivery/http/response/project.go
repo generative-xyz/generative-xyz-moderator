@@ -19,6 +19,7 @@ type ProjectResp struct {
 	MaxSupply              int64            `json:"maxSupply"`
 	Limit                  int64            `json:"limit"`
 	MintPrice              string           `json:"mintPrice"`
+	MintPriceEth					 string						`json:"mintPriceEth"`
 	MintPriceAddr          string           `json:"mintPriceAddr"`
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`

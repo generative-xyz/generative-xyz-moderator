@@ -11,7 +11,7 @@ import (
 type TokenPaidType string
 const (
 	ETH TokenPaidType = "eth"
-	BIT TokenPaidType = "bit"
+	BIT TokenPaidType = "btc"
 )
 
 type TokenUriAttrFilter struct {
