@@ -238,3 +238,7 @@ func GenerateAddressSegwit() (privKey, pubKey, addressSegwit string, err error) 
 
 	return
 }
+
+func (bs *BlockcypherService) CheckTx(tx string) (gobcy.TX, error) {
+	return bs.chain.GetTX(tx, nil)
+}
