@@ -327,8 +327,10 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
 				continue
 			}
-			// charge 10% total amount:
-			amountWithChargee := int(totalAmount.Uint64()) - int(totalAmount.Uint64()*utils.BUY_NFT_CHARGE/100)
+			// charge x% total amount:
+			fee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+
+			amountWithChargee := int(totalAmount.Uint64()) - fee
 
 			fmt.Println("send btc from", item.SegwitAddress, "to: ", nftListing.SellerAddress)
 
@@ -344,7 +346,8 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
 				continue
 			}
-
+			item.FeeChargeBTCBuyer = fee
+			item.AmountBTCSentSeller = amountWithChargee
 			item.TxSendBTC = txID
 			item.ErrCount = 0 // reset error count!
 			// TODO: update item
