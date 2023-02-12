@@ -298,13 +298,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	}
 
 	// get list buy order status = sent nft:
-	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SentNFT)
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
 
 	for _, item := range listTosendBtc {
-		if item.Status == entity.StatusBuy_SendingNFT {
+		if item.Status == entity.StatusBuy_SentNFT {
 
 			// get amount nft:
 			nftListing, err := u.Repo.FindBtcNFTListingByOrderIDValid(item.ItemID)
@@ -362,7 +362,7 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	}
 
 	// get list buy order status = sent nft:
-	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingBTC)
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
