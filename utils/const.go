@@ -80,6 +80,7 @@ const (
 
 	COLLECTION_USERS                    string = "users"
 	COLLECTION_TOKEN_URI                string = "token_uri"
+	COLLECTION_TOKEN_URI_HISTORIES               string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
