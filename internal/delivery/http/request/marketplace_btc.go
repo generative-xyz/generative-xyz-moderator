@@ -14,3 +14,9 @@ type CreateMarketplaceBTCListing struct {
 	Description       string `json:"description"`
 	Price             string `json:"price"`
 }
+
+type SendNFT struct {
+	WalletName        string `json:"WalletName"`
+	ReceiveOrdAddress string `json:"ReceiveOrdAddress"`
+	InscriptionID     string `json:"InscriptionID"`
+}

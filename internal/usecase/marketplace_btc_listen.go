@@ -299,6 +299,9 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 
 	// get list buy order status = sent nft:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SentNFT)
+
+	fmt.Println("len(listTosendBtc)", len(listTosendBtc))
+
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
@@ -319,15 +322,21 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 
 			// Todo cal amount to send user and master
 			// send user first:
-			receiveAmount, _ := big.NewInt(0).SetString(item.ReceivedBalance, 10)
+			totalAmount, ok := big.NewInt(0).SetString(nftListing.Price, 10)
+			if !ok {
+				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
+				continue
+			}
 			// charge 10% total amount:
-			amountWithChargee := int(receiveAmount.Uint64()) - int(receiveAmount.Uint64()*utils.BUY_NFT_CHARGE/100)
+			amountWithChargee := int(totalAmount.Uint64()) - int(totalAmount.Uint64()*utils.BUY_NFT_CHARGE/100)
+
+			fmt.Println("send btc from", item.SegwitAddress, "to: ", nftListing.SellerAddress)
 
 			// transfer now:
 			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
 				item.SegwitKey,
-				nftListing.SellerAddress,
 				item.SegwitAddress,
+				nftListing.SellerAddress,
 				amountWithChargee,
 				btc.PreferenceMedium,
 			)
@@ -622,4 +631,46 @@ func (u *Usecase) trackHistory(id, name, table string, status interface{}, reque
 		fmt.Printf("trackHistory.%s.Error:%s", name, err.Error())
 	}
 
+}
+
+// tesst:
+func (u Usecase) SendTokenMKPTest(rootSpan opentracing.Span, walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
+	span, log := u.StartSpan(fmt.Sprintf("SendTokenMKPTest.%s", inscriptionID), rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
+
+	go u.trackHistory("test_send_nft", "SendTokenMKPTest", inscriptionID, receiveAddr, walletName, "before call ord_service.ExecRequest")
+
+	sendTokenReq := ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			walletName,
+			"wallet",
+			"send",
+			receiveAddr,
+			inscriptionID,
+			"--fee-rate",
+			"15",
+		}}
+
+	log.SetData("sendTokenReq", sendTokenReq)
+
+	resp, err := u.OrdService.Exec(sendTokenReq)
+
+	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "after call OrdService.Exec")
+	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "SendTokenMKP.JsonTransform", resp)
+
+	defer u.Notify(rootSpan, "SendTokenMKPTest", receiveAddr, inscriptionID)
+	if err != nil {
+		log.SetData("u.OrdService.Exec.Error", err.Error())
+		log.Error("u.OrdService.Exec", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("sendTokenRes", resp)
+
+	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "return now...")
+
+	return resp, err
 }
