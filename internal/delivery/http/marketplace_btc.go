@@ -219,11 +219,12 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
-	err := h.Usecase.BtcSendBTCForBuyOrder(span)
+	// err := h.Usecase.BtcSendBTCForBuyOrder(span)
 
 	// fmt.Println("len result", len(result))
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
