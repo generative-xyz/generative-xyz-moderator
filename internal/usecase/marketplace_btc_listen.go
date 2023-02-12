@@ -455,9 +455,8 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 			}
 
 			// transfer now:
-			sentTokenResp, err := u.SendTokenMKP(rootSpan, item.OrdAddress, item.InscriptionID)
+			sentTokenResp, err := u.SendTokenMKP(item.OrdAddress, item.InscriptionID)
 
-			go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.Error", err.Error())
 			go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
 			if err != nil {
@@ -562,12 +561,8 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) SendTokenMKP(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan(fmt.Sprintf("SendTokenMKP.%s", inscriptionID), rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SendTokenMKP(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
 
-	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
 	sendTokenReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -580,15 +575,7 @@ func (u Usecase) SendTokenMKP(rootSpan opentracing.Span, receiveAddr string, ins
 			"15",
 		}}
 
-	log.SetData("sendTokenReq", sendTokenReq)
 	resp, err := u.OrdService.Exec(sendTokenReq)
-	defer u.Notify(rootSpan, "SendTokenMKP", receiveAddr, inscriptionID)
-	if err != nil {
-		log.SetData("u.OrdService.Exec.Error", err.Error())
-		log.Error("u.OrdService.Exec", err.Error(), err)
-		return nil, err
-	}
-	log.SetData("sendTokenRes", resp)
 	return resp, err
 }
 
