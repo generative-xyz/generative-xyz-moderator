@@ -159,10 +159,9 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	p, err := u.Repo.FindProjectByTokenID(btc.ProjectID)
 	if err != nil {
 		log.Error("BTCMint.FindProjectByTokenID", err.Error(), err)
-		return nil, nil,err
+		return nil, nil, err
 	}
 	//log.SetData("found.Project", p)
-	
 
 	//prepare data for mint
 	// - Get project.AnimationURL
@@ -170,10 +169,9 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
 	if err != nil {
 		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
-		return nil,nil, err
+		return nil, nil, err
 	}
 
-	
 	// - Upload the Animation URL to GCS
 	animation := projectNftTokenUri.AnimationUrl
 	log.SetData("animation", animation)
@@ -183,7 +181,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
 		if err != nil {
 			log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
-			return nil,nil, err
+			return nil, nil, err
 		}
 		btc.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 
@@ -204,7 +202,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 			updated, err := u.Repo.UpdateProject(p.UUID, p)
 			if err != nil {
 				log.Error("BTCMint.UpdateProject", err.Error(), err)
-				return nil,nil, err
+				return nil, nil, err
 			}
 			log.SetData("updated", updated)
 		}
@@ -213,7 +211,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	if btc.FileURI == "" {
 		err = errors.New("There is no file uri to mint")
 		log.Error("fileURI.empty", err.Error(), err)
-		return nil,nil, err
+		return nil, nil, err
 	}
 
 	mintData := ord_service.MintRequest{
@@ -227,7 +225,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	resp, err := u.OrdService.Mint(mintData)
 	if err != nil {
 		log.Error("BTCMint.Mint", err.Error(), err)
-		return nil,nil, err
+		return nil, nil, err
 	}
 
 	u.Notify(rootSpan, fmt.Sprintf("[MintFor][projectID %s]", btc.ProjectID), btc.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
@@ -241,7 +239,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
 		log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
-		return nil,nil, err
+		return nil, nil, err
 	}
 
 	log.SetTag(utils.TOKEN_ID_TAG, btcMintResp.Inscription)
@@ -384,13 +382,13 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 
 	log.SetData("addreses", addreses)
 	for _, item := range addreses {
-		func (rootSpan opentracing.Span, item entity.BTCWalletAddress) {
+		func(rootSpan opentracing.Span, item entity.BTCWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
 			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-			
+
 			newItem, err := u.BalanceLogic(span, item)
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
@@ -461,7 +459,7 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 
 	log.SetData("addreses", addreses)
 	for _, item := range addreses {
-		func (rootSpan opentracing.Span, item entity.BTCWalletAddress) { 
+		func(rootSpan opentracing.Span, item entity.BTCWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
@@ -543,7 +541,6 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-			
 
 		}(span, item)
 
@@ -551,6 +548,37 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	}
 
 	return nil, nil
+}
+
+func (u Usecase) SendTokenMKP(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+	span, log := u.StartSpan(fmt.Sprintf("SendToken.%s", inscriptionID), rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
+	sendTokenReq := ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			"ord_marketplace_master",
+			"wallet",
+			"send",
+			receiveAddr,
+			inscriptionID,
+			"--fee-rate",
+			"15",
+		}}
+
+	log.SetData("sendTokenReq", sendTokenReq)
+	resp, err := u.OrdService.Exec(sendTokenReq)
+
+	if err != nil {
+		log.Error("u.OrdService.Exec", err.Error(), err)
+		return nil, err
+	}
+	u.Notify(rootSpan, "SendToken", receiveAddr, inscriptionID)
+	log.SetData("sendTokenRes", resp)
+	return resp, err
+
 }
 
 func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
