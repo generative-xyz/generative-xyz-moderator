@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
@@ -45,11 +46,18 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// }
 
 	// if strings.Contains(reqBody.ReceiveAddress)
-	if _, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
+	if priceInt, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
 		err := fmt.Errorf("invalid price")
 		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
+	} else {
+		if priceInt < utils.MIN_BTC_TO_LIST_BTC {
+			err := fmt.Errorf("invalid price")
+			log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	}
 
 	// check price:
@@ -62,8 +70,8 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
 
-		//TODO - Tri comment code, becasue type of utils.BUY_NFT_CHARGE and tils.MIN_BTC_TO_LIST_BTC are not defined 
-		// ServiceFee:     utils.BUY_NFT_CHARGE, 
+		//TODO - Tri comment code, becasue type of utils.BUY_NFT_CHARGE and tils.MIN_BTC_TO_LIST_BTC are not defined
+		// ServiceFee:     utils.BUY_NFT_CHARGE,
 		// Min:            utils.MIN_BTC_TO_LIST_BTC,
 	}
 
@@ -119,15 +127,25 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	var nft *entity.MarketplaceBTCListing
 	var err error
 	isBuyable := true
+	isCompleted := false
+	lastPrice := int64(0)
 	nft, err = h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
 	if err != nil {
 		isBuyable = false
-		nft, err = h.Usecase.Repo.FindBtcNFTListingByNFTID(inscriptionID)
+		nft, err = h.Usecase.Repo.FindBtcNFTListingSoldByNFTID(inscriptionID)
 		if err != nil {
 			log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
+		priceInt, err := strconv.ParseInt(nft.Price, 10, 64)
+		if err != nil {
+			log.Error("h.btcMarketplaceNFTDetail.strconv.ParseInt", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		lastPrice = priceInt
+		isCompleted = true
 	}
 
 	if !nft.IsSold {
@@ -159,6 +177,8 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		OrderID:       nft.UUID,
 		IsConfirmed:   nft.IsConfirm,
 		Buyable:       isBuyable,
+		IsCompleted:   isCompleted,
+		LastPrice:     lastPrice,
 	}
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)

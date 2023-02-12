@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -36,7 +37,33 @@ func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.Mark
 		{Key: "inscriptionID", Value: inscriptionID},
 	}
 
-	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f, &options.FindOneOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// get item valid:
+func (r Repository) FindBtcNFTListingSoldByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "isConfirm", Value: true},
+		{Key: "isSold", Value: true},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f, &options.FindOneOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -21,22 +21,22 @@ import (
 type Repository struct {
 	Connection *mongo.Client
 	Logger     logger.Ilogger
-	Cache redis.IRedisCache
-	DB *mongo.Database
+	Cache      redis.IRedisCache
+	DB         *mongo.Database
 }
 
 type PaginationKey struct {
 	Colllection string
-	Page int64
-	Limit int64
-	Filter interface{}
-	OrderBy string
-	Order entity.SortType
+	Page        int64
+	Limit       int64
+	Filter      interface{}
+	OrderBy     string
+	Order       entity.SortType
 }
 
 type Sort struct {
 	SortBy string
-	Sort entity.SortType
+	Sort   entity.SortType
 }
 
 func NewRepository(g *global.Global) (*Repository, error) {
@@ -85,31 +85,30 @@ func (r Repository) InsertOne(dbName string, obj entity.IEntity) error {
 	obj.SetID()
 	obj.SetCreatedAt()
 
-
 	bData, err := obj.ToBson()
-	if err != nil {
-		return  err
-	}
-
-	inserted , err := r.DB.Collection(dbName).InsertOne(context.TODO(), &bData)
 	if err != nil {
 		return err
 	}
 
-	objIDObject :=inserted.InsertedID.(primitive.ObjectID)
+	inserted, err := r.DB.Collection(dbName).InsertOne(context.TODO(), &bData)
+	if err != nil {
+		return err
+	}
+
+	objIDObject := inserted.InsertedID.(primitive.ObjectID)
 	objIDStr := objIDObject.Hex()
 
 	r.CreateCache(dbName, objIDStr, obj)
 	err = obj.Decode(bData)
 	if err != nil {
-		return  err
+		return err
 	}
 
-	return  nil
+	return nil
 }
 
 type queriedChan struct {
-	Err error
+	Err  error
 	Data *primitive.M
 }
 
@@ -121,7 +120,7 @@ func (r Repository) FindOne(dbName string, id string) (*bson.M, error) {
 		return data, nil
 	}
 
-	data, err  = r.FindOneWithoutCache(dbName, id)
+	data, err = r.FindOneWithoutCache(dbName, id)
 	if err == nil {
 		return data, nil
 	}
@@ -130,42 +129,42 @@ func (r Repository) FindOne(dbName string, id string) (*bson.M, error) {
 }
 
 func (r Repository) FindOneWithoutCache(dbName string, id string) (*bson.M, error) {
-	
+
 	var err error
 	data := &primitive.M{}
 	filter := bson.D{
-		{"$and", 
+		{"$and",
 			bson.A{
 				bson.D{{utils.KEY_UUID, id}},
 				bson.D{{utils.KEY_DELETED_AT, nil}},
 			},
 		},
 	}
-	
+
 	data, err = r.FilterOne(dbName, filter)
 	if err != nil {
 		return nil, err
 	}
 	r.CreateCache(dbName, id, data)
 	return data, nil
-	
+
 }
 
-func (r Repository) FilterOne(dbName string, filter bson.D) (*bson.M, error) {	
+func (r Repository) FilterOne(dbName string, filter bson.D, opts ...*options.FindOneOptions) (*bson.M, error) {
 	data := &bson.M{}
-	
-	err := r.DB.Collection(dbName).FindOne(context.Background(), filter).Decode(data)
+
+	err := r.DB.Collection(dbName).FindOne(context.Background(), filter, opts...).Decode(data)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func (r Repository) UpdateOne(dbName string, filter bson.D, obj entity.IEntity)  (*mongo.UpdateResult, error) {
+func (r Repository) UpdateOne(dbName string, filter bson.D, obj entity.IEntity) (*mongo.UpdateResult, error) {
 	obj.SetUpdatedAt()
 	bData, err := obj.ToBson()
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	update := bson.D{{"$set", bData}}
@@ -177,11 +176,11 @@ func (r Repository) UpdateOne(dbName string, filter bson.D, obj entity.IEntity) 
 	//Update cache
 	id := obj.GetID()
 	r.CreateCache(dbName, id, obj)
-	
-	return result,  nil
+
+	return result, nil
 }
 
-func (r Repository) DeleteOne(dbName string, filter bson.D)  (*mongo.DeleteResult, error) {
+func (r Repository) DeleteOne(dbName string, filter bson.D) (*mongo.DeleteResult, error) {
 	result, err := r.DB.Collection(dbName).DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return nil, err
@@ -190,23 +189,23 @@ func (r Repository) DeleteOne(dbName string, filter bson.D)  (*mongo.DeleteResul
 	filterArr := filter.Map()
 	id, ok := filterArr[utils.KEY_UUID]
 	if ok {
-		 r.DeleteCache(dbName, id.(string))
+		r.DeleteCache(dbName, id.(string))
 	}
 
-	return result,  nil
+	return result, nil
 }
 
 // only delete in mongo
-func (r Repository) DeleteMany(dbName string, filter bson.D)  (*mongo.DeleteResult, error) {
+func (r Repository) DeleteMany(dbName string, filter bson.D) (*mongo.DeleteResult, error) {
 	result, err := r.DB.Collection(dbName).DeleteMany(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
 
-	return result,  nil
+	return result, nil
 }
 
-func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error) {
+func (r Repository) SoftDelete(obj entity.IEntity) (*mongo.UpdateResult, error) {
 	id := obj.GetID()
 	dbName := obj.TableName()
 
@@ -215,7 +214,7 @@ func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error)
 
 	bData, err := obj.ToBson()
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	update := bson.D{{"$set", bData}}
@@ -224,29 +223,28 @@ func (r Repository) SoftDelete(obj entity.IEntity)  (*mongo.UpdateResult, error)
 		return nil, err
 	}
 
-	
 	r.DeleteCache(dbName, id)
 	return result, nil
 }
 
-func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {	
+func (r Repository) Paginate(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
 	paginatedData := New(r.DB.Collection(dbName)).
 		Context(context.TODO()).
 		Limit(int64(limit)).
 		Page(int64(page))
 
-	if 	len(sorts) > 0 {
+	if len(sorts) > 0 {
 		for _, sort := range sorts {
 			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
 				//sortValue := bson.D{{"created_at", -1}}
 				paginatedData.Sort(sort.SortBy, sort.Sort)
-			}	
+			}
 		}
-	}else{
+	} else {
 		paginatedData.Sort("created_at", entity.SORT_DESC)
 	}
-		
-	data, err :=	paginatedData.
+
+	data, err := paginatedData.
 		Select(selectFields).
 		Filter(filter).
 		Decode(returnData).
@@ -255,7 +253,7 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return data, nil
 }
 
@@ -264,7 +262,7 @@ func (r Repository) CreateCache(dbName string, objID string, obj interface{}) er
 	if err != nil {
 		return err
 	}
-	
+
 	stringData := string(bytes)
 	key := fmt.Sprintf(utils.DB_CACHE_KEY, dbName, objID)
 	err = r.Cache.SetStringDataWithExpTime(key, stringData, utils.DB_CACHE_EXPIRED_TIME)
@@ -273,7 +271,7 @@ func (r Repository) CreateCache(dbName string, objID string, obj interface{}) er
 	}
 
 	return nil
-} 
+}
 
 func (r Repository) GetCache(dbName string, objID string) (*bson.M, error) {
 	key := fmt.Sprintf(utils.DB_CACHE_KEY, dbName, objID)
@@ -287,7 +285,7 @@ func (r Repository) GetCache(dbName string, objID string) (*bson.M, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return resp, nil
 }
 
@@ -295,42 +293,42 @@ func (r Repository) DeleteCache(dbName string, objID string) error {
 	key := fmt.Sprintf(utils.DB_CACHE_KEY, dbName, objID)
 	err := r.Cache.Delete(key)
 	if err != nil {
-		return  err
+		return err
 	}
 	return nil
 }
 
-func (r Repository) CreateCollectionIndexes()  error {
+func (r Repository) CreateCollectionIndexes() error {
 	_, err := r.CreateTokenURIIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateProjectIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateMarketplaceListingsIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateMarketplaceOffersIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateProposalIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateProposalVotesIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateBTCWalletIndexModel()
 	if err != nil {
 		return err
