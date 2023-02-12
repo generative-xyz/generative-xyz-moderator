@@ -7,6 +7,7 @@ type MarketplaceNFTDetail struct {
 	Description   string `json:"description"`
 	OrderID       string `json:"orderID"`
 	IsConfirmed   bool   `json:"isConfirmed"`
+	Buyable       bool   `json:"buyable"`
 }
 
 type CreateMarketplaceBTCBuyOrder struct {

@@ -29,12 +29,33 @@ func (r Repository) CreateMarketplaceBuyOrder(order *entity.MarketplaceBTCBuyOrd
 	return nil
 }
 
-// get item valid + unsold:
+// get item valid:
 func (r Repository) FindBtcNFTListingByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
 	resp := &entity.MarketplaceBTCListing{}
 
 	f := bson.D{
 		{Key: "inscriptionID", Value: inscriptionID},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// get item valid + unsold:
+func (r Repository) FindBtcNFTListingUnsoldByNFTID(inscriptionID string) (*entity.MarketplaceBTCListing, error) {
+	resp := &entity.MarketplaceBTCListing{}
+
+	f := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+		{Key: "isSold", Value: false},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_BTC_LISTING, f)
