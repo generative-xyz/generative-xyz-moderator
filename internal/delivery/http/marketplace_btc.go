@@ -45,8 +45,8 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// 	return
 	// }
 
-	// if strings.Contains(reqBody.ReceiveAddress)
-	if priceInt, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
+	priceNumber, err := strconv.ParseInt(reqBody.Price, 10, 64)
+	if err != nil {
 		err := fmt.Errorf("invalid price")
 		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -61,6 +61,12 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	// check price:
+	if priceNumber < utils.MIN_BTC_TO_LIST_BTC {
+		err := fmt.Errorf("invalid price, min btc is: %.2f ", float64(priceNumber/1e8))
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	reqUsecase := structure.MarketplaceBTC_ListingInfo{
 		InscriptionID:  inscriptionID[1],
@@ -69,10 +75,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-
-		//TODO - Tri comment code, becasue type of utils.BUY_NFT_CHARGE and tils.MIN_BTC_TO_LIST_BTC are not defined
-		// ServiceFee:     utils.BUY_NFT_CHARGE,
-		// Min:            utils.MIN_BTC_TO_LIST_BTC,
+		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE/100),
 	}
 
 	listing, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
