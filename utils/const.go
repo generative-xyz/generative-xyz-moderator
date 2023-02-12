@@ -104,7 +104,7 @@ const (
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
-	BUY_NFT_CHARGE           = 2.5
+	BUY_NFT_CHARGE           = 2
 	MIN_BTC_TO_LIST_BTC      = 200000
 )
 
