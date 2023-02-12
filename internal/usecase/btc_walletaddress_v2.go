@@ -17,12 +17,13 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 )
 
 type BitcoinTokenMintFee struct {
-	Amount string
-	MintFee string
+	Amount       string
+	MintFee      string
 	SentTokenFee string
 }
 
@@ -38,8 +39,8 @@ func calculateMintPrice(input structure.BctWalletAddressDataV2) BitcoinTokenMint
 	fileSize := len([]byte(dec))
 	mintFee := int32(fileSize) / 4 * input.FeeRate
 	return BitcoinTokenMintFee{
-		Amount: strconv.FormatInt(int64(mintFee + SENT_TOKEN_FEE), 10),
-		MintFee: strconv.FormatInt(int64(mintFee), 10),
+		Amount:       strconv.FormatInt(int64(mintFee+SENT_TOKEN_FEE), 10),
+		MintFee:      strconv.FormatInt(int64(mintFee), 10),
 		SentTokenFee: strconv.FormatInt(int64(SENT_TOKEN_FEE), 10),
 	}
 }
@@ -56,6 +57,16 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 		log.Error("u.CreateBTCWalletAddressV2.Copy", err.Error(), err)
 		return nil, err
 	}
+
+	//TODO: @tri use segwit address and private key (replace Mnemonic)
+	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
+	if err != nil {
+		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+		return nil, err
+	}
+	addressSegwit
+	walletAddress.Mnemonic = privKey
+	//----------------------------------------------------------------
 
 	userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, userWallet)
@@ -115,14 +126,14 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 func (u Usecase) CheckbalanceWalletAddressV2(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddressV2, error) {
 	span, log := u.StartSpan("CheckbalanceWalletAddressV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
 	btc, err := u.Repo.FindBtcWalletAddressByOrdV2(input.Address)
 	if err != nil {
 		log.Error("u.Repo.FindBtcWalletAddressByOrd", err.Error(), err)
 		return nil, err
 	}
-	
+
 	balance, err := u.CheckBalanceV2(span, *btc)
 	if err != nil {
 		log.Error("u.BalanceLogic", err.Error(), err)
@@ -231,14 +242,14 @@ func (u Usecase) UpdateBtcMintedStatusV2(rootSpan opentracing.Span, btcWallet *e
 	log.SetData("updated", updated)
 	return btcWallet, nil
 }
- 
-func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error)  {
+
+func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error) {
 	span, log := u.StartSpan("CheckBlanceV2", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
-	
+	defer u.Tracer.FinishSpan(span, log)
+
 	log.SetTag(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
-	
+
 	balanceRequest := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -264,7 +275,7 @@ func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletA
 
 	go func(rootSpan opentracing.Span, balance *entity.BTCWalletAddressV2) {
 		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
+		defer u.Tracer.FinishSpan(span, log)
 
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddrV2(balance.OrdAddress, balance)
 		if err != nil {
@@ -280,13 +291,13 @@ func (u Usecase) CheckBalanceV2(rootSpan opentracing.Span, btc entity.BTCWalletA
 
 func (u Usecase) BalanceLogicV2(rootSpan opentracing.Span, btc entity.BTCWalletAddressV2) (*entity.BTCWalletAddressV2, error) {
 	span, log := u.StartSpan("BalanceLogicV2", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+	defer u.Tracer.FinishSpan(span, log)
 	balance, err := u.CheckBalanceV2(span, btc)
 	if err != nil {
 		log.Error("u.CheckBlance", err.Error(), err)
 		return nil, err
 	}
-	
+
 	//TODO logic of the checked balance here
 	if balance.Balance < btc.Amount {
 		err := errors.New("Not enough amount")
@@ -373,12 +384,12 @@ func (u Usecase) WaitingForMintedV2(rootSpan opentracing.Span) ([]entity.BTCWall
 	for _, item := range addreses {
 		log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 		log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
-		
+
 		addr := item.OriginUserAddress
 		if addr == "" {
 			addr = item.UserAddress
 		}
-	
+
 		sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 		if err != nil {
 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
