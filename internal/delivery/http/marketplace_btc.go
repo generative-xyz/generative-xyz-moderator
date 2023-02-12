@@ -37,12 +37,12 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	if reqBody.Name == "" {
-		err := fmt.Errorf("invalid name")
-		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// if reqBody.Name == "" {
+	// 	err := fmt.Errorf("invalid name")
+	// 	log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 	// if strings.Contains(reqBody.ReceiveAddress)
 	if _, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
 		err := fmt.Errorf("invalid price")
