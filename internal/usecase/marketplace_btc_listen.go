@@ -411,6 +411,40 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 	for _, item := range listTosendBtc {
 		if item.Status == entity.StatusBuy_ReceivedFund {
 
+			// check nft in master wallet or not:
+			listNFTsRep, err := u.GetMasterNfts(span)
+			if err != nil {
+				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.Error", err.Error())
+				continue
+			}
+
+			go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.listNFTsRep", listNFTsRep)
+
+			// parse nft data:
+			var resp []struct {
+				Inscription string `json:"inscription"`
+				Location    string `json:"location"`
+				Explorer    string `json:"explorer"`
+			}
+
+			err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
+			if err != nil {
+				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.Unmarshal(listNFTsRep)", err.Error())
+				continue
+			}
+			owner := false
+			for _, nft := range resp {
+				if strings.EqualFold(nft.Inscription, item.InscriptionID) {
+					owner = true
+					break
+				}
+
+			}
+			go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.CheckNFTOwner", owner)
+			if !owner {
+				continue
+			}
+
 			// transfer now:
 			sentTokenResp, err := u.SendTokenMKP(rootSpan, item.OrdAddress, item.InscriptionID)
 
@@ -422,6 +456,8 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 
+			//TODO: handle log err: Database already open. Cannot acquire lock
+
 			// Update status first if none err:
 			item.Status = entity.StatusBuy_SendingNFT
 			item.ErrCount = 0 // reset error count!
@@ -431,6 +467,7 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err.Error())
 				log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
 				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.UpdateBTCNFTBuyOrder", err.Error())
+				continue
 			}
 
 			tmpText := sentTokenResp.Stdout
@@ -513,6 +550,62 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 	}
 
 	return nil
+}
+
+func (u Usecase) SendTokenMKP(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+	span, log := u.StartSpan(fmt.Sprintf("SendTokenMKP.%s", inscriptionID), rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
+	sendTokenReq := ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			"ord_marketplace_master",
+			"wallet",
+			"send",
+			receiveAddr,
+			inscriptionID,
+			"--fee-rate",
+			"15",
+		}}
+
+	log.SetData("sendTokenReq", sendTokenReq)
+	resp, err := u.OrdService.Exec(sendTokenReq)
+	defer u.Notify(rootSpan, "SendTokenMKP", receiveAddr, inscriptionID)
+	if err != nil {
+		log.SetData("u.OrdService.Exec.Error", err.Error())
+		log.Error("u.OrdService.Exec", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("sendTokenRes", resp)
+	return resp, err
+}
+
+func (u Usecase) GetMasterNfts(rootSpan opentracing.Span) (*ord_service.ExecRespose, error) {
+	span, log := u.StartSpan(fmt.Sprintf("GetMasterNfts.%s", "inscriptions"), rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.TOKEN_ID_TAG, "inscriptions")
+	log.SetTag(utils.WALLET_ADDRESS_TAG, "ord_marketplace_master")
+	listNFTsReq := ord_service.ExecRequest{
+		Args: []string{
+			"--wallet",
+			"ord_marketplace_master",
+			"wallet",
+			"inscriptions",
+		}}
+
+	log.SetData("listNFTsReq", listNFTsReq)
+	resp, err := u.OrdService.Exec(listNFTsReq)
+	defer u.Notify(rootSpan, "GetMasterNfts", "ord_marketplace_master", "inscriptions")
+	if err != nil {
+		log.SetData("u.OrdService.Exec.Error", err.Error())
+		log.Error("u.OrdService.Exec", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("listNFTsRep", resp)
+	return resp, err
 }
 
 func (u *Usecase) trackHistory(id, name, table string, status interface{}, requestMsg interface{}, responseMsg interface{}) {
