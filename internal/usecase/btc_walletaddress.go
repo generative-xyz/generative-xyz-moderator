@@ -549,36 +549,6 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 	return nil, nil
 }
 
-func (u Usecase) SendTokenMKP(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan(fmt.Sprintf("SendToken.%s", inscriptionID), rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
-	sendTokenReq := ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			"ord_marketplace_master",
-			"wallet",
-			"send",
-			receiveAddr,
-			inscriptionID,
-			"--fee-rate",
-			"15",
-		}}
-
-	log.SetData("sendTokenReq", sendTokenReq)
-	resp, err := u.OrdService.Exec(sendTokenReq)
-	defer u.Notify(rootSpan, "SendToken", receiveAddr, inscriptionID)
-	if err != nil {
-		log.SetData("u.OrdService.Exec.Error", err.Error())
-		log.Error("u.OrdService.Exec", err.Error(), err)
-		return nil, err
-	}
-	log.SetData("sendTokenRes", resp)
-	return resp, err
-}
-
 func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
 	span, log := u.StartSpan(fmt.Sprintf("SendToken.%s", inscriptionID), rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
