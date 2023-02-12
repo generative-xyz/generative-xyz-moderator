@@ -220,14 +220,14 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 		}
 
 		// get amount nft:
-		nftListing, err := u.Repo.FindBtcNFTListingByNFTID(item.InscriptionID)
+		nftListing, err := u.Repo.FindBtcNFTListingByOrderID(item.ItemID)
 		if err != nil {
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByNFTID err", err.Error())
+			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByOrderID err", err.Error())
 			continue
 		}
 		if nftListing == nil {
 
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByNFTID nil", "updated need to refund now")
+			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByOrderID nil", "updated need to refund now")
 
 			// update StatusBuy_NeedToRefund now for listing:
 			item.Status = entity.StatusBuy_NeedToRefund
@@ -307,13 +307,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 		if item.Status == entity.StatusBuy_SendingNFT {
 
 			// get amount nft:
-			nftListing, err := u.Repo.FindBtcNFTListingByNFTIDValid(item.InscriptionID)
+			nftListing, err := u.Repo.FindBtcNFTListingByOrderIDValid(item.ItemID)
 			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByNFTIDValid err", err.Error())
+				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid err", err.Error())
 				continue
 			}
 			if nftListing == nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByNFTIDValid nil", "[]")
+				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid nil", "[]")
 				continue
 			}
 
