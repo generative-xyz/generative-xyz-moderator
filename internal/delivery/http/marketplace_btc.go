@@ -44,7 +44,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
-
+  
 	// if strings.Contains(reqBody.ReceiveAddress)
 	if _, err := strconv.ParseInt(reqBody.Price, 10, 64); err != nil {
 		err := fmt.Errorf("invalid price")
@@ -129,22 +129,24 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
-	if err != nil {
-		log.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
-	}
-	currentTime := time.Now()
-	for _, order := range buyOrders {
-		expireTime := order.ExpiredAt
-		// not expired yet still waiting for btc
-		if expireTime.Before(currentTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
-			isBuyable = false
-			break
+	if !nft.IsSold {
+		buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
+		if err != nil {
+			log.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
 		}
-		// could be expired but received btc
-		if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
-			isBuyable = false
-			break
+		currentTime := time.Now()
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isBuyable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isBuyable = false
+				break
+			}
 		}
 	}
 
