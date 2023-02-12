@@ -30,10 +30,6 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 func (h ScronBTCHandler) StartServer() {
 
-	if true {
-		return
-	}
-
 	var wg sync.WaitGroup
 
 	for {
