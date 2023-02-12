@@ -51,13 +51,6 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
-	} else {
-		if priceInt < utils.MIN_BTC_TO_LIST_BTC {
-			err := fmt.Errorf("invalid price")
-			log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
 	}
 
 	// check price:
