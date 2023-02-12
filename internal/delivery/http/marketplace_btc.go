@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -30,13 +31,18 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	inscriptionID := strings.Split(reqBody.InscriptionID, "https://ordinals.com/inscription/")
 
-	if len(inscriptionID) != 2 {
-		err := fmt.Errorf("invalid ordinals link")
-		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
+	inscriptionID := reqBody.InscriptionID
+
+	inscriptionIDs := strings.Split(inscriptionID, "https://ordinals.com/inscription/")
+
+	if len(inscriptionIDs) == 2 {
+		inscriptionID = inscriptionIDs[1]
+		// err := fmt.Errorf("invalid ordinals link")
+		// log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		// return
+
 	}
 	// if reqBody.Name == "" {
 	// 	err := fmt.Errorf("invalid name")
@@ -44,6 +50,23 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
+
+	// check valid inscriptionID:
+	suffix := "i0"
+	if !strings.HasSuffix(inscriptionID, suffix) {
+		err := fmt.Errorf("invalid inscriptionID")
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	inscriptionID = strings.TrimSuffix(inscriptionID, suffix)
+	_, err = chainhash.NewHashFromStr(inscriptionID)
+	if err != nil {
+		err := fmt.Errorf("invalid inscriptionID")
+		log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	priceNumber, err := strconv.ParseInt(reqBody.Price, 10, 64)
 	if err != nil {
@@ -62,7 +85,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	reqUsecase := structure.MarketplaceBTC_ListingInfo{
-		InscriptionID:  inscriptionID[1],
+		InscriptionID:  inscriptionID,
 		Name:           reqBody.Name,
 		Description:    reqBody.Description,
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
