@@ -61,7 +61,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		ServiceFee:     "10", //10%
 	}
 
-	depositAddress, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
+	listing, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -69,7 +69,8 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	resp := response.CreateMarketplaceBTCListing{
-		ReceiveAddress: depositAddress,
+		ReceiveAddress: listing.HoldOrdAddress,
+		TimeoutAt:      fmt.Sprintf("%d", listing.ExpiredAt.Unix()),
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")

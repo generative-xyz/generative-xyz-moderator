@@ -16,4 +16,5 @@ type CreateMarketplaceBTCBuyOrder struct {
 
 type CreateMarketplaceBTCListing struct {
 	ReceiveAddress string `json:"receiveAddress"`
+	TimeoutAt      string `json:"timeoutAt"`
 }

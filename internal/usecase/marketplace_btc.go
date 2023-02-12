@@ -11,7 +11,7 @@ import (
 	"rederinghub.io/utils/btc"
 )
 
-func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (string, error) {
+func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo structure.MarketplaceBTC_ListingInfo) (*entity.MarketplaceBTCListing, error) {
 	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	listing := entity.MarketplaceBTCListing{
@@ -22,7 +22,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		ServiceFee:     listingInfo.ServiceFee,
 		IsConfirm:      false,
 		IsSold:         false,
-		ExpiredAt:      time.Now().Add(time.Hour * 6),
+		ExpiredAt:      time.Now().Add(time.Hour * 2),
 		Name:           listingInfo.Name,
 		Description:    listingInfo.Description,
 		InscriptionID:  listingInfo.InscriptionID,
@@ -38,7 +38,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	})
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-		return "", err
+		return &listing, err
 	}
 	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	listing.HoldOrdAddress = holdOrdAddress
@@ -73,9 +73,9 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	err = u.Repo.CreateMarketplaceListingBTC(&listing)
 	if err != nil {
 		log.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
-		return "", err
+		return &listing, err
 	}
-	return holdOrdAddress, nil
+	return &listing, nil
 }
 
 func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.MarketplaceBTCListing, error) {
