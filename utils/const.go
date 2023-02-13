@@ -105,10 +105,12 @@ const (
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
-	BUY_NFT_CHARGE           = 0     // 0%
+	BUY_NFT_CHARGE           = 0      // 0%
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
 
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
+
+	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 )
 
 type PubSubSendOtp struct {

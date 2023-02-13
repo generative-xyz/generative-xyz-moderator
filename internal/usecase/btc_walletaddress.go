@@ -328,14 +328,14 @@ func (u Usecase) GetBalanceSegwitBTCWallet(rootSpan opentracing.Span, userAddres
 		log.Error("u.buildBTCClient", err.Error(), err)
 		return "", nil
 	}
-	log.SetData("bs",bs)
+	log.SetData("bs", bs)
 	balance, confirm, err := bs.GetBalance(userAddress)
 	if err != nil {
 		log.Error("bs.GetBalance", err.Error(), err)
 		return "", err
 	}
-	log.SetData("confirm",confirm)
-	log.SetData("balance",balance.String())
+	log.SetData("confirm", confirm)
+	log.SetData("balance", balance.String())
 
 	//TODO: @thaibao
 
@@ -388,7 +388,7 @@ func (u Usecase) CheckBalance(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 		if balance == "" {
 			err := errors.New("balance is empty")
 			log.Error("balance.Empty", err.Error(), err)
-			return nil,  err
+			return nil, err
 		}
 	}
 	log.SetData("balance", balance)
@@ -671,4 +671,46 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {
 		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 	}
+}
+
+//phuong:
+// send btc from segwit address to master address
+func (u Usecase) JobBtcSendBtcToMaster(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("JobBtcSendBtcToMaster", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	addreses, err := u.Repo.ListWalletAddressToClaimBTC()
+	if err != nil {
+		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
+		return err
+	}
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+
+	log.SetData("addreses", addreses)
+	for _, item := range addreses {
+
+		// send master now:
+		tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(item.Mnemonic, item.OrdAddress, utils.MASTER_ADDRESS, -1, btc.PreferenceMedium)
+		if err != nil {
+			log.Error(fmt.Sprintf("JobBtcSendBtcToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+			return err
+		}
+		// save tx:
+		item.TxSendMaster = tx
+		item.IsSentMaster = true
+		_, err = u.Repo.UpdateBtcWalletAddress(&item)
+		if err != nil {
+			log.Error(fmt.Sprintf("JobBtcSendBtcToMaster.UpdateBtcWalletAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+			return err
+		}
+
+		time.Sleep(3 * time.Second)
+	}
+
+	return nil
 }
