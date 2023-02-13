@@ -188,8 +188,8 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 	return result, nil
 }
 
-func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
-	resp := []entity.MarketplaceBTCListing{}
+func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset int64) ([]entity.MarketplaceBTCListingFilterPipeline, error) {
+	resp := []entity.MarketplaceBTCListingFilterPipeline{}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
 		bson.D{
@@ -247,7 +247,7 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 	return resp, nil
 }
 
-func (r Repository) RetrieveBTCNFTListings(limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
+func (r Repository) RetrieveBTCNFTListings(limit, offset int64) ([]entity.MarketplaceBTCListingFilterPipeline, error) {
 	filter := bson.D{
 		{Key: "isConfirm", Value: true},
 	}
@@ -260,7 +260,7 @@ func (r Repository) RetrieveBTCNFTListings(limit, offset int64) ([]entity.Market
 	return resp, nil
 }
 
-func (r Repository) RetrieveBTCNFTListingsUnsold(limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
+func (r Repository) RetrieveBTCNFTListingsUnsold(limit, offset int64) ([]entity.MarketplaceBTCListingFilterPipeline, error) {
 	filter := bson.D{
 		{Key: "isConfirm", Value: true},
 		{Key: "isSold", Value: false},

@@ -34,6 +34,23 @@ type MarketplaceBTCListing struct {
 	ExpiredAt      time.Time `bson:"expired_at"`
 }
 
+type MarketplaceBTCListingFilterPipeline struct {
+	ID             string    `bson:"_id"`
+	UUID           string    `bson:"uuid"`
+	SellOrdAddress string    `bson:"seller_ord_address"`
+	SellerAddress  string    `bson:"seller_address"`
+	HoldOrdAddress string    `bson:"hold_ord_address"`
+	Price          string    `bson:"amount"`
+	ServiceFee     string    `bson:"service_fee"`
+	IsConfirm      bool      `bson:"isConfirm"`
+	IsSold         bool      `bson:"isSold"`
+	TxNFT          string    `bson:"tx_nft"`
+	InscriptionID  string    `bson:"inscriptionID"` // tokenID in btc
+	Name           string    `bson:"name"`
+	Description    string    `bson:"description"`
+	ExpiredAt      time.Time `bson:"expired_at"`
+}
+
 func (u MarketplaceBTCListing) TableName() string {
 	return utils.COLLECTION_MARKETPLACE_BTC_LISTING
 }

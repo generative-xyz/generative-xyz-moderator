@@ -82,7 +82,7 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	result := []structure.MarketplaceNFTDetail{}
-	var nftList []entity.MarketplaceBTCListing
+	var nftList []entity.MarketplaceBTCListingFilterPipeline
 	var err error
 
 	if buyableOnly {
