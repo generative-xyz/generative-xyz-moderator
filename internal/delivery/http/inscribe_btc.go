@@ -2,6 +2,8 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/jinzhu/copier"
@@ -19,38 +21,55 @@ import (
 // @Produce  json
 // @Param request body request.CreateBtcWalletAddressReqV2 true "Create a btc wallet address request"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /btc-v2/receive-address [POST]
-func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.btcGetReceiveWalletAddress", r)
+// @Router /inscribe/receive-address [POST]
+func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.btcCreateInscribeBTC", r)
 	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
-	var reqBody request.CreateBtcWalletAddressReqV2
+	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		log.Error("httpDelivery.btcCreateInscribeBTC.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	reqUsecase := &structure.BctWalletAddressDataV2{}
+	reqUsecase := &structure.InscribeBtcReceiveAddrRespReq{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
 		log.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	if reqUsecase == nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
+		return
+	}
+	if len(reqUsecase.Name) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("name is invalid"))
+		return
+	}
+	if reqUsecase.FeeRate != 5 && reqUsecase.FeeRate != 10 && reqUsecase.FeeRate != 15 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("fee rate is invalid"))
+		return
+	}
 
-	btcWallet, err := h.Usecase.CreateBTCWalletAddressV2(span, *reqUsecase)
+	if len(reqUsecase.File) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("file is invalid"))
+		return
+	}
+
+	btcWallet, err := h.Usecase.CreateInscribeBTC(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
+		log.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcWallet", btcWallet)
-	resp, err := h.BtcWalletAddressToRespV2(btcWallet)
+	log.SetData("btcCreateInscribeBTC", btcWallet)
+	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -60,8 +79,8 @@ func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *ht
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) BtcWalletAddressToRespV2(input *entity.BTCWalletAddressV2) (*response.BtcWalletRespV2, error) {
-	resp := &response.BtcWalletRespV2{}
+func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
 	resp.MintFee = input.MintFee
@@ -71,5 +90,7 @@ func (h *httpDelivery) BtcWalletAddressToRespV2(input *entity.BTCWalletAddressV2
 	resp.IsConfirm = input.IsConfirm
 	resp.InscriptionID = input.InscriptionID
 	resp.Balance = input.Balance
+	resp.TimeoutAt = fmt.Sprintf("%d", input.ExpiredAt.Unix())
+	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
 }
