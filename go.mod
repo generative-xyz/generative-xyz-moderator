@@ -25,7 +25,7 @@ require (
 	github.com/slack-go/slack v0.12.1
 	github.com/swaggo/http-swagger v1.1.2
 	github.com/swaggo/swag v1.8.2
-	github.com/tdewolff/minify v2.3.6+incompatible
+	github.com/tdewolff/minify v2.3.6+incompatible // indirect
 	github.com/tdewolff/minify/v2 v2.12.4
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	go.mongodb.org/mongo-driver v1.10.2
