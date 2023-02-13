@@ -27,6 +27,31 @@ type CreateProjectReq struct {
 	Categories []string `json:"categories"`
 }
 
+type CreateBtcProjectReq struct {
+	MaxSupply             int64              `json:"maxSupply"`
+	LimitSupply           int64              `json:"limitSupply"`
+	MintPrice             string             `json:"mintPrice"`
+	Name                  string             `json:"name"`
+	CreatorName           string             `json:"creatorName"`
+	CreatorAddrr          string             `json:"creatorAddrr"`
+	Description           string             `json:"description"`
+	OpenMintUnixTimestamp  int                `json:"openMintUnixTimestamp"`
+	CloseMintUnixTimestamp int                `json:"closeMintUnixTimestamp"`
+	Thumbnail             string             `json:"thumbnail"`
+	ThirdPartyScripts     []string           `json:"thirdPartyScripts"`
+	Scripts               []string           `json:"scripts"`
+	TokenDescription      string             `json:"tokenDescription"`
+	Styles                string             `json:"styles"`
+	SocialWeb             string             `json:"socialWeb"`
+	SocialTwitter         string             `json:"socialTwitter"`
+	SocialDiscord         string             `json:"socialDiscord"`
+	SocialMedium          string             `json:"socialMedium"`
+	SocialInstagram       string             `json:"socialInstagram"`
+	License               string             `json:"license"`
+	Tags                  []string           `json:"tags"`
+	Categories            []string           `json:"categories"`
+}
+
 type CreateProposaltReq struct {
 	Title string `json:"title"`
 	Description string `json:"description"`

@@ -42,6 +42,29 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreatePr
 	return pe, nil
 }
 
+func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.CreateBtcProjectReq) (*entity.Projects, error) {
+	span, log := u.StartSpan("CreateBTCProject", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	pe := &entity.Projects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	max, err := u.Repo.GetMaxBtcProjectID()
+	_ = max
+
+	err = u.Repo.CreateProject(pe)
+	if err != nil {
+		log.Error("u.Repo.CreateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("pe", pe)
+	return pe, nil
+}
+
 func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("UpdateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)

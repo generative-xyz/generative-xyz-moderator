@@ -65,6 +65,56 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary Create btc project
+// @Description Create btc project
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param request body request.CreateBTCProjectReq true "Create profile request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/btc [POST]
+func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("createBTCProject", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	var reqBody request.CreateBTCProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.CreateBtcProjectReq{}
+	err = copier.Copy(reqUsecase, reqBody)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("reqUsecase",reqUsecase)
+	message, err := h.Usecase.CreateBTCProject(span, *reqUsecase)
+	if err != nil {
+		log.Error("h.Usecase.CreateBTCProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+	
+	resp, err  := h.projectToResp(message)
+	if err != nil {
+		log.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+
+// UserCredits godoc
 // @Summary get project's detail
 // @Description get project's detail
 // @Tags Project

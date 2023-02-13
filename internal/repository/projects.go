@@ -311,6 +311,29 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 	return resp, nil
 }
 
+
+
+func (r Repository) GetMaxBtcProjectID() (*int64, error)  {
+	btcID := 1000000;
+
+	f := bson.M{
+		"$match" : bson.M{"tokenIDInt": bson.M{ "$gte": btcID }},
+		"maxID" : bson.M{"$max": "tokenIDInt"},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Aggregate(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]interface{})
+	
+	err = cursor.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	
+	return nil, nil
+}
+
 func (r Repository)SortProjects () []Sort {
 	s := []Sort{}
 	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })

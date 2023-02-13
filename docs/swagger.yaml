@@ -5,6 +5,61 @@ definitions:
       address:
         type: string
     type: object
+  request.CreateBTCProjectReq:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      closeMintUnixTimestamp:
+        type: integer
+      creatorAddrr:
+        type: string
+      creatorName:
+        type: string
+      description:
+        type: string
+      license:
+        type: string
+      limitSupply:
+        type: integer
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      name:
+        type: string
+      openMintUnixTimestamp:
+        type: integer
+      scripts:
+        items:
+          type: string
+        type: array
+      socialDiscord:
+        type: string
+      socialInstagram:
+        type: string
+      socialMedium:
+        type: string
+      socialTwitter:
+        type: string
+      socialWeb:
+        type: string
+      styles:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thirdPartyScripts:
+        items:
+          type: string
+        type: array
+      thumbnail:
+        type: string
+      tokenDescription:
+        type: string
+    type: object
   request.CreateBtcWalletAddressReq:
     properties:
       projectID:
@@ -289,6 +344,8 @@ definitions:
       mintPrice:
         type: string
       mintPriceAddr:
+        type: string
+      mintPriceEth:
         type: string
       mintedTime:
         type: string
@@ -1801,6 +1858,28 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's tokens
+      tags:
+      - Project
+  /project/btc:
+    post:
+      consumes:
+      - application/json
+      description: Create btc project
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBTCProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Create btc project
       tags:
       - Project
   /project/minted-out:
