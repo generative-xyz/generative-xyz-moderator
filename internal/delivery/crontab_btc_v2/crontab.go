@@ -33,7 +33,7 @@ func (h ScronBTCHandler) StartServer() {
 	var wg sync.WaitGroup
 
 	for {
-		wg.Add(4)
+		wg.Add(5)
 
 		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron")
 		defer span.Finish()
@@ -49,6 +49,17 @@ func (h ScronBTCHandler) StartServer() {
 			defer span.Finish()
 
 			h.Usecase.JobInscribeCheckTxSend(span)
+
+		}(span, &wg)
+		
+		// job check balance:
+		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+
+			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.CheckBlance")
+			defer wg.Done()
+			defer span.Finish()
+
+			h.Usecase.JobInscribeWaitingBalance(span)
 
 		}(span, &wg)
 

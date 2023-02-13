@@ -42,7 +42,7 @@ func (h ScronBTCHandler) StartServer() {
 
 		//Waiting for balance + Mint
 		for {
-			wg.Add(2)
+			wg.Add(3)
 			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
 				span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForBalancing")
 				defer wg.Done()
