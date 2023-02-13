@@ -321,17 +321,21 @@ func (u Usecase) GetBalanceSegwitBTCWallet(rootSpan opentracing.Span, userAddres
 	span, log := u.StartSpan("GetBalanceSegwitBTCWallet", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
+	log.SetData("userAddress", userAddress)
+	log.SetTag(utils.WALLET_ADDRESS_TAG, userAddress)
 	_, bs, err := u.buildBTCClient()
-
 	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		log.Error("u.buildBTCClient", err.Error(), err)
 		return "", nil
 	}
-
+	log.SetData("bs",bs)
 	balance, confirm, err := bs.GetBalance(userAddress)
 	if err != nil {
+		log.Error("bs.GetBalance", err.Error(), err)
 		return "", err
 	}
+	log.SetData("confirm",confirm)
+	log.SetData("balance",balance.String())
 
 	//TODO: @thaibao
 
@@ -375,21 +379,24 @@ func (u Usecase) CheckBalance(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 	// check ord first
 	balance, err := u.GetBalanceOrdBTCWallet(rootSpan, btc.UserAddress)
 	if err != nil || balance == "" {
+		log.Error("u.GetBalanceOrdBTCWallet", err.Error(), err)
 		balance, err = u.GetBalanceSegwitBTCWallet(rootSpan, btc.UserAddress)
 		if err != nil {
+			log.Error("u.GetBalanceSegwitBTCWallet", err.Error(), err)
 			return nil, err
 		}
 		if balance == "" {
-			return nil, errors.New("balance is empty")
+			err := errors.New("balance is empty")
+			log.Error("balance.Empty", err.Error(), err)
+			return nil,  err
 		}
 	}
 	log.SetData("balance", balance)
-
 	btc.Balance = balance
 	btc.BalanceCheckTime = btc.BalanceCheckTime + 1
 	updated, _ := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, &btc)
+	log.SetData("updated", btc)
 	log.SetData("updated", updated)
-
 	return &btc, nil
 }
 
