@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"rederinghub.io/internal/entity"
@@ -14,9 +15,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (r Repository) FindInscribeBTC(key string) (*entity.InscribeBTC, error) {
-	resp := &entity.InscribeBTC{}
+func (r Repository) FindInscribeBTC(key string) (*entity.InscribeBTCResp, error) {
+	resp := &entity.InscribeBTCResp{}
 	usr, err := r.FilterOne(entity.BTCWalletAddress{}.TableName(), bson.D{{utils.KEY_UUID, key}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindInscribeBTCByNftID(inscriptionID string) (*entity.InscribeBTCResp, error) {
+
+	log.Println("inscriptionID:", inscriptionID)
+
+	resp := &entity.InscribeBTCResp{}
+	usr, err := r.FilterOne(entity.InscribeBTC{}.TableName(), bson.D{{"inscriptionID", inscriptionID}})
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +55,11 @@ func (r Repository) InsertInscribeBTC(data *entity.InscribeBTC) error {
 }
 
 func (r Repository) ListInscribeBTC(filter entity.FilterInscribeBT) (*entity.Pagination, error) {
-	confs := []entity.InscribeBTC{}
+	confs := []entity.InscribeBTCResp{}
 	resp := &entity.Pagination{}
-	f := bson.M{}
+	f := bson.M{
+		// "isConfirm": true,
+	}
 
 	p, err := r.Paginate(entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
