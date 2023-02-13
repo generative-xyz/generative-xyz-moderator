@@ -87,6 +87,6 @@ func (h ScronBTCHandler) StartServer() {
 
 		log.SetData("wait", "wait")
 		wg.Wait()
-		time.Sleep(1 * time.Minute)
+		time.Sleep(3 * time.Minute)
 	}
 }

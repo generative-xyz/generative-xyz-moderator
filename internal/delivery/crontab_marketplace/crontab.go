@@ -40,7 +40,6 @@ func (h ScronMarketplaceHandler) StartServer() {
 
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
-	
 
 		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
 			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcChecktListNft")
@@ -95,6 +94,6 @@ func (h ScronMarketplaceHandler) StartServer() {
 
 		log.SetData("MaketPlace.wait", "wait")
 		wg.Wait()
-		time.Sleep(1 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
