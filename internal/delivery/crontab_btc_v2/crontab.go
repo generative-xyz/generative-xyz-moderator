@@ -1,13 +1,15 @@
 package crontab_btc_v2
 
 import (
+	"sync"
+	"time"
+
+	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/tracer"
-
-	"gopkg.in/robfig/cron.v2"
 )
 
 type ScronBTCHandler struct {
@@ -27,25 +29,64 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 }
 
 func (h ScronBTCHandler) StartServer() {
-	span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron.OneMinute")
-	defer span.Finish()
 
-	c := cron.New()
-	c.AddFunc("*/5 * * * *", func() {
-		span := h.Tracer.StartSpan("ScronBTCHandlerV2.DispatchCron.OneMinute")
+	var wg sync.WaitGroup
+
+	for {
+		wg.Add(4)
+
+		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron")
 		defer span.Finish()
 
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-		go func() {
-			h.Usecase.WaitingForBalancingV2(span) // BTC
-		}()
+		// job check tx:
+		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
 
-		// go func() {
-		// 	h.Usecase.WaitingForMintedV2(span)
-		// }()
-	})
+			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeCheckTxSend")
+			defer wg.Done()
+			defer span.Finish()
 
-	c.Start()
+			h.Usecase.JobInscribeCheckTxSend(span)
+
+		}(span, &wg)
+
+		// job send btc to ord address:
+		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+
+			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeSendBTCToOrdWallet")
+			defer wg.Done()
+			defer span.Finish()
+
+			h.Usecase.JobInscribeSendBTCToOrdWallet(span)
+
+		}(span, &wg)
+
+		// job mint nft:
+		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+
+			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeMintNft")
+			defer wg.Done()
+			defer span.Finish()
+
+			h.Usecase.JobInscribeMintNft(span)
+
+		}(span, &wg)
+
+		// job send nft to user:
+		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+
+			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeSendNft")
+			defer wg.Done()
+			defer span.Finish()
+
+			h.Usecase.JobInscribeSendNft(span)
+
+		}(span, &wg)
+
+		log.SetData("wait", "wait")
+		wg.Wait()
+		time.Sleep(1 * time.Minute)
+	}
 }
