@@ -376,8 +376,11 @@ func (u Usecase) CheckBalance(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 	balance, err := u.GetBalanceOrdBTCWallet(rootSpan, btc.UserAddress)
 	if err != nil || balance == "" {
 		balance, err = u.GetBalanceSegwitBTCWallet(rootSpan, btc.UserAddress)
-		if err != nil || balance == "" {
+		if err != nil {
 			return nil, err
+		}
+		if balance == "" {
+			return nil, errors.New("balance is empty")
 		}
 	}
 	log.SetData("balance", balance)
