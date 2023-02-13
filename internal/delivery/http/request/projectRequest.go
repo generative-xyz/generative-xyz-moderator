@@ -31,7 +31,9 @@ type CreateBTCProjectReq struct {
 	License               string             `json:"license"`
 	Tags                  []string           `json:"tags"`
 	Categories            []string           `json:"categories"`
-	ZipLink				   *string			  `json:"zipLink"`
+	ZipLink				  *string			  `json:"zipLink"`
+	AnimationURL		  *string			  `json:"animationURL"`
+	Royalty		  int			  `json:"royalty"`
 }
 
 type UpdateProjectReq struct {
