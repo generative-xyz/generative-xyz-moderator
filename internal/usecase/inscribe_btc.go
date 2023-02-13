@@ -422,7 +422,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 
 		var btcMintResp ord_service.MintStdoputRespose
 
-		err = json.Unmarshal([]byte(jsonStr), btcMintResp)
+		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
 		if err != nil {
 			log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
@@ -462,7 +462,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		go u.trackInscribeHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
 
 		// parse nft data:
 		var resp []struct {
