@@ -118,9 +118,9 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 				size := file.UncompressedSize64 / 1024
 				if size > 100 {
-					// err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
-					// log.Error("maxFileSize",err.Error(), err)
-					// return nil, err
+					err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
+					log.Error("maxFileSize",err.Error(), err)
+					return nil, err
 				}
 
 				fC, err :=  helpers.ReadFile(file)
