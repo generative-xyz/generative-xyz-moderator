@@ -216,7 +216,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 		whitelistedPrice := new(big.Float)
 		ethPrice, _ := helpers.GetExternalPrice("ETH")
 		if ethPrice == 0 {
-			ethPrice = 2100
+			ethPrice = 1500
 		}
 		whitelistedPrice.SetFloat64(50.0 / ethPrice)
 		whitelistedPrice = whitelistedPrice.Mul(whitelistedPrice, big.NewFloat(1e18))
