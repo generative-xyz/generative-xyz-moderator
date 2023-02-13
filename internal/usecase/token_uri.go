@@ -655,19 +655,18 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 		if err != nil {
 			return nil, err
 		}
-
 		imageURI = data.AnimationUrl
+		tokenUri.AnimationURL = imageURI
 	}else{
 		now := time.Now().UTC()
 		imageURI = mintedURL
+		tokenUri.AnimationURL = ""
 		tokenUri.Thumbnail = mintedURL
 		tokenUri.Image = mintedURL
 		tokenUri.ParsedImage = &mintedURL
 		tokenUri.ThumbnailCapturedAt = &now
 		log.SetData("mintedURL", mintedURL)
 	}
-
-	tokenUri.AnimationURL = imageURI
 	
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
