@@ -188,12 +188,54 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 	return result, nil
 }
 
-func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, error) {
+func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
-	filter := bson.M{
-		"isConfirm": true,
-		"isSold":    false,
-	}
+
+	r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
+		bson.D{
+			{"$project",
+				bson.D{
+					{"uuid", 1},
+					{"inscriptionID", 1},
+					{"isConfirm", 1},
+					{"isSold", 1},
+					{"created_at", 1},
+					{"expired_at", 1},
+					{"name", 1},
+					{"description", 1},
+					{"seller_address", 1},
+					{"seller_ord_address", 1},
+					{"hold_ord_address", 1},
+					{"amount", 1},
+					{"service_fee", 1},
+				},
+			},
+		},
+		bson.D{{"$match", filter}},
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$inscriptionID"},
+					{"uuid", bson.D{{"$first", "$uuid"}}},
+					{"inscriptionID", bson.D{{"$first", "$inscriptionID"}}},
+					{"isConfirm", bson.D{{"$first", "$isConfirm"}}},
+					{"isSold", bson.D{{"$first", "$isSold"}}},
+					{"created_at", bson.D{{"$first", "$created_at"}}},
+					{"expired_at", bson.D{{"$first", "$expired_at"}}},
+					{"name", bson.D{{"$first", "$name"}}},
+					{"description", bson.D{{"$first", "$description"}}},
+					{"seller_address", bson.D{{"$first", "$seller_address"}}},
+					{"seller_ord_address", bson.D{{"$first", "$seller_ord_address"}}},
+					{"hold_ord_address", bson.D{{"$first", "$hold_ord_address"}}},
+					{"amount", bson.D{{"$first", "$amount"}}},
+					{"service_fee", bson.D{{"$first", "$service_fee"}}},
+				},
+			},
+		},
+		bson.D{{"$limit", limit}},
+		bson.D{{"$skip", offset}},
+	})
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
 	if err != nil {
@@ -201,6 +243,33 @@ func (r Repository) RetrieveBTCNFTListings() ([]entity.MarketplaceBTCListing, er
 	}
 
 	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) RetrieveBTCNFTListings(limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
+	filter := bson.D{
+		{Key: "isConfirm", Value: true},
+	}
+
+	resp, err := r.retrieveBTCNFTListingsByFilter(filter, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) RetrieveBTCNFTListingsUnsold(limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
+	filter := bson.D{
+		{Key: "isConfirm", Value: true},
+		{Key: "isSold", Value: false},
+	}
+
+	resp, err := r.retrieveBTCNFTListingsByFilter(filter, limit, offset)
+	if err != nil {
 		return nil, err
 	}
 

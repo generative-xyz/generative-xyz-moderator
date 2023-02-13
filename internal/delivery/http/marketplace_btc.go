@@ -139,25 +139,27 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 	span, log := h.StartSpan("btcMarketplaceListNFTs", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	nfts, err := h.Usecase.BTCMarketplaceListNFT(span)
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		limit = 20
+	}
+
+	buyableOnly := false
+	if r.URL.Query().Get("buyable-only") == "true" {
+		buyableOnly = true
+	}
+
+	result, err := h.Usecase.BTCMarketplaceListNFT(span, buyableOnly, int64(limit), int64(offset))
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	result := []response.MarketplaceNFTDetail{}
-	for _, nft := range nfts {
-		nftInfo := response.MarketplaceNFTDetail{
-			InscriptionID: nft.InscriptionID,
-			Name:          nft.Name,
-			Description:   nft.Description,
-			Price:         nft.Price,
-			OrderID:       nft.UUID,
-			IsConfirmed:   nft.IsConfirm,
-		}
-		result = append(result, nftInfo)
-	}
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
