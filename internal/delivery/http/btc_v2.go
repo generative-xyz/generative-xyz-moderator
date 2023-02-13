@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/jinzhu/copier"
@@ -71,5 +72,7 @@ func (h *httpDelivery) BtcWalletAddressToRespV2(input *entity.BTCWalletAddressV2
 	resp.IsConfirm = input.IsConfirm
 	resp.InscriptionID = input.InscriptionID
 	resp.Balance = input.Balance
+	resp.TimeoutAt = fmt.Sprintf("%d", input.ExpiredAt.Unix())
+	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
 }
