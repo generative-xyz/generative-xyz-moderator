@@ -1046,6 +1046,11 @@
         },
         "/eth/receive-address/whitelist": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "Generate receive wallet address",
                 "consumes": [
                     "application/json"
@@ -3246,6 +3251,9 @@
                     "$ref": "#/definitions/response.ProfileSocial"
                 },
                 "walletAddress": {
+                    "type": "string"
+                },
+                "wallet_address_btc": {
                     "type": "string"
                 }
             }

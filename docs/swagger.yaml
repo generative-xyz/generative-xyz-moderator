@@ -295,6 +295,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
+      wallet_address_btc:
+        type: string
       walletAddress:
         type: string
     type: object
@@ -1144,6 +1146,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: ETH Generate receive wallet address
       tags:
       - ETH
