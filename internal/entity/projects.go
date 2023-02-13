@@ -31,6 +31,10 @@ type ProjectStat struct {
 	MintedCount        int32  `bson:"minted_count" json:"mintedCount"`
 }
 
+type MaxProjectID struct {
+	ID int64 `bson:"_id"`
+}
+
 type Projects struct {
 	BaseEntity            `bson:",inline" json:"-"`
 	ContractAddress       string             `bson:"contractAddress" json:"contractAddress"`
@@ -79,6 +83,7 @@ type Projects struct {
 	Priority              *int               `bson:"priority" json:"priority"`
 	IsHidden              bool               `bson:"isHidden" json:"isHidden"`
 	Images              []string              `bson:"images" json:"images"` //if user uses links instead of animation URL
+	WhiteListEthContracts              []string              `bson:"whiteListEthContracts" json:"whiteListEthContracts"` //if user uses links instead of animation URL
 	ProcessingImages 	[]string 				`bson:"processingImages" json:"processingImages"`
 	MintedImages        []MintedImages        `bson:"mintedImages" json:"mintedImages"` //if user uses links instead of animation URL
 }

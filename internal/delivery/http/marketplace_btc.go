@@ -43,7 +43,6 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		// log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		// return
-
 	}
 	// if reqBody.Name == "" {
 	// 	err := fmt.Errorf("invalid name")
@@ -108,7 +107,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE/100),
+		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
 	}
 
 	nft, err := h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
@@ -139,25 +138,27 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 	span, log := h.StartSpan("btcMarketplaceListNFTs", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	nfts, err := h.Usecase.BTCMarketplaceListNFT(span)
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		limit = 20
+	}
+
+	buyableOnly := false
+	if r.URL.Query().Get("buyable-only") == "true" {
+		buyableOnly = true
+	}
+
+	result, err := h.Usecase.BTCMarketplaceListNFT(span, buyableOnly, int64(limit), int64(offset))
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	result := []response.MarketplaceNFTDetail{}
-	for _, nft := range nfts {
-		nftInfo := response.MarketplaceNFTDetail{
-			InscriptionID: nft.InscriptionID,
-			Name:          nft.Name,
-			Description:   nft.Description,
-			Price:         nft.Price,
-			OrderID:       nft.UUID,
-			IsConfirmed:   nft.IsConfirm,
-		}
-		result = append(result, nftInfo)
-	}
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
@@ -214,7 +215,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	nftInfo := response.MarketplaceNFTDetail{
+	nftInfo := structure.MarketplaceNFTDetail{
 		InscriptionID: nft.InscriptionID,
 		Name:          nft.Name,
 		Description:   nft.Description,
@@ -228,6 +229,58 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
+}
+
+func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.btcMarketplaceListingFee", r)
+	defer h.Tracer.FinishSpan(span, log)
+	h.Response.SetLog(h.Tracer, span)
+
+	var reqBody request.ListingFee
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	inscriptionID := reqBody.InscriptionID
+
+	inscriptionIDs := strings.Split(inscriptionID, "https://ordinals.com/inscription/")
+
+	if len(inscriptionIDs) == 2 {
+		inscriptionID = inscriptionIDs[1]
+	}
+
+	tokenUri, err := h.Usecase.GetTokenByTokenID(span, inscriptionID, 0)
+	if err != nil {
+		resp := response.ListingFee{
+			ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee: fmt.Sprintf("%v", 0),
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+		return
+	}
+
+	projectDetail, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+		ContractAddress: tokenUri.ContractAddress,
+		ProjectID:       tokenUri.ProjectID,
+	})
+	if err != nil {
+		resp := response.ListingFee{
+			ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee: fmt.Sprintf("%v", 0),
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+		return
+	}
+
+	resp := response.ListingFee{
+		ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+		RoyaltyFee: fmt.Sprintf("%v", float64(projectDetail.Royalty)/10000*100),
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *http.Request) {

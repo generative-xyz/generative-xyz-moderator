@@ -70,6 +70,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
+	project.HandleFunc("/btc", h.createBTCProject).Methods("POST")
+	project.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
@@ -135,7 +137,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
 	eth.HandleFunc("/receive-address", h.ethGetReceiveWalletAddress).Methods("POST")
-	// eth.HandleFunc("/mint", h.mintETH).Methods("POST")
+	signedEth := api.PathPrefix("/eth").Subrouter()
+	signedEth.Use(h.MiddleWare.AccessToken)
+	signedEth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
 
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
@@ -144,6 +148,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
+	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
+
+	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
 	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 

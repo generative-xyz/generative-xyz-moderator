@@ -20,3 +20,7 @@ type SendNFT struct {
 	ReceiveOrdAddress string `json:"ReceiveOrdAddress"`
 	InscriptionID     string `json:"InscriptionID"`
 }
+
+type ListingFee struct {
+	InscriptionID string `json:"InscriptionID"`
+}

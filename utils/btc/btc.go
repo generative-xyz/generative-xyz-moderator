@@ -30,7 +30,7 @@ func NewBlockcypherService(chainEndpoint string, explorerEndPoint string, bcyTok
 }
 
 // SendTX from Segwit address by lib gobcy, with preference, without manually setting fees :
-//send from segwit to legacy address |
+// send from segwit to legacy address |
 func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(secret string, from string, destination string, amount int,
 	preference string) (string, error) {
 	wif, err := btcutil.DecodeWIF(secret)

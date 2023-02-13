@@ -65,6 +65,56 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary Create btc project
+// @Description Create btc project
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param request body request.CreateBTCProjectReq true "Create profile request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/btc [POST]
+func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("createBTCProject", r)
+	defer h.Tracer.FinishSpan(span, log )
+
+	var reqBody request.CreateBTCProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.CreateBtcProjectReq{}
+	err = copier.Copy(reqUsecase, reqBody)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("reqUsecase",reqUsecase)
+	message, err := h.Usecase.CreateBTCProject(span, *reqUsecase)
+	if err != nil {
+		log.Error("h.Usecase.CreateBTCProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+	
+	resp, err  := h.projectToResp(message)
+	if err != nil {
+		log.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+
+// UserCredits godoc
 // @Summary get project's detail
 // @Description get project's detail
 // @Tags Project
@@ -419,6 +469,38 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("h.projectToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Upload images for a project
+// @Description Upload images for a project
+// @Tags Project
+// @Content-Type: multipart/form-data
+// @Param projectName formData string true "Project's name"
+// @Param file formData file true "file"
+// @Produce  multipart/form-data
+// @Success 200 {object} response.JsonResponse{data=response.FileRes}
+// @Router /project/btc/files [POST]
+func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.UploadProjectFiles", r)
+	defer h.Tracer.FinishSpan(span, log )
+	file, err := h.Usecase.UploadProjectFiles(span, r)
+	if err != nil {
+		log.Error("h.Usecase.UploadFile", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp := &response.FileRes{}
+	err = response.CopyEntityToRes(resp, file)
+	if err != nil {
+		log.Error("response.CopyEntityToRes", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 

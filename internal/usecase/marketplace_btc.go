@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -20,12 +21,12 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 		HoldOrdAddress: "",
 		Price:          listingInfo.Price,
 		//ServiceFee:     listingInfo.ServiceFee, //Tri comment: ServiceFee is not existed
-		IsConfirm:      false,
-		IsSold:         false,
-		ExpiredAt:      time.Now().Add(time.Hour * 2),
-		Name:           listingInfo.Name,
-		Description:    listingInfo.Description,
-		InscriptionID:  listingInfo.InscriptionID,
+		IsConfirm:     false,
+		IsSold:        false,
+		ExpiredAt:     time.Now().Add(time.Hour * 2),
+		Name:          listingInfo.Name,
+		Description:   listingInfo.Description,
+		InscriptionID: listingInfo.InscriptionID,
 	}
 	holdOrdAddress := ""
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
@@ -78,54 +79,60 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	return &listing, nil
 }
 
-func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.MarketplaceBTCListing, error) {
+func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
 	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	result := []entity.MarketplaceBTCListing{}
+	result := []structure.MarketplaceNFTDetail{}
+	var nftList []entity.MarketplaceBTCListingFilterPipeline
+	var err error
 
-	// test1 := entity.MarketplaceBTCListing{
-	// 	InscriptionID: "c0f8acd8f0d91d490ac9c08977b142aa836207d2ee93d111992866cf47a6d2e6i0",
-	// 	Name:          "Test1",
-	// 	Description:   "test1 blah blah blah",
-	// 	Price:         "1234567",
-	// 	BaseEntity: entity.BaseEntity{
-	// 		UUID: "1",
-	// 	},
-	// }
-
-	// test2 := entity.MarketplaceBTCListing{
-	// 	InscriptionID: "2696948882cc088f2d1c160981501a48b3744d8d5df0e8d9a71557e716c634dci0",
-	// 	Name:          "Test2",
-	// 	Description:   "test2 blah blah blah",
-	// 	Price:         "1234567",
-	// 	BaseEntity: entity.BaseEntity{
-	// 		UUID: "2",
-	// 	},
-	// }
-
-	// test3 := entity.MarketplaceBTCListing{
-	// 	InscriptionID: "95752b856f94d0c60bee700d6df1b47c949c28f2a06859cf6d5a3466843463b8i0",
-	// 	Name:          "Test3",
-	// 	Description:   "test3 blah blah blah",
-	// 	Price:         "1234567",
-	// 	BaseEntity: entity.BaseEntity{
-	// 		UUID: "3",
-	// 	},
-	// }
-
-	// result = append(result, test1)
-	// result = append(result, test2)
-	// result = append(result, test3)
-
-	nftList, err := u.Repo.RetrieveBTCNFTListings()
+	// if buyableOnly {
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
 	if err != nil {
 		return nil, err
 	}
+	// } else {
+	// 	nftList, err = u.Repo.RetrieveBTCNFTListings(limit, offset)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	for _, listing := range nftList {
+		// if listing.IsSold {
+		// 	if !buyableOnly {
+		// 		nftInfo := structure.MarketplaceNFTDetail{
+		// 			InscriptionID: listing.InscriptionID,
+		// 			Name:          listing.Name,
+		// 			Description:   listing.Description,
+		// 			Price:         listing.Price,
+		// 			OrderID:       listing.UUID,
+		// 			IsConfirmed:   listing.IsConfirm,
+		// 			Buyable:       false,
+		// 			IsCompleted:   listing.IsSold,
+		// 			CreatedAt:     listing.CreatedAt,
+		// 		}
+		// 		result = append(result, nftInfo)
+		// 	}
+		// 	continue
+		// }
 		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
 		if err != nil {
-			continue
+			if !buyableOnly {
+				nftInfo := structure.MarketplaceNFTDetail{
+					InscriptionID: listing.InscriptionID,
+					Name:          listing.Name,
+					Description:   listing.Description,
+					Price:         listing.Price,
+					OrderID:       listing.UUID,
+					IsConfirmed:   listing.IsConfirm,
+					Buyable:       false,
+					IsCompleted:   listing.IsSold,
+					CreatedAt:     listing.CreatedAt,
+				}
+				result = append(result, nftInfo)
+				continue
+			}
 		}
 		currentTime := time.Now()
 		isAvailable := true
@@ -142,10 +149,42 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span) ([]entity.Mark
 				break
 			}
 		}
-		if isAvailable {
-			result = append(result, listing)
+
+		nftInfo := structure.MarketplaceNFTDetail{
+			InscriptionID: listing.InscriptionID,
+			Name:          listing.Name,
+			Description:   listing.Description,
+			Price:         listing.Price,
+			OrderID:       listing.UUID,
+			IsConfirmed:   listing.IsConfirm,
+			Buyable:       isAvailable,
+			IsCompleted:   listing.IsSold,
+			CreatedAt:     listing.CreatedAt,
+		}
+		if buyableOnly && isAvailable {
+			result = append(result, nftInfo)
+		}
+		if !buyableOnly {
+			result = append(result, nftInfo)
 		}
 	}
+
+	if !buyableOnly {
+		sort.SliceStable(result, func(i, j int) bool {
+			if result[i].Buyable && result[j].Buyable {
+				if result[i].CreatedAt.After(result[j].CreatedAt) {
+					return true
+				}
+			}
+			return result[i].Buyable
+		})
+	}
+
+	// result := []response.MarketplaceNFTDetail{}
+	// for _, nft := range nfts {
+
+	// 	result = append(result, nftInfo)
+	// }
 	return result, nil
 }
 

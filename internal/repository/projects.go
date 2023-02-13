@@ -311,10 +311,47 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 	return resp, nil
 }
 
+func (r Repository) GetMaxBtcProjectID() (int64, error)  {
+	btcID := 1000000;
+	btcMaxID := 1999999;
+
+	f := bson.A{
+		bson.M{"$match" : bson.M{"$and":  bson.A{
+			bson.M{ "tokenIDInt": bson.M{ "$gte": btcID}},
+			bson.M{ "tokenIDInt": bson.M{ "$lte": btcMaxID}},
+		} } },
+		bson.M{"$group":  bson.M{"_id": "$tokenIDInt"}, },
+		bson.M{"$sort":  bson.M{"_id": -1}, },
+		
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Aggregate(context.TODO(), f)
+	if err != nil {
+		return 0, err
+	}
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return 0, err
+	}
+
+	for _, results := range results {
+		i := &entity.MaxProjectID{}
+		err := helpers.Transform(results, i)
+		if err != nil {
+			continue
+		}
+		return i.ID, nil
+		
+	}
+	
+	d := int64(btcID)
+	return d, nil
+}
+
 func (r Repository)SortProjects () []Sort {
 	s := []Sort{}
 	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })
-	s = append(s, Sort{SortBy:"created_at", Sort: entity.SORT_DESC })
+	s = append(s, Sort{SortBy:"index", Sort: entity.SORT_DESC })
 	return s
 }
 
@@ -346,6 +383,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"creatorProfile", 1},
 		{"images", 1},
 		{"mintedImages", 1},
+		{"whiteListEthContracts", 1},
 	}
 	return f
 }

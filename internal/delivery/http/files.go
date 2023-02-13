@@ -106,3 +106,4 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
 }
+

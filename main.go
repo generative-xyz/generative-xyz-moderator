@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"rederinghub.io/utils/delegate"
 	"time"
 
 	"rederinghub.io/external/nfts"
@@ -52,8 +53,7 @@ func init() {
 
 	l := _logger.NewLogger()
 
-
-	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority",c.Databases.Mongo.Scheme, c.Databases.Mongo.User,c.Databases.Mongo.Pass, c.Databases.Mongo.Host )
+	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
 	if err != nil {
 		log.Println("Cannot connect mongoDB ", err)
@@ -85,12 +85,12 @@ func init() {
 
 // @BasePath /rederinghub.io/v1
 func main() {
-	
+
 	defer func() {
-        if r := recover(); r != nil {
-            fmt.Println("Recovered. Error:\n", r)
-        }
-    }()
+		if r := recover(); r != nil {
+			fmt.Println("Recovered. Error:\n", r)
+		}
+	}()
 
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
@@ -111,27 +111,32 @@ func startServer() {
 
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
 	ord := ord_service.NewBtcOrd(conf, t, cache)
-	covalent := nfts.NewCovalentNfts(conf);
+	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis, t)
-
+	delegateService, err := delegate.NewService(ethClient.GetClient())
+	if err != nil {
+		logger.Error("error initializing delegate service", err)
+		return
+	}
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Tracer: t,
-		Logger:       logger,
-		MuxRouter:    r,
-		Conf:         conf,
-		DBConnection: mongoConnection,
-		Cache:        cache,
-		Auth2: *auth2Service,
-		GCS: gcs,
-		MoralisNFT: *moralis,
-		CovalentNFT: *covalent,
-		Blockchain: *ethClient,
-		Slack: *slack,
-		Pubsub: rPubsub,
-		OrdService: ord,
+		Tracer:          t,
+		Logger:          logger,
+		MuxRouter:       r,
+		Conf:            conf,
+		DBConnection:    mongoConnection,
+		Cache:           cache,
+		Auth2:           *auth2Service,
+		GCS:             gcs,
+		MoralisNFT:      *moralis,
+		CovalentNFT:     *covalent,
+		Blockchain:      *ethClient,
+		Slack:           *slack,
+		Pubsub:          rPubsub,
+		OrdService:      ord,
+		DelegateService: delegateService,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -145,7 +150,7 @@ func startServer() {
 		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
 		return
 	}
-	
+
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
 		logger.Error("LoadUsecases - Cannot init usecase", err)
@@ -161,23 +166,23 @@ func startServer() {
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
-	servers["http"] =  delivery.AddedServer{
-		Server: h,
+	servers["http"] = delivery.AddedServer{
+		Server:  h,
 		Enabled: conf.StartHTTP,
 	}
-	
-	servers["txconsumer"] =  delivery.AddedServer{
-		Server: txConsumer,
+
+	servers["txconsumer"] = delivery.AddedServer{
+		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
 	}
-	
-	servers["crontab"] =  delivery.AddedServer{
-		Server: cron,
+
+	servers["crontab"] = delivery.AddedServer{
+		Server:  cron,
 		Enabled: conf.Crontab.Enabled,
 	}
-	
-	servers["btc_crontab"] =  delivery.AddedServer{
-		Server: btcCron,
+
+	servers["btc_crontab"] = delivery.AddedServer{
+		Server:  btcCron,
 		Enabled: conf.Crontab.BTCEnabled,
 	}
 
@@ -190,9 +195,9 @@ func startServer() {
 		Server: mkCron,
 		Enabled: conf.Crontab.MarketPlaceEnabled,
 	}
-	
-	servers["pubsub"] =  delivery.AddedServer{
-		Server: ph,
+
+	servers["pubsub"] = delivery.AddedServer{
+		Server:  ph,
 		Enabled: conf.StartPubsub,
 	}
 
@@ -207,17 +212,17 @@ func startServer() {
 	signal.Notify(c, os.Interrupt)
 	// Run our server in a goroutine so that it doesn't block.
 
-	for  name, server := range servers {
+	for name, server := range servers {
 		if server.Enabled {
 			if server.Server != nil {
 				go server.Server.StartServer()
 			}
 			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
-		}else{
+		} else {
 			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
 	}
-	
+
 	// Block until we receive our signal.
 	<-c
 	wait := time.Second
@@ -236,5 +241,5 @@ func startServer() {
 	// to finalize based on context cancellation.
 	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
 	os.Exit(0)
-	
+
 }
