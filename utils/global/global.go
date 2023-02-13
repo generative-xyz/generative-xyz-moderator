@@ -6,6 +6,7 @@ import (
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
+	"rederinghub.io/utils/delegate"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/mqttClient"
@@ -18,20 +19,21 @@ import (
 )
 
 type Global struct {
-	Conf         *config.Config
-	Logger       _logger.Ilogger
-	MuxRouter    *mux.Router
-	DBConnection _pConnection.IConnection
-	Cache        redis.IRedisCache
-	CacheAuthService        redis.IRedisCache
-	Pubsub       redis.IPubSubClient
-	Tracer       tracer.ITracer
-	Auth2 oauth2service.Auth2
-	GCS           googlecloud.IGcstorage
-	MoralisNFT nfts.MoralisNfts
-	CovalentNFT nfts.CovalentNfts
-	OrdService *ord_service.BtcOrd
-	Blockchain blockchain.Blockchain
-	Slack slack.Slack
-	MqttClient mqttClient.IDeviceMqtt
+	Conf             *config.Config
+	Logger           _logger.Ilogger
+	MuxRouter        *mux.Router
+	DBConnection     _pConnection.IConnection
+	Cache            redis.IRedisCache
+	CacheAuthService redis.IRedisCache
+	Pubsub           redis.IPubSubClient
+	Tracer           tracer.ITracer
+	Auth2            oauth2service.Auth2
+	GCS              googlecloud.IGcstorage
+	MoralisNFT       nfts.MoralisNfts
+	CovalentNFT      nfts.CovalentNfts
+	OrdService       *ord_service.BtcOrd
+	Blockchain       blockchain.Blockchain
+	Slack            slack.Slack
+	MqttClient       mqttClient.IDeviceMqtt
+	DelegateService  *delegate.Service
 }
