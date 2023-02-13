@@ -49,6 +49,7 @@ type MarketplaceBTCListingFilterPipeline struct {
 	Name           string    `bson:"name"`
 	Description    string    `bson:"description"`
 	ExpiredAt      time.Time `bson:"expired_at"`
+	CreatedAt      time.Time `bson:"created_at"`
 }
 
 func (u MarketplaceBTCListing) TableName() string {

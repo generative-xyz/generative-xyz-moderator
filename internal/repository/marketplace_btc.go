@@ -233,6 +233,7 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 				},
 			},
 		},
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
 		bson.D{{"$limit", limit}},
 		bson.D{{"$skip", offset}},
 	})

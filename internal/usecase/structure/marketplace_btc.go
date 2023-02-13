@@ -1,5 +1,7 @@
 package structure
 
+import "time"
+
 type MarketplaceBTC_ListingInfo struct {
 	InscriptionID  string `json:"inscriptionID"` // tokenID in btc
 	Name           string `json:"name"`
@@ -18,12 +20,13 @@ type MarketplaceBTC_BuyOrderInfo struct {
 }
 
 type MarketplaceNFTDetail struct {
-	InscriptionID string `json:"inscriptionID"`
-	Price         string `json:"price"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	OrderID       string `json:"orderID"`
-	IsConfirmed   bool   `json:"isConfirmed"`
-	Buyable       bool   `json:"buyable"`
-	IsCompleted   bool   `json:"isCompleted"`
+	InscriptionID string    `json:"inscriptionID"`
+	Price         string    `json:"price"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	OrderID       string    `json:"orderID"`
+	IsConfirmed   bool      `json:"isConfirmed"`
+	Buyable       bool      `json:"buyable"`
+	IsCompleted   bool      `json:"isCompleted"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
