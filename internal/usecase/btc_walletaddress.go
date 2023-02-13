@@ -698,7 +698,7 @@ func (u Usecase) JobBtcSendBtcToMaster(rootSpan opentracing.Span) error {
 		tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(item.Mnemonic, item.OrdAddress, utils.MASTER_ADDRESS, -1, btc.PreferenceMedium)
 		if err != nil {
 			log.Error(fmt.Sprintf("JobBtcSendBtcToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
-			return err
+			continue
 		}
 		// save tx:
 		item.TxSendMaster = tx
@@ -706,7 +706,7 @@ func (u Usecase) JobBtcSendBtcToMaster(rootSpan opentracing.Span) error {
 		_, err = u.Repo.UpdateBtcWalletAddress(&item)
 		if err != nil {
 			log.Error(fmt.Sprintf("JobBtcSendBtcToMaster.UpdateBtcWalletAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
-			return err
+			continue
 		}
 
 		time.Sleep(3 * time.Second)
