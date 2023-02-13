@@ -84,7 +84,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
 	}
-	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt) / 1e8))
+	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		log.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
@@ -249,7 +249,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	}
 
 	go func(rootSpan opentracing.Span, wallet *entity.ETHWalletAddress, balance *big.Int) {
-		span, log := u.StartSpan("CheckBlance.RoutineUpdate", rootSpan)
+		span, log := u.StartSpan("CheckBalance.RoutineUpdate", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
 		wallet.Balance = balance.String()
@@ -279,7 +279,7 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	//TODO - save balance
 	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 	if err != nil {
-		log.Error("u.CheckBlance.updatedStatus", err.Error(), err)
+		log.Error("u.CheckBalance.updatedStatus", err.Error(), err)
 		return nil, err
 	}
 	log.SetData("updated", updated)
@@ -312,7 +312,7 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
 		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
@@ -321,9 +321,9 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 
 	log.SetData("addreses", addreses)
 	for _, item := range addreses {
-		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
-			defer u.Tracer.FinishSpan(span, log) 
+			defer u.Tracer.FinishSpan(span, log)
 			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 			newItem, err := u.BalanceETHLogic(span, item)
@@ -342,10 +342,10 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			log.SetData("updated", updated)
 			if item.MintResponse.Inscription != "" {
 				err = errors.New("Token is being minted")
-				log.Error("Token.minted",err.Error(), err)
-				return 
+				log.Error("Token.minted", err.Error(), err)
+				return
 			}
-	
+
 			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
@@ -353,19 +353,18 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			}
 
 			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				TokenID: mintReps.Inscription,
-				Commit: mintReps.Commit,
-				Reveal: mintReps.Reveal,
-				Fees: mintReps.Fees,
+				TokenID:       mintReps.Inscription,
+				Commit:        mintReps.Commit,
+				Reveal:        mintReps.Reveal,
+				Fees:          mintReps.Fees,
 				MinterAddress: "ord_master",
-				Owner: "",
-				ProjectID: item.ProjectID,
-				Action: entity.MINT,
-				Type: entity.ETH,
-				TraceID: u.Tracer.TraceID(span),
+				Owner:         "",
+				ProjectID:     item.ProjectID,
+				Action:        entity.MINT,
+				Type:          entity.ETH,
+				TraceID:       u.Tracer.TraceID(span),
 			})
 
-	
 			log.SetData("btc.Minted", mintReps)
 			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
 			newItem.IsMinted = true
@@ -393,10 +392,10 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 		log.Error("WillBeProcessWTC.ListETHAddress", err.Error(), err)
 		return nil, err
 	}
-	
+
 	log.SetData("addreses", addreses)
 	for _, item := range addreses {
-		func (rootSpan opentracing.Span, item entity.ETHWalletAddress) { 
+		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
@@ -409,16 +408,16 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 			}
 
 			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				TokenID: item.MintResponse.Inscription,
-				Commit: item.MintResponse.Commit,
-				Reveal: item.MintResponse.Reveal,
-				Fees: item.MintResponse.Fees,
+				TokenID:       item.MintResponse.Inscription,
+				Commit:        item.MintResponse.Commit,
+				Reveal:        item.MintResponse.Reveal,
+				Fees:          item.MintResponse.Fees,
 				MinterAddress: "ord_master",
-				Owner: item.UserAddress,
-				Action: entity.SENT,
-				ProjectID: item.ProjectID,
-				Type: entity.ETH,
-				TraceID: u.Tracer.TraceID(span),
+				Owner:         item.UserAddress,
+				Action:        entity.SENT,
+				ProjectID:     item.ProjectID,
+				Type:          entity.ETH,
+				TraceID:       u.Tracer.TraceID(span),
 			})
 
 			u.Notify(rootSpan, fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
@@ -456,14 +455,13 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 }
 
 func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
-	
+
 	span, log := u.StartSpan("convertBTCToETH", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	//amount = "0.1"
 	powIntput := math.Pow10(8)
 	powIntputBig := new(big.Float)
 	powIntputBig.SetFloat64(powIntput)
-
 
 	log.SetData("amount", amount)
 	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
@@ -493,25 +491,23 @@ func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (stri
 	log.SetData("amountMintBTC", amountMintBTC.String())
 	//btcToETH := btcPrice / ethPrice
 	btcToETH := 14.27
-	
+
 	rate := new(big.Float)
 	rate.SetFloat64(btcToETH)
 	log.SetData("rate", rate.String())
-	
+
 	amountMintBTC.Mul(amountMintBTC, rate)
 	log.SetData("btcToETH", btcToETH)
 
 	pow := math.Pow10(10)
 	powBig := new(big.Float)
 	powBig.SetFloat64(pow)
-	
+
 	amountMintBTC.Mul(amountMintBTC, powBig)
 	log.SetData("amountMintBTC.Mul", btcToETH)
 
 	result := new(big.Int)
 	amountMintBTC.Int(result)
-	
 
 	return result.String(), nil
 }
-

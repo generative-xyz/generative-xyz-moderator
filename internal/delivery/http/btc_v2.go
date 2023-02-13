@@ -22,7 +22,7 @@ import (
 // @Router /btc-v2/receive-address [POST]
 func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.btcGetReceiveWalletAddress", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	h.Response.SetLog(h.Tracer, span)
 
 	var reqBody request.CreateBtcWalletAddressReqV2
@@ -44,8 +44,8 @@ func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *ht
 
 	btcWallet, err := h.Usecase.CreateBTCWalletAddressV2(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateBTCWalletAddress", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		log.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -53,11 +53,10 @@ func (h *httpDelivery) btcGetReceiveWalletAddressV2(w http.ResponseWriter, r *ht
 	resp, err := h.BtcWalletAddressToRespV2(btcWallet)
 	if err != nil {
 		log.Error(" h.proposalToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

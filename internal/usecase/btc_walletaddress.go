@@ -17,8 +17,8 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("CreateBTCWalletAddress", rootSpan)
+func (u Usecase) CreateOrdBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("CreateOrdBTCWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
@@ -39,7 +39,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	walletAddress := &entity.BTCWalletAddress{}
 	err = copier.Copy(walletAddress, input)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.Copy", err.Error(), err)
+		log.Error("u.CreateOrdBTCWalletAddress.Copy", err.Error(), err)
 		return nil, err
 	}
 
@@ -61,7 +61,7 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 		walletAddress.Mnemonic = resp.Stdout
 	}
 
-	log.SetData("CreateBTCWalletAddress.createdWallet", resp)
+	log.SetData("CreateOrdBTCWalletAddress.createdWallet", resp)
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -75,10 +75,10 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	log.SetData("CreateBTCWalletAddress.receive", resp)
+	log.SetData("CreateOrdBTCWalletAddress.receive", resp)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		log.Error("u.CreateOrdBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
 
@@ -98,11 +98,15 @@ func (u Usecase) CreateBTCWalletAddress(rootSpan opentracing.Span, input structu
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, walletAddress.OrdAddress)
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
 	if err != nil {
-		log.Error("u.CreateBTCWalletAddress.InsertBtcWalletAddress", err.Error(), err)
+		log.Error("u.CreateOrdBTCWalletAddress.InsertBtcWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
 	return walletAddress, nil
+}
+
+func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+	return nil, nil
 }
 
 func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
@@ -116,7 +120,7 @@ func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input stru
 		return nil, err
 	}
 
-	blance, err := u.CheckBlance(span, *btc)
+	blance, err := u.CheckBalance(span, *btc)
 	if err != nil {
 		log.Error("u.BalanceLogic", err.Error(), err)
 		return nil, err
@@ -276,17 +280,20 @@ func (u Usecase) UpdateBtcMintedStatus(rootSpan opentracing.Span, btcWallet *ent
 	return btcWallet, nil
 }
 
-func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("CheckBlance", rootSpan)
+func (u Usecase) GetBalanceSegwitOrdBTCWallet(rootSpan opentracing.Span, userAddress string) (string, error) {
+	span, log := u.StartSpan("CheckBalance", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	log.SetTag(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
-	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
+	return "", nil
+}
 
+func (u Usecase) GetBalanceOrdBTCWallet(rootSpan opentracing.Span, userAddress string) (string, error) {
+	span, log := u.StartSpan("CheckBalance", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
 	balanceRequest := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
-			btc.UserAddress,
+			userAddress,
 			"wallet",
 			"balance",
 		},
@@ -297,11 +304,29 @@ func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddr
 	resp, err := u.OrdService.Exec(balanceRequest)
 	if err != nil {
 		log.Error("BTCMint.Exec.balance", err.Error(), err)
-		return nil, err
+		return "", err
 	}
 
 	log.SetData("balanceResponse", resp)
 	balance := strings.ReplaceAll(resp.Stdout, "\n", "")
+	return balance, nil
+}
+
+func (u Usecase) CheckBalance(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("CheckBalance", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.WALLET_ADDRESS_TAG, btc.UserAddress)
+	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, btc.OrdAddress)
+
+	// check ord first
+	balance, err := u.GetBalanceOrdBTCWallet(rootSpan, btc.UserAddress)
+	if err != nil || balance == "" {
+		balance, err = u.GetBalanceSegwitOrdBTCWallet(rootSpan, btc.UserAddress)
+		if err != nil || balance == "" {
+			return nil, err
+		}
+	}
 	log.SetData("balance", balance)
 
 	btc.Balance = balance
@@ -315,9 +340,9 @@ func (u Usecase) CheckBlance(rootSpan opentracing.Span, btc entity.BTCWalletAddr
 func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("BalanceLogic", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	balance, err := u.CheckBlance(span, btc)
+	balance, err := u.CheckBalance(span, btc)
 	if err != nil {
-		log.Error("u.CheckBlance", err.Error(), err)
+		log.Error("u.CheckBalance", err.Error(), err)
 		return nil, err
 	}
 
@@ -330,7 +355,7 @@ func (u Usecase) BalanceLogic(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 
 	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, &btc)
 	if err != nil {
-		log.Error("u.CheckBlance.updatedStatus", err.Error(), err)
+		log.Error("u.CheckBalance.updatedStatus", err.Error(), err)
 		return nil, err
 	}
 	log.SetData("updated", updated)
@@ -577,7 +602,7 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	defer u.Tracer.FinishSpan(span, log)
 
 	//slack
-	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ",os.Getenv("JAEGER_SERVICE_NAME"), u.Tracer.TraceID(span), userAddress)
+	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), u.Tracer.TraceID(span), userAddress)
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {

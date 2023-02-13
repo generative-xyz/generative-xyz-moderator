@@ -93,7 +93,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 
 // 	ethWallet, err := h.Usecase.ETHMint(span, *reqUsecase)
 // 	if err != nil {
-// 		log.Error("h.Usecase.CreateBTCWalletAddress", err.Error(), err)
+// 		log.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
