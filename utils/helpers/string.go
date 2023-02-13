@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +68,13 @@ func JsonTransform(from interface{}, to interface{}) error {
 func GenerateKey(key string) string {
 	key = strings.ToUpper(key)
 	key = strings.ReplaceAll(key, " ", "_")
+	return key
+}
+
+
+func GenerateSlug(key string) string {
+	key = strings.ReplaceAll(key, " ", "-")
+	key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	return key
 }
 

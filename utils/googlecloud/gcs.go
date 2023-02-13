@@ -42,6 +42,7 @@ type GcsUploadedObject struct {
 
 type GcsFile struct {
 	FileHeader *multipart.FileHeader
+	Path *string
 }
 type gcstorage struct {
 	client     *storage.Client
@@ -91,6 +92,11 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	}
 
 	fname = fmt.Sprintf("upload/%d-%s", now, fname)
+	if file.Path != nil {
+		if *file.Path != "" {
+			fname = fmt.Sprintf("%s/%d-%s", *file.Path,now, fname)
+		}
+	}
 
 	fmt.Printf("Uploaded File: %+v\n", file.FileHeader.Filename)
 	fmt.Printf("File Size: %+v\n", file.FileHeader.Size)
