@@ -43,7 +43,6 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		// log.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
 		// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		// return
-
 	}
 	// if reqBody.Name == "" {
 	// 	err := fmt.Errorf("invalid name")
@@ -108,7 +107,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		SellOrdAddress: reqBody.ReceiveOrdAddress,
 		SellerAddress:  reqBody.ReceiveAddress,
 		Price:          reqBody.Price,
-		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE/100),
+		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
 	}
 
 	nft, err := h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
@@ -230,6 +229,52 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
+}
+
+func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.btcMarketplaceListingFee", r)
+	defer h.Tracer.FinishSpan(span, log)
+	h.Response.SetLog(h.Tracer, span)
+
+	var reqBody request.ListingFee
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	inscriptionID := reqBody.InscriptionID
+
+	inscriptionIDs := strings.Split(inscriptionID, "https://ordinals.com/inscription/")
+
+	if len(inscriptionIDs) == 2 {
+		inscriptionID = inscriptionIDs[1]
+	}
+
+	tokenUri, err := h.Usecase.GetTokenByTokenID(span, inscriptionID, 0)
+	if err != nil {
+		log.Error("h.Usecase.GetTokenByTokenID", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	projectDetail, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+		ContractAddress: tokenUri.ContractAddress,
+		ProjectID:       tokenUri.ProjectID,
+	})
+	if err != nil {
+		log.Error("h.Usecase.GetProjectDetail", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp := response.ListingFee{
+		ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+		RoyaltyFee: fmt.Sprintf("%v", float64(projectDetail.Royalty/10000)*100),
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 )
@@ -332,10 +333,25 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				continue
 			}
 			// charge x% total amount:
-			fee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+			serviceFee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
 
-			amountWithChargee := int(totalAmount.Uint64()) - fee
+			royaltyFee := int(0)
 
+			tokenUri, err := u.GetTokenByTokenID(span, item.InscriptionID, 0)
+			if err == nil {
+				projectDetail, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+					ContractAddress: tokenUri.ContractAddress,
+					ProjectID:       tokenUri.ProjectID,
+				})
+				if err != nil {
+					log.Error("u.GetProjectDetail", err.Error(), err)
+				}
+				royaltyFeePercent := float64(projectDetail.Royalty / 10000)
+				royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
+				royaltyFee = 0 //TODO: lam
+			}
+
+			amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
 			fmt.Println("send btc from", item.SegwitAddress, "to: ", nftListing.SellerAddress)
 
 			// transfer now:
@@ -350,7 +366,8 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
 				continue
 			}
-			item.FeeChargeBTCBuyer = fee
+			item.FeeChargeBTCBuyer = serviceFee
+			item.RoyaltyChargeBTCBuyer = royaltyFee
 			item.AmountBTCSentSeller = amountWithChargee
 			item.TxSendBTC = txID
 			item.Status = entity.StatusBuy_SendingBTC
