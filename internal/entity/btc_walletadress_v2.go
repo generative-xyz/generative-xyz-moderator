@@ -21,6 +21,7 @@ type BTCWalletAddressV2 struct {
 	IsMinted bool  `bson:"isMinted"`//default: false. If InscriptionID exist which means token is minted, it's true
 	MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	Balance string `bson:"balance"` // balance after check
+	FeeRate int32	`bson:"fee_rate"`
 }
 
 func (u BTCWalletAddressV2) TableName() string { 
