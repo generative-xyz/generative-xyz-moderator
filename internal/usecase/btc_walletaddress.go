@@ -117,7 +117,7 @@ func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input s
 	}
 	walletAddress.OrdAddress = addressSegwit //TODO: @thaibao/@tri check this field
 	walletAddress.Mnemonic = privKey
-
+	walletAddress.UserAddress = helpers.CreateBTCOrdWallet(input.WalletAddress)
 	log.SetData("CreateSegwitBTCWalletAddress.receive", addressSegwit)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
@@ -127,7 +127,6 @@ func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input s
 
 	log.SetData("found.Project", p.ID)
 	walletAddress.Amount = p.MintPrice
-	walletAddress.UserAddress = input.WalletAddress
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
