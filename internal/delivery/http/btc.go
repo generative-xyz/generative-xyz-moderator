@@ -91,9 +91,9 @@ func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	btcWallet, err := h.Usecase.CheckbalanceWalletAddress(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CheckBalanceWalletAddress(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CheckbalanceWalletAddress", err.Error(), err)
+		log.Error("h.Usecase.CheckBalanceWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

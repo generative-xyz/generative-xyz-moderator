@@ -107,7 +107,7 @@ func (u Usecase) CreateOrdBTCWalletAddress(rootSpan opentracing.Span, input stru
 }
 
 func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
+	span, log := u.StartSpan("CheckBalanceWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	walletAddress := &entity.BTCWalletAddress{}
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
@@ -146,8 +146,8 @@ func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input s
 	return walletAddress, nil
 }
 
-func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
+func (u Usecase) CheckBalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
+	span, log := u.StartSpan("CheckBalanceWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
@@ -157,13 +157,13 @@ func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input stru
 		return nil, err
 	}
 
-	blance, err := u.CheckBalance(span, *btc)
+	balance, err := u.CheckBalance(span, *btc)
 	if err != nil {
 		log.Error("u.BalanceLogic", err.Error(), err)
 		return nil, err
 	}
 
-	return blance, nil
+	return balance, nil
 }
 
 func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData) (*ord_service.MintStdoputRespose, *string, error) {
