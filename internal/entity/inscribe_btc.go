@@ -85,3 +85,12 @@ func (u InscribeBTCLogs) TableName() string {
 func (u InscribeBTCLogs) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+type FilterInscribeBT struct {
+	BaseFilters
+	UserAddress   *string
+	Amount        *string
+	OrdAddress    *string
+	IsConfirm     *string
+	InscriptionID *string
+}

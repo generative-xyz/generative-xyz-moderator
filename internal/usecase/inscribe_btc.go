@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,14 +28,14 @@ type BitcoinTokenMintFee struct {
 }
 
 func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*BitcoinTokenMintFee, error) {
-	base64String := input.File
-	base64String = strings.ReplaceAll(base64String, "data:text/html;base64,", "")
-	base64String = strings.ReplaceAll(base64String, "data:image/png;base64,", "")
-	dec, err := base64.StdEncoding.DecodeString(base64String)
-	if err != nil {
-		return nil, err
-	}
-	fileSize := len([]byte(dec))
+	// base64String := input.File
+	// base64String = strings.ReplaceAll(base64String, "data:text/html;base64,", "")
+	// base64String = strings.ReplaceAll(base64String, "data:image/png;base64,", "")
+	// dec, err := base64.StdEncoding.DecodeString(base64String)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	fileSize := len([]byte(input.File))
 	mintFee := int32(fileSize) / 4 * input.FeeRate
 
 	sentTokenFee := utils.FEE_BTC_SEND_AGV * 2
@@ -141,6 +140,13 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	return walletAddress, nil
 }
 
+func (u Usecase) ListInscribeBTC(rootSpan opentracing.Span, limit, page int64) (*entity.Pagination, error) {
+	return u.Repo.ListInscribeBTC(entity.FilterInscribeBT{
+		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
+	})
+}
+
+// JOBs:
 // step 1: job check balance for list inscribe
 func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 
@@ -292,7 +298,19 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 
 	for _, item := range listTosendBtc {
 
-		txHash, err := chainhash.NewHashFromStr(item.TxSendBTC)
+		statusSuccess := entity.StatusInscribe_Minted
+		txHashDb := item.TxMintNft
+
+		if item.Status == entity.StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr {
+			statusSuccess = entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd
+			txHashDb = item.TxSendBTC
+		}
+		if item.Status == entity.StatusInscribe_SendingNFTToUser {
+			statusSuccess = entity.StatusInscribe_SentNFTToUser
+			txHashDb = item.TxSendNft
+		}
+
+		txHash, err := chainhash.NewHashFromStr(txHashDb)
 		if err != nil {
 			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
 			continue
@@ -300,16 +318,8 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 
 		txResponse, err := btcClient.GetTransaction(txHash)
 
-		statusSuccess := entity.StatusInscribe_Minted
-		if item.Status == entity.StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr {
-			statusSuccess = entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd
-		}
-		if item.Status == entity.StatusInscribe_SendingNFTToUser {
-			statusSuccess = entity.StatusInscribe_SentNFTToUser
-		}
-
 		if err == nil {
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+item.TxSendBTC, txResponse.Confirmations)
+			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
 				// send btc ok now:
 				item.Status = statusSuccess
@@ -320,18 +330,18 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 			}
 		} else {
 			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendBTC, err.Error())
+			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, "Begin check tx via api.")
+			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
 
 			// check with api:
-			txInfo, err := bs.CheckTx(item.TxSendBTC)
+			txInfo, err := bs.CheckTx(txHashDb)
 			if err != nil {
 				fmt.Printf("Could not bs - with err: %v", err)
-				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, err.Error())
+				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
 			if txInfo.Confirmations >= 1 {
-				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendBTC, txInfo.Confirmations)
+				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
 				_, err = u.Repo.UpdateBtcInscribe(&item)

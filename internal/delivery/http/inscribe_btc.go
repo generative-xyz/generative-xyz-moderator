@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/delivery/http/request"
@@ -100,4 +101,28 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	resp.TimeoutAt = fmt.Sprintf("%d", input.ExpiredAt.Unix())
 	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
+}
+
+func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcListInscribeBTC", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		limit = 1
+	}
+
+	result, err := h.Usecase.ListInscribeBTC(span, int64(limit), int64(page))
+	if err != nil {
+		log.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
