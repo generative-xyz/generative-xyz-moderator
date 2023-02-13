@@ -318,14 +318,13 @@ func (r Repository) GetMaxBtcProjectID() (*int64, error)  {
 
 	f := bson.A{
 		bson.M{"$match" : bson.M{"tokenIDInt": bson.M{ "$gte": btcID }}},
-		bson.M{"$group" : bson.M{"_id": "$tokenIDInt", "max": bson.M{"$max": "$tokenIDInt"}}},
+		//bson.M{"$group" : bson.M{"_id": "$tokenIDInt", "max": bson.M{"$max": "$tokenIDInt"}}},
 	}
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Aggregate(context.TODO(), f)
 	if err != nil {
 		return nil, err
 	}
-	result := make(map[string]interface{})
-	
+	var result interface{}
 	err = cursor.Decode(&result)
 	if err != nil {
 		return nil, err
