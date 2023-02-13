@@ -31,6 +31,10 @@ type ProjectStat struct {
 	MintedCount        int32  `bson:"minted_count" json:"mintedCount"`
 }
 
+type MaxProjectID struct {
+	ID int64 `bson:"_id"`
+}
+
 type Projects struct {
 	BaseEntity            `bson:",inline" json:"-"`
 	ContractAddress       string             `bson:"contractAddress" json:"contractAddress"`

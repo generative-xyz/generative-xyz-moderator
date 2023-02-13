@@ -52,14 +52,22 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		return nil, err
 	}
 
-	max, err := u.Repo.GetMaxBtcProjectID()
-	_ = max
-
+	maxID, err := u.Repo.GetMaxBtcProjectID()
+	if err != nil {
+		log.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
+		return nil, err
+	}
+	maxID = maxID + 1
+	pe.TokenIDInt =  maxID
+	pe.TokenID =  fmt.Sprintf("%d", maxID)
+	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
 	}
+
+	
 
 	log.SetData("pe", pe)
 	return pe, nil
