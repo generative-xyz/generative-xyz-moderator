@@ -191,7 +191,7 @@ func (r Repository) UpdateBTCNFTConfirmListings(model *entity.MarketplaceBTCList
 func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset int64) ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 
-	r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
 		bson.D{
 			{"$project",
 				bson.D{
@@ -236,8 +236,6 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 		bson.D{{"$limit", limit}},
 		bson.D{{"$skip", offset}},
 	})
-
-	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
