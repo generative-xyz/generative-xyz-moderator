@@ -29,6 +29,99 @@ func NewBlockcypherService(chainEndpoint string, explorerEndPoint string, bcyTok
 	}
 }
 
+func TempNewTXMultiOut(inAddr string, outAddrs map[string]big.Int) (trans gobcy.TX) {
+	trans.Inputs = make([]gobcy.TXInput, 1)
+	trans.Inputs[0].Addresses = make([]string, 1)
+	trans.Inputs[0].Addresses[0] = inAddr
+	for addr, amount := range outAddrs {
+		newOutput := gobcy.TXOutput{
+			Value:     amount,
+			Addresses: []string{addr},
+		}
+		trans.Outputs = append(trans.Outputs, newOutput)
+	}
+	return
+}
+
+func (bs *BlockcypherService) EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(secret string, from string, destinations map[string]int,
+	preference string) (*big.Int, error) {
+
+	outAddrs := make(map[string]big.Int)
+
+	for addr, amount := range destinations {
+		outAddrs[addr] = *big.NewInt(int64(amount))
+	}
+
+	tx := TempNewTXMultiOut(from, outAddrs)
+
+	if len(preference) == 0 {
+		tx.Preference = PreferenceMedium
+	} else {
+		tx.Preference = preference
+	}
+	skel, err := bs.chain.NewTX(tx, false) // gobcy.TX
+
+	if err != nil {
+		log.Println("bs.chain.NewTX err: ", err, tx)
+		return nil, err
+	}
+	log.Println("[SendTransactionWithPreference] fee", skel.Trans.Fees)
+	return &skel.Trans.Fees, nil
+}
+
+func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddressMultiAddress(secret string, from string, destinations map[string]int,
+	preference string) (string, error) {
+	wif, err := btcutil.DecodeWIF(secret)
+	if err != nil {
+		return "", err
+	}
+
+	pkHex := hex.EncodeToString(wif.PrivKey.Serialize())
+
+	outAddrs := make(map[string]big.Int)
+
+	for addr, amount := range destinations {
+		outAddrs[addr] = *big.NewInt(int64(amount))
+	}
+
+	tx := TempNewTXMultiOut(from, outAddrs)
+
+	if len(preference) == 0 {
+		tx.Preference = PreferenceMedium
+	} else {
+		tx.Preference = preference
+	}
+	skel, err := bs.chain.NewTX(tx, false) // gobcy.TX
+
+	if err != nil {
+		log.Println("bs.chain.NewTX err: ", err, tx)
+		return "", err
+	}
+	log.Println("[SendTransactionWithPreference] fee", skel.Trans.Fees)
+	prikHexs := []string{}
+	for i := 0; i < len(skel.ToSign); i++ {
+		prikHexs = append(prikHexs, pkHex)
+	}
+
+	err = skel.Sign(prikHexs)
+	if err != nil {
+		log.Println("skel.Sign error: ", err)
+		return "", err
+	}
+
+	// add this one with segwit address:
+	for i, _ := range skel.Signatures {
+		skel.Signatures[i] = skel.Signatures[i] + "01"
+	}
+
+	skel, err = bs.chain.SendTX(skel)
+	if err != nil {
+		log.Println("bs.chain.SendTX err:", err)
+		return "", err
+	}
+	return skel.Trans.Hash, nil
+}
+
 // SendTX from Segwit address by lib gobcy, with preference, without manually setting fees :
 // send from segwit to legacy address |
 func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(secret string, from string, destination string, amount int,
