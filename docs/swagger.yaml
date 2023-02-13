@@ -132,6 +132,11 @@ definitions:
       tokenType:
         type: string
     type: object
+  request.CreateWhitelistedEthWalletAddressReq:
+    properties:
+      walletAddress:
+        type: string
+    type: object
   request.GenerateMessageRequest:
     properties:
       address:
@@ -1138,7 +1143,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request.CreateEthWalletAddressReq'
+          $ref: '#/definitions/request.CreateWhitelistedEthWalletAddressReq'
       produces:
       - application/json
       responses:

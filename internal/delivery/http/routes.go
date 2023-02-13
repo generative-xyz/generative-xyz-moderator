@@ -134,8 +134,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
 	eth.HandleFunc("/receive-address", h.ethGetReceiveWalletAddress).Methods("POST")
-	eth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
-	// eth.HandleFunc("/mint", h.mintETH).Methods("POST")
+	signedEth := api.PathPrefix("/eth").Subrouter()
+	signedEth.Use(h.MiddleWare.AccessToken)
+	signedEth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
 
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 

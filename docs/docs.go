@@ -1077,7 +1077,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.CreateEthWalletAddressReq"
+                            "$ref": "#/definitions/request.CreateWhitelistedEthWalletAddressReq"
                         }
                     }
                 ],
@@ -3003,6 +3003,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tokenType": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateWhitelistedEthWalletAddressReq": {
+            "type": "object",
+            "properties": {
+                "walletAddress": {
                     "type": "string"
                 }
             }
