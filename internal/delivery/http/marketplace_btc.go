@@ -278,7 +278,7 @@ func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.R
 
 	resp := response.ListingFee{
 		ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
-		RoyaltyFee: fmt.Sprintf("%v", float64(projectDetail.Royalty/10000)*100),
+		RoyaltyFee: fmt.Sprintf("%v", float64(projectDetail.Royalty)/10000*100),
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
