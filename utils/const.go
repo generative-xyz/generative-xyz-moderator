@@ -26,8 +26,8 @@ func ParseSort(key string) QuerySort {
 }
 
 const (
-	MAX_CHECK_BALANCE int = 15
-	API_KEY string = "Api-Key"
+	MAX_CHECK_BALANCE int    = 15
+	API_KEY           string = "Api-Key"
 	//AUTH_TOKEN           string = "Authorization" //token will be save in this variable
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
 	REDIS_VERIFIED_TOKEN      string = "verified_token"
@@ -93,7 +93,7 @@ const (
 	COLLECTION_LEADERBOARD_TOKEN_HOLDER string = "token_holders"
 	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
-	COLLECTION_BTC_WALLET_ADDRESS_V2    string = "btc_wallet_address_v2"
+	INSCRIBE_BTC                        string = "inscribe_btc"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
@@ -107,6 +107,8 @@ const (
 	FirstScannedBTCBlkHeight = 697200
 	BUY_NFT_CHARGE           = 10     // 10%
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
+
+	FEE_BTC_SEND_AGV = 8000 // fee send btc
 )
 
 type PubSubSendOtp struct {
