@@ -134,7 +134,7 @@ definitions:
     type: object
   request.CreateWhitelistedEthWalletAddressReq:
     properties:
-      walletAddress:
+      projectID:
         type: string
     type: object
   request.GenerateMessageRequest:

@@ -3010,7 +3010,7 @@ const docTemplate = `{
         "request.CreateWhitelistedEthWalletAddressReq": {
             "type": "object",
             "properties": {
-                "walletAddress": {
+                "projectID": {
                     "type": "string"
                 }
             }
