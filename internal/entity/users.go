@@ -18,6 +18,7 @@ type FilterUsers struct {
 	BaseFilters
 	Email *string
 	WalletAddress *string
+	WalletAddressBTC *string
 	UserType *UserType
 	IsUpdatedAvatar *bool
 }
@@ -33,6 +34,7 @@ type Users struct {
 	BaseEntity      `bson:",inline" json:"-"`
 	ID              string        `bson:"id" json:"id,omitempty"`
 	WalletAddress   string        `bson:"wallet_address" json:"wallet_address,omitempty"`
+	WalletAddressBTC   string        `bson:"wallet_address_btc" json:"wallet_address_btc,omitempty"`
 	DisplayName     string        `bson:"display_name" json:"display_name,omitempty"`
 	Bio             string        `bson:"bio" json:"bio,omitempty"`
 	Avatar          string        `bson:"avatar" json:"avatar"`

@@ -5,6 +5,63 @@ definitions:
       address:
         type: string
     type: object
+  request.CreateBTCProjectReq:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      closeMintUnixTimestamp:
+        type: integer
+      creatorAddrr:
+        type: string
+      creatorName:
+        type: string
+      description:
+        type: string
+      license:
+        type: string
+      limitSupply:
+        type: integer
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      name:
+        type: string
+      openMintUnixTimestamp:
+        type: integer
+      scripts:
+        items:
+          type: string
+        type: array
+      socialDiscord:
+        type: string
+      socialInstagram:
+        type: string
+      socialMedium:
+        type: string
+      socialTwitter:
+        type: string
+      socialWeb:
+        type: string
+      styles:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thirdPartyScripts:
+        items:
+          type: string
+        type: array
+      thumbnail:
+        type: string
+      tokenDescription:
+        type: string
+      zipLink:
+        type: string
+    type: object
   request.CreateBtcWalletAddressReq:
     properties:
       projectID:
@@ -73,6 +130,11 @@ definitions:
       title:
         type: string
       tokenType:
+        type: string
+    type: object
+  request.CreateWhitelistedEthWalletAddressReq:
+    properties:
+      projectID:
         type: string
     type: object
   request.GenerateMessageRequest:
@@ -238,6 +300,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
+      wallet_address_btc:
+        type: string
       walletAddress:
         type: string
     type: object
@@ -290,6 +354,8 @@ definitions:
         type: string
       mintPriceAddr:
         type: string
+      mintPriceEth:
+        type: string
       mintedTime:
         type: string
       mintingInfo:
@@ -328,6 +394,10 @@ definitions:
       traitStat:
         items:
           $ref: '#/definitions/response.TraitStat'
+        type: array
+      whiteListEthContracts:
+        items:
+          type: string
         type: array
     type: object
   response.ProjectStatResp:
@@ -1059,6 +1129,30 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      summary: ETH Generate receive wallet address
+      tags:
+      - ETH
+  /eth/receive-address/whitelist:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateWhitelistedEthWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: ETH Generate receive wallet address
       tags:
       - ETH
@@ -1801,6 +1895,57 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's tokens
+      tags:
+      - Project
+  /project/btc:
+    post:
+      consumes:
+      - application/json
+      description: Create btc project
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBTCProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Create btc project
+      tags:
+      - Project
+  /project/btc/files:
+    post:
+      description: Upload images for a project
+      parameters:
+      - description: Project's name
+        in: formData
+        name: projectName
+        required: true
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      summary: Upload images for a project
       tags:
       - Project
   /project/minted-out:

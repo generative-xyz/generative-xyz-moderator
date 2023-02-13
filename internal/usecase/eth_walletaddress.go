@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
+
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -89,7 +91,142 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 		log.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
 	}
-	walletAddress.Amount = mintPrice
+	walletAddress.Amount = mintPrice // 0.023 * 1e18 eth
+	walletAddress.UserAddress = input.WalletAddress
+	walletAddress.OrdAddress = strings.ReplaceAll(address, "\n", "")
+	walletAddress.IsConfirm = false
+	walletAddress.IsMinted = false
+	walletAddress.FileURI = ""       //find files from google store
+	walletAddress.InscriptionID = "" //find files from google store
+	walletAddress.ProjectID = input.ProjectID
+	walletAddress.Balance = "0"
+	walletAddress.BalanceCheckTime = 0
+
+	log.SetTag("ordAddress", walletAddress.OrdAddress)
+	err = u.Repo.InsertEthWalletAddress(walletAddress)
+	if err != nil {
+		log.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	return walletAddress, nil
+}
+
+func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, whitelistedAddrs []string) (bool, error) {
+	if len(whitelistedAddrs) == 0 {
+		return false, nil
+	}
+	for _, addr := range whitelistedAddrs {
+		filter := nfts.MoralisFilter{}
+		filter.Limit = new(int)
+		*filter.Limit = 1
+		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
+		if err != nil {
+			return false, err
+		}
+		if len(resp.Result) > 0 {
+			return true, nil
+		}
+	}
+
+	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
+	if err != nil {
+		return false, err
+	}
+	for _, delegation := range delegations {
+		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("CreateETHWalletAddress", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetData("input", input)
+	log.SetTag("btcUserWallet", input.WalletAddress)
+
+	walletAddress := &entity.ETHWalletAddress{}
+	err := copier.Copy(walletAddress, input)
+	if err != nil {
+		log.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	// userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
+	// resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"create",
+	// 	},
+	// })
+
+	ethClient := eth.NewClient(nil)
+
+	privKey, pubKey, address, err := ethClient.GenerateAddress()
+	if err != nil {
+		log.Error("ethClient.GenerateAddress", err.Error(), err)
+		return nil, err
+	} else {
+		walletAddress.Mnemonic = privKey
+	}
+
+	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
+	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
+	// 	Args: []string{
+	// 		"--wallet",
+	// 		userWallet,
+	// 		"wallet",
+	// 		"receive",
+	// 	},
+	// })
+	// if err != nil {
+	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	log.SetData("CreateETHWalletAddress.receive", address)
+	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
+	if err != nil {
+		log.Error("u.CreateETHWalletAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("found.Project", p.ID)
+	mintPriceInt, err := strconv.ParseInt(p.MintPrice, 10, 64)
+	if err != nil {
+		log.Error("convertBTCToInt", err.Error(), err)
+		return nil, err
+	}
+	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	if err != nil {
+		log.Error("convertBTCToETH", err.Error(), err)
+		return nil, err
+	}
+
+	walletAddress.Amount = mintPrice // 0.023 * 1e18 eth
+
+	isWhitelist, err := u.IsWhitelistedAddress(ctx, span, input.WalletAddress, p.WhiteListEthContracts)
+
+	if isWhitelist {
+		whitelistedPrice := new(big.Float)
+		ethPrice, _ := helpers.GetExternalPrice("ETH")
+		if ethPrice == 0 {
+			ethPrice = 1500
+		}
+		whitelistedPrice.SetFloat64(50.0 / ethPrice)
+		whitelistedPrice = whitelistedPrice.Mul(whitelistedPrice, big.NewFloat(1e18))
+
+		intPrice := new(big.Int)
+		whitelistedPrice.Int(intPrice)
+
+		walletAddress.Amount = intPrice.String()
+	}
+
 	walletAddress.UserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(address, "\n", "")
 	walletAddress.IsConfirm = false
@@ -263,12 +400,15 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	}(span, &ethEntity, balance)
 
 	// check total amount = received amount?
-	amount, _ := big.NewInt(0).SetString(ethEntity.Amount, 10)
+	amount, ok := big.NewInt(0).SetString(ethEntity.Amount, 10)
+	if !ok {
+		err := errors.New("ethEntity.Amount.OK.False")
+		return nil, err
+	}
 
 	if r := balance.Cmp(amount); r == -1 {
 		err := errors.New("Not enough amount")
 		return nil, err
-
 	}
 
 	log.SetData("userWallet", ethEntity.UserAddress)
@@ -510,4 +650,16 @@ func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (stri
 	amountMintBTC.Int(result)
 
 	return result.String(), nil
+}
+
+// containsIgnoreCase ...
+// Todo: move to helper function
+func containsIgnoreCase(strSlice []string, item string) bool {
+	for _, str := range strSlice {
+		if strings.EqualFold(str, item) {
+			return true
+		}
+	}
+
+	return false
 }

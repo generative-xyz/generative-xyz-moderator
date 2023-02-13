@@ -1044,6 +1044,45 @@
                 }
             }
         },
+        "/eth/receive-address/whitelist": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH"
+                ],
+                "summary": "ETH Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a eth wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateWhitelistedEthWalletAddressReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/files": {
             "post": {
                 "security": [
@@ -2024,6 +2063,88 @@
                 }
             }
         },
+        "/project/btc": {
+            "post": {
+                "description": "Create btc project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create btc project",
+                "parameters": [
+                    {
+                        "description": "Create profile request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBTCProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/btc/files": {
+            "post": {
+                "description": "Upload images for a project",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Upload images for a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project's name",
+                        "name": "projectName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/project/minted-out": {
             "get": {
                 "description": "get minted out projects",
@@ -2684,6 +2805,92 @@
                 }
             }
         },
+        "request.CreateBTCProjectReq": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "creatorAddrr": {
+                    "type": "string"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limitSupply": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "socialDiscord": {
+                    "type": "string"
+                },
+                "socialInstagram": {
+                    "type": "string"
+                },
+                "socialMedium": {
+                    "type": "string"
+                },
+                "socialTwitter": {
+                    "type": "string"
+                },
+                "socialWeb": {
+                    "type": "string"
+                },
+                "styles": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thirdPartyScripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "tokenDescription": {
+                    "type": "string"
+                },
+                "zipLink": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateBtcWalletAddressReq": {
             "type": "object",
             "properties": {
@@ -2788,6 +2995,14 @@
                     "type": "string"
                 },
                 "tokenType": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateWhitelistedEthWalletAddressReq": {
+            "type": "object",
+            "properties": {
+                "projectID": {
                     "type": "string"
                 }
             }
@@ -3045,6 +3260,9 @@
                 },
                 "walletAddress": {
                     "type": "string"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
                 }
             }
         },
@@ -3122,6 +3340,9 @@
                 "mintPriceAddr": {
                     "type": "string"
                 },
+                "mintPriceEth": {
+                    "type": "string"
+                },
                 "mintedTime": {
                     "type": "string"
                 },
@@ -3178,6 +3399,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/response.TraitStat"
+                    }
+                },
+                "whiteListEthContracts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }

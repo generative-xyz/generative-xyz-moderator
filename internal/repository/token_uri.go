@@ -15,7 +15,7 @@ import (
 
 func (r Repository) FindTokenUrisWithoutCache(f bson.M) ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
-	
+
 	f[utils.KEY_DELETED_AT] = nil
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
@@ -45,7 +45,7 @@ func (r Repository) FindTokenUriWithoutCache(filter bson.D) (*entity.TokenUri, e
 
 func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*entity.TokenUri, error) {
 	// always reload cache
-	liveReload := func (filter bson.D, key string) (*entity.TokenUri, error) {
+	liveReload := func(filter bson.D, key string) (*entity.TokenUri, error) {
 		token, err := r.FindTokenUriWithoutCache(filter)
 		if err != nil {
 			return nil, err
@@ -55,9 +55,9 @@ func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*en
 	}
 
 	go liveReload(filter, cachedKey)
-	
+
 	cached, err := r.Cache.GetData(cachedKey)
-	if err != nil  || cached == nil{
+	if err != nil || cached == nil {
 		return liveReload(filter, cachedKey)
 	}
 
@@ -67,7 +67,12 @@ func (r Repository) FindTokenUriWithtCache(filter bson.D, cachedKey string) (*en
 		return nil, err
 	}
 
-	return  tok, nil
+	return tok, nil
+}
+func (r Repository) FindTokenByTokenID(tokenID string) (*entity.TokenUri, error) {
+	f := bson.D{{"token_id", tokenID}}
+
+	return r.FindTokenUriWithoutCache(f)
 }
 
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
@@ -92,18 +97,17 @@ func (r Repository) FindTokenByGenNftAddr(genNftAddrr string, tokenID string) (*
 func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagination, error) {
 	tokens := []entity.TokenUri{}
 	resp := &entity.Pagination{}
-	
+
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
 	}
 
-
-	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields() , r.SortToken(filter), &tokens)
+	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields(), r.SortToken(filter), &tokens)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp.Result = tokens
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
@@ -116,50 +120,49 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	f := bson.M{}
 	f[utils.KEY_DELETED_AT] = nil
 
-
 	if filter.CreatorAddr != nil {
 		if *filter.CreatorAddr != "" {
 			f["creator_address"] = *filter.CreatorAddr
 		}
- 	}
-	
+	}
+
 	if filter.Keyword != nil {
 		if *filter.Keyword != "" {
 			kwInt, err := strconv.Atoi(*filter.Keyword)
 			if err == nil {
 				f["token_id_mini"] = kwInt
-			}else{
+			} else {
 				f["token_id_mini"] = *filter.Keyword
 			}
-			
+
 		}
- 	}
-	
+	}
+
 	if filter.OwnerAddr != nil {
 		if *filter.OwnerAddr != "" {
 			f["owner_addrress"] = *filter.OwnerAddr
 		}
- 	}
-	
+	}
+
 	if filter.GenNFTAddr != nil {
 		if *filter.GenNFTAddr != "" {
 			f["gen_nft_addrress"] = *filter.GenNFTAddr
 		}
- 	}
-	
+	}
+
 	if filter.ContractAddress != nil {
 		if *filter.ContractAddress != "" {
 			f["contract_address"] = *filter.ContractAddress
 		}
- 	}
-	
+	}
+
 	if len(filter.CollectionIDs) > 0 {
-		f["gen_nft_addrress"] = bson.D{ {Key: "$in", Value: filter.CollectionIDs} }
- 	}
-	
+		f["gen_nft_addrress"] = bson.D{{Key: "$in", Value: filter.CollectionIDs}}
+	}
+
 	if len(filter.TokenIDs) > 0 {
-		f["token_id"] =  bson.D{ {Key: "$in", Value: filter.TokenIDs} }
- 	}
+		f["token_id"] = bson.D{{Key: "$in", Value: filter.TokenIDs}}
+	}
 
 	if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
 		priceFilter := bson.M{}
@@ -177,7 +180,7 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	}
 
 	andFilters := []bson.M{
-	f,
+		f,
 	}
 
 	if filter.Attributes != nil && len(filter.Attributes) > 0 {
@@ -186,25 +189,25 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 				"parsed_attributes_str": bson.M{
 					"$elemMatch": bson.M{
 						"trait_type": attribute.TraitType,
-						"value": bson.M {
-							"$in" : attribute.Values,
+						"value": bson.M{
+							"$in": attribute.Values,
 						},
 					},
 				},
 			})
 		}
-	} 
+	}
 	return bson.M{
 		"$and": andFilters,
 	}
 }
 
-func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
+func (r Repository) GetAllTokens() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
 	f := bson.M{}
 	f[utils.KEY_DELETED_AT] = nil
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, )
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +219,7 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error)  {
 	return tokens, nil
 }
 
-func (r Repository) GetAllTokensSeletedFields() ([]entity.TokenUri, error)  {
+func (r Repository) GetAllTokensSeletedFields() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
 	f := bson.M{}
@@ -239,20 +242,19 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 	inputData.SetCreatedAt()
 	bData, _ := inputData.ToBson()
 	filter := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
-	update := bson.D{{"$set",  bData}}
+	update := bson.D{{"$set", bData}}
 	updateOpts := options.Update().SetUpsert(true)
 	//indexOpts := options.CreateIndexes().SetMaxTime(10 * time.Second)
 
-
 	//id := fmt.Sprintf("%s%s", contractAddress, tokenID)
-	result, err := r.DB.Collection(inputData.TableName()).UpdateOne( context.TODO(), filter, update, updateOpts)
+	result, err := r.DB.Collection(inputData.TableName()).UpdateOne(context.TODO(), filter, update, updateOpts)
 	if err != nil {
 		return nil, err
 	}
 
 	key1 := helpers.TokenURIKey(contractAddress, tokenID)
 	key2 := helpers.TokenURIByGenNftAddrKey(inputData.GenNFTAddr, tokenID)
-	
+
 	r.Cache.SetData(key1, inputData)
 	r.Cache.SetData(key2, inputData)
 	return result, nil
@@ -261,7 +263,7 @@ func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID strin
 func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 	f := bson.D{{
-		Key: utils.KEY_PROJECT_ID, 
+		Key:   utils.KEY_PROJECT_ID,
 		Value: projectID,
 	}}
 
@@ -309,9 +311,9 @@ func (r Repository) SelectedTokenFields() bson.D {
 	return f
 }
 
-func (r Repository) SortToken (filter entity.FilterTokenUris) []Sort {
+func (r Repository) SortToken(filter entity.FilterTokenUris) []Sort {
 	s := []Sort{}
-	s = append(s, Sort{SortBy: filter.SortBy, Sort: filter.Sort })
+	s = append(s, Sort{SortBy: filter.SortBy, Sort: filter.Sort})
 	return s
 }
 
@@ -319,16 +321,16 @@ func (r Repository) CreateToken(data *entity.TokenUri) error {
 	data.SetCreatedAt()
 	bData, err := data.ToBson()
 	if err != nil {
-		return  err
+		return err
 	}
 
-	inserted , err := r.DB.Collection(data.TableName()).InsertOne(context.TODO(), &bData)
+	inserted, err := r.DB.Collection(data.TableName()).InsertOne(context.TODO(), &bData)
 	if err != nil {
 		return err
 	}
 
 	_ = inserted
-	return  nil
+	return nil
 }
 
 func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price int64) error {
@@ -340,7 +342,7 @@ func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price int64) error
 			"stats.price_int": price,
 		},
 	}
-	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -356,7 +358,7 @@ func (r Repository) UnsetTokenPriceByTokenId(tokenId string) error {
 			"stats.price_int": true,
 		},
 	}
-	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
@@ -372,7 +374,7 @@ func (r Repository) UpdateTokenOnchainStatusByTokenId(tokenId string) error {
 			"isOnchain": true,
 		},
 	}
-	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne( context.TODO(), filter, update)
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}

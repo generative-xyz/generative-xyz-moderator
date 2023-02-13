@@ -46,6 +46,7 @@ type ProjectResp struct {
 	Priority               int              `json:"priority"`
 	OpenMintUnixTimestamp  int              `json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
+	WhiteListEthContracts []string              `json:"whiteListEthContracts"`
 }
 
 type ProjectStatResp struct {
