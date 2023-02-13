@@ -100,6 +100,7 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 	walletAddress.IsMinted = false
 	walletAddress.FileURI = input.File
 	walletAddress.InscriptionID = ""
+	walletAddress.FeeRate = input.FeeRate
 
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, walletAddress.OrdAddress)
 	err = u.Repo.InsertBtcWalletAddressV2(walletAddress)
@@ -131,6 +132,7 @@ func (u Usecase) CheckbalanceWalletAddressV2(rootSpan opentracing.Span, input st
 	return balance, nil
 }
 
+// change this to mint from ord address
 func (u Usecase) BTCMintV2(rootSpan opentracing.Span, input structure.BctMintData) (*entity.BTCWalletAddressV2, error) {
 	span, log := u.StartSpan("BTCMintV2", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
@@ -170,7 +172,7 @@ func (u Usecase) BTCMintV2(rootSpan opentracing.Span, input structure.BctMintDat
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl:    fileURI,
-		FeeRate:    15, //temp
+		FeeRate:    int(btc.FeeRate), //temp
 		DryRun:     false,
 	})
 
@@ -358,106 +360,106 @@ func (u Usecase) WaitingForBalancingV2(rootSpan opentracing.Span) ([]entity.BTCW
 	return nil, nil
 }
 
-func (u Usecase) WaitingForMintedV2(rootSpan opentracing.Span) ([]entity.BTCWalletAddressV2, error) {
-	span, log := u.StartSpan("WaitingForMintedV2", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+// func (u Usecase) WaitingForMintedV2(rootSpan opentracing.Span) ([]entity.BTCWalletAddressV2, error) {
+// 	span, log := u.StartSpan("WaitingForMintedV2", rootSpan)
+// 	defer u.Tracer.FinishSpan(span, log)
 
-	addreses, err := u.Repo.ListBTCAddressV2()
-	if err != nil {
-		log.Error("WillBeProcessWTC.ListBTCAddress", err.Error(), err)
-		return nil, err
-	}
+// 	addreses, err := u.Repo.ListBTCAddressV2()
+// 	if err != nil {
+// 		log.Error("WillBeProcessWTC.ListBTCAddress", err.Error(), err)
+// 		return nil, err
+// 	}
 
-	for _, item := range addreses {
-		log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
-		log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+// 	for _, item := range addreses {
+// 		log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+// 		log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+		
+// 		addr := item.OriginUserAddress
+// 		if addr == "" {
+// 			addr = item.UserAddress
+// 		}
+	
+// 		sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
+// 		if err != nil {
+// 			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+// 			continue
+// 		}
 
-		addr := item.OriginUserAddress
-		if addr == "" {
-			addr = item.UserAddress
-		}
+// 		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+// 		// amout, err := strconv.ParseFloat(item.Amount, 10)
+// 		// if err != nil {
+// 		// 	log.Error("ListenTheMintedBTC.%s. strconv.ParseFloa.Error", err.Error(), err)
+// 		// 	continue
+// 		// }
+// 		// amout = amout * 0.9
 
-		sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
+// 		// fundData := ord_service.ExecRequest{
+// 		// 	Args: []string{
+// 		// 		"--wallet",
+// 		// 		item.OrdAddress,
+// 		// 		"send",
+// 		// 		"ord_master",
+// 		// 		fmt.Sprintf("%f", amout),
+// 		// 		"--fee-rate",
+// 		// 		"15",
+// 		// 	},
+// 		// }
 
-		log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
-		// amout, err := strconv.ParseFloat(item.Amount, 10)
-		// if err != nil {
-		// 	log.Error("ListenTheMintedBTC.%s. strconv.ParseFloa.Error", err.Error(), err)
-		// 	continue
-		// }
-		// amout = amout * 0.9
+// 		// log.SetData("fundData", fundData)
+// 		// fundResp, err := u.OrdService.Exec(fundData)
 
-		// fundData := ord_service.ExecRequest{
-		// 	Args: []string{
-		// 		"--wallet",
-		// 		item.OrdAddress,
-		// 		"send",
-		// 		"ord_master",
-		// 		fmt.Sprintf("%f", amout),
-		// 		"--fee-rate",
-		// 		"15",
-		// 	},
-		// }
+// 		// if err != nil {
+// 		// 	log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.ReFund.Error", item.OrdAddress), err.Error(), err)
+// 		// 	continue
+// 		// }
 
-		// log.SetData("fundData", fundData)
-		// fundResp, err := u.OrdService.Exec(fundData)
+// 		// log.SetData("fundResp", fundResp)
 
-		// if err != nil {
-		// 	log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.ReFund.Error", item.OrdAddress), err.Error(), err)
-		// 	continue
-		// }
+// 		item.MintResponse.IsSent = true
+// 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddrV2(item.OrdAddress, &item)
+// 		if err != nil {
+// 			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+// 			continue
+// 		}
+// 		log.SetData("updated", updated)
 
-		// log.SetData("fundResp", fundResp)
+// 		//TODO: - create bitcoin token here
+// 		// _, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription)
+// 		// if err != nil {
+// 		// 	log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+// 		// 	continue
+// 		// }
+// 	}
 
-		item.MintResponse.IsSent = true
-		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddrV2(item.OrdAddress, &item)
-		if err != nil {
-			log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateBtcWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
-			continue
-		}
-		log.SetData("updated", updated)
+// 	return nil, nil
+// }
 
-		//TODO: - create bitcoin token here
-		// _, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription)
-		// if err != nil {
-		// 	log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-		// 	continue
-		// }
-	}
+// func (u Usecase) SendTokenV2(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+// 	span, log := u.StartSpan("SendTokenV2", rootSpan)
+// 	defer u.Tracer.FinishSpan(span, log)
 
-	return nil, nil
-}
+// 	log.SetData(utils.TOKEN_ID_TAG, inscriptionID)
+// 	sendTokenReq := ord_service.ExecRequest{
+// 		Args: []string{
+// 			"--wallet",
+// 			"ord_master",
+// 			"wallet",
+// 			"send",
+// 			receiveAddr,
+// 			inscriptionID,
+// 			"--fee-rate",
+// 			"15",
+// 		}}
 
-func (u Usecase) SendTokenV2(rootSpan opentracing.Span, receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan("SendTokenV2", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+// 	log.SetData("sendTokenReq", sendTokenReq)
+// 	resp, err := u.OrdService.Exec(sendTokenReq)
 
-	log.SetData(utils.TOKEN_ID_TAG, inscriptionID)
-	sendTokenReq := ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			"ord_master",
-			"wallet",
-			"send",
-			receiveAddr,
-			inscriptionID,
-			"--fee-rate",
-			"15",
-		}}
+// 	if err != nil {
+// 		log.Error("u.OrdService.Exec", err.Error(), err)
+// 		return nil, err
+// 	}
 
-	log.SetData("sendTokenReq", sendTokenReq)
-	resp, err := u.OrdService.Exec(sendTokenReq)
+// 	log.SetData("sendTokenRes", resp)
+// 	return resp, err
 
-	if err != nil {
-		log.Error("u.OrdService.Exec", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("sendTokenRes", resp)
-	return resp, err
-
-}
+// }

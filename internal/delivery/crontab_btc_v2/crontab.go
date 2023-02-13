@@ -1,4 +1,4 @@
-package crontab_btc
+package crontab_btc_v2
 
 import (
 	"rederinghub.io/internal/usecase"
@@ -42,10 +42,9 @@ func (h ScronBTCHandler) StartServer() {
 			h.Usecase.WaitingForBalancingV2(span) // BTC
 		}()
 
-		go func() {
-			h.Usecase.WaitingForMintedV2(span)
-
-		}()
+		// go func() {
+		// 	h.Usecase.WaitingForMintedV2(span)
+		// }()
 	})
 
 	c.Start()
