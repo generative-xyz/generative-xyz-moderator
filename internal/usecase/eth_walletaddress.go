@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
+
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -111,8 +113,20 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 }
 
 func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, whitelistedAddrs []string) (bool, error) {
-	if contains(whitelistedAddrs, userAddr) {
-		return true, nil
+	if len(whitelistedAddrs) == 0 {
+		return false, nil
+	}
+	for _, addr := range whitelistedAddrs {
+		filter := nfts.MoralisFilter{}
+		filter.Limit = new(int)
+		*filter.Limit = 1
+		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
+		if err != nil {
+			return false, err
+		}
+		if len(resp.Result) > 0 {
+			return true, nil
+		}
 	}
 
 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
@@ -120,7 +134,7 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 		return false, err
 	}
 	for _, delegation := range delegations {
-		if contains(whitelistedAddrs, strings.ToLower(delegation.Contract.String())) {
+		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
 			return true, nil
 		}
 	}
@@ -204,7 +218,8 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 		if ethPrice == 0 {
 			ethPrice = 2100
 		}
-		whitelistedPrice.SetFloat64(50.0 / ethPrice * 1e18)
+		whitelistedPrice.SetFloat64(50.0 / ethPrice)
+		whitelistedPrice = whitelistedPrice.Mul(whitelistedPrice, big.NewFloat(1e18))
 		walletAddress.Amount = whitelistedPrice.String()
 	}
 
@@ -630,11 +645,11 @@ func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (stri
 	return result.String(), nil
 }
 
-// contains ...
+// containsIgnoreCase ...
 // Todo: move to helper function
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
+func containsIgnoreCase(strSlice []string, item string) bool {
+	for _, str := range strSlice {
+		if strings.EqualFold(str, item) {
 			return true
 		}
 	}
