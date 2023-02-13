@@ -1145,6 +1145,28 @@ paths:
       summary: ETH Generate receive wallet address
       tags:
       - ETH
+  /eth/receive-address/whitelist:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateEthWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: ETH Generate receive wallet address
+      tags:
+      - ETH
   /files:
     post:
       description: Upload file
