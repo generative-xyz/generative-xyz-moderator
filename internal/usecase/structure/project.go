@@ -50,6 +50,7 @@ type CreateBtcProjectReq struct {
 	License               string             `json:"license"`
 	Tags                  []string           `json:"tags"`
 	Categories            []string           `json:"categories"`
+	ZipLink				   *string			  `json:"zipLink"`
 }
 
 type CreateProposaltReq struct {

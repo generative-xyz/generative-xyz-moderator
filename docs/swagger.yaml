@@ -701,32 +701,6 @@ paths:
       summary: BTC mint
       tags:
       - BTC
-  /btc/files:
-    post:
-      description: Upload images for a projecct
-      parameters:
-      - description: file
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - multipart/form-data
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.JsonResponse'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.FileRes'
-              type: object
-      security:
-      - Authorization: []
-      summary: Upload images for a projecct
-      tags:
-      - Files
   /btc/receive-address:
     post:
       consumes:
@@ -1928,6 +1902,35 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: Create btc project
+      tags:
+      - Project
+  /project/btc/files:
+    post:
+      description: Upload images for a project
+      parameters:
+      - description: Project's name
+        in: formData
+        name: projectName
+        required: true
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      summary: Upload images for a project
       tags:
       - Project
   /project/minted-out:
