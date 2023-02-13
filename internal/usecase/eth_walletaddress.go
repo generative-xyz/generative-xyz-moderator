@@ -220,7 +220,11 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 		}
 		whitelistedPrice.SetFloat64(50.0 / ethPrice)
 		whitelistedPrice = whitelistedPrice.Mul(whitelistedPrice, big.NewFloat(1e18))
-		walletAddress.Amount = whitelistedPrice.String()
+
+		intPrice := new(big.Int)
+		whitelistedPrice.Int(intPrice)
+
+		walletAddress.Amount = intPrice.String()
 	}
 
 	walletAddress.UserAddress = input.WalletAddress
