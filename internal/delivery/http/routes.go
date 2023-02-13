@@ -71,6 +71,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
 	project.HandleFunc("/btc", h.createBTCProject).Methods("POST")
+	project.HandleFunc("/btc/files", h.UploadFile).Methods("POST")
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
