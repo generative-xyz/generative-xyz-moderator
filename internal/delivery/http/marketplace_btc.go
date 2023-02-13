@@ -255,8 +255,11 @@ func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.R
 
 	tokenUri, err := h.Usecase.GetTokenByTokenID(span, inscriptionID, 0)
 	if err != nil {
-		log.Error("h.Usecase.GetTokenByTokenID", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		resp := response.ListingFee{
+			ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee: fmt.Sprintf("%v", 0),
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 		return
 	}
 
@@ -265,8 +268,11 @@ func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.R
 		ProjectID:       tokenUri.ProjectID,
 	})
 	if err != nil {
-		log.Error("h.Usecase.GetProjectDetail", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		resp := response.ListingFee{
+			ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee: fmt.Sprintf("%v", 0),
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 		return
 	}
 
