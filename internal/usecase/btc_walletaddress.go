@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -106,7 +107,17 @@ func (u Usecase) CreateOrdBTCWalletAddress(rootSpan opentracing.Span, input stru
 }
 
 func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
-	return nil, nil
+	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	newWallet := entity.BTCWalletAddress{}
+	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
+	if err != nil {
+		log.Error("u.CreateSegwitBTCWalletAddress.GenerateAddressSegwit", err.Error(), err)
+		return nil, err
+	}
+	newWallet.OrdAddress = addressSegwit //TODO: @thaibao/@tri check this field
+	newWallet.Mnemonic = privKey
+	return &newWallet, nil
 }
 
 func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
@@ -284,7 +295,23 @@ func (u Usecase) GetBalanceSegwitBTCWallet(rootSpan opentracing.Span, userAddres
 	span, log := u.StartSpan("CheckBalance", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
-	return "", nil
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return "", nil
+	}
+
+	balance, confirm, err := bs.GetBalance(userAddress)
+	if err != nil {
+		return "", err
+	}
+
+	//TODO: @thaibao
+
+	_ = confirm
+
+	return balance.String(), nil
 }
 
 func (u Usecase) GetBalanceOrdBTCWallet(rootSpan opentracing.Span, userAddress string) (string, error) {
