@@ -430,6 +430,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		}
 
 		item.TxMintNft = btcMintResp.Reveal
+		item.InscriptionID = btcMintResp.Inscription
 		// TODO: update item
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
