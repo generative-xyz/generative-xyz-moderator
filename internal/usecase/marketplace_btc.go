@@ -98,6 +98,22 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 	}
 
 	for _, listing := range nftList {
+		if listing.IsSold {
+			if !buyableOnly {
+				nftInfo := structure.MarketplaceNFTDetail{
+					InscriptionID: listing.InscriptionID,
+					Name:          listing.Name,
+					Description:   listing.Description,
+					Price:         listing.Price,
+					OrderID:       listing.UUID,
+					IsConfirmed:   listing.IsConfirm,
+					Buyable:       false,
+					IsCompleted:   listing.IsSold,
+				}
+				result = append(result, nftInfo)
+			}
+			continue
+		}
 		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
 		if err != nil {
 			if !buyableOnly {
@@ -108,6 +124,8 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 					Price:         listing.Price,
 					OrderID:       listing.UUID,
 					IsConfirmed:   listing.IsConfirm,
+					Buyable:       false,
+					IsCompleted:   listing.IsSold,
 				}
 				result = append(result, nftInfo)
 				continue
