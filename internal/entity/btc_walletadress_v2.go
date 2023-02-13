@@ -21,7 +21,7 @@ type BTCWalletAddressV2 struct {
 	IsConfirm bool  `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID string `bson:"inscriptionID"` // tokenID in ETH
 	Mnemonic string `bson:"mnemonic"` 
-	MnemonicSegwit string `bson:"mnemonic_segwit"`
+	SegwitKey string `bson:"segwit_key"`
 	IsMinted bool  `bson:"isMinted"`//default: false. If InscriptionID exist which means token is minted, it's true
 	MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	Balance string `bson:"balance"` // balance after check
