@@ -493,10 +493,11 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		// transfer now:
 		sentTokenResp, err := u.SendTokenByWallet(item.OriginUserAddress, item.InscriptionID, item.UserAddress, int(item.FeeRate))
 
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.sentTokenResp", sentTokenResp)
 
 		if err != nil {
 			log.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error())
 			continue
 		}
 
