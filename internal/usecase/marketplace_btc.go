@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -109,6 +110,7 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 					IsConfirmed:   listing.IsConfirm,
 					Buyable:       false,
 					IsCompleted:   listing.IsSold,
+					CreatedAt:     listing.CreatedAt,
 				}
 				result = append(result, nftInfo)
 			}
@@ -126,6 +128,7 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 					IsConfirmed:   listing.IsConfirm,
 					Buyable:       false,
 					IsCompleted:   listing.IsSold,
+					CreatedAt:     listing.CreatedAt,
 				}
 				result = append(result, nftInfo)
 				continue
@@ -156,6 +159,7 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 			IsConfirmed:   listing.IsConfirm,
 			Buyable:       isAvailable,
 			IsCompleted:   listing.IsSold,
+			CreatedAt:     listing.CreatedAt,
 		}
 		if buyableOnly && isAvailable {
 			result = append(result, nftInfo)
@@ -163,6 +167,17 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 		if !buyableOnly {
 			result = append(result, nftInfo)
 		}
+	}
+
+	if !buyableOnly {
+		sort.SliceStable(result, func(i, j int) bool {
+			if result[i].Buyable && result[j].Buyable {
+				if result[i].CreatedAt.After(result[j].CreatedAt) {
+					return true
+				}
+			}
+			return result[i].Buyable
+		})
 	}
 
 	// result := []response.MarketplaceNFTDetail{}
