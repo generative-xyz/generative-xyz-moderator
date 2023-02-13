@@ -198,11 +198,13 @@ func (u Usecase) UploadProjectFiles(rootSpan opentracing.Span, r *http.Request) 
 		return nil, err
 	}
 
+	key :=  helpers.GenerateSlug(projectName)
+	key = fmt.Sprintf("btc-projects/%s", key)
 	gf := googlecloud.GcsFile{
 		FileHeader: handler,
+		Path: &key,
 	}
 
-	_ = projectName
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
 		log.Error("u.GCS.FileUploadToBucke", err.Error(), err)

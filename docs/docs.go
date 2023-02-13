@@ -377,52 +377,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/btc/files": {
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Upload images for a projecct",
-                "produces": [
-                    "multipart/form-data"
-                ],
-                "tags": [
-                    "Files"
-                ],
-                "summary": "Upload images for a projecct",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "file",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.JsonResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.FileRes"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/btc/receive-address": {
             "post": {
                 "description": "Generate receive wallet address",
@@ -2141,6 +2095,54 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/btc/files": {
+            "post": {
+                "description": "Upload images for a project",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Upload images for a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project's name",
+                        "name": "projectName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileRes"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
