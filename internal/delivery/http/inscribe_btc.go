@@ -11,6 +11,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/btc"
 )
 
 // UserCredits godoc
@@ -47,10 +48,16 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
-	if len(reqUsecase.Name) == 0 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("name is invalid"))
+	if len(reqUsecase.WalletAddress) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is required"))
 		return
 	}
+
+	if ok, _ := btc.ValidateAddress("btc", reqUsecase.WalletAddress); !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is invalid"))
+		return
+	}
+
 	if reqUsecase.FeeRate != 5 && reqUsecase.FeeRate != 10 && reqUsecase.FeeRate != 15 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("fee rate is invalid"))
 		return
