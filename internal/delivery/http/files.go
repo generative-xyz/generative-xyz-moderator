@@ -106,3 +106,35 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
 }
+
+// UserCredits godoc
+// @Summary Upload images for a projecct
+// @Description Upload images for a projecct
+// @Tags Files
+// @Content-Type: multipart/form-data
+// @Security Authorization
+// @Param file formData file true "file"
+// @Produce  multipart/form-data
+// @Success 200 {object} response.JsonResponse{data=response.FileRes}
+// @Router /btc/files [POST]
+func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("httpDelivery.UploadProjectFiles", r)
+	defer h.Tracer.FinishSpan(span, log )
+	file, err := h.Usecase.UploadProjectFiles(span, r)
+	if err != nil {
+		log.Error("h.Usecase.UploadFile", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp := &response.FileRes{}
+	err = response.CopyEntityToRes(resp, file)
+	if err != nil {
+		log.Error("response.CopyEntityToRes", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
