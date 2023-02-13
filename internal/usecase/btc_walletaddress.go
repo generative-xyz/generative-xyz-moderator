@@ -109,15 +109,42 @@ func (u Usecase) CreateOrdBTCWalletAddress(rootSpan opentracing.Span, input stru
 func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
 	span, log := u.StartSpan("CheckbalanceWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	newWallet := entity.BTCWalletAddress{}
+	walletAddress := &entity.BTCWalletAddress{}
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
 	if err != nil {
 		log.Error("u.CreateSegwitBTCWalletAddress.GenerateAddressSegwit", err.Error(), err)
 		return nil, err
 	}
-	newWallet.OrdAddress = addressSegwit //TODO: @thaibao/@tri check this field
-	newWallet.Mnemonic = privKey
-	return &newWallet, nil
+	walletAddress.OrdAddress = addressSegwit //TODO: @thaibao/@tri check this field
+	walletAddress.Mnemonic = privKey
+
+	log.SetData("CreateSegwitBTCWalletAddress.receive", addressSegwit)
+	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
+	if err != nil {
+		log.Error("u.CreateOrdBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("found.Project", p.ID)
+	walletAddress.Amount = p.MintPrice
+	walletAddress.UserAddress = input.WalletAddress
+	walletAddress.OriginUserAddress = input.WalletAddress
+	walletAddress.IsConfirm = false
+	walletAddress.IsMinted = false
+	walletAddress.FileURI = ""       //find files from google store
+	walletAddress.InscriptionID = "" //find files from google store
+	walletAddress.ProjectID = input.ProjectID
+	walletAddress.Balance = "0"
+	walletAddress.BalanceCheckTime = 0
+
+	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, walletAddress.OrdAddress)
+	err = u.Repo.InsertBtcWalletAddress(walletAddress)
+	if err != nil {
+		log.Error("u.CreateOrdBTCWalletAddress.InsertBtcWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	return walletAddress, nil
 }
 
 func (u Usecase) CheckbalanceWalletAddress(rootSpan opentracing.Span, input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
