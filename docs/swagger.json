@@ -2024,6 +2024,40 @@
                 }
             }
         },
+        "/project/btc": {
+            "post": {
+                "description": "Create btc project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create btc project",
+                "parameters": [
+                    {
+                        "description": "Create profile request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBTCProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/minted-out": {
             "get": {
                 "description": "get minted out projects",
@@ -2684,6 +2718,89 @@
                 }
             }
         },
+        "request.CreateBTCProjectReq": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "creatorAddrr": {
+                    "type": "string"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limitSupply": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "socialDiscord": {
+                    "type": "string"
+                },
+                "socialInstagram": {
+                    "type": "string"
+                },
+                "socialMedium": {
+                    "type": "string"
+                },
+                "socialTwitter": {
+                    "type": "string"
+                },
+                "socialWeb": {
+                    "type": "string"
+                },
+                "styles": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thirdPartyScripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "tokenDescription": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateBtcWalletAddressReq": {
             "type": "object",
             "properties": {
@@ -3120,6 +3237,9 @@
                     "type": "string"
                 },
                 "mintPriceAddr": {
+                    "type": "string"
+                },
+                "mintPriceEth": {
                     "type": "string"
                 },
                 "mintedTime": {
