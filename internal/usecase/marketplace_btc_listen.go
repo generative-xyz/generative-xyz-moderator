@@ -310,6 +310,10 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
+	serviceFeeAddress := "bc1qfz4pc72mrtjq7zln3lww0y3d3hvkdn06ddvv2j"
+	if u.Config.MarketBTCServiceFeeAddress != "" {
+		serviceFeeAddress = u.Config.MarketBTCServiceFeeAddress
+	}
 
 	for _, item := range listTosendBtc {
 		if item.Status == entity.StatusBuy_SentNFT {
@@ -336,36 +340,69 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			serviceFee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
 
 			royaltyFee := int(0)
-
+			artistAddress := ""
 			tokenUri, err := u.GetTokenByTokenID(span, item.InscriptionID, 0)
 			if err == nil {
 				projectDetail, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
 					ContractAddress: tokenUri.ContractAddress,
 					ProjectID:       tokenUri.ProjectID,
 				})
-				if err != nil {
-					log.Error("u.GetProjectDetail", err.Error(), err)
+				if err == nil {
+					if projectDetail.Royalty > 0 {
+						creator, err := u.GetUserProfileByWalletAddress(span, projectDetail.CreatorAddrr)
+						if err == nil {
+							if creator.WalletAddressBTC != "" {
+								royaltyFeePercent := float64(projectDetail.Royalty) / 10000
+								royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
+								artistAddress = creator.WalletAddressBTC
+							}
+						}
+					}
 				}
-				royaltyFeePercent := float64(projectDetail.Royalty) / 10000
-				royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
-				royaltyFee = 0 //TODO: lam
 			}
 
 			amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
 			fmt.Println("send btc from", item.SegwitAddress, "to: ", nftListing.SellerAddress)
 
-			// transfer now:
-			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
+			destinations := make(map[string]int)
+
+			destinations[nftListing.SellerAddress] = amountWithChargee
+			if artistAddress != "" {
+				destinations[artistAddress] = royaltyFee
+			}
+
+			destinations[serviceFeeAddress] = serviceFee
+
+			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
+			if err != nil {
+				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error())
+				continue
+			}
+			amountWithChargee = amountWithChargee - int(txFee.Int64())
+			destinations[nftListing.SellerAddress] = amountWithChargee
+
+			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddressMultiAddress(
 				item.SegwitKey,
 				item.SegwitAddress,
-				nftListing.SellerAddress,
-				amountWithChargee,
+				destinations,
 				btc.PreferenceMedium,
 			)
 			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
+				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error())
 				continue
 			}
+			// // transfer now:
+			// txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
+			// 	item.SegwitKey,
+			// 	item.SegwitAddress,
+			// 	nftListing.SellerAddress,
+			// 	amountWithChargee,
+			// 	btc.PreferenceMedium,
+			// )
+			// if err != nil {
+			// 	go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
+			// 	continue
+			// }
 			item.FeeChargeBTCBuyer = serviceFee
 			item.RoyaltyChargeBTCBuyer = royaltyFee
 			item.AmountBTCSentSeller = amountWithChargee

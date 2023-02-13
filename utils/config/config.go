@@ -42,6 +42,8 @@ type Config struct {
 
 	BlockcypherAPI   string
 	BlockcypherToken string
+
+	MarketBTCServiceFeeAddress string
 }
 
 type MQTTConfig struct {
@@ -52,10 +54,10 @@ type MQTTConfig struct {
 }
 
 type CronTabConfig struct {
-	Enabled      bool
-	BTCEnabled   bool
-	MarketPlaceEnabled   bool
-	BTCV2Enabled bool
+	Enabled            bool
+	BTCEnabled         bool
+	MarketPlaceEnabled bool
+	BTCV2Enabled       bool
 }
 
 type MoralisConfig struct {
@@ -262,9 +264,9 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:      crontabStart,
-			BTCEnabled:   crontabBtcStart,
-			BTCV2Enabled: crontabBtcV2Start,
+			Enabled:            crontabStart,
+			BTCEnabled:         crontabBtcStart,
+			BTCV2Enabled:       crontabBtcV2Start,
 			MarketPlaceEnabled: crontabMKStart,
 		},
 		GENToken: GENToken{
@@ -277,6 +279,8 @@ func NewConfig() (*Config, error) {
 
 		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
+
+		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")
