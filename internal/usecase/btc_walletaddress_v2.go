@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -83,10 +84,20 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 			"receive",
 		},
 	})
+
 	if err != nil {
 		log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
 		return nil, err
 	}
+
+	// create segwit address
+	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
+	if err != nil {
+		log.Error("u.CreateSegwitBTCWalletAddress.GenerateAddressSegwit", err.Error(), err)
+		return nil, err
+	}
+	walletAddress.Mnemonic = privKey
+	walletAddress.SegwitAddress = addressSegwit
 
 	log.SetData("CreateBTCWalletAddressV2.receive", resp)
 	mintFee := calculateMintPrice(input)
