@@ -156,12 +156,12 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 	_, bs, err := u.buildBTCClient()
 
 	if err != nil {
-		go u.trackHistory("", "JobInscribeWaitingBalance", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error())
+		go u.trackInscribeHistory("", "JobInscribeWaitingBalance", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error())
 		return err
 	}
 	listPending, _ := u.Repo.ListBTCInscribePending()
 	if len(listPending) == 0 {
-		// go u.trackHistory("", "JobInscribeWaitingBalance", "", "", "ListBTCInscribePending", "[]")
+		// go u.trackInscribeHistory("", "JobInscribeWaitingBalance", "", "", "ListBTCInscribePending", "[]")
 		return nil
 	}
 
@@ -174,17 +174,17 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 
 		if err != nil {
 			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
-			go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance - with err", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance - with err", err.Error())
 			continue
 		}
 		if balance == nil {
 			err = errors.New("balance is nil")
-			go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", err.Error())
 			continue
 		}
 
 		if balance.Uint64() == 0 {
-			go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", "0")
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", "0")
 			continue
 		}
 
@@ -193,13 +193,13 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 
 		if amount.Uint64() == 0 {
 			err := errors.New("balance is zero")
-			go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
 			continue
 		}
 
 		if r := balance.Cmp(amount); r == -1 {
 			err := errors.New("Not enough amount")
-			go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Receive balance err", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Receive balance err", err.Error())
 
 			item.Status = entity.StatusInscribe_NotEnoughBalance
 			u.Repo.UpdateBtcInscribe(&item)
@@ -215,7 +215,7 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		go u.trackHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
 		log.SetData(fmt.Sprintf("JobInscribeWaitingBalance.CheckReceiveBTC.%s", item.SegwitAddress), item)
 		u.Notify(rootSpan, "JobInscribeWaitingBalance", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.Status, item.InscriptionID))
 
@@ -233,13 +233,13 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet(rootSpan opentracing.Span) error 
 	_, bs, err := u.buildBTCClient()
 
 	if err != nil {
-		go u.trackHistory("", "JobInscribeSendBTCToOrdWallet", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error())
+		go u.trackInscribeHistory("", "JobInscribeSendBTCToOrdWallet", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error())
 		return err
 	}
 
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_ReceivedFund})
 	if len(listTosendBtc) == 0 {
-		// go u.trackHistory("", "JobInscribeSendBTCToOrdWallet", "", "", "ListBTCInscribeByStatus", "[]")
+		// go u.trackInscribeHistory("", "JobInscribeSendBTCToOrdWallet", "", "", "ListBTCInscribeByStatus", "[]")
 		return nil
 	}
 
@@ -258,7 +258,7 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet(rootSpan opentracing.Span) error 
 				btc.PreferenceMedium,
 			)
 			if err != nil {
-				go u.trackHistory(item.ID.String(), "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
+				go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
 				continue
 			}
 
@@ -319,7 +319,7 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 		txResponse, err := btcClient.GetTransaction(txHash)
 
 		if err == nil {
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
 				// send btc ok now:
 				item.Status = statusSuccess
@@ -330,18 +330,18 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 			}
 		} else {
 			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
-			go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
 
 			// check with api:
 			txInfo, err := bs.CheckTx(txHashDb)
 			if err != nil {
 				fmt.Printf("Could not bs - with err: %v", err)
-				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
+				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
 			if txInfo.Confirmations >= 1 {
-				go u.trackHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
+				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
 				_, err = u.Repo.UpdateBtcInscribe(&item)
@@ -363,7 +363,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd})
 	if len(listTosendBtc) == 0 {
-		// go u.trackHistory("", "ListBTCInscribeByStatus", "", "", "ListBTCInscribeByStatus", "[]")
+		// go u.trackInscribeHistory("", "ListBTCInscribeByStatus", "", "", "ListBTCInscribeByStatus", "[]")
 		return nil
 	}
 
@@ -381,7 +381,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", item.OrdAddress, now))
 		if err != nil {
 			log.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
-			go u.trackHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
 			continue
 		}
 
@@ -398,7 +398,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 
 		if err != nil {
 			log.Error("OrdService.Mint", err.Error(), err)
-			go u.trackHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "OrdService.Mint", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "OrdService.Mint", err.Error())
 			continue
 		}
 		// if not err => update status ok now:
@@ -411,7 +411,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
-			go u.trackHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
 			continue
 		}
 
@@ -425,7 +425,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		err = json.Unmarshal([]byte(jsonStr), btcMintResp)
 		if err != nil {
 			log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
-			go u.trackHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
 			continue
 		}
 
@@ -458,11 +458,11 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		// check nft in master wallet or not:
 		listNFTsRep, err := u.GetNftsOwnerOf(span, item.UserAddress)
 		if err != nil {
-			go u.trackHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error())
 			continue
 		}
 
-		go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
+		go u.trackInscribeHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
 
 		// parse nft data:
 		var resp []struct {
@@ -473,7 +473,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 
 		err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
 		if err != nil {
-			go u.trackHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error())
 			continue
 		}
 		owner := false
@@ -484,7 +484,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 			}
 
 		}
-		go u.trackHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner)
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner)
 		if !owner {
 			continue
 		}
@@ -492,7 +492,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		// transfer now:
 		sentTokenResp, err := u.SendTokenByWallet(item.OrdAddress, item.InscriptionID, item.UserAddress, int(item.FeeRate))
 
-		go u.trackHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
 		if err != nil {
 			log.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
@@ -511,7 +511,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err.Error())
 			log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
-			go u.trackHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
 			continue
 		}
 
@@ -526,7 +526,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
 			log.Error("UpdateBtcInscribe.UpdateBtcInscribe", errPack.Error(), errPack)
-			go u.trackHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "u.UpdateBtcInscribe.UpdateBTCNFTBuyOrder", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "u.UpdateBtcInscribe.UpdateBTCNFTBuyOrder", err.Error())
 		}
 		// save log:
 		log.SetData(fmt.Sprintf("UpdateBtcInscribe.execResp.%s", item.OrdAddress), sentTokenResp)
