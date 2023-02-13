@@ -32,54 +32,78 @@ func (h ScronBTCHandler) StartServer() {
 
 	var wg sync.WaitGroup
 
-	for {
-		wg.Add(4)
+	go func() {
 
-		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron")
+		span := h.Tracer.StartSpan("ScronBTCHandler.CheckBalance")
+		defer span.Finish()
+
+
+		log := tracer.NewTraceLog()
+		defer log.ToSpan(span)
+
+		//Waiting for balance + Mint
+		for {
+			wg.Add(2) 
+			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForBalancing")
+				defer wg.Done()
+				defer span.Finish()
+	
+				h.Usecase.WaitingForBalancing(span) // BTC
+			}(span, &wg)
+	
+			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHBalancing")
+				defer wg.Done()
+				defer span.Finish()
+	
+				h.Usecase.WaitingForETHBalancing(span) // ETH
+			}(span, &wg)
+
+			log.SetData("wait.CheckBlance", "wait")
+			wg.Wait()
+			time.Sleep(5 * time.Minute)
+		}	
+		
+	
+		
+	}()
+	
+	go func() {
+
+		span := h.Tracer.StartSpan("ScronBTCHandler.SendNft")
 		defer span.Finish()
 
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForBalancing")
-			defer wg.Done()
-			defer span.Finish()
+		//Waiting for Send
+		for {
+			wg.Add(2) 
+			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
 
-			h.Usecase.WaitingForBalancing(span) // BTC
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHBalancing")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.WaitingForETHBalancing(span) // ETH
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForMinted")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.WaitingForMinted(span)
-
-		}(span, &wg)
-
-		//TODO mint with ETH payment?
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHMinted")
-			defer wg.Done()
-			defer span.Finish()
-
-			h.Usecase.WaitingForETHMinted(span)
-
-		}(span, &wg)
-
+				span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForMinted")
+				defer wg.Done()
+				defer span.Finish()
 	
-		log.SetData("wait", "wait")
-		wg.Wait()
-		time.Sleep(1 * time.Minute)
-	}
+				h.Usecase.WaitingForMinted(span)
+	
+			}(span, &wg)
+	
+			//TODO mint with ETH payment?
+			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHMinted")
+				defer wg.Done()
+				defer span.Finish()
+	
+				h.Usecase.WaitingForETHMinted(span)
+	
+			}(span, &wg)
+	
+
+			log.SetData("wait.SendNft", "wait")
+			wg.Wait()
+			time.Sleep(1 * time.Minute)
+		}
+	}()
 }

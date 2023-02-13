@@ -351,7 +351,7 @@ func (r Repository) GetMaxBtcProjectID() (int64, error)  {
 func (r Repository)SortProjects () []Sort {
 	s := []Sort{}
 	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })
-	s = append(s, Sort{SortBy:"created_at", Sort: entity.SORT_DESC })
+	s = append(s, Sort{SortBy:"index", Sort: entity.SORT_DESC })
 	return s
 }
 
@@ -383,6 +383,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"creatorProfile", 1},
 		{"images", 1},
 		{"mintedImages", 1},
+		{"whiteListEthContracts", 1},
 	}
 	return f
 }
