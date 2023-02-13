@@ -36,7 +36,7 @@ func (r Repository) InsertInscribeBTC(data *entity.InscribeBTC) error {
 	return nil
 }
 
-func (r Repository) ListInscribeBTC(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error) {
+func (r Repository) ListInscribeBTC(filter entity.FilterInscribeBT) (*entity.Pagination, error) {
 	confs := []entity.InscribeBTC{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
