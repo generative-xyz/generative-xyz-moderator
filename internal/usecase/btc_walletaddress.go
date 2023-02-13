@@ -280,7 +280,7 @@ func (u Usecase) UpdateBtcMintedStatus(rootSpan opentracing.Span, btcWallet *ent
 	return btcWallet, nil
 }
 
-func (u Usecase) GetBalanceSegwitOrdBTCWallet(rootSpan opentracing.Span, userAddress string) (string, error) {
+func (u Usecase) GetBalanceSegwitBTCWallet(rootSpan opentracing.Span, userAddress string) (string, error) {
 	span, log := u.StartSpan("CheckBalance", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -322,7 +322,7 @@ func (u Usecase) CheckBalance(rootSpan opentracing.Span, btc entity.BTCWalletAdd
 	// check ord first
 	balance, err := u.GetBalanceOrdBTCWallet(rootSpan, btc.UserAddress)
 	if err != nil || balance == "" {
-		balance, err = u.GetBalanceSegwitOrdBTCWallet(rootSpan, btc.UserAddress)
+		balance, err = u.GetBalanceSegwitBTCWallet(rootSpan, btc.UserAddress)
 		if err != nil || balance == "" {
 			return nil, err
 		}
