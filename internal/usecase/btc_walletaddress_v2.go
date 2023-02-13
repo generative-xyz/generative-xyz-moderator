@@ -96,7 +96,7 @@ func (u Usecase) CreateBTCWalletAddressV2(rootSpan opentracing.Span, input struc
 		log.Error("u.CreateSegwitBTCWalletAddress.GenerateAddressSegwit", err.Error(), err)
 		return nil, err
 	}
-	walletAddress.MnemonicSegwit = privKey
+	walletAddress.SegwitKey = privKey
 	walletAddress.SegwitAddress = addressSegwit
 
 	log.SetData("CreateBTCWalletAddressV2.receive", resp)
