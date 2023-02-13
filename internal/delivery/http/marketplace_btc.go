@@ -216,7 +216,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	nftInfo := response.MarketplaceNFTDetail{
+	nftInfo := structure.MarketplaceNFTDetail{
 		InscriptionID: nft.InscriptionID,
 		Name:          nft.Name,
 		Description:   nft.Description,
