@@ -162,6 +162,9 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 			pe.Images = images	
 		 }
+	}else{
+		animationURL := req.AnimationURL
+		_ = animationURL
 	}
 
 	pe.ProcessingImages = []string{}
