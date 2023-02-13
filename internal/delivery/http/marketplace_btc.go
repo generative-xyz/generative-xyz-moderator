@@ -348,7 +348,7 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("BtcChecktListNft", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	result, _ := h.Usecase.Repo.ListWalletAddressToClaimBTC()
+	result := h.Usecase.JobInscribeSendBTCToOrdWallet(span)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 

@@ -79,7 +79,7 @@ type InscribeBTCLogs struct {
 }
 
 func (u InscribeBTCLogs) TableName() string {
-	return utils.COLLECTION_MARKETPLACE_BTC_LOGS
+	return "inscribe_btc_logs"
 }
 
 func (u InscribeBTCLogs) ToBson() (*bson.D, error) {
