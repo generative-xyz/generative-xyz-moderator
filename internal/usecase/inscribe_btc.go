@@ -548,7 +548,7 @@ func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			fmt.Sprint("%s", rate),
+			fmt.Sprintf("%d", rate),
 		}}
 
 	resp, err := u.OrdService.Exec(sendTokenReq)
