@@ -480,7 +480,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		}
 
 		// transfer now:
-		sentTokenResp, err := u.SendTokenByWallet(item.OrdAddress, item.InscriptionID, item.UserAddress)
+		sentTokenResp, err := u.SendTokenByWallet(item.OrdAddress, item.InscriptionID, item.UserAddress, int(item.FeeRate))
 
 		go u.trackHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
@@ -525,7 +525,7 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName string) (*ord_service.ExecRespose, error) {
+func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName string, rate int) (*ord_service.ExecRespose, error) {
 
 	sendTokenReq := ord_service.ExecRequest{
 		Args: []string{
@@ -536,7 +536,7 @@ func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			"15",
+			fmt.Sprint("%s", rate),
 		}}
 
 	resp, err := u.OrdService.Exec(sendTokenReq)
