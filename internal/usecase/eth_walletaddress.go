@@ -400,12 +400,15 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	}(span, &ethEntity, balance)
 
 	// check total amount = received amount?
-	amount, _ := big.NewInt(0).SetString(ethEntity.Amount, 10)
+	amount, ok := big.NewInt(0).SetString(ethEntity.Amount, 10)
+	if !ok {
+		err := errors.New("ethEntity.Amount.OK.False")
+		return nil, err
+	}
 
 	if r := balance.Cmp(amount); r == -1 {
 		err := errors.New("Not enough amount")
 		return nil, err
-
 	}
 
 	log.SetData("userWallet", ethEntity.UserAddress)
