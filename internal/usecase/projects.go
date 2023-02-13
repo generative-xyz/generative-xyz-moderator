@@ -70,6 +70,14 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenIDInt =  maxID
 	pe.TokenID =  fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+
+	nftTokenURI := make(map[string]interface{})
+	nftTokenURI["name"] = pe.Name
+	nftTokenURI["description"] = pe.Description
+	nftTokenURI["image"] = pe.Thumbnail
+	nftTokenURI["animation_url"] = ""
+	nftTokenURI["attributes"] = []string{}
+	
 	
 	zipLink := req.ZipLink
 	spew.Dump(zipLink)
@@ -110,9 +118,9 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 				size := file.UncompressedSize64 / 1024
 				if size > 100 {
-					err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
-					log.Error("maxFileSize",err.Error(), err)
-					return nil, err
+					// err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
+					// log.Error("maxFileSize",err.Error(), err)
+					// return nil, err
 				}
 
 				fC, err :=  helpers.ReadFile(file)
@@ -164,9 +172,17 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		 }
 	}else{
 		animationURL := req.AnimationURL
-		_ = animationURL
+		nftTokenURI["animation_url"] = animationURL
 	}
 
+	bytes, err := json.Marshal(nftTokenURI)
+	if err != nil {
+		log.Error("json.Marshal.nftTokenURI", err.Error(), err)
+		return nil, err
+	}
+
+	nftToken := helpers.Base64Encode(bytes)
+	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
 	pe.ProcessingImages = []string{}
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
