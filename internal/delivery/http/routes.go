@@ -128,8 +128,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	btc.HandleFunc("/receive-address", h.btcGetReceiveWalletAddress).Methods("POST")
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
-	btcV2 := api.PathPrefix("/btc-v2").Subrouter()
-	btcV2.HandleFunc("/receive-address", h.btcGetReceiveWalletAddressV2).Methods("POST")
+	// btcV2 := api.PathPrefix("/btc-v2").Subrouter()
+	// btcV2.HandleFunc("/receive-address", h.btcGetReceiveWalletAddressV2).Methods("POST")
+
+	btcV2 := api.PathPrefix("/inscribe").Subrouter()
+	btcV2.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
 
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
