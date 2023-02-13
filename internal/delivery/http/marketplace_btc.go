@@ -111,6 +111,15 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE/100),
 	}
 
+	nft, err := h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
+	if err == nil {
+		if nft != nil {
+			err := fmt.Errorf("this inscription is already listed")
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	}
+
 	listing, err := h.Usecase.BTCMarketplaceListingNFT(span, reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
