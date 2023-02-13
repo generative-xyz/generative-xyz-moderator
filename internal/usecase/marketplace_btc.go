@@ -86,36 +86,36 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 	var nftList []entity.MarketplaceBTCListingFilterPipeline
 	var err error
 
-	if buyableOnly {
-		nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		nftList, err = u.Repo.RetrieveBTCNFTListings(limit, offset)
-		if err != nil {
-			return nil, err
-		}
+	// if buyableOnly {
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
+	if err != nil {
+		return nil, err
 	}
+	// } else {
+	// 	nftList, err = u.Repo.RetrieveBTCNFTListings(limit, offset)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	for _, listing := range nftList {
-		if listing.IsSold {
-			if !buyableOnly {
-				nftInfo := structure.MarketplaceNFTDetail{
-					InscriptionID: listing.InscriptionID,
-					Name:          listing.Name,
-					Description:   listing.Description,
-					Price:         listing.Price,
-					OrderID:       listing.UUID,
-					IsConfirmed:   listing.IsConfirm,
-					Buyable:       false,
-					IsCompleted:   listing.IsSold,
-					CreatedAt:     listing.CreatedAt,
-				}
-				result = append(result, nftInfo)
-			}
-			continue
-		}
+		// if listing.IsSold {
+		// 	if !buyableOnly {
+		// 		nftInfo := structure.MarketplaceNFTDetail{
+		// 			InscriptionID: listing.InscriptionID,
+		// 			Name:          listing.Name,
+		// 			Description:   listing.Description,
+		// 			Price:         listing.Price,
+		// 			OrderID:       listing.UUID,
+		// 			IsConfirmed:   listing.IsConfirm,
+		// 			Buyable:       false,
+		// 			IsCompleted:   listing.IsSold,
+		// 			CreatedAt:     listing.CreatedAt,
+		// 		}
+		// 		result = append(result, nftInfo)
+		// 	}
+		// 	continue
+		// }
 		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
 		if err != nil {
 			if !buyableOnly {
