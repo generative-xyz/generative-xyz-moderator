@@ -59,6 +59,8 @@ definitions:
         type: string
       tokenDescription:
         type: string
+      zipLink:
+        type: string
     type: object
   request.CreateBtcWalletAddressReq:
     properties:
@@ -385,6 +387,10 @@ definitions:
       traitStat:
         items:
           $ref: '#/definitions/response.TraitStat'
+        type: array
+      whiteListEthContracts:
+        items:
+          type: string
         type: array
     type: object
   response.ProjectStatResp:

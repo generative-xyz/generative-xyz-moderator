@@ -21,6 +21,7 @@ type VerifyResponse struct {
 type ProfileResponse struct {
 	BaseResponse
 	WalletAddress string `json:"walletAddress"`
+	WalletAddressBTC   string        `json:"wallet_address_btc,omitempty"`
 	DisplayName string `json:"displayName"`
 	Bio string `json:"bio"`
 	Avatar string `json:"avatar"`

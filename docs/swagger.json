@@ -2880,6 +2880,9 @@
                 },
                 "tokenDescription": {
                     "type": "string"
+                },
+                "zipLink": {
+                    "type": "string"
                 }
             }
         },
@@ -3380,6 +3383,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/response.TraitStat"
+                    }
+                },
+                "whiteListEthContracts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }
