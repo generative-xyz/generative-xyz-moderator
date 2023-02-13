@@ -42,9 +42,9 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 		return
 	}
 
-	btcWallet, err := h.Usecase.CreateOrdBTCWalletAddress(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CreateSegwitBTCWalletAddress(span, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
+		log.Error("h.Usecase.CreateSegwitBTCWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
