@@ -6,5 +6,5 @@ type CreateEthWalletAddressReq struct {
 }
 
 type CreateWhitelistedEthWalletAddressReq struct {
-	WalletAddress string `json:"walletAddress"`
+	ProjectID string `json:"projectID"`
 }

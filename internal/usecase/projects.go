@@ -1,14 +1,18 @@
 package usecase
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -21,6 +25,11 @@ import (
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/helpers"
 )
+
+type uploadFileChan struct {
+	FileURL *string
+	Err error
+}
 
 func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("CreateProject", rootSpan)
@@ -61,13 +70,106 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenIDInt =  maxID
 	pe.TokenID =  fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	
+	zipLink := req.ZipLink
+	spew.Dump(zipLink)
+	images := []string{}
+	if zipLink != nil {
+		 if *zipLink != "" {
+			resp, err := http.Get(*zipLink)
+			if err != nil {
+				log.Error("http.Get", err.Error(), err)
+				return nil, err
+			}
+			defer resp.Body.Close()
+
+			fileName := fmt.Sprintf("%s.zip", helpers.GenerateSlug(pe.Name))
+
+			out, err := os.Create(fileName)
+			if err != nil {
+				log.Error("os.Create", err.Error(), err)
+				return nil, err
+			}
+			defer out.Close()
+			_, err = io.Copy(out, resp.Body)
+			if err != nil {
+				log.Error("os.Create", err.Error(), err)
+				return nil, err
+			}
+
+			zf, err := zip.OpenReader(fileName)
+			if err != nil {
+				log.Error("zip.OpenReader", err.Error(), err)
+				return nil, err
+			}
+			
+			uploadChan := make(chan uploadFileChan, len(zf.File))
+			for _, file := range zf.File {
+				log.SetData("fileName", file.Name)
+				log.SetData("UncompressedSize64", file.UncompressedSize64)
+
+				size := file.UncompressedSize64 / 1024
+				if size > 100 {
+					err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
+					log.Error("maxFileSize",err.Error(), err)
+					return nil, err
+				}
+
+				fC, err :=  helpers.ReadFile(file)
+				if err != nil {
+					log.Error("zip.OpenReader", err.Error(), err)
+					return nil, err
+				}
+
+				
+			
+				go func(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan) {
+					span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
+					defer u.Tracer.FinishSpan(span, log)
+					var err error
+					var uploadedUrl *string
+
+					defer func  ()  {
+						uploadChan <- uploadFileChan{
+							FileURL: uploadedUrl,
+							Err: err,
+						}
+					}()
+
+					base64Data := helpers.Base64Encode(fc)
+					uploadFileName := fmt.Sprintf("%s/%s", helpers.GenerateSlug(pe.Name), file.Name)
+					uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
+					if err != nil {
+						log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+						return
+					}
+
+					cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+					uploadedUrl = &cdnURL
+
+				}(span, fC, uploadChan)
+			}
+
+			for i := 0 ;i < len( zf.File) ; i++ {
+				dataFromChan := <- uploadChan
+				if dataFromChan.Err != nil {
+					log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
+					return nil, dataFromChan.Err
+				}
+
+				images = append(images, *dataFromChan.FileURL)
+			}
+
+			pe.Images = images	
+		 }
+	}
+
+	pe.ProcessingImages = []string{}
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
 	}
-
-	
 
 	log.SetData("pe", pe)
 	return pe, nil

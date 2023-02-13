@@ -69,7 +69,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 // @Accept  json
 // @Produce  json
 // @Security Authorization
-// @Param request body request.CreateEthWalletAddressReq true "Create a eth wallet address request"
+// @Param request body request.CreateWhitelistedEthWalletAddressReq true "Create a eth wallet address request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/receive-address/whitelist [POST]
 func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWriter, r *http.Request) {
