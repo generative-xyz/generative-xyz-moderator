@@ -346,7 +346,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 				if err != nil {
 					log.Error("u.GetProjectDetail", err.Error(), err)
 				}
-				royaltyFeePercent := float64(projectDetail.Royalty / 10000)
+				royaltyFeePercent := float64(projectDetail.Royalty) / 10000
 				royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
 				royaltyFee = 0 //TODO: lam
 			}
