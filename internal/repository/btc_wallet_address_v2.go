@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -58,16 +60,16 @@ func (r Repository) InsertBtcWalletAddressV2(data *entity.BTCWalletAddressV2) er
 	return nil
 }
 
-func (r Repository) ListBtcWalletAddressV2(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error)  {
+func (r Repository) ListBtcWalletAddressV2(filter entity.FilterBTCWalletAddress) (*entity.Pagination, error) {
 	confs := []entity.BTCWalletAddressV2{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(entity.BTCWalletAddressV2{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	p, err := r.Paginate(entity.BTCWalletAddressV2{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
@@ -85,14 +87,14 @@ func (r Repository) UpdateBtcWalletAddressByOrdAddrV2(ordAddress string, conf *e
 	return result, nil
 }
 
-func (r Repository) ListProcessingWalletAddressV2() ([]entity.BTCWalletAddressV2, error)  {
+func (r Repository) ListProcessingWalletAddressV2() ([]entity.BTCWalletAddressV2, error) {
 	confs := []entity.BTCWalletAddressV2{}
 	f := bson.M{}
 	f["$or"] = []interface{}{
-		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}} ,
-		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}} ,
+		bson.M{"isMinted": bson.M{"$not": bson.M{"$eq": true}}},
+		bson.M{"isConfirm": bson.M{"$not": bson.M{"$eq": true}}},
 	}
-	
+
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS_V2).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -106,14 +108,14 @@ func (r Repository) ListProcessingWalletAddressV2() ([]entity.BTCWalletAddressV2
 	return confs, nil
 }
 
-func (r Repository) ListBTCAddressV2() ([]entity.BTCWalletAddressV2, error)  {
+func (r Repository) ListBTCAddressV2() ([]entity.BTCWalletAddressV2, error) {
 	confs := []entity.BTCWalletAddressV2{}
-	
+
 	f := bson.M{}
 	f["mintResponse"] = bson.M{"$not": bson.M{"$eq": nil}}
 	f["mintResponse.issent"] = false
 	f["mintResponse.inscription"] = bson.M{"$not": bson.M{"$eq": ""}}
-	
+
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS_V2).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -137,10 +139,66 @@ func (r Repository) ListBTCAddressV2() ([]entity.BTCWalletAddressV2, error)  {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-	
+
 // 	resp.Result = confs
 // 	resp.Page = p.Pagination.Page
 // 	resp.Total = p.Pagination.Total
 // 	resp.PageSize = filter.Limit
 // 	return resp, nil
 // }
+
+// new:
+func (r Repository) ListBTCInscribePending() ([]entity.BTCWalletAddressV2, error) {
+	resp := []entity.BTCWalletAddressV2{}
+	filter := bson.M{
+		"status":     entity.StatusInscribe_Pending,
+		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS_V2).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+func (r Repository) ListBTCInscribeByStatus(statuses []entity.StatusInscribe) ([]entity.BTCWalletAddressV2, error) {
+	resp := []entity.BTCWalletAddressV2{}
+	filter := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS_V2).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) UpdateBtcInscribe(model *entity.BTCWalletAddressV2) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+	result, err := r.UpdateOne(model.TableName(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r Repository) CreateInscribeBTCLog(logs *entity.InscribeBTCLogs) error {
+	err := r.InsertOne(logs.TableName(), logs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
