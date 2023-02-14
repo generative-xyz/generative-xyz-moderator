@@ -23,6 +23,7 @@ type ProjectResp struct {
 	MintPriceAddr          string           `json:"mintPriceAddr"`
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`
+	CreatorAddrrBTC   string        		 `json:"creatorAddrrBTC"`
 	License                string           `json:"license"`
 	Desc                   string           `json:"desc"`
 	Image                  string           `json:"image"`
@@ -48,6 +49,7 @@ type ProjectResp struct {
 	OpenMintUnixTimestamp  int              `json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
 	WhiteListEthContracts []string              `json:"whiteListEthContracts"`
+	IsHidden  bool              `json:"isHidden"`
 }
 
 type ProjectStatResp struct {

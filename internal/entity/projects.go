@@ -47,7 +47,7 @@ type Projects struct {
 	Name                  string             `bson:"name" json:"name"`
 	CreatorName           string             `bson:"creatorName" json:"creatorName"`
 	CreatorAddrr          string             `bson:"creatorAddress" json:"creatorAddrr"`
-	CreatorAddrrBTC   string        		 `json:"creatorAddrrBTC" json:"creatorAddrr"`
+	CreatorAddrrBTC   string        		 `bson:"creatorAddrrBTC" json:"creatorAddrrBTC"`
 	Description           string             `bson:"description" json:"description"`
 	OpenMintUnixTimestamp  int                `bson:"openMintUnixTimestamp" json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int                `bson:"closeMintUnixTimestamp" json:"closeMintUnixTimestamp"`
