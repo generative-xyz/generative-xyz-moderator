@@ -26,6 +26,34 @@ func (r Repository) FindEthWalletAddress(key string) (*entity.ETHWalletAddress, 
 	return resp, nil
 }
 
+func (r Repository) FindEthWalletAddressByUserAddress(userAddress string) (*entity.ETHWalletAddress, error) {
+	resp := &entity.ETHWalletAddress{}
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"user_address", userAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindDelegateEthWalletAddressByUserAddress(userAddress string) (*entity.ETHWalletAddress, error) {
+	resp := &entity.ETHWalletAddress{}
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"user_address", userAddress}, {"isUseDelegate", true}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindEthWalletAddressByOrd(ordAddress string) (*entity.ETHWalletAddress, error) {
 	resp := &entity.ETHWalletAddress{}
 	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"ordAddress", ordAddress}})
