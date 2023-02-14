@@ -51,7 +51,7 @@ func (h ScronBTCHandler) StartServer() {
 			h.Usecase.JobInscribeCheckTxSend(span)
 
 		}(span, &wg)
-		
+
 		// job check balance:
 		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
 
@@ -98,6 +98,6 @@ func (h ScronBTCHandler) StartServer() {
 
 		log.SetData("wait", "wait")
 		wg.Wait()
-		time.Sleep(3 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }

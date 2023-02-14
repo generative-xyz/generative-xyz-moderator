@@ -128,7 +128,7 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	walletAddress.FileURI = input.File
 	walletAddress.InscriptionID = ""
 	walletAddress.FeeRate = input.FeeRate
-	walletAddress.ExpiredAt = time.Now().Add(time.Hour * 2)
+	walletAddress.ExpiredAt = time.Now().Add(time.Hour * 1)
 
 	log.SetTag(userWallet, walletAddress.OrdAddress)
 
