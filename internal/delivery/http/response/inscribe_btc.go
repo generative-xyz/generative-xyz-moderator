@@ -14,3 +14,23 @@ type InscribeBtcResp struct {
 	Balance       string `json:"balance"`       // balance after check
 	TimeoutAt     string `json:"timeout_at"`
 }
+
+type InscribeInfoResp struct {
+	BaseResponse
+	Address            string `json:"address"`
+	Index              string `json:"index"`
+	OutputValue        string `json:"outputValue"`
+	Sat                string `json:"sat"`
+	Preview            string `json:"preview"`
+	Content            string `json:"content"`
+	ContentLength      string `json:"contentLength"`
+	ContentType        string `json:"contentType"`
+	Timestamp          string `json:"timestamp"`
+	GenesisHeight      string `json:"genesisHeight"`
+	GenesisFee         string `json:"genesisFee"`
+	GenesisTransaction string `json:"genesisTransaction"`
+	Location           string `json:"location"`
+	Output             string `json:"output"`
+	Offset             string `json:"offset"`
+}
+
