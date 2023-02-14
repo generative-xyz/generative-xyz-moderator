@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -42,7 +44,11 @@ func (r Repository) FindEthWalletAddressByUserAddress(userAddress string) (*enti
 
 func (r Repository) FindDelegateEthWalletAddressByUserAddress(userAddress string) (*entity.ETHWalletAddress, error) {
 	resp := &entity.ETHWalletAddress{}
-	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"delegatedAddress", true}})
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"delegatedAddress", bson.M{"$regex": primitive.Regex{
+		//Pattern:  *filter.WalletAddress,
+		Pattern: fmt.Sprintf(`^%s$`, userAddress),
+		Options: "i",
+	}}}})
 	if err != nil {
 		return nil, err
 	}
