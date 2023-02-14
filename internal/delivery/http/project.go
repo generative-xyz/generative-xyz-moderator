@@ -329,6 +329,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CompleteTime = input.CompleteTime
 	resp.BlockNumberMinted = input.BlockNumberMinted
 	resp.MintedTime = input.MintedTime
+	resp.IsFullChain = input.IsFullChain
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount: input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
