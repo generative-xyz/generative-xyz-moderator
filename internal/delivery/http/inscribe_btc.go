@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -113,7 +114,7 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 	}
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
-		limit = 1
+		page = 1
 	}
 
 	result, err := h.Usecase.ListInscribeBTC(span, int64(limit), int64(page))
@@ -125,4 +126,24 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+// detail:
+func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcDetailInscribeBTC", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	inscriptionID := vars["ID"]
+
+	result, err := h.Usecase.DetailInscribeBTC(inscriptionID)
+	if err != nil {
+		log.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
 }

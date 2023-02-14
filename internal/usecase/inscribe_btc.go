@@ -145,6 +145,9 @@ func (u Usecase) ListInscribeBTC(rootSpan opentracing.Span, limit, page int64) (
 		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
 	})
 }
+func (u Usecase) DetailInscribeBTC(inscriptionID string) (*entity.InscribeBTCResp, error) {
+	return u.Repo.FindInscribeBTCByNftID(inscriptionID)
+}
 
 // JOBs:
 // step 1: job check balance for list inscribe
@@ -208,6 +211,7 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 
 		// received fund:
 		item.Status = entity.StatusInscribe_ReceivedFund
+		item.IsConfirm = true
 
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
@@ -308,6 +312,9 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 		if item.Status == entity.StatusInscribe_SendingNFTToUser {
 			statusSuccess = entity.StatusInscribe_SentNFTToUser
 			txHashDb = item.TxSendNft
+		}
+		if item.Status == entity.StatusInscribe_Minting {
+			item.IsMinted = true
 		}
 
 		txHash, err := chainhash.NewHashFromStr(txHashDb)
@@ -493,10 +500,11 @@ func (u Usecase) JobInscribeSendNft(rootSpan opentracing.Span) error {
 		// transfer now:
 		sentTokenResp, err := u.SendTokenByWallet(item.OriginUserAddress, item.InscriptionID, item.UserAddress, int(item.FeeRate))
 
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
+		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.sentTokenResp", sentTokenResp)
 
 		if err != nil {
 			log.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error())
 			continue
 		}
 
@@ -547,7 +555,7 @@ func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			fmt.Sprint("%s", rate),
+			fmt.Sprintf("%d", rate),
 		}}
 
 	resp, err := u.OrdService.Exec(sendTokenReq)
