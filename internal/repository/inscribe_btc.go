@@ -15,9 +15,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (r Repository) FindInscribeBTC(key string) (*entity.InscribeBTCResp, error) {
-	resp := &entity.InscribeBTCResp{}
-	usr, err := r.FilterOne(entity.BTCWalletAddress{}.TableName(), bson.D{{utils.KEY_UUID, key}})
+func (r Repository) FindInscribeBTC(key string) (*entity.InscribeBTC, error) {
+	resp := &entity.InscribeBTC{}
+	usr, err := r.FilterOne(entity.InscribeBTC{}.TableName(), bson.D{{utils.KEY_UUID, key}})
 	if err != nil {
 		return nil, err
 	}
@@ -29,12 +29,12 @@ func (r Repository) FindInscribeBTC(key string) (*entity.InscribeBTCResp, error)
 	return resp, nil
 }
 
-func (r Repository) FindInscribeBTCByNftID(inscriptionID string) (*entity.InscribeBTCResp, error) {
+func (r Repository) FindInscribeBTCByNftID(uuid string) (*entity.InscribeBTCResp, error) {
 
-	log.Println("inscriptionID:", inscriptionID)
+	log.Println("uuid:", uuid)
 
 	resp := &entity.InscribeBTCResp{}
-	usr, err := r.FilterOne(entity.InscribeBTC{}.TableName(), bson.D{{"inscriptionID", inscriptionID}})
+	usr, err := r.FilterOne(entity.InscribeBTC{}.TableName(), bson.D{{"uuid", uuid}})
 	if err != nil {
 		return nil, err
 	}

@@ -135,6 +135,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/list", h.btcListInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
+	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()

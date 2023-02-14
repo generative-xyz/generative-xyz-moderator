@@ -134,9 +134,9 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
-	inscriptionID := vars["ID"]
+	uuid := vars["ID"]
 
-	result, err := h.Usecase.DetailInscribeBTC(inscriptionID)
+	result, err := h.Usecase.DetailInscribeBTC(uuid)
 	if err != nil {
 		log.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -145,5 +145,24 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
+}
+
+func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcRetryInscribeBTC", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	id := vars["ID"]
+
+	err := h.Usecase.RetryInscribeBTC(id)
+	if err != nil {
+		log.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
