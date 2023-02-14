@@ -94,6 +94,7 @@ const (
 	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
 	INSCRIBE_BTC                        string = "inscribe_btc"
+	INSCRIBE_INFO												string = "inscribe_infos"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"

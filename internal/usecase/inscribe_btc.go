@@ -50,7 +50,6 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 }
 
 func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
-
 	span, log := u.StartSpan("CreateInscribeBTC", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 

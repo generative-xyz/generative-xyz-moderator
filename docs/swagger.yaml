@@ -17,6 +17,8 @@ definitions:
         type: integer
       creatorAddrr:
         type: string
+      creatorAddrrBTC:
+        type: string
       creatorName:
         type: string
       description:
@@ -342,6 +344,8 @@ definitions:
         type: string
       creatorAddr:
         type: string
+      creatorAddrrBTC:
+        type: string
       creatorProfile:
         $ref: '#/definitions/response.ProfileResponse'
       desc:
@@ -353,6 +357,8 @@ definitions:
       image:
         type: string
       isFullChain:
+        type: boolean
+      isHidden:
         type: boolean
       itemDesc:
         type: string
@@ -1222,6 +1228,27 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /inscribe/info/{ID}:
+    get:
+      consumes:
+      - application/json
+      description: get inscribe info
+      parameters:
+      - description: inscribe ID
+        in: path
+        name: ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get inscribe info
+      tags:
+      - Inscribe
   /inscribe/receive-address:
     post:
       consumes:
@@ -1928,6 +1955,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: Create btc project
       tags:
       - Project

@@ -166,3 +166,56 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
+
+// UserCredits godoc
+// @Summary get inscribe info
+// @Description get inscribe info
+// @Tags Inscribe
+// @Accept  json
+// @Produce  json
+// @Param ID path string true "inscribe ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /inscribe/info/{ID} [GET]
+func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getInscribeInfo", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	id := vars["ID"]
+	inscribeInfo, err := h.Usecase.GetInscribeInfo(span, id)
+	if  err != nil {
+		log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.inscribeInfoToResp(inscribeInfo)
+	if err != nil {
+		log.Error("h.inscribeInfoToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response.InscribeInfoResp, error) {
+	resp := &response.InscribeInfoResp{}
+	resp.ID = input.ID
+	resp.Index = input.Index
+	resp.Address = input.Address
+	resp.OutputValue = input.OutputValue
+	resp.Sat = input.Sat
+	resp.Preview = input.Preview
+	resp.Content = input.Content
+	resp.ContentLength = input.ContentLength
+	resp.ContentType = input.ContentType
+	resp.Timestamp = input.Timestamp
+	resp.GenesisHeight = input.GenesisHeight
+	resp.GenesisTransaction = input.GenesisTransaction
+	resp.Location = input.Location
+	resp.Output = input.Output
+	resp.Offset = input.Offset
+	return resp, nil
+}

@@ -1193,6 +1193,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/inscribe/info/{ID}": {
+            "get": {
+                "description": "get inscribe info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "get inscribe info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/receive-address": {
             "post": {
                 "description": "Generate receive wallet address",
@@ -2073,6 +2105,11 @@ const docTemplate = `{
         },
         "/project/btc": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "Create btc project",
                 "consumes": [
                     "application/json"
@@ -2831,6 +2868,9 @@ const docTemplate = `{
                 "creatorAddrr": {
                     "type": "string"
                 },
+                "creatorAddrrBTC": {
+                    "type": "string"
+                },
                 "creatorName": {
                     "type": "string"
                 },
@@ -3330,6 +3370,9 @@ const docTemplate = `{
                 "creatorAddr": {
                     "type": "string"
                 },
+                "creatorAddrrBTC": {
+                    "type": "string"
+                },
                 "creatorProfile": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
@@ -3346,6 +3389,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isFullChain": {
+                    "type": "boolean"
+                },
+                "isHidden": {
                     "type": "boolean"
                 },
                 "itemDesc": {
