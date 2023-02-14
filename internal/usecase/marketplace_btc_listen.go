@@ -246,7 +246,12 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		amount, _ := big.NewInt(0).SetString(nftListing.Price, 10)
+		amount, ok := big.NewInt(0).SetString(nftListing.Price, 10)
+		if !ok {
+			err := errors.New("cannot parse amount")
+			go u.trackInscribeHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "SetString(amount) err", err.Error())
+			continue
+		}
 
 		if amount.Uint64() == 0 {
 			err := errors.New("balance is zero")
@@ -255,7 +260,7 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 		}
 
 		if r := balance.Cmp(amount); r == -1 {
-			err := errors.New("Not enough amount")
+			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
 			fmt.Printf("buy order id: %s err: %v", item.InscriptionID, err)
 
 			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Receive balance err", err.Error())

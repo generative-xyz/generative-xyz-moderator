@@ -192,7 +192,12 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 		}
 
 		// get required amount to check vs temp wallet balance:
-		amount, _ := big.NewInt(0).SetString(item.Amount, 10)
+		amount, ok := big.NewInt(0).SetString(item.Amount, 10)
+		if !ok {
+			err := errors.New("cannot parse amount")
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "SetString(amount) err", err.Error())
+			continue
+		}
 
 		if amount.Uint64() == 0 {
 			err := errors.New("balance is zero")
@@ -200,9 +205,9 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 			continue
 		}
 
-		if r := balance.Cmp(amount); r == -1 {
-			err := errors.New("Not enough amount")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Receive balance err", err.Error())
+		if balance.Uint64() < amount.Uint64() {
+			err := fmt.Errorf("Not enough amount %d < %d ", balance, amount)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "compare balance err", err.Error())
 
 			item.Status = entity.StatusInscribe_NotEnoughBalance
 			u.Repo.UpdateBtcInscribe(&item)
