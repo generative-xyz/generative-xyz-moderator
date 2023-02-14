@@ -74,6 +74,7 @@ type TokenUri struct {
 	Creator *Users `bson:"creator"`
 	PaidType TokenPaidType `bson:"paidType"` 
 	IsOnchain bool `bson:"isOnchain"` 
+	InscriptionIndex string `bson:"inscription_index"`
 }
 
 type TokenUriAttr struct {

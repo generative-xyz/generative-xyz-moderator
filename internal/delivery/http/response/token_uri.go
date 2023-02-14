@@ -35,6 +35,7 @@ type InternalTokenURIResp struct{
 	Thumbnail string `json:"thumbnail"`
 	Priority  int `json:"priority"`
 	Stats TokenStat `json:"stats"`
+	InscriptionIndex string `json:"inscriptionIndex"`
 }
 
 type InternalTokenTraitsResp struct{

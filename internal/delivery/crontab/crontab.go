@@ -188,13 +188,26 @@ func (h ScronHandler) StartServer() {
 	})
 
 	c.AddFunc("0 0 * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.OneMinute")
+		span := h.Tracer.StartSpan("DispatchCron.Everyday")
 		defer span.Finish()
 
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
 		err := h.Usecase.SnapShotOldRankAndOldBalance(span)
+		if err != nil {
+			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+		}
+	})
+
+	c.AddFunc("*/20 * * * *", func() {
+		span := h.Tracer.StartSpan("DispatchCron.EveryTenMinutes")
+		defer span.Finish()
+
+		log := tracer.NewTraceLog()
+		defer log.ToSpan(span)
+
+		err := h.Usecase.SyncTokenInscribeIndex(span)
 		if err != nil {
 			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
 		}
