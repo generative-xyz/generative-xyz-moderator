@@ -93,7 +93,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenID =  fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mintPrice.String()
-	pe.IsHidden = true
+	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
@@ -933,7 +933,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	pe.Images = images	
 	pe.IsFullChain = true
-	pe.IsHidden = true
+	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
 
