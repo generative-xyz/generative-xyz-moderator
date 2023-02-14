@@ -106,6 +106,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 			nftTokenURI["animation_url"] = animationURL
 		}
 		pe.IsHidden = false
+		pe.Status = true
 	}
 
 	bytes, err := json.Marshal(nftTokenURI)
@@ -903,7 +904,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	pe.Images = images	
 	pe.IsFullChain = true
 	pe.IsHidden = false
-
+	pe.Status = true
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
