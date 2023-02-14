@@ -870,10 +870,12 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	for _, file := range processingFiles {
 		log.SetData("fileName", file.Name)
 		log.SetData("UncompressedSize64", file.UncompressedSize64)
+		maxFileSize := uint64(400000)
 
-		size := file.UncompressedSize64 / 1024
-		if size > 100 {
-			err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
+		log.SetData("maxFileSize", maxFileSize)
+		size := file.UncompressedSize64
+		if size > maxFileSize {
+			err := errors.New(fmt.Sprintf("%s, size: %d Max file size must be less than 400kb", file.Name, size))
 			log.Error("maxFileSize",err.Error(), err)
 			return nil, err
 		}
