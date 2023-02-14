@@ -804,15 +804,16 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 }
 
 func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
-	span, log := u.StartSpan("getNftContractDetailInternal", rootSpan)
+	span, log := u.StartSpan("UnzipProjectFile", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
+	log.SetTag(utils.PROJECT_ID_TAG, zipPayload.ProjectID)
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
 		log.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
-
+	log.SetData("project", pe)
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -820,6 +821,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 
+	log.SetData("zipPayload", zipPayload)
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 	resp, err := http.Get(zipLink)
@@ -849,6 +851,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		return nil, err
 	}
 	
+	log.SetData("zf.File", len(zf.File))
 	uploadChan := make(chan uploadFileChan, len(zf.File))
 	processed := 1
 	processingFiles := []*zip.File{}
@@ -903,13 +906,18 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			}()
 
 			base64Data := helpers.Base64Encode(fc)
-			uploadFileName := fmt.Sprintf("%s/%s", helpers.GenerateSlug(pe.Name), file.Name)
+
+			key :=  helpers.GenerateSlug(pe.Name)
+			key = fmt.Sprintf("btc-projects/%s/unzip", key)
+
+			uploadFileName := fmt.Sprintf("%s/%s", key, file.Name)
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
 			if err != nil {
 				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
 				return
 			}
 
+			log.SetData("uploaded", uploaded)
 			cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 			uploadedUrl = &cdnURL
 
