@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"strconv"
@@ -145,8 +146,24 @@ func (u Usecase) ListInscribeBTC(rootSpan opentracing.Span, limit, page int64) (
 		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
 	})
 }
+
 func (u Usecase) DetailInscribeBTC(inscriptionID string) (*entity.InscribeBTCResp, error) {
 	return u.Repo.FindInscribeBTCByNftID(inscriptionID)
+}
+
+func (u Usecase) RetryInscribeBTC(id string) error {
+	item, _ := u.Repo.FindInscribeBTC(id)
+	log.Println("item: ", item, id)
+	if item != nil {
+		if item.Status == entity.StatusInscribe_NotEnoughBalance {
+			item.Status = entity.StatusInscribe_Pending
+			_, err := u.Repo.UpdateBtcInscribe(item)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // JOBs:
