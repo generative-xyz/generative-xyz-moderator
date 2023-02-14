@@ -42,7 +42,7 @@ func (r Repository) FindEthWalletAddressByUserAddress(userAddress string) (*enti
 
 func (r Repository) FindDelegateEthWalletAddressByUserAddress(userAddress string) (*entity.ETHWalletAddress, error) {
 	resp := &entity.ETHWalletAddress{}
-	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"user_address", userAddress}, {"isUseDelegate", true}})
+	usr, err := r.FilterOne(entity.ETHWalletAddress{}.TableName(), bson.D{{"delegatedAddress", true}})
 	if err != nil {
 		return nil, err
 	}

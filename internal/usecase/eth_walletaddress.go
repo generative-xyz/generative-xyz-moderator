@@ -161,19 +161,17 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	log.SetData("input", input)
 	log.SetTag("btcUserWallet", input.WalletAddress)
 
-	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(input.WalletAddress)
+	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
 	if err == nil {
 		if weth != nil {
 			log.SetData("ethWalletAddress", weth)
-			if weth.IsUseDelegate == true {
-				if weth.IsConfirm == true {
-					err = errors.New("This account has applied discount")
-					log.Error("applied.Discount", err.Error(), err)
-					return nil, err
-				}
-
-				return weth, nil
+			if weth.IsConfirm == true {
+				err = errors.New("This account has applied discount")
+				log.Error("applied.Discount", err.Error(), err)
+				return nil, err
 			}
+
+			return weth, nil
 		}
 	} else {
 		log.Error("u.Repo.FindEthWalletAddressByUserAddress", err.Error(), err)
@@ -267,7 +265,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	walletAddress.ProjectID = input.ProjectID
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
-	walletAddress.IsUseDelegate = true
+	walletAddress.DelegatedAddress = userAddr
 
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
