@@ -85,16 +85,10 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	fname := strings.ToLower(file.FileHeader.Filename)
 	fname = strings.ReplaceAll(fname, " ", "_")
 	fname = strings.TrimSpace(fname)
-
-	strLen := len(fname)
-	if strLen >= 10 {
-		fname = fname[strLen-8 : strLen]
-	}
-
-	fname = fmt.Sprintf("upload/%d-%s", now, fname)
+	path := fmt.Sprintf("upload/%d-%s", now, fname)
 	if file.Path != nil {
 		if *file.Path != "" {
-			fname = fmt.Sprintf("%s/%d-%s", *file.Path,now, fname)
+			path = fmt.Sprintf("%s/%s", *file.Path, fname)
 		}
 	}
 
@@ -108,7 +102,7 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	contentType := header.Get("Content-Type")
 
 	// create writer
-	sw := g.bucket.Object(fname).NewWriter(ctx)
+	sw := g.bucket.Object(path).NewWriter(ctx)
 	sw.ContentType = contentType
 
 	openedFile, err := file.FileHeader.Open()
