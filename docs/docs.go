@@ -3076,6 +3076,9 @@ var doc = `{
                 },
                 "profileSocial": {
                     "$ref": "#/definitions/request.ProfileSocial"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
                 }
             }
         },

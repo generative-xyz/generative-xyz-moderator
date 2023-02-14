@@ -384,6 +384,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"images", 1},
 		{"mintedImages", 1},
 		{"whiteListEthContracts", 1},
+		{"isFullChain", 1},
 	}
 	return f
 }

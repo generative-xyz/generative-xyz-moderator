@@ -187,6 +187,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	nftToken := helpers.Base64Encode(bytes)
 	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
 	pe.ProcessingImages = []string{}
+	pe.MintedImages = nil
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)

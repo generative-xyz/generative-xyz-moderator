@@ -173,6 +173,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
+      wallet_address_btc:
+        type: string
     type: object
   request.UpdateProjectReq:
     properties:

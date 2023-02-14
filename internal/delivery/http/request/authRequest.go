@@ -21,6 +21,7 @@ type UpdateProfileRequest struct {
 	Bio *string `json:"bio"`
 	Avatar *string `json:"avatar"`
 	ProfileSocial ProfileSocial `json:"profileSocial"`
+	WalletAddressBTC   string        `json:"wallet_address_btc"`
 }
 
 type ProfileSocial  struct{

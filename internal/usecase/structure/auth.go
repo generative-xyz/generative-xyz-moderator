@@ -29,6 +29,7 @@ type ProfileResponse struct {
 	Bio string `json:"bio"`
 	Avatar string `json:"avatar"`
 	CreatedAt *time.Time `json:"created_at"`
+	WalletAddressBTC   string        `json:"wallet_address_btc"`
 }
 
 type UpdateProfile struct {
@@ -36,6 +37,7 @@ type UpdateProfile struct {
 	Bio *string 
 	ProfileSocial ProfileSocial
 	Avatar *string
+	WalletAddressBTC   string 
 }
 
 type ProfileSocial  struct{
