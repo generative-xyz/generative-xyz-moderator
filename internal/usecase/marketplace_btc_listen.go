@@ -310,7 +310,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
-	serviceFeeAddress := "bc1qfz4pc72mrtjq7zln3lww0y3d3hvkdn06ddvv2j"
+	serviceFeeAddress := "bc1q2a7j7zxqc0l43xd9urahxywqt7zl462hgpm0wh"
 	if u.Config.MarketBTCServiceFeeAddress != "" {
 		serviceFeeAddress = u.Config.MarketBTCServiceFeeAddress
 	}
