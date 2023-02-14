@@ -1,16 +1,17 @@
 package nfts
 
 const (
-	KeyOwner       string = "owner"
-	KeyLimit       string = "limit"
-	KeyOffset      string = "offset"
-	KeyCurrsor     string = "currsor"
-	KeyChain       string = "chain"
-	KeyFormat      string = "format"
-	KeyTotalRanges string = "totalRanges"
-	KeyRange       string = "range"
-	URLAssets      string = "assets"
-	URLNft         string = "nft"
+	KeyOwner          string = "owner"
+	KeyLimit          string = "limit"
+	KeyOffset         string = "offset"
+	KeyCurrsor        string = "currsor"
+	KeyTokenAddresses string = "token_addresses"
+	KeyChain          string = "chain"
+	KeyFormat         string = "format"
+	KeyTotalRanges    string = "totalRanges"
+	KeyRange          string = "range"
+	URLAssets         string = "assets"
+	URLNft            string = "nft"
 )
 
 var ChainToChainID = map[string]string{

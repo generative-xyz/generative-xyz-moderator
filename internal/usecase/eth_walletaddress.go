@@ -121,22 +121,22 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 		log.SetData("whitelistedAddrs.Total", len(whitelistedAddrs))
 		return false, nil
 	}
-	for _, addr := range whitelistedAddrs {
-		filter := nfts.MoralisFilter{}
-		filter.Limit = new(int)
-		*filter.Limit = 1
+	filter := nfts.MoralisFilter{}
+	filter.Limit = new(int)
+	*filter.Limit = 1
+	filter.TokenAddresses = new([]string)
+	*filter.TokenAddresses = whitelistedAddrs
 
-		log.SetData("filter.GetNftByWalletAddress", filter)
-		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
-		if err != nil {
-			log.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
-			return false, err
-		}
+	log.SetData("filter.GetNftByWalletAddress", filter)
+	resp, err := u.MoralisNft.GetNftByWalletAddress(userAddr, filter)
+	if err != nil {
+		log.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+		return false, err
+	}
 
-		log.SetData("resp", resp)
-		if len(resp.Result) > 0 {
-			return true, nil
-		}
+	log.SetData("resp", resp)
+	if len(resp.Result) > 0 {
+		return true, nil
 	}
 
 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)

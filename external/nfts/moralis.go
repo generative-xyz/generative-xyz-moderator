@@ -19,25 +19,25 @@ import (
 )
 
 type MoralisNfts struct {
-	conf            *config.Config
-	tracer          tracer.ITracer
-	rootSpan opentracing.Span
+	conf      *config.Config
+	tracer    tracer.ITracer
+	rootSpan  opentracing.Span
 	serverURL string
-	apiKey string
+	apiKey    string
 	//client forwarder.IForwarder
 	cache redis.IRedisCache
 }
 
 func NewMoralisNfts(conf *config.Config, t tracer.ITracer, cache redis.IRedisCache) *MoralisNfts {
-	
+
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
-    return &MoralisNfts{
-		conf:            conf,
-		tracer:          t,
+	return &MoralisNfts{
+		conf:      conf,
+		tracer:    t,
 		serverURL: serverURL,
-		apiKey: apiKey,
-		cache: cache,
+		apiKey:    apiKey,
+		cache:     cache,
 	}
 }
 
@@ -50,52 +50,59 @@ func (m MoralisNfts) generateUrl(path string, filters *MoralisFilter) string {
 	fullUrl := fmt.Sprintf("%s/%s", m.serverURL, path)
 	if filters != nil {
 		params := url.Values{}
-		
+
 		if filters.Chain != nil {
 			params[KeyChain] = []string{
 				*filters.Chain,
 			}
-		}else{
+		} else {
 			params[KeyChain] = []string{
 				m.conf.Moralis.Chain,
 			}
 		}
-		
-		if filters.Format != nil { 
+
+		if filters.Format != nil {
 			params[KeyFormat] = []string{
 				*filters.Format,
 			}
 		}
-		
-		if filters.Limit != nil { 
-			if  *filters.Limit != 0 {
+
+		if filters.Limit != nil {
+			if *filters.Limit != 0 {
 				params[KeyLimit] = []string{
 					strconv.Itoa(*filters.Limit),
 				}
-			}	
+			}
 		}
-		
-		if filters.TotalRanges != nil { 
+
+		if filters.TotalRanges != nil {
 			if *filters.TotalRanges != 0 {
 				params[KeyTotalRanges] = []string{
 					strconv.Itoa(*filters.TotalRanges),
 				}
 			}
 		}
-		
-		if filters.Range != nil { 
+
+		if filters.Range != nil {
 			if *filters.Range != 0 {
 				params[KeyRange] = []string{
 					strconv.Itoa(*filters.Range),
 				}
 			}
 		}
-		
-		if filters.Cursor != nil { 
+
+		if filters.Cursor != nil {
 			if *filters.Cursor != "" {
 				params[KeyCurrsor] = []string{
 					*filters.Cursor,
 				}
+			}
+		}
+
+		if filters.TokenAddresses != nil {
+			tokenAddresses := *filters.TokenAddresses
+			if len(tokenAddresses) > 0 {
+				params[KeyTokenAddresses] = tokenAddresses
 			}
 		}
 
@@ -105,18 +112,18 @@ func (m MoralisNfts) generateUrl(path string, filters *MoralisFilter) string {
 	return fullUrl
 }
 
-func (m MoralisNfts) request(fullUrl string, method string, headers map[string]string , reqBody io.Reader) ([]byte, error) {
+func (m MoralisNfts) request(fullUrl string, method string, headers map[string]string, reqBody io.Reader) ([]byte, error) {
 	req, err := http.NewRequest(method, fullUrl, reqBody)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(headers) > 0 {
-		for key, val := range headers{
-			req.Header.Add(key,  val)
+		for key, val := range headers {
+			req.Header.Add(key, val)
 		}
 	}
-	
+
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("X-API-Key", m.apiKey)
@@ -135,15 +142,15 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 	return body, nil
 }
 
-func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*MoralisTokensResp, error){
-	url := fmt.Sprintf("%s/%s", URLNft, contractAddr )
+func (m MoralisNfts) GetNftByContract(contractAddr string, f MoralisFilter) (*MoralisTokensResp, error) {
+	url := fmt.Sprintf("%s/%s", URLNft, contractAddr) // Todo: review this url
 	fullUrl := m.generateUrl(url, &f)
 
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
@@ -153,15 +160,15 @@ func (m MoralisNfts) GetNftByContract(contractAddr string,f MoralisFilter) (*Mor
 	return resp, nil
 }
 
-func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string,f MoralisFilter) (*MoralisTokensResp, error){
-	url := fmt.Sprintf("%s/%s", URLNft, wallletAddress )
-	fullUrl := m.generateUrl(url, &f)
-	
+func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string, filter MoralisFilter) (*MoralisTokensResp, error) {
+	url := fmt.Sprintf("%s/%s", wallletAddress, URLNft)
+	fullUrl := m.generateUrl(url, &filter)
+
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
@@ -177,7 +184,7 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(f.ReqBody)
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	data, err := m.request(fullUrl, "POST", nil, &buf)
@@ -200,7 +207,7 @@ func (m MoralisNfts) GetMultipleNfts(f MoralisGetMultipleNftsFilter) ([]MoralisT
 }
 
 func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID string) (*MoralisToken, error) {
-	key :=  helpers.NftFromMoralisKey(contractAddr, tokenID)
+	key := helpers.NftFromMoralisKey(contractAddr, tokenID)
 	liveReload := func(contractAddr string, tokenID string) (*MoralisToken, error) {
 		nfts, err := m.GetMultipleNfts(MoralisGetMultipleNftsFilter{
 			Chain: nil,
@@ -208,7 +215,7 @@ func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID str
 				Tokens: []NftFilter{
 					{
 						TokenAddress: contractAddr,
-						TokenId: tokenID,
+						TokenId:      tokenID,
 					},
 				},
 			},
@@ -217,7 +224,7 @@ func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID str
 			return nil, err
 		}
 		if len(nfts) != 1 {
-			return nil, errors.New("cannot find moralis token") 
+			return nil, errors.New("cannot find moralis token")
 		} else {
 
 			nft := nfts[0]
@@ -232,9 +239,9 @@ func (m MoralisNfts) GetNftByContractAndTokenID(contractAddr string, tokenID str
 	if cached == nil || err != nil {
 		return liveReload(contractAddr, tokenID)
 	}
-	
+
 	resp := &MoralisToken{}
-	err = helpers.ParseCache(cached,resp)
+	err = helpers.ParseCache(cached, resp)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +256,7 @@ func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, token
 			Tokens: []NftFilter{
 				{
 					TokenAddress: contractAddr,
-					TokenId: tokenID,
+					TokenId:      tokenID,
 				},
 			},
 		},
@@ -258,9 +265,9 @@ func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, token
 		return nil, err
 	}
 	if len(nfts) != 1 {
-		return nil, errors.New("cannot find moralis token") 
-	} 
-	
+		return nil, errors.New("cannot find moralis token")
+	}
+
 	nft := nfts[0]
 	return &nft, nil
 }
