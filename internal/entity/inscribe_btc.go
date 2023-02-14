@@ -27,7 +27,7 @@ type InscribeBTC struct {
 	Balance   string    `bson:"balance"` // balance after check
 	FeeRate   int32     `bson:"fee_rate"`
 	ExpiredAt time.Time `bson:"expired_at"`
-	Success   bool      `bson:"fee_rate"`
+	IsSuccess bool      `bson:"isSuccess"`
 
 	Status    StatusInscribe `bson:"status"` // status for record
 	TxSendBTC string         `bson:"tx_send_btc"`
@@ -106,11 +106,13 @@ type InscribeBTCResp struct {
 	// OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
 	// SegwitAddress     string `bson:"segwit_address"`
 	// FileURI       string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
-	IsConfirm     bool   `bson:"isConfirm"`     //default: false, if OrdAddress get all amount it will be set true
+	IsConfirm bool `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
+	IsMinted  bool `bson:"isMinted"`  //default: false. If InscriptionID exist which means token is minted, it's true
+	IsSuccess bool `bson:"isSuccess"` //default: false. If InscriptionID was sent to user, it's true
+
 	InscriptionID string `bson:"inscriptionID"` // tokenID in ETH
 	// Mnemonic          string `bson:"mnemonic"`
 	// SegwitKey         string `bson:"segwit_key"`
-	IsMinted bool `bson:"isMinted"` //default: false. If InscriptionID exist which means token is minted, it's true
 	// MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	// Balance   string    `bson:"balance"` // balance after check
 	FeeRate   int32     `bson:"fee_rate"`
