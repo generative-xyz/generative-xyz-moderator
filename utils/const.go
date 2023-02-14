@@ -102,6 +102,7 @@ const (
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
+	PUBSUB_PROJECT_UNZIP                    string = "project_unzip"
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
