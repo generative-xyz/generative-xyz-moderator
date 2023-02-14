@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"rederinghub.io/internal/entity"
@@ -10,6 +11,7 @@ import (
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -276,7 +278,11 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
-			f["creatorAddress"] = *filter.WalletAddress
+			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{
+				//Pattern:  *filter.WalletAddress,
+				Pattern:  fmt.Sprintf(`^%s$`, *filter.WalletAddress),
+				Options: "i",
+			}} 
 		}
 	}
 
