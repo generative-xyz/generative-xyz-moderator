@@ -128,7 +128,6 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		if *zipLink != "" {
 			pe.IsHidden = true
 			isPubsub = true
-			pe.IsSynced = false
 			pe.Status = false
 		}
 	}else{
@@ -897,18 +896,18 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			var uploadedUrl *string
 
 			defer func  ()  {
-		uploadChan <- uploadFileChan{
-			FileURL: uploadedUrl,
-			Err: err,
-		}
+				uploadChan <- uploadFileChan{
+					FileURL: uploadedUrl,
+					Err: err,
+				}
 			}()
 
 			base64Data := helpers.Base64Encode(fc)
 			uploadFileName := fmt.Sprintf("%s/%s", helpers.GenerateSlug(pe.Name), file.Name)
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
 			if err != nil {
-		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
-		return
+				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+				return
 			}
 
 			cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
