@@ -3013,6 +3013,9 @@
             "properties": {
                 "projectID": {
                     "type": "string"
+                },
+                "walletAddress": {
+                    "type": "string"
                 }
             }
         },
@@ -3333,6 +3336,9 @@
                 },
                 "image": {
                     "type": "string"
+                },
+                "isFullChain": {
+                    "type": "boolean"
                 },
                 "itemDesc": {
                     "type": "string"
