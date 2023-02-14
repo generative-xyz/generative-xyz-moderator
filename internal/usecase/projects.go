@@ -112,6 +112,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 			}
 			
 			uploadChan := make(chan uploadFileChan, len(zf.File))
+
+			processed := 1
 			for _, file := range zf.File {
 				log.SetData("fileName", file.Name)
 				log.SetData("UncompressedSize64", file.UncompressedSize64)
@@ -129,8 +131,10 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 					return nil, err
 				}
 
+				if processed % 5 == 0 {
+					time.Sleep(5 * time.Second)
+				}
 				
-			
 				go func(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan) {
 					span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
 					defer u.Tracer.FinishSpan(span, log)
@@ -156,6 +160,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 					uploadedUrl = &cdnURL
 
 				}(span, fC, uploadChan)
+
+				processed ++
 			}
 
 			for i := 0 ;i < len( zf.File) ; i++ {

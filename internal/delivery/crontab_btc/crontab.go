@@ -30,10 +30,10 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 func (h ScronBTCHandler) StartServer() {
 
-	var wg sync.WaitGroup
+	
 
 	go func() {
-
+		var wg sync.WaitGroup
 		span := h.Tracer.StartSpan("ScronBTCHandler.CheckBalance")
 		defer span.Finish()
 
@@ -75,7 +75,7 @@ func (h ScronBTCHandler) StartServer() {
 	}()
 
 	go func() {
-
+		var wg sync.WaitGroup
 		span := h.Tracer.StartSpan("ScronBTCHandler.SendNft")
 		defer span.Finish()
 

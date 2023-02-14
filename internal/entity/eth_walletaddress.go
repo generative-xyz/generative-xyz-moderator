@@ -20,6 +20,7 @@ type ETHWalletAddress struct {
 	MintResponse  MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	Balance       string              `bson:"balance"`      // balance after check
 	BalanceCheckTime int `bson:"balanceCheckTime"` // Total balance check time
+	IsUseDelegate bool `bson:"isUseDelegate"` //applied the whitelist contract for discount: default false
 }
 
 type FilterETHWalletAddress struct {

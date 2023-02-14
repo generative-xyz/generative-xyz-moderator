@@ -113,17 +113,27 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 }
 
 func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, whitelistedAddrs []string) (bool, error) {
+	span, log := u.StartSpan("IsWhitelistedAddress", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	log.SetData("whitelistedAddrs", whitelistedAddrs)
 	if len(whitelistedAddrs) == 0 {
+		log.SetData("whitelistedAddrs.Total", len(whitelistedAddrs))
 		return false, nil
 	}
 	for _, addr := range whitelistedAddrs {
 		filter := nfts.MoralisFilter{}
 		filter.Limit = new(int)
 		*filter.Limit = 1
+
+		log.SetData("filter.GetNftByWalletAddress",filter)
 		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
 		if err != nil {
+			log.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
 			return false, err
 		}
+
+		log.SetData("resp", resp)
 		if len(resp.Result) > 0 {
 			return true, nil
 		}
@@ -131,8 +141,11 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 
 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
 	if err != nil {
+		log.Error("u.DelegateService.GetDelegationsByDelegate", err.Error(), err)
 		return false, err
 	}
+
+	log.SetData("delegations", delegations)
 	for _, delegation := range delegations {
 		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
 			return true, nil
@@ -148,8 +161,26 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	log.SetData("input", input)
 	log.SetTag("btcUserWallet", input.WalletAddress)
 
+	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(input.WalletAddress)
+	if err == nil {
+		if weth != nil {
+			log.SetData("ethWalletAddress", weth)
+			if weth.IsUseDelegate == true {
+				if weth.IsConfirm == true {
+					err = errors.New("This account has applied discount")
+					log.Error("applied.Discount", err.Error(), err)
+					return nil, err
+				}
+
+				return weth, nil
+			}
+		}
+	}else{
+		log.Error("u.Repo.FindEthWalletAddressByUserAddress", err.Error(), err)
+	}
+
 	walletAddress := &entity.ETHWalletAddress{}
-	err := copier.Copy(walletAddress, input)
+	err = copier.Copy(walletAddress, input)
 	if err != nil {
 		log.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
 		return nil, err
@@ -236,6 +267,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	walletAddress.ProjectID = input.ProjectID
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
+	walletAddress.IsUseDelegate = true
 
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
@@ -385,19 +417,12 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		return nil, err
 	}
 
-	go func(rootSpan opentracing.Span, wallet *entity.ETHWalletAddress, balance *big.Int) {
-		span, log := u.StartSpan("CheckBalance.RoutineUpdate", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
-
-		wallet.Balance = balance.String()
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
-		if err != nil {
-			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
-			return
-		}
-		log.SetData("updated", updated)
-
-	}(span, &ethEntity, balance)
+	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
+	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
+	if err != nil {
+		log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+		return nil, err
+	}
 
 	// check total amount = received amount?
 	amount, ok := big.NewInt(0).SetString(ethEntity.Amount, 10)
@@ -415,9 +440,9 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	log.SetData("ordWalletAddress", ethEntity.OrdAddress)
 
 	ethEntity.IsConfirm = true
-	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
+	ethEntity.Balance = balance.String()
 	//TODO - save balance
-	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
+	updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 	if err != nil {
 		log.Error("u.CheckBalance.updatedStatus", err.Error(), err)
 		return nil, err
@@ -517,7 +542,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 
 		}(span, item)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return nil, nil
