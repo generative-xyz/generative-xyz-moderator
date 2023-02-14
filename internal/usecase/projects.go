@@ -80,7 +80,9 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenID =  fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mintPrice.String()
-
+	pe.IsHidden = false
+	pe.Status = true
+	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -90,10 +92,22 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
 	if err != nil {
-		creatorAddrr = &entity.Users{}
+		log.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		return nil, err
 	}
 
-	creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
+	if creatorAddrr.WalletAddressBTC == "" {
+		creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
+		updated, err := u.Repo.UpdateUserByID(creatorAddrr.UUID, creatorAddrr)
+		if err != nil {
+			log.Error("u.Repo.UpdateUserByID", err.Error(), err)
+			
+		}else{
+			log.SetData("updated.creatorAddrr", creatorAddrr)
+			log.SetData("updated", updated)
+		}
+	}
+
 	isPubsub := false
 	animationURL := ""
 	zipLink := req.ZipLink
@@ -101,14 +115,14 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		if *zipLink != "" {
 			pe.IsHidden = true
 			isPubsub = true
+			pe.IsSynced = false
+			pe.Status = false
 		}
 	}else{
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
 			nftTokenURI["animation_url"] = animationURL
 		}
-		pe.IsHidden = false
-		pe.Status = true
 	}
 
 	bytes, err := json.Marshal(nftTokenURI)
@@ -122,7 +136,6 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
 	pe.ProcessingImages = []string{}
 	pe.MintedImages = nil
-	pe.IsSynced = true
 	pe.MintedTime = &now
 	pe.CreatorProfile = *creatorAddrr
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
@@ -907,6 +920,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	pe.IsFullChain = true
 	pe.IsHidden = false
 	pe.Status = true
+	pe.IsSynced = true
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
