@@ -612,3 +612,27 @@ func (u Usecase) SyncProjectsStats(rootSpan opentracing.Span) error {
 
 	return nil
 }
+
+func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SyncTokenInscribeIndex", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
+	if err != nil {
+		return err
+	}
+	processed := 0
+	for _, token := range notSyncedTokens {
+		processed++
+		tokenSpan, log := u.StartSpanWithoutRoot("SyncTokenInscribeIndex")
+		log.SetData("tokenId", token.TokenID)
+		inscribeInfo, err := u.GetInscribeInfo(tokenSpan, token.TokenID)
+		if err != nil {
+			return err
+		}
+		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
+		if processed % 10 == 0 {
+			time.Sleep(time.Second)
+		}
+	}
+	return nil
+}

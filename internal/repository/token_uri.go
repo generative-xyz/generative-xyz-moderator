@@ -380,3 +380,42 @@ func (r Repository) UpdateTokenOnchainStatusByTokenId(tokenId string) error {
 	}
 	return err
 }
+
+func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+
+	f := bson.M{
+		"project_id_int" : bson.M{"$gt" : 1000000},
+		"$or": []bson.M{
+			{"inscription_index": bson.M{"$exists": true}},
+			{"inscription_index": bson.M{"$ne": ""}},
+		},
+	}
+	f[utils.KEY_DELETED_AT] = nil
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (r Repository) UpdateTokenInscriptionIndex(tokenId string, inscriptionIndex string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"inscription_index": inscriptionIndex,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
