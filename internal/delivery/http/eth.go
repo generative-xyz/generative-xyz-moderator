@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"rederinghub.io/utils"
 
 	"github.com/jinzhu/copier"
+
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc

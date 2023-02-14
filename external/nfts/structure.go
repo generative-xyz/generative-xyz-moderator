@@ -13,70 +13,71 @@ type MoralisGetMultipleNftsReqBody struct {
 }
 
 type MoralisGetMultipleNftsFilter struct {
-	Chain             *string     `json:"chain"`
+	Chain   *string `json:"chain"`
 	ReqBody MoralisGetMultipleNftsReqBody
 }
 
-type  MoralisFilter struct {
-	Chain *string `json:"chain"`
-	Format *string `json:"format"`
-	Limit *int `json:"limit"`
-	TotalRanges *int `json:"totalRanges"`
-	Range *int `json:"range"`
-	Cursor *string `json:"cursor"`
-	NormalizeMetadata *bool `json:"normalizeMetadata"`
+type MoralisFilter struct {
+	Chain             *string   `json:"chain"`
+	Format            *string   `json:"format"`
+	Limit             *int      `json:"limit"`
+	TotalRanges       *int      `json:"totalRanges"`
+	Range             *int      `json:"range"`
+	Cursor            *string   `json:"cursor"`
+	TokenAddresses    *[]string `json:"token_addresses"`
+	NormalizeMetadata *bool     `json:"normalizeMetadata"`
 }
 
 type MoralisTokensResp struct {
-	Total int `json:"total"`
-	Page int `json:"page"`
-	PageSize int `json:"page_size"`
-	Cursor string `json:"cursor"`
-	Result []MoralisToken `json:"result"`
+	Total    int            `json:"total"`
+	Page     int            `json:"page"`
+	PageSize int            `json:"page_size"`
+	Cursor   string         `json:"cursor"`
+	Result   []MoralisToken `json:"result"`
 }
 
 type MoralisToken struct {
-	TokenAddress string `json:"token_address"`
-	TokenID string `json:"token_id"`
-	Amount string `json:"amount"`
-	Owner string `json:"owner_of"`
-	TokenHash string `json:"token_hash"`
-	ContractType string `json:"contract_type"`
-	Name string `json:"name"`
-	Symbol string `json:"symbol"`
-	TokenUri string `json:"token_uri"`
-	MetadataString *string `json:"metadata"`
-	BlockNumberMinted string `json:"block_number_minted"`
-	Metadata *MoralisTokenMetadata `json:"-"`
+	TokenAddress      string                `json:"token_address"`
+	TokenID           string                `json:"token_id"`
+	Amount            string                `json:"amount"`
+	Owner             string                `json:"owner_of"`
+	TokenHash         string                `json:"token_hash"`
+	ContractType      string                `json:"contract_type"`
+	Name              string                `json:"name"`
+	Symbol            string                `json:"symbol"`
+	TokenUri          string                `json:"token_uri"`
+	MetadataString    *string               `json:"metadata"`
+	BlockNumberMinted string                `json:"block_number_minted"`
+	Metadata          *MoralisTokenMetadata `json:"-"`
 }
 
 type MoralisTokenMetadata struct {
-	Image string `json:"image"`
-	Name string `json:"name"`
-	Description string `json:"description"`
-	ExternalLink string `json:"external_link"`
-	AnimationUrl string `json:"animation_url"`
-	Traits interface{} `json:"traits"`
+	Image        string      `json:"image"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	ExternalLink string      `json:"external_link"`
+	AnimationUrl string      `json:"animation_url"`
+	Traits       interface{} `json:"traits"`
 }
 
 // Covalent structures
 type CovalentNftTransactionFilter struct {
-	Chain *string
+	Chain           *string
 	ContractAddress string
-	TokenID string
+	TokenID         string
 }
 
 type CovalentGetTokenHolderRequest struct {
 	ContractAddress string
-	Chain *string
-	Page int32
-	Limit int32	
+	Chain           *string
+	Page            int32
+	Limit           int32
 }
 
 type CovalentGetAllTokenHolderRequest struct {
 	ContractAddress string
-	Chain *string
-	Limit int32	
+	Chain           *string
+	Limit           int32
 }
 
 type CovalentGetTokenHolderData struct {
@@ -102,17 +103,17 @@ type CovalentGetTokenHolderData struct {
 }
 
 type CovalentGetTokenHolderResponse struct {
-	Data CovalentGetTokenHolderData `json:"data"`
-	Error        bool        `json:"error"`
-	ErrorMessage interface{} `json:"error_message"`
-	ErrorCode    interface{} `json:"error_code"`
+	Data         CovalentGetTokenHolderData `json:"data"`
+	Error        bool                       `json:"error"`
+	ErrorMessage interface{}                `json:"error_message"`
+	ErrorCode    interface{}                `json:"error_code"`
 }
 
 type CovalentGetNftTransactionResponse struct {
-	Data CovalentGetNftTransactionData `json:"data"`
-	Error        bool        `json:"error"`
-	ErrorMessage interface{} `json:"error_message"`
-	ErrorCode    interface{} `json:"error_code"`
+	Data         CovalentGetNftTransactionData `json:"data"`
+	Error        bool                          `json:"error"`
+	ErrorMessage interface{}                   `json:"error_message"`
+	ErrorCode    interface{}                   `json:"error_code"`
 }
 
 type CovalentGetNftTransactionData struct {
@@ -162,10 +163,9 @@ type CovalentGetNftTransactionData struct {
 		} `json:"nft_transactions"`
 	} `json:"items"`
 	Pagination interface{} `json:"pagination"`
-} 
-
+}
 
 type MoralisMessage struct {
 	Message string `json:"message"`
-	Err error
+	Err     error
 }
