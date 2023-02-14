@@ -2844,6 +2844,9 @@ var doc = `{
                 "description": {
                     "type": "string"
                 },
+                "isFullChain": {
+                    "type": "boolean"
+                },
                 "license": {
                     "type": "string"
                 },

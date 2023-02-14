@@ -21,6 +21,8 @@ definitions:
         type: string
       description:
         type: string
+      isFullChain:
+        type: boolean
       license:
         type: string
       limitSupply:
