@@ -92,6 +92,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	if err != nil {
 		creatorAddrr = &entity.Users{}
 	}
+
+	creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
 	isPubsub := false
 	animationURL := ""
 	zipLink := req.ZipLink
