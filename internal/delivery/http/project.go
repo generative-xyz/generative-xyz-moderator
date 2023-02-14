@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -10,6 +11,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -70,12 +72,23 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Tags Project
 // @Accept  json
 // @Produce  json
+// @Security Authorization
 // @Param request body request.CreateBTCProjectReq true "Create profile request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/btc [POST]
 func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("createBTCProject", r)
 	defer h.Tracer.FinishSpan(span, log )
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New( "Wallet address is incorect")
+		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	var reqBody request.CreateBTCProjectReq
 	decoder := json.NewDecoder(r.Body)
@@ -93,7 +106,7 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
+	reqUsecase.CreatorAddrr = walletAddress
 	log.SetData("reqUsecase",reqUsecase)
 	message, err := h.Usecase.CreateBTCProject(span, *reqUsecase)
 	if err != nil {

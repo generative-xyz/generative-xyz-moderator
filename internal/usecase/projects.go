@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -61,6 +63,13 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		return nil, err
 	}
 
+	pow := math.Pow10(8)
+	powBig := big.NewFloat(0).SetFloat64(pow)
+
+	mintPrice := big.NewFloat(0)
+	mintPrice.SetString(req.MintPrice)
+	mintPrice.Mul(mintPrice, powBig)
+
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
 		log.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
@@ -70,6 +79,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenIDInt =  maxID
 	pe.TokenID =  fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	pe.MintPrice = mintPrice.String()
 
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
@@ -77,6 +87,11 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
+
+	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
+	if err != nil {
+		creatorAddrr = &entity.Users{}
+	}
 	
 	animationURL := ""
 	zipLink := req.ZipLink
@@ -112,9 +127,23 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 			}
 			
 			uploadChan := make(chan uploadFileChan, len(zf.File))
-
 			processed := 1
+			processingFiles := []*zip.File{}
 			for _, file := range zf.File {
+				if strings.Index(file.Name, "__MACOSX") > -1 {
+					continue
+				}
+				
+				if strings.Index(file.Name, ".DS_Store") > -1 {
+					continue
+				}
+				
+				processingFiles = append(processingFiles, file)
+			}
+			log.SetData("processingFiles",processingFiles)
+			
+
+			for _, file := range processingFiles {
 				log.SetData("fileName", file.Name)
 				log.SetData("UncompressedSize64", file.UncompressedSize64)
 
@@ -164,7 +193,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 				processed ++
 			}
 
-			for i := 0 ;i < len( zf.File) ; i++ {
+			for i := 0 ;i < len(processingFiles) ; i++ {
 				dataFromChan := <- uploadChan
 				if dataFromChan.Err != nil {
 					log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
@@ -173,27 +202,38 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 				images = append(images, *dataFromChan.FileURL)
 				animationURL = *dataFromChan.FileURL
+				nftTokenURI["image"] = animationURL
 			}
 
 			pe.Images = images	
+			pe.IsFullChain = true
 		 }
 	}else{
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
+			nftTokenURI["animation_url"] = animationURL
 		}
 	}
 
-	nftTokenURI["animation_url"] = animationURL
+	
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		log.Error("json.Marshal.nftTokenURI", err.Error(), err)
 		return nil, err
 	}
-
 	nftToken := helpers.Base64Encode(bytes)
+	now := time.Now().UTC()
+
 	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
 	pe.ProcessingImages = []string{}
 	pe.MintedImages = nil
+	pe.IsSynced = true
+	pe.MintedTime = &now
+	pe.CreatorProfile = *creatorAddrr
+	pe.IsHidden = false
+	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
+	pe.LimitSupply = 0
+	
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
