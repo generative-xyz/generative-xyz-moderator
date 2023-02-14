@@ -27,6 +27,7 @@ type InscribeBTC struct {
 	Balance   string    `bson:"balance"` // balance after check
 	FeeRate   int32     `bson:"fee_rate"`
 	ExpiredAt time.Time `bson:"expired_at"`
+	Success   bool      `bson:"fee_rate"`
 
 	Status    StatusInscribe `bson:"status"` // status for record
 	TxSendBTC string         `bson:"tx_send_btc"`

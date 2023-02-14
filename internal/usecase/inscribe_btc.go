@@ -356,6 +356,7 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
+				item.Success = true
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
