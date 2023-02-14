@@ -142,6 +142,8 @@ definitions:
     properties:
       projectID:
         type: string
+      walletAddress:
+        type: string
     type: object
   request.GenerateMessageRequest:
     properties:
@@ -350,6 +352,8 @@ definitions:
         type: string
       image:
         type: string
+      isFullChain:
+        type: boolean
       itemDesc:
         type: string
       license:

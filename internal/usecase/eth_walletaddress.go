@@ -115,7 +115,7 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, whitelistedAddrs []string) (bool, error) {
 	span, log := u.StartSpan("IsWhitelistedAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	log.SetData("whitelistedAddrs", whitelistedAddrs)
 	if len(whitelistedAddrs) == 0 {
 		log.SetData("whitelistedAddrs.Total", len(whitelistedAddrs))
@@ -126,7 +126,7 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 		filter.Limit = new(int)
 		*filter.Limit = 1
 
-		log.SetData("filter.GetNftByWalletAddress",filter)
+		log.SetData("filter.GetNftByWalletAddress", filter)
 		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
 		if err != nil {
 			log.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
@@ -154,7 +154,7 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 	return false, nil
 }
 
-func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
+func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("CreateETHWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -175,7 +175,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 				return weth, nil
 			}
 		}
-	}else{
+	} else {
 		log.Error("u.Repo.FindEthWalletAddressByUserAddress", err.Error(), err)
 	}
 
@@ -241,7 +241,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 
 	walletAddress.Amount = mintPrice // 0.023 * 1e18 eth
 
-	isWhitelist, err := u.IsWhitelistedAddress(ctx, span, input.WalletAddress, p.WhiteListEthContracts)
+	isWhitelist, err := u.IsWhitelistedAddress(ctx, span, userAddr, p.WhiteListEthContracts)
 
 	if isWhitelist {
 		whitelistedPrice := new(big.Float)
