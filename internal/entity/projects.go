@@ -86,6 +86,7 @@ type Projects struct {
 	WhiteListEthContracts              []string              `bson:"whiteListEthContracts" json:"whiteListEthContracts"` //if user uses links instead of animation URL
 	ProcessingImages 	[]string 				`bson:"processingImages" json:"processingImages"`
 	MintedImages        []MintedImages        `bson:"mintedImages" json:"mintedImages"` //if user uses links instead of animation URL
+	IsFullChain        bool        `bson:"isFullChain" json:"isFullChain"` 
 }
 
 type MintedImages struct {
