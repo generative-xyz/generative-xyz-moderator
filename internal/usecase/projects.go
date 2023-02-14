@@ -78,7 +78,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 	
-	
+	animationURL := ""
 	zipLink := req.ZipLink
 	spew.Dump(zipLink)
 	images := []string{}
@@ -166,15 +166,18 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 				}
 
 				images = append(images, *dataFromChan.FileURL)
+				animationURL = *dataFromChan.FileURL
 			}
 
 			pe.Images = images	
 		 }
 	}else{
-		animationURL := req.AnimationURL
-		nftTokenURI["animation_url"] = animationURL
+		if req.AnimationURL != nil {
+			animationURL = *req.AnimationURL
+		}
 	}
 
+	nftTokenURI["animation_url"] = animationURL
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		log.Error("json.Marshal.nftTokenURI", err.Error(), err)
@@ -184,6 +187,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	nftToken := helpers.Base64Encode(bytes)
 	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
 	pe.ProcessingImages = []string{}
+	pe.MintedImages = nil
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)

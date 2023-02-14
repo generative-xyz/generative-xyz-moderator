@@ -34,6 +34,7 @@ type CreateBTCProjectReq struct {
 	ZipLink				  *string			  `json:"zipLink"`
 	AnimationURL		  *string			  `json:"animationURL"`
 	Royalty		  int			  `json:"royalty"`
+	IsFullChain        bool        `json:"isFullChain"` 
 }
 
 type UpdateProjectReq struct {
