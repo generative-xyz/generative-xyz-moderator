@@ -206,7 +206,7 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 		}
 
 		if balance.Uint64() < amount.Uint64() {
-			err := fmt.Errorf("Not enough amount %d < %d ", balance, amount)
+			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "compare balance err", err.Error())
 
 			item.Status = entity.StatusInscribe_NotEnoughBalance
