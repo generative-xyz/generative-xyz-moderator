@@ -7,6 +7,8 @@ definitions:
     type: object
   request.CreateBTCProjectReq:
     properties:
+      animationURL:
+        type: string
       categories:
         items:
           type: string
@@ -30,6 +32,8 @@ definitions:
       name:
         type: string
       openMintUnixTimestamp:
+        type: integer
+      royalty:
         type: integer
       scripts:
         items:
@@ -69,17 +73,6 @@ definitions:
       walletAddress:
         type: string
     type: object
-  request.CreateBtcWalletAddressReqV2:
-    properties:
-      fee_rate:
-        type: integer
-      file:
-        type: string
-      name:
-        type: string
-      walletAddress:
-        type: string
-    type: object
   request.CreateCategoryRequest:
     properties:
       name:
@@ -100,6 +93,17 @@ definitions:
   request.CreateEthWalletAddressReq:
     properties:
       projectID:
+        type: string
+      walletAddress:
+        type: string
+    type: object
+  request.CreateInscribeBtcReq:
+    properties:
+      fee_rate:
+        type: integer
+      file:
+        type: string
+      name:
         type: string
       walletAddress:
         type: string
@@ -670,28 +674,6 @@ paths:
       summary: Verified the generated message
       tags:
       - Auth
-  /btc-v2/receive-address:
-    post:
-      consumes:
-      - application/json
-      description: Generate receive wallet address
-      parameters:
-      - description: Create a btc wallet address request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateBtcWalletAddressReqV2'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: BTC Generate receive wallet address
-      tags:
-      - BTC
   /btc/balance:
     post:
       consumes:
@@ -1232,6 +1214,28 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /inscribe/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a btc wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateInscribeBtcReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: BTC Generate receive wallet address
+      tags:
+      - BTC
   /marketplace/listing/{genNFTAddr}/token/{tokenID}:
     get:
       consumes:
