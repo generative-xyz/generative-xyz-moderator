@@ -140,7 +140,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.CreatorProfile = *creatorAddrr
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
-	
+	pe.GenNFTAddr = pe.TokenID
 	
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
