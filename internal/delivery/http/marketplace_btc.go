@@ -144,7 +144,7 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 	}
 	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 	if err != nil {
-		limit = 20
+		offset = 20
 	}
 
 	buyableOnly := false
