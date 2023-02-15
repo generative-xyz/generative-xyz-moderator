@@ -259,6 +259,8 @@ definitions:
         type: string
       image:
         type: string
+      inscriptionIndex:
+        type: string
       mintedTime:
         type: string
       name:
@@ -336,6 +338,10 @@ definitions:
     properties:
       blockNumberMinted:
         type: string
+      categories:
+        items:
+          type: string
+        type: array
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -379,6 +385,10 @@ definitions:
       mintingInfo:
         $ref: '#/definitions/response.NftMintingDetail'
       name:
+        type: string
+      networkFee:
+        type: string
+      networkFeeEth:
         type: string
       openMintUnixTimestamp:
         type: integer
@@ -1762,9 +1772,17 @@ paths:
         in: query
         name: name
         type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
       - description: limit
         in: query
         name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
         type: integer
       - description: newest, priority-asc, priority-desc
         in: query

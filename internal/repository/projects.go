@@ -290,6 +290,11 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 			f["$text"] = bson.M{"$search": *filter.Name}
 		}
 	}
+
+	if filter.CategoryIds != nil && len(filter.CategoryIds) > 0 {
+		f["categories"] = bson.M{"$all": filter.CategoryIds}
+	}
+
 	return f
 }
 
@@ -356,6 +361,7 @@ func (r Repository) SortProjects() []Sort {
 	s := []Sort{}
 	s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
 	s = append(s, Sort{SortBy: "index", Sort: entity.SORT_DESC})
+	s = append(s, Sort{SortBy: "tokenid", Sort: entity.SORT_ASC})
 	return s
 }
 
@@ -371,6 +377,7 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"name", 1},
 		{"creatorName", 1},
 		{"creatorAddress", 1},
+		{"categories", 1},
 		{"thumbnail", 1},
 		{"mintFee", 1},
 		{"openMintUnixTimestamp", 1},

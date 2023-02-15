@@ -2043,9 +2043,21 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "filter project via category ids",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "page",
                         "in": "query"
                     },
                     {
@@ -3240,6 +3252,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "inscriptionIndex": {
+                    "type": "string"
+                },
                 "mintedTime": {
                     "type": "string"
                 },
@@ -3358,6 +3373,12 @@ const docTemplate = `{
                 "blockNumberMinted": {
                     "type": "string"
                 },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
@@ -3422,6 +3443,12 @@ const docTemplate = `{
                     "$ref": "#/definitions/response.NftMintingDetail"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "networkFee": {
+                    "type": "string"
+                },
+                "networkFeeEth": {
                     "type": "string"
                 },
                 "openMintUnixTimestamp": {

@@ -315,7 +315,7 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	//TODO - enable this
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
-		WalletName: "ord_master",
+		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 		FileUrl:    fileURI,
 		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
 		DryRun:     false,
@@ -489,7 +489,7 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			log.SetData("updated", updated)
 
 			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				MinterAddress: "ord_master",
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
 				Owner:         "",
 				ProjectID:     item.ProjectID,
 				Action:        entity.BLANCE,
@@ -541,7 +541,7 @@ func (u Usecase) WaitingForETHMinting(rootSpan opentracing.Span) ([]entity.ETHWa
 				Commit:        mintReps.Commit,
 				Reveal:        mintReps.Reveal,
 				Fees:          mintReps.Fees,
-				MinterAddress: "ord_master",
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
 				Owner:         "",
 				ProjectID:     item.ProjectID,
 				Action:        entity.MINT,
@@ -599,7 +599,7 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 				Commit:        item.MintResponse.Commit,
 				Reveal:        item.MintResponse.Reveal,
 				Fees:          item.MintResponse.Fees,
-				MinterAddress: "ord_master",
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
 				Owner:         item.UserAddress,
 				Action:        entity.SENT,
 				ProjectID:     item.ProjectID,
