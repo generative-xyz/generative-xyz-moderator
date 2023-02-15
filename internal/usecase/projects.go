@@ -905,7 +905,6 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	}
 
 	log.SetData("zf.File", len(zf.File))
-	uploadChan := make(chan uploadFileChan, len(zf.File))
 	processingFiles := []*zip.File{}
 	for _, file := range zf.File {
 		if strings.Index(file.Name, "__MACOSX") > -1 {
@@ -919,6 +918,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		processingFiles = append(processingFiles, file)
 	}
 	log.SetData("processingFiles", processingFiles)
+	uploadChan := make(chan uploadFileChan, len(processingFiles))
 
 	maxSize := uint64(0)
 	groups := make(map[string][]byte)
@@ -947,9 +947,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 		if len(groups) == 100 {
 			var wg sync.WaitGroup
-			for k, v := range groups {
+			for fileName, fileData := range groups {
 				wg.Add(1)
-				go u.UploadFileZip(span, v, uploadChan, pe.Name, k, &wg)
+				go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
 			}
 			wg.Wait()
 			groups = make(map[string][]byte)
@@ -960,9 +960,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	if len(groups) > 0 {
 		var wg sync.WaitGroup
-		for k, v := range groups {
+		for fileName, fileData := range groups {
 			wg.Add(1)
-			go u.UploadFileZip(span, v, uploadChan, pe.Name, k, &wg)
+			go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
 		}
 		wg.Wait()
 		groups = make(map[string][]byte)
@@ -972,7 +972,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		dataFromChan := <-uploadChan
 		if dataFromChan.Err != nil {
 			log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
-			return nil, dataFromChan.Err
+			if pe.MaxSupply < int64(i) {
+				return nil, dataFromChan.Err
+			}
 		}
 
 		images = append(images, *dataFromChan.FileURL)
