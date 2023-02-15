@@ -490,7 +490,7 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 			FileUrl:           fileURI,
 			FeeRate:           int(item.FeeRate),
 			DryRun:            false,
-			AutoFeeRateSelect: true,
+			AutoFeeRateSelect: false,
 		})
 
 		if err != nil {
