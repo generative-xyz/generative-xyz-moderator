@@ -26,6 +26,7 @@ type ProjectResp struct {
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`
 	CreatorAddrrBTC        string           `json:"creatorAddrrBTC"`
+	Categories 						 []string				  `json:"categories"`
 	License                string           `json:"license"`
 	Desc                   string           `json:"desc"`
 	Image                  string           `json:"image"`
