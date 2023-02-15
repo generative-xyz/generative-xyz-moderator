@@ -715,98 +715,51 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	return pTokenUri, nil
 }
 
-// func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structure.MarketplaceNFTDetail, error) {
-// 	span, log := u.StartSpan("GetAllListListingWithRule", rootSpan)
-// 	defer u.Tracer.FinishSpan(span, log)
-// 	result := []structure.MarketplaceNFTDetail{}
-// 	var nftList []entity.MarketplaceBTCListingFilterPipeline
-// 	var err error
+func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structure.MarketplaceNFTDetail, error) {
+	span, log := u.StartSpan("GetAllListListingWithRule", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	result := []structure.MarketplaceNFTDetail{}
+	var nftList []entity.MarketplaceBTCListingFilterPipeline
+	var err error
 
-// 	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	for _, listing := range nftList {
-// 		// if listing.IsSold {
-// 		// 	if !buyableOnly {
-// 		// 		nftInfo := structure.MarketplaceNFTDetail{
-// 		// 			InscriptionID: listing.InscriptionID,
-// 		// 			Name:          listing.Name,
-// 		// 			Description:   listing.Description,
-// 		// 			Price:         listing.Price,
-// 		// 			OrderID:       listing.UUID,
-// 		// 			IsConfirmed:   listing.IsConfirm,
-// 		// 			Buyable:       false,
-// 		// 			IsCompleted:   listing.IsSold,
-// 		// 			CreatedAt:     listing.CreatedAt,
-// 		// 		}
-// 		// 		result = append(result, nftInfo)
-// 		// 	}
-// 		// 	continue
-// 		// }
-// 		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
-// 		if err != nil {
-// 			if !buyableOnly {
-// 				nftInfo := structure.MarketplaceNFTDetail{
-// 					InscriptionID: listing.InscriptionID,
-// 					Name:          listing.Name,
-// 					Description:   listing.Description,
-// 					Price:         listing.Price,
-// 					OrderID:       listing.UUID,
-// 					IsConfirmed:   listing.IsConfirm,
-// 					Buyable:       false,
-// 					IsCompleted:   listing.IsSold,
-// 					CreatedAt:     listing.CreatedAt,
-// 				}
-// 				result = append(result, nftInfo)
-// 				continue
-// 			}
-// 		}
-// 		currentTime := time.Now()
-// 		isAvailable := true
-// 		for _, order := range buyOrders {
-// 			expireTime := order.ExpiredAt
-// 			// not expired yet still waiting for btc
-// 			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
-// 				isAvailable = false
-// 				break
-// 			}
-// 			// could be expired but received btc
-// 			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
-// 				isAvailable = false
-// 				break
-// 			}
-// 		}
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(9999999, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, listing := range nftList {
+		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
+		if err != nil {
+			continue
 
-// 		nftInfo := structure.MarketplaceNFTDetail{
-// 			InscriptionID: listing.InscriptionID,
-// 			Name:          listing.Name,
-// 			Description:   listing.Description,
-// 			Price:         listing.Price,
-// 			OrderID:       listing.UUID,
-// 			IsConfirmed:   listing.IsConfirm,
-// 			Buyable:       isAvailable,
-// 			IsCompleted:   listing.IsSold,
-// 			CreatedAt:     listing.CreatedAt,
-// 		}
-// 		if buyableOnly && isAvailable {
-// 			result = append(result, nftInfo)
-// 		}
-// 		if !buyableOnly {
-// 			result = append(result, nftInfo)
-// 		}
-// 	}
+		}
+		currentTime := time.Now()
+		isAvailable := true
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isAvailable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isAvailable = false
+				break
+			}
+		}
 
-// 	if !buyableOnly {
-// 		sort.SliceStable(result, func(i, j int) bool {
-// 			if result[i].Buyable && result[j].Buyable {
-// 				if result[i].CreatedAt.After(result[j].CreatedAt) {
-// 					return true
-// 				}
-// 			}
-// 			return result[i].Buyable
-// 		})
-// 	}
-
-// 	return result, nil
-// }
+		nftInfo := structure.MarketplaceNFTDetail{
+			InscriptionID: listing.InscriptionID,
+			Name:          listing.Name,
+			Description:   listing.Description,
+			Price:         listing.Price,
+			OrderID:       listing.UUID,
+			IsConfirmed:   listing.IsConfirm,
+			Buyable:       isAvailable,
+			IsCompleted:   listing.IsSold,
+			CreatedAt:     listing.CreatedAt,
+		}
+		result = append(result, nftInfo)
+	}
+	return result, nil
+}
