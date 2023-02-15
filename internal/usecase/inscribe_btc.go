@@ -116,6 +116,11 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 		return nil, err
 	}
 
+	expiredTime := utils.INSCRIBE_TIMEOUT
+	if u.Config.ENV == "develop" {
+		expiredTime = 1
+	}
+
 	walletAddress.Amount = mintFee.Amount
 	walletAddress.MintFee = mintFee.MintFee
 	walletAddress.SentTokenFee = mintFee.SentTokenFee
@@ -127,7 +132,7 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	walletAddress.FileURI = input.File
 	walletAddress.InscriptionID = ""
 	walletAddress.FeeRate = input.FeeRate
-	walletAddress.ExpiredAt = time.Now().Add(time.Hour * 6)
+	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 
 	log.SetTag(userWallet, walletAddress.OrdAddress)
 

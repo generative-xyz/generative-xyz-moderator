@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -99,7 +100,7 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	resp.IsConfirm = input.IsConfirm
 	resp.InscriptionID = input.InscriptionID
 	resp.Balance = input.Balance
-	resp.TimeoutAt = fmt.Sprintf("%d", input.ExpiredAt.Unix())
+	resp.TimeoutAt = fmt.Sprintf("%d", time.Now().Add(time.Hour*1).Unix()) // return FE in 1h. //TODO: need update
 	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
 }
@@ -183,7 +184,7 @@ func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["ID"]
 	inscribeInfo, err := h.Usecase.GetInscribeInfo(span, id)
-	if  err != nil {
+	if err != nil {
 		log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
