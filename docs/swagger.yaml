@@ -338,6 +338,10 @@ definitions:
     properties:
       blockNumberMinted:
         type: string
+      categories:
+        items:
+          type: string
+        type: array
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -1775,6 +1779,10 @@ paths:
       - description: limit
         in: query
         name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
         type: integer
       - description: newest, priority-asc, priority-desc
         in: query

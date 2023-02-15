@@ -181,6 +181,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Param name query string false "filter project via name"
 // @Param category query string false "filter project via category ids"
 // @Param limit query int false "limit"
+// @Param page query int false "limit"
 // @Param sort query string false "newest, priority-asc, priority-desc"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
