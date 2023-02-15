@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -392,6 +393,9 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 		return nil, err
 	}
 
+	// get nft listing from marketplace:
+	nftListing, _ := h.Usecase.GetAllListListingWithRule(span)
+
 	for _, token := range tokens {
 		resp, err := h.tokenToResp(&token)
 		if err != nil {
@@ -399,14 +403,20 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 			log.Error("tokenToResp", err.Error(), err)
 			return nil, err
 		}
+
+		for _, v := range nftListing {
+			if resp != nil {
+				if strings.EqualFold(v.InscriptionID, resp.TokenID) {
+					resp.Project.Buyable = v.Buyable
+					resp.Project.PriceBTC = v.Price
+					resp.Project.OrderID = v.OrderID
+					break
+				}
+			}
+		}
+
 		respItems = append(respItems, *resp)
 	}
-
-	// get nft listing from marketplace:
-	// nftList, err = h.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	resp := h.PaginationResp(pag, respItems)
 	return &resp, nil
