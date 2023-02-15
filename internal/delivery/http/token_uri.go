@@ -393,7 +393,7 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 		return nil, err
 	}
 
-	// get nft listing from marketplace:
+	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
 	nftListing, _ := h.Usecase.GetAllListListingWithRule(span)
 
 	for _, token := range tokens {
