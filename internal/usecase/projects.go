@@ -132,7 +132,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mintPrice.String()
 	networkFee := big.NewFloat(u.networkFeeBySize(300000 / 4)) // will update after unzip and check data
-	pe.NetworkFee = networkFee.Mul(networkFee, powBig).String()
+	pe.NetworkFee = networkFee.String()
 	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
@@ -986,7 +986,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	pe.IsSynced = true
 
 	networkFee := big.NewFloat(u.networkFeeBySize(float64(maxSize) / 4)) // will update after unzip and check data
-	pe.NetworkFee = networkFee.Mul(networkFee, big.NewFloat(math.Pow10(8))).String()
+	pe.NetworkFee = networkFee.String()
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
