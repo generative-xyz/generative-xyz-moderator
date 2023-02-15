@@ -922,7 +922,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	maxSize := uint64(0)
 	groups := make(map[string][]byte)
+	i := 0
 	for _, file := range processingFiles {
+		i++
 		log.SetData("fileName", file.Name)
 		log.SetData("UncompressedSize64", file.UncompressedSize64)
 		maxFileSize := uint64(400000)
@@ -945,9 +947,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			return nil, err
 		}
 
-		if len(groups) <= 500 {
-			groups[file.Name] = fC
-		} else {
+		if len(groups) == 100 || i == len(processingFiles) {
 			var wg sync.WaitGroup
 			for k, v := range groups {
 				wg.Add(1)
@@ -955,6 +955,8 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			}
 			wg.Wait()
 			groups = make(map[string][]byte)
+		} else {
+			groups[file.Name] = fC
 		}
 	}
 
