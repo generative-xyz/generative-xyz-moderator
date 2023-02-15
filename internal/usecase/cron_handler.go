@@ -630,6 +630,10 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 			return err
 		}
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
+
+		if token.OwnerAddr != inscribeInfo.Address {
+			u.Repo.UpdateTokenOwnerAddr(inscribeInfo.ID, inscribeInfo.Address)
+		}
 		// try to find user with address as btc address
 		profile, err := u.Repo.FindUserByBtcAddress(inscribeInfo.Address)
 		if err == nil && profile != nil {

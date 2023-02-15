@@ -438,3 +438,19 @@ func (r Repository) UpdateTokenOwner(tokenId string, owner *entity.Users) error 
 	}
 	return err
 }
+
+func (r Repository) UpdateTokenOwnerAddr(tokenId string, addr string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"owner_addrress": addr,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
