@@ -39,16 +39,6 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	// userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-	// resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"create",
-	// 	},
-	// })
-
 	ethClient := eth.NewClient(nil)
 
 	privKey, pubKey, address, err := ethClient.GenerateAddress()
@@ -60,18 +50,6 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
-	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"receive",
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-	// 	return nil, err
-	// }
 
 	log.SetData("CreateETHWalletAddress.receive", address)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
@@ -85,6 +63,15 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	if err != nil {
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
+	}
+	if p.NetworkFee != "" {
+		// extra network fee
+		networkFee, err1 := strconv.ParseInt(p.NetworkFee, 10, 64)
+		if err1 != nil {
+			log.Error("convertBTCToInt", err.Error(), err)
+		} else {
+			mintPriceInt += networkFee
+		}
 	}
 	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
@@ -205,18 +192,6 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	}
 
 	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
-	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"receive",
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-	// 	return nil, err
-	// }
 
 	log.SetData("CreateETHWalletAddress.receive", address)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
@@ -230,6 +205,15 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	if err != nil {
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
+	}
+	if p.NetworkFee != "" {
+		// extra network fee
+		networkFee, err1 := strconv.ParseInt(p.NetworkFee, 10, 64)
+		if err1 != nil {
+			log.Error("convertBTCToInt", err.Error(), err)
+		} else {
+			mintPriceInt += networkFee
+		}
 	}
 	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
@@ -333,7 +317,7 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl:    fileURI,
-		FeeRate:    15, //temp
+		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
 		DryRun:     false,
 	})
 	u.Notify(rootSpan, fmt.Sprintf("[MintFor][projectID %s]", ethAddress.ProjectID), ethAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", ethAddress.UserAddress, resp.Stdout))
