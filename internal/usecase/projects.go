@@ -167,12 +167,10 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	isPubsub := false
 	animationURL := ""
 	zipLink := req.ZipLink
-	if zipLink != nil {
-		if *zipLink != "" {
-			pe.IsHidden = true
-			isPubsub = true
-			pe.Status = false
-		}
+	if zipLink != nil && *zipLink != ""  {
+		pe.IsHidden = true
+		isPubsub = true
+		pe.Status = false
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
