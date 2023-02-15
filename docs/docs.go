@@ -2055,6 +2055,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "newest, priority-asc, priority-desc",
                         "name": "sort",
@@ -3366,6 +3372,12 @@ const docTemplate = `{
             "properties": {
                 "blockNumberMinted": {
                     "type": "string"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "closeMintUnixTimestamp": {
                     "type": "integer"
