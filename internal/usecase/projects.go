@@ -879,12 +879,12 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	spew.Dump(os.Getenv("GCS_DOMAIN"))
 	// TODO
-	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/",os.Getenv("GCS_DOMAIN")), "")
-	// err = u.GCS.UnzipFile(zipLink)
-	// if err != nil {
-	// 	log.Error("http.Get", err.Error(), err)
-	// 	return nil, err
-	// }
+	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
+	err = u.GCS.UnzipFile(zipLink)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
@@ -895,7 +895,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	maxSize := uint64(0)
 	for _, f := range files {
 		//TODO check f.Name is not empty
-		
+
 		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
 		images = append(images, temp)
 		nftTokenURI["image"] = temp
