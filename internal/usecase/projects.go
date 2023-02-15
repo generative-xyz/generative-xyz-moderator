@@ -1002,8 +1002,8 @@ func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan 
 			FileURL: uploadedUrl,
 			Err:     err,
 		}
+		wg.Done()
 	}()
-	defer wg.Done()
 
 	base64Data := helpers.Base64Encode(fc)
 
