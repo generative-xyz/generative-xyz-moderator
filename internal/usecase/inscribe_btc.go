@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +27,21 @@ type BitcoinTokenMintFee struct {
 	Amount       string
 	MintFee      string
 	SentTokenFee string
+	Size         int
+}
+
+func decodeFileBase64(file string) (string, string, error) {
+	i := strings.Index(file, ",")
+	if i < 0 {
+		return "", "", errors.New("no comma")
+	}
+
+	dec, err := base64.StdEncoding.DecodeString(file[i+1:])
+	if err != nil {
+		log.Println("DecodeString err", err)
+		return "", "", err
+	}
+	return string(dec), file[i+1:], nil
 }
 
 func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*BitcoinTokenMintFee, error) {
@@ -36,8 +52,20 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	// if err != nil {
 	// 	return nil, err
 	// }
-	fileSize := len([]byte(input.File))
+
+	// need to encode file: phuong viet lai:
+	fileDecode, _, err := decodeFileBase64(input.File)
+	if err != nil {
+		return nil, err
+	}
+
+	fileSize := len([]byte(fileDecode))
+
+	fmt.Println("fileSize===>", fileSize)
+
 	mintFee := int32(fileSize) / 4 * input.FeeRate
+
+	fmt.Println("mintFee===>", mintFee)
 
 	sentTokenFee := utils.FEE_BTC_SEND_AGV * 2
 	totalFee := int(mintFee) + sentTokenFee
@@ -46,6 +74,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 		Amount:       strconv.FormatInt(int64(totalFee), 10),
 		MintFee:      strconv.FormatInt(int64(mintFee), 10),
 		SentTokenFee: strconv.FormatInt(int64(sentTokenFee), 10),
+		Size:         fileSize,
 	}, nil
 }
 
@@ -133,8 +162,27 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	walletAddress.InscriptionID = ""
 	walletAddress.FeeRate = input.FeeRate
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
+	walletAddress.FileName = input.FileName
 
 	log.SetTag(userWallet, walletAddress.OrdAddress)
+
+	// todo remove:
+	// _, base64Str, err := decodeFileBase64(input.File)
+	// if err != nil {
+	// 	log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// now := time.Now().UTC().Unix()
+	// uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", walletAddress.OrdAddress, now, "jpg"))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	// fmt.Println("fileURI: ", fileURI)
+	// walletAddress.LocalLink = fileURI
+	// end remove
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -407,17 +455,31 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		fmt.Println("mint nft now ...")
 
 		// - Upload the Animation URL to GCS
-		animation := item.FileURI
-		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
-		animation = strings.ReplaceAll(animation, "data:image/png;base64,", "")
+		typeFile := "html"
+
+		if len(item.FileName) > 0 {
+			typeFiles := strings.Split(".", item.FileName)
+			if len(typeFiles) == 2 {
+				typeFile = typeFiles[1]
+			}
+		}
+
+		// update google clound: TODO need to move into api to avoid create file many time.
+		_, base64Str, err := decodeFileBase64(item.FileURI)
+		if err != nil {
+			log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.decodeFileBase64", err.Error())
+			continue
+		}
 
 		now := time.Now().UTC().Unix()
-		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", item.OrdAddress, now))
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.OrdAddress, now, typeFile))
 		if err != nil {
 			log.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
 			continue
 		}
+		item.LocalLink = uploaded.FullPath
 
 		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 		item.FileURI = fileURI
