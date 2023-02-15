@@ -111,7 +111,7 @@ func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) BtcWalletAddressToResp(input *entity.BTCWalletAddress) (*response.BctReceiveWalletResp, error) {
 	resp := &response.BctReceiveWalletResp{}
 	resp.Address = input.OrdAddress
-	resp.Pricce = input.Amount
+	resp.Price = input.Amount
 	return resp, nil
 }
 

@@ -99,11 +99,29 @@ func (r Repository) UpdateBtcWalletAddress(model *entity.BTCWalletAddress) (*mon
 func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, error) {
 	confs := []entity.BTCWalletAddress{}
 	f := bson.M{}
-	f["$or"] = []interface{}{
-		bson.M{"isMinted": false},
-		bson.M{"isConfirm": false},
-	}
+	f["isConfirm"] = false
+	f["isMinted"] = false
 	f["balanceCheckTime"] = bson.M{"$lt": utils.MAX_CHECK_BALANCE}
+
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+
+func (r Repository) ListMintingWalletAddress() ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["isMinted"] = false
 
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
