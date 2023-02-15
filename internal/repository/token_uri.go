@@ -421,3 +421,20 @@ func (r Repository) UpdateTokenInscriptionIndex(tokenId string, inscriptionIndex
 	}
 	return err
 }
+
+func (r Repository) UpdateTokenOwner(tokenId string, owner *entity.Users) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"owner_addrress": owner.WalletAddressBTC,
+			"owner": owner,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}

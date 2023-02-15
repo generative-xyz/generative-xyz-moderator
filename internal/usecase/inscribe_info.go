@@ -1,11 +1,13 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gocolly/colly"
 	"github.com/opentracing/opentracing-go"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 )
 
@@ -13,6 +15,8 @@ import (
 func (u Usecase) crawlInscribeWebsite(rootSpan opentracing.Span, id string) (*entity.InscribeInfo, error) {
 	span, log := u.StartSpan("usecase.crawlInscribeWebsite", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
+	url := fmt.Sprintf("https://ordinals-explorer.generative.xyz/inscription/%s", id)
 	
 	dts := []string{}
 	dds := []string{}
@@ -20,6 +24,7 @@ func (u Usecase) crawlInscribeWebsite(rootSpan opentracing.Span, id string) (*en
 	var inscribeIndex string
 
 	c := colly.NewCollector()
+	var err error
 
 	c.OnHTML("dl", func(e *colly.HTMLElement) {
 		e.ForEach("dt", func(id int, e *colly.HTMLElement) {
@@ -36,7 +41,17 @@ func (u Usecase) crawlInscribeWebsite(rootSpan opentracing.Span, id string) (*en
 		inscribeIndex = strings.Replace(text, "Inscription ", "", -1)
 	})
 
-	c.Visit(fmt.Sprintf("https://ordinals-explorer.generative.xyz/inscription/%s", id))
+	c.OnError(func(r *colly.Response, e error) {
+		log.Error(fmt.Sprintf("request to url %s failed", url), err.Error(), err)
+		err = e
+	})
+
+
+	c.Visit(url)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if len(dts) != len(dds) {
 		return nil, fmt.Errorf("something went wrong went crawl inscribe id %s", id)
@@ -87,4 +102,35 @@ func (u Usecase) GetInscribeInfo(rootSpan opentracing.Span, id string) (*entity.
 	}
 
 	return inscribeInfo, nil
+}
+
+func (u Usecase) SyncInscribeInfo(rootSpan opentracing.Span, id string) (*entity.InscribeInfo, bool, error) {
+	span, log := u.StartSpan("usecase.SyncInscribeInfo", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	updated := false
+	
+	// try to find old record in mongo
+	oldInscribeInfo, err := u.Repo.GetInscribeInfo(id);
+	var newInscribeInfo *entity.InscribeInfo
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			// make sure oldInscribeInfo == nil
+			oldInscribeInfo = nil
+			newInscribeInfo, err = u.crawlInscribeWebsite(span, id) 
+			if err != nil {
+				return nil, updated, err
+			}
+		} else {
+			return nil, updated, err		
+		}
+	}
+	
+	// need an update
+	if oldInscribeInfo == nil || oldInscribeInfo.Address != newInscribeInfo.Address {
+		// update inscribe info document
+		updated = true
+		u.Repo.UpsertTokenUri(id, newInscribeInfo)
+	} 
+
+	return newInscribeInfo, updated, nil
 }

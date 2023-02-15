@@ -75,6 +75,7 @@ const (
 	KEY_ORDER_ID         string = "order_id"
 	KEY_AUTO_USERID      string = "user_id"
 	KEY_WALLET_ADDRESS   string = "wallet_address"
+	KEY_WALLET_ADDRESS_BTC string = "wallet_address_btc"
 	KEY_DELETED_AT       string = "deleted_at"
 	KEY_PROJECT_ID       string = "project_id"
 	KEY_LISTING_CONTRACT string = "collection_contract"
