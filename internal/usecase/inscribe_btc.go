@@ -285,7 +285,7 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet(rootSpan opentracing.Span) error 
 				item.SegwitAddress,
 				item.OrdAddress,
 				-1,
-				btc.PreferenceMedium,
+				btc.PreferenceHigh,
 			)
 			if err != nil {
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
