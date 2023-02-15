@@ -947,7 +947,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			return nil, err
 		}
 
-		if len(groups) == 100 || i == len(processingFiles) {
+		if len(groups) == 100 || i == len(processingFiles)+1 {
 			var wg sync.WaitGroup
 			for k, v := range groups {
 				wg.Add(1)
