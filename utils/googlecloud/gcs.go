@@ -1,6 +1,8 @@
 package googlecloud
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -29,6 +32,7 @@ type IGcstorage interface {
 	ReadFileFromBucket(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
 	ReadFolder(name string) ([]*storage.ObjectAttrs, error)
+	UnzipFile(object string) error
 }
 
 type GcsUploadedObject struct {
@@ -42,7 +46,7 @@ type GcsUploadedObject struct {
 
 type GcsFile struct {
 	FileHeader *multipart.FileHeader
-	Path *string
+	Path       *string
 }
 type gcstorage struct {
 	client     *storage.Client
@@ -75,6 +79,56 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 	}
 
 	return &gcStorage, nil
+}
+
+func (g gcstorage) UnzipFile(object string) error {
+	r, err := g.client.Bucket(g.bucketName).Object(object).NewReader(g.ctx)
+	if err != nil {
+		return err
+	}
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	br := bytes.NewReader(b)
+
+	zr, err := zip.NewReader(br, int64(len(b)))
+	if err != nil {
+		return err
+	}
+
+	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
+	buffer := make([]byte, 32*1024)
+	outputBucket := g.bucketName
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		err := func() error {
+			r, err := f.Open()
+			if err != nil {
+				return fmt.Errorf("Open: %v", err)
+			}
+			defer r.Close()
+
+			p := filepath.Join(baseDir, f.Name)
+			w := g.client.Bucket(outputBucket).Object(p).NewWriter(g.ctx)
+			defer w.Close()
+
+			_, err = io.CopyBuffer(w, r, buffer)
+			if err != nil {
+				return fmt.Errorf("io.Copy: %v", err)
+			}
+
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
 }
 
 func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) {
@@ -140,7 +194,7 @@ func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 	defer cancel()
 
 	// create reader
-	r, err := g.bucket.Object(fmt.Sprintf("upload/%s",fileName)).NewReader(ctx)
+	r, err := g.bucket.Object(fmt.Sprintf("upload/%s", fileName)).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -160,23 +214,22 @@ func (g *gcstorage) UploadBaseToBucket(base64Srting string, name string) (*GcsUp
 }
 
 type ImageConfig struct {
-	Width int64
-	Height int64
-	Ratio string
-	RatioWidth int
+	Width       int64
+	Height      int64
+	Ratio       string
+	RatioWidth  int
 	RatioHeight int
 }
 
-
 type uploadGcsChannel struct {
-	Attrs *storage.ObjectAttrs
-	Err error
+	Attrs    *storage.ObjectAttrs
+	Err      error
 	FilePath string
 }
 
 type detectImageSizeChannel struct {
 	Size *ImageConfig
-	Err error
+	Err  error
 }
 
 func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedObject, error) {
@@ -195,7 +248,7 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 
 		channel := &uploadGcsChannel{}
 
-		defer func ()  {
+		defer func() {
 			gcsChannel <- channel
 		}()
 
@@ -204,37 +257,36 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 		_, err = sw.Write(decode)
 		if err != nil {
 			channel.Err = err
-			return 
+			return
 		}
 
 		if err = sw.Close(); err != nil {
 			channel.Err = err
-			return 
+			return
 		}
 
 		attrs := sw.Attrs()
 		u, err := url.Parse("/" + g.bucketName + "/" + attrs.Name)
 		if err != nil {
 			channel.Err = err
-			return 
+			return
 		}
 		filePath := u.EscapedPath()
 		//fullPath := fmt.Sprintf("%s%s", GcloudStorePath, filePath)
-		
+
 		channel.Attrs = attrs
 		channel.FilePath = filePath
 
 	}(gcsChannel, base64Image, objectName)
-	
-	
+
 	go func(detectSizeChannel chan *detectImageSizeChannel, base64Image string, objectName string) {
 		channel := &detectImageSizeChannel{}
 		dec, err := base64.StdEncoding.DecodeString(base64Image)
 
-		defer func ()  {
+		defer func() {
 			detectSizeChannel <- channel
 		}()
-		
+
 		if err != nil {
 			channel.Err = err
 			return
@@ -260,7 +312,7 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 		size, err := g.detectImageSize(objectName)
 		if err != nil {
 			channel.Err = err
-			return 
+			return
 		}
 
 		channel.Size = size
@@ -270,14 +322,13 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 
 	}(detectSizeChannel, base64Image, objectName)
 
-	uploadedInfo := <- gcsChannel
+	uploadedInfo := <-gcsChannel
 	if uploadedInfo.Err != nil {
 		return nil, uploadedInfo.Err
 	}
 
 	attrs := uploadedInfo.Attrs
 	filePath := uploadedInfo.FilePath
-	
 
 	result := GcsUploadedObject{
 		Name:     attrs.Name,
@@ -285,73 +336,70 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 		Size:     attrs.Size,
 		Path:     filePath,
 		FullPath: attrs.MediaLink,
-		
 	}
 	return &result, nil
 }
 
-func (g *gcstorage) detectImageSize(fileName string)  (*ImageConfig, error) {
-	reader, err := os.Open(fileName); 
+func (g *gcstorage) detectImageSize(fileName string) (*ImageConfig, error) {
+	reader, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Impossible to open the file:", err)
-		return nil, err		
-	} 
+		return nil, err
+	}
 
 	defer reader.Close()
 	im, _, err := image.DecodeConfig(reader)
 	if err != nil {
-		return nil, err	
+		return nil, err
 	}
 
 	detectedRation := g.detectRatio(&im)
 	return &detectedRation, nil
 }
 
-
 func (g *gcstorage) detectRatio(size *image.Config) ImageConfig {
 	width := size.Width
 	height := size.Height
 	returnData := ImageConfig{
-		Width:  int64(width),
-		Height:  int64(height),
-		Ratio:   "1:1",
-		RatioWidth: 1,
+		Width:       int64(width),
+		Height:      int64(height),
+		Ratio:       "1:1",
+		RatioWidth:  1,
 		RatioHeight: 1,
 	}
 
 	if width == height {
-		 returnData.Ratio = "1:1"
-		 return returnData
+		returnData.Ratio = "1:1"
+		return returnData
 	}
 
 	number := g.findDeviedNumber(width, height)
 	ratioW := width
 	ratioH := height
 	for {
-		if ratioW % number != 0 || ratioH % number != 0 {
+		if ratioW%number != 0 || ratioH%number != 0 {
 			break
 		}
 		ratioW = ratioW / number
 		ratioH = ratioH / number
 	}
 
-	returnData.Ratio = fmt.Sprintf("%d:%d",ratioW, ratioH)
+	returnData.Ratio = fmt.Sprintf("%d:%d", ratioW, ratioH)
 	returnData.RatioWidth = ratioW
 	returnData.RatioHeight = ratioH
 	return returnData
 }
 
-
 func (g *gcstorage) findDeviedNumber(with int, height int) int {
 	i := 2
 	for {
-		if with % i == 0 && height %i == 0 {
+		if with%i == 0 && height%i == 0 {
 			break
 		}
-		i ++
+		i++
 	}
 	return i
-} 
+}
 
 func (g *gcstorage) Delete(objectName string) error {
 	// [START delete_file]
@@ -395,26 +443,26 @@ func (g *gcstorage) deleFile(tmpFileName string) error {
 
 func (g gcstorage) ReadFolder(name string) ([]*storage.ObjectAttrs, error) {
 	resp := []*storage.ObjectAttrs{}
-	
+
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
 
 	// create reader
 	obj := g.bucket.Objects(ctx, &storage.Query{Prefix: name, Delimiter: "/"})
 	for {
-        attrs, err := obj.Next()
-        if err == iterator.Done {
-            break
-        }
-        if err != nil {
-            return nil, err
-        }
+		attrs, err := obj.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 
 		if attrs.Name != name { // remove folder
 			resp = append(resp, attrs)
 		}
-		
-    }
+
+	}
 	return resp, nil
 
 }

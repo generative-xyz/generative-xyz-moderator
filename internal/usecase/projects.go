@@ -1,11 +1,9 @@
 package usecase
 
 import (
-	"archive/zip"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -877,7 +875,31 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	log.SetData("zipPayload", zipPayload)
 	images := []string{}
 	zipLink := zipPayload.ZipLink
-	resp, err := http.Get(zipLink)
+
+	// TODO
+	zipLink = strings.ReplaceAll(zipLink, os.Getenv("GCS_DOMAIN"), "")
+	err = u.GCS.UnzipFile(zipLink)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+	files, err := u.GCS.ReadFolder(zipLink + "_unzip")
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+	maxSize := uint64(0)
+	for _, f := range files {
+		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
+		images = append(images, temp)
+		nftTokenURI["image"] = temp
+		if uint64(f.Size) > maxSize {
+			maxSize = uint64(f.Size)
+		}
+	}
+	//
+
+	/*resp, err := http.Get(zipLink)
 	if err != nil {
 		log.Error("http.Get", err.Error(), err)
 		return nil, err
@@ -980,7 +1002,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		images = append(images, *dataFromChan.FileURL)
 		animationURL := *dataFromChan.FileURL
 		nftTokenURI["image"] = animationURL
-	}
+	}*/
 
 	pe.Images = images
 	pe.IsFullChain = true
