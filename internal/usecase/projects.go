@@ -196,6 +196,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
+	pe.TraceID = u.Tracer.TraceID(span)
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
@@ -213,6 +214,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	log.SetData("pe", pe)
 	log.SetData("pe.isPubsub", isPubsub)
+
+	u.Notify(rootSpan, fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
 }
 

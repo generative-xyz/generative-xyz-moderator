@@ -456,13 +456,14 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 	return ethEntity, nil
 }
 
+//Mint flow
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
-		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
+		log.Error("WaitingForETHBalancing.ListProcessingWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
@@ -475,27 +476,63 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 			newItem, err := u.BalanceETHLogic(span, item)
 			if err != nil {
-				//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-			log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-			u.Notify(rootSpan, fmt.Sprintf("[WaitingForBalance][projectID %s]", item.ProjectID), item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
+			log.SetData(fmt.Sprintf("WaitingForETHBalancing.BalanceLogic.%s", item.OrdAddress), newItem)
+			u.Notify(rootSpan, fmt.Sprintf("[WaitingForBalance][projectID %s]", item.ProjectID), item.UserAddress, fmt.Sprintf("%s checking ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
 			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
 			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WaitingForETHBalancing.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-
 			log.SetData("updated", updated)
+
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				MinterAddress: "ord_master",
+				Owner:         "",
+				ProjectID:     item.ProjectID,
+				Action:        entity.BLANCE,
+				Type:          entity.ETH,
+				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
+			})
+		}(span, item)
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return nil, nil
+}
+
+
+func (u Usecase) WaitingForETHMinting(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("WaitingForETHMinting", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	addreses, err := u.Repo.ListMintingETHWalletAddress()
+	if err != nil {
+		log.Error("WaitingForETHMinting.ListProcessingWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("addreses", addreses)
+	for _, item := range addreses {
+		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
+			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+			
 			if item.MintResponse.Inscription != "" {
 				err = errors.New("Token is being minted")
 				log.Error("Token.minted", err.Error(), err)
 				return
 			}
 
-			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
 			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 
@@ -510,17 +547,20 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				Action:        entity.MINT,
 				Type:          entity.ETH,
 				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
 			})
 
 			log.SetData("btc.Minted", mintReps)
-			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
-			newItem.IsMinted = true
-			newItem.FileURI = *fileURI
-			updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			item.MintResponse = entity.MintStdoputResponse(*mintReps)
+			item.IsMinted = true
+			item.FileURI = *fileURI
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
+
+			log.SetData("updated", updated)
 
 		}(span, item)
 
@@ -565,6 +605,7 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 				ProjectID:     item.ProjectID,
 				Type:          entity.ETH,
 				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
 			})
 
 			u.Notify(rootSpan, fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
@@ -601,6 +642,7 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	return nil, nil
 }
 
+//Mint flow
 func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
 
 	span, log := u.StartSpan("convertBTCToETH", rootSpan)

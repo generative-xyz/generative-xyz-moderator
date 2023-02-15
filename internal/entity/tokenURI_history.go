@@ -8,6 +8,7 @@ import (
 
 type TokenHistoryType string
 const (
+	BLANCE TokenHistoryType = "balance"
 	MINT TokenHistoryType = "mint"
 	SENT TokenHistoryType = "sent"
 )
@@ -21,7 +22,8 @@ type FilterTokenUriHistory struct {
 
 type TokenUriHistories struct {
 	BaseEntity `bson:",inline"`
-	TokenID string `bson:"token_id" json:"token_id"`
+	ProccessID string `bson:"processID"` //map to eth_wallet_adress or btc_wallet_address
+	TokenID string `bson:"token_id" json:"tokenID"`
 	MinterAddress string `bson:"minter_address"`
 	Owner string `bson:"owner"`
 	Action TokenHistoryType `bson:"action"`
@@ -31,6 +33,8 @@ type TokenUriHistories struct {
 	ProjectID string `bson:"projectID"`
 	Type TokenPaidType `bson:"type"`
 	TraceID string `bson:"traceID"`
+	Balance string `bson:"balance"`
+	Amount string `bson:"amount"`
 }
 
 func (u TokenUriHistories) TableName() string { 

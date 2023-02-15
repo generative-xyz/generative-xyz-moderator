@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"rederinghub.io/internal/entity"
@@ -122,12 +123,29 @@ func (r Repository) UpdateEthWalletAddressByOrdAddr(ordAddress string, conf *ent
 func (r Repository) ListProcessingETHWalletAddress() ([]entity.ETHWalletAddress, error) {
 	confs := []entity.ETHWalletAddress{}
 	f := bson.M{}
-	f["$or"] = []interface{}{
-		bson.M{"isMinted": false},
-		bson.M{"isConfirm": false},
-	}
+	f["isConfirm"] = false
+	f["isMinted"] = false
 	f["balanceCheckTime"] = bson.M{"$lt": utils.MAX_CHECK_BALANCE}
 
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+
+func (r Repository) ListMintingETHWalletAddress() ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["isMinted"] = false
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
