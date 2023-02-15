@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -902,7 +903,6 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	log.SetData("zf.File", len(zf.File))
 	uploadChan := make(chan uploadFileChan, len(zf.File))
-	processed := 1
 	processingFiles := []*zip.File{}
 	for _, file := range zf.File {
 		if strings.Index(file.Name, "__MACOSX") > -1 {
@@ -918,6 +918,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	log.SetData("processingFiles", processingFiles)
 
 	maxSize := uint64(0)
+	groups := make(map[string][]byte)
 	for _, file := range processingFiles {
 		log.SetData("fileName", file.Name)
 		log.SetData("UncompressedSize64", file.UncompressedSize64)
@@ -941,42 +942,17 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			return nil, err
 		}
 
-		if processed%5 == 0 {
-			time.Sleep(5 * time.Second)
-		}
-
-		go func(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan) {
-			span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
-			defer u.Tracer.FinishSpan(span, log)
-			var err error
-			var uploadedUrl *string
-
-			defer func() {
-				uploadChan <- uploadFileChan{
-					FileURL: uploadedUrl,
-					Err:     err,
-				}
-			}()
-
-			base64Data := helpers.Base64Encode(fc)
-
-			key := helpers.GenerateSlug(pe.Name)
-			key = fmt.Sprintf("btc-projects/%s/unzip", key)
-
-			uploadFileName := fmt.Sprintf("%s/%s", key, file.Name)
-			uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
-			if err != nil {
-				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
-				return
+		if len(groups) <= 500 {
+			groups[file.Name] = fC
+		} else {
+			var wg sync.WaitGroup
+			for k, v := range groups {
+				wg.Add(1)
+				go u.UploadFileZip(span, v, uploadChan, pe.Name, k, &wg)
 			}
-
-			log.SetData("uploaded", uploaded)
-			cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-			uploadedUrl = &cdnURL
-
-		}(span, fC, uploadChan)
-
-		processed++
+			wg.Wait()
+			groups = make(map[string][]byte)
+		}
 	}
 
 	for i := 0; i < len(processingFiles); i++ {
@@ -1008,4 +984,36 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	log.SetData("updated", updated)
 	return pe, nil
+}
+
+func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
+	span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	var err error
+	var uploadedUrl *string
+
+	defer func() {
+		uploadChan <- uploadFileChan{
+			FileURL: uploadedUrl,
+			Err:     err,
+		}
+	}()
+	defer wg.Done()
+
+	base64Data := helpers.Base64Encode(fc)
+
+	key := helpers.GenerateSlug(peName)
+	key = fmt.Sprintf("btc-projects/%s/unzip", key)
+
+	uploadFileName := fmt.Sprintf("%s/%s", key, fileName)
+	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
+	if err != nil {
+		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+		return
+	}
+
+	log.SetData("uploaded", uploaded)
+	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	uploadedUrl = &cdnURL
+
 }
