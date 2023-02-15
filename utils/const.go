@@ -111,6 +111,7 @@ const (
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
 
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
+	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
 
 	INSCRIBE_TIMEOUT = 6
 
