@@ -198,6 +198,9 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	categoriesRaw := r.URL.Query().Get("category")
 
 	categoryIds := strings.Split(categoriesRaw, ",")
+	if categoriesRaw == "" {
+		categoryIds = []string{}
+	}
 
 	baseF, err := h.BaseFilters(r)
 	if err != nil {

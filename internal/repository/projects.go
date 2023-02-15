@@ -361,6 +361,7 @@ func (r Repository) SortProjects() []Sort {
 	s := []Sort{}
 	s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
 	s = append(s, Sort{SortBy: "index", Sort: entity.SORT_DESC})
+	s = append(s, Sort{SortBy: "token_id", Sort: entity.SORT_ASC})
 	return s
 }
 
