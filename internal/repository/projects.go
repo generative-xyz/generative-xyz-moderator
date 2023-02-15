@@ -16,13 +16,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
+func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{utils.KEY_UUID, projectID}})
 	if err != nil {
 		return nil, err
 	}
-	
+
 	err = helpers.Transform(usr, resp)
 	if err != nil {
 		return nil, err
@@ -30,13 +30,13 @@ func (r Repository) FindProject( projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
-func (r Repository) FindProjectByTokenID( tokenID string) (*entity.Projects, error) {
+func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
 	if err != nil {
 		return nil, err
 	}
-	
+
 	err = helpers.Transform(usr, resp)
 	if err != nil {
 		return nil, err
@@ -44,11 +44,11 @@ func (r Repository) FindProjectByTokenID( tokenID string) (*entity.Projects, err
 	return resp, nil
 }
 
-func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
+func (r Repository) FindProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
 	go r.findProjectBy(contractAddress, tokenID)
-	
+
 	p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
 	if err != nil {
 		return r.findProjectBy(contractAddress, tokenID)
@@ -62,19 +62,19 @@ func (r Repository) FindProjectBy( contractAddress string, tokenID string) (*ent
 	return resp, nil
 }
 
-func (r Repository) IncreaseProjectIndex(projectID string) (error) {
+func (r Repository) IncreaseProjectIndex(projectID string) error {
 	filter := bson.D{{Key: "tokenid", Value: projectID}}
 	update := bson.M{"$inc": bson.M{"index": 1}}
 	_, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
 	return err
 }
 
-func (r Repository) FindProjectWithoutCache( contractAddress string, tokenID string) (*entity.Projects, error) {
+func (r Repository) FindProjectWithoutCache(contractAddress string, tokenID string) (*entity.Projects, error) {
 	contractAddress = strings.ToLower(contractAddress)
-	return  r.findProjectBy(contractAddress, tokenID)
+	return r.findProjectBy(contractAddress, tokenID)
 }
 
-func (r Repository) findProjectBy( contractAddress string, tokenID string) (*entity.Projects, error) {
+func (r Repository) findProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	contractAddress = strings.ToLower(contractAddress)
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"contractAddress", contractAddress}, {"tokenid", tokenID}})
@@ -86,7 +86,7 @@ func (r Repository) findProjectBy( contractAddress string, tokenID string) (*ent
 	if err != nil {
 		return nil, err
 	}
-	
+
 	r.Cache.SetData(helpers.ProjectDetailKey(contractAddress, tokenID), resp)
 	return resp, nil
 }
@@ -102,7 +102,7 @@ func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return resp, nil
 }
 
@@ -122,17 +122,17 @@ func (r Repository) UpdateProjectImages(ID string, images []string, processingIm
 	filter := bson.D{{utils.KEY_UUID, ID}}
 	update := bson.M{
 		"$set": bson.M{
-			"images": images,
+			"images":           images,
 			"processingImages": processingImages,
 		},
 	}
-	
+
 	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
-		return nil, err	
+		return nil, err
 	}
-	
+
 	return result, nil
 }
 
@@ -155,24 +155,23 @@ func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mon
 	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
-		return nil, err	
+		return nil, err
 	}
-	
+
 	return result, nil
 }
 
-func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
+func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
-	
-	
+
 	s := r.SortProjects()
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
@@ -180,7 +179,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	return resp, nil
 }
 
-func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error)  {
+func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error) {
 	projects := []entity.Projects{}
 	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
@@ -195,7 +194,7 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 	return projects, nil
 }
 
-func (r Repository) GetAllProjectsWithSelectedFields() ([]entity.Projects, error)  {
+func (r Repository) GetAllProjectsWithSelectedFields() ([]entity.Projects, error) {
 	projects := []entity.Projects{}
 	f := bson.M{}
 	opts := options.Find().SetProjection(r.SelectedProjectFields())
@@ -211,7 +210,7 @@ func (r Repository) GetAllProjectsWithSelectedFields() ([]entity.Projects, error
 	return projects, nil
 }
 
-func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error)  {
+func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error) {
 	//products := &entity.Products{}
 	f := r.FilterProjects(filter)
 	count, err := r.DB.Collection(utils.COLLECTION_PROJECTS).CountDocuments(context.TODO(), f)
@@ -222,37 +221,13 @@ func (r Repository) CountProjects(filter entity.FilterProjects) (*int64, error) 
 	return &count, nil
 }
 
-func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
+func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
 
 	query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
-	err := json. Unmarshal([]byte(query), &f)
-	if err != nil {
-		return nil, err
-	}
-
-	s := r.SortProjects()
-	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f , r.SelectedProjectFields(), s, &confs)
-	if err != nil {
-		return nil, err
-	}
-	
-	resp.Result = confs
-	resp.Page = p.Pagination.Page
-	resp.Total = p.Pagination.Total
-	resp.PageSize = filter.Limit
-	return resp, nil
-}
-
-func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entity.Pagination, error)  {
-	confs := []entity.Projects{}
-	resp := &entity.Pagination{}
-	f := r.FilterProjects(filter)
-
-	query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
-	err := json. Unmarshal([]byte(query), &f)
+	err := json.Unmarshal([]byte(query), &f)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +237,31 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	if err != nil {
 		return nil, err
 	}
-	
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
+}
+
+func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
+	confs := []entity.Projects{}
+	resp := &entity.Pagination{}
+	f := r.FilterProjects(filter)
+
+	query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
+	err := json.Unmarshal([]byte(query), &f)
+	if err != nil {
+		return nil, err
+	}
+
+	s := r.SortProjects()
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
@@ -280,15 +279,15 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{
 				//Pattern:  *filter.WalletAddress,
-				Pattern:  fmt.Sprintf(`^%s$`, *filter.WalletAddress),
+				Pattern: fmt.Sprintf(`^%s$`, *filter.WalletAddress),
 				Options: "i",
-			}} 
+			}}
 		}
 	}
 
 	if filter.Name != nil {
 		if *filter.Name != "" {
-			f["$text"] =  bson.M{"$search": *filter.Name}
+			f["$text"] = bson.M{"$search": *filter.Name}
 		}
 	}
 	return f
@@ -304,7 +303,7 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 			return resp, nil
 		}
 	}
-	
+
 	prj, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "genNFTAddr", Value: genNFTAddr}})
 	if err != nil {
 		return nil, err
@@ -317,18 +316,17 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 	return resp, nil
 }
 
-func (r Repository) GetMaxBtcProjectID() (int64, error)  {
-	btcID := 1000000;
-	btcMaxID := 1999999;
+func (r Repository) GetMaxBtcProjectID() (int64, error) {
+	btcID := 1000000
+	btcMaxID := 1999999
 
 	f := bson.A{
-		bson.M{"$match" : bson.M{"$and":  bson.A{
-			bson.M{ "tokenIDInt": bson.M{ "$gte": btcID}},
-			bson.M{ "tokenIDInt": bson.M{ "$lte": btcMaxID}},
-		} } },
-		bson.M{"$group":  bson.M{"_id": "$tokenIDInt"}, },
-		bson.M{"$sort":  bson.M{"_id": -1}, },
-		
+		bson.M{"$match": bson.M{"$and": bson.A{
+			bson.M{"tokenIDInt": bson.M{"$gte": btcID}},
+			bson.M{"tokenIDInt": bson.M{"$lte": btcMaxID}},
+		}}},
+		bson.M{"$group": bson.M{"_id": "$tokenIDInt"}},
+		bson.M{"$sort": bson.M{"_id": -1}},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Aggregate(context.TODO(), f)
@@ -347,21 +345,21 @@ func (r Repository) GetMaxBtcProjectID() (int64, error)  {
 			continue
 		}
 		return i.ID, nil
-		
+
 	}
-	
+
 	d := int64(btcID)
 	return d, nil
 }
 
-func (r Repository)SortProjects () []Sort {
+func (r Repository) SortProjects() []Sort {
 	s := []Sort{}
-	s = append(s, Sort{SortBy:"priority", Sort: entity.SORT_DESC })
-	s = append(s, Sort{SortBy:"index", Sort: entity.SORT_DESC })
+	s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
+	s = append(s, Sort{SortBy: "index", Sort: entity.SORT_DESC})
 	return s
 }
 
-func (r Repository)SelectedProjectFields () bson.D {
+func (r Repository) SelectedProjectFields() bson.D {
 	f := bson.D{
 		{"id", 1},
 		{"contractAddress", 1},
@@ -369,6 +367,7 @@ func (r Repository)SelectedProjectFields () bson.D {
 		{"maxSupply", 1},
 		{"limitSupply", 1},
 		{"mintPrice", 1},
+		{"networkFee", 1},
 		{"name", 1},
 		{"creatorName", 1},
 		{"creatorAddress", 1},
