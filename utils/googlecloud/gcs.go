@@ -82,7 +82,7 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 }
 
 func (g gcstorage) UnzipFile(object string) error {
-	r, err := g.client.Bucket(g.bucketName).Object(object).NewReader(g.ctx)
+	r, err := g.client.Bucket(os.Getenv("GCS_BUCKET")).Object(object).NewReader(g.ctx)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (g gcstorage) UnzipFile(object string) error {
 		if err != nil {
 			return err
 		}
-		return nil
+		
 	}
 
 	return nil
@@ -448,7 +448,7 @@ func (g gcstorage) ReadFolder(name string) ([]*storage.ObjectAttrs, error) {
 	defer cancel()
 
 	// create reader
-	obj := g.bucket.Objects(ctx, &storage.Query{Prefix: name, Delimiter: "/"})
+	obj := g.client.Bucket(os.Getenv("GCS_BUCKET")).Objects(ctx, &storage.Query{Prefix: name})
 	for {
 		attrs, err := obj.Next()
 		if err == iterator.Done {

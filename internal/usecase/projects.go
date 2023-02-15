@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -876,20 +877,25 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
+	spew.Dump(os.Getenv("GCS_DOMAIN"))
 	// TODO
-	zipLink = strings.ReplaceAll(zipLink, os.Getenv("GCS_DOMAIN"), "")
-	err = u.GCS.UnzipFile(zipLink)
-	if err != nil {
-		log.Error("http.Get", err.Error(), err)
-		return nil, err
-	}
-	files, err := u.GCS.ReadFolder(zipLink + "_unzip")
+	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/",os.Getenv("GCS_DOMAIN")), "")
+	// err = u.GCS.UnzipFile(zipLink)
+	// if err != nil {
+	// 	log.Error("http.Get", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	unzipFoler := zipLink + "_unzip"
+	files, err := u.GCS.ReadFolder(unzipFoler)
 	if err != nil {
 		log.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
 	maxSize := uint64(0)
 	for _, f := range files {
+		//TODO check f.Name is not empty
+		
 		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
 		images = append(images, temp)
 		nftTokenURI["image"] = temp
