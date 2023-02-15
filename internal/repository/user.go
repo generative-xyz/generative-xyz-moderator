@@ -39,6 +39,23 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 	return resp, nil
 }
 
+func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, error) {
+	resp := &entity.Users{}
+
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS_BTC, btcAddress}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+
 func (r Repository) FindUserByID(userID string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
