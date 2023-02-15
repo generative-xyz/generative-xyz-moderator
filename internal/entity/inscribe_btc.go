@@ -17,7 +17,9 @@ type InscribeBTC struct {
 	SentTokenFee      string `bson:"sent_token_fee"`
 	OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
 	SegwitAddress     string `bson:"segwit_address"`
-	FileURI           string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
+	FileURI           string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
+	LocalLink         string `bson:"local_link"`
+	FileName          string `bson:"file_name"`
 	IsConfirm         bool   `bson:"isConfirm"`     //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID     string `bson:"inscriptionID"` // tokenID in ETH
 	Mnemonic          string `bson:"mnemonic"`
