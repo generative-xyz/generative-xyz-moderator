@@ -896,6 +896,14 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	for _, f := range files {
 		//TODO check f.Name is not empty
 
+		if strings.Index(f.Name, "__MACOSX") > -1 {
+			continue
+		}
+
+		if strings.Index(f.Name, ".DS_Store") > -1 {
+			continue
+		}
+
 		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
 		images = append(images, temp)
 		nftTokenURI["image"] = temp
