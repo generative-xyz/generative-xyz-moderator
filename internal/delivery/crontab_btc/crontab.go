@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -93,4 +94,21 @@ func (h ScronBTCHandler) StartServer() {
 			time.Sleep(1 * time.Minute)
 		}
 	}()
+
+	c := cron.New()
+	// cronjob to sync inscription index
+	c.AddFunc("*/30 * * * *", func() {
+		span := h.Tracer.StartSpan("DispatchCron.EveryTwentyMinutes")
+		defer span.Finish()
+
+		log := tracer.NewTraceLog()
+		defer log.ToSpan(span)
+
+		err := h.Usecase.SyncTokenInscribeIndex(span)
+		if err != nil {
+			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+		}
+	})
+
+	c.Start()
 }

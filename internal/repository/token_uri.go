@@ -307,6 +307,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"creator.avatar", 1},
 		{"stats.price_int", 1},
 		{"minter_address", 1},
+		{"inscription_index", 1},
 	}
 	return f
 }
@@ -392,7 +393,8 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 		},
 	}
 	f[utils.KEY_DELETED_AT] = nil
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
 	}
