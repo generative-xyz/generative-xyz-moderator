@@ -107,18 +107,21 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	mintPrice := big.NewFloat(0)
 	mintPrice.SetString(req.MintPrice)
 
-	minMint, ok := big.NewFloat(0).SetString("0.01")
-	if !ok {
-		err = errors.New("Cannot convert number")
-		log.Error("validate.convert.number", err.Error(), err)
-		return nil, err
-	}
+	/*
+		minMint, ok := big.NewFloat(0).SetString("0.01")
+		if !ok {
+			err = errors.New("Cannot convert number")
+			log.Error("validate.convert.number", err.Error(), err)
+			return nil, err
+		}
 
-	if mintPrice.Cmp(minMint) == -1 {
-		err = errors.New("mintPrice must be greater than 0.01")
-		log.Error("validate.Min.Fee.Fail", err.Error(), err)
-		return nil, err
-	}
+		if mintPrice.Cmp(minMint) == -1 {
+			err = errors.New("mintPrice must be greater than 0.01")
+			log.Error("validate.Min.Fee.Fail", err.Error(), err)
+			return nil, err
+		}
+	*/
+
 	mintPrice.Mul(mintPrice, powBig)
 
 	maxID, err := u.Repo.GetMaxBtcProjectID()
