@@ -53,11 +53,6 @@ type ProjectResp struct {
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
 	WhiteListEthContracts  []string         `json:"whiteListEthContracts"`
 	IsHidden               bool             `json:"isHidden"`
-
-	// for buyable:
-	Buyable  bool   `json:"buyable"`
-	PriceBTC string `json:"priceBTC"`
-	OrderID  string `json:"orderID"`
 }
 
 type ProjectStatResp struct {
