@@ -260,7 +260,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	mintData := ord_service.MintRequest{
 		WalletName: "ord_master",
 		FileUrl:    btc.FileURI,
-		FeeRate:    15, //temp
+		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
 		DryRun:     false,
 	}
 
