@@ -113,6 +113,7 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name          *string
+	CategoryIds 	[]string
 }
 
 func (u Projects) TableName() string {

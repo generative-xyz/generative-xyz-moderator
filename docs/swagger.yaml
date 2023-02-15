@@ -259,6 +259,8 @@ definitions:
         type: string
       image:
         type: string
+      inscriptionIndex:
+        type: string
       mintedTime:
         type: string
       name:
@@ -379,6 +381,10 @@ definitions:
       mintingInfo:
         $ref: '#/definitions/response.NftMintingDetail'
       name:
+        type: string
+      networkFee:
+        type: string
+      networkFeeEth:
         type: string
       openMintUnixTimestamp:
         type: integer
@@ -1761,6 +1767,10 @@ paths:
       - description: filter project via name
         in: query
         name: name
+        type: string
+      - description: filter project via category ids
+        in: query
+        name: category
         type: string
       - description: limit
         in: query
