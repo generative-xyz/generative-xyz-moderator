@@ -407,9 +407,9 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 		for _, v := range nftListing {
 			if resp != nil {
 				if strings.EqualFold(v.InscriptionID, resp.TokenID) {
-					resp.Project.Buyable = v.Buyable
-					resp.Project.PriceBTC = v.Price
-					resp.Project.OrderID = v.OrderID
+					resp.Buyable = v.Buyable
+					resp.PriceBTC = v.Price
+					resp.OrderID = v.OrderID
 					break
 				}
 			}
