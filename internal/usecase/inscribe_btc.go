@@ -452,17 +452,28 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 	for _, item := range listTosendBtc {
 
 		// send all amount:
-		fmt.Println("mint nft now ...")
+		fmt.Println("mint nft now ...", item.FileName)
 
 		// - Upload the Animation URL to GCS
-		typeFile := "html"
+		typeFile := ""
 
-		if len(item.FileName) > 0 {
-			typeFiles := strings.Split(".", item.FileName)
-			if len(typeFiles) == 2 {
-				typeFile = typeFiles[1]
-			}
+		if len(item.FileName) == 0 {
+			err := errors.New("File name invalid")
+			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			continue
 		}
+
+		typeFiles := strings.Split(item.FileName, ".")
+		if len(typeFiles) != 2 {
+			err := errors.New("File name invalid")
+			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			continue
+		}
+
+		typeFile = typeFiles[1]
+		fmt.Println("typeFile: ", typeFile)
 
 		// update google clound: TODO need to move into api to avoid create file many time.
 		_, base64Str, err := decodeFileBase64(item.FileURI)
