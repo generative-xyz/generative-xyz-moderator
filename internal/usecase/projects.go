@@ -389,6 +389,15 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	}
 	c.MintPriceEth = ethPrice
 
+	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
+	if err == nil {
+		ethNetworkFeePrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		if err != nil {
+			return nil, err
+		}
+		c.NetworkFeeEth = ethNetworkFeePrice
+	}
+
 	return c, nil
 }
 

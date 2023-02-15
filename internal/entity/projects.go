@@ -45,6 +45,7 @@ type Projects struct {
 	LimitSupply            int64  `bson:"limitSupply" json:"limitSupply"`
 	MintPrice              string `bson:"mintPrice" json:"mintPrice"`
 	MintPriceEth           string
+	NetworkFeeEth          string
 	NetworkFee             string             `bson:"networkFee" json:"networkFee"`
 	Name                   string             `bson:"name" json:"name"`
 	CreatorName            string             `bson:"creatorName" json:"creatorName"`
