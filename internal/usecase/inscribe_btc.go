@@ -486,10 +486,11 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 
 		//TODO - enable this
 		resp, err := u.OrdService.Mint(ord_service.MintRequest{
-			WalletName: item.UserAddress,
-			FileUrl:    fileURI,
-			FeeRate:    int(item.FeeRate),
-			DryRun:     false,
+			WalletName:        item.UserAddress,
+			FileUrl:           fileURI,
+			FeeRate:           int(item.FeeRate),
+			DryRun:            false,
+			AutoFeeRateSelect: true,
 		})
 
 		if err != nil {
