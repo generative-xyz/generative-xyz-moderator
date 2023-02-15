@@ -51,6 +51,12 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
+
+	if len(reqUsecase.FileName) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Filename is required"))
+		return
+	}
+
 	if len(reqUsecase.WalletAddress) == 0 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is required"))
 		return
