@@ -200,18 +200,5 @@ func (h ScronHandler) StartServer() {
 		}
 	})
 
-	c.AddFunc("*/20 * * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.EveryTenMinutes")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
-		err := h.Usecase.SyncTokenInscribeIndex(span)
-		if err != nil {
-			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
-		}
-	})
-
 	c.Start()
 }
