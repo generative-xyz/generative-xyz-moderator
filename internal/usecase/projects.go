@@ -55,7 +55,7 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreatePr
 	return pe, nil
 }
 
-func (u Usecase) networkFeeBySize(size float64) float64 {
+func (u Usecase) networkFeeBySize(size int64) int64 {
 	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
 
 	if err != nil {
@@ -63,7 +63,7 @@ func (u Usecase) networkFeeBySize(size float64) float64 {
 		os.Exit(1)
 	}
 
-	feeRateValue := float64(entity.DEFAULT_FEE_RATE)
+	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
@@ -83,7 +83,7 @@ func (u Usecase) networkFeeBySize(size float64) float64 {
 			log.Fatal(err)
 		}
 		if feeRateObj.fastestFee > 0 {
-			feeRateValue = float64(feeRateObj.fastestFee)
+			feeRateValue = int64(feeRateObj.fastestFee)
 		}
 	}
 
@@ -131,7 +131,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenID = fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mintPrice.String()
-	networkFee := big.NewFloat(u.networkFeeBySize(300000 / 4)) // will update after unzip and check data
+	networkFee := big.NewInt(u.networkFeeBySize(int64(300000 / 4))) // will update after unzip and check data
 	pe.NetworkFee = networkFee.String()
 	pe.IsHidden = false
 	pe.Status = true
@@ -985,7 +985,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	pe.Status = true
 	pe.IsSynced = true
 
-	networkFee := big.NewFloat(u.networkFeeBySize(float64(maxSize) / 4)) // will update after unzip and check data
+	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.NetworkFee = networkFee.String()
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)

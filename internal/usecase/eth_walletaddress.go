@@ -201,14 +201,14 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	}
 
 	log.SetData("found.Project", p.ID)
-	mintPriceInt, err := strconv.ParseInt(p.MintPrice, 10, 64)
+	mintPriceInt, err := strconv.Atoi(p.MintPrice)
 	if err != nil {
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
 	}
 	if p.NetworkFee != "" {
 		// extra network fee
-		networkFee, err1 := strconv.ParseInt(p.NetworkFee, 10, 64)
+		networkFee, err1 := strconv.Atoi(p.NetworkFee)
 		if err1 != nil {
 			log.Error("convertBTCToInt", err.Error(), err)
 		} else {
