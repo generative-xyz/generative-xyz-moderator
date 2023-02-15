@@ -31,7 +31,7 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 func (h ScronBTCHandler) StartServer() {
 
 	
-
+	//waiting for blancing
 	go func() {
 		var wg sync.WaitGroup
 		//Waiting for balance + Mint
@@ -39,14 +39,6 @@ func (h ScronBTCHandler) StartServer() {
 			wg.Add(3)
 			go func(wg *sync.WaitGroup) {
 				span := h.Tracer.StartSpan("BTC.WaitingForBalancing")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForBalancing(span) // BTC
-			}(&wg)
-
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("ETH.WaitingForETHBalancing")
 				defer wg.Done()
 				defer span.Finish()
 
@@ -58,13 +50,53 @@ func (h ScronBTCHandler) StartServer() {
 				defer wg.Done()
 				defer span.Finish()
 
+				h.Usecase.WaitingForBalancing(span) // BTC
+			}(&wg)
+
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.SendBTCToMaster")
+				defer wg.Done()
+				defer span.Finish()
+
 				h.Usecase.JobBtcSendBtcToMaster(span) // BTC
 			}(&wg)
 			time.Sleep(5 * time.Minute)
 		}
-
 	}()
 
+	//waiting for minting
+	go func() {
+		var wg sync.WaitGroup
+		//Waiting for Send
+		for {
+			wg.Add(2)
+			go func(wg *sync.WaitGroup) {
+
+				span := h.Tracer.StartSpan("BTC.WaitingForMinting")
+				defer wg.Done()
+				defer span.Finish()
+
+				h.Usecase.WaitingForMinting(span)
+				
+			}(&wg)
+
+			//TODO mint with ETH payment?
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.WaitingForETHMinting")
+				defer wg.Done()
+				defer span.Finish()
+
+				h.Usecase.WaitingForETHMinting(span)
+
+			}(&wg)
+
+			wg.Wait()
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
+
+	//Waiting for minted and send
 	go func() {
 		var wg sync.WaitGroup
 		//Waiting for Send
@@ -109,6 +141,5 @@ func (h ScronBTCHandler) StartServer() {
 			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
 		}
 	})
-
 	c.Start()
 }
