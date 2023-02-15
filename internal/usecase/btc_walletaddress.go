@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -84,7 +85,16 @@ func (u Usecase) CreateOrdBTCWalletAddress(rootSpan opentracing.Span, input stru
 	}
 
 	log.SetData("found.Project", p.ID)
-	walletAddress.Amount = p.MintPrice
+	mintPrice, err := strconv.Atoi(p.MintPrice)
+	if err != nil {
+		log.Error("u.CreateOrdBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	networkFee, err := strconv.Atoi(p.NetworkFee)
+	if err == nil {
+		mintPrice += networkFee
+	}
+	walletAddress.Amount = strconv.Itoa(mintPrice)
 	walletAddress.UserAddress = userWallet
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
@@ -121,12 +131,22 @@ func (u Usecase) CreateSegwitBTCWalletAddress(rootSpan opentracing.Span, input s
 	log.SetData("CreateSegwitBTCWalletAddress.receive", addressSegwit)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
-		log.Error("u.CreateOrdBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		log.Error("u.CreateSegwitBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
 
 	log.SetData("found.Project", p.ID)
-	walletAddress.Amount = p.MintPrice
+	mintPrice, err := strconv.Atoi(p.MintPrice)
+	if err != nil {
+		log.Error("u.CreateSegwitBTCWalletAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	networkFee, err := strconv.Atoi(p.NetworkFee)
+	if err == nil {
+		mintPrice += networkFee
+	}
+
+	walletAddress.Amount = strconv.Itoa(mintPrice)
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
