@@ -623,9 +623,7 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 	processed := 0
 	for _, token := range notSyncedTokens {
 		processed++
-		tokenSpan, log := u.StartSpanWithoutRoot("SyncTokenInscribeIndex")
-		log.SetData("tokenId", token.TokenID)
-		inscribeInfo, err := u.GetInscribeInfo(tokenSpan, token.TokenID)
+		inscribeInfo, err := u.GetInscribeInfo(span, token.TokenID)
 		if err != nil {
 			return err
 		}

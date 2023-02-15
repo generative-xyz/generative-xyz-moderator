@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -178,7 +179,9 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param contractAddress query string false "Filter project via contract address"
 // @Param name query string false "filter project via name"
+// @Param category query string false "filter project via category ids"
 // @Param limit query int false "limit"
+// @Param page query int false "limit"
 // @Param sort query string false "newest, priority-asc, priority-desc"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
@@ -192,6 +195,14 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	span.SetTag("contractAddress", contractAddress)
 
 	name := r.URL.Query().Get("name")
+
+	categoriesRaw := r.URL.Query().Get("category")
+
+	categoryIds := strings.Split(categoriesRaw, ",")
+	if categoriesRaw == "" {
+		categoryIds = []string{}
+	}
+
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
@@ -202,6 +213,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.Name = &name
+	f.CategoryIds = categoryIds
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
@@ -351,6 +363,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		BestMakeOfferPrice: input.Stats.BestMakeOfferPrice,
 		ListedPercent:      input.Stats.ListedPercent,
 	}
+	resp.Categories = input.Categories
 	if input.TraitsStat != nil {
 		traitStat := make([]response.TraitStat, 0)
 		for _, v := range input.TraitsStat {
