@@ -348,7 +348,7 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("btcTestListen", r)
 	defer h.Tracer.FinishSpan(span, log)
 
-	result := h.Usecase.JobInscribeWaitingBalance(span)
+	result := h.Usecase.JobInscribeMintNft(span)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
