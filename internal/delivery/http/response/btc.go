@@ -13,5 +13,5 @@ type BctWalletResp struct {
 
 type BctReceiveWalletResp struct {
 	Address string `json:"address"`
-	Pricce  string `bson:"price"`
+	Price   string `bson:"price"`
 }

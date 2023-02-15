@@ -21,6 +21,7 @@ type ProjectResp struct {
 	MintPrice              string           `json:"mintPrice"`
 	MintPriceEth           string           `json:"mintPriceEth"`
 	NetworkFee             string           `json:"networkFee"`
+	NetworkFeeEth          string           `json:"networkFeeEth"`
 	MintPriceAddr          string           `json:"mintPriceAddr"`
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`

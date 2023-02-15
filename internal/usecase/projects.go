@@ -107,18 +107,21 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	mintPrice := big.NewFloat(0)
 	mintPrice.SetString(req.MintPrice)
 
-	minMint, ok := big.NewFloat(0).SetString("0.01")
-	if !ok {
-		err = errors.New("Cannot convert number")
-		log.Error("validate.convert.number", err.Error(), err)
-		return nil, err
-	}
+	/*
+		minMint, ok := big.NewFloat(0).SetString("0.01")
+		if !ok {
+			err = errors.New("Cannot convert number")
+			log.Error("validate.convert.number", err.Error(), err)
+			return nil, err
+		}
 
-	if mintPrice.Cmp(minMint) == -1 {
-		err = errors.New("mintPrice must be greater than 0.01")
-		log.Error("validate.Min.Fee.Fail", err.Error(), err)
-		return nil, err
-	}
+		if mintPrice.Cmp(minMint) == -1 {
+			err = errors.New("mintPrice must be greater than 0.01")
+			log.Error("validate.Min.Fee.Fail", err.Error(), err)
+			return nil, err
+		}
+	*/
+
 	mintPrice.Mul(mintPrice, powBig)
 
 	maxID, err := u.Repo.GetMaxBtcProjectID()
@@ -193,6 +196,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
+	pe.TraceID = u.Tracer.TraceID(span)
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
@@ -210,6 +214,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	log.SetData("pe", pe)
 	log.SetData("pe.isPubsub", isPubsub)
+
+	u.Notify(rootSpan, fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
 }
 
@@ -388,6 +394,15 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 		return nil, err
 	}
 	c.MintPriceEth = ethPrice
+
+	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
+	if err == nil {
+		ethNetworkFeePrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		if err != nil {
+			return nil, err
+		}
+		c.NetworkFeeEth = ethNetworkFeePrice
+	}
 
 	return c, nil
 }

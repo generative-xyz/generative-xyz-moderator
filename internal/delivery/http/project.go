@@ -375,6 +375,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	}
 
 	resp.MintPriceEth = input.MintPriceEth
+	resp.NetworkFeeEth = input.NetworkFeeEth
 
 	return resp, nil
 }

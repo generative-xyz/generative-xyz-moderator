@@ -45,6 +45,7 @@ type Projects struct {
 	LimitSupply            int64  `bson:"limitSupply" json:"limitSupply"`
 	MintPrice              string `bson:"mintPrice" json:"mintPrice"`
 	MintPriceEth           string
+	NetworkFeeEth          string
 	NetworkFee             string             `bson:"networkFee" json:"networkFee"`
 	Name                   string             `bson:"name" json:"name"`
 	CreatorName            string             `bson:"creatorName" json:"creatorName"`
@@ -90,6 +91,7 @@ type Projects struct {
 	ProcessingImages       []string           `bson:"processingImages" json:"processingImages"`
 	MintedImages           []MintedImages     `bson:"mintedImages" json:"mintedImages"` //if user uses links instead of animation URL
 	IsFullChain            bool               `bson:"isFullChain" json:"isFullChain"`
+	TraceID            string               `bson:"traceID" json:"traceID"` //TO find log easily
 }
 
 type MintedImages struct {
