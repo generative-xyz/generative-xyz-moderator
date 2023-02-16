@@ -654,6 +654,16 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 					if err != nil {
 						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
 					}
+
+					// Add successfully buy activity.
+					go func(item entity.MarketplaceBTCBuyOrder) {
+						nftListing, err := u.Repo.FindBtcNFTListingByOrderID(item.ItemID)
+						if err != nil {
+							fmt.Println("can not FindBtcNFTListingByOrderID with err:", err)
+							return
+						}
+						u.CreateBuyActivity(item.InscriptionID, nftListing.Price)
+					}(item)
 				}
 			}
 

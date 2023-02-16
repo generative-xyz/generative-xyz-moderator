@@ -231,6 +231,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	go h.Usecase.CreateViewProjectActivity(project.TokenID)
+
 	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
