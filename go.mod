@@ -23,7 +23,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/slack-go/slack v0.12.1
-	github.com/swaggo/http-swagger v1.3.3
+	github.com/swaggo/http-swagger v1.1.2
 	github.com/swaggo/swag v1.8.2
 	github.com/tdewolff/minify/v2 v2.12.4
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
