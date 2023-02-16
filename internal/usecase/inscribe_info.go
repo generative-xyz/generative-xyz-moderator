@@ -73,6 +73,7 @@ func (u Usecase) crawlInscribeWebsite(rootSpan opentracing.Span, id string) (*en
 		Preview: inscribeInfoToHref["preview"],
 		Content: inscribeInfoToHref["content"],
 		ContentLength: inscribeInfo["content length"],
+		ContentType: inscribeInfo["content type"],
 		Timestamp: inscribeInfo["timestamp"],
 		GenesisHeight: inscribeInfo["genesis height"],
 		GenesisTransaction: inscribeInfo["genesis transaction"],
