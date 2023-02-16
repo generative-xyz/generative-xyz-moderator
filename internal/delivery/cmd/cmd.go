@@ -39,5 +39,5 @@ func (h CMDHandler) StartServer() {
 	// h.Usecase.ChangeRoyalty("1000140", 5*100)
 	// h.Usecase.ChangeRoyalty("1000140", 5*100)
 	//h.Usecase.UpdateProfileProfile("1000067")
-	h.Usecase.Update1M02Collections("1000002")
+	h.Usecase.Update1M02Collections("1000122")
 }

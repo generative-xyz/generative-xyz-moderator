@@ -882,12 +882,12 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	// TODO
 
 	
-	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
-	// err = u.GCS.UnzipFile(zipLink)
-	// if err != nil {
-	// 	log.Error("http.Get", err.Error(), err)
-	// 	return nil, err
-	// }
+	zipLink = strings.ReplaceAll(zipLink, "https://storage.googleapis.com/generative-static-prod/", "")
+	err = u.GCS.UnzipFile(zipLink)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
@@ -1272,8 +1272,8 @@ func (u Usecase) Update1M02Collections(projectID string) {
 	helpers.WriteFile(fmt.Sprintf("bk-%s-images.json", projectID), bk)
 
    
-	tokenID := "1000002"
-	ziplink :=  "https://cdn.generative.xyz/btc-projects/1000002/output.zip"
+	tokenID := "1000122"
+	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/1000122/Young_Satoshi.zip"
 	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
 	if err != nil {
 		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
