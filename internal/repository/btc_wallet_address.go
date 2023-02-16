@@ -163,6 +163,7 @@ func (r Repository) ListWalletAddressToClaimBTC() ([]entity.BTCWalletAddress, er
 
 	filter := bson.M{
 		"isConfirm":      true,
+		"isMinted":      true,
 		"uuid":           bson.M{"$gt": "63ea272eb020796632eb8811"},
 		"is_sent_master": false,
 	}
