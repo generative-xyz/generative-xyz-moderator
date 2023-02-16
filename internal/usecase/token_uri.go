@@ -801,6 +801,7 @@ func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID strin
 		OrderID:       nft.UUID,
 		IsConfirmed:   nft.IsConfirm,
 		Buyable:       isBuyable,
+		IsCompleted:   nft.IsSold,
 	}
 	return &nftInfo, nil
 
