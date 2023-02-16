@@ -26,6 +26,7 @@ func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient, log l
 func (h PubsubHandler) StartServer() {
 	names := []string{
 		utils.PUBSUB_TOKEN_THUMBNAIL,
+		utils.PUBSUB_PROJECT_UNZIP,
 	}
 
 	h.pubsub.GetChannelNames(names...)
@@ -51,6 +52,9 @@ func (h PubsubHandler) StartServer() {
 		switch chanName {
 		case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
 			h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
+			break
+		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
+			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
 			break
 		}	
 	}

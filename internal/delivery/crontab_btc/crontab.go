@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -30,84 +30,116 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 
 func (h ScronBTCHandler) StartServer() {
 
-	var wg sync.WaitGroup
-
+	
+	//waiting for blancing
 	go func() {
-
-		span := h.Tracer.StartSpan("ScronBTCHandler.CheckBalance")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
+		var wg sync.WaitGroup
 		//Waiting for balance + Mint
 		for {
 			wg.Add(3)
-			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForBalancing")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForBalancing(span) // BTC
-			}(span, &wg)
-
-			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHBalancing")
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("BTC.WaitingForBalancing")
 				defer wg.Done()
 				defer span.Finish()
 
 				h.Usecase.WaitingForETHBalancing(span) // ETH
-			}(span, &wg)
+			}(&wg)
 
-			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.SendBTCToMaster")
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.SendBTCToMaster")
+				defer wg.Done()
+				defer span.Finish()
+
+				h.Usecase.WaitingForBalancing(span) // BTC
+			}(&wg)
+
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.SendBTCToMaster")
 				defer wg.Done()
 				defer span.Finish()
 
 				h.Usecase.JobBtcSendBtcToMaster(span) // BTC
-			}(span, &wg)
-
-			log.SetData("wait.CheckBlance", "wait")
-			wg.Wait()
+			}(&wg)
 			time.Sleep(5 * time.Minute)
 		}
-
 	}()
 
+	//waiting for minting
 	go func() {
-
-		span := h.Tracer.StartSpan("ScronBTCHandler.SendNft")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
+		var wg sync.WaitGroup
 		//Waiting for Send
 		for {
 			wg.Add(2)
-			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+			go func(wg *sync.WaitGroup) {
 
-				span := h.Tracer.StartSpanFromRoot(rootSpan, "BTC.WaitingForMinted")
+				span := h.Tracer.StartSpan("BTC.WaitingForMinting")
+				defer wg.Done()
+				defer span.Finish()
+
+				h.Usecase.WaitingForMinting(span)
+				
+			}(&wg)
+
+			//TODO mint with ETH payment?
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.WaitingForETHMinting")
+				defer wg.Done()
+				defer span.Finish()
+
+				h.Usecase.WaitingForETHMinting(span)
+
+			}(&wg)
+
+			wg.Wait()
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
+
+	//Waiting for minted and send
+	go func() {
+		var wg sync.WaitGroup
+		//Waiting for Send
+		for {
+			wg.Add(2)
+			go func(wg *sync.WaitGroup) {
+
+				span := h.Tracer.StartSpan("BTC.WaitingForMinted")
 				defer wg.Done()
 				defer span.Finish()
 
 				h.Usecase.WaitingForMinted(span)
 
-			}(span, &wg)
+			}(&wg)
 
 			//TODO mint with ETH payment?
-			go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpanFromRoot(rootSpan, "ETH.WaitingForETHMinted")
+			go func(wg *sync.WaitGroup) {
+				span := h.Tracer.StartSpan("ETH.WaitingForETHMinted")
 				defer wg.Done()
 				defer span.Finish()
 
 				h.Usecase.WaitingForETHMinted(span)
 
-			}(span, &wg)
+			}(&wg)
 
-			log.SetData("wait.SendNft", "wait")
 			wg.Wait()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
+
+	c := cron.New()
+	// cronjob to sync inscription index
+	c.AddFunc("*/30 * * * *", func() {
+		span := h.Tracer.StartSpan("DispatchCron.EveryTwentyMinutes")
+		defer span.Finish()
+
+		log := tracer.NewTraceLog()
+		defer log.ToSpan(span)
+
+		err := h.Usecase.SyncTokenInscribeIndex(span)
+		if err != nil {
+			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+		}
+	})
+	c.Start()
 }

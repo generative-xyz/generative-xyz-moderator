@@ -39,16 +39,6 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 		return nil, err
 	}
 
-	// userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-	// resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"create",
-	// 	},
-	// })
-
 	ethClient := eth.NewClient(nil)
 
 	privKey, pubKey, address, err := ethClient.GenerateAddress()
@@ -60,18 +50,6 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	}
 
 	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
-	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"receive",
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-	// 	return nil, err
-	// }
 
 	log.SetData("CreateETHWalletAddress.receive", address)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
@@ -85,6 +63,15 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 	if err != nil {
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
+	}
+	if p.NetworkFee != "" {
+		// extra network fee
+		networkFee, err1 := strconv.ParseInt(p.NetworkFee, 10, 64)
+		if err1 != nil {
+			log.Error("convertBTCToInt", err.Error(), err)
+		} else {
+			mintPriceInt += networkFee
+		}
 	}
 	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
@@ -113,26 +100,39 @@ func (u Usecase) CreateETHWalletAddress(rootSpan opentracing.Span, input structu
 }
 
 func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, whitelistedAddrs []string) (bool, error) {
+	span, log := u.StartSpan("IsWhitelistedAddress", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetData("whitelistedAddrs", whitelistedAddrs)
 	if len(whitelistedAddrs) == 0 {
+		log.SetData("whitelistedAddrs.Total", len(whitelistedAddrs))
 		return false, nil
 	}
-	for _, addr := range whitelistedAddrs {
-		filter := nfts.MoralisFilter{}
-		filter.Limit = new(int)
-		*filter.Limit = 1
-		resp, err := u.MoralisNft.GetNftByWalletAddress(addr, filter)
-		if err != nil {
-			return false, err
-		}
-		if len(resp.Result) > 0 {
-			return true, nil
-		}
+	filter := nfts.MoralisFilter{}
+	filter.Limit = new(int)
+	*filter.Limit = 1
+	filter.TokenAddresses = new([]string)
+	*filter.TokenAddresses = whitelistedAddrs
+
+	log.SetData("filter.GetNftByWalletAddress", filter)
+	resp, err := u.MoralisNft.GetNftByWalletAddress(userAddr, filter)
+	if err != nil {
+		log.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+		return false, err
+	}
+
+	log.SetData("resp", resp)
+	if len(resp.Result) > 0 {
+		return true, nil
 	}
 
 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
 	if err != nil {
+		log.Error("u.DelegateService.GetDelegationsByDelegate", err.Error(), err)
 		return false, err
 	}
+
+	log.SetData("delegations", delegations)
 	for _, delegation := range delegations {
 		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
 			return true, nil
@@ -141,15 +141,31 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, rootSpan opentracing.
 	return false, nil
 }
 
-func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan opentracing.Span, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
+func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan opentracing.Span, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("CreateETHWalletAddress", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	log.SetData("input", input)
 	log.SetTag("btcUserWallet", input.WalletAddress)
 
+	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
+	if err == nil {
+		if weth != nil {
+			log.SetData("ethWalletAddress", weth)
+			if weth.IsConfirm == true {
+				err = errors.New("This account has applied discount")
+				log.Error("applied.Discount", err.Error(), err)
+				return nil, err
+			}
+
+			return weth, nil
+		}
+	} else {
+		log.Error("u.Repo.FindEthWalletAddressByUserAddress", err.Error(), err)
+	}
+
 	walletAddress := &entity.ETHWalletAddress{}
-	err := copier.Copy(walletAddress, input)
+	err = copier.Copy(walletAddress, input)
 	if err != nil {
 		log.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
 		return nil, err
@@ -176,18 +192,6 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	}
 
 	log.SetData("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
-	// resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-	// 	Args: []string{
-	// 		"--wallet",
-	// 		userWallet,
-	// 		"wallet",
-	// 		"receive",
-	// 	},
-	// })
-	// if err != nil {
-	// 	log.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-	// 	return nil, err
-	// }
 
 	log.SetData("CreateETHWalletAddress.receive", address)
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
@@ -197,10 +201,19 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	}
 
 	log.SetData("found.Project", p.ID)
-	mintPriceInt, err := strconv.ParseInt(p.MintPrice, 10, 64)
+	mintPriceInt, err := strconv.Atoi(p.MintPrice)
 	if err != nil {
 		log.Error("convertBTCToInt", err.Error(), err)
 		return nil, err
+	}
+	if p.NetworkFee != "" {
+		// extra network fee
+		networkFee, err1 := strconv.Atoi(p.NetworkFee)
+		if err1 != nil {
+			log.Error("convertBTCToInt", err.Error(), err)
+		} else {
+			mintPriceInt += networkFee
+		}
 	}
 	mintPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
@@ -210,7 +223,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 
 	walletAddress.Amount = mintPrice // 0.023 * 1e18 eth
 
-	isWhitelist, err := u.IsWhitelistedAddress(ctx, span, input.WalletAddress, p.WhiteListEthContracts)
+	isWhitelist, err := u.IsWhitelistedAddress(ctx, span, userAddr, p.WhiteListEthContracts)
 
 	if isWhitelist {
 		whitelistedPrice := new(big.Float)
@@ -236,6 +249,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, rootSpan
 	walletAddress.ProjectID = input.ProjectID
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
+	walletAddress.DelegatedAddress = userAddr
 
 	log.SetTag("ordAddress", walletAddress.OrdAddress)
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
@@ -301,9 +315,9 @@ func (u Usecase) ETHMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	//TODO - enable this
 	resp, err := u.OrdService.Mint(ord_service.MintRequest{
-		WalletName: "ord_master",
+		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 		FileUrl:    fileURI,
-		FeeRate:    15, //temp
+		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
 		DryRun:     false,
 	})
 	u.Notify(rootSpan, fmt.Sprintf("[MintFor][projectID %s]", ethAddress.ProjectID), ethAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", ethAddress.UserAddress, resp.Stdout))
@@ -385,19 +399,12 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 		return nil, err
 	}
 
-	go func(rootSpan opentracing.Span, wallet *entity.ETHWalletAddress, balance *big.Int) {
-		span, log := u.StartSpan("CheckBalance.RoutineUpdate", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
-
-		wallet.Balance = balance.String()
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(wallet.OrdAddress, wallet)
-		if err != nil {
-			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
-			return
-		}
-		log.SetData("updated", updated)
-
-	}(span, &ethEntity, balance)
+	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
+	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
+	if err != nil {
+		log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+		return nil, err
+	}
 
 	// check total amount = received amount?
 	amount, ok := big.NewInt(0).SetString(ethEntity.Amount, 10)
@@ -415,9 +422,9 @@ func (u Usecase) BalanceETHLogic(rootSpan opentracing.Span, ethEntity entity.ETH
 	log.SetData("ordWalletAddress", ethEntity.OrdAddress)
 
 	ethEntity.IsConfirm = true
-	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
+	ethEntity.Balance = balance.String()
 	//TODO - save balance
-	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
+	updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 	if err != nil {
 		log.Error("u.CheckBalance.updatedStatus", err.Error(), err)
 		return nil, err
@@ -449,13 +456,14 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 	return ethEntity, nil
 }
 
+//Mint flow
 func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
-		log.Error("WillBeProcessWTC.ListProcessingWalletAddress", err.Error(), err)
+		log.Error("WaitingForETHBalancing.ListProcessingWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
@@ -468,27 +476,63 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 			newItem, err := u.BalanceETHLogic(span, item)
 			if err != nil {
-				//log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-			log.SetData(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s", item.OrdAddress), newItem)
-			u.Notify(rootSpan, fmt.Sprintf("[WaitingForBalance][projectID %s]", item.ProjectID), item.UserAddress, fmt.Sprintf("%s received ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
+			log.SetData(fmt.Sprintf("WaitingForETHBalancing.BalanceLogic.%s", item.OrdAddress), newItem)
+			u.Notify(rootSpan, fmt.Sprintf("[WaitingForBalance][projectID %s]", item.ProjectID), item.UserAddress, fmt.Sprintf("%s checking ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
 			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
 			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WaitingForETHBalancing.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-
 			log.SetData("updated", updated)
+
+			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
+				Owner:         "",
+				ProjectID:     item.ProjectID,
+				Action:        entity.BLANCE,
+				Type:          entity.ETH,
+				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
+			})
+		}(span, item)
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return nil, nil
+}
+
+
+func (u Usecase) WaitingForETHMinting(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpan("WaitingForETHMinting", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	addreses, err := u.Repo.ListMintingETHWalletAddress()
+	if err != nil {
+		log.Error("WaitingForETHMinting.ListProcessingWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("addreses", addreses)
+	for _, item := range addreses {
+		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
+			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
+			defer u.Tracer.FinishSpan(span, log)
+			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
+			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+			
 			if item.MintResponse.Inscription != "" {
 				err = errors.New("Token is being minted")
 				log.Error("Token.minted", err.Error(), err)
 				return
 			}
 
-			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: newItem.OrdAddress})
+			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
 			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", newItem.OrdAddress), err.Error(), err)
+				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 
@@ -497,27 +541,30 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 				Commit:        mintReps.Commit,
 				Reveal:        mintReps.Reveal,
 				Fees:          mintReps.Fees,
-				MinterAddress: "ord_master",
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
 				Owner:         "",
 				ProjectID:     item.ProjectID,
 				Action:        entity.MINT,
 				Type:          entity.ETH,
 				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
 			})
 
 			log.SetData("btc.Minted", mintReps)
-			newItem.MintResponse = entity.MintStdoputResponse(*mintReps)
-			newItem.IsMinted = true
-			newItem.FileURI = *fileURI
-			updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
+			item.MintResponse = entity.MintStdoputResponse(*mintReps)
+			item.IsMinted = true
+			item.FileURI = *fileURI
+			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 
+			log.SetData("updated", updated)
+
 		}(span, item)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return nil, nil
@@ -552,12 +599,13 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 				Commit:        item.MintResponse.Commit,
 				Reveal:        item.MintResponse.Reveal,
 				Fees:          item.MintResponse.Fees,
-				MinterAddress: "ord_master",
+				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
 				Owner:         item.UserAddress,
 				Action:        entity.SENT,
 				ProjectID:     item.ProjectID,
 				Type:          entity.ETH,
 				TraceID:       u.Tracer.TraceID(span),
+				ProccessID: item.UUID,
 			})
 
 			u.Notify(rootSpan, fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
@@ -594,6 +642,7 @@ func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWal
 	return nil, nil
 }
 
+//Mint flow
 func (u Usecase) convertBTCToETH(rootSpan opentracing.Span, amount string) (string, error) {
 
 	span, log := u.StartSpan("convertBTCToETH", rootSpan)

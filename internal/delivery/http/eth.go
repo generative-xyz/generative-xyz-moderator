@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"rederinghub.io/utils"
 
 	"github.com/jinzhu/copier"
+
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -78,7 +79,7 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
 		log.Error("ctx.Value.Token", err.Error(), err)
@@ -104,8 +105,7 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	reqUsecase.WalletAddress = walletAddress
-	ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, span, *reqUsecase)
+	ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, span, userWalletAddr, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

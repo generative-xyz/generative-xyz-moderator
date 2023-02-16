@@ -17,6 +17,8 @@ definitions:
         type: integer
       creatorAddrr:
         type: string
+      creatorAddrrBTC:
+        type: string
       creatorName:
         type: string
       description:
@@ -142,6 +144,8 @@ definitions:
     properties:
       projectID:
         type: string
+      walletAddress:
+        type: string
     type: object
   request.GenerateMessageRequest:
     properties:
@@ -255,6 +259,8 @@ definitions:
         type: string
       image:
         type: string
+      inscriptionIndex:
+        type: string
       mintedTime:
         type: string
       name:
@@ -332,6 +338,10 @@ definitions:
     properties:
       blockNumberMinted:
         type: string
+      categories:
+        items:
+          type: string
+        type: array
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -339,6 +349,8 @@ definitions:
       contractAddress:
         type: string
       creatorAddr:
+        type: string
+      creatorAddrrBTC:
         type: string
       creatorProfile:
         $ref: '#/definitions/response.ProfileResponse'
@@ -350,6 +362,10 @@ definitions:
         type: string
       image:
         type: string
+      isFullChain:
+        type: boolean
+      isHidden:
+        type: boolean
       itemDesc:
         type: string
       license:
@@ -369,6 +385,10 @@ definitions:
       mintingInfo:
         $ref: '#/definitions/response.NftMintingDetail'
       name:
+        type: string
+      networkFee:
+        type: string
+      networkFeeEth:
         type: string
       openMintUnixTimestamp:
         type: integer
@@ -1218,6 +1238,27 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /inscribe/info/{ID}:
+    get:
+      consumes:
+      - application/json
+      description: get inscribe info
+      parameters:
+      - description: inscribe ID
+        in: path
+        name: ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get inscribe info
+      tags:
+      - Inscribe
   /inscribe/receive-address:
     post:
       consumes:
@@ -1731,9 +1772,17 @@ paths:
         in: query
         name: name
         type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
       - description: limit
         in: query
         name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
         type: integer
       - description: newest, priority-asc, priority-desc
         in: query
@@ -1924,6 +1973,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: Create btc project
       tags:
       - Project

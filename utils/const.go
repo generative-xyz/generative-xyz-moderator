@@ -75,6 +75,7 @@ const (
 	KEY_ORDER_ID         string = "order_id"
 	KEY_AUTO_USERID      string = "user_id"
 	KEY_WALLET_ADDRESS   string = "wallet_address"
+	KEY_WALLET_ADDRESS_BTC string = "wallet_address_btc"
 	KEY_DELETED_AT       string = "deleted_at"
 	KEY_PROJECT_ID       string = "project_id"
 	KEY_LISTING_CONTRACT string = "collection_contract"
@@ -94,6 +95,7 @@ const (
 	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
 	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
 	INSCRIBE_BTC                        string = "inscribe_btc"
+	INSCRIBE_INFO                       string = "inscribe_infos"
 	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
@@ -102,6 +104,7 @@ const (
 	REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK string = "lock-tx-consumer-update-last-processed-block"
 	EVM_NULL_ADDRESS                          string = "0x0000000000000000000000000000000000000000"
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
+	PUBSUB_PROJECT_UNZIP                      string = "project_unzip"
 
 	BTCConfirmationThreshold = 6
 	FirstScannedBTCBlkHeight = 697200
@@ -109,6 +112,9 @@ const (
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
 
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
+	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
+
+	INSCRIBE_TIMEOUT = 6
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 )

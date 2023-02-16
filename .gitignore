@@ -21,3 +21,4 @@ rederinghub.io
 config.json
 bin
 /datadir/*
+test_decode.go

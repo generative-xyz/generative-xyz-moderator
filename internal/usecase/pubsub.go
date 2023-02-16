@@ -62,3 +62,35 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 	}
 
 }
+
+func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {
+	span, log := u.StartSpanFromInjecttion(tracingInjection, "PubSubProjectUnzipl")
+	defer u.Tracer.FinishSpan(span, log)
+
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		log.Error("PubSubProjectUnzipl.json.Marshal", err.Error(), err)
+		return
+	}
+
+	pz := &structure.ProjectUnzipPayload{}
+	err = json.Unmarshal(bytes, pz)
+	if err != nil {
+		log.Error("PubSubProjectUnzipl.json.Unmarshal", err.Error(), err)
+		return
+	}
+
+	log.SetData("payload", pz)
+	log.SetData("projectID", pz.ProjectID)
+	log.SetTag("zipLinkkenID", pz.ZipLink)
+
+
+	pe, err := u.UnzipProjectFile(span, pz)
+	if err != nil {
+		log.Error("PubSubProjectUnzipl.json.Unmarshal", err.Error(), err)
+		return
+	}
+
+	log.SetData("project", pe)
+
+}

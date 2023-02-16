@@ -188,7 +188,7 @@ func (h ScronHandler) StartServer() {
 	})
 
 	c.AddFunc("0 0 * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.OneMinute")
+		span := h.Tracer.StartSpan("DispatchCron.Everyday")
 		defer span.Finish()
 
 		log := tracer.NewTraceLog()

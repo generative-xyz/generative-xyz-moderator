@@ -15,6 +15,7 @@ type CreateBTCProjectReq struct {
 	Name                  string             `json:"name"`
 	CreatorName           string             `json:"creatorName"`
 	CreatorAddrr          string             `json:"creatorAddrr"`
+	CreatorAddrrBTC   		string        		 `json:"creatorAddrrBTC"`
 	Description           string             `json:"description"`
 	OpenMintUnixTimestamp  int                `json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int                `json:"closeMintUnixTimestamp"`

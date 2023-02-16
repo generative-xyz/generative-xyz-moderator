@@ -242,6 +242,7 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 		}
 	} else {
 		paginatedData.Sort("created_at", entity.SORT_DESC)
+		paginatedData.Sort(utils.KEY_UUID, entity.SORT_ASC)
 	}
 
 	data, err := paginatedData.

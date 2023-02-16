@@ -4,6 +4,7 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name *string
+	CategoryIds []string
 }
 
 type FilterProposal struct {
@@ -34,6 +35,7 @@ type CreateBtcProjectReq struct {
 	Name                  string             `json:"name"`
 	CreatorName           string             `json:"creatorName"`
 	CreatorAddrr          string             `json:"creatorAddrr"`
+	CreatorAddrrBTC          string           `json:"creatorAddrrBTC"`
 	Description           string             `json:"description"`
 	OpenMintUnixTimestamp  int                `json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int                `json:"closeMintUnixTimestamp"`

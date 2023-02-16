@@ -714,3 +714,52 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 
 	return pTokenUri, nil
 }
+
+func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structure.MarketplaceNFTDetail, error) {
+	span, log := u.StartSpan("GetAllListListingWithRule", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	result := []structure.MarketplaceNFTDetail{}
+	var nftList []entity.MarketplaceBTCListingFilterPipeline
+	var err error
+
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(9999999, 1)
+	if err != nil {
+		return nil, err
+	}
+	for _, listing := range nftList {
+		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
+		if err != nil {
+			continue
+
+		}
+		currentTime := time.Now()
+		isAvailable := true
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isAvailable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isAvailable = false
+				break
+			}
+		}
+
+		nftInfo := structure.MarketplaceNFTDetail{
+			InscriptionID: listing.InscriptionID,
+			Name:          listing.Name,
+			Description:   listing.Description,
+			Price:         listing.Price,
+			OrderID:       listing.UUID,
+			IsConfirmed:   listing.IsConfirm,
+			Buyable:       isAvailable,
+			IsCompleted:   listing.IsSold,
+			CreatedAt:     listing.CreatedAt,
+		}
+		result = append(result, nftInfo)
+	}
+	return result, nil
+}

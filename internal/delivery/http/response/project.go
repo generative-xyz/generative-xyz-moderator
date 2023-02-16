@@ -19,10 +19,14 @@ type ProjectResp struct {
 	MaxSupply              int64            `json:"maxSupply"`
 	Limit                  int64            `json:"limit"`
 	MintPrice              string           `json:"mintPrice"`
-	MintPriceEth					 string						`json:"mintPriceEth"`
+	MintPriceEth           string           `json:"mintPriceEth"`
+	NetworkFee             string           `json:"networkFee"`
+	NetworkFeeEth          string           `json:"networkFeeEth"`
 	MintPriceAddr          string           `json:"mintPriceAddr"`
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`
+	CreatorAddrrBTC        string           `json:"creatorAddrrBTC"`
+	Categories 						 []string				  `json:"categories"`
 	License                string           `json:"license"`
 	Desc                   string           `json:"desc"`
 	Image                  string           `json:"image"`
@@ -34,7 +38,7 @@ type ProjectResp struct {
 	GenNFTAddr             string           `json:"genNFTAddr"`
 	ItemDesc               string           `json:"itemDesc"`
 	Status                 bool             `json:"status"`
-	IsFullChain                 bool             `json:"isFullChain"`
+	IsFullChain            bool             `json:"isFullChain"`
 	NftTokenURI            string           `json:"projectURI"`
 	MintingInfo            NftMintingDetail `json:"mintingInfo"`
 	Royalty                int              `json:"royalty"`
@@ -47,7 +51,8 @@ type ProjectResp struct {
 	Priority               int              `json:"priority"`
 	OpenMintUnixTimestamp  int              `json:"openMintUnixTimestamp"`
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
-	WhiteListEthContracts []string              `json:"whiteListEthContracts"`
+	WhiteListEthContracts  []string         `json:"whiteListEthContracts"`
+	IsHidden               bool             `json:"isHidden"`
 }
 
 type ProjectStatResp struct {

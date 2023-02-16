@@ -2,7 +2,9 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -10,6 +12,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -23,7 +26,7 @@ import (
 // @Router /project [POST]
 func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("createProjects", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.CreateProjectReq
 	decoder := json.NewDecoder(r.Body)
@@ -42,21 +45,21 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.SetData("reqUsecase",reqUsecase)
-	log.SetTag("contractAddress",reqUsecase.ContractAddress)
-	log.SetTag("tokenID",reqUsecase.TokenID)
+	log.SetData("reqUsecase", reqUsecase)
+	log.SetTag("contractAddress", reqUsecase.ContractAddress)
+	log.SetTag("tokenID", reqUsecase.TokenID)
 
 	message, err := h.Usecase.CreateProject(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateProject", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
-	resp, err  := h.projectToResp(message)
+
+	resp, err := h.projectToResp(message)
 	if err != nil {
 		log.Error("h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -70,12 +73,23 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Tags Project
 // @Accept  json
 // @Produce  json
+// @Security Authorization
 // @Param request body request.CreateBTCProjectReq true "Create profile request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/btc [POST]
 func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("createBTCProject", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	var reqBody request.CreateBTCProjectReq
 	decoder := json.NewDecoder(r.Body)
@@ -93,26 +107,25 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	log.SetData("reqUsecase",reqUsecase)
+	reqUsecase.CreatorAddrr = walletAddress
+	log.SetData("reqUsecase", reqUsecase)
 	message, err := h.Usecase.CreateBTCProject(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateBTCProject", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
-	resp, err  := h.projectToResp(message)
+
+	resp, err := h.projectToResp(message)
 	if err != nil {
 		log.Error("h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 
 // UserCredits godoc
 // @Summary get project's detail
@@ -126,36 +139,36 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projectDetail", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
-	
+
 	projectID := vars["projectID"]
 	span.SetTag("projectID", projectID)
 
 	project, err := h.Usecase.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
 		ContractAddress: contractAddress,
-		ProjectID: projectID,
+		ProjectID:       projectID,
 	})
 
 	if err != nil {
 		log.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp, err := h.projectToResp(project)
 	if err != nil {
 		log.Error(" h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -166,38 +179,49 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param contractAddress query string false "Filter project via contract address"
 // @Param name query string false "filter project via name"
+// @Param category query string false "filter project via category ids"
 // @Param limit query int false "limit"
+// @Param page query int false "limit"
 // @Param sort query string false "newest, priority-asc, priority-desc"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]
 func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projects", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	var err error
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 	span.SetTag("contractAddress", contractAddress)
 
 	name := r.URL.Query().Get("name")
+
+	categoriesRaw := r.URL.Query().Get("category")
+
+	categoryIds := strings.Split(categoriesRaw, ",")
+	if categoriesRaw == "" {
+		categoryIds = []string{}
+	}
+
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.Name = &name
+	f.CategoryIds = categoryIds
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	pResp :=  []response.ProjectResp{}
+	pResp := []response.ProjectResp{}
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
 	for _, project := range projects {
@@ -205,7 +229,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 		p, err := h.projectToResp(&project)
 		if err != nil {
 			log.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 
@@ -229,7 +253,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 // @Router /project/minted-out [GET]
 func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projects", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	var err error
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
@@ -238,7 +262,7 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -247,11 +271,11 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 	uProjects, err := h.Usecase.GetMintedOutProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	pResp :=  []response.ProjectResp{}
+	pResp := []response.ProjectResp{}
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
 	for _, project := range projects {
@@ -259,7 +283,7 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 		p, err := h.projectToResp(&project)
 		if err != nil {
 			log.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 
@@ -269,7 +293,6 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
-
 
 // UserCredits godoc
 // @Summary get the random projects
@@ -281,20 +304,20 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 // @Router /project/random [GET]
 func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getRandomProject", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	var err error
 
 	project, err := h.Usecase.GetRandomProject(span)
 	if err != nil {
 		log.Error(" h.GetRandomProject", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	resp, err := h.projectToResp(project)
 	if err != nil {
 		log.Error(" h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -315,13 +338,14 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.Image = input.Thumbnail
 	resp.ScriptType = input.ThirdPartyScripts
 	resp.NftTokenURI = input.NftTokenUri
+	resp.NetworkFee = input.NetworkFee
 	social["web"] = input.SocialWeb
 	social["twitter"] = input.SocialTwitter
 	social["discord"] = input.SocialDiscord
 	social["medium"] = input.SocialMedium
 	social["instagram"] = input.SocialInstagram
 	resp.MintingInfo = response.NftMintingDetail{
-		Index: input.MintingInfo.Index,
+		Index:        input.MintingInfo.Index,
 		IndexReserve: input.MintingInfo.IndexReverse,
 	}
 	resp.Royalty = input.Royalty
@@ -330,39 +354,42 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.BlockNumberMinted = input.BlockNumberMinted
 	resp.MintedTime = input.MintedTime
 	resp.IsFullChain = input.IsFullChain
+	resp.IsHidden = input.IsHidden
+	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.Stats = response.ProjectStatResp{
-		UniqueOwnerCount: input.Stats.UniqueOwnerCount,
+		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
-		FloorPrice: input.Stats.FloorPrice,
+		FloorPrice:         input.Stats.FloorPrice,
 		BestMakeOfferPrice: input.Stats.BestMakeOfferPrice,
-		ListedPercent: input.Stats.ListedPercent,
+		ListedPercent:      input.Stats.ListedPercent,
 	}
+	resp.Categories = input.Categories
 	if input.TraitsStat != nil {
 		traitStat := make([]response.TraitStat, 0)
 		for _, v := range input.TraitsStat {
 			traitValueStats := make([]response.TraitValueStat, 0)
 			for _, vv := range v.TraitValuesStat {
 				traitValueStats = append(traitValueStats, response.TraitValueStat{
-					Value: vv.Value,
+					Value:  vv.Value,
 					Rarity: vv.Rarity,
 				})
 			}
 			traitStat = append(traitStat, response.TraitStat{
-				TraitName: v.TraitName,
+				TraitName:       v.TraitName,
 				TraitValuesStat: traitValueStats,
 			})
 		}
 		resp.TraitStat = traitStat
 	}
 
-
-	profileResp, err  := h.profileToResp(&input.CreatorProfile)
+	profileResp, err := h.profileToResp(&input.CreatorProfile)
 	if err == nil {
 		resp.CreatorProfile = *profileResp
 	}
 
 	resp.MintPriceEth = input.MintPriceEth
-	
+	resp.NetworkFeeEth = input.NetworkFeeEth
+
 	return resp, nil
 }
 
@@ -379,7 +406,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 // @Router /project/recent-works [GET]
 func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("projects", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	var err error
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
@@ -388,7 +415,7 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -397,11 +424,11 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 	uProjects, err := h.Usecase.GetRecentWorksProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	pResp :=  []response.ProjectResp{}
+	pResp := []response.ProjectResp{}
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
 	for _, project := range projects {
@@ -409,7 +436,7 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 		p, err := h.projectToResp(&project)
 		if err != nil {
 			log.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 
@@ -433,7 +460,7 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 // @Router /project/{contractAddress}/{projectID} [PUT]
 func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("updateProject", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
@@ -450,26 +477,25 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 
 	reqUsecase := &structure.UpdateProjectReq{
 		ContracAddress: contractAddress,
-		TokenID: projectID,
-		Priority: reqBody.Priority,
+		TokenID:        projectID,
+		Priority:       reqBody.Priority,
 	}
 
-	log.SetData("reqUsecase",reqUsecase)
-	log.SetTag("projectID",projectID)
-	log.SetTag("contractAddress",contractAddress)
-
+	log.SetData("reqUsecase", reqUsecase)
+	log.SetTag("projectID", projectID)
+	log.SetTag("contractAddress", contractAddress)
 
 	message, err := h.Usecase.UpdateProject(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateProject", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
-	resp, err  := h.projectToResp(message)
+
+	resp, err := h.projectToResp(message)
 	if err != nil {
 		log.Error("h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -489,7 +515,7 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 // @Router /project/btc/files [POST]
 func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.UploadProjectFiles", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	file, err := h.Usecase.UploadProjectFiles(span, r)
 	if err != nil {
 		log.Error("h.Usecase.UploadFile", err.Error(), err)

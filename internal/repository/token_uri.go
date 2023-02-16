@@ -307,6 +307,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"creator.avatar", 1},
 		{"stats.price_int", 1},
 		{"minter_address", 1},
+		{"inscription_index", 1},
 	}
 	return f
 }
@@ -372,6 +373,79 @@ func (r Repository) UpdateTokenOnchainStatusByTokenId(tokenId string) error {
 	update := bson.M{
 		"$set": bson.M{
 			"isOnchain": true,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+
+	f := bson.M{
+		"project_id_int" : bson.M{"$gt" : 1000000},
+		"$or": []bson.M{
+			{"inscription_index": bson.M{"$exists": true}},
+			{"inscription_index": bson.M{"$ne": ""}},
+		},
+	}
+	f[utils.KEY_DELETED_AT] = nil
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (r Repository) UpdateTokenInscriptionIndex(tokenId string, inscriptionIndex string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"inscription_index": inscriptionIndex,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) UpdateTokenOwner(tokenId string, owner *entity.Users) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"owner_addrress": owner.WalletAddressBTC,
+			"owner": owner,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) UpdateTokenOwnerAddr(tokenId string, addr string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"owner_addrress": addr,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)

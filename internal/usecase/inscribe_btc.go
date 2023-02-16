@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"strconv"
@@ -25,6 +27,21 @@ type BitcoinTokenMintFee struct {
 	Amount       string
 	MintFee      string
 	SentTokenFee string
+	Size         int
+}
+
+func decodeFileBase64(file string) (string, string, error) {
+	i := strings.Index(file, ",")
+	if i < 0 {
+		return "", "", errors.New("no comma")
+	}
+
+	dec, err := base64.StdEncoding.DecodeString(file[i+1:])
+	if err != nil {
+		log.Println("DecodeString err", err)
+		return "", "", err
+	}
+	return string(dec), file[i+1:], nil
 }
 
 func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*BitcoinTokenMintFee, error) {
@@ -35,21 +52,40 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	// if err != nil {
 	// 	return nil, err
 	// }
-	fileSize := len([]byte(input.File))
+
+	// need to encode file: phuong viet lai:
+	fileDecode, _, err := decodeFileBase64(input.File)
+	if err != nil {
+		return nil, err
+	}
+
+	fileSize := len([]byte(fileDecode))
+
+	fmt.Println("fileSize===>", fileSize)
+
+	if fileSize < utils.MIN_FILE_SIZE {
+		fileSize = utils.MIN_FILE_SIZE
+	}
+	fmt.Println("new fileSize===>", fileSize)
+
 	mintFee := int32(fileSize) / 4 * input.FeeRate
+
+	fmt.Println("mintFee===>", mintFee)
 
 	sentTokenFee := utils.FEE_BTC_SEND_AGV * 2
 	totalFee := int(mintFee) + sentTokenFee
+
+	fmt.Println("total fee ===>", totalFee)
 
 	return &BitcoinTokenMintFee{
 		Amount:       strconv.FormatInt(int64(totalFee), 10),
 		MintFee:      strconv.FormatInt(int64(mintFee), 10),
 		SentTokenFee: strconv.FormatInt(int64(sentTokenFee), 10),
+		Size:         fileSize,
 	}, nil
 }
 
 func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
-
 	span, log := u.StartSpan("CreateInscribeBTC", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
@@ -116,6 +152,11 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 		return nil, err
 	}
 
+	expiredTime := utils.INSCRIBE_TIMEOUT
+	if u.Config.ENV == "develop" {
+		expiredTime = 1
+	}
+
 	walletAddress.Amount = mintFee.Amount
 	walletAddress.MintFee = mintFee.MintFee
 	walletAddress.SentTokenFee = mintFee.SentTokenFee
@@ -127,9 +168,28 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	walletAddress.FileURI = input.File
 	walletAddress.InscriptionID = ""
 	walletAddress.FeeRate = input.FeeRate
-	walletAddress.ExpiredAt = time.Now().Add(time.Hour * 2)
+	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
+	walletAddress.FileName = input.FileName
 
 	log.SetTag(userWallet, walletAddress.OrdAddress)
+
+	// todo remove:
+	// _, base64Str, err := decodeFileBase64(input.File)
+	// if err != nil {
+	// 	log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// now := time.Now().UTC().Unix()
+	// uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", walletAddress.OrdAddress, now, "jpg"))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	// fmt.Println("fileURI: ", fileURI)
+	// walletAddress.LocalLink = fileURI
+	// end remove
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -145,8 +205,24 @@ func (u Usecase) ListInscribeBTC(rootSpan opentracing.Span, limit, page int64) (
 		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
 	})
 }
+
 func (u Usecase) DetailInscribeBTC(inscriptionID string) (*entity.InscribeBTCResp, error) {
 	return u.Repo.FindInscribeBTCByNftID(inscriptionID)
+}
+
+func (u Usecase) RetryInscribeBTC(id string) error {
+	item, _ := u.Repo.FindInscribeBTC(id)
+	log.Println("item: ", item, id)
+	if item != nil {
+		if item.Status == entity.StatusInscribe_NotEnoughBalance {
+			item.Status = entity.StatusInscribe_Pending
+			_, err := u.Repo.UpdateBtcInscribe(item)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // JOBs:
@@ -264,7 +340,7 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet(rootSpan opentracing.Span) error 
 				item.SegwitAddress,
 				item.OrdAddress,
 				-1,
-				btc.PreferenceMedium,
+				btc.PreferenceHigh,
 			)
 			if err != nil {
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
@@ -356,7 +432,7 @@ func (u Usecase) JobInscribeCheckTxSend(rootSpan opentracing.Span) error {
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
-				item.IsSuccess = true
+				item.IsSuccess = statusSuccess == entity.StatusInscribe_SentNFTToUser
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
@@ -383,30 +459,56 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 	for _, item := range listTosendBtc {
 
 		// send all amount:
-		fmt.Println("mint nft now ...")
+		fmt.Println("mint nft now ...", item.FileName)
 
 		// - Upload the Animation URL to GCS
-		animation := item.FileURI
-		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
-		animation = strings.ReplaceAll(animation, "data:image/png;base64,", "")
+		typeFile := ""
+
+		if len(item.FileName) == 0 {
+			err := errors.New("File name invalid")
+			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			continue
+		}
+
+		typeFiles := strings.Split(item.FileName, ".")
+		if len(typeFiles) != 2 {
+			err := errors.New("File name invalid")
+			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			continue
+		}
+
+		typeFile = typeFiles[1]
+		fmt.Println("typeFile: ", typeFile)
+
+		// update google clound: TODO need to move into api to avoid create file many time.
+		_, base64Str, err := decodeFileBase64(item.FileURI)
+		if err != nil {
+			log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.decodeFileBase64", err.Error())
+			continue
+		}
 
 		now := time.Now().UTC().Unix()
-		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", item.OrdAddress, now))
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.OrdAddress, now, typeFile))
 		if err != nil {
 			log.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
 			continue
 		}
+		item.LocalLink = uploaded.FullPath
 
 		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 		item.FileURI = fileURI
 
 		//TODO - enable this
 		resp, err := u.OrdService.Mint(ord_service.MintRequest{
-			WalletName: item.UserAddress,
-			FileUrl:    fileURI,
-			FeeRate:    int(item.FeeRate),
-			DryRun:     false,
+			WalletName:        item.UserAddress,
+			FileUrl:           fileURI,
+			FeeRate:           int(item.FeeRate),
+			DryRun:            false,
+			AutoFeeRateSelect: false,
 		})
 
 		if err != nil {
@@ -608,4 +710,51 @@ func (u *Usecase) trackInscribeHistory(id, name, table string, status interface{
 		fmt.Printf("trackInscribeHistory.%s.Error:%s", name, err.Error())
 	}
 
+}
+
+func (u Usecase) ApiCheckListTempAddress(rootSpan opentracing.Span) error {
+	var autoGenerated []struct {
+		SegwitAddress string `json:"segwit_address"`
+	}
+	listBtc := `[{}]`
+
+	err := json.Unmarshal([]byte(listBtc), &autoGenerated)
+	if err != nil {
+		fmt.Println("err")
+		return nil
+	}
+
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+	fmt.Println("len(autoGenerated)", len((autoGenerated)))
+
+	for _, btc := range autoGenerated {
+
+		fmt.Println("check address: ", btc.SegwitAddress)
+
+		balance, confirm, err := bs.GetBalance(btc.SegwitAddress)
+
+		fmt.Println("GetBalance response: ", balance, confirm, err)
+
+		if err != nil {
+			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
+			continue
+		}
+		if balance == nil {
+			err = errors.New("balance is nil")
+			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
+			continue
+		}
+		if balance.Uint64() > 0 {
+			fmt.Println("Balance OK now====>", btc.SegwitAddress)
+		}
+		time.Sleep(time.Second * 1)
+
+	}
+
+	return nil
 }

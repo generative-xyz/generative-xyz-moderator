@@ -1,15 +1,18 @@
 package usecase
 
 import (
-	"archive/zip"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
+	"log"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -24,11 +27,12 @@ import (
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/redis"
 )
 
 type uploadFileChan struct {
 	FileURL *string
-	Err error
+	Err     error
 }
 
 func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreateProjectReq) (*entity.Projects, error) {
@@ -51,6 +55,42 @@ func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreatePr
 	return pe, nil
 }
 
+func (u Usecase) networkFeeBySize(size int64) int64 {
+	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
+
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		type feeRate struct {
+			fastestFee  int
+			halfHourFee int
+			hourFee     int
+			economyFee  int
+			minimumFee  int
+		}
+
+		feeRateObj := feeRate{}
+
+		err = json.Unmarshal(responseData, &feeRateObj)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if feeRateObj.fastestFee > 0 {
+			feeRateValue = int64(feeRateObj.fastestFee)
+		}
+	}
+
+	return size * feeRateValue
+
+}
+
 func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.CreateBtcProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("CreateBTCProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
@@ -61,140 +101,121 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		return nil, err
 	}
 
+	pow := math.Pow10(8)
+	powBig := big.NewFloat(0).SetFloat64(pow)
+
+	mintPrice := big.NewFloat(0)
+	mintPrice.SetString(req.MintPrice)
+
+	/*
+		minMint, ok := big.NewFloat(0).SetString("0.01")
+		if !ok {
+			err = errors.New("Cannot convert number")
+			log.Error("validate.convert.number", err.Error(), err)
+			return nil, err
+		}
+
+		if mintPrice.Cmp(minMint) == -1 {
+			err = errors.New("mintPrice must be greater than 0.01")
+			log.Error("validate.Min.Fee.Fail", err.Error(), err)
+			return nil, err
+		}
+	*/
+
+	mintPrice.Mul(mintPrice, powBig)
+
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
 		log.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
 		return nil, err
 	}
 	maxID = maxID + 1
-	pe.TokenIDInt =  maxID
-	pe.TokenID =  fmt.Sprintf("%d", maxID)
+	pe.TokenIDInt = maxID
+	pe.TokenID = fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
-
+	pe.MintPrice = mintPrice.String()
+	networkFee := big.NewInt(u.networkFeeBySize(int64(300000 / 4))) // will update after unzip and check data
+	pe.NetworkFee = networkFee.String()
+	pe.IsHidden = false
+	pe.Status = true
+	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-	
-	animationURL := ""
-	zipLink := req.ZipLink
-	spew.Dump(zipLink)
-	images := []string{}
-	if zipLink != nil {
-		 if *zipLink != "" {
-			resp, err := http.Get(*zipLink)
-			if err != nil {
-				log.Error("http.Get", err.Error(), err)
-				return nil, err
-			}
-			defer resp.Body.Close()
 
-			fileName := fmt.Sprintf("%s.zip", helpers.GenerateSlug(pe.Name))
+	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
+	if err != nil {
+		log.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		return nil, err
+	}
 
-			out, err := os.Create(fileName)
-			if err != nil {
-				log.Error("os.Create", err.Error(), err)
-				return nil, err
-			}
-			defer out.Close()
-			_, err = io.Copy(out, resp.Body)
-			if err != nil {
-				log.Error("os.Create", err.Error(), err)
-				return nil, err
-			}
+	if creatorAddrr.WalletAddressBTC == "" {
+		creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
+		updated, err := u.Repo.UpdateUserByID(creatorAddrr.UUID, creatorAddrr)
+		if err != nil {
+			log.Error("u.Repo.UpdateUserByID", err.Error(), err)
 
-			zf, err := zip.OpenReader(fileName)
-			if err != nil {
-				log.Error("zip.OpenReader", err.Error(), err)
-				return nil, err
-			}
-			
-			uploadChan := make(chan uploadFileChan, len(zf.File))
-			for _, file := range zf.File {
-				log.SetData("fileName", file.Name)
-				log.SetData("UncompressedSize64", file.UncompressedSize64)
-
-				size := file.UncompressedSize64 / 1024
-				if size > 100 {
-					err := errors.New(fmt.Sprintf("%s, size: %d Max filsize is 100kb", file.Name, size))
-					log.Error("maxFileSize",err.Error(), err)
-					return nil, err
-				}
-
-				fC, err :=  helpers.ReadFile(file)
-				if err != nil {
-					log.Error("zip.OpenReader", err.Error(), err)
-					return nil, err
-				}
-
-				
-			
-				go func(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan) {
-					span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
-					defer u.Tracer.FinishSpan(span, log)
-					var err error
-					var uploadedUrl *string
-
-					defer func  ()  {
-						uploadChan <- uploadFileChan{
-							FileURL: uploadedUrl,
-							Err: err,
-						}
-					}()
-
-					base64Data := helpers.Base64Encode(fc)
-					uploadFileName := fmt.Sprintf("%s/%s", helpers.GenerateSlug(pe.Name), file.Name)
-					uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
-					if err != nil {
-						log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
-						return
-					}
-
-					cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-					uploadedUrl = &cdnURL
-
-				}(span, fC, uploadChan)
-			}
-
-			for i := 0 ;i < len( zf.File) ; i++ {
-				dataFromChan := <- uploadChan
-				if dataFromChan.Err != nil {
-					log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
-					return nil, dataFromChan.Err
-				}
-
-				images = append(images, *dataFromChan.FileURL)
-				animationURL = *dataFromChan.FileURL
-			}
-
-			pe.Images = images	
-		 }
-	}else{
-		if req.AnimationURL != nil {
-			animationURL = *req.AnimationURL
+		} else {
+			log.SetData("updated.creatorAddrr", creatorAddrr)
+			log.SetData("updated", updated)
 		}
 	}
 
-	nftTokenURI["animation_url"] = animationURL
+	isPubsub := false
+	animationURL := ""
+	zipLink := req.ZipLink
+	if zipLink != nil && *zipLink != ""  {
+		
+		pe.IsHidden = true
+		isPubsub = true
+		pe.Status = false
+		
+	} else {
+		if req.AnimationURL != nil {
+			animationURL = *req.AnimationURL
+			nftTokenURI["animation_url"] = animationURL
+		}
+	}
+
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		log.Error("json.Marshal.nftTokenURI", err.Error(), err)
 		return nil, err
 	}
-
 	nftToken := helpers.Base64Encode(bytes)
-	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s",nftToken)
+	now := time.Now().UTC()
+
+	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
 	pe.ProcessingImages = []string{}
 	pe.MintedImages = nil
+	pe.MintedTime = &now
+	pe.CreatorProfile = *creatorAddrr
+	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
+	pe.LimitSupply = 0
+	pe.GenNFTAddr = pe.TokenID
+	pe.TraceID = u.Tracer.TraceID(span)
+
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		log.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
 	}
 
+	if isPubsub {
+		err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
+		if err != nil {
+			log.Error("u.Repo.CreateProject", err.Error(), err)
+			//return nil, err
+		}
+	}
+
 	log.SetData("pe", pe)
+	log.SetData("pe.isPubsub", isPubsub)
+
+	u.Notify(rootSpan, fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
 }
 
@@ -208,10 +229,10 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdatePr
 	}
 
 	if req.Priority != nil {
-		priority  := 0
+		priority := 0
 		p.Priority = &priority
 	}
-	
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("UpdateProject.UpdateProject", err.Error(), err)
@@ -238,7 +259,7 @@ func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProj
 		log.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-	
+
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
 		log.Error("u.Repo.GetProjects", err.Error(), err)
@@ -296,7 +317,7 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 	if len(projects) == 0 {
 		err := errors.New("Project are not found")
 		log.Error("Projects.are.not.found", err.Error(), err)
-		return nil, err 
+		return nil, err
 	}
 
 	timeNow := time.Now().UTC().Nanosecond()
@@ -344,17 +365,17 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 
 	// 		_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
 	// 		if err != nil {
-	// 			log.Error("u.Repo.FindProjectBy", err.Error(), err)
-	// 			return
+	// 	log.Error("u.Repo.FindProjectBy", err.Error(), err)
+	// 	return
 	// 		}
 
-	// 	}(span)	
+	// 	}(span)
 	// }()
 
 	log.SetTag("ProjectID", req.ProjectID)
 	log.SetTag("ContractAddress", req.ContractAddress)
 
-	c, _ := u.Repo.FindProjectBy(req.ContractAddress, req.ProjectID)
+	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		// p, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
 		// if err != nil {
@@ -368,11 +389,20 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	if err != nil {
 		return nil, err
 	}
-	ethPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt) / 1e8))
+	ethPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		return nil, err
 	}
 	c.MintPriceEth = ethPrice
+
+	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
+	if err == nil {
+		ethNetworkFeePrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		if err != nil {
+			return nil, err
+		}
+		c.NetworkFeeEth = ethNetworkFeePrice
+	}
 
 	return c, nil
 }
@@ -398,7 +428,7 @@ func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure
 	return projects, nil
 }
 
-func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat,error) {
+func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
 	span, log := u.StartSpan("SyncProjectStats", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
@@ -407,8 +437,8 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	}
 
 	// do not resync
-	if project.Stats.LastTimeSynced != nil && project.Stats.LastTimeSynced.Unix() + int64(u.Config.TimeResyncProjectStat) > time.Now().Unix() {
-		return &project.Stats, project.TraitsStat,nil
+	if project.Stats.LastTimeSynced != nil && project.Stats.LastTimeSynced.Unix()+int64(u.Config.TimeResyncProjectStat) > time.Now().Unix() {
+		return &project.Stats, project.TraitsStat, nil
 	}
 
 	allTokenFromDb, err := u.Repo.GetAllTokensByProjectID(project.TokenID)
@@ -532,7 +562,6 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	} else {
 		listedPercent = 0
 	}
-	
 
 	if totalTradingVolumn == nil {
 		totalTradingVolumn = new(big.Int)
@@ -562,12 +591,12 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		traitValueStat := make([]entity.TraitValueStat, 0)
 		for value, cntValue := range traitValueToCnt[k] {
 			traitValueStat = append(traitValueStat, entity.TraitValueStat{
-				Value: value,
+				Value:  value,
 				Rarity: int32(cntValue * 100 / cnt),
 			})
 		}
 		traitsStat = append(traitsStat, entity.TraitStat{
-			TraitName: k,
+			TraitName:       k,
 			TraitValuesStat: traitValueStat,
 		})
 	}
@@ -580,16 +609,15 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	}
 
 	return &entity.ProjectStat{
-		LastTimeSynced: &now,
-		UniqueOwnerCount: uint32(len(owners)),
+		LastTimeSynced:     &now,
+		UniqueOwnerCount:   uint32(len(owners)),
 		TotalTradingVolumn: totalTradingVolumn.String(),
-		FloorPrice: floorPrice.String(),
+		FloorPrice:         floorPrice.String(),
 		BestMakeOfferPrice: bestMakeOfferPrice.String(),
-		ListedPercent: listedPercent,
-		MintedCount: project.Stats.MintedCount,
+		ListedPercent:      listedPercent,
+		MintedCount:        project.Stats.MintedCount,
 	}, traitsStat, nil
 }
-
 
 func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
 	span, log := u.StartSpan("getProjectDetailFromChainWithoutCache", rootSpan)
@@ -597,7 +625,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
 	log.SetData("req", req)
-	
+
 	addr := common.HexToAddress(req.ContractAddress)
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
@@ -626,12 +654,12 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 	span, log := u.StartSpan("getProjectDetailFromChain", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	contractDataKey := helpers.ProjectDetailKey(req.ContractAddress, req.ProjectID)
-	
+
 	//u.Cache.Delete(contractDataKey)
 	data, err := u.Cache.GetData(contractDataKey)
 	if err != nil {
 		log.SetData("req", req)
-		
+
 		addr := common.HexToAddress(req.ContractAddress)
 		// call to contract to get emotion
 		client, err := helpers.EthDialer()
@@ -655,7 +683,6 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 		return contractDetail, nil
 	}
 
-	
 	contractDetail := &structure.ProjectDetail{}
 	err = helpers.ParseCache(data, contractDetail)
 	if err != nil {
@@ -673,7 +700,7 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 
 	log.SetTag("contractAddress", contractAddr)
 	log.SetTag("projectID", projectID)
-	
+
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
 		log.Error("generative_project_contract.NewGenerativeProjectContract", err.Error(), err)
@@ -826,4 +853,218 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 
 	log.SetData("resp", resp)
 	return resp, nil
+}
+
+func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
+	span, log := u.StartSpan("UnzipProjectFile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.PROJECT_ID_TAG, zipPayload.ProjectID)
+	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("project", pe)
+	nftTokenURI := make(map[string]interface{})
+	nftTokenURI["name"] = pe.Name
+	nftTokenURI["description"] = pe.Description
+	nftTokenURI["image"] = pe.Thumbnail
+	nftTokenURI["animation_url"] = ""
+	nftTokenURI["attributes"] = []string{}
+
+	log.SetData("zipPayload", zipPayload)
+	images := []string{}
+	zipLink := zipPayload.ZipLink
+
+	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	// TODO
+	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
+	err = u.GCS.UnzipFile(zipLink)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+
+	unzipFoler := zipLink + "_unzip"
+	files, err := u.GCS.ReadFolder(unzipFoler)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+	maxSize := uint64(0)
+	for _, f := range files {
+		//TODO check f.Name is not empty
+
+		if strings.Index(f.Name, "__MACOSX") > -1 {
+			continue
+		}
+
+		if strings.Index(f.Name, ".DS_Store") > -1 {
+			continue
+		}
+
+		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
+		images = append(images, temp)
+		nftTokenURI["image"] = temp
+		if uint64(f.Size) > maxSize {
+			maxSize = uint64(f.Size)
+		}
+	}
+	//
+
+	/*resp, err := http.Get(zipLink)
+	if err != nil {
+		log.Error("http.Get", err.Error(), err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	fileName := fmt.Sprintf("%s.zip", helpers.GenerateSlug(pe.Name))
+
+	out, err := os.Create(fileName)
+	if err != nil {
+		log.Error("os.Create", err.Error(), err)
+		return nil, err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		log.Error("os.Create", err.Error(), err)
+		return nil, err
+	}
+
+	zf, err := zip.OpenReader(fileName)
+	if err != nil {
+		log.Error("zip.OpenReader", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("zf.File", len(zf.File))
+	processingFiles := []*zip.File{}
+	for _, file := range zf.File {
+		if strings.Index(file.Name, "__MACOSX") > -1 {
+			continue
+		}
+
+		if strings.Index(file.Name, ".DS_Store") > -1 {
+			continue
+		}
+
+		processingFiles = append(processingFiles, file)
+	}
+	log.SetData("processingFiles", processingFiles)
+	uploadChan := make(chan uploadFileChan, len(processingFiles))
+
+	maxSize := uint64(0)
+	groups := make(map[string][]byte)
+	for _, file := range processingFiles {
+		log.SetData("fileName", file.Name)
+		log.SetData("UncompressedSize64", file.UncompressedSize64)
+		maxFileSize := uint64(400000)
+
+		log.SetData("maxFileSize", maxFileSize)
+		size := file.UncompressedSize64
+
+		if size > maxFileSize {
+			err := errors.New(fmt.Sprintf("%s, size: %d Max file size must be less than 400kb", file.Name, size))
+			log.Error("maxFileSize", err.Error(), err)
+			return nil, err
+		}
+		if size > maxSize {
+			maxSize = size
+		}
+
+		fC, err := helpers.ReadFile(file)
+		if err != nil {
+			log.Error("zip.OpenReader", err.Error(), err)
+			return nil, err
+		}
+
+		if len(groups) == 100 {
+			var wg sync.WaitGroup
+			for fileName, fileData := range groups {
+				wg.Add(1)
+				go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
+			}
+			wg.Wait()
+			groups = make(map[string][]byte)
+		} else {
+			groups[file.Name] = fC
+		}
+	}
+
+	if len(groups) > 0 {
+		var wg sync.WaitGroup
+		for fileName, fileData := range groups {
+			wg.Add(1)
+			go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
+		}
+		wg.Wait()
+		groups = make(map[string][]byte)
+	}
+
+	for i := 0; i < len(processingFiles); i++ {
+		dataFromChan := <-uploadChan
+		if dataFromChan.Err != nil {
+			log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
+			if pe.MaxSupply < int64(i) {
+				return nil, dataFromChan.Err
+			}
+		}
+
+		images = append(images, *dataFromChan.FileURL)
+		animationURL := *dataFromChan.FileURL
+		nftTokenURI["image"] = animationURL
+	}*/
+
+	pe.Images = images
+	pe.IsFullChain = true
+	pe.IsHidden = false
+	pe.Status = true
+	pe.IsSynced = true
+
+	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+	pe.NetworkFee = networkFee.String()
+
+	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	if err != nil {
+		log.Error("u.Repo.UpdateProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return pe, nil
+}
+
+func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
+	span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	var err error
+	var uploadedUrl *string
+
+	defer func() {
+		uploadChan <- uploadFileChan{
+			FileURL: uploadedUrl,
+			Err:     err,
+		}
+		wg.Done()
+	}()
+
+	base64Data := helpers.Base64Encode(fc)
+
+	key := helpers.GenerateSlug(peName)
+	key = fmt.Sprintf("btc-projects/%s/unzip", key)
+
+	uploadFileName := fmt.Sprintf("%s/%s", key, fileName)
+	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
+	if err != nil {
+		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+		return
+	}
+
+	log.SetData("uploaded", uploaded)
+	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	uploadedUrl = &cdnURL
+
 }

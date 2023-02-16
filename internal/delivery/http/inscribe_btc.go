@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -50,6 +51,12 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
+
+	if len(reqUsecase.FileName) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Filename is required"))
+		return
+	}
+
 	if len(reqUsecase.WalletAddress) == 0 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is required"))
 		return
@@ -60,7 +67,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if reqUsecase.FeeRate != 5 && reqUsecase.FeeRate != 10 && reqUsecase.FeeRate != 15 {
+	if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("fee rate is invalid"))
 		return
 	}
@@ -99,7 +106,7 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	resp.IsConfirm = input.IsConfirm
 	resp.InscriptionID = input.InscriptionID
 	resp.Balance = input.Balance
-	resp.TimeoutAt = fmt.Sprintf("%d", input.ExpiredAt.Unix())
+	resp.TimeoutAt = fmt.Sprintf("%d", time.Now().Add(time.Hour*1).Unix()) // return FE in 1h. //TODO: need update
 	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
 }
@@ -134,9 +141,9 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
-	inscriptionID := vars["ID"]
+	uuid := vars["ID"]
 
-	result, err := h.Usecase.DetailInscribeBTC(inscriptionID)
+	result, err := h.Usecase.DetailInscribeBTC(uuid)
 	if err != nil {
 		log.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -146,4 +153,76 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
+}
+
+func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcRetryInscribeBTC", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	id := vars["ID"]
+
+	err := h.Usecase.RetryInscribeBTC(id)
+	if err != nil {
+		log.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+
+}
+
+// UserCredits godoc
+// @Summary get inscribe info
+// @Description get inscribe info
+// @Tags Inscribe
+// @Accept  json
+// @Produce  json
+// @Param ID path string true "inscribe ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /inscribe/info/{ID} [GET]
+func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("getInscribeInfo", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	id := vars["ID"]
+	inscribeInfo, err := h.Usecase.GetInscribeInfo(span, id)
+	if err != nil {
+		log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.inscribeInfoToResp(inscribeInfo)
+	if err != nil {
+		log.Error("h.inscribeInfoToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response.InscribeInfoResp, error) {
+	resp := &response.InscribeInfoResp{}
+	resp.ID = input.ID
+	resp.Index = input.Index
+	resp.Address = input.Address
+	resp.OutputValue = input.OutputValue
+	resp.Sat = input.Sat
+	resp.Preview = input.Preview
+	resp.Content = input.Content
+	resp.ContentLength = input.ContentLength
+	resp.ContentType = input.ContentType
+	resp.Timestamp = input.Timestamp
+	resp.GenesisHeight = input.GenesisHeight
+	resp.GenesisTransaction = input.GenesisTransaction
+	resp.Location = input.Location
+	resp.Output = input.Output
+	resp.Offset = input.Offset
+	return resp, nil
 }
