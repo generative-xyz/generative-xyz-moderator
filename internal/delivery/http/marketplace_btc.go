@@ -226,6 +226,15 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		IsCompleted:   isCompleted,
 		// LastPrice:     lastPrice,
 	}
+	inscribeInfo, err := h.Usecase.GetInscribeInfo(span, nftInfo.InscriptionID)
+	if err != nil {
+		log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+	}
+	if inscribeInfo != nil {
+		nftInfo.InscriptionNumber = inscribeInfo.Index
+		nftInfo.ContentType = inscribeInfo.ContentType
+		nftInfo.ContentLength = inscribeInfo.ContentLength
+	}
 	//log.SetData("resp.Proposal", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
