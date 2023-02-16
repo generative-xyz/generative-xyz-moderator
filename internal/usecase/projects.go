@@ -896,8 +896,25 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		return nil, err
 	}
 	maxSize := uint64(0)
+	processingImages := pe.ProcessingImages
+	processingImageNames := []string{}
+
+	for _, item := range processingImages {
+		spew.Dump(item)
+		name := strings.ReplaceAll(item, "https://cdn.generative.xyz/btc-projects/1000002/images/uploaded/output/", "")
+		name = strings.ReplaceAll(name, ".jpg", "")
+		processingImageNames = append(processingImageNames, name)
+	}
+
+	
 	for _, f := range files {
 		//TODO check f.Name is not empty
+		tmpName := strings.ReplaceAll(f.Name, "btc-projects/1000002/output.zip_unzip/output/","")
+		tmpName = strings.ReplaceAll(tmpName, ".jpg","")
+		
+		if u.checkInArray(tmpName, processingImageNames) {
+			continue
+		}
 
 		if strings.Index(f.Name, "__MACOSX") > -1 {
 			continue
@@ -913,8 +930,11 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		if uint64(f.Size) > maxSize {
 			maxSize = uint64(f.Size)
 		}
+
+		//fmt.Println(temp)
 	}
 	//
+	   
 
 	/*resp, err := http.Get(zipLink)
 	if err != nil {
@@ -1021,12 +1041,17 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		nftTokenURI["image"] = animationURL
 	}*/
 
+	helpers.WriteFile(fmt.Sprintf("bk-%s-proccessing-images.json", pe.TokenID), pe.ProcessingImages)
+
+	spew.Dump(len(images))
+	// return nil, nil
+
 	pe.Images = images
-	pe.IsFullChain = true
-	pe.IsHidden = false
-	pe.Status = true
-	pe.IsSynced = true
-	pe.MintPrice = "0"
+	// pe.IsFullChain = true
+	// pe.IsHidden = false
+	// pe.Status = true
+	// pe.IsSynced = true
+	// pe.MintPrice = "0"
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.NetworkFee = networkFee.String()
@@ -1073,6 +1098,18 @@ func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan 
 
 }
 
+func (u Usecase) checkInArray(tmpName string, processingImageNames []string) bool {
+	for _, minted := range processingImageNames {
+			
+		if tmpName ==  minted {
+			println(minted+ "-------" + tmpName)
+			return true
+		}
+	}
+
+	return false
+}
+
 func (u Usecase) LoadImage() {
 	span, log := u.StartSpanWithoutRoot("LoadImage.1000118")
 	defer u.Tracer.FinishSpan(span, log)
@@ -1086,12 +1123,11 @@ func (u Usecase) LoadImage() {
 	}
 }
 
-func (u Usecase) ChangeProjectCreatorProfile() {
+func (u Usecase) ChangeProjectCreatorProfile(tokenID string, changeTo string) {
 	//from := strings.ToLower("0xE9136362bB1c97019EaB596ea9047f935644bB49")
-	changeTo := strings.ToLower("0x673eE6D0F3f60104BF8Fe41d7640cCDc88AFe18A")
-	btcWLchangeTo := strings.ToLower("bc1q2wnxvtw3davze47c58gsmeg5jz6hy4af9y3jc6")
-	tokenID := "1000014"
 
+	changeTo = strings.ToLower(changeTo)
+	spew.Dump(changeTo)
 	p, err := u.Repo.FindProjectByTokenID(tokenID)
 	if err != nil {
 		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
@@ -1116,7 +1152,7 @@ func (u Usecase) ChangeProjectCreatorProfile() {
 
 	p.CreatorAddrr = changeTo
 	p.CreatorProfile = *user
-	p.CreatorAddrrBTC = btcWLchangeTo
+	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		spew.Dump(err)
@@ -1211,6 +1247,39 @@ func (u Usecase) UpdateProfileProfile(projectID string) {
 		return
 	}
 	spew.Dump(updated)
+	
+}
+
+
+func (u Usecase) Update1M02Collections(projectID string) {
+	span, log := u.StartSpanWithoutRoot("Update1M02Collections")
+	defer u.Tracer.FinishSpan(span, log)
+
+
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	
+	//Backup
+	bkImages := p.Images
+	log.SetData("bkImages", bkImages)
+	bk := make(map [string][]string)
+	bk[`inages`] = bkImages
+	
+	// unzip
+	helpers.WriteFile(fmt.Sprintf("bk-%s-images.json", projectID), bk)
+
+   
+	tokenID := "1000002"
+	ziplink :=  "https://cdn.generative.xyz/btc-projects/1000002/output.zip"
+	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
+	if err != nil {
+		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
+		//return nil, err
+	}
+
 	
 }
 

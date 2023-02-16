@@ -126,7 +126,7 @@ func (g gcstorage) UnzipFile(object string) error {
 		}()
 
 
-		fmt.Printf("Procesed %d / %d files", i+1, len(zr.File))
+		fmt.Printf("Procesed %d / %d files \n", i+1, len(zr.File))
 		if err != nil {
 			//.fmt.Errorf("%s",err.Error())
 			fmt.Errorf("%v", err)
