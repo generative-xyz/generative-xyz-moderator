@@ -643,3 +643,41 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 	}
 	return nil
 }
+
+const (
+	TRENDING_SCORE_EACH_BTC_VOLUMN = 1000
+	TRENDING_SCORE_EACH_VIEW       = 1
+)
+
+func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SyncProjectTrending", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// All btc activities, which include Mint and Buy activity 
+	btcActivites, err := u.Repo.GetRecentBTCActivity()
+	if err != nil {
+		return err
+	}
+
+	// Mapping from projectID to latest 24h's volumn in satoshi
+	fromProjectIDToRecentVolumn := map[string]int64{}
+	for _, btcActivity := range btcActivites {
+		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
+	}
+
+	projects, err := u.Repo.GetAllProjectsWithSelectedFields()
+	if err != nil {
+		return err
+	}
+
+	var processed int32
+	for _, project := range projects {
+		processed++
+		_countView, err := u.Repo.CountViewActivity(project.TokenID)
+		if err != nil {
+			return err
+		}
+		volumnInSatoshi := fromProjectIDToRecentVolumn
+	}
+
+}
