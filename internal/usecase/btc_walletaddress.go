@@ -495,8 +495,8 @@ func (u Usecase) MintLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAddre
 }
 
 //Mint flow
-func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForBalancing", rootSpan)
+func (u Usecase) WaitingForBalancing() ([]entity.BTCWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForBalancing")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListProcessingWalletAddress()
@@ -547,8 +547,8 @@ func (u Usecase) WaitingForBalancing(rootSpan opentracing.Span) ([]entity.BTCWal
 	return nil, nil
 }
 
-func (u Usecase) WaitingForMinting(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForMinting", rootSpan)
+func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForMinting")
 	defer u.Tracer.FinishSpan(span, log)
 	addreses, err := u.Repo.ListMintingWalletAddress()
 	if err != nil {
@@ -611,8 +611,8 @@ func (u Usecase) WaitingForMinting(rootSpan opentracing.Span) ([]entity.BTCWalle
 	return nil, nil
 }
 
-func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForMinted", rootSpan)
+func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForMinted")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListBTCAddress()
@@ -740,9 +740,9 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 }
 
 //phuong:
-// send btc from segwit address to master address
-func (u Usecase) JobBtcSendBtcToMaster(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("JobBtcSendBtcToMaster", rootSpan)
+// send btc from segwit address to master address - it does not call our ORD server
+func (u Usecase) JobBtcSendBtcToMaster() error {
+	span, log := u.StartSpanWithoutRoot("JobBtcSendBtcToMaster")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListWalletAddressToClaimBTC()
