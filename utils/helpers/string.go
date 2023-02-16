@@ -71,7 +71,6 @@ func GenerateKey(key string) string {
 	return key
 }
 
-
 func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, " ", "-")
 	key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
@@ -158,9 +157,9 @@ func ParseUintToUnixTime(number uint64) *time.Time {
 	return &t
 }
 
-func CreateBTCOrdWallet( userWallet string) string {
+func CreateBTCOrdWallet(userWallet string) string {
 	now := time.Now().UTC().Unix()
-	return fmt.Sprintf("%s_%s_%d","USER", userWallet, now)
+	return fmt.Sprintf("%s_%s_%d", "USER", userWallet, now)
 }
 
 func GetExternalPrice(tokenSymbol string) (float64, error) {
@@ -204,4 +203,34 @@ retry:
 		return 0, nil
 	}
 	return value, nil
+}
+
+func CalcOrigBinaryLength(datas string) int {
+
+	l := len(datas)
+
+	// count how many trailing '=' there are (if any)
+	eq := 0
+	if l >= 2 {
+		if datas[l-1] == '=' {
+			eq++
+		}
+		if datas[l-2] == '=' {
+			eq++
+		}
+
+		l -= eq
+	}
+
+	// basically:
+	//
+	// eq == 0 :    bits-wasted = 0
+	// eq == 1 :    bits-wasted = 2
+	// eq == 2 :    bits-wasted = 4
+
+	// each base64 character = 6 bits
+
+	// so orig length ==  (l*6 - eq*2) / 8
+
+	return (l*3 - eq) / 4
 }
