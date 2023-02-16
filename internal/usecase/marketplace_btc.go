@@ -130,6 +130,15 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 					IsCompleted:   listing.IsSold,
 					CreatedAt:     listing.CreatedAt,
 				}
+				inscribeInfo, err := u.GetInscribeInfo(span, nftInfo.InscriptionID)
+				if err != nil {
+					log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+				}
+				if inscribeInfo != nil {
+					nftInfo.InscriptionNumber = inscribeInfo.Index
+					nftInfo.ContentType = inscribeInfo.ContentType
+					nftInfo.ContentLength = inscribeInfo.ContentLength
+				}
 				result = append(result, nftInfo)
 				continue
 			}
