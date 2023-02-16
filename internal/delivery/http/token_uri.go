@@ -156,6 +156,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if resp != nil {
+		// get nft listing detail to check buyable (contact Phuong):
+		nft, _ := h.Usecase.GetListingDetail(span, tokenID)
+		if nft != nil {
+			resp.Buyable = nft.Buyable
+			resp.PriceBTC = nft.Price
+			resp.OrderID = nft.OrderID
+		}
+	}
+
 	log.SetData("resp.token", token.TokenID)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")

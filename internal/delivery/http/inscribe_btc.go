@@ -51,6 +51,12 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
+
+	if len(reqUsecase.FileName) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Filename is required"))
+		return
+	}
+
 	if len(reqUsecase.WalletAddress) == 0 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is required"))
 		return
@@ -61,7 +67,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if reqUsecase.FeeRate != 5 && reqUsecase.FeeRate != 10 && reqUsecase.FeeRate != 15 {
+	if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("fee rate is invalid"))
 		return
 	}

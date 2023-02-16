@@ -89,6 +89,7 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	verified, err := h.Usecase.VerifyMessage(span, structure.VerifyMessage{
 		Signature: *reqBody.Sinature,
 		Address: *reqBody.Address,
+		AddressBTC: reqBody.AddressBTC,
 	})
 
 	log.SetData("verified", verified)

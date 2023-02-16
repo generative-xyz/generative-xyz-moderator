@@ -5,4 +5,5 @@ type CreateInscribeBtcReq struct {
 	Name          string `json:"name"`
 	File          string `json:"file"`
 	FeeRate       int32  `json:"fee_rate"`
+	FileName      string `json:"fileName"`
 }
