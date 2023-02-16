@@ -117,7 +117,7 @@ const (
 
 	INSCRIBE_TIMEOUT = 6
 
-	MASTER_ADDRESS = "bc1qeeu2s29dlhu497xqqcl9gjanq4t8kch3jt63hd"
+	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 )
 
 type PubSubSendOtp struct {
