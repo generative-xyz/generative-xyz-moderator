@@ -38,6 +38,17 @@ type CreateBTCProjectReq struct {
 	IsFullChain        bool        `json:"isFullChain"` 
 }
 
+type UpdateBTCProjectReq struct {
+	ProjectID                 	 *string             `json:"projectID"`
+	Name                  *string             `json:"name"`
+	Description           *string             `json:"description"`
+	Thumbnail             *string             `json:"thumbnail"`
+	IsHidden 			*bool	 `json:"isHidden"`
+	Royalty 				*int64	 `json:"royalty"`
+	MintPrice 				*string	 `json:"mintPrice"`
+	MaxSupply 				*int64	 `json:"maxSupply"`
+}
+
 type UpdateProjectReq struct {
 	Priority *int `json:"priority"`
 }
