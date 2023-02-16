@@ -75,6 +75,7 @@ type TokenUri struct {
 	PaidType TokenPaidType `bson:"paidType"` 
 	IsOnchain bool `bson:"isOnchain"` 
 	InscriptionIndex string `bson:"inscription_index"`
+	SyncedInscriptionInfo bool `bson:"synced_inscription_info"`
 }
 
 type TokenUriAttr struct {
