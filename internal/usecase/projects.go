@@ -134,8 +134,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.TokenID = fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mintPrice.String()
-	networkFee := big.NewInt(u.networkFeeBySize(int64(300000 / 4))) // will update after unzip and check data
-	pe.NetworkFee = networkFee.String()
+	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
@@ -167,7 +166,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	isPubsub := false
 	animationURL := ""
 	zipLink := req.ZipLink
-	if zipLink != nil && *zipLink != ""  {
+	if zipLink != nil && *zipLink != "" {
 
 		pe.IsHidden = true
 		isPubsub = true
@@ -176,6 +175,8 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
+			maxSize := helpers.CalcOrigBinaryLength(animationURL)
+			pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
 			nftTokenURI["animation_url"] = animationURL
 		}
 	}
