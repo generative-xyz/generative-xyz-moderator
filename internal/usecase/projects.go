@@ -267,7 +267,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	}
 	
 	if req.Royalty != nil {
-		if *req.Royalty > 25 {
+		if *req.Royalty > 2500 {
 			err := errors.New("Royalty must be less than 25")
 			log.Error("pjID.empty", err.Error(), err)
 			return nil, err
