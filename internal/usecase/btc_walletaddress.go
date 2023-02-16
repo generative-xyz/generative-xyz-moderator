@@ -669,6 +669,8 @@ func (u Usecase) WaitingForMinted(rootSpan opentracing.Span) ([]entity.BTCWallet
 				return
 			}
 
+			go u.CreateMintActivity(item.InscriptionID, item.Amount)
+
 			//TODO: - create entity.TokenURI
 			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
 			if err != nil {
