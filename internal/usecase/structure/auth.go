@@ -14,6 +14,7 @@ type GenerateMessage struct {
 type VerifyMessage struct {
 	Signature string
 	Address string
+	AddressBTC *string
 }
 
 type VerifyResponse struct {

@@ -132,6 +132,16 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
+	//TODO - Tri temporay comment
+	// if data.AddressBTC !=  nil {
+	// 	if *data.AddressBTC  != "" {
+	// 		if user.WalletAddressBTC == ""  {
+	// 			user.WalletAddressBTC = *data.AddressBTC
+	// 			log.SetData("user.WalletAddressBTC.Updated", true)
+	// 		}
+	// 	}
+	// }
+
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
 		log.Error("u.Repo.UpdateUserByWalletAddress", err.Error(), err)
