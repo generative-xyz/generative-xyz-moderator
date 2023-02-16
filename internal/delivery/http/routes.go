@@ -152,6 +152,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
 
+	marketplaceBTC.HandleFunc("/collections", h.btcMarketplaceListCollections).Methods("POST")
+	marketplaceBTC.HandleFunc("/collection/{ID}", h.btcMarketplaceCollectionDetail).Methods("GET")
+	marketplaceBTC.HandleFunc("/collection/{ID}/inscriptions", h.btcMarketplaceCollectionInscriptions).Methods("GET")
+
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
 	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")

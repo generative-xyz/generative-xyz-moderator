@@ -243,3 +243,20 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 	}
 	return addressSegwit, nil
 }
+
+func (u Usecase) BTCMarketplaceCollectionDetail(rootSpan opentracing.Span, buyableOnly bool, limit, offset int64) (*structure.MarketplaceCollectionDetail, error) {
+	var result structure.MarketplaceCollectionDetail
+	return &result, nil
+}
+
+func (u Usecase) BTCMarketplaceListCollections(rootSpan opentracing.Span, limit, offset int64) ([]structure.MarketplaceCollectionDetail, error) {
+	var result []structure.MarketplaceCollectionDetail
+
+	return result, nil
+}
+
+func (u Usecase) BTCMarketplaceListNFTByCollections(rootSpan opentracing.Span, collectionID string, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
+	var result []structure.MarketplaceNFTDetail
+
+	return result, nil
+}

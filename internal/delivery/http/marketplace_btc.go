@@ -311,7 +311,6 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		OrderID:       reqBody.OrderID,
 		BuyOrdAddress: reqBody.WalletAddress,
 	}
-	//TODO: lam uncomment
 	listing, err := h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
@@ -341,6 +340,113 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// TODO: lam
+func (h *httpDelivery) btcMarketplaceListCollections(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcMarketplaceListCollections", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+
+	result, err := h.Usecase.BTCMarketplaceListCollections(span, int64(limit), int64(offset))
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListCollections", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+// TODO: lam
+func (h *httpDelivery) btcMarketplaceCollectionInscriptions(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcMarketplaceCollectionInscriptions", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	collectionID := vars["ID"]
+	span.SetTag("ID", collectionID)
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		limit = 20
+	}
+
+	buyableOnly := false
+	if r.URL.Query().Get("buyable-only") == "true" {
+		buyableOnly = true
+	}
+
+	result, err := h.Usecase.BTCMarketplaceListNFT(span, buyableOnly, int64(limit), int64(offset))
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+// TODO: lam
+func (h *httpDelivery) btcMarketplaceCollectionDetail(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcMarketplaceCollectionDetail", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	inscriptionID := vars["ID"]
+	span.SetTag("ID", inscriptionID)
+	var nft *entity.MarketplaceBTCListing
+	var err error
+	isBuyable := true
+	isCompleted := false
+	// lastPrice := int64(0)
+	nft, err = h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
+	if err != nil {
+		isBuyable = false
+		nft, err = h.Usecase.Repo.FindBtcNFTListingLastSoldByNFTID(inscriptionID)
+		if err != nil {
+			log.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		// priceInt, err := strconv.ParseInt(nft.Price, 10, 64)
+		// if err != nil {
+		// 	log.Error("h.btcMarketplaceNFTDetail.strconv.ParseInt", err.Error(), err)
+		// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		// 	return
+		// }
+		// lastPrice = priceInt
+		isCompleted = true
+	}
+
+	nftInfo := structure.MarketplaceNFTDetail{
+		InscriptionID: nft.InscriptionID,
+		Name:          nft.Name,
+		Description:   nft.Description,
+		Price:         nft.Price,
+		OrderID:       nft.UUID,
+		IsConfirmed:   nft.IsConfirm,
+		Buyable:       isBuyable,
+		IsCompleted:   isCompleted,
+		// LastPrice:     lastPrice,
+	}
+	//log.SetData("resp.Proposal", resp)
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
 }
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {

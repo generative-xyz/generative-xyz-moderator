@@ -10,7 +10,7 @@ type MarketplaceBTC_ListingInfo struct {
 	SellerAddress  string `json:"seller_address"`
 	Price          string `json:"amount"`
 	ServiceFee     string `json:"service_fee"`
-	Min            string `json:"service_fee"`
+	Min            string `json:"min"`
 }
 
 type MarketplaceBTC_BuyOrderInfo struct {
@@ -29,4 +29,20 @@ type MarketplaceNFTDetail struct {
 	Buyable       bool      `json:"buyable"`
 	IsCompleted   bool      `json:"isCompleted"`
 	CreatedAt     time.Time `json:"createdAt"`
+	CollectionID  string    `json:"collectionID"`
+}
+
+type MarketplaceCollectionDetail struct {
+	CollectionID  string `json:"collectionID"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Total         string `json:"total"`
+	InscriptionID string `json:"inscriptionID"`
+	Creator       []struct {
+		UUID     string `json:"uuid"`
+		Name     string `json:"display_name"`
+		Avatar   string `json:"avatar"`
+		Verified bool   `json:"is_verified"`
+	} `json:"creator"`
+	CreatedAt time.Time `json:"createdAt"`
 }
