@@ -58,6 +58,19 @@ type CreateBtcProjectReq struct {
 	IsFullChain        	bool        `json:"isFullChain"`
 }
 
+
+type UpdateBTCProjectReq struct {
+	ProjectID                 	 *string             `json:"projectID"`
+	Name                 	 *string             `json:"name"`
+	Description           	*string             `json:"description"`
+	Thumbnail             	*string             `json:"thumbnail"`
+	IsHidden 				*bool	 `json:"isHidden"`
+	Royalty 				*int	 `json:"royalty"`
+	MintPrice 					*string	 `json:"mintPrice"`
+	MaxSupply 				*int64	 `json:"maxSupply"`
+	CreatetorAddress 				*string	 `json:"createtorAddress"`
+}
+
 type CreateProposaltReq struct {
 	Title string `json:"title"`
 	Description string `json:"description"`

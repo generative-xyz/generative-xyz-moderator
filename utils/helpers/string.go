@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/big"
 	"net/http"
 	"os"
@@ -233,4 +234,15 @@ func CalcOrigBinaryLength(datas string) int {
 	// so orig length ==  (l*6 - eq*2) / 8
 
 	return (l*3 - eq) / 4
+}
+
+func StringToBTCAmount(price string) *big.Float {
+	pow := math.Pow10(8)
+	powBig := big.NewFloat(0).SetFloat64(pow)
+
+	mintPrice := big.NewFloat(0)
+	mintPrice.SetString(price)
+	mintPrice.Mul(mintPrice, powBig)
+
+	return mintPrice
 }

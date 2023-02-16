@@ -53,6 +53,7 @@ type ProjectResp struct {
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
 	WhiteListEthContracts  []string         `json:"whiteListEthContracts"`
 	IsHidden               bool             `json:"isHidden"`
+	TotalImages               int             `json:"totalImages"`
 }
 
 type ProjectStatResp struct {
