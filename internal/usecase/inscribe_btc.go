@@ -472,14 +472,14 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		}
 
 		typeFiles := strings.Split(item.FileName, ".")
-		if len(typeFiles) != 2 {
+		if len(typeFiles) < 2 {
 			err := errors.New("File name invalid")
 			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
 
-		typeFile = typeFiles[1]
+		typeFile = typeFiles[len(typeFiles)-1]
 		fmt.Println("typeFile: ", typeFile)
 
 		// update google clound: TODO need to move into api to avoid create file many time.
