@@ -763,3 +763,46 @@ func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structu
 	}
 	return result, nil
 }
+
+func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
+	// addon for check isBuyable (contact Phuong)
+
+	isBuyable := true
+	nft, err := u.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !nft.IsSold {
+		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
+		if err != nil {
+			return nil, err
+		}
+		currentTime := time.Now()
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isBuyable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isBuyable = false
+				break
+			}
+		}
+	}
+	nftInfo := structure.MarketplaceNFTDetail{
+		InscriptionID: nft.InscriptionID,
+		Name:          nft.Name,
+		Description:   nft.Description,
+		Price:         nft.Price,
+		OrderID:       nft.UUID,
+		IsConfirmed:   nft.IsConfirm,
+		Buyable:       isBuyable,
+		CreatedAt:     nft.CreatedAt,
+	}
+	return &nftInfo
+
+}
