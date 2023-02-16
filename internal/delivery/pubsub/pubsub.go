@@ -58,6 +58,7 @@ func (h PubsubHandler) StartServer() {
 			break
 		}	
 	}
+
 	<-ch
 	return
 }

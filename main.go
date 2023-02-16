@@ -6,19 +6,15 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"rederinghub.io/utils/delegate"
 	"time"
+
+	"rederinghub.io/utils/delegate"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
-	"rederinghub.io/internal/delivery/crontab"
-	"rederinghub.io/internal/delivery/crontab_btc"
-	"rederinghub.io/internal/delivery/crontab_btc_v2"
-	"rederinghub.io/internal/delivery/crontab_marketplace"
-	httpHandler "rederinghub.io/internal/delivery/http"
+	cmd "rederinghub.io/internal/delivery/cmd"
 	"rederinghub.io/internal/delivery/pubsub"
-	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
@@ -157,50 +153,23 @@ func startServer() {
 		return
 	}
 
-	h, _ := httpHandler.NewHandler(&g, *uc)
-	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-	cron := crontab.NewScronHandler(&g, *uc)
-	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	btcCronV2 := crontab_btc_v2.NewScronBTCHandler(&g, *uc)
+	
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+	cmd := cmd.NewCMDHandler(&g, *uc)
 
 	servers := make(map[string]delivery.AddedServer)
-	servers["http"] = delivery.AddedServer{
-		Server:  h,
-		Enabled: conf.StartHTTP,
-	}
-
-	servers["txconsumer"] = delivery.AddedServer{
-		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
-	}
-
-	servers["crontab"] = delivery.AddedServer{
-		Server:  cron,
-		Enabled: conf.Crontab.Enabled,
-	}
-
-	servers["btc_crontab"] = delivery.AddedServer{
-		Server:  btcCron,
-		Enabled: conf.Crontab.BTCEnabled,
-	}
-
-	servers["btc_crontab_v2"] =  delivery.AddedServer{
-		Server: btcCronV2,
-		Enabled: conf.Crontab.BTCV2Enabled,
-	}
-	
-	servers["marketplace_crontab"] =  delivery.AddedServer{
-		Server: mkCron,
-		Enabled: conf.Crontab.MarketPlaceEnabled,
-	}
-
 	servers["pubsub"] = delivery.AddedServer{
 		Server:  ph,
-		Enabled: conf.StartPubsub,
+		Enabled: true,
 	}
 
+	servers["cmd"] = delivery.AddedServer{
+		Server:  cmd,
+		Enabled: true,
+	}
+
+
+	
 	//var wait time.Duration
 	c := make(chan os.Signal, 1)
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
@@ -217,9 +186,9 @@ func startServer() {
 			if server.Server != nil {
 				go server.Server.StartServer()
 			}
-			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+			logger.Info(fmt.Sprintf("%s is enabled", name))
 		} else {
-			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
+			logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
 	}
 
@@ -239,7 +208,7 @@ func startServer() {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	<-ctx.Done() //if your application should wait for other services
 	// to finalize based on context cancellation.
-	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	logger.Warning("httpDelivery.StartServer - server is shutting down")
 	os.Exit(0)
 
 }

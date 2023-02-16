@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -879,12 +880,14 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	spew.Dump(os.Getenv("GCS_DOMAIN"))
 	// TODO
+
+	
 	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
-	err = u.GCS.UnzipFile(zipLink)
-	if err != nil {
-		log.Error("http.Get", err.Error(), err)
-		return nil, err
-	}
+	// err = u.GCS.UnzipFile(zipLink)
+	// if err != nil {
+	// 	log.Error("http.Get", err.Error(), err)
+	// 	return nil, err
+	// }
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
@@ -1023,6 +1026,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
+	pe.MintPrice = "0"
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.NetworkFee = networkFee.String()
@@ -1068,3 +1072,147 @@ func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan 
 	uploadedUrl = &cdnURL
 
 }
+
+func (u Usecase) LoadImage() {
+	span, log := u.StartSpanWithoutRoot("LoadImage.1000118")
+	defer u.Tracer.FinishSpan(span, log)
+
+	tokenID := "1000118"
+	ziplink :=  "https://cdn.generative.xyz/btc-projects/puke-2-earn-ape-club-btc/p2e-for-btc.zip"
+	err := u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
+	if err != nil {
+		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
+		//return nil, err
+	}
+}
+
+func (u Usecase) ChangeProjectCreatorProfile() {
+	//from := strings.ToLower("0xE9136362bB1c97019EaB596ea9047f935644bB49")
+	changeTo := strings.ToLower("0x673eE6D0F3f60104BF8Fe41d7640cCDc88AFe18A")
+	btcWLchangeTo := strings.ToLower("bc1q2wnxvtw3davze47c58gsmeg5jz6hy4af9y3jc6")
+	tokenID := "1000014"
+
+	p, err := u.Repo.FindProjectByTokenID(tokenID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	
+
+	user, err := u.Repo.FindUserByWalletAddress(changeTo)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			user = &entity.Users{
+				WalletAddress: changeTo,
+			}
+
+			err := u.Repo.CreateUser(user)
+			if err != nil {
+				spew.Dump(err)
+				return
+			}
+		}
+	}
+
+	p.CreatorAddrr = changeTo
+	p.CreatorProfile = *user
+	p.CreatorAddrrBTC = btcWLchangeTo
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+	spew.Dump(updated)
+	
+}
+
+
+func (u Usecase) ChangePrice(projectID string, price string) {
+	//from := strings.ToLower("0xE9136362bB1c97019EaB596ea9047f935644bB49")
+	pow := math.Pow10(8)
+	powBig := big.NewFloat(0).SetFloat64(pow)
+	mintPrice := big.NewFloat(0)
+	mintPrice.SetString(price)
+	mintPrice.Mul(mintPrice, powBig)
+
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+
+
+	p.MintPrice = mintPrice.String()
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+	spew.Dump(updated)
+	
+}
+
+func (u Usecase) DeleteProjectID(projectID string) {
+	//from := strings.ToLower("0xE9136362bB1c97019EaB596ea9047f935644bB49")
+	
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	p.IsHidden = true
+	p.IsSynced = false
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+	spew.Dump(updated)
+	
+}
+
+func (u Usecase) ChangeRoyalty(projectID string, royalty int) {
+	
+	
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	
+	p.Royalty = royalty
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+	spew.Dump(updated)
+	
+}
+
+func (u Usecase) UpdateProfileProfile(projectID string) {
+		
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	
+	user, err := u.Repo.FindUserByWalletAddress(p.CreatorAddrr)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+	
+	p.CreatorProfile = *user
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+	spew.Dump(updated)
+	
+}
+
+
+

@@ -100,7 +100,9 @@ func (g gcstorage) UnzipFile(object string) error {
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
 	buffer := make([]byte, 32*1024)
 	outputBucket := g.bucketName
-	for _, f := range zr.File {
+
+	fmt.Println(baseDir)
+	for i, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
@@ -122,7 +124,12 @@ func (g gcstorage) UnzipFile(object string) error {
 
 			return nil
 		}()
+
+
+		fmt.Printf("Procesed %d / %d files", i+1, len(zr.File))
 		if err != nil {
+			//.fmt.Errorf("%s",err.Error())
+			fmt.Errorf("%v", err)
 			return err
 		}
 		
