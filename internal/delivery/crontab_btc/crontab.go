@@ -1,7 +1,6 @@
 package crontab_btc
 
 import (
-	"sync"
 	"time"
 
 	"gopkg.in/robfig/cron.v2"
@@ -29,101 +28,40 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 }
 
 func (h ScronBTCHandler) StartServer() {
-
-	
-	//waiting for blancing
 	go func() {
-		var wg sync.WaitGroup
-		//Waiting for balance + Mint
+		//it does not call our ORD server
 		for {
-			wg.Add(3)
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("BTC.WaitingForBalancing")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForETHBalancing(span) // ETH
-			}(&wg)
-
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("ETH.SendBTCToMaster")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForBalancing(span) // BTC
-			}(&wg)
-
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("ETH.SendBTCToMaster")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.JobBtcSendBtcToMaster(span) // BTC
-			}(&wg)
+			h.Usecase.JobBtcSendBtcToMaster() // BTC
+			
 			time.Sleep(5 * time.Minute)
 		}
 	}()
 
-	//waiting for minting
+	//waiting for minting - CALL our ord server
 	go func() {
-		var wg sync.WaitGroup
-		//Waiting for Send
+		//All process will be >= 30 minutes
 		for {
-			wg.Add(2)
-			go func(wg *sync.WaitGroup) {
+			h.Usecase.WaitingForBalancing() // BTC
 
-				span := h.Tracer.StartSpan("BTC.WaitingForMinting")
-				defer wg.Done()
-				defer span.Finish()
+			h.Usecase.WaitingForETHBalancing() //ETH
 
-				h.Usecase.WaitingForMinting(span)
+			//Sleetp 5 minutes after check balancing
+			time.Sleep(5 * time.Minute)
+
+			h.Usecase.WaitingForMinting() // BTC
 				
-			}(&wg)
-
-			//TODO mint with ETH payment?
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("ETH.WaitingForETHMinting")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForETHMinting(span)
-
-			}(&wg)
-
-			wg.Wait()
-			time.Sleep(1 * time.Minute)
-		}
-	}()
+			h.Usecase.WaitingForETHMinting() //ETH
 
 
-	//Waiting for minted and send
-	go func() {
-		var wg sync.WaitGroup
-		//Waiting for Send
-		for {
-			wg.Add(2)
-			go func(wg *sync.WaitGroup) {
+			//Sleep 15 minutes after mint
+			time.Sleep(15 * time.Minute)
+			
+			h.Usecase.WaitingForMinted() // BTC
 
-				span := h.Tracer.StartSpan("BTC.WaitingForMinted")
-				defer wg.Done()
-				defer span.Finish()
+			h.Usecase.WaitingForETHMinted() //ETH
 
-				h.Usecase.WaitingForMinted(span)
-
-			}(&wg)
-
-			//TODO mint with ETH payment?
-			go func(wg *sync.WaitGroup) {
-				span := h.Tracer.StartSpan("ETH.WaitingForETHMinted")
-				defer wg.Done()
-				defer span.Finish()
-
-				h.Usecase.WaitingForETHMinted(span)
-
-			}(&wg)
-
-			wg.Wait()
-			time.Sleep(1 * time.Minute)
+			//Sleep 5 minutes after mint
+			time.Sleep(5 * time.Minute)
 		}
 	}()
 
