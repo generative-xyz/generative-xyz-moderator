@@ -2340,6 +2340,43 @@
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "update btc project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "update a btc project",
+                "parameters": [
+                    {
+                        "description": "Update project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateBTCProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/project/{contractAddress}/{projectID}": {
@@ -3009,6 +3046,9 @@
                 "file": {
                     "type": "string"
                 },
+                "fileName": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3102,6 +3142,35 @@
                 }
             }
         },
+        "request.UpdateBTCProjectReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "isHidden": {
+                    "type": "boolean"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectID": {
+                    "type": "string"
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -3153,6 +3222,9 @@
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "addressBtc": {
                     "type": "string"
                 },
                 "signature": {
@@ -3229,6 +3301,10 @@
                     "type": "string"
                 },
                 "attributes": {},
+                "buyable": {
+                    "description": "for buyable:",
+                    "type": "boolean"
+                },
                 "creator": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
@@ -3253,10 +3329,16 @@
                 "name": {
                     "type": "string"
                 },
+                "orderID": {
+                    "type": "string"
+                },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
                 "ownerAddr": {
+                    "type": "string"
+                },
+                "priceBTC": {
                     "type": "string"
                 },
                 "priority": {
@@ -3485,6 +3567,9 @@
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "totalImages": {
+                    "type": "integer"
                 },
                 "traitStat": {
                     "type": "array",
