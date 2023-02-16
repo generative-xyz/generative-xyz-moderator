@@ -20,13 +20,16 @@ type MarketplaceBTC_BuyOrderInfo struct {
 }
 
 type MarketplaceNFTDetail struct {
-	InscriptionID string    `json:"inscriptionID"`
-	Price         string    `json:"price"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	OrderID       string    `json:"orderID"`
-	IsConfirmed   bool      `json:"isConfirmed"`
-	Buyable       bool      `json:"buyable"`
-	IsCompleted   bool      `json:"isCompleted"`
-	CreatedAt     time.Time `json:"createdAt"`
+	InscriptionID     string    `json:"inscriptionID"`
+	Price             string    `json:"price"`
+	Name              string    `json:"name"`
+	Description       string    `json:"description"`
+	OrderID           string    `json:"orderID"`
+	IsConfirmed       bool      `json:"isConfirmed"`
+	Buyable           bool      `json:"buyable"`
+	IsCompleted       bool      `json:"isCompleted"`
+	CreatedAt         time.Time `json:"createdAt"`
+	InscriptionNumber string    `json:"inscriptionNumber"`
+	ContentType       string    `json:"contentType"`
+	ContentLength     string    `json:"contentLength"`
 }
