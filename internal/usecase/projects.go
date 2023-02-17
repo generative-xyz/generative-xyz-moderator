@@ -260,7 +260,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		p.Thumbnail = *req.Thumbnail
 	}
 
-	if req.MaxSupply != nil && *req.MaxSupply !=  0 && *req.MaxSupply != p.MaxSupply {
+	if req.MaxSupply != nil && *req.MaxSupply !=  0 && *req.MaxSupply != p.MaxSupply && *req.MaxSupply != p.MaxSupply {
 		if p.MintingInfo.Index > 0 {
 			err := errors.New("Project is minted, cannot update max supply")
 			log.Error("pjID.minted", err.Error(), err)
@@ -277,7 +277,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		// 	return nil, err
 		// }
 
-		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0 {
+		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0 && p.Royalty != *req.Royalty {
 			err := errors.New("Project is minted, cannot update max supply")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
@@ -288,15 +288,15 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	}
 	
 	if req.MintPrice != nil {
-		if *req.MintPrice != p.MintPrice &&  p.MintingInfo.Index > 0 {
+		mFStr := helpers.StringToBTCAmount(p.MintPrice)
+		reqMfFStr := helpers.StringToBTCAmount(*req.MintPrice)
+
+		if *req.MintPrice != p.MintPrice &&  p.MintingInfo.Index > 0  && mFStr.String() != reqMfFStr.String(){
 			err := errors.New("Project is minted, cannot update mint price")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
 		}
-
-		m := helpers.StringToBTCAmount(*req.MintPrice)
-		p.MintPrice = m.String()
-
+		p.MintPrice = reqMfFStr.String()
 	}
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
