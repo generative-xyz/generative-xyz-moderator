@@ -87,10 +87,10 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	log.SetData("request.decoder", decoder)
 	verifyMessage := structure.VerifyMessage{
 		Signature:        *reqBody.Sinature,
-		Address:          *reqBody.Address,      //eth
-		AddressBTC:       reqBody.AddressBTC,    //btc taproot addree -> use for transfer nft
-		AddressBTCSegwit: reqBody.AddressBTC,    //btc segwit address -> use for verify signature
-		MessagePrefix:    reqBody.MessagePrefix, //btc prefix message
+		Address:          *reqBody.Address,         //eth
+		AddressBTC:       reqBody.AddressBTC,       //btc taproot addree -> use for transfer nft
+		AddressBTCSegwit: reqBody.AddressBTCSegwit, //btc segwit address -> use for verify signature
+		MessagePrefix:    reqBody.MessagePrefix,    //btc prefix message
 	}
 	verified, err := h.Usecase.VerifyMessage(span, verifyMessage)
 
