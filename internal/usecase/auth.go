@@ -146,13 +146,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	// TODO
-	/*if data.AddressBTC != nil && *data.AddressBTC != "" {
+	if data.AddressBTC != nil && *data.AddressBTC != "" {
 		if &user.WalletAddressBTC == nil || user.WalletAddressBTC == "" {
 			user.WalletAddressBTC = *data.AddressBTC
 			log.SetData("user.WalletAddressBTC.Updated", true)
 		}
-	}*/
+	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
