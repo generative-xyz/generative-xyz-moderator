@@ -171,6 +171,10 @@ definitions:
     type: object
   request.UpdateBTCProjectReq:
     properties:
+      categories:
+        items:
+          type: string
+        type: array
       description:
         type: string
       isHidden:
@@ -223,6 +227,10 @@ definitions:
       address:
         type: string
       addressBtc:
+        type: string
+      addressBtcSegwit:
+        type: string
+      messagePrefix:
         type: string
       signature:
         type: string
@@ -1818,7 +1826,7 @@ paths:
         in: query
         name: page
         type: integer
-      - description: newest, priority-asc, priority-desc, trending-score
+      - description: newest, oldest, priority-asc, priority-desc, trending-score
         in: query
         name: sort
         type: string
@@ -2137,6 +2145,58 @@ paths:
       summary: get the recent work projects
       tags:
       - Project
+  /referrals:
+    get:
+      consumes:
+      - application/json
+      description: get referrals
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get referrals
+      tags:
+      - Referral
+  /referrals/{referrerID}:
+    post:
+      consumes:
+      - application/json
+      description: Create referral
+      parameters:
+      - description: referrerID
+        in: path
+        name: referrerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+      security:
+      - Authorization: []
+      summary: Create referral
+      tags:
+      - Referral
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:

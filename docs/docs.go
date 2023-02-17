@@ -2062,7 +2062,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "newest, priority-asc, priority-desc, trending-score",
+                        "description": "newest, oldest, priority-asc, priority-desc, trending-score",
                         "name": "sort",
                         "in": "query"
                     },
@@ -2537,6 +2537,92 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/referrals": {
+            "get": {
+                "description": "get referrals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "get referrals",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/referrals/{referrerID}": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create referral",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Create referral",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "referrerID",
+                        "name": "referrerID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -3153,6 +3239,12 @@ const docTemplate = `{
         "request.UpdateBTCProjectReq": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3233,6 +3325,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "addressBtc": {
+                    "type": "string"
+                },
+                "addressBtcSegwit": {
+                    "type": "string"
+                },
+                "messagePrefix": {
                     "type": "string"
                 },
                 "signature": {
