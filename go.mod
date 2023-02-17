@@ -37,8 +37,11 @@ require (
 )
 
 require (
+	github.com/bitcoinsv/bsvd v0.0.0-20190609155523-4c29707f7173
 	github.com/blockcypher/gobcy/v2 v2.0.5
 	github.com/gocolly/colly v1.2.0
+	github.com/libsv/go-bk v0.1.6
+	github.com/libsv/go-bt/v2 v2.1.1
 )
 
 require (
@@ -48,8 +51,6 @@ require (
 	cloud.google.com/go/iam v0.8.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect

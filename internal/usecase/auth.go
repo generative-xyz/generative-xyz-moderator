@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/libsv/go-bt/v2/bscript"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
@@ -18,6 +21,10 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/oauth2service"
+
+	"github.com/bitcoinsv/bsvd/chaincfg/chainhash"
+	"github.com/bitcoinsv/bsvd/wire"
+	"github.com/libsv/go-bk/bec"
 )
 
 func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.GenerateMessage) (*string, error) {
@@ -166,9 +173,52 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	return &verified, nil
 }
 
-func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
+// PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
+func PubKeyFromSignature(sig, data string) (pubKey *bec.PublicKey, wasCompressed bool, err error) {
 
-	return false, nil
+	var decodedSig []byte
+	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
+		return nil, false, err
+	}
+
+	// Validate the signature - this just shows that it was valid at all
+	// we will compare it with the key next
+	var buf bytes.Buffer
+	//if err = wire.WriteVarString(&buf, 0, hBSV); err != nil {
+	//	return nil, false, err
+	//}
+	if err = wire.WriteVarString(&buf, 0, data); err != nil {
+		return nil, false, err
+	}
+
+	// Create the hash
+	expectedMessageHash := chainhash.DoubleHashB(buf.Bytes())
+	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash)
+}
+
+func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
+	// Reconstruct the pubkey
+	publicKey, wasCompressed, err := PubKeyFromSignature(signatureHex, msgStr)
+	if err != nil {
+		return false, err
+	}
+
+	// Get the address
+	var bscriptAddress *bscript.Address
+	if bscriptAddress, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
+		return false, err
+	}
+
+	// Return nil if addresses match.
+	if bscriptAddress.AddressString == signer {
+		return true, nil
+	}
+	return false, fmt.Errorf(
+		"address (%s) not found - compressed: %t\n%s was found instead",
+		signer,
+		wasCompressed,
+		bscriptAddress.AddressString,
+	)
 }
 
 func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
