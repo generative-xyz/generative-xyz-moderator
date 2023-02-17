@@ -193,11 +193,14 @@ func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, 
 	}
 
 	// Create the hash
-	expectedMessageHash := chainhash.DoubleHashH(buf.Bytes())
+	expectedMessageHash := chainhash.HashH(buf.Bytes())
 	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
 }
 
 func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
+	span, log := u.StartSpan("verifyBTCSegwit", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
 	// Reconstruct the pubkey
 	publicKey, wasCompressed, err := PubKeyFromSignature(signatureHex, msgStr, hBSV)
 	if err != nil {
