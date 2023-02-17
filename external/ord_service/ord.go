@@ -124,6 +124,11 @@ func (m BtcOrd) request(fullUrl string, method string, headers map[string]string
 		return nil, err
 	}
 
+	if res.StatusCode != http.StatusOK {
+		err = errors.New(fmt.Sprintf("Response with status %d", res.StatusCode))
+		return nil, err
+	}
+
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {

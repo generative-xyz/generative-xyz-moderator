@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -195,12 +194,13 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	log.SetData("input", input)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, input.Address)
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
-
+	mintType := entity.BIT
+	eth := &entity.ETHWalletAddress{}
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
 
 		btc = &entity.BTCWalletAddress{}
-		eth, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
+		eth, err = u.Repo.FindEthWalletAddressByOrd(input.Address)
 		if err != nil {
 			log.Error("BTCMint.FindEthWalletAddressByOrd", err.Error(), err)
 			return nil, nil, err
@@ -212,13 +212,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 			return nil, nil, err
 		}
 
-		eth.IsMinted = true
-		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
-		if err != nil {
-			log.Error(fmt.Sprintf("BTCMint.UpdateEthWalletAddressByOrdAddr.%s.Error", btc.OrdAddress), err.Error(), err)
-			return nil, nil, err
-		}
-		log.SetData("updated", updated)
+		mintType = entity.ETH
 
 	} else {
 		btc.IsMinted = true
@@ -290,12 +284,13 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, nil, err
 	}
 
-	baseUrl, err := url.Parse(btc.FileURI)
-	if err != nil {
-		log.Error("fileURI.baseUrl", err.Error(), err)
-		return nil, nil, err
-	}
-	mintURL := baseUrl.String()
+	// baseUrl, err := url.Parse(btc.FileURI)
+	// if err != nil {
+	// 	log.Error("fileURI.baseUrl", err.Error(), err)
+	// 	return nil, nil, err
+	// }
+	mintURL := btc.FileURI
+	spew.Dump(mintURL)
 	mintData := ord_service.MintRequest{
 		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 		FileUrl:    mintURL,
@@ -324,6 +319,30 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
 	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
 	btcMintResp := &ord_service.MintStdoputRespose{}
+
+	//Update mint status here
+	if entity.TokenPaidType(mintType) == entity.BIT {
+		btc.IsMinted = true
+		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, btc)
+		if err != nil {
+			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr.Err", err.Error(), err)
+			return nil, nil, err
+		}
+		log.SetData("updated.Status",updated)
+
+	}
+	
+	if  entity.TokenPaidType(mintType) == entity.ETH {
+		eth.IsMinted = true
+		updated, err :=  u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
+		if err != nil {
+			log.Error("u.Repo.UpdateEthWalletAddressByOrdAddr.Err", err.Error(), err)
+			return nil, nil, err
+		}
+
+		log.SetData("updated.Status",updated)
+	}
+
 
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
@@ -557,6 +576,11 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 		log.Error("u.Repo.ListErrorMintingWalletAddress", err.Error(), err)
 	}
 	for i, item := range items {
+		if item.ProjectID != "1000192" {
+			continue
+		}else{
+			spew.Dump(item.OrdAddress)
+		}
 		mintedAddress := fmt.Sprintf("%d - %s \n", i, item.OrdAddress)
 		log.SetData("mintedAddress", mintedAddress)
 
