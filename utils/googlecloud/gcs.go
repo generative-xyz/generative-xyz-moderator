@@ -139,7 +139,8 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	fname := strings.ToLower(file.FileHeader.Filename)
 	fname = strings.ReplaceAll(fname, " ", "_")
 	fname = strings.TrimSpace(fname)
-	path := fmt.Sprintf("upload/%d-%s", now, fname)
+	fname = fmt.Sprintf("%d-%s", now, fname)
+	path := fmt.Sprintf("upload/%s", fname)
 	if file.Path != nil {
 		if *file.Path != "" {
 			path = fmt.Sprintf("%s/%s", *file.Path, fname)

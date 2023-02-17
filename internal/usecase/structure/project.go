@@ -69,6 +69,7 @@ type UpdateBTCProjectReq struct {
 	MintPrice 					*string	 `json:"mintPrice"`
 	MaxSupply 				*int64	 `json:"maxSupply"`
 	CreatetorAddress 				*string	 `json:"createtorAddress"`
+	Categories            []string           `json:"categories"`
 }
 
 type CreateProposaltReq struct {

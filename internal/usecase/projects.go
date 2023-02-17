@@ -299,6 +299,10 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 
 	}
 
+	if len(req.Categories) > 0 {
+		p.Categories = req.Categories
+	}
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("updated", err.Error(), err)
