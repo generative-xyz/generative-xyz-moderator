@@ -193,6 +193,10 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 	pe.TraceID = u.Tracer.TraceID(span)
+	pe.Categories = req.Categories
+	if pe.Categories == nil || len(pe.Categories) == 0 {
+		pe.Categories = []string{u.Config.OtherCategoryID}
+	}
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
