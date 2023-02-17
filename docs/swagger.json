@@ -2054,7 +2054,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "newest, priority-asc, priority-desc",
+                        "description": "newest, priority-asc, priority-desc, trending-score",
                         "name": "sort",
                         "in": "query"
                     },
@@ -3322,6 +3322,9 @@
                 },
                 "inscriptionIndex": {
                     "type": "string"
+                },
+                "isCompleted": {
+                    "type": "boolean"
                 },
                 "mintedTime": {
                     "type": "string"

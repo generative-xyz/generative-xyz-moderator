@@ -165,8 +165,15 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
-
-	s := r.SortProjects()
+	var s []Sort
+	if filter.SortBy == "" {
+		s = r.SortProjects()
+	} else {
+		s = []Sort{
+			{SortBy: filter.SortBy, Sort: filter.Sort},
+			{SortBy: "tokenid", Sort: entity.SORT_ASC},
+		}
+	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
