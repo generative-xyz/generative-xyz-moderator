@@ -2062,7 +2062,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "newest, priority-asc, priority-desc",
+                        "description": "newest, priority-asc, priority-desc, trending-score",
                         "name": "sort",
                         "in": "query"
                     },
@@ -2338,6 +2338,43 @@ const docTemplate = `{
                         "name": "projectID",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "update btc project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "update a btc project",
+                "parameters": [
+                    {
+                        "description": "Update project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateBTCProjectReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -3017,6 +3054,9 @@ const docTemplate = `{
                 "file": {
                     "type": "string"
                 },
+                "fileName": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3110,6 +3150,35 @@ const docTemplate = `{
                 }
             }
         },
+        "request.UpdateBTCProjectReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "isHidden": {
+                    "type": "boolean"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "projectID": {
+                    "type": "string"
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -3161,6 +3230,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "addressBtc": {
                     "type": "string"
                 },
                 "signature": {
@@ -3237,6 +3309,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "attributes": {},
+                "buyable": {
+                    "description": "for buyable:",
+                    "type": "boolean"
+                },
                 "creator": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
@@ -3255,16 +3331,25 @@ const docTemplate = `{
                 "inscriptionIndex": {
                     "type": "string"
                 },
+                "isCompleted": {
+                    "type": "boolean"
+                },
                 "mintedTime": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
+                "orderID": {
+                    "type": "string"
+                },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
                 "ownerAddr": {
+                    "type": "string"
+                },
+                "priceBTC": {
                     "type": "string"
                 },
                 "priority": {
@@ -3493,6 +3578,9 @@ const docTemplate = `{
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "totalImages": {
+                    "type": "integer"
                 },
                 "traitStat": {
                     "type": "array",

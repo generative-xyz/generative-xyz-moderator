@@ -457,8 +457,8 @@ func (u Usecase) MintLogicETH(rootSpan opentracing.Span, ethEntity *entity.ETHWa
 }
 
 //Mint flow
-func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForETHBalancing", rootSpan)
+func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForETHBalancing")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
@@ -506,8 +506,8 @@ func (u Usecase) WaitingForETHBalancing(rootSpan opentracing.Span) ([]entity.ETH
 }
 
 
-func (u Usecase) WaitingForETHMinting(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForETHMinting", rootSpan)
+func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForETHMinting")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListMintingETHWalletAddress()
@@ -570,8 +570,8 @@ func (u Usecase) WaitingForETHMinting(rootSpan opentracing.Span) ([]entity.ETHWa
 	return nil, nil
 }
 
-func (u Usecase) WaitingForETHMinted(rootSpan opentracing.Span) ([]entity.ETHWalletAddress, error) {
-	span, log := u.StartSpan("WaitingForETHMinted", rootSpan)
+func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
+	span, log := u.StartSpanWithoutRoot("WaitingForETHMinted")
 	defer u.Tracer.FinishSpan(span, log)
 
 	addreses, err := u.Repo.ListETHAddress()
