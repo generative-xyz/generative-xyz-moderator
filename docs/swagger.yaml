@@ -287,6 +287,8 @@ definitions:
         type: string
       inscriptionIndex:
         type: string
+      isCompleted:
+        type: boolean
       mintedTime:
         type: string
       name:
@@ -1816,7 +1818,7 @@ paths:
         in: query
         name: page
         type: integer
-      - description: newest, priority-asc, priority-desc
+      - description: newest, priority-asc, priority-desc, trending-score
         in: query
         name: sort
         type: string
