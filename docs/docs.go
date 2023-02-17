@@ -2062,7 +2062,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "newest, priority-asc, priority-desc, trending-score",
+                        "description": "newest, oldest, priority-asc, priority-desc, trending-score",
                         "name": "sort",
                         "in": "query"
                     },
@@ -3202,6 +3202,12 @@ const docTemplate = `{
         "request.UpdateBTCProjectReq": {
             "type": "object",
             "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3282,6 +3288,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "addressBtc": {
+                    "type": "string"
+                },
+                "addressBtcSegwit": {
+                    "type": "string"
+                },
+                "messagePrefix": {
                     "type": "string"
                 },
                 "signature": {
