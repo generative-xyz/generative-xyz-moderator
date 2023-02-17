@@ -2145,7 +2145,31 @@ paths:
       summary: get the recent work projects
       tags:
       - Project
-  /referral/{referrerID}:
+  /referrals:
+    get:
+      consumes:
+      - application/json
+      description: get referrals
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get referrals
+      tags:
+      - Referral
+  /referrals/{referrerID}:
     post:
       consumes:
       - application/json
