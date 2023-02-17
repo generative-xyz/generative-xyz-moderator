@@ -44,6 +44,8 @@ type Config struct {
 	BlockcypherToken string
 
 	MarketBTCServiceFeeAddress string
+
+	OtherCategoryID string
 }
 
 type MQTTConfig struct {
@@ -285,6 +287,7 @@ func NewConfig() (*Config, error) {
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
 
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
+		OtherCategoryID: os.Getenv("OTHER_CATEGORY_ID"),
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")
