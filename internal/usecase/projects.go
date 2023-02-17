@@ -923,8 +923,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		if strings.Index(f.Name, ".DS_Store") > -1 {
 			continue
 		}
-
-		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), f.Name)
+		spew.Dump(f.Name)
+		fName := helpers.GenerateSlug(f.Name)
+		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), fName)
 		images = append(images, temp)
 		nftTokenURI["image"] = temp
 		if uint64(f.Size) > maxSize {
@@ -1006,11 +1007,11 @@ func (u Usecase) checkInArray(tmpName string, processingImageNames []string) boo
 }
 
 func (u Usecase) LoadImage() {
-	span, log := u.StartSpanWithoutRoot("LoadImage.1000118")
+	span, log := u.StartSpanWithoutRoot("LoadImage.1000192")
 	defer u.Tracer.FinishSpan(span, log)
 
-	tokenID := "1000113"
-	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/1000113/symbiotic_fusion.zip"
+	tokenID := "1000192"
+	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/genesis-series-2-nakamoto-village/candy_house.zip"
 	// err := u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
 	// if err != nil {
 	// 	u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
