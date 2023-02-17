@@ -1,4 +1,4 @@
-package crontab_btc
+package crontab_trending
 
 import (
 	"gopkg.in/robfig/cron.v2"
@@ -32,7 +32,7 @@ func (h ScronTrendingHandler) StartServer() {
 		log := tracer.NewTraceLog()
 		defer log.ToSpan(span)
 
-		err := h.Usecase.SyncTokenInscribeIndex(span)
+		err := h.Usecase.SyncProjectTrending(span)
 		if err != nil {
 			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
 		}

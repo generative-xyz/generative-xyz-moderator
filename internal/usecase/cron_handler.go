@@ -645,8 +645,9 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 }
 
 const (
-	TRENDING_SCORE_EACH_BTC_VOLUMN = 1000
-	TRENDING_SCORE_EACH_VIEW       = 1
+	SATOSHI_EACH_BTC							 int64 = 100000000
+	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000
+	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
 func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
@@ -677,7 +678,20 @@ func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
 		if err != nil {
 			return err
 		}
-		volumnInSatoshi := fromProjectIDToRecentVolumn
+		var countView int64 = 0
+		if _countView != nil {
+			countView = *_countView
+		}
+		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
+		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+		trendingScore := countView * TRENDING_SCORE_EACH_VIEW +  volumnInBtc * TRENDING_SCORE_EACH_BTC_VOLUMN
+
+		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
+
+		if processed % 10 == 0 {
+			time.Sleep(1 * time.Second)
+		}
 	}
 
+	return nil
 }
