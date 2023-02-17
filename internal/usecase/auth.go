@@ -95,14 +95,23 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	}
 	log.SetData("user", user)
 
-	isVeried, err := u.verify(span, signature, user.WalletAddress, user.Message)
-	if err != nil {
-		log.Error("u.verify", err.Error(), err)
-		return nil, err
+	var isVeried = false
+	if &data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
+		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, user.Message)
+		if err != nil {
+			log.Error("u.verify", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("isVeried", isVeried)
+	} else {
+		isVeried, err = u.verify(span, signature, data.Address, user.Message)
+		if err != nil {
+			log.Error("u.verify", err.Error(), err)
+			return nil, err
+		}
+		log.SetData("isVeried", isVeried)
 	}
-	log.SetData("isVeried", isVeried)
 
-	//isVeried := true
 	if !isVeried {
 		err := errors.New("Cannot verify wallet address")
 		log.Error("u.verify", err.Error(), err)
@@ -130,14 +139,13 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	if data.AddressBTC != nil {
-		if *data.AddressBTC != "" {
-			if user.WalletAddressBTC == "" {
-				user.WalletAddressBTC = *data.AddressBTC
-				log.SetData("user.WalletAddressBTC.Updated", true)
-			}
+	// TODO
+	/*if data.AddressBTC != nil && *data.AddressBTC != "" {
+		if &user.WalletAddressBTC == nil || user.WalletAddressBTC == "" {
+			user.WalletAddressBTC = *data.AddressBTC
+			log.SetData("user.WalletAddressBTC.Updated", true)
 		}
-	}
+	}*/
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -156,6 +164,11 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	}
 
 	return &verified, nil
+}
+
+func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
+
+	return false, nil
 }
 
 func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {

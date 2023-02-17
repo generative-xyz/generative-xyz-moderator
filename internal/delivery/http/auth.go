@@ -21,7 +21,7 @@ import (
 // @Router /auth/nonce [POST]
 func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("generateMessage", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.GenerateMessageRequest
 	decoder := json.NewDecoder(r.Body)
@@ -31,7 +31,7 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	err = reqBody.SelfValidate()
 	if err != nil {
 		log.Error("reqBody.SelfValidate", err.Error(), err)
@@ -46,7 +46,7 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
@@ -66,7 +66,7 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 // @Router /auth/nonce/verify [POST]
 func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("messages.Verify", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.VerifyMessageRequest
 	decoder := json.NewDecoder(r.Body)
@@ -77,31 +77,32 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	err = reqBody.SelfValidate()
 	if err != nil {
 		log.Error("reqBody.SelfValidate", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	log.SetData("request.decoder", decoder)
-	verified, err := h.Usecase.VerifyMessage(span, structure.VerifyMessage{
-		Signature: *reqBody.Sinature,
-		Address: *reqBody.Address,
-		AddressBTC: reqBody.AddressBTC,
-	})
+	verifyMessage := structure.VerifyMessage{
+		Signature:        *reqBody.Sinature,
+		Address:          *reqBody.Address,   //eth
+		AddressBTC:       reqBody.AddressBTC, //btc taproot addree -> use for transfer nft
+		AddressBTCSegwit: reqBody.AddressBTC, //btc segwit address -> use for verify signature
+	}
+	verified, err := h.Usecase.VerifyMessage(span, verifyMessage)
 
 	log.SetData("verified", verified)
 	if err != nil {
 		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.VerifyResponse{
-		IsVerified: verified.IsVerified,
-		Token: verified.Token,
+		IsVerified:   verified.IsVerified,
+		Token:        verified.Token,
 		RefreshToken: verified.RefreshToken,
 	}
 
