@@ -259,6 +259,15 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	if req.Thumbnail != nil && *req.Thumbnail  != "" {
 		p.Thumbnail = *req.Thumbnail
 	}
+	
+	if req.IsHidden != nil && *req.IsHidden  != p.IsHidden {
+		p.IsHidden = *req.IsHidden
+	}
+
+	if len(req.Categories) > 0 {
+		p.Categories = req.Categories
+	}
+
 
 	if req.MaxSupply != nil && *req.MaxSupply !=  0 && *req.MaxSupply != p.MaxSupply {
 		if p.MintingInfo.Index > 0 {
@@ -277,7 +286,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		// 	return nil, err
 		// }
 
-		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0 {
+		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0  {
 			err := errors.New("Project is minted, cannot update max supply")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
@@ -288,17 +297,17 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	}
 	
 	if req.MintPrice != nil {
-		if *req.MintPrice != p.MintPrice &&  p.MintingInfo.Index > 0 {
+		mFStr := p.MintPrice
+		reqMfFStr := helpers.StringToBTCAmount(*req.MintPrice)
+		if  p.MintingInfo.Index > 0  && mFStr != reqMfFStr.String(){
 			err := errors.New("Project is minted, cannot update mint price")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
 		}
-
-		m := helpers.StringToBTCAmount(*req.MintPrice)
-		p.MintPrice = m.String()
-
+		p.MintPrice = reqMfFStr.String()
 	}
 
+	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("updated", err.Error(), err)
