@@ -9,6 +9,7 @@ func ParseSort(key string) QuerySort {
 	sortParams := make(map[string]QuerySort)
 	sortParams["custom"] = QuerySort{Sort: -1, SortBy: ""}
 	sortParams["newest"] = QuerySort{Sort: -1, SortBy: "created_at"}
+	sortParams["oldest"] = QuerySort{Sort: 1, SortBy: "created_at"}
 	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy: "priority"}
 	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy: "priority"}
 	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy: "price"}
