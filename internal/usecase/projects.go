@@ -896,25 +896,25 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		return nil, err
 	}
 	maxSize := uint64(0)
-	processingImages := pe.ProcessingImages
-	processingImageNames := []string{}
+	//processingImages := pe.ProcessingImages
+	//processingImageNames := []string{}
 
-	for _, item := range processingImages {
-		spew.Dump(item)
-		name := strings.ReplaceAll(item, "https://cdn.generative.xyz/btc-projects/1000002/images/uploaded/output/", "")
-		name = strings.ReplaceAll(name, ".jpg", "")
-		processingImageNames = append(processingImageNames, name)
-	}
+	// for _, item := range processingImages {
+	// 	spew.Dump(item)
+	// 	name := strings.ReplaceAll(item, "https://cdn.generative.xyz/btc-projects/1000002/images/uploaded/output/", "")
+	// 	name = strings.ReplaceAll(name, ".jpg", "")
+	// 	processingImageNames = append(processingImageNames, name)
+	// }
 
 	
 	for _, f := range files {
 		//TODO check f.Name is not empty
-		tmpName := strings.ReplaceAll(f.Name, "btc-projects/1000002/output.zip_unzip/output/","")
-		tmpName = strings.ReplaceAll(tmpName, ".jpg","")
+		// tmpName := strings.ReplaceAll(f.Name, "btc-projects/1000002/output.zip_unzip/output/","")
+		// tmpName = strings.ReplaceAll(tmpName, ".jpg","")
 		
-		if u.checkInArray(tmpName, processingImageNames) {
-			continue
-		}
+		// if u.checkInArray(tmpName, processingImageNames) {
+		// 	continue
+		// }
 
 		if strings.Index(f.Name, "__MACOSX") > -1 {
 			continue
@@ -935,111 +935,6 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	}
 	//
 	   
-
-	/*resp, err := http.Get(zipLink)
-	if err != nil {
-		log.Error("http.Get", err.Error(), err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	fileName := fmt.Sprintf("%s.zip", helpers.GenerateSlug(pe.Name))
-
-	out, err := os.Create(fileName)
-	if err != nil {
-		log.Error("os.Create", err.Error(), err)
-		return nil, err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		log.Error("os.Create", err.Error(), err)
-		return nil, err
-	}
-
-	zf, err := zip.OpenReader(fileName)
-	if err != nil {
-		log.Error("zip.OpenReader", err.Error(), err)
-		return nil, err
-	}
-
-	log.SetData("zf.File", len(zf.File))
-	processingFiles := []*zip.File{}
-	for _, file := range zf.File {
-		if strings.Index(file.Name, "__MACOSX") > -1 {
-			continue
-		}
-
-		if strings.Index(file.Name, ".DS_Store") > -1 {
-			continue
-		}
-
-		processingFiles = append(processingFiles, file)
-	}
-	log.SetData("processingFiles", processingFiles)
-	uploadChan := make(chan uploadFileChan, len(processingFiles))
-
-	maxSize := uint64(0)
-	groups := make(map[string][]byte)
-	for _, file := range processingFiles {
-		log.SetData("fileName", file.Name)
-		log.SetData("UncompressedSize64", file.UncompressedSize64)
-		maxFileSize := uint64(400000)
-
-		log.SetData("maxFileSize", maxFileSize)
-		size := file.UncompressedSize64
-
-		if size > maxFileSize {
-			err := errors.New(fmt.Sprintf("%s, size: %d Max file size must be less than 400kb", file.Name, size))
-			log.Error("maxFileSize", err.Error(), err)
-			return nil, err
-		}
-		if size > maxSize {
-			maxSize = size
-		}
-
-		fC, err := helpers.ReadFile(file)
-		if err != nil {
-			log.Error("zip.OpenReader", err.Error(), err)
-			return nil, err
-		}
-
-		if len(groups) == 100 {
-			var wg sync.WaitGroup
-			for fileName, fileData := range groups {
-				wg.Add(1)
-				go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
-			}
-			wg.Wait()
-			groups = make(map[string][]byte)
-		} else {
-			groups[file.Name] = fC
-		}
-	}
-
-	if len(groups) > 0 {
-		var wg sync.WaitGroup
-		for fileName, fileData := range groups {
-			wg.Add(1)
-			go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
-		}
-		wg.Wait()
-		groups = make(map[string][]byte)
-	}
-
-	for i := 0; i < len(processingFiles); i++ {
-		dataFromChan := <-uploadChan
-		if dataFromChan.Err != nil {
-			log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
-			if pe.MaxSupply < int64(i) {
-				return nil, dataFromChan.Err
-			}
-		}
-
-		images = append(images, *dataFromChan.FileURL)
-		animationURL := *dataFromChan.FileURL
-		nftTokenURI["image"] = animationURL
-	}*/
 
 	helpers.WriteFile(fmt.Sprintf("bk-%s-proccessing-images.json", pe.TokenID), pe.ProcessingImages)
 
@@ -1114,13 +1009,15 @@ func (u Usecase) LoadImage() {
 	span, log := u.StartSpanWithoutRoot("LoadImage.1000118")
 	defer u.Tracer.FinishSpan(span, log)
 
-	tokenID := "1000118"
-	ziplink :=  "https://cdn.generative.xyz/btc-projects/puke-2-earn-ape-club-btc/p2e-for-btc.zip"
-	err := u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
-	if err != nil {
-		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
-		//return nil, err
-	}
+	tokenID := "1000113"
+	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/1000113/symbiotic_fusion.zip"
+	// err := u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
+	// if err != nil {
+	// 	u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
+	// 	//return nil, err
+	// }
+
+	u.UnzipProjectFile(span, &structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink})
 }
 
 func (u Usecase) ChangeProjectCreatorProfile(tokenID string, changeTo string) {
