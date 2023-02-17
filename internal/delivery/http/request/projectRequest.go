@@ -47,6 +47,7 @@ type UpdateBTCProjectReq struct {
 	Royalty 				*int64	 `json:"royalty"`
 	MintPrice 				*string	 `json:"mintPrice"`
 	MaxSupply 				*int64	 `json:"maxSupply"`
+	Categories            []string           `json:"categories"`
 }
 
 type UpdateProjectReq struct {
