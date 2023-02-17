@@ -2137,6 +2137,34 @@ paths:
       summary: get the recent work projects
       tags:
       - Project
+  /referral/{referrerID}:
+    post:
+      consumes:
+      - application/json
+      description: Create referral
+      parameters:
+      - description: referrerID
+        in: path
+        name: referrerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+      security:
+      - Authorization: []
+      summary: Create referral
+      tags:
+      - Referral
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
