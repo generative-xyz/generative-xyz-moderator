@@ -15,6 +15,12 @@ type Referral struct {
 	Percent    int32 	`bson:"percent"`
 }
 
+type FilterReferrals struct {
+	BaseFilters
+	ReferrerID *string
+	ReferreeID *string
+}
+
 func (u Referral) TableName() string { 
 	return utils.COLLECTION_REFERRALS
 }
