@@ -104,7 +104,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 
 	var isVeried = false
 	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
-		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, user.Message)
+		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
 		if err != nil {
 			log.Error("u.verify", err.Error(), err)
 			return nil, err
@@ -174,7 +174,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 }
 
 // PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
-func PubKeyFromSignature(sig, data string) (pubKey *bec.PublicKey, wasCompressed bool, err error) {
+func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, wasCompressed bool, err error) {
 
 	var decodedSig []byte
 	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
@@ -184,9 +184,9 @@ func PubKeyFromSignature(sig, data string) (pubKey *bec.PublicKey, wasCompressed
 	// Validate the signature - this just shows that it was valid at all
 	// we will compare it with the key next
 	var buf bytes.Buffer
-	//if err = wire.WriteVarString(&buf, 0, hBSV); err != nil {
-	//	return nil, false, err
-	//}
+	if err = wire.WriteVarString(&buf, 0, hBSV); err != nil {
+		return nil, false, err
+	}
 	if err = wire.WriteVarString(&buf, 0, data); err != nil {
 		return nil, false, err
 	}
@@ -196,9 +196,9 @@ func PubKeyFromSignature(sig, data string) (pubKey *bec.PublicKey, wasCompressed
 	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash)
 }
 
-func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
+func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
 	// Reconstruct the pubkey
-	publicKey, wasCompressed, err := PubKeyFromSignature(signatureHex, msgStr)
+	publicKey, wasCompressed, err := PubKeyFromSignature(signatureHex, msgStr, hBSV)
 	if err != nil {
 		return false, err
 	}
