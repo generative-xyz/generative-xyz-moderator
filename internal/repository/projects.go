@@ -321,6 +321,22 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 	return resp, nil
 }
 
+func (r Repository) UpdateTrendingScoreForProject(tokenID string, trendingScore int64) error {
+	filter := bson.D{
+		{Key: "tokenid", Value: tokenID},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.trending_score": trendingScore,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func (r Repository) GetMaxBtcProjectID() (int64, error) {
 	btcID := 1000000
 	btcMaxID := 1999999
