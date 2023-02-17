@@ -23,7 +23,16 @@ func (h *httpDelivery) getCategories(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getCategorys", r)
 	defer h.Tracer.FinishSpan(span, log )
 
-	data, err := h.Usecase.GetCategories(span, structure.FilterCategories{})
+	f := structure.FilterCategories{}
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		log.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	f.BaseFilters =*baseF
+
+	data, err := h.Usecase.GetCategories(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetCategorys", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
