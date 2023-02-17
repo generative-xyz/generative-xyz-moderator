@@ -573,6 +573,7 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 
 			minResp, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
 			if err != nil {
+				u.Notify(rootSpan, fmt.Sprintf("[Error][MintFor][projectID %s]", item.ProjectID), item.OrdAddress, err.Error())
 				log.Error(fmt.Sprintf("WaitingForMinting.BTCMint.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
@@ -637,6 +638,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 
 			sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 			if err != nil {
+				u.Notify(rootSpan, fmt.Sprintf("[Error][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, err.Error())
 				log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
