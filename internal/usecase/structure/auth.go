@@ -15,6 +15,7 @@ type VerifyMessage struct {
 	Address          string
 	AddressBTC       *string
 	AddressBTCSegwit *string
+	MessagePrefix    *string
 }
 
 type VerifyResponse struct {
