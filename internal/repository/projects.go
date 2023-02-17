@@ -165,8 +165,15 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
-
-	s := r.SortProjects()
+	var s []Sort
+	if filter.SortBy == "" {
+		s = r.SortProjects()
+	} else {
+		s = []Sort{
+			{SortBy: filter.SortBy, Sort: filter.Sort},
+			{SortBy: "tokenid", Sort: entity.SORT_ASC},
+		}
+	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
@@ -319,6 +326,22 @@ func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) UpdateTrendingScoreForProject(tokenID string, trendingScore int64) error {
+	filter := bson.D{
+		{Key: "tokenid", Value: tokenID},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.trending_score": trendingScore,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 func (r Repository) GetMaxBtcProjectID() (int64, error) {
