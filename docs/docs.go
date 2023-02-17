@@ -2542,7 +2542,44 @@ const docTemplate = `{
                 }
             }
         },
-        "/referral/{referrerID}": {
+        "/referrals": {
+            "get": {
+                "description": "get referrals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "get referrals",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/referrals/{referrerID}": {
             "post": {
                 "security": [
                     {
