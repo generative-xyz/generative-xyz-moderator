@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -294,10 +295,15 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("fileURI.baseUrl", err.Error(), err)
 		return nil, nil, err
 	}
+	mintURL := baseUrl.String()
+	mintURL = strings.ReplaceAll(mintURL, "glb", "html")
+	mintURL = `https://storage.googleapis.com/generative-static-dev/btc-projects/sweet-candy-003/model_shape7_height3_surface0_.glb.zip_unzip/model_shape7_height3_surface0_.html`
+	spew.Dump(baseUrl)
+	spew.Dump(mintURL)
 
 	mintData := ord_service.MintRequest{
 		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
-		FileUrl:    baseUrl.String(),
+		FileUrl:    mintURL,
 		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
 		DryRun:     false,
 	}
