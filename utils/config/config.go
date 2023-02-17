@@ -46,6 +46,14 @@ type Config struct {
 	MarketBTCServiceFeeAddress string
 
 	OtherCategoryID string
+
+	TrendingConfig TrendingConfig
+}
+
+type TrendingConfig struct {
+	WhitelistedProjectID []string
+	BoostedCategoryID    string
+	BoostedWeight        int64
 }
 
 type MQTTConfig struct {
@@ -188,6 +196,10 @@ func NewConfig() (*Config, error) {
 	crontabMKStart, _ := strconv.ParseBool(os.Getenv("MAKETPLACE_CRONTAB_START"))
 	crontabTrendingStart, _ := strconv.ParseBool(os.Getenv("TRENDING_CRONTAB_START"))
 
+	whitelistedTrendingProjectID := strings.Split(os.Getenv("TRENDING_WHITELISTED_PROJECT_IDS"), ",")
+	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
+	trendingBoostedWeight, _ := strconv.Atoi(os.Getenv("TRENDING_BOOSTED_WEIGHT"))
+
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -288,6 +300,11 @@ func NewConfig() (*Config, error) {
 
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
 		OtherCategoryID: os.Getenv("OTHER_CATEGORY_ID"),
+		TrendingConfig: TrendingConfig{
+			WhitelistedProjectID: whitelistedTrendingProjectID,
+			BoostedCategoryID: boostedTrendingCategoryID,
+			BoostedWeight: int64(trendingBoostedWeight),
+		},
 	}
 
 	c, _ := json.MarshalIndent(conf, "", "\t")
