@@ -191,8 +191,8 @@ func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, 
 	}
 
 	// Create the hash
-	expectedMessageHash := chainhash.DoubleHashB(buf.Bytes())
-	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash)
+	expectedMessageHash := chainhash.DoubleHashH(buf.Bytes())
+	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
 }
 
 func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
