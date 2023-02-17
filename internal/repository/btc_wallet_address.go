@@ -179,3 +179,23 @@ func (r Repository) ListWalletAddressToClaimBTC() ([]entity.BTCWalletAddress, er
 
 	return resp, nil
 }
+
+func (r Repository) ListErrorMintingWalletAddress() ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["isMinted"] = true
+	f["mintResponse.inscription"] = ""
+
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
