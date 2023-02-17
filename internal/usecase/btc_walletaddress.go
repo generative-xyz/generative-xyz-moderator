@@ -571,26 +571,20 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 	span, log := u.StartSpanWithoutRoot("WaitingForMinting")
 	defer u.Tracer.FinishSpan(span, log)
 	
-	items, err := u.Repo.ListErrorMintingWalletAddress()
+	item, err := u.Repo.FindBtcWalletAddressByOrd("bc1qjdws23jh4lvvmldzgrd968g5hw7fe53uere4mg")
 	if err != nil {
-		log.Error("u.Repo.ListErrorMintingWalletAddress", err.Error(), err)
-	}
-	for i, item := range items {
-		if item.ProjectID != "1000192" {
-			continue
-		}else{
-			spew.Dump(item.OrdAddress)
-		}
-		mintedAddress := fmt.Sprintf("%d - %s \n", i, item.OrdAddress)
-		log.SetData("mintedAddress", mintedAddress)
-
-		err = u.Mint(span, item)
-		if err != nil {
-			log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
-		}
+		log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
 	}
 
-	spew.Dump(items)
+	mintedAddress := fmt.Sprintf("%s \n", item.OrdAddress)
+	log.SetData("mintedAddress", mintedAddress)
+
+	err = u.Mint(span, *item)
+	if err != nil {
+		log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
+	}
+
+	//spew.Dump(items)
 	return nil, nil
 }
 
