@@ -643,3 +643,55 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 	}
 	return nil
 }
+
+const (
+	SATOSHI_EACH_BTC							 int64 = 100000000
+	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000
+	TRENDING_SCORE_EACH_VIEW       int64 = 1
+)
+
+func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
+	span, log := u.StartSpan("Usecase.SyncProjectTrending", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	// All btc activities, which include Mint and Buy activity 
+	btcActivites, err := u.Repo.GetRecentBTCActivity()
+	if err != nil {
+		return err
+	}
+
+	// Mapping from projectID to latest 24h's volumn in satoshi
+	fromProjectIDToRecentVolumn := map[string]int64{}
+	for _, btcActivity := range btcActivites {
+		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
+	}
+
+	projects, err := u.Repo.GetAllProjectsWithSelectedFields()
+	if err != nil {
+		return err
+	}
+
+	var processed int32
+	for _, project := range projects {
+		processed++
+		_countView, err := u.Repo.CountViewActivity(project.TokenID)
+		if err != nil {
+			return err
+		}
+		var countView int64 = 0
+		if _countView != nil {
+			countView = *_countView
+		}
+		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
+		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+		trendingScore := countView * TRENDING_SCORE_EACH_VIEW +  volumnInBtc * TRENDING_SCORE_EACH_BTC_VOLUMN
+
+		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
+
+		if processed % 10 == 0 {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	return nil
+}

@@ -6,8 +6,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"rederinghub.io/utils/delegate"
 	"time"
+
+	"rederinghub.io/utils/delegate"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
@@ -16,6 +17,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab_btc"
 	"rederinghub.io/internal/delivery/crontab_btc_v2"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
+	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/delivery/txserver"
@@ -163,6 +165,7 @@ func startServer() {
 	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
 	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
 	btcCronV2 := crontab_btc_v2.NewScronBTCHandler(&g, *uc)
+	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
@@ -194,6 +197,11 @@ func startServer() {
 	servers["marketplace_crontab"] =  delivery.AddedServer{
 		Server: mkCron,
 		Enabled: conf.Crontab.MarketPlaceEnabled,
+	}
+
+	servers["trending_crontab"] =  delivery.AddedServer{
+		Server: trendingCron,
+		Enabled: conf.Crontab.TrendingEnabled,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{

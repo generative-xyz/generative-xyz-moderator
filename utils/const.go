@@ -16,6 +16,7 @@ func ParseSort(key string) QuerySort {
 	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy: "minted_time"}
 	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy: "stats.price_int"}
 	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy: "stats.price_int"}
+	sortParams["trending-score"] = QuerySort{Sort: -1, SortBy: "stats.trending_score"}
 
 	sort, ok := sortParams[key]
 	if !ok {
