@@ -722,7 +722,7 @@ func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structu
 	var nftList []entity.MarketplaceBTCListingFilterPipeline
 	var err error
 
-	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(9999999, 1)
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(9999999, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -801,6 +801,7 @@ func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID strin
 		OrderID:       nft.UUID,
 		IsConfirmed:   nft.IsConfirm,
 		Buyable:       isBuyable,
+		IsCompleted:   nft.IsSold,
 	}
 	return &nftInfo, nil
 

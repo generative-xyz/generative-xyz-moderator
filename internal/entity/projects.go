@@ -30,6 +30,7 @@ type ProjectStat struct {
 	BestMakeOfferPrice string `bson:"bestMakeOfferPrice" json:"bestMakeOfferPrice"`
 	ListedPercent      int32  `bson:"listedPercent" json:"listedPercent"`
 	MintedCount        int32  `bson:"minted_count" json:"mintedCount"`
+	TrendingScore      int64  `bson:"trending_score" json:"trendingScore"`
 }
 
 type MaxProjectID struct {

@@ -38,9 +38,10 @@ type InternalTokenURIResp struct {
 	InscriptionIndex string           `json:"inscriptionIndex"`
 
 	// for buyable:
-	Buyable  bool   `json:"buyable"`
-	PriceBTC string `json:"priceBTC"`
-	OrderID  string `json:"orderID"`
+	Buyable     bool   `json:"buyable"`
+	IsCompleted bool   `json:"isCompleted"`
+	PriceBTC    string `json:"priceBTC"`
+	OrderID     string `json:"orderID"`
 }
 
 type InternalTokenTraitsResp struct {

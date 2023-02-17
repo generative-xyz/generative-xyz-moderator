@@ -387,10 +387,7 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 
 	f := bson.M{
 		"project_id_int" : bson.M{"$gt" : 1000000},
-		"$or": []bson.M{
-			{"inscription_index": bson.M{"$exists": true}},
-			{"inscription_index": bson.M{"$ne": ""}},
-		},
+		"synced_inscription_info": bson.M{"$ne": true},
 	}
 	f[utils.KEY_DELETED_AT] = nil
 	opts := options.Find().SetProjection(r.SelectedTokenFields())
@@ -413,6 +410,7 @@ func (r Repository) UpdateTokenInscriptionIndex(tokenId string, inscriptionIndex
 	update := bson.M{
 		"$set": bson.M{
 			"inscription_index": inscriptionIndex,
+			"synced_inscription_info": true,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)

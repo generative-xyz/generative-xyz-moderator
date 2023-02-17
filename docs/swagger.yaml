@@ -107,6 +107,8 @@ definitions:
         type: integer
       file:
         type: string
+      fileName:
+        type: string
       name:
         type: string
       walletAddress:
@@ -167,6 +169,25 @@ definitions:
       web:
         type: string
     type: object
+  request.UpdateBTCProjectReq:
+    properties:
+      description:
+        type: string
+      isHidden:
+        type: boolean
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      name:
+        type: string
+      projectID:
+        type: string
+      royalty:
+        type: integer
+      thumbnail:
+        type: string
+    type: object
   request.UpdateProfileRequest:
     properties:
       avatar:
@@ -200,6 +221,8 @@ definitions:
   request.VerifyMessageRequest:
     properties:
       address:
+        type: string
+      addressBtc:
         type: string
       signature:
         type: string
@@ -249,6 +272,9 @@ definitions:
       animationUrl:
         type: string
       attributes: {}
+      buyable:
+        description: 'for buyable:'
+        type: boolean
       creator:
         $ref: '#/definitions/response.ProfileResponse'
       description:
@@ -261,13 +287,19 @@ definitions:
         type: string
       inscriptionIndex:
         type: string
+      isCompleted:
+        type: boolean
       mintedTime:
         type: string
       name:
         type: string
+      orderID:
+        type: string
       owner:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
+        type: string
+      priceBTC:
         type: string
       priority:
         type: integer
@@ -419,6 +451,8 @@ definitions:
         type: string
       tokenID:
         type: string
+      totalImages:
+        type: integer
       traitStat:
         items:
           $ref: '#/definitions/response.TraitStat'
@@ -1784,7 +1818,7 @@ paths:
         in: query
         name: page
         type: integer
-      - description: newest, priority-asc, priority-desc
+      - description: newest, priority-asc, priority-desc, trending-score
         in: query
         name: sort
         type: string
@@ -1880,6 +1914,29 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
+      tags:
+      - Project
+    put:
+      consumes:
+      - application/json
+      description: update btc project
+      parameters:
+      - description: Update project request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateBTCProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: update a btc project
       tags:
       - Project
   /project/{genNFTAddr}/tokens:

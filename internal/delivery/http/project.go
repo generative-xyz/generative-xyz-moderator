@@ -128,6 +128,71 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 }
 
 // UserCredits godoc
+// @Summary update a btc project
+// @Description update btc project
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param request body request.UpdateBTCProjectReq true "Update project request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID} [PUT]
+func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("updateBTCProject", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	span.SetTag("projectID", projectID)
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var reqBody request.UpdateBTCProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.UpdateBTCProjectReq{}
+	err = copier.Copy(reqUsecase, reqBody)
+	if err != nil {
+		log.Error("copier.Copy", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	reqUsecase.CreatetorAddress = &walletAddress
+	reqUsecase.ProjectID = &projectID
+	log.SetData("reqUsecase", reqUsecase)
+	message, err := h.Usecase.UpdateBTCProject(span, *reqUsecase)
+	if err != nil {
+		log.Error("h.Usecase.UpdateBTCProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		log.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
 // @Summary get project's detail
 // @Description get project's detail
 // @Tags Project
@@ -166,6 +231,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	go h.Usecase.CreateViewProjectActivity(project.TokenID)
+
 	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -182,7 +249,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Param category query string false "filter project via category ids"
 // @Param limit query int false "limit"
 // @Param page query int false "limit"
-// @Param sort query string false "newest, priority-asc, priority-desc"
+// @Param sort query string false "newest, priority-asc, priority-desc, trending-score"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]
@@ -356,6 +423,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.IsFullChain = input.IsFullChain
 	resp.IsHidden = input.IsHidden
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
+	resp.TotalImages = len(input.Images)
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,

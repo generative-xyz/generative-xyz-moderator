@@ -16,6 +16,7 @@ func ParseSort(key string) QuerySort {
 	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy: "minted_time"}
 	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy: "stats.price_int"}
 	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy: "stats.price_int"}
+	sortParams["trending-score"] = QuerySort{Sort: -1, SortBy: "stats.trending_score"}
 
 	sort, ok := sortParams[key]
 	if !ok {
@@ -87,6 +88,7 @@ const (
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
+	COLLECTION_ACTIVITIES								string = "activities"
 	COLLECTION_MARKETPLACE_LISTINGS     string = "marketplace_listings"
 	COLLECTION_MARKETPLACE_OFFERS       string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL             string = "proposals"
@@ -116,7 +118,7 @@ const (
 
 	INSCRIBE_TIMEOUT = 6
 
-	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
+	MASTER_ADDRESS = "bc1qeeu2s29dlhu497xqqcl9gjanq4t8kch3jt63hd"
 )
 
 type PubSubSendOtp struct {
