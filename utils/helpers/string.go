@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -73,7 +74,7 @@ func GenerateKey(key string) string {
 
 func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, " ", "-")
-	//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
+	key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	key = strings.ToLower(key)
 	return key
 }

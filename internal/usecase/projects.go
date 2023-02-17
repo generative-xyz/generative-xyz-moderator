@@ -923,8 +923,8 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		if strings.Index(f.Name, ".DS_Store") > -1 {
 			continue
 		}
-		spew.Dump(f.Name)
-		fName := helpers.GenerateSlug(f.Name)
+		
+		fName := f.Name
 		temp := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), fName)
 		images = append(images, temp)
 		nftTokenURI["image"] = temp
