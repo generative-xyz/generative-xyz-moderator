@@ -89,6 +89,7 @@ const (
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
 	COLLECTION_ACTIVITIES								string = "activities"
+	COLLECTION_REFERRALS								string = "referrals"
 	COLLECTION_MARKETPLACE_LISTINGS     string = "marketplace_listings"
 	COLLECTION_MARKETPLACE_OFFERS       string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL             string = "proposals"

@@ -2542,6 +2542,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/referral/{referrerID}": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create referral",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Referral"
+                ],
+                "summary": "Create referral",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "referrerID",
+                        "name": "referrerID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/token/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token uri data",
