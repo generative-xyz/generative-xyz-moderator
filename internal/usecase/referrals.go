@@ -14,6 +14,7 @@ const (
 func (u Usecase) CreateReferral(rootSpan opentracing.Span, referrerID string, referreeID string) error {
 	span, log := u.StartSpan("CreateReferral", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
+
 	referrer, err := u.Repo.FindUserByID(referrerID)
 	if err != nil {
 		return err
@@ -58,3 +59,4 @@ func (u Usecase) GetReferrals(rootSpan opentracing.Span, req structure.FilterRef
 	log.SetData("referrals", referrals.Total)
 	return referrals, nil
 }
+

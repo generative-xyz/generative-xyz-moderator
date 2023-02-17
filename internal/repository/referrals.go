@@ -40,3 +40,4 @@ func (r Repository) GetReferrals(filter entity.FilterReferrals) (*entity.Paginat
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
+

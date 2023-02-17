@@ -164,7 +164,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	referral.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 	referral.HandleFunc("", h.getReferrals).Methods("GET")
 
-
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
 	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")

@@ -21,7 +21,6 @@ type FilterReferrals struct {
 	ReferreeID *string
 }
 
-
 func (u Referral) TableName() string { 
 	return utils.COLLECTION_REFERRALS
 }
