@@ -12,9 +12,10 @@ type GenerateMessageRequest struct {
 }
 
 type VerifyMessageRequest struct {
-	Sinature   *string `json:"signature"`
-	Address    *string `json:"address"`
-	AddressBTC *string `json:"addressBtc"`
+	Sinature         *string `json:"signature"`
+	Address          *string `json:"address"`
+	AddressBTC       *string `json:"addressBtc"`
+	AddressBTCSegwit *string `json:"AddressBtcSegwit"`
 }
 
 type UpdateProfileRequest struct {
