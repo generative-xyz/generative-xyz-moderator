@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -208,6 +210,12 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 					{"hold_ord_address", 1},
 					{"amount", 1},
 					{"service_fee", 1},
+
+					{"collection", 1},
+					{"collection_id", 1},
+					{"inscription_name", 1},
+					{"inscription", 1},
+					{"inscription_index", 1},
 				},
 			},
 		},
@@ -230,6 +238,8 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 					{"hold_ord_address", bson.D{{"$first", "$hold_ord_address"}}},
 					{"amount", bson.D{{"$first", "$amount"}}},
 					{"service_fee", bson.D{{"$first", "$service_fee"}}},
+
+					{"inscription", bson.D{{"$first", "$inscription"}}},
 				},
 			},
 		},
@@ -562,3 +572,197 @@ func (r Repository) CreateMarketplaceBTCLog(listing *entity.MarketplaceBTCLogs) 
 
 // 	return result, err
 // }
+
+// update collection_id only
+func (r Repository) UpdateListingCollectionInfo(uuid string, tokenInfo *entity.TokenUri) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{Key: "uuid", Value: uuid},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"collection_id":     tokenInfo.ProjectID,
+			"collection_name":   tokenInfo.Project.Name,
+			"inscription_name":  tokenInfo.Name,
+			"inscription":       tokenInfo,
+			"inscription_index": tokenInfo.InscriptionIndex,
+		},
+	}
+
+	result, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) RetrieveBTCNFTListingsUnsoldForSearch(filterObject *entity.FilterString, limit, offset int64) ([]entity.MarketplaceBTCListingFilterPipeline, error) {
+	filter := bson.M{
+		"isConfirm": true,
+		"isSold":    false,
+	}
+
+	if filterObject != nil {
+
+		filterMore := []bson.M{}
+
+		if len(filterObject.Keyword) > 0 {
+
+			filterKeyworkOr := []bson.M{}
+
+			fmt.Println("filterObject.Keyword", filterObject.Keyword)
+
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"inscription_index": filterObject.Keyword})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"inscription_name": bson.M{"$regex": filterObject.Keyword}})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"inscriptionID": bson.M{"$regex": filterObject.Keyword}})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"description": bson.M{"$regex": filterObject.Keyword}})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"name": bson.M{"$regex": filterObject.Keyword}})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"collection_name": bson.M{"$regex": filterObject.Keyword}})
+			filterKeyworkOr = append(filterKeyworkOr, bson.M{"collection_id": bson.M{"$regex": filterObject.Keyword}})
+
+			filterMore = append(filterMore, bson.M{"$or": filterKeyworkOr})
+
+		}
+		if len(filterObject.ListCollectionIDs) > 0 {
+			// parse collection: 1,2,3,4
+			colectionArray := strings.Split(filterObject.ListCollectionIDs, ",")
+			if len(colectionArray) > 0 {
+				filterCollectionIdkOr := []bson.M{}
+
+				filterCollectionIdkOr = append(filterCollectionIdkOr, bson.M{"collection_id": bson.M{"$in": colectionArray}})
+
+				filterMore = append(filterMore, bson.M{"$or": filterCollectionIdkOr})
+			}
+
+		}
+		if len(filterObject.ListIDs) > 0 {
+			// parse id 11_22, 33_44
+			ids := strings.Split(filterObject.ListIDs, ",")
+			if len(ids) > 0 {
+				// split _
+				for _, v := range ids {
+					idArray := strings.Split(v, "_")
+					if len(idArray) > 0 {
+						filterMore = append(filterMore, bson.M{"inscription_index": bson.M{"$in": idArray}})
+					}
+				}
+			}
+		}
+
+		if len(filterObject.ListPrices) > 0 {
+			// parse 0.05_2, 2_5, 5_7, 7_9, 9_1000
+			prices := strings.Split(filterObject.ListPrices, ",")
+
+			if len(prices) > 0 {
+				// split _
+				filterPriceOr := []bson.M{}
+				for _, v := range prices {
+					priceRange := strings.Split(v, "_")
+
+					fmt.Println("len(priceRange): ", len(priceRange), priceRange)
+
+					if len(priceRange) == 2 {
+						// OR:
+						filterPriceOr = append(filterPriceOr, bson.M{"amount": bson.M{"$gte": priceRange[0], "$lt": priceRange[1]}})
+					}
+				}
+				filterMore = append(filterMore, bson.M{"$or": filterPriceOr})
+
+			}
+		}
+		if len(filterMore) > 0 {
+			filter = bson.M{
+				"isConfirm": true,
+				"isSold":    false,
+				// "$and": []bson.M{{"isConfirm": true}, {"isSold": false}},
+				"$and": filterMore,
+			}
+		}
+		// filter = bson.M{
+		//"isConfirm": true,
+		// "$or": []bson.M{
+		// 	{"inscription_name": bson.M{"$regex": keyword}},
+		// 	{"inscriptionID": bson.M{"$regex": keyword}},
+		// 	{"description": bson.M{"$regex": keyword}},
+		// 	{"name": bson.M{"$regex": keyword}},
+		// },
+		// }
+	}
+
+	fmt.Println("filter: ", filter)
+
+	resp, err := r.retrieveBTCNFTListingsByFilterForSearch(filter, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit, offset int64) ([]entity.MarketplaceBTCListingFilterPipeline, error) {
+	resp := []entity.MarketplaceBTCListingFilterPipeline{}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
+		bson.D{
+			{"$project",
+				bson.D{
+					{"uuid", 1},
+					{"inscriptionID", 1},
+					{"isConfirm", 1},
+					{"isSold", 1},
+					{"created_at", 1},
+					{"expired_at", 1},
+					{"name", 1},
+					{"description", 1},
+					{"seller_address", 1},
+					{"seller_ord_address", 1},
+					{"hold_ord_address", 1},
+					{"amount", 1},
+					{"service_fee", 1},
+
+					{"collection", 1},
+					{"collection_id", 1},
+					{"inscription_name", 1},
+					{"inscription", 1},
+					{"inscription_index", 1},
+				},
+			},
+		},
+		bson.D{{"$match", filter}},
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$inscriptionID"},
+					{"uuid", bson.D{{"$first", "$uuid"}}},
+					{"inscriptionID", bson.D{{"$first", "$inscriptionID"}}},
+					{"isConfirm", bson.D{{"$first", "$isConfirm"}}},
+					{"isSold", bson.D{{"$first", "$isSold"}}},
+					{"created_at", bson.D{{"$first", "$created_at"}}},
+					{"expired_at", bson.D{{"$first", "$expired_at"}}},
+					{"name", bson.D{{"$first", "$name"}}},
+					{"description", bson.D{{"$first", "$description"}}},
+					{"seller_address", bson.D{{"$first", "$seller_address"}}},
+					{"seller_ord_address", bson.D{{"$first", "$seller_ord_address"}}},
+					{"hold_ord_address", bson.D{{"$first", "$hold_ord_address"}}},
+					{"amount", bson.D{{"$first", "$amount"}}},
+					{"service_fee", bson.D{{"$first", "$service_fee"}}},
+
+					{"inscription", bson.D{{"$first", "$inscription"}}},
+				},
+			},
+		},
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
+		bson.D{{"$limit", limit}},
+		bson.D{{"$skip", offset}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
