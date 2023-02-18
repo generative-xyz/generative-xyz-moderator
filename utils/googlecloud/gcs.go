@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"rederinghub.io/utils/config"
+	"rederinghub.io/utils/helpers"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
@@ -111,7 +112,7 @@ func (g gcstorage) UnzipFile(object string) error {
 			}
 			defer r.Close()
 
-			p := filepath.Join(baseDir, f.Name)
+			p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
 			w := g.client.Bucket(outputBucket).Object(p).NewWriter(g.ctx)
 			defer w.Close()
 
