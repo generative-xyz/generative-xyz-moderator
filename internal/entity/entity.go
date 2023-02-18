@@ -9,20 +9,19 @@ import (
 )
 
 type BaseEntity struct {
-	ID            primitive.ObjectID `bson:"_id"`
-	UUID            string `bson:"uuid"`
-	BaseEntityNoID    `bson:",inline"`
+	ID             primitive.ObjectID `bson:"_id"`
+	UUID           string             `bson:"uuid"`
+	BaseEntityNoID `bson:",inline"`
 }
 
 type BaseEntityNoID struct {
-	DeletedAt *time.Time `bson:"deleted_at"`
-	CreatedAt *time.Time `bson:"created_at"`
-	UpdatedAt *time.Time `bson:"updated_at"`
-	IsVerified bool `bson:"is_verified"`
+	DeletedAt  *time.Time `bson:"deleted_at"`
+	CreatedAt  *time.Time `bson:"created_at"`
+	UpdatedAt  *time.Time `bson:"updated_at"`
+	IsVerified bool       `bson:"is_verified"`
 	VerifiedAt *time.Time `bson:"verified_at"`
-	Message string `bson:"message"`
+	Message    string     `bson:"message"`
 }
-
 
 func (b *BaseEntity) SetID() {
 	b.ID = primitive.NewObjectID()
@@ -57,4 +56,11 @@ func (b *BaseEntityNoID) Decode(from *primitive.D) error {
 		return err
 	}
 	return nil
+}
+
+type FilterString struct {
+	Keyword           string
+	ListCollectionIDs string
+	ListPrices        string
+	ListIDs           string
 }

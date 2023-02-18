@@ -74,7 +74,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-	
+
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
 
@@ -158,6 +158,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
+
+	marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
+
+	marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
