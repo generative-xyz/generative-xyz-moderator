@@ -171,42 +171,42 @@ func startServer() {
 	servers := make(map[string]delivery.AddedServer)
 	servers["http"] = delivery.AddedServer{
 		Server:  h,
-		Enabled: conf.StartHTTP,
+		Enabled: false,
 	}
 
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
+		Enabled: false,
 	}
 
 	servers["crontab"] = delivery.AddedServer{
 		Server:  cron,
-		Enabled: conf.Crontab.Enabled,
+		Enabled: false,
 	}
 
 	servers["btc_crontab"] = delivery.AddedServer{
 		Server:  btcCron,
-		Enabled: conf.Crontab.BTCEnabled,
+		Enabled: true,
 	}
 
 	servers["btc_crontab_v2"] =  delivery.AddedServer{
 		Server: btcCronV2,
-		Enabled: conf.Crontab.BTCV2Enabled,
+		Enabled: false,
 	}
 	
 	servers["marketplace_crontab"] =  delivery.AddedServer{
 		Server: mkCron,
-		Enabled: conf.Crontab.MarketPlaceEnabled,
+		Enabled: false,
 	}
 
 	servers["trending_crontab"] =  delivery.AddedServer{
 		Server: trendingCron,
-		Enabled: conf.Crontab.TrendingEnabled,
+		Enabled: false,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{
 		Server:  ph,
-		Enabled: conf.StartPubsub,
+		Enabled: false,
 	}
 
 	//var wait time.Duration

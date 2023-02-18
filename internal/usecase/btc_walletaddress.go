@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
@@ -195,12 +195,9 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	log.SetData("input", input)
 	log.SetTag(utils.WALLET_ADDRESS_TAG, input.Address)
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, input.Address)
-	mintType := entity.BIT
-	eth := &entity.ETHWalletAddress{}
+
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
-
-		btc = &entity.BTCWalletAddress{}
 		eth, err = u.Repo.FindEthWalletAddressByOrd(input.Address)
 		if err != nil {
 			log.Error("BTCMint.FindEthWalletAddressByOrd", err.Error(), err)
@@ -213,16 +210,15 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 			return nil, nil, err
 		}
 
-		mintType = entity.ETH
-
-	} 
+		mintype = entity.ETH
+	}
 
 	//mint logic
-	// btc, err = u.MintLogic(span, btc)
-	// if err != nil {
-	// 	log.Error("BTCMint.MintLogic", err.Error(), err)
-	// 	return nil, nil, err
-	// }
+	btc, err = u.MintLogic(span, btc)
+	if err != nil {
+		log.Error("BTCMint.MintLogic", err.Error(), err)
+		return nil, nil, err
+	}
 
 	// get data from project
 	p, err := u.Repo.FindProjectByTokenID(btc.ProjectID)
@@ -277,18 +273,17 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		return nil, nil, err
 	}
 
-	// baseUrl, err := url.Parse(btc.FileURI)
-	// if err != nil {
-	// 	log.Error("fileURI.baseUrl", err.Error(), err)
-	// 	return nil, nil, err
-	// }
-	mintURL := btc.FileURI
-	spew.Dump(mintURL)
+	baseUrl, err := url.Parse(btc.FileURI)
+	if err != nil {
+		log.Error("fileURI.baseUrl", err.Error(), err)
+		return nil, nil, err
+	}
+
 	mintData := ord_service.MintRequest{
 		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
-		FileUrl:    mintURL,
+		FileUrl:    baseUrl.String(),
 		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
-		DryRun:     false,
+		DryRun:     true, //TODO - check code
 	}
 
 	log.SetData("mintData", mintData)
@@ -331,30 +326,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
 	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
 	btcMintResp := &ord_service.MintStdoputRespose{}
-
-	//Update mint status here
-	if entity.TokenPaidType(mintType) == entity.BIT {
-		btc.IsMinted = true
-		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, btc)
-		if err != nil {
-			log.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr.Err", err.Error(), err)
-			return nil, nil, err
-		}
-		log.SetData("updated.Status",updated)
-
-	}
-	
-	if  entity.TokenPaidType(mintType) == entity.ETH {
-		eth.IsMinted = true
-		updated, err :=  u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
-		if err != nil {
-			log.Error("u.Repo.UpdateEthWalletAddressByOrdAddr.Err", err.Error(), err)
-			return nil, nil, err
-		}
-
-		log.SetData("updated.Status",updated)
-	}
-
 
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
