@@ -1,6 +1,7 @@
 module rederinghub.io
 
 go 1.17
+
 require (
 	cloud.google.com/go/storage v1.28.1
 	github.com/btcsuite/btcd v0.23.4
@@ -83,6 +84,8 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/incognito-core-libs/btcd v0.20.4 // indirect
+	github.com/incognito-core-libs/btcutil v1.0.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
