@@ -645,6 +645,7 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 }
 
 const (
+	INF_TRENDING_SCORE   	         int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC							 int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
@@ -685,6 +686,30 @@ func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
 		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
 		trendingScore := countView * TRENDING_SCORE_EACH_VIEW +  volumnInBtc * TRENDING_SCORE_EACH_BTC_VOLUMN
+
+		isWhitelistedProject := false
+		isBoostedProject := false
+		
+		// check if this project is whitelisted in top of trending
+		for _, str := range u.Config.TrendingConfig.WhitelistedProjectID {
+			if project.TokenID == str {
+				isWhitelistedProject = true
+			}
+		}
+
+		if project.Categories != nil {
+			for _, str := range project.Categories {
+				if str == u.Config.TrendingConfig.BoostedCategoryID {
+					isBoostedProject = true
+				}
+			}
+		}
+
+		if isWhitelistedProject {
+			trendingScore = INF_TRENDING_SCORE
+		} else if isBoostedProject {
+			trendingScore *= u.Config.TrendingConfig.BoostedWeight
+		}
 
 		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 
