@@ -516,9 +516,12 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 		return nil, err
 	}
 
+	txLogs := []string{}
 	for i, item := range pendingTX {
-		fmt.Printf("PendingTX:[%d][%s] - %s \n", i, item.ProjectID, item.OrdAddress)
+		log  := fmt.Sprintf("PendingTX:[%d][%s] - %s \n", i, item.ProjectID, item.OrdAddress)
+		txLogs = append(txLogs, log)
 	} 
+	log.SetData("pendingTX", txLogs)
 
 
 	//log.SetData("addreses", pendingTX)
