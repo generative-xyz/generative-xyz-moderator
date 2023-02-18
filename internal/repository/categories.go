@@ -46,7 +46,7 @@ func (r Repository) ListCategories(filter entity.FilterCategories) (*entity.Pagi
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(entity.Categories{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{} , &confs)
+	p, err := r.Paginate(entity.Categories{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{{SortBy: filter.SortBy, Sort: filter.Sort}} , &confs)
 	if err != nil {
 		return nil, err
 	}
