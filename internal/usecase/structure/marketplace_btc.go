@@ -1,6 +1,10 @@
 package structure
 
-import "time"
+import (
+	"time"
+
+	"rederinghub.io/internal/entity"
+)
 
 type MarketplaceBTC_ListingInfo struct {
 	InscriptionID  string `json:"inscriptionID"` // tokenID in btc
@@ -10,7 +14,6 @@ type MarketplaceBTC_ListingInfo struct {
 	SellerAddress  string `json:"seller_address"`
 	Price          string `json:"amount"`
 	ServiceFee     string `json:"service_fee"`
-	Min            string `json:"service_fee"`
 }
 
 type MarketplaceBTC_BuyOrderInfo struct {
@@ -32,4 +35,10 @@ type MarketplaceNFTDetail struct {
 	InscriptionNumber string    `json:"inscriptionNumber"`
 	ContentType       string    `json:"contentType"`
 	ContentLength     string    `json:"contentLength"`
+
+	// for filter
+	CollectionID    string           `json:"collection_id"`
+	CollectionName  string           `json:"collection_name"`
+	InscriptionName string           `json:"inscription_name"`
+	Inscription     *entity.TokenUri `json:"inscription"`
 }

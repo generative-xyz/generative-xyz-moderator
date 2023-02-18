@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -79,7 +80,7 @@ func (u Usecase) BTCMarketplaceListingNFT(rootSpan opentracing.Span, listingInfo
 	return &listing, nil
 }
 
-func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
+func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, filter *entity.FilterString, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
 	span, log := u.StartSpan("BTCMarketplaceListingNFT", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 	result := []structure.MarketplaceNFTDetail{}
@@ -87,7 +88,7 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 	var err error
 
 	// if buyableOnly {
-	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsold(limit, offset)
+	nftList, err = u.Repo.RetrieveBTCNFTListingsUnsoldForSearch(filter, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +130,8 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 					Buyable:       false,
 					IsCompleted:   listing.IsSold,
 					CreatedAt:     listing.CreatedAt,
+
+					Inscription: listing.Inscription,
 				}
 				inscribeInfo, err := u.GetInscribeInfo(span, nftInfo.InscriptionID)
 				if err != nil {
@@ -169,6 +172,8 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, buyableOnly bo
 			Buyable:       isAvailable,
 			IsCompleted:   listing.IsSold,
 			CreatedAt:     listing.CreatedAt,
+
+			Inscription: listing.Inscription,
 		}
 		inscribeInfo, err := u.GetInscribeInfo(span, nftInfo.InscriptionID)
 		if err != nil {
@@ -260,4 +265,66 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 		return "", err
 	}
 	return addressSegwit, nil
+}
+
+// get filter info:
+type CollectionFilter struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+func (u Usecase) BTCMarketplaceUpdateNftInfo(rootSpan opentracing.Span) error {
+	// create data for listing data:
+	// get nft list + update collection:
+	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 0)
+
+	fmt.Println("len(listingOrder): ", len(listingOrder))
+
+	for _, v := range listingOrder {
+		// get nft collection info:
+		nftCollectionInfo, _ := u.Repo.FindTokenByTokenID(v.InscriptionID)
+		if nftCollectionInfo != nil {
+			_, err := u.Repo.UpdateListingCollectionInfo(v.UUID, nftCollectionInfo)
+			if err != nil {
+				fmt.Println("can not UpdateListingCollectionInfo err: ", err)
+			} else {
+				fmt.Println("update done: ", nftCollectionInfo.TokenID)
+			}
+		} else {
+			fmt.Println("can not found id", v.InscriptionID)
+		}
+	}
+	return nil
+}
+
+func (u Usecase) BTCMarketplaceFilterInfo(rootSpan opentracing.Span) (interface{}, error) {
+
+	listCollectionFilterMap := map[string]CollectionFilter{}
+
+	listCollectionFilterMapReturn := map[string]interface{}{}
+
+	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 1)
+	for _, v := range listingOrder {
+		if v.Inscription == nil {
+			continue
+		}
+		collectionFilter := CollectionFilter{
+			ID:    v.Inscription.ProjectID,
+			Name:  v.Inscription.Project.Name,
+			Count: 0,
+		}
+
+		val, ok := listCollectionFilterMap[collectionFilter.ID]
+		// If the key exists
+		if ok {
+			collectionFilter.Count = val.Count + 1
+			listCollectionFilterMap[collectionFilter.ID] = collectionFilter
+		}
+		listCollectionFilterMap[collectionFilter.ID] = collectionFilter
+	}
+
+	listCollectionFilterMapReturn["collection"] = listCollectionFilterMap
+
+	return listCollectionFilterMapReturn, nil
 }

@@ -3,6 +3,11 @@ module rederinghub.io
 go 1.17
 
 require (
+    github.com/btcsuite/btcd/v2 v2.1.1
+    github.com/btcsuite/btcutil/v4 v4.0.0
+)
+
+require (
 	cloud.google.com/go/storage v1.28.1
 	github.com/btcsuite/btcd v0.23.4
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
@@ -56,6 +61,7 @@ require (
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.2.4 // indirect
 	github.com/antchfx/xpath v1.1.8 // indirect
+	github.com/bitonicnl/verify-signed-message v0.4.0 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
@@ -105,6 +111,7 @@ require (
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
+	github.com/thoas/go-funk v0.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

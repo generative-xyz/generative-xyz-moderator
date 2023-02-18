@@ -22,3 +22,11 @@ config.json
 bin
 /datadir/*
 test_decode.go
+go2.sum
+test2.go
+test3.go
+test4.go
+test_nodejs/
+utils/btc/internal/
+utils/btc/verifier/
+utils/btc/btc2.go
