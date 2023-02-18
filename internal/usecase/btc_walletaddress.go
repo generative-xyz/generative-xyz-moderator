@@ -198,6 +198,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
+		btc = &entity.BTCWalletAddress{}
 		eth, err = u.Repo.FindEthWalletAddressByOrd(input.Address)
 		if err != nil {
 			log.Error("BTCMint.FindEthWalletAddressByOrd", err.Error(), err)
@@ -213,7 +214,6 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		mintype = entity.ETH
 	}
 
-	//mint logic
 	btc, err = u.MintLogic(span, btc)
 	if err != nil {
 		log.Error("BTCMint.MintLogic", err.Error(), err)
@@ -292,7 +292,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("BTCMint.Mint", err.Error(), err)
 		return nil, nil, err
 	}
-
+	log.SetData("mint.resp",resp)
 	//update btc or eth here
 	if mintype == entity.BIT {
 		btc.IsMinted = true
@@ -320,7 +320,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	}
 	log.SetData("project.Updated", updated)
 
-	u.Notify(rootSpan, fmt.Sprintf("[MintFor][projectID %s]", btc.ProjectID), btc.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
+	u.Notify(rootSpan, fmt.Sprintf("[MintFor][%s][projectID %s]",mintype, btc.ProjectID), btc.OrdAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
 	tmpText := resp.Stdout
 	//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
@@ -489,6 +489,18 @@ func (u Usecase) MintLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAddre
 
 	if !btc.IsConfirm {
 		err = errors.New("This btc must be IsConfirmed")
+		log.Error("BTCMint.IsConfirmed", err.Error(), err)
+		return nil, err
+	}
+	
+	if btc.MintResponse.Inscription != "" {
+		err = errors.New(fmt.Sprintf("This btc has Inscription %s", btc.MintResponse.Inscription))
+		log.Error("BTCMint.IsConfirmed", err.Error(), err)
+		return nil, err
+	}
+	
+	if btc.MintResponse.Reveal != "" {
+		err = errors.New(fmt.Sprintf("This btc has revealID %s", btc.MintResponse.Reveal))
 		log.Error("BTCMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
