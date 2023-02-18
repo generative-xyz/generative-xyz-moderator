@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -269,9 +270,11 @@ func (u Usecase) BTCMarketplaceBuyOrder(rootSpan opentracing.Span, orderInfo str
 
 // get filter info:
 type CollectionFilter struct {
-	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Count int    `json:"count"`
+	Value string `json:"value"`
+	From  int64  `json:"from"`
+	To    int64  `json:"to"`
 }
 
 func (u Usecase) BTCMarketplaceUpdateNftInfo(rootSpan opentracing.Span) error {
@@ -301,6 +304,20 @@ func (u Usecase) BTCMarketplaceUpdateNftInfo(rootSpan opentracing.Span) error {
 func (u Usecase) BTCMarketplaceFilterInfo(rootSpan opentracing.Span) (interface{}, error) {
 
 	listCollectionFilterMap := map[string]CollectionFilter{}
+	listPriceFilterMap := map[string]CollectionFilter{}
+	listNftIDFilterMap := map[string]CollectionFilter{}
+
+	listPriceFilterMap["range1"] = CollectionFilter{Name: "0 BTC - 2 BTC", Count: 0, Value: "0_200000000", From: 0, To: 200000000}
+	listPriceFilterMap["range2"] = CollectionFilter{Name: "2 BTC - 5 BTC", Count: 0, Value: "200000000_500000000", From: 200000000, To: 500000000}
+	listPriceFilterMap["range3"] = CollectionFilter{Name: "5 BTC - 7 BTC", Count: 0, Value: "500000000_700000000", From: 500000000, To: 700000000}
+	listPriceFilterMap["range4"] = CollectionFilter{Name: "7 BTC - 9 BTC", Count: 0, Value: "700000000_900000000", From: 700000000, To: 900000000}
+	listPriceFilterMap["range5"] = CollectionFilter{Name: "> 9 BTC", Count: 0, Value: "900000000_999999999999", From: 900000000, To: 999999999999}
+
+	listNftIDFilterMap["range1"] = CollectionFilter{Name: "#0 - #1000", Count: 0, Value: "0_1000", From: 0, To: 1000}
+	listNftIDFilterMap["range2"] = CollectionFilter{Name: "#1000 - #2000", Count: 0, Value: "1000_2000", From: 1000, To: 2000}
+	listNftIDFilterMap["range3"] = CollectionFilter{Name: "#2000 - #3000", Count: 0, Value: "2000_3000", From: 2000, To: 3000}
+	listNftIDFilterMap["range4"] = CollectionFilter{Name: "#3000 - #4000", Count: 0, Value: "3000_4000", From: 3000, To: 4000}
+	listNftIDFilterMap["range5"] = CollectionFilter{Name: "> #4000", Count: 0, Value: "4000_9999999", From: 4000, To: 9999999}
 
 	listCollectionFilterMapReturn := map[string]interface{}{}
 
@@ -310,21 +327,51 @@ func (u Usecase) BTCMarketplaceFilterInfo(rootSpan opentracing.Span) (interface{
 			continue
 		}
 		collectionFilter := CollectionFilter{
-			ID:    v.Inscription.ProjectID,
 			Name:  v.Inscription.Project.Name,
-			Count: 0,
+			Count: 1,
+			Value: v.Inscription.ProjectID,
 		}
 
-		val, ok := listCollectionFilterMap[collectionFilter.ID]
+		val, ok := listCollectionFilterMap[v.Inscription.ProjectID]
 		// If the key exists
 		if ok {
 			collectionFilter.Count = val.Count + 1
-			listCollectionFilterMap[collectionFilter.ID] = collectionFilter
+			listCollectionFilterMap[v.Inscription.ProjectID] = collectionFilter
 		}
-		listCollectionFilterMap[collectionFilter.ID] = collectionFilter
+		listCollectionFilterMap[v.Inscription.ProjectID] = collectionFilter
+
+		var price int64
+		if len(v.Price) > 0 {
+			price, _ = strconv.ParseInt(v.Price, 10, 64)
+		}
+
+		var nftID int64
+		if len(v.InscriptionIndex) > 0 {
+			nftID, _ = strconv.ParseInt(v.InscriptionIndex, 10, 64)
+		}
+
+		// TODO important: if len(listPriceFilterMap) != len(listNftIDFilterMap) please use 2 for loop.
+		for key, _ := range listPriceFilterMap {
+			filterPrice := listPriceFilterMap[key]
+			// for price
+			if listPriceFilterMap[key].From <= price && price < listPriceFilterMap[key].To {
+				filterPrice.Count += 1
+			}
+			listPriceFilterMap[key] = filterPrice
+
+			// for nftID:
+			filterNftID := listNftIDFilterMap[key]
+			// for price
+			if listNftIDFilterMap[key].From < nftID && nftID <= listNftIDFilterMap[key].To {
+				filterNftID.Count += 1
+			}
+			listNftIDFilterMap[key] = filterNftID
+		}
 	}
 
 	listCollectionFilterMapReturn["collection"] = listCollectionFilterMap
+	listCollectionFilterMapReturn["price"] = listPriceFilterMap
+	listCollectionFilterMapReturn["inscriptionID"] = listNftIDFilterMap
 
 	return listCollectionFilterMapReturn, nil
 }
