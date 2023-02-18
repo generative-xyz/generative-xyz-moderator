@@ -510,14 +510,19 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 	span, log := u.StartSpanWithoutRoot("WaitingForETHMinting")
 	defer u.Tracer.FinishSpan(span, log)
 
-	addreses, err := u.Repo.ListMintingETHWalletAddress()
+	pendingTX, err := u.Repo.ListErrMintingETHWalletAddress()
 	if err != nil {
 		log.Error("WaitingForETHMinting.ListProcessingWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("addreses", addreses)
-	for _, item := range addreses {
+	for i, item := range pendingTX {
+		fmt.Printf("PendingTX:[%d][%s] - %s \n", i, item.ProjectID, item.OrdAddress)
+	} 
+
+
+	//log.SetData("addreses", pendingTX)
+	for _, item := range pendingTX {
 		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForETHMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)

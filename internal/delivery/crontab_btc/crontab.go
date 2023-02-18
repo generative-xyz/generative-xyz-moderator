@@ -25,7 +25,8 @@ func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHand
 }
 
 func (h ScronBTCHandler) StartServer() {
-	h.Usecase.WaitingForMinting() // BTC
+	//h.Usecase.WaitingForMinting() // BTC
+	h.Usecase.WaitingForETHMinting() // ETH
 				
 			//h.Usecase.WaitingForETHMinting() //ETH
 }

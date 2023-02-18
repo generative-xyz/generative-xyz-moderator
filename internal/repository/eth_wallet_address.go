@@ -159,6 +159,26 @@ func (r Repository) ListMintingETHWalletAddress() ([]entity.ETHWalletAddress, er
 	return confs, nil
 }
 
+
+func (r Repository) ListErrMintingETHWalletAddress() ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["isMinted"] = true
+	f["mintResponse.inscription"] = ""
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
 func (r Repository) ListETHAddress() ([]entity.ETHWalletAddress, error) {
 	confs := []entity.ETHWalletAddress{}
 

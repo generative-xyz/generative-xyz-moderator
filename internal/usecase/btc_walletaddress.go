@@ -198,6 +198,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
+		btc = &entity.BTCWalletAddress{}
 		eth, err = u.Repo.FindEthWalletAddressByOrd(input.Address)
 		if err != nil {
 			log.Error("BTCMint.FindEthWalletAddressByOrd", err.Error(), err)
