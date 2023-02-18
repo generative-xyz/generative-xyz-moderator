@@ -34,10 +34,11 @@ type MarketplaceBTCListing struct {
 	ExpiredAt      time.Time `bson:"expired_at"`
 
 	// for filter
-	CollectionID    string    `bson:"collection_id"`
-	CollectionName  string    `bson:"collection_name"`
-	InscriptionName string    `bson:"inscription_name"`
-	Inscription     *TokenUri `bson:"inscription"`
+	CollectionID     string    `bson:"collection_id"`
+	CollectionName   string    `bson:"collection_name"`
+	InscriptionName  string    `bson:"inscription_name"`
+	InscriptionIndex string    `bson:"inscription_index"`
+	Inscription      *TokenUri `bson:"inscription"`
 }
 
 type MarketplaceBTCListingFilterPipeline struct {
@@ -58,10 +59,11 @@ type MarketplaceBTCListingFilterPipeline struct {
 	CreatedAt      time.Time `bson:"created_at"`
 
 	// for filter
-	CollectionID    string    `bson:"collection_id"`
-	CollectionName  string    `bson:"collection_name"`
-	InscriptionName string    `bson:"inscription_name"`
-	Inscription     *TokenUri `bson:"inscription"`
+	CollectionID     string    `bson:"collection_id"`
+	CollectionName   string    `bson:"collection_name"`
+	InscriptionName  string    `bson:"inscription_name"`
+	InscriptionIndex string    `bson:"inscription_index"`
+	Inscription      *TokenUri `bson:"inscription"`
 }
 
 func (u MarketplaceBTCListing) TableName() string {

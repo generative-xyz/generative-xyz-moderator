@@ -240,6 +240,7 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 					{"service_fee", bson.D{{"$first", "$service_fee"}}},
 
 					{"inscription", bson.D{{"$first", "$inscription"}}},
+					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
 				},
 			},
 		},
