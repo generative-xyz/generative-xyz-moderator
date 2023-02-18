@@ -179,3 +179,44 @@ func (r Repository) ListWalletAddressToClaimBTC() ([]entity.BTCWalletAddress, er
 
 	return resp, nil
 }
+
+func (r Repository) ListMintedBtcWalletAddress(projectID string) ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	
+	f := bson.M{}
+	f["projectID"] = projectID
+	f["mintResponse.issent"] = true
+	f["mintResponse.inscription"] = bson.M{"$nin": bson.A{ nil, "" }}
+	
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListMintedEthWalletAddress(projectID string) ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+	
+	f := bson.M{}
+	f["mintResponse.issent"] = true
+	f["mintResponse.inscription"] = bson.M{"$nin": bson.A{ nil, "" }}
+	
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}

@@ -1183,3 +1183,67 @@ func (u Usecase) Update1M02Collections(projectID string) {
 
 
 
+func (u Usecase) ReportMinted() {
+	span, log := u.StartSpanWithoutRoot("ReportMinted")
+	defer u.Tracer.FinishSpan(span, log)
+	projectID := "1000118"
+
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		log.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+	}
+
+	helpers.WriteFile("1000118-ProcessingImages.json",p.ProcessingImages)
+	helpers.WriteFile("1000118-Images.json",p.Images)
+	
+	
+	ph, err := u.Repo.ListTokenURIHistory(projectID)
+	if err != nil {
+		log.Error("u.Repo.ListTokenURIHistory", err.Error(), err)
+	}
+
+	tokenIDstrs := []string{}
+	for _, his := range ph {
+		tokenIDstrs = append(tokenIDstrs, his.TokenID)
+	}
+	//log.SetData("tokenIDstrs", tokenIDstrs)
+
+	tokens, err := u.Repo.ListTokensIn(tokenIDstrs)
+	if err != nil {
+		log.Error("u.Repo.ListTokenURIHistory", err.Error(), err)
+	}
+
+	mintedImage := []string{}
+	for _, token := range tokens {
+		mintedImage = append(mintedImage, token.Thumbnail )
+	}
+
+	trashImages := []string{}
+	newProcessing := []string{}
+	
+	for _, item := range  p.ProcessingImages {
+		if helpers.InArray(item, mintedImage) {
+			newProcessing = append(newProcessing, item)
+			continue
+		}
+		trashImages = append(trashImages, item)
+	}
+
+	for _, trashImage := range trashImages {
+		p.Images = append(p.Images, trashImage)
+	}
+
+	log.SetData("mintedImage", len(trashImages))
+	log.SetData("p.ProcessingImages", len(p.ProcessingImages))
+
+	log.SetData("p.Images", len(p.Images))
+	log.SetData("newProcessing", len(newProcessing))
+	log.SetData("trashImages", trashImages)
+
+
+	//p.Images = append(p.Images, trashImages)
+
+	//spew.Dump(mintedImage)
+
+	
+}

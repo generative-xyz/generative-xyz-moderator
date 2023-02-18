@@ -19,3 +19,13 @@ func ReadFile(file *zip.File) ([]byte, error) {
 
 	return content, nil
 }
+
+func InArray(item string, arr []string) bool {
+	for _, check :=  range arr {
+		if item == check {
+			return true
+		}
+	}
+
+	return false
+}
