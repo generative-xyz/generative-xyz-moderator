@@ -9,6 +9,7 @@ func ParseSort(key string) QuerySort {
 	sortParams := make(map[string]QuerySort)
 	sortParams["custom"] = QuerySort{Sort: -1, SortBy: ""}
 	sortParams["newest"] = QuerySort{Sort: -1, SortBy: "created_at"}
+	sortParams["oldest"] = QuerySort{Sort: 1, SortBy: "created_at"}
 	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy: "priority"}
 	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy: "priority"}
 	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy: "price"}
@@ -89,6 +90,7 @@ const (
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
 	COLLECTION_ACTIVITIES								string = "activities"
+	COLLECTION_REFERRALS								string = "referrals"
 	COLLECTION_MARKETPLACE_LISTINGS     string = "marketplace_listings"
 	COLLECTION_MARKETPLACE_OFFERS       string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL             string = "proposals"
@@ -118,7 +120,7 @@ const (
 
 	INSCRIBE_TIMEOUT = 6
 
-	MASTER_ADDRESS = "bc1qeeu2s29dlhu497xqqcl9gjanq4t8kch3jt63hd"
+	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 )
 
 type PubSubSendOtp struct {
