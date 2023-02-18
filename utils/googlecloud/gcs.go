@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 
@@ -101,7 +102,9 @@ func (g gcstorage) UnzipFile(object string) error {
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
 	buffer := make([]byte, 32*1024)
 	outputBucket := g.bucketName
-	for _, f := range zr.File {
+
+	fmt.Println(baseDir)
+	for i, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
@@ -112,7 +115,17 @@ func (g gcstorage) UnzipFile(object string) error {
 			}
 			defer r.Close()
 
+			if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
+				return nil
+			}
+	
+			if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
+				return nil
+			}
+			
 			p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
+			spew.Dump(f.Name)
+			spew.Dump(p)
 			w := g.client.Bucket(outputBucket).Object(p).NewWriter(g.ctx)
 			defer w.Close()
 
@@ -123,7 +136,12 @@ func (g gcstorage) UnzipFile(object string) error {
 
 			return nil
 		}()
+
+
+		fmt.Printf("Procesed %d / %d files \n", i+1, len(zr.File))
 		if err != nil {
+			//.fmt.Errorf("%s",err.Error())
+			fmt.Errorf("%v", err)
 			return err
 		}
 		
@@ -131,6 +149,7 @@ func (g gcstorage) UnzipFile(object string) error {
 
 	return nil
 }
+
 
 func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) {
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
