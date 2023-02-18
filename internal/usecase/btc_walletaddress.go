@@ -571,19 +571,24 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 	span, log := u.StartSpanWithoutRoot("WaitingForMinting")
 	defer u.Tracer.FinishSpan(span, log)
 	
-	item, err := u.Repo.FindBtcWalletAddressByOrd("bc1qjdws23jh4lvvmldzgrd968g5hw7fe53uere4mg")
+	// item, err := u.Repo.FindBtcWalletAddressByOrd("bc1qjdws23jh4lvvmldzgrd968g5hw7fe53uere4mg")
+	// if err != nil {
+	// 	log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
+	// }
+	pendingTX, err := u.Repo.ListErrorMintingWalletAddress()
 	if err != nil {
-		log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
+		log.Error("u.Repo.ListErrorMintingWalletAddress", err.Error(), err)
+		return nil, err
 	}
 
-	mintedAddress := fmt.Sprintf("%s \n", item.OrdAddress)
-	log.SetData("mintedAddress", mintedAddress)
-
-	err = u.Mint(span, *item)
-	if err != nil {
-		log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
-	}
-
+	log.SetData("pendingTX", pendingTX)
+	for _, item := range pendingTX {
+		err = u.Mint(span, item)
+		if err != nil {
+			log.Error(fmt.Sprintf("Mint.Err.%s", item.OrdAddress), err.Error(), err)
+		}
+	} 
+	
 	//spew.Dump(items)
 	return nil, nil
 }
@@ -595,6 +600,9 @@ func (u Usecase) Mint(rootSpan opentracing.Span, item entity.BTCWalletAddress) e
 	var err error
 	log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 	log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
+
+	mintedAddress := fmt.Sprintf("%s \n", item.OrdAddress)
+	log.SetData("mintedAddress", mintedAddress)
 
 	if item.MintResponse.Inscription != "" {
 		err = errors.New("Token is being minted")
