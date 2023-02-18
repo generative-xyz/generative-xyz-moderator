@@ -60,7 +60,7 @@ func (t *TraceLog) Error(key string, value string, err error) {
 	t.error = &err
 
 	if t.log != nil {
-		t.log.Error("%s, %v", key, value, err)
+		t.log.Error(key, value, err)
 	}
 }
 

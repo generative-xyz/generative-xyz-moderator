@@ -214,11 +214,11 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	}
 
 	//mint logic
-	btc, err = u.MintLogic(span, btc)
-	if err != nil {
-		log.Error("BTCMint.MintLogic", err.Error(), err)
-		return nil, nil, err
-	}
+	// btc, err = u.MintLogic(span, btc)
+	// if err != nil {
+	// 	log.Error("BTCMint.MintLogic", err.Error(), err)
+	// 	return nil, nil, err
+	// }
 
 	// get data from project
 	p, err := u.Repo.FindProjectByTokenID(btc.ProjectID)
@@ -283,7 +283,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 		FileUrl:    baseUrl.String(),
 		FeeRate:    entity.DEFAULT_FEE_RATE, //temp
-		DryRun:     true, //TODO - check code
+		DryRun:     false, //TODO - check code
 	}
 
 	log.SetData("mintData", mintData)
@@ -563,6 +563,10 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 		log.Error("u.Repo.ListErrorMintingWalletAddress", err.Error(), err)
 		return nil, err
 	}
+
+	for i, item := range pendingTX {
+		fmt.Printf("PendingTX:[%d][%s] - %s \n", i, item.ProjectID, item.OrdAddress)
+	} 
 
 	log.SetData("pendingTX", pendingTX)
 	for _, item := range pendingTX {

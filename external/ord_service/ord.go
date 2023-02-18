@@ -125,7 +125,7 @@ func (m BtcOrd) request(fullUrl string, method string, headers map[string]string
 	}
 
 	if res.StatusCode != http.StatusOK {
-		err = errors.New(fmt.Sprintf("Response with status %d", res.StatusCode))
+		err = errors.New(fmt.Sprintf("Response with status [%d]: %s", res.StatusCode, res.Status))
 		return nil, err
 	}
 
