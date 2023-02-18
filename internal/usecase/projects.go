@@ -995,11 +995,11 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	for _, f := range files {
 		//TODO check f.Name is not empty
 
-		if strings.Index(f.Name, "__MACOSX") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
 		}
 
-		if strings.Index(f.Name, ".DS_Store") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
 			continue
 		}
 
