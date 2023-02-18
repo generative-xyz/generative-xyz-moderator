@@ -1,12 +1,6 @@
 module rederinghub.io
 
 go 1.17
-
-require (
-    github.com/btcsuite/btcd/v2 v2.1.1
-    github.com/btcsuite/btcutil/v4 v4.0.0
-)
-
 require (
 	cloud.google.com/go/storage v1.28.1
 	github.com/btcsuite/btcd v0.23.4
