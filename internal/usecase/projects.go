@@ -916,11 +916,11 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		// 	continue
 		// }
 
-		if strings.Index(f.Name, "__MACOSX") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
 		}
 
-		if strings.Index(f.Name, ".DS_Store") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
 			continue
 		}
 		
@@ -1010,8 +1010,8 @@ func (u Usecase) LoadImage() {
 	span, log := u.StartSpanWithoutRoot("LoadImage.1000192")
 	defer u.Tracer.FinishSpan(span, log)
 
-	tokenID := "1000192"
-	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/genesis-series-2-nakamoto-village/candy_house.zip"
+	tokenID := "1000257"
+	ziplink :=  "https://storage.googleapis.com/generative-static-prod/btc-projects/btc-textures-edition-1/1676681797-archive.zip"
 	// err := u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: tokenID, ZipLink: ziplink}})
 	// if err != nil {
 	// 	u.Logger.Error("u.Repo.CreateProject", err.Error(), err)

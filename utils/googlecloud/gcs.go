@@ -115,6 +115,14 @@ func (g gcstorage) UnzipFile(object string) error {
 			}
 			defer r.Close()
 
+			if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
+				return nil
+			}
+	
+			if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
+				return nil
+			}
+			
 			p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
 			spew.Dump(f.Name)
 			spew.Dump(p)
