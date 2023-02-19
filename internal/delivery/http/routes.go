@@ -74,7 +74,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
+
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
 
@@ -82,6 +82,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	projectAuth.Use(h.MiddleWare.AccessToken)
 	projectAuth.HandleFunc("/btc", h.createBTCProject).Methods("POST")
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
+	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
 
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
@@ -157,6 +158,15 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
+  marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
+	marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
+
+
+	referral := api.PathPrefix("/referrals").Subrouter()
+	referral.Use(h.MiddleWare.AccessToken)
+	referral.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
+	referral.HandleFunc("", h.getReferrals).Methods("GET")
+
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 

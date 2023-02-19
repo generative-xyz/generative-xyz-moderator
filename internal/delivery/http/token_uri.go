@@ -163,6 +163,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			resp.Buyable = nft.Buyable
 			resp.PriceBTC = nft.Price
 			resp.OrderID = nft.OrderID
+			resp.IsCompleted = nft.IsCompleted
 		}
 	}
 
@@ -420,6 +421,7 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 					resp.Buyable = v.Buyable
 					resp.PriceBTC = v.Price
 					resp.OrderID = v.OrderID
+					resp.IsCompleted = v.IsCompleted
 					break
 				}
 			}

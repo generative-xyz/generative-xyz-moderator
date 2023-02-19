@@ -91,6 +91,24 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 
 	log.SetData("input", input)
 
+	// todo remove:
+	// _, base64Str, err := decodeFileBase64(input.File)
+	// if err != nil {
+	// 	log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// now := time.Now().UTC().Unix()
+	// uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", "bc1p3lh2xp8a63rlwpk8zkxrwhhzwqgskfr9el3lmhceu3atyam4rvmshf24vt", now, "txt"))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	// fmt.Println("fileURI===> ", fileURI)
+
+	// end remove
+
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
@@ -172,24 +190,6 @@ func (u Usecase) CreateInscribeBTC(rootSpan opentracing.Span, input structure.In
 	walletAddress.FileName = input.FileName
 
 	log.SetTag(userWallet, walletAddress.OrdAddress)
-
-	// todo remove:
-	// _, base64Str, err := decodeFileBase64(input.File)
-	// if err != nil {
-	// 	log.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
-	// 	return nil, err
-	// }
-
-	// now := time.Now().UTC().Unix()
-	// uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", walletAddress.OrdAddress, now, "jpg"))
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-	// fmt.Println("fileURI: ", fileURI)
-	// walletAddress.LocalLink = fileURI
-	// end remove
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -472,14 +472,14 @@ func (u Usecase) JobInscribeMintNft(rootSpan opentracing.Span) error {
 		}
 
 		typeFiles := strings.Split(item.FileName, ".")
-		if len(typeFiles) != 2 {
+		if len(typeFiles) < 2 {
 			err := errors.New("File name invalid")
 			log.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
 
-		typeFile = typeFiles[1]
+		typeFile = typeFiles[len(typeFiles)-1]
 		fmt.Println("typeFile: ", typeFile)
 
 		// update google clound: TODO need to move into api to avoid create file many time.

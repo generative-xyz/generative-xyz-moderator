@@ -193,6 +193,10 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 	pe.TraceID = u.Tracer.TraceID(span)
+	pe.Categories = req.Categories
+	if pe.Categories == nil || len(pe.Categories) == 0 {
+		pe.Categories = []string{u.Config.OtherCategoryID}
+	}
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
@@ -255,6 +259,15 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	if req.Thumbnail != nil && *req.Thumbnail  != "" {
 		p.Thumbnail = *req.Thumbnail
 	}
+	
+	if req.IsHidden != nil && *req.IsHidden  != p.IsHidden {
+		p.IsHidden = *req.IsHidden
+	}
+
+	if len(req.Categories) > 0 {
+		p.Categories = req.Categories
+	}
+
 
 	if req.MaxSupply != nil && *req.MaxSupply !=  0 && *req.MaxSupply != p.MaxSupply {
 		if p.MintingInfo.Index > 0 {
@@ -267,13 +280,13 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	}
 	
 	if req.Royalty != nil {
-		if *req.Royalty > 25 {
-			err := errors.New("Royalty must be less than 25")
-			log.Error("pjID.empty", err.Error(), err)
-			return nil, err
-		}
+		// if *req.Royalty > 2500 {
+		// 	err := errors.New("Royalty must be less than 25")
+		// 	log.Error("pjID.empty", err.Error(), err)
+		// 	return nil, err
+		// }
 
-		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0 {
+		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0  {
 			err := errors.New("Project is minted, cannot update max supply")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
@@ -284,17 +297,17 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	}
 	
 	if req.MintPrice != nil {
-		if *req.MintPrice != p.MintPrice &&  p.MintingInfo.Index > 0 {
+		mFStr := p.MintPrice
+		reqMfFStr := helpers.StringToBTCAmount(*req.MintPrice)
+		if  p.MintingInfo.Index > 0  && mFStr != reqMfFStr.String(){
 			err := errors.New("Project is minted, cannot update mint price")
 			log.Error("pjID.minted", err.Error(), err)
 			return nil, err
 		}
-
-		m := helpers.StringToBTCAmount(*req.MintPrice)
-		p.MintPrice = m.String()
-
+		p.MintPrice = reqMfFStr.String()
 	}
 
+	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("updated", err.Error(), err)
@@ -982,11 +995,11 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	for _, f := range files {
 		//TODO check f.Name is not empty
 
-		if strings.Index(f.Name, "__MACOSX") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
 		}
 
-		if strings.Index(f.Name, ".DS_Store") > -1 {
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
 			continue
 		}
 

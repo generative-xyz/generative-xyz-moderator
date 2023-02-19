@@ -37,8 +37,11 @@ require (
 )
 
 require (
+	github.com/bitcoinsv/bsvd v0.0.0-20190609155523-4c29707f7173
 	github.com/blockcypher/gobcy/v2 v2.0.5
 	github.com/gocolly/colly v1.2.0
+	github.com/libsv/go-bk v0.1.6
+	github.com/libsv/go-bt/v2 v2.1.1
 )
 
 require (
@@ -48,13 +51,12 @@ require (
 	cloud.google.com/go/iam v0.8.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.2.4 // indirect
 	github.com/antchfx/xpath v1.1.8 // indirect
+	github.com/bitonicnl/verify-signed-message v0.4.0 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
@@ -82,6 +84,8 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/incognito-core-libs/btcd v0.20.4 // indirect
+	github.com/incognito-core-libs/btcutil v1.0.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -104,6 +108,7 @@ require (
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
+	github.com/thoas/go-funk v0.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

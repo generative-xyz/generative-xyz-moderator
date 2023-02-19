@@ -231,6 +231,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	go h.Usecase.CreateViewProjectActivity(project.TokenID)
+
 	log.SetData("resp.project", resp)
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -247,7 +249,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Param category query string false "filter project via category ids"
 // @Param limit query int false "limit"
 // @Param page query int false "limit"
-// @Param sort query string false "newest, priority-asc, priority-desc"
+// @Param sort query string false "newest, oldest, priority-asc, priority-desc, trending-score"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]
@@ -404,6 +406,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.ScriptType = input.ThirdPartyScripts
 	resp.NftTokenURI = input.NftTokenUri
 	resp.NetworkFee = input.NetworkFee
+	resp.Categories = input.Categories
 	social["web"] = input.SocialWeb
 	social["twitter"] = input.SocialTwitter
 	social["discord"] = input.SocialDiscord

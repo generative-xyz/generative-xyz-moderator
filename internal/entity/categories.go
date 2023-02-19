@@ -9,6 +9,7 @@ import (
 type Categories struct {
 	BaseEntity`bson:",inline"`
 	Name string `bson:"name"`
+	Priority               *int               `bson:"priority" json:"priority"`
 	
 }
 
