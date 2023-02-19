@@ -158,15 +158,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
 	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
 	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
-  marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
+	marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
 	marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
-
 
 	referral := api.PathPrefix("/referrals").Subrouter()
 	referral.Use(h.MiddleWare.AccessToken)
 	referral.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 	referral.HandleFunc("", h.getReferrals).Methods("GET")
-
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 

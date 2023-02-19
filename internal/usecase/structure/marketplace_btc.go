@@ -37,8 +37,9 @@ type MarketplaceNFTDetail struct {
 	ContentLength     string    `json:"contentLength"`
 
 	// for filter
-	CollectionID    string           `json:"collection_id"`
-	CollectionName  string           `json:"collection_name"`
-	InscriptionName string           `json:"inscription_name"`
-	Inscription     *entity.TokenUri `json:"inscription"`
+	CollectionID     string           `json:"collection_id"`
+	CollectionName   string           `json:"collection_name"`
+	InscriptionName  string           `json:"inscription_name"`
+	InscriptionIndex string           `json:"inscription_index"`
+	Inscription      *entity.TokenUri `json:"inscription"`
 }

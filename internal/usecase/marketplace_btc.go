@@ -132,7 +132,10 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, filter *entity
 					IsCompleted:   listing.IsSold,
 					CreatedAt:     listing.CreatedAt,
 
-					Inscription: listing.Inscription,
+					Inscription:      listing.Inscription,
+					InscriptionName:  listing.InscriptionName,
+					InscriptionIndex: listing.InscriptionIndex,
+					CollectionID:     listing.CollectionID,
 				}
 				inscribeInfo, err := u.GetInscribeInfo(span, nftInfo.InscriptionID)
 				if err != nil {
@@ -175,6 +178,10 @@ func (u Usecase) BTCMarketplaceListNFT(rootSpan opentracing.Span, filter *entity
 			CreatedAt:     listing.CreatedAt,
 
 			Inscription: listing.Inscription,
+
+			InscriptionName:  listing.InscriptionName,
+			InscriptionIndex: listing.InscriptionIndex,
+			CollectionID:     listing.CollectionID,
 		}
 		inscribeInfo, err := u.GetInscribeInfo(span, nftInfo.InscriptionID)
 		if err != nil {
@@ -288,6 +295,7 @@ func (u Usecase) BTCMarketplaceUpdateNftInfo(rootSpan opentracing.Span) error {
 		// get nft collection info:
 		nftCollectionInfo, _ := u.Repo.FindTokenByTokenID(v.InscriptionID)
 		if nftCollectionInfo != nil {
+			fmt.Println("can not get nftCollectionInfo with v.InscriptionID: ", v.InscriptionID)
 			_, err := u.Repo.UpdateListingCollectionInfo(v.UUID, nftCollectionInfo)
 			if err != nil {
 				fmt.Println("can not UpdateListingCollectionInfo err: ", err)
@@ -323,22 +331,19 @@ func (u Usecase) BTCMarketplaceFilterInfo(rootSpan opentracing.Span) (interface{
 
 	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 1)
 	for _, v := range listingOrder {
-		if v.Inscription == nil {
-			continue
-		}
 		collectionFilter := CollectionFilter{
-			Name:  v.Inscription.Project.Name,
+			Name:  v.CollectionName,
 			Count: 1,
-			Value: v.Inscription.ProjectID,
+			Value: v.CollectionID,
 		}
 
-		val, ok := listCollectionFilterMap[v.Inscription.ProjectID]
+		val, ok := listCollectionFilterMap[v.CollectionID]
 		// If the key exists
 		if ok {
 			collectionFilter.Count = val.Count + 1
-			listCollectionFilterMap[v.Inscription.ProjectID] = collectionFilter
+			listCollectionFilterMap[v.CollectionID] = collectionFilter
 		}
-		listCollectionFilterMap[v.Inscription.ProjectID] = collectionFilter
+		listCollectionFilterMap[v.CollectionID] = collectionFilter
 
 		var price int64
 		if len(v.Price) > 0 {
@@ -353,6 +358,9 @@ func (u Usecase) BTCMarketplaceFilterInfo(rootSpan opentracing.Span) (interface{
 		// TODO important: if len(listPriceFilterMap) != len(listNftIDFilterMap) please use 2 for loop.
 		for key, _ := range listPriceFilterMap {
 			filterPrice := listPriceFilterMap[key]
+
+			fmt.Println("filterPrice: ", filterPrice.From, filterPrice.To)
+
 			// for price
 			if listPriceFilterMap[key].From <= price && price < listPriceFilterMap[key].To {
 				filterPrice.Count += 1
