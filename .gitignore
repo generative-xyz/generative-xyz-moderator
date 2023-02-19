@@ -26,6 +26,8 @@ go2.sum
 test2.go
 test3.go
 test4.go
+test5.go
+test6.go
 test_nodejs/
 utils/btc/internal/
 utils/btc/verifier/
