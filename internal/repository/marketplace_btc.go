@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -642,12 +643,25 @@ func (r Repository) RetrieveBTCNFTListingsUnsoldForSearch(filterObject *entity.F
 			ids := strings.Split(filterObject.ListIDs, ",")
 			if len(ids) > 0 {
 				// split _
+				filterIDsOr := []bson.M{}
 				for _, v := range ids {
 					idArray := strings.Split(v, "_")
-					if len(idArray) > 0 {
-						filterMore = append(filterMore, bson.M{"inscription_index": bson.M{"$in": idArray}})
+					if len(idArray) == 2 {
+
+						minID, _ := strconv.Atoi(idArray[0])
+						maxID, _ := strconv.Atoi(idArray[1])
+
+						// filterMore = append(filterMore, bson.M{"inscription_index": bson.M{"$in": idArray}})
+						filterIDsOr = append(filterIDsOr,
+							bson.M{"$and": []bson.M{
+								{"$expr": bson.M{"$gte": bson.A{bson.M{"$toDouble": "$inscription_index"}, minID}}},
+								{"$expr": bson.M{"$lte": bson.A{bson.M{"$toDouble": "$inscription_index"}, maxID}}},
+							},
+							},
+						)
 					}
 				}
+				filterMore = append(filterMore, bson.M{"$or": filterIDsOr})
 			}
 		}
 
@@ -664,8 +678,33 @@ func (r Repository) RetrieveBTCNFTListingsUnsoldForSearch(filterObject *entity.F
 					fmt.Println("len(priceRange): ", len(priceRange), priceRange)
 
 					if len(priceRange) == 2 {
-						// OR:
-						filterPriceOr = append(filterPriceOr, bson.M{"amount": bson.M{"$gte": priceRange[0], "$lt": priceRange[1]}})
+
+						minPrice, _ := strconv.Atoi(priceRange[0])
+						maxPrice, _ := strconv.Atoi(priceRange[1])
+
+						fmt.Println("minPrice, maxPrice", minPrice, maxPrice)
+
+						// min <= price <= max
+
+						// mongo that la met moi -_-
+						// filterPriceOr = append(filterPriceOr, bson.M{"$and": []bson.M{{"amount": bson.M{"$gte": priceRange[0]} , "amount": bson.M{"$lt": priceRange[1]} }})
+						// {isConfirm: true, isSold: false, $expr: {$gte: [{ $toDouble: "$amount" }, 0]}, $expr: {$lte: [{ $toDouble: "$amount" }, 2000] }}
+						//"$expr": bson.M{"$eq": bson.A{"$proposalID",  "$$proposalID"}},
+
+						filterPriceOr = append(filterPriceOr,
+							bson.M{"$and": []bson.M{
+								// {"$expr": bson.M{"$gte": minPrice}},
+								// {"$expr": bson.M{"$lte": maxPrice}},
+								{"$expr": bson.M{"$gte": bson.A{bson.M{"$toDouble": "$amount"}, minPrice}}},
+								{"$expr": bson.M{"$lte": bson.A{bson.M{"$toDouble": "$amount"}, maxPrice}}},
+							},
+							},
+						)
+
+						// 	bson.M{
+						// 		"$expr": bson.M{"$gte": bson.A{bson.M{"$toDouble": "$amount"}, minPrice}},
+						// 		"$expr": bson.M{"$lte": bson.A{bson.M{"$toDouble": "$amount"}, maxPrice}},
+						// 	},
 					}
 				}
 				filterMore = append(filterMore, bson.M{"$or": filterPriceOr})
@@ -721,7 +760,7 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"amount", 1},
 					{"service_fee", 1},
 
-					{"collection", 1},
+					// {"collection", 1},
 					{"collection_id", 1},
 					{"inscription_name", 1},
 					{"inscription", 1},
@@ -749,7 +788,10 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"amount", bson.D{{"$first", "$amount"}}},
 					{"service_fee", bson.D{{"$first", "$service_fee"}}},
 
+					{"collection_id", bson.D{{"$first", "$collection_id"}}},
+					{"inscription_name", bson.D{{"$first", "$inscription_name"}}},
 					{"inscription", bson.D{{"$first", "$inscription"}}},
+					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
 				},
 			},
 		},
