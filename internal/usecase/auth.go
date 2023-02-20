@@ -101,7 +101,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	log.SetData("user", user)
 
 	var isVeried = false
-	if false && data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
+	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
 		if err != nil {
 			log.Error("u.verify", err.Error(), err)
@@ -187,7 +187,8 @@ func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string,
 	}
 
 	// Return nil if addresses match.
-	if addressWitnessPubKeyHash.String() == signer {
+	temp := addressWitnessPubKeyHash.String()
+	if temp == signer {
 		return true, nil
 	}
 	return false, fmt.Errorf(
