@@ -36,6 +36,9 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string]string, error) {
 	result := make(map[string]string)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://ordinals-explorer-v5-dev.generative.xyz"
+	}
 	for _, output := range outputs {
 		inscription, err := getInscriptionByOutput(ordServer, output)
 		if err != nil {
