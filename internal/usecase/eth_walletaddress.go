@@ -580,6 +580,8 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 		return nil, err
 	}
 
+	_, bs, err := u.buildBTCClient()
+
 	log.SetData("addreses", addreses)
 	for _, item := range addreses {
 		func(rootSpan opentracing.Span, item entity.ETHWalletAddress) {
@@ -588,52 +590,69 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 
 			log.SetData("userWallet", item.UserAddress)
 			log.SetData("ordWalletAddress", item.OrdAddress)
-			sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
+
+			//check token is created or not via BlockcypherService
+			txInfo, err := bs.CheckTx(item.MintResponse.Reveal)
 			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+				log.Error(" bs.CheckTx", err.Error(), err)
+				u.Notify(rootSpan, fmt.Sprintf("[Error][ETH][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %v", err.Error(), item))
 				return
 			}
 
-			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				TokenID:       item.MintResponse.Inscription,
-				Commit:        item.MintResponse.Commit,
-				Reveal:        item.MintResponse.Reveal,
-				Fees:          item.MintResponse.Fees,
-				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
-				Owner:         item.UserAddress,
-				Action:        entity.SENT,
-				ProjectID:     item.ProjectID,
-				Type:          entity.ETH,
-				TraceID:       u.Tracer.TraceID(span),
-				ProccessID: item.UUID,
-			})
+			log.SetData("txInfo", txInfo)
+			if txInfo.Confirmations > 1 { 
+				sentTokenResp, err := u.SendToken(span, item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
+				if err != nil {
+					u.Notify(rootSpan, fmt.Sprintf("[Error][ETH][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %v", err.Error(), item))
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
 
-			u.Notify(rootSpan, fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
+				u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+					TokenID:       item.MintResponse.Inscription,
+					Commit:        item.MintResponse.Commit,
+					Reveal:        item.MintResponse.Reveal,
+					Fees:          item.MintResponse.Fees,
+					MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
+					Owner:         item.UserAddress,
+					Action:        entity.SENT,
+					ProjectID:     item.ProjectID,
+					Type:          entity.ETH,
+					TraceID:       u.Tracer.TraceID(span),
+					ProccessID: item.UUID,
+				})
 
-			log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+				u.Notify(rootSpan, fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
 
-			//TODO - fund via ETH
+				log.SetData(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
 
-			item.MintResponse.IsSent = true
-			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
-			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
-				return
+				//TODO - fund via ETH
+
+				item.MintResponse.IsSent = true
+				updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+				log.SetData("updated", updated)
+
+				//TODO: - create entity.TokenURI
+				_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+
+				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
+				if err != nil {
+					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
+					return
+				}
+			}else{
+				log.SetData("checkTx.Inscription.Existed", false)
 			}
-			log.SetData("updated", updated)
 
-			//TODO: - create entity.TokenURI
-			_, err = u.CreateBTCTokenURI(span, item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
-			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
-
-			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
-			if err != nil {
-				log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
+			
 
 		}(span, item)
 		time.Sleep(5 * time.Second)

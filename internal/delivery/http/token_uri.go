@@ -340,6 +340,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	walletAddress := vars["walletAddress"]
 	span.SetTag("walletAddress", walletAddress)
 
+	hidden := false
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		log.Error("BaseFilters", err.Error(), err)
@@ -351,8 +352,17 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
 
-	hidden := true
-	f.IssHidden = &hidden
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	
+	currentUserWalletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		f.IsHidden = &hidden
+	}
+
+	if ok && currentUserWalletAddress != walletAddress {
+		f.IsHidden = &hidden
+	}	
 
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
