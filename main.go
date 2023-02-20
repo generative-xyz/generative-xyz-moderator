@@ -189,24 +189,29 @@ func startServer() {
 		Enabled: conf.Crontab.BTCEnabled,
 	}
 
-	servers["btc_crontab_v2"] =  delivery.AddedServer{
-		Server: btcCronV2,
+	servers["btc_crontab_v2"] = delivery.AddedServer{
+		Server:  btcCronV2,
 		Enabled: conf.Crontab.BTCV2Enabled,
 	}
-	
-	servers["marketplace_crontab"] =  delivery.AddedServer{
-		Server: mkCron,
+
+	servers["marketplace_crontab"] = delivery.AddedServer{
+		Server:  mkCron,
 		Enabled: conf.Crontab.MarketPlaceEnabled,
 	}
 
-	servers["trending_crontab"] =  delivery.AddedServer{
-		Server: trendingCron,
+	servers["trending_crontab"] = delivery.AddedServer{
+		Server:  trendingCron,
 		Enabled: conf.Crontab.TrendingEnabled,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{
 		Server:  ph,
 		Enabled: conf.StartPubsub,
+	}
+
+	servers["inscription_events"] = delivery.AddedServer{
+		Server:  btcCronV2,
+		Enabled: conf.Crontab.InscriptionEventEnabled,
 	}
 
 	//var wait time.Duration
