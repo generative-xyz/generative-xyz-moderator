@@ -1220,6 +1220,7 @@ func (u Usecase) ReportMinted() {
 
 	trashImages := []string{}
 	newProcessing := []string{}
+	newImages := []string{}
 	
 	for _, item := range  p.ProcessingImages {
 		if helpers.InArray(item, mintedImage) {
@@ -1230,14 +1231,15 @@ func (u Usecase) ReportMinted() {
 	}
 
 	for _, trashImage := range trashImages {
-		p.Images = append(p.Images, trashImage)
+		newImages = append(newImages, trashImage)
 	}
 
 	log.SetData("mintedImage", len(trashImages))
 	log.SetData("p.ProcessingImages", len(p.ProcessingImages))
-
 	log.SetData("p.Images", len(p.Images))
+
 	log.SetData("newProcessing", len(newProcessing))
+	log.SetData("newImages", len(newImages))
 	log.SetData("trashImages", trashImages)
 
 
