@@ -39,7 +39,7 @@ type UpdateProfile struct {
 	Bio              *string
 	ProfileSocial    ProfileSocial
 	Avatar           *string
-	WalletAddressBTC string
+	WalletAddressBTC *string
 }
 
 type ProfileSocial struct {
