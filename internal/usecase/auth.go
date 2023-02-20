@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"os"
 	"strings"
 	"time"
@@ -24,7 +26,6 @@ import (
 
 	"github.com/bitcoinsv/bsvd/chaincfg/chainhash"
 	"github.com/bitcoinsv/bsvd/wire"
-	"github.com/libsv/go-bk/bec"
 )
 
 func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.GenerateMessage) (*string, error) {
@@ -146,14 +147,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	// if data.AddressBTC != nil {
-	// 	if *data.AddressBTC != "" {
-	// 		if user.WalletAddressBTC == "" {
-	// 			user.WalletAddressBTC = *data.AddressBTC
-	// 			log.SetData("user.WalletAddressBTC.Updated", true)
-	// 		}
-	// 	}
-	// }
+	if data.AddressBTC != nil && *data.AddressBTC != "" {
+		if user.WalletAddressBTC == "" {
+			user.WalletAddressBTC = *data.AddressBTC
+			log.SetData("user.WalletAddressBTC.Updated", true)
+		}
+	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -175,7 +174,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 }
 
 // PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
-func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, wasCompressed bool, err error) {
+func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *btcec.PublicKey, wasCompressed bool, err error) {
 
 	var decodedSig []byte
 	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
@@ -193,8 +192,10 @@ func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, 
 	}
 
 	// Create the hash
+
 	expectedMessageHash := chainhash.HashH(buf.Bytes())
-	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
+	//return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
+	return ecdsa.RecoverCompact(decodedSig, expectedMessageHash[:])
 }
 
 func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
