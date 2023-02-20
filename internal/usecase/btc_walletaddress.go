@@ -292,7 +292,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("BTCMint.Mint", err.Error(), err)
 		return nil, nil, err
 	}
-	log.SetData("mint.resp",resp)
+	log.SetData("mint.resp", resp)
 	//update btc or eth here
 	if mintype == entity.BIT {
 		btc.IsMinted = true
@@ -303,7 +303,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		}
 		log.SetData("updated", updated)
 
-	}else{
+	} else {
 		eth.IsMinted = true
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
 		if err != nil {
@@ -320,7 +320,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	}
 	log.SetData("project.Updated", updated)
 
-	u.Notify(rootSpan, fmt.Sprintf("[MintFor][%s][projectID %s]",mintype, btc.ProjectID), btc.OrdAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
+	u.Notify(rootSpan, fmt.Sprintf("[MintFor][%s][projectID %s]", mintype, btc.ProjectID), btc.OrdAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
 	tmpText := resp.Stdout
 	//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
@@ -492,13 +492,13 @@ func (u Usecase) MintLogic(rootSpan opentracing.Span, btc *entity.BTCWalletAddre
 		log.Error("BTCMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
-	
+
 	if btc.MintResponse.Inscription != "" {
 		err = errors.New(fmt.Sprintf("This btc has Inscription %s", btc.MintResponse.Inscription))
 		log.Error("BTCMint.IsConfirmed", err.Error(), err)
 		return nil, err
 	}
-	
+
 	if btc.MintResponse.Reveal != "" {
 		err = errors.New(fmt.Sprintf("This btc has revealID %s", btc.MintResponse.Reveal))
 		log.Error("BTCMint.IsConfirmed", err.Error(), err)
@@ -645,7 +645,6 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
-
 			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 
@@ -661,12 +660,12 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 				u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 				return
 			}
-			
+
 			log.SetData("txInfo", txInfo)
 			if txInfo.Confirmations > 1 {
 				sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 				if err != nil {
-					u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
+					u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
@@ -713,10 +712,10 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					log.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
-			}else{
+			} else {
 				log.SetData("checkTx.Inscription.Existed", false)
 			}
-			
+
 		}(span, item)
 
 		time.Sleep(5 * time.Second)
@@ -742,7 +741,7 @@ func (u Usecase) SendToken(rootSpan opentracing.Span, receiveAddr string, inscri
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			fmt.Sprintf("%d",  entity.DEFAULT_FEE_RATE),
+			fmt.Sprintf("%d", entity.DEFAULT_FEE_RATE),
 		}}
 
 	log.SetData("sendTokenReq", sendTokenReq)
