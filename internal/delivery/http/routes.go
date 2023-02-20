@@ -151,8 +151,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	signedEth := api.PathPrefix("/eth").Subrouter()
 	signedEth.Use(h.MiddleWare.AccessToken)
 	signedEth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
-
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
+
+	// request-mint (new flow)
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
