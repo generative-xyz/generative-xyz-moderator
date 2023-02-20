@@ -100,7 +100,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	log.SetData("user", user)
 
 	var isVeried = false
-	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
+	if false && data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
 		if err != nil {
 			log.Error("u.verify", err.Error(), err)
@@ -143,12 +143,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	if data.AddressBTC != nil && *data.AddressBTC != "" {
+	/*if data.AddressBTC != nil && *data.AddressBTC != "" {
 		if user.WalletAddressBTC == "" {
 			user.WalletAddressBTC = *data.AddressBTC
 			log.SetData("user.WalletAddressBTC.Updated", true)
 		}
-	}
+	}*/
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -294,7 +294,7 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 	if data.Bio != nil {
 		user.Bio = *data.Bio
 	}
-	
+
 	if data.WalletAddressBTC != nil {
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
