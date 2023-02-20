@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	// "github.com/btcsuite/btcd/btcec/v2"
+	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
+
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -290,6 +293,10 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 
 	if data.Bio != nil {
 		user.Bio = *data.Bio
+	}
+	
+	if data.WalletAddressBTC != nil {
+		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
 
 	if data.WalletAddressBTC != nil {

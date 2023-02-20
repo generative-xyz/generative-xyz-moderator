@@ -5,6 +5,7 @@ type FilterProjects struct {
 	WalletAddress *string
 	Name *string
 	IsHidden *bool
+	IssHidden *bool
 	CategoryIds []string
 }
 
