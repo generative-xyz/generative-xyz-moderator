@@ -1186,7 +1186,28 @@ func (u Usecase) Update1M02Collections(projectID string) {
 func (u Usecase) ReportMinted() {
 	span, log := u.StartSpanWithoutRoot("ReportMinted")
 	defer u.Tracer.FinishSpan(span, log)
+	pri := 100
+
+	data := []string{"1000001",  "1000003", "1000201", "1000207", "1000203", "1000195", "1000010", "1000246", "1000005", "1000355"}
+	
 	//projectID := "1000118"
+
+	for i:=0; i < len(data); i ++ {
+		p, err := u.Repo.FindProjectByTokenID(data[i])
+		if err != nil {
+			log.Error("u.Repo.FindTokenByTokenID", err.Error(), err)
+			continue
+		}
+		p.Priority = &pri
+		pri --
+
+		update, err := u.Repo.UpdateProject(p.UUID, p)
+		if err != nil {
+			log.Error("err", err.Error(),  err)
+			continue 
+		}
+		_ = update
+	}
 
 	// p, err := u.Repo.FindProjectByTokenID(projectID)
 	// if err != nil {
@@ -1247,25 +1268,25 @@ func (u Usecase) ReportMinted() {
 
 	//spew.Dump(mintedImage)
 
-	catIDs := []string{}
-	catIDs = append(catIDs, "63edb842ced83bb22d0b5920")
-	projects, err := u.Repo.GetAllProjects(entity.FilterProjects{CategoryIds: catIDs })
-	if err != nil {
-		return 
-	}
+	// catIDs := []string{}
+	// catIDs = append(catIDs, "63edb842ced83bb22d0b5920")
+	// projects, err := u.Repo.GetAllProjects(entity.FilterProjects{CategoryIds: catIDs })
+	// if err != nil {
+	// 	return 
+	// }
 
-	for _, p := range projects {
-		cat := []string{}
-		cat = append(cat, "63edb893ced83bb22d0b5925")
-		p.Categories = cat
+	// for _, p := range projects {
+	// 	cat := []string{}
+	// 	cat = append(cat, "63edb893ced83bb22d0b5925")
+	// 	p.Categories = cat
 
-		update, err := u.Repo.UpdateProject(p.UUID, &p)
-		if err != nil {
-			log.Error("err", err.Error(),  err)
-			continue 
-		}
+	// 	update, err := u.Repo.UpdateProject(p.UUID, &p)
+	// 	if err != nil {
+	// 		log.Error("err", err.Error(),  err)
+	// 		continue 
+	// 	}
 
-		log.SetData("update", update)
-	}
+	// 	log.SetData("update", update)
+	// }
 	
 }
