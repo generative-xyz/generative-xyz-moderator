@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcd/btcutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/btcsuite/btcd/btcutil"
 
 	// "github.com/btcsuite/btcd/btcec/v2"
 	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
@@ -100,7 +101,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	log.SetData("user", user)
 
 	var isVeried = false
-	if false && data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
+	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
 		if err != nil {
 			log.Error("u.verify", err.Error(), err)
@@ -143,12 +144,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	/*if data.AddressBTC != nil && *data.AddressBTC != "" {
-		if user.WalletAddressBTC == "" {
-			user.WalletAddressBTC = *data.AddressBTC
-			log.SetData("user.WalletAddressBTC.Updated", true)
+	if data.AddressBTC != nil && *data.AddressBTC != "" {
+		if user.WalletAddressBTCTaproot == "" {
+			user.WalletAddressBTCTaproot = *data.AddressBTC
+			log.SetData("user.WalletAddressBTCTaproot.Updated", true)
 		}
-	}*/
+	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -180,13 +181,14 @@ func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string,
 	}
 
 	// Get the address
-	var addressWitnessPubKeyHash *btcutil.AddressWitnessPubKeyHash
+	var addressWitnessPubKeyHash *btcutil.AddressPubKeyHash
 	if addressWitnessPubKeyHash, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
 		return false, err
 	}
 
 	// Return nil if addresses match.
-	if addressWitnessPubKeyHash.String() == signer {
+	temp := addressWitnessPubKeyHash.String()
+	if temp == signer {
 		return true, nil
 	}
 	return false, fmt.Errorf(
@@ -294,7 +296,7 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 	if data.Bio != nil {
 		user.Bio = *data.Bio
 	}
-	
+
 	if data.WalletAddressBTC != nil {
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
@@ -336,6 +338,38 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 		log.Error("u.Repo.UpdateUserByID", err.Error(), err)
 		return nil, err
 	}
+
+	//update project's creator profile
+	go func(rootspan opentracing.Span, user entity.Users) {
+
+		span, log := u.StartSpan("UserProfile.Routine.Projects", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		projects, err := u.Repo.GetAllProjects(entity.FilterProjects{
+			WalletAddress: &user.WalletAddress,
+		})
+
+		if err != nil {
+			log.Error("u.Repo.GetAllProjects", err.Error(), err)
+			return
+		}
+
+		for _, p := range projects {
+			if p.CreatorAddrr != user.WalletAddress {
+				continue
+			}
+			p.CreatorProfile = user
+
+			updated, err := u.Repo.UpdateProject(p.UUID, &p)
+			if err != nil {
+				log.Error("u.Repo.UpdateProject", err.Error(), err)
+				continue
+			}
+
+			log.SetData(fmt.Sprintf("p.%s.updated", p.UUID), updated)
+		}
+
+	}(span, *user)
 
 	log.SetData("updated", updated)
 	return user, nil
