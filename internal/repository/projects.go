@@ -271,9 +271,9 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 
 func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
-	f["isSynced"] = true
+	//f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
-	f["isHidden"] = false
+	//f["isHidden"] = false
 
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
