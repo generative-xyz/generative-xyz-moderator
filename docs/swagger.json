@@ -2196,30 +2196,7 @@
         },
         "/project/minted-out": {
             "get": {
-                "description": "get minted out projects",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "get minted out projects",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter project via contract address",
-                        "name": "contractAddress",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
                     {
                         "type": "string",
                         "description": "The cursor returned in the previous response (used for getting the next page).",
@@ -2427,6 +2404,54 @@
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}/categories": {
+            "put": {
+                "description": "Update project's categories",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project's categories",
+                "parameters": [
+                    {
+                        "description": "UpdateBTCProjectCategoriesReq",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateBTCProjectCategoriesReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract adress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -2536,6 +2561,11 @@
         },
         "/referrals": {
             "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "get referrals",
                 "consumes": [
                     "application/json"
@@ -3228,6 +3258,17 @@
                 }
             }
         },
+        "request.UpdateBTCProjectCategoriesReq": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.UpdateBTCProjectReq": {
             "type": "object",
             "properties": {
@@ -3278,7 +3319,7 @@
                 "profileSocial": {
                     "$ref": "#/definitions/request.ProfileSocial"
                 },
-                "wallet_address_btc": {
+                "walletAddressBtc": {
                     "type": "string"
                 }
             }
