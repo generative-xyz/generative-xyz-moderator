@@ -282,8 +282,8 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	f.Name = &name
 	f.CategoryIds = categoryIds
 
-	hidden := true
-	f.IssHidden = &hidden
+	hidden := false
+	f.IsHidden = &hidden
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)

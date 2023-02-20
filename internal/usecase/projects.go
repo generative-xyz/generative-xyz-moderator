@@ -100,8 +100,6 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		return nil, err
 	}
 
-	
-
 	/*
 		minMint, ok := big.NewFloat(0).SetString("0.01")
 		if !ok {
@@ -117,7 +115,6 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		}
 	*/
 
-	
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
@@ -193,7 +190,10 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 	pe.TraceID = u.Tracer.TraceID(span)
-	pe.Categories = req.Categories
+	if len(req.Categories) != 0 {
+		pe.Categories = []string{req.Categories[0]}
+	}
+
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
@@ -215,28 +215,27 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	log.SetData("pe", pe)
 	log.SetData("pe.isPubsub", isPubsub)
 
-	u.Notify(rootSpan, fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
+	u.NotifyWithChannel(rootSpan, os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
 }
-
 
 func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("UpdateBTCProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
 		log.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
-	
+
 	if req.CreatetorAddress == nil {
 		err := errors.New("CreatorAddress is requeried")
 		log.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
-	p, err := u.Repo.FindProjectByTokenID( *req.ProjectID)
+	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
 		log.Error("pjID.empty", err.Error(), err)
 		return nil, err
@@ -248,37 +247,36 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		return nil, err
 	}
 
-	if req.Name != nil && *req.Name  != "" {
+	if req.Name != nil && *req.Name != "" {
 		p.Name = *req.Name
 	}
-	
-	if req.Description != nil && *req.Description  != "" {
+
+	if req.Description != nil && *req.Description != "" {
 		p.Description = *req.Description
 	}
-	
-	if req.Thumbnail != nil && *req.Thumbnail  != "" {
+
+	if req.Thumbnail != nil && *req.Thumbnail != "" {
 		p.Thumbnail = *req.Thumbnail
 	}
-	
-	if req.IsHidden != nil && *req.IsHidden  != p.IsHidden {
+
+	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
 		p.IsHidden = *req.IsHidden
 	}
 
 	if len(req.Categories) > 0 {
-		p.Categories = req.Categories
+		p.Categories = []string{req.Categories[0]}
 	}
 
-
-	if req.MaxSupply != nil && *req.MaxSupply !=  0 && *req.MaxSupply != p.MaxSupply {
-		if p.MintingInfo.Index > 0 {
-			err := errors.New("Project is minted, cannot update max supply")
-			log.Error("pjID.minted", err.Error(), err)
-			return nil, err
-		}
+	if req.MaxSupply != nil && *req.MaxSupply != 0 && *req.MaxSupply != p.MaxSupply {
+		// if p.MintingInfo.Index > 0 {
+		// 	err := errors.New("Project is minted, cannot update max supply")
+		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	return nil, err
+		// }
 
 		p.MaxSupply = *req.MaxSupply
 	}
-	
+
 	if req.Royalty != nil {
 		// if *req.Royalty > 2500 {
 		// 	err := errors.New("Royalty must be less than 25")
@@ -286,28 +284,26 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		// 	return nil, err
 		// }
 
-		if *req.Royalty != p.Royalty &&  p.MintingInfo.Index > 0  {
-			err := errors.New("Project is minted, cannot update max supply")
-			log.Error("pjID.minted", err.Error(), err)
-			return nil, err
-		}
+		// if *req.Royalty != p.Royalty && p.MintingInfo.Index > 0 {
+		// 	err := errors.New("Project is minted, cannot update max supply")
+		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	return nil, err
+		// }
 
 		p.Royalty = *req.Royalty
-
 	}
-	
+
 	if req.MintPrice != nil {
-		mFStr := p.MintPrice
+		// mFStr := p.MintPrice
 		reqMfFStr := helpers.StringToBTCAmount(*req.MintPrice)
-		if  p.MintingInfo.Index > 0  && mFStr != reqMfFStr.String(){
-			err := errors.New("Project is minted, cannot update mint price")
-			log.Error("pjID.minted", err.Error(), err)
-			return nil, err
-		}
+		// if p.MintingInfo.Index > 0 && mFStr != reqMfFStr.String() {
+		// 	err := errors.New("Project is minted, cannot update mint price")
+		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	return nil, err
+		// }
 		p.MintPrice = reqMfFStr.String()
 	}
 
-	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("updated", err.Error(), err)
@@ -321,26 +317,23 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 func (u Usecase) SetCategoriesForBTCProject(rootSpan opentracing.Span, req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("SetCategoriesForBTCProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
-	
+
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
 		log.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
-	
 
-	p, err := u.Repo.FindProjectByTokenID( *req.ProjectID)
+	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
 		log.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
-
 	if len(req.Categories) > 0 {
-		p.Categories = req.Categories
+		p.Categories = []string{req.Categories[0]}
 	}
 
-	
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		log.Error("updated", err.Error(), err)

@@ -55,6 +55,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
+	profile.Use(h.MiddleWare.UserToken)
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")

@@ -645,6 +645,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
+
 			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 
@@ -657,7 +658,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			txInfo, err := bs.CheckTx(item.MintResponse.Reveal)
 			if err != nil {
 				log.Error(" bs.CheckTx", err.Error(), err)
-				u.Notify(rootSpan, fmt.Sprintf("[Error][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, err.Error())
+				u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 				return
 			}
 			
@@ -665,7 +666,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			if txInfo.Confirmations > 1 {
 				sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 				if err != nil {
-					u.Notify(rootSpan, fmt.Sprintf("[Error][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, err.Error())
+					u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
@@ -766,6 +767,19 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
+}
+
+func (u Usecase) NotifyWithChannel(rootSpan opentracing.Span, channelID string, title string, userAddress string, content string) {
+	span, log := u.StartSpan("SendMessageMint", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	//slack
+	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), u.Tracer.TraceID(span), userAddress)
+	c := fmt.Sprintf("%s", content)
+
+	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
 		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcutil"
 	"os"
 	"strings"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/libsv/go-bt/v2/bscript"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
@@ -180,20 +180,20 @@ func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string,
 	}
 
 	// Get the address
-	var bscriptAddress *bscript.Address
-	if bscriptAddress, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
+	var addressWitnessPubKeyHash *btcutil.AddressWitnessPubKeyHash
+	if addressWitnessPubKeyHash, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
 		return false, err
 	}
 
 	// Return nil if addresses match.
-	if bscriptAddress.AddressString == signer {
+	if addressWitnessPubKeyHash.String() == signer {
 		return true, nil
 	}
 	return false, fmt.Errorf(
 		"address (%s) not found - compressed: %t\n%s was found instead",
 		signer,
 		wasCompressed,
-		bscriptAddress.AddressString,
+		addressWitnessPubKeyHash.String(),
 	)
 }
 
@@ -294,7 +294,11 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 	if data.Bio != nil {
 		user.Bio = *data.Bio
 	}
-	
+
+	if data.WalletAddressBTC != nil {
+		user.WalletAddressBTC = *data.WalletAddressBTC
+	}
+
 	if data.WalletAddressBTC != nil {
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
