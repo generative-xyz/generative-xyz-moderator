@@ -645,6 +645,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			span, log := u.StartSpan(fmt.Sprintf("WaitingForMinted.%s", item.UserAddress), rootSpan)
 			defer u.Tracer.FinishSpan(span, log)
 
+
 			log.SetTag(utils.WALLET_ADDRESS_TAG, item.UserAddress)
 			log.SetTag(utils.ORD_WALLET_ADDRESS_TAG, item.OrdAddress)
 
@@ -657,7 +658,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			txInfo, err := bs.CheckTx(item.MintResponse.Reveal)
 			if err != nil {
 				log.Error(" bs.CheckTx", err.Error(), err)
-				u.Notify(rootSpan, fmt.Sprintf("[Error][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, err.Error())
+				u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %v", err.Error(), item))
 				return
 			}
 			
@@ -665,7 +666,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 			if txInfo.Confirmations > 1 {
 				sentTokenResp, err := u.SendToken(rootSpan, addr, item.MintResponse.Inscription)
 				if err != nil {
-					u.Notify(rootSpan, fmt.Sprintf("[Error][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, err.Error())
+					u.Notify(rootSpan, fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %v", err.Error(), item))
 					log.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 					return
 				}

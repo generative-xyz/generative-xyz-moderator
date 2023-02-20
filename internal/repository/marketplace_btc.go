@@ -654,8 +654,8 @@ func (r Repository) RetrieveBTCNFTListingsUnsoldForSearch(filterObject *entity.F
 						// filterMore = append(filterMore, bson.M{"inscription_index": bson.M{"$in": idArray}})
 						filterIDsOr = append(filterIDsOr,
 							bson.M{"$and": []bson.M{
-								{"$expr": bson.M{"$gte": bson.A{bson.M{"$toDouble": "$inscription_index"}, minID}}},
-								{"$expr": bson.M{"$lte": bson.A{bson.M{"$toDouble": "$inscription_index"}, maxID}}},
+								{"$expr": bson.M{"$gte": bson.A{bson.M{"$toInt": "$inscription_index"}, minID}}},
+								{"$expr": bson.M{"$lte": bson.A{bson.M{"$toInt": "$inscription_index"}, maxID}}},
 							},
 							},
 						)
