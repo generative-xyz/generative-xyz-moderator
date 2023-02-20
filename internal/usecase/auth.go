@@ -181,7 +181,7 @@ func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string,
 	}
 
 	// Get the address
-	var addressWitnessPubKeyHash *btcutil.AddressWitnessPubKeyHash
+	var addressWitnessPubKeyHash *btcutil.AddressPubKeyHash
 	if addressWitnessPubKeyHash, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
 		return false, err
 	}
@@ -339,12 +339,12 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 	}
 
 	//update project's creator profile
- 	go func (rootspan opentracing.Span, user entity.Users)  {
+	go func(rootspan opentracing.Span, user entity.Users) {
 
 		span, log := u.StartSpan("UserProfile.Routine.Projects", rootSpan)
 		defer u.Tracer.FinishSpan(span, log)
 
-		projects, err :=  u.Repo.GetAllProjects(entity.FilterProjects{
+		projects, err := u.Repo.GetAllProjects(entity.FilterProjects{
 			WalletAddress: &user.WalletAddress,
 		})
 
@@ -353,7 +353,7 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 			return
 		}
 
-		for _, p:= range projects {
+		for _, p := range projects {
 			if p.CreatorAddrr != user.WalletAddress {
 				continue
 			}
@@ -365,9 +365,8 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 				continue
 			}
 
-			log.SetData(fmt.Sprintf("p.%s.updated",p.UUID), updated)
+			log.SetData(fmt.Sprintf("p.%s.updated", p.UUID), updated)
 		}
-
 
 	}(span, *user)
 
