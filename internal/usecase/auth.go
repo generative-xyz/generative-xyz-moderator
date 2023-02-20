@@ -1,11 +1,10 @@
 package usecase
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcutil"
 	"os"
 	"strings"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/libsv/go-bt/v2/bscript"
 	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
@@ -24,10 +22,6 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/oauth2service"
-
-	"github.com/bitcoinsv/bsvd/chaincfg/chainhash"
-	"github.com/bitcoinsv/bsvd/wire"
-	"github.com/libsv/go-bk/bec"
 )
 
 func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.GenerateMessage) (*string, error) {
@@ -149,14 +143,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	// if data.AddressBTC != nil {
-	// 	if *data.AddressBTC != "" {
-	// 		if user.WalletAddressBTC == "" {
-	// 			user.WalletAddressBTC = *data.AddressBTC
-	// 			log.SetData("user.WalletAddressBTC.Updated", true)
-	// 		}
-	// 	}
-	// }
+	/*if data.AddressBTC != nil && *data.AddressBTC != "" {
+		if user.WalletAddressBTC == "" {
+			user.WalletAddressBTC = *data.AddressBTC
+			log.SetData("user.WalletAddressBTC.Updated", true)
+		}
+	}*/
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -177,54 +169,31 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	return &verified, nil
 }
 
-// PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
-func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *bec.PublicKey, wasCompressed bool, err error) {
-
-	var decodedSig []byte
-	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
-		return nil, false, err
-	}
-
-	// Validate the signature - this just shows that it was valid at all
-	// we will compare it with the key next
-	var buf bytes.Buffer
-	if err = wire.WriteVarString(&buf, 0, hBSV); err != nil {
-		return nil, false, err
-	}
-	if err = wire.WriteVarString(&buf, 0, data); err != nil {
-		return nil, false, err
-	}
-
-	// Create the hash
-	expectedMessageHash := chainhash.HashH(buf.Bytes())
-	return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
-}
-
 func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
 	span, log := u.StartSpan("verifyBTCSegwit", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)
 
 	// Reconstruct the pubkey
-	publicKey, wasCompressed, err := PubKeyFromSignature(signatureHex, msgStr, hBSV)
+	publicKey, wasCompressed, err := helpers.PubKeyFromSignature(signatureHex, msgStr, hBSV)
 	if err != nil {
 		return false, err
 	}
 
 	// Get the address
-	var bscriptAddress *bscript.Address
-	if bscriptAddress, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
+	var addressWitnessPubKeyHash *btcutil.AddressWitnessPubKeyHash
+	if addressWitnessPubKeyHash, err = helpers.GetAddressFromPubKey(publicKey, wasCompressed); err != nil {
 		return false, err
 	}
 
 	// Return nil if addresses match.
-	if bscriptAddress.AddressString == signer {
+	if addressWitnessPubKeyHash.String() == signer {
 		return true, nil
 	}
 	return false, fmt.Errorf(
 		"address (%s) not found - compressed: %t\n%s was found instead",
 		signer,
 		wasCompressed,
-		bscriptAddress.AddressString,
+		addressWitnessPubKeyHash.String(),
 	)
 }
 
@@ -326,6 +295,10 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 		user.Bio = *data.Bio
 	}
 	
+	if data.WalletAddressBTC != nil {
+		user.WalletAddressBTC = *data.WalletAddressBTC
+	}
+
 	if data.WalletAddressBTC != nil {
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}

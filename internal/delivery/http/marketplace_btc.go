@@ -152,7 +152,19 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 		buyableOnly = true
 	}
 
-	result, err := h.Usecase.BTCMarketplaceListNFT(span, buyableOnly, int64(limit), int64(offset))
+	keyword := r.URL.Query().Get("keyword")
+	listCollectionIDs := r.URL.Query().Get("listCollectionIDs") // collection id
+	listPrices := r.URL.Query().Get("listPrices")               // price
+	listIDs := r.URL.Query().Get("listIDs")                     // nft id
+
+	filterObject := &entity.FilterString{
+		Keyword:           keyword,
+		ListCollectionIDs: listCollectionIDs,
+		ListPrices:        listPrices,
+		ListIDs:           listIDs,
+	}
+
+	result, err := h.Usecase.BTCMarketplaceListNFT(span, filterObject, buyableOnly, int64(limit), int64(offset))
 	if err != nil {
 		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -393,4 +405,36 @@ func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+}
+
+func (h *httpDelivery) btcMarketplaceFilterInfo(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcMarketplaceFilterInfo", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	result, err := h.Usecase.BTCMarketplaceFilterInfo(span)
+
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("btcMarketplaceFilterInfo", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	err := h.Usecase.BTCMarketplaceUpdateNftInfo(span)
+
+	if err != nil {
+		log.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
