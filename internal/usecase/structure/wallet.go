@@ -36,6 +36,7 @@ type BlockCypherWalletInfo struct {
 		DoubleSpend   bool      `json:"double_spend"`
 	} `json:"txrefs"`
 	TxURL string `json:"tx_url"`
+	Error string `json:"error"`
 }
 
 type WalletInfo struct {
