@@ -296,6 +296,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 	//update btc or eth here
 	if mintype == entity.BIT {
 		btc.IsMinted = true
+		btc.FileURI = baseUrl.String()
 		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, btc)
 		if err != nil {
 			log.Error(fmt.Sprintf("BTCMint.UpdateBtcWalletAddressByOrdAddr.%s.Error", btc.OrdAddress), err.Error(), err)
@@ -305,6 +306,7 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 
 	}else{
 		eth.IsMinted = true
+		btc.FileURI = baseUrl.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
 		if err != nil {
 			log.Error(fmt.Sprintf("BTCMint.UpdateEthWalletAddressByOrdAddr.%s.Error", btc.OrdAddress), err.Error(), err)
@@ -333,6 +335,41 @@ func (u Usecase) BTCMint(rootSpan opentracing.Span, input structure.BctMintData)
 		log.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
 		return nil, nil, err
 	}
+
+	if mintype == entity.BIT {
+		btc.MintResponse = entity.MintStdoputResponse(*btcMintResp)
+		updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btc.OrdAddress, btc)
+		if err != nil {
+			log.Error(fmt.Sprintf("BTCMint.UpdateBtcWalletAddressByOrdAddr.%s.Error", btc.OrdAddress), err.Error(), err)
+			return nil, nil, err
+		}
+		log.SetData("updated", updated)
+
+	}else{
+		eth.MintResponse = entity.MintStdoputResponse(*btcMintResp)
+		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
+		if err != nil {
+			log.Error(fmt.Sprintf("BTCMint.UpdateEthWalletAddressByOrdAddr.%s.Error", btc.OrdAddress), err.Error(), err)
+			return nil, nil, err
+		}
+		log.SetData("updated", updated)
+	}
+
+	u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
+		TokenID:       btcMintResp.Inscription,
+		Commit:        btcMintResp.Commit,
+		Reveal:        btcMintResp.Reveal,
+		Fees:          btcMintResp.Fees,
+		MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
+		Owner:         "",
+		ProjectID:     btc.ProjectID,
+		Action:        entity.MINT,
+		Type:          mintype,
+		TraceID:       u.Tracer.TraceID(span),
+		Balance:       btc.Balance,
+		Amount:        btc.Amount,
+		ProccessID:    btc.UUID,
+	})
 
 	log.SetTag(utils.TOKEN_ID_TAG, btcMintResp.Inscription)
 	return btcMintResp, &btc.FileURI, nil
@@ -586,38 +623,14 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 				return
 			}
 
-			minResp, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
+			_, _, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
 			if err != nil {
 				u.Notify(rootSpan, fmt.Sprintf("[Error][MintFor][projectID %s]", item.ProjectID), item.OrdAddress, err.Error())
 				log.Error(fmt.Sprintf("WaitingForMinting.BTCMint.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
 
-			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				TokenID:       minResp.Inscription,
-				Commit:        minResp.Commit,
-				Reveal:        minResp.Reveal,
-				Fees:          minResp.Fees,
-				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
-				Owner:         "",
-				ProjectID:     item.ProjectID,
-				Action:        entity.MINT,
-				Type:          entity.BIT,
-				TraceID:       u.Tracer.TraceID(span),
-				Balance:       item.Balance,
-				Amount:        item.Amount,
-				ProccessID:    item.UUID,
-			})
 
-			item.MintResponse = entity.MintStdoputResponse(*minResp)
-			item.FileURI = *fileURI
-			updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(item.OrdAddress, &item)
-			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
-			log.SetData("btc.Minted", minResp)
-			log.SetData("btc.updated", updated)
 
 		}(span, item)
 
