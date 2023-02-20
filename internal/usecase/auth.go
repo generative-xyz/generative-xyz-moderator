@@ -144,11 +144,10 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 		return nil, err
 	}
 
-	// TODO: verify with sang, duc
 	if data.AddressBTC != nil && *data.AddressBTC != "" {
-		if user.WalletAddressBTC == "" {
-			user.WalletAddressBTC = *data.AddressBTC
-			log.SetData("user.WalletAddressBTC.Updated", true)
+		if user.WalletAddressBTCTaproot == "" {
+			user.WalletAddressBTCTaproot = *data.AddressBTC
+			log.SetData("user.WalletAddressBTCTaproot.Updated", true)
 		}
 	}
 
