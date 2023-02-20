@@ -41,5 +41,5 @@ type BlockCypherWalletInfo struct {
 
 type WalletInfo struct {
 	BlockCypherWalletInfo
-	Inscriptions map[string]string
+	Inscriptions map[string]string `json:"inscriptions"`
 }
