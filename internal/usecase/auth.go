@@ -9,9 +9,6 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/btcsuite/btcd/btcec/v2"
-	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
-
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
