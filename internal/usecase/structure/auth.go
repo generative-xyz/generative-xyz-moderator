@@ -13,7 +13,7 @@ type GenerateMessage struct {
 type VerifyMessage struct {
 	Signature        string
 	Address          string
-	AddressBTC       *string
+	AddressBTC       *string // taproot address
 	AddressBTCSegwit *string
 	MessagePrefix    *string
 }
