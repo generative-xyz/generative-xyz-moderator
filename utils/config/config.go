@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+
 	"rederinghub.io/utils/slack"
 )
 
@@ -68,7 +69,7 @@ type CronTabConfig struct {
 	BTCEnabled         bool
 	MarketPlaceEnabled bool
 	BTCV2Enabled       bool
-	TrendingEnabled		 bool
+	TrendingEnabled    bool
 }
 
 type MoralisConfig struct {
@@ -121,8 +122,11 @@ type GCS struct {
 	ProjectId string
 	Bucket    string
 	Auth      string
+	Endpoint  string
+	Region    string
+	AccessKey string
+	SecretKey string
 }
-
 type RedisConfig struct {
 	Address  string
 	Password string
@@ -200,7 +204,6 @@ func NewConfig() (*Config, error) {
 	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
 	trendingBoostedWeight, _ := strconv.Atoi(os.Getenv("TRENDING_BOOSTED_WEIGHT"))
 
-
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -239,6 +242,10 @@ func NewConfig() (*Config, error) {
 			ProjectId: os.Getenv("GCS_PROJECT_ID"),
 			Bucket:    os.Getenv("GCS_BUCKET"),
 			Auth:      os.Getenv("GCS_AUTH"),
+			Endpoint:  os.Getenv("GCS_ENDPOINT"),
+			Region:    os.Getenv("GCS_REGION"),
+			AccessKey: os.Getenv("GCS_ACCESS_KEY"),
+			SecretKey: os.Getenv("GCS_SECRET_KEY"),
 		},
 		Moralis: MoralisConfig{
 			Key:   os.Getenv("MORALIS_KEY"),
@@ -285,7 +292,7 @@ func NewConfig() (*Config, error) {
 			BTCEnabled:         crontabBtcStart,
 			BTCV2Enabled:       crontabBtcV2Start,
 			MarketPlaceEnabled: crontabMKStart,
-			TrendingEnabled: crontabTrendingStart,
+			TrendingEnabled:    crontabTrendingStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
@@ -299,11 +306,11 @@ func NewConfig() (*Config, error) {
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
 
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
-		OtherCategoryID: os.Getenv("OTHER_CATEGORY_ID"),
+		OtherCategoryID:            os.Getenv("OTHER_CATEGORY_ID"),
 		TrendingConfig: TrendingConfig{
 			WhitelistedProjectID: whitelistedTrendingProjectID,
-			BoostedCategoryID: boostedTrendingCategoryID,
-			BoostedWeight: int64(trendingBoostedWeight),
+			BoostedCategoryID:    boostedTrendingCategoryID,
+			BoostedWeight:        int64(trendingBoostedWeight),
 		},
 	}
 
