@@ -35,6 +35,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//api
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
+	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")

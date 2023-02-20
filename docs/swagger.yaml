@@ -217,6 +217,11 @@ definitions:
       priority:
         type: integer
     type: object
+  request.UpdateTokenThumbnailReq:
+    properties:
+      thumbnail:
+        type: string
+    type: object
   request.UpdateTokentReq:
     properties:
       priority:
@@ -361,9 +366,11 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
-      wallet_address_btc:
-        type: string
       walletAddress:
+        type: string
+      walletAddressBtc:
+        type: string
+      walletAddressBtcTaproot:
         type: string
     type: object
   response.ProfileSocial:
@@ -2375,6 +2382,38 @@ paths:
                   $ref: '#/definitions/response.InternalTokenURIResp'
               type: object
       summary: get token uri data
+      tags:
+      - Tokens
+  /tokens/{tokenID}/thumbnail:
+    post:
+      consumes:
+      - application/json
+      description: Update token's thumbnail
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateTokenThumbnailReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: Update token's thumbnail
       tags:
       - Tokens
   /tokens/traits/{contractAddress}/{tokenID}:

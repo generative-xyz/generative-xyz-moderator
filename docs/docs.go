@@ -2961,6 +2961,59 @@ var doc = `{
                 }
             }
         },
+        "/tokens/{tokenID}/thumbnail": {
+            "post": {
+                "description": "Update token's thumbnail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "Update token's thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateTokenThumbnailReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/trait/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token's traits",
@@ -3347,6 +3400,14 @@ var doc = `{
                 }
             }
         },
+        "request.UpdateTokenThumbnailReq": {
+            "type": "object",
+            "properties": {
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateTokentReq": {
             "type": "object",
             "properties": {
@@ -3570,7 +3631,10 @@ var doc = `{
                 "walletAddress": {
                     "type": "string"
                 },
-                "wallet_address_btc": {
+                "walletAddressBtc": {
+                    "type": "string"
+                },
+                "walletAddressBtcTaproot": {
                     "type": "string"
                 }
             }
