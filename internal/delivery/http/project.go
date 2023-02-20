@@ -318,6 +318,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Param contractAddress query string false "Filter project via contract address"
 // @Param limit query int false "limit"
+
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/minted-out [GET]
@@ -558,6 +559,60 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	log.SetTag("contractAddress", contractAddress)
 
 	message, err := h.Usecase.UpdateProject(span, *reqUsecase)
+	if err != nil {
+		log.Error("h.Usecase.CreateProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		log.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+
+// UserCredits godoc
+// @Summary Update project's categories
+// @Description  Update project's categories
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param request body request.UpdateBTCProjectCategoriesReq true "UpdateBTCProjectCategoriesReq"
+// @Param contractAddress path string true "contract adress"
+// @Param projectID path string true "projectID adress"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/categories [PUT]
+func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("updateProjectcategories", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	
+	var reqBody request.UpdateBTCProjectCategoriesReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.UpdateBTCProjectReq{
+		ProjectID: &projectID,
+		Categories: reqBody.Categories,
+	}
+
+	log.SetData("reqUsecase", reqUsecase)
+	log.SetTag("projectID", projectID)
+
+	message, err := h.Usecase.SetCategoriesForBTCProject(span, *reqUsecase)
 	if err != nil {
 		log.Error("h.Usecase.CreateProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
