@@ -4,8 +4,8 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name          *string
-	IssHidden     *bool
 	CategoryIds   []string
+	IsHidden      *bool
 }
 
 type FilterProposal struct {
