@@ -771,6 +771,19 @@ func (u Usecase) Notify(rootSpan opentracing.Span, title string, userAddress str
 	}
 }
 
+func (u Usecase) NotifyWithChannel(rootSpan opentracing.Span, channelID string, title string, userAddress string, content string) {
+	span, log := u.StartSpan("SendMessageMint", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	//slack
+	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), u.Tracer.TraceID(span), userAddress)
+	c := fmt.Sprintf("%s", content)
+
+	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
+		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+	}
+}
+
 //phuong:
 // send btc from segwit address to master address - it does not call our ORD server
 func (u Usecase) JobBtcSendBtcToMaster() error {
