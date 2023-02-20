@@ -119,7 +119,7 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getInscriptionByOutput Response status != 200")
+		return nil, errors.New("getWalletInfo Response status != 200")
 	}
 
 	body, err := ioutil.ReadAll(res.Body)

@@ -302,7 +302,7 @@ func (u Usecase) JobInscribeWaitingBalance(rootSpan opentracing.Span) error {
 
 		go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
 		log.SetData(fmt.Sprintf("JobInscribeWaitingBalance.CheckReceiveBTC.%s", item.SegwitAddress), item)
-		u.Notify(rootSpan, "JobInscribeWaitingBalance", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.Status, item.InscriptionID))
+		u.Notify(rootSpan, "JobInscribeWaitingBalance", item.SegwitAddress, fmt.Sprintf("%s received BTC %d from [InscriptionID] %s", item.SegwitAddress, item.Status, item.InscriptionID))
 
 	}
 
