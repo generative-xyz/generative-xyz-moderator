@@ -114,6 +114,7 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name          *string
+	IsHidden          *bool
 	CategoryIds 	[]string
 }
 

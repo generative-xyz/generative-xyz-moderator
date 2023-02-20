@@ -351,6 +351,9 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
 
+	hidden := true
+	f.IssHidden = &hidden
+
 	uProjects, err := h.Usecase.GetProjects(span, f)
 	if err != nil {
 		log.Error("h.Usecase.GetProjects", err.Error(), err)
