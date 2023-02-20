@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcd/btcutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/btcsuite/btcd/btcutil"
 
 	// "github.com/btcsuite/btcd/btcec/v2"
 	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
@@ -336,6 +337,39 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 		log.Error("u.Repo.UpdateUserByID", err.Error(), err)
 		return nil, err
 	}
+
+	//update project's creator profile
+ 	go func (rootspan opentracing.Span, user entity.Users)  {
+
+		span, log := u.StartSpan("UserProfile.Routine.Projects", rootSpan)
+		defer u.Tracer.FinishSpan(span, log)
+
+		projects, err :=  u.Repo.GetAllProjects(entity.FilterProjects{
+			WalletAddress: &user.WalletAddress,
+		})
+
+		if err != nil {
+			log.Error("u.Repo.GetAllProjects", err.Error(), err)
+			return
+		}
+
+		for _, p:= range projects {
+			if p.CreatorAddrr != user.WalletAddress {
+				continue
+			}
+			p.CreatorProfile = user
+
+			updated, err := u.Repo.UpdateProject(p.UUID, &p)
+			if err != nil {
+				log.Error("u.Repo.UpdateProject", err.Error(), err)
+				continue
+			}
+
+			log.SetData(fmt.Sprintf("p.%s.updated",p.UUID), updated)
+		}
+
+
+	}(span, *user)
 
 	log.SetData("updated", updated)
 	return user, nil
