@@ -26,7 +26,7 @@ func Hash160(buf []byte) []byte {
 
 // GetAddressFromPubKey gets a bscript.Address from a bec.PublicKey
 func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*bscript.Address, error) {
-	//
+	// TODO hiennguyen
 	return nil, nil
 
 	/*if publicKey == nil {
@@ -65,7 +65,7 @@ func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*bscript
 
 // PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
 func PubKeyFromSignature(sig, msg string, prefix string) (pubKey *btcec.PublicKey, wasCompressed bool, err error) {
-
+	// TODO hiennguyen
 	var decodedSig []byte
 	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
 		return nil, false, err
@@ -115,6 +115,7 @@ func PubKeyFromSignature(sig, msg string, prefix string) (pubKey *btcec.PublicKe
 }
 
 func MagicHash(msg, messagePrefix string) (*chainhash.Hash, error) {
+	// TODO hiennguyen
 	if messagePrefix == "" {
 		messagePrefix = `\u0018Bitcoin Signed Message:\n`
 	}
