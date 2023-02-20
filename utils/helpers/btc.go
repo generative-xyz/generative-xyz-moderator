@@ -6,9 +6,10 @@ import (
 	"encoding/base64"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/libsv/go-bt/v2/bscript"
 	"golang.org/x/crypto/ripemd160"
 	"hash"
 )
@@ -25,42 +26,12 @@ func Hash160(buf []byte) []byte {
 }
 
 // GetAddressFromPubKey gets a bscript.Address from a bec.PublicKey
-func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*bscript.Address, error) {
-	// TODO hiennguyen
-	return nil, nil
-
-	/*if publicKey == nil {
-		return nil, fmt.Errorf("publicKey cannot be nil")
-	} else if publicKey.X == nil {
-		return nil, fmt.Errorf("publicKey.X cannot be nil")
-	}
-
-	if !compressed {
-		// go-bt/v2/bscript does not have a function that exports the uncompressed address
-		// https://github.com/libsv/go-bt/blob/master/bscript/address.go#L98
-		hash := Hash160(publicKey.SerializeUncompressed())
-		bb := make([]byte, 1)
-		//nolint: makezero // we need to set up the array with 1
-		bb = append(bb, hash...)
-		return &bscript.Address{
-			AddressString: bscript.Base58EncodeMissingChecksum(bb),
-			PublicKeyHash: hex.EncodeToString(hash),
-		}, nil
-	}
-
-	ecdsaPub := publicKey.ToECDSA()
-	//temp, err := json.Marshal(ecdsaPub)
-	//if err != nil {
-	//	return nil, err
-	//}
-	result := bec.PublicKey{
-		Curve: ecdsaPub.Curve, X: ecdsaPub.X, Y: ecdsaPub.Y,
-	}
-	err = json.Unmarshal(temp, &result)
+func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*btcutil.AddressWitnessPubKeyHash, error) {
+	temp, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
 		return nil, err
 	}
-	return bscript.NewAddressFromPublicKey(&result, true)*/
+	return temp, nil
 }
 
 // PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
