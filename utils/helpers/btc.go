@@ -1,11 +1,16 @@
 package helpers
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/libsv/go-bk/bec"
 	"github.com/libsv/go-bt/v2/bscript"
 	"golang.org/x/crypto/ripemd160"
@@ -54,4 +59,29 @@ func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*bscript
 		return nil, err
 	}
 	return bscript.NewAddressFromPublicKey(&result, true)
+}
+
+// PubKeyFromSignature gets a publickey for a signature and tells you whether is was compressed
+func PubKeyFromSignature(sig, data string, hBSV string) (pubKey *btcec.PublicKey, wasCompressed bool, err error) {
+
+	var decodedSig []byte
+	if decodedSig, err = base64.StdEncoding.DecodeString(sig); err != nil {
+		return nil, false, err
+	}
+
+	// Validate the signature - this just shows that it was valid at all
+	// we will compare it with the key next
+	var buf bytes.Buffer
+	if err = wire.WriteVarString(&buf, 0, hBSV); err != nil {
+		return nil, false, err
+	}
+	if err = wire.WriteVarString(&buf, 0, data); err != nil {
+		return nil, false, err
+	}
+
+	// Create the hash
+
+	expectedMessageHash := chainhash.HashH(buf.Bytes())
+	//return bec.RecoverCompact(bec.S256(), decodedSig, expectedMessageHash[:])
+	return ecdsa.RecoverCompact(decodedSig, expectedMessageHash[:])
 }
