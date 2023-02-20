@@ -94,7 +94,9 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 }
 
 func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalletInfo, error) {
-	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
+	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
+
+	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false", address)
 	fmt.Println("url", url)
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
