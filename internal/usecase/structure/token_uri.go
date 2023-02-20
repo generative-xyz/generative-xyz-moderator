@@ -245,3 +245,9 @@ type UpdateTokenReq struct {
 	Priority *int `json:"priority"`
 	ContracAddress string `json:"contractAddress"`
 }
+
+
+type UpdateTokenThumbnailReq struct {
+	TokenID string `json:"tokenID"`
+	Thumbnail string `json:"thumbnail"`
+}
