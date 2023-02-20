@@ -50,6 +50,11 @@ type UpdateBTCProjectReq struct {
 	Categories            []string           `json:"categories"`
 }
 
+type UpdateBTCProjectCategoriesReq struct {
+	ProjectID                 	 *string             `json:"-"`
+	Categories            []string           `json:"categories"`
+}
+
 type UpdateProjectReq struct {
 	Priority *int `json:"priority"`
 }

@@ -169,6 +169,13 @@ definitions:
       web:
         type: string
     type: object
+  request.UpdateBTCProjectCategoriesReq:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+    type: object
   request.UpdateBTCProjectReq:
     properties:
       categories:
@@ -202,7 +209,7 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
-      wallet_address_btc:
+      walletAddressBtc:
         type: string
     type: object
   request.UpdateProjectReq:
@@ -1898,6 +1905,38 @@ paths:
       summary: Update project
       tags:
       - Project
+  /project/{contractAddress}/{projectID}/categories:
+    put:
+      consumes:
+      - application/json
+      description: Update project's categories
+      parameters:
+      - description: UpdateBTCProjectCategoriesReq
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateBTCProjectCategoriesReq'
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID adress
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Update project's categories
+      tags:
+      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
@@ -2074,33 +2113,17 @@ paths:
       - Project
   /project/minted-out:
     get:
-      consumes:
-      - application/json
-      description: get minted out projects
       parameters:
-      - description: Filter project via contract address
-        in: query
-        name: contractAddress
-        type: string
-      - description: limit
-        in: query
-        name: limit
-        type: integer
       - description: The cursor returned in the previous response (used for getting
           the next page).
         in: query
         name: cursor
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
-      summary: get minted out projects
-      tags:
-      - Project
   /project/random:
     get:
       consumes:
@@ -2166,6 +2189,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: get referrals
       tags:
       - Referral
