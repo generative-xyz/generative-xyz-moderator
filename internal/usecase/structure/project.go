@@ -4,6 +4,7 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name *string
+	IssHidden *bool
 	CategoryIds []string
 }
 
@@ -69,6 +70,11 @@ type UpdateBTCProjectReq struct {
 	MintPrice 					*string	 `json:"mintPrice"`
 	MaxSupply 				*int64	 `json:"maxSupply"`
 	CreatetorAddress 				*string	 `json:"createtorAddress"`
+	Categories            []string           `json:"categories"`
+}
+
+type UpdateBTCProjectCategoriesReq struct {
+	ProjectID                 	 *string             `json:"projectID"`
 	Categories            []string           `json:"categories"`
 }
 
