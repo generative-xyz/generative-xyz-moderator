@@ -530,38 +530,12 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 				return
 			}
 
-			mintReps, fileURI, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
+			_, _, err := u.BTCMint(span, structure.BctMintData{Address: item.OrdAddress})
 			if err != nil {
 				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-
-			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
-				TokenID:       mintReps.Inscription,
-				Commit:        mintReps.Commit,
-				Reveal:        mintReps.Reveal,
-				Fees:          mintReps.Fees,
-				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
-				Owner:         "",
-				ProjectID:     item.ProjectID,
-				Action:        entity.MINT,
-				Type:          entity.ETH,
-				TraceID:       u.Tracer.TraceID(span),
-				ProccessID: item.UUID,
-			})
-
-			log.SetData("btc.Minted", mintReps)
-			item.MintResponse = entity.MintStdoputResponse(*mintReps)
-			item.IsMinted = true
-			item.FileURI = *fileURI
-			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
-			if err != nil {
-				log.Error(fmt.Sprintf("WillBeProcessWTC.UpdateBtcWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
-				return
-			}
-
-			log.SetData("updated", updated)
-
+			
 		}(span, item)
 
 		time.Sleep(2 * time.Second)
