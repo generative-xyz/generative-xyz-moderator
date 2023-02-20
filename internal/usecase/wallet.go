@@ -116,12 +116,6 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 		}
 	}(res)
 
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getWalletInfo Response status != 200")
-	}
-
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, errors.New("Read body failed")
@@ -129,6 +123,9 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
 	}
 
 	return &result, nil
