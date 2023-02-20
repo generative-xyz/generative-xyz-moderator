@@ -318,6 +318,39 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	return p, nil
 }
 
+func (u Usecase) SetCategoriesForBTCProject(rootSpan opentracing.Span, req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
+	span, log := u.StartSpan("SetCategoriesForBTCProject", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+	
+	if req.ProjectID == nil {
+		err := errors.New("ProjectID is requeried")
+		log.Error("pjID.empty", err.Error(), err)
+		return nil, err
+	}
+	
+
+	p, err := u.Repo.FindProjectByTokenID( *req.ProjectID)
+	if err != nil {
+		log.Error("pjID.empty", err.Error(), err)
+		return nil, err
+	}
+
+
+	if len(req.Categories) > 0 {
+		p.Categories = req.Categories
+	}
+
+	
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		log.Error("updated", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return p, nil
+}
+
 func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
 	span, log := u.StartSpan("UpdateProject", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)

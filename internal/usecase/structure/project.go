@@ -73,6 +73,11 @@ type UpdateBTCProjectReq struct {
 	Categories            []string           `json:"categories"`
 }
 
+type UpdateBTCProjectCategoriesReq struct {
+	ProjectID                 	 *string             `json:"projectID"`
+	Categories            []string           `json:"categories"`
+}
+
 type CreateProposaltReq struct {
 	Title string `json:"title"`
 	Description string `json:"description"`
