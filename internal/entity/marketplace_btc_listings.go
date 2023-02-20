@@ -18,20 +18,32 @@ import (
 // 	Finished           *bool
 // }
 
+type SellerPaymentInfo struct {
+	Network       string `bson:"network"`
+	SellerAddress string `bson:"seller_address"` // address to receive fund from buyer
+	Price         string `bson:"price"`          // price by network
+	TokenID       string `bson:"token_id"`       // maybe: native token, erc20 token like usdt, busd...,
+}
+
 type MarketplaceBTCListing struct {
-	BaseEntity     `bson:",inline"`
-	SellOrdAddress string    `bson:"seller_ord_address"`
-	SellerAddress  string    `bson:"seller_address"`
-	HoldOrdAddress string    `bson:"hold_ord_address"`
-	Price          string    `bson:"amount"`
-	ServiceFee     string    `bson:"service_fee"`
-	IsConfirm      bool      `bson:"isConfirm"`
-	IsSold         bool      `bson:"isSold"`
-	TxNFT          string    `bson:"tx_nft"`
-	InscriptionID  string    `bson:"inscriptionID"` // tokenID in btc
-	Name           string    `bson:"name"`
-	Description    string    `bson:"description"`
-	ExpiredAt      time.Time `bson:"expired_at"`
+	BaseEntity `bson:",inline"`
+
+	SellOrdAddress string `bson:"seller_ord_address"` // refund nft when cancel
+	HoldOrdAddress string `bson:"hold_ord_address"`   // address temp that user send nft
+
+	SellerAddress string `bson:"seller_address"` // address to receive btc from buyer
+	Price         string `bson:"amount"`         // amount by btc
+
+	SellerPaymentInfo []SellerPaymentInfo `bson:"sellerPaymentInfo"`
+
+	ServiceFee    string    `bson:"service_fee"`
+	IsConfirm     bool      `bson:"isConfirm"`
+	IsSold        bool      `bson:"isSold"`
+	TxNFT         string    `bson:"tx_nft"`
+	InscriptionID string    `bson:"inscriptionID"` // tokenID in btc
+	Name          string    `bson:"name"`
+	Description   string    `bson:"description"`
+	ExpiredAt     time.Time `bson:"expired_at"`
 
 	// for filter
 	CollectionID     string    `bson:"collection_id"`
@@ -42,21 +54,27 @@ type MarketplaceBTCListing struct {
 }
 
 type MarketplaceBTCListingFilterPipeline struct {
-	ID             string    `bson:"_id"`
-	UUID           string    `bson:"uuid"`
-	SellOrdAddress string    `bson:"seller_ord_address"`
-	SellerAddress  string    `bson:"seller_address"`
-	HoldOrdAddress string    `bson:"hold_ord_address"`
-	Price          string    `bson:"amount"`
-	ServiceFee     string    `bson:"service_fee"`
-	IsConfirm      bool      `bson:"isConfirm"`
-	IsSold         bool      `bson:"isSold"`
-	TxNFT          string    `bson:"tx_nft"`
-	InscriptionID  string    `bson:"inscriptionID"` // tokenID in btc
-	Name           string    `bson:"name"`
-	Description    string    `bson:"description"`
-	ExpiredAt      time.Time `bson:"expired_at"`
-	CreatedAt      time.Time `bson:"created_at"`
+	ID   string `bson:"_id"`
+	UUID string `bson:"uuid"`
+
+	SellOrdAddress string `bson:"seller_ord_address"` // refund nft when cancel
+	HoldOrdAddress string `bson:"hold_ord_address"`   // address temp that user send nft
+
+	SellerAddress string `bson:"seller_address"` // address to receive btc
+
+	Price         string    `bson:"amount"`
+	ServiceFee    string    `bson:"service_fee"`
+	IsConfirm     bool      `bson:"isConfirm"`
+	IsSold        bool      `bson:"isSold"`
+	TxNFT         string    `bson:"tx_nft"`
+	InscriptionID string    `bson:"inscriptionID"` // tokenID in btc
+	Name          string    `bson:"name"`
+	Description   string    `bson:"description"`
+	ExpiredAt     time.Time `bson:"expired_at"`
+	CreatedAt     time.Time `bson:"created_at"`
+
+	//listing payment info:
+	PaymentType []string // ["btc", "eth", "usdt"} ....
 
 	// for filter
 	CollectionID     string    `bson:"collection_id"`
