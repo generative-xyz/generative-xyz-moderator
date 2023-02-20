@@ -173,6 +173,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
+	wallet := api.PathPrefix("/wallet").Subrouter()
+	wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
+	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
