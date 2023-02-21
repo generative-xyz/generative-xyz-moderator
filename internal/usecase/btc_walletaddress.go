@@ -770,7 +770,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	}
 
 	for _, item := range listBTC {
-		projectInfo, err := u.Repo.FindProject(item.ProjectID)
+		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
 			return nil, err
 		}
@@ -784,7 +784,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	}
 
 	for _, item := range listETH {
-		projectInfo, err := u.Repo.FindProject(item.ProjectID)
+		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
 			return nil, err
 		}
