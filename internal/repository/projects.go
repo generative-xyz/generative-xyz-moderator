@@ -302,8 +302,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	if filter.CategoryIds != nil && len(filter.CategoryIds) > 0 {
 		f["categories"] = bson.M{"$all": filter.CategoryIds}
 	}
-	
-	if filter.IsHidden != nil {
+if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
 	}
 

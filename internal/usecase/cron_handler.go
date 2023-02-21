@@ -11,15 +11,12 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
 	"rederinghub.io/utils/helpers"
 )
 
-func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
-	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u *Usecase) PrepareData() (error) {
 	allListings, err := u.Repo.GetAllListings()
 	if err != nil {
 		return err
@@ -50,16 +47,14 @@ func (u *Usecase) PrepareData(rootSpan opentracing.Span) (error) {
 	return nil
 }
 
-func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("SyncUserStats", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncUserStats() error {
 
 	addressToCollectionCreated := make(map[string]int32)
 	addressToNftMinted := make(map[string]int32)
 	addressToOutputMinted := make(map[string]int32)
 
 	for _, token := range u.gData.AllTokens {
-		log.SetData(fmt.Sprintf("tokenId=%s", token.TokenID), token.TokenID)
+		u.Logger.Info(fmt.Sprintf("tokenId=%s", token.TokenID), token.TokenID)
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
 		}
@@ -76,7 +71,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 
 	updateUserStats := func (wg *sync.WaitGroup, address string, stats entity.UserStats) {
 		defer wg.Done()
-		//log.SetData(fmt.Sprintf("update user stats address=%s", address), stats)
+		//u.Logger.Info(fmt.Sprintf("update user stats address=%s", address), stats)
 		u.Repo.UpdateUserStats(address, stats)
 	}
 
@@ -86,11 +81,10 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 		collectionCreated := addressToCollectionCreated[user.WalletAddress]
 		nftMinted := addressToNftMinted[user.WalletAddress]
 		outputMinted := addressToOutputMinted[user.WalletAddress]
-		log.SetData(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
+		u.Logger.Info(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
 		if collectionCreated != user.Stats.CollectionCreated {
 			user.Stats.CollectionCreated = collectionCreated
-			update = true			
-		}
+			update = true			}
 		if nftMinted != user.Stats.NftMinted {
 			user.Stats.NftMinted = nftMinted
 			update = true
@@ -116,9 +110,7 @@ func (u Usecase) SyncUserStats(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("SyncTokenAndMarketplaceData", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncTokenAndMarketplaceData() error {
 
 	gData := u.gData
 
@@ -130,23 +122,21 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
-		err := u.syncMarketplaceDurationAndTokenPrice(span, &gData)
+		err := u.syncMarketplaceDurationAndTokenPrice(&gData)
 		errChan <- err
 	}(wg, errChan)
-		
 	go func(wg *sync.WaitGroup, errChan chan error) {
 		defer wg.Done()
-		err := u.syncMarketplaceOfferTokenOwner(span, &gData)
+		err := u.syncMarketplaceOfferTokenOwner(&gData)
 		errChan <- err
 	}(wg, errChan)
-	
-	wg.Wait()
+wg.Wait()
 	close(errChan)
 
 	for e := range errChan {
 		if e != nil {
 			err = e
-			log.Error("error when sync data", err.Error(), err)
+			u.Logger.Error(err)
 		}
 	}
 
@@ -154,10 +144,7 @@ func (u Usecase) SyncTokenAndMarketplaceData(rootSpan opentracing.Span) error {
 }
 
 // synchronize token data
-func (u Usecase) syncMarketplaceDurationAndTokenPrice(rootSpan opentracing.Span, gData *gData) error {
-	span, log := u.StartSpan("syncMarketplaceDurationAndTokenPrice", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
-
+func (u Usecase) syncMarketplaceDurationAndTokenPrice( gData *gData) error {
 	allListings := u.gData.AllListings
 	allOffers := u.gData.AllOffers
 	allTokens := u.gData.AllTokens
@@ -212,8 +199,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(rootSpan opentracing.Span,
 			}
 		}
 	}
-	
-	// map from token id to price
+// map from token id to price
 	fromTokenIdToPrice := make(map[string]int64)
 	for _, listing := range activeListings {
 		if _, ok := fromTokenIdToPrice[listing.TokenId]; !ok && !listing.Closed {
@@ -249,7 +235,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(rootSpan opentracing.Span,
 			return fmt.Errorf("can not find token with tokenID %s", k)
 		}
 		if token.Stats.PriceInt == nil || *token.Stats.PriceInt != v {
-			log.SetData(fmt.Sprintf("setTokenPrice%s", k), v)
+			u.Logger.Info(fmt.Sprintf("setTokenPrice%s", k), v)
 			u.Repo.UpdateTokenPriceByTokenId(k, v)
 		}
 		tokenWithPricesSet[k] = false
@@ -258,39 +244,36 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(rootSpan opentracing.Span,
 		if !v {
 			continue
 		}
-		log.SetData(fmt.Sprintf("unsetTokenPrice%s", k), true)
+		u.Logger.Info(fmt.Sprintf("unsetTokenPrice%s", k), true)
 		u.Repo.UnsetTokenPriceByTokenId(k)
 	}
 	return nil
 }
 
-func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData *gData) error {
-	span, log := u.StartSpan("syncMarketplaceOfferTokenOwner", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) syncMarketplaceOfferTokenOwner( gData *gData) error {
+
 	allListings := gData.AllListings
 	allOffers := gData.AllOffers
 	allTokens := gData.AllTokens
-	
-	tokenIdToToken := make(map[string]entity.TokenUri)
+tokenIdToToken := make(map[string]entity.TokenUri)
 	for _, token := range allTokens {
 		tokenIdToToken[token.TokenID] = token
 	}
 
 	updateListingOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
-		log.SetData(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
+		u.Logger.Info(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateListingOwnerAddress(offeringID, ownerAddress)
 	}
 
 	updateOfferOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
-		log.SetData(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
+		u.Logger.Info(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateOfferOwnerAddress(offeringID, ownerAddress)
 	}
 
 	wg := new(sync.WaitGroup)
-	
-	counter := 0;
+counter := 0;
 
 	for _, listing := range allListings {
 		token, ok := tokenIdToToken[listing.TokenId]
@@ -327,51 +310,42 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(rootSpan opentracing.Span, gData
 	return nil
 }
 
-func (u Usecase) GetTheCurrentBlockNumber(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.GetTheCurrentBlockNumber", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
+func (u Usecase) GetTheCurrentBlockNumber() error {
 	block, err := u.Blockchain.GetBlockNumber()
 	if err != nil {
-		log.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
 		return err
 	}
 
-	log.SetData("block",block)
+	u.Logger.Info("block",block)
 	return nil
 }
 
-func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.UpdateProposalState", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
+func (u Usecase) UpdateProposalState() error {
 	block, err := u.Blockchain.GetBlock()
 	if err != nil {
-		log.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
 		return err
 	}
 
 	proposals, err := u.Repo.AllProposals(entity.FilterProposals{})
 	if err != nil {
-		log.Error("Usecase.GetTheCurrentBlockNumber.AllProposals",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.AllProposals",err.Error(), err)
 		return err
 	}
 
 	addr := common.HexToAddress(os.Getenv("DAO_PROPOSAL_CONTRACT"))
 	daoContract, err := generative_dao.NewGenerativeDao(addr, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init DAO contract", err.Error(), err)
+		u.Logger.Error(err)
 		return err
 	}
 
 	processed := 0
 	processChain := make(chan bool, len(proposals))
-	
-	for _, proposal := range proposals {
+for _, proposal := range proposals {
 
 		go func ( proposal entity.Proposal)  {
-			span, log := u.StartSpan("Usecase.UpdateProposalState.Routine", rootSpan)
-			defer u.Tracer.FinishSpan(span, log)
 
 			defer func(){
 				processChain <- true
@@ -384,15 +358,15 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 				if err == nil {
 					proposal.State = state
 				}else{
-					log.Error("daoContract.State", err.Error(), err)
+					u.Logger.Error(err)
 				}
 
 				vote, err := daoContract.Proposals(nil, n)
 				if err != nil {
-					log.Error("daoContract.Proposals.vote.Error", err.Error(), err)
+					u.Logger.Error(err)
 				}else{
 					//createdProposal.State = state
-					log.SetData("daoContract.Proposals.vote", vote)
+					u.Logger.Info("daoContract.Proposals.vote", vote)
 				}
 
 				forVote :=  helpers.ParseBigToFloat(vote.ForVotes)
@@ -427,8 +401,7 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 					_ = test
 				}
 			}
-	
-			proposal.CurrentBlock = block.Number.Int64()
+		proposal.CurrentBlock = block.Number.Int64()
 			proposal.CurrentBlockTime = helpers.ParseUintToUnixTime(block.Time) 
 
 			stB, err :=  u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.StartBlock))
@@ -443,11 +416,10 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 				 
 			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
 			if err != nil {
-				log.Error("daoContract.State", err.Error(), err)
+				u.Logger.Error(err)
 			}
-			log.SetData("Updated", updated)
-			
-		}(proposal)
+			u.Logger.Info("Updated", updated)
+			}(proposal)
 
 		if processed % 10 == 0{
 			time.Sleep(5 * time.Second)
@@ -461,9 +433,7 @@ func (u Usecase) UpdateProposalState(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.SyncLeaderboard", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncLeaderboard() error {
 
 	allUsers := u.gData.AllProfile
 	addressToProfile := make(map[string]entity.Users)
@@ -478,13 +448,12 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 
 	addressToOldRank := make(map[string]*int32)
 	addressToOldBalance := make(map[string]*string)
-	
-	for _, tokenHolder := range allTokenHolders {
+for _, tokenHolder := range allTokenHolders {
 		addressToOldRank[tokenHolder.Address] = tokenHolder.OldRank
 		addressToOldBalance[tokenHolder.Address] = tokenHolder.OldBalance
 	}
 
-	allNewTokenHolders, err := u.GetAllTokenHolder(span)
+	allNewTokenHolders, err := u.GetAllTokenHolder()
 	if err != nil {
 		return err
 	}
@@ -577,18 +546,14 @@ func (u Usecase) SyncLeaderboard(rootSpan opentracing.Span) error {
 	return err
 }
 
-func (u Usecase) SnapShotOldRankAndOldBalance(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.SnapShotOldRankAndOldBalance", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SnapShotOldRankAndOldBalance() error {
 	_, err := u.Repo.SnapShotOldRankAndOldBalance()
 	return err
 }
 
 // Currently, this function only syncs projects' nft minted data
 // TODO: move all other stats to be synced in this function
-func (u Usecase) SyncProjectsStats(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.SyncProjectsStats", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncProjectsStats() error {
 	allProjects := u.gData.AllProjects
 	allTokens := u.gData.AllTokens
 	projectIdToMintedCount := map[string]int32{}
@@ -606,16 +571,13 @@ func (u Usecase) SyncProjectsStats(rootSpan opentracing.Span) error {
 			}
 			if processed % 10 == 0 {
 				time.Sleep(1 * time.Second)
-			}			
-		}
+			}			}
 	}
 
 	return nil
 }
 
-func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.SyncTokenInscribeIndex", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncTokenInscribeIndex() error {
 	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
 	if err != nil {
 		return err
@@ -623,7 +585,7 @@ func (u Usecase) SyncTokenInscribeIndex(rootSpan opentracing.Span) error {
 	processed := 0
 	for _, token := range notSyncedTokens {
 		processed++
-		inscribeInfo, err := u.GetInscribeInfo(span, token.TokenID)
+		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
 			return err
 		}
@@ -651,9 +613,7 @@ const (
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
-func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.SyncProjectTrending", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SyncProjectTrending() error {
 
 	// All btc activities, which include Mint and Buy activity 
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
@@ -689,7 +649,6 @@ func (u Usecase) SyncProjectTrending(rootSpan opentracing.Span) error {
 
 		isWhitelistedProject := false
 		isBoostedProject := false
-		
 		// check if this project is whitelisted in top of trending
 		for _, str := range u.Config.TrendingConfig.WhitelistedProjectID {
 			if project.TokenID == str {

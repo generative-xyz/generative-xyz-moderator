@@ -46,8 +46,8 @@ type Proposal struct {
 	Amount string `bson:"amount" json:"amount"`
 	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
-	State uint8 `bson:"state" json:"state"`	
-	ProposalDetail ProposalDetail `bson:"-" json:"proposalDetail"`	
+	State uint8 `bson:"state" json:"state"`
+	ProposalDetail ProposalDetail `bson:"-" json:"proposalDetail"`
 	Vote ProposalVote `bson:"vote" json:"vote"`	
 }
 
@@ -82,8 +82,8 @@ type QueriedProposal struct {
 	Amount string `bson:"amount" json:"amount"`
 	TokenType string `bson:"tokenType" json:"tokenType"`
 	Raw ProposalRaw `bson:"raw" json:"raw"`
-	State uint8 `bson:"state" json:"state"`	
-	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`	
+	State uint8 `bson:"state" json:"state"`
+	ProposalDetail []ProposalDetail `bson:"proposalDetail" json:"proposalDetail"`
 	Vote ProposalVote `bson:"vote" json:"vote"`	
 }
 

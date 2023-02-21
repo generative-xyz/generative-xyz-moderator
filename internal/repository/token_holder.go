@@ -61,7 +61,6 @@ func (r Repository) FilterTokenHolders(filter entity.FilterTokenHolders) (*entit
 
 func (r Repository) SnapShotOldRankAndOldBalance() (*mongo.UpdateResult, error) {
 	result, err := r.DB.Collection(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER).UpdateMany(context.TODO(), bson.M{}, []bson.M{
-		{"$set": bson.M{"old_rank": "$current_rank", "old_balance": "$balance"}},	
-	})
+		{"$set": bson.M{"old_rank": "$current_rank", "old_balance": "$balance"}},})
 	return result, err
 }

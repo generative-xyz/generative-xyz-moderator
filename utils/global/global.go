@@ -9,11 +9,9 @@ import (
 	"rederinghub.io/utils/delegate"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
-	"rederinghub.io/utils/mqttClient"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/slack"
-	"rederinghub.io/utils/tracer"
 
 	"github.com/gorilla/mux"
 )
@@ -26,7 +24,6 @@ type Global struct {
 	Cache            redis.IRedisCache
 	CacheAuthService redis.IRedisCache
 	Pubsub           redis.IPubSubClient
-	Tracer           tracer.ITracer
 	Auth2            oauth2service.Auth2
 	GCS              googlecloud.IGcstorage
 	S3Adapter        googlecloud.S3Adapter
@@ -35,6 +32,5 @@ type Global struct {
 	OrdService       *ord_service.BtcOrd
 	Blockchain       blockchain.Blockchain
 	Slack            slack.Slack
-	MqttClient       mqttClient.IDeviceMqtt
 	DelegateService  *delegate.Service
 }

@@ -13,28 +13,22 @@ import (
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
-
-	"github.com/opentracing/opentracing-go"
 )
 
 type MoralisNfts struct {
 	conf      *config.Config
-	tracer    tracer.ITracer
-	rootSpan  opentracing.Span
 	serverURL string
 	apiKey    string
 	//client forwarder.IForwarder
 	cache redis.IRedisCache
 }
 
-func NewMoralisNfts(conf *config.Config, t tracer.ITracer, cache redis.IRedisCache) *MoralisNfts {
+func NewMoralisNfts(conf *config.Config,  cache redis.IRedisCache) *MoralisNfts {
 
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
 	return &MoralisNfts{
-		conf:      conf,
-		tracer:    t,
+		conf:      conf,	
 		serverURL: serverURL,
 		apiKey:    apiKey,
 		cache:     cache,
