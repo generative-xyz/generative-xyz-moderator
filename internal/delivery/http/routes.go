@@ -56,7 +56,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
 	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
-	files.HandleFunc("/multipart/{uploadID}", h.CreateMultipartUpload).Methods("POST")
+	files.HandleFunc("/multipart/{uploadID}", h.CompleteMultipartUpload).Methods("POST")
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
