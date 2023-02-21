@@ -184,7 +184,45 @@ func (r Repository) ListMintingETHByWalletAddress(address string) ([]entity.ETHW
 	f := bson.M{}
 	f["isConfirm"] = true
 	f["user_address"] = address
+	f["isMinted"] = false
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListMintingWaitingToSendETHByWalletAddress(address string) ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["user_address"] = address
+	f["isMinted"] = true
 	f["mintResponse.issent"] = false
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListMintingETHWaitingForFundByWalletAddress(address string) ([]entity.ETHWalletAddress, error) {
+	confs := []entity.ETHWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = false
+	f["user_address"] = address
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
