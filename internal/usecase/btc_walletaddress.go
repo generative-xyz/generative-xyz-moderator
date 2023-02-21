@@ -774,13 +774,23 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if err != nil {
 			return nil, err
 		}
-		minting := structure.MintingInscription{
-			Status:      "minting",
-			FileURI:     item.FileURI,
-			ProjectID:   item.ProjectID,
-			ProjectName: projectInfo.Name,
+		var minting *structure.MintingInscription
+		if !item.IsMinted {
+			minting = &structure.MintingInscription{
+				Status:      "minting",
+				FileURI:     item.FileURI,
+				ProjectID:   item.ProjectID,
+				ProjectName: projectInfo.Name,
+			}
+		} else {
+			minting = &structure.MintingInscription{
+				Status:      "transferring",
+				FileURI:     item.FileURI,
+				ProjectID:   item.ProjectID,
+				ProjectName: projectInfo.Name,
+			}
 		}
-		result = append(result, minting)
+		result = append(result, *minting)
 	}
 
 	for _, item := range listETH {
@@ -788,13 +798,23 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if err != nil {
 			return nil, err
 		}
-		minting := structure.MintingInscription{
-			Status:      "minting",
-			FileURI:     item.FileURI,
-			ProjectID:   item.ProjectID,
-			ProjectName: projectInfo.Name,
+		var minting *structure.MintingInscription
+		if !item.IsMinted {
+			minting = &structure.MintingInscription{
+				Status:      "minting",
+				FileURI:     item.FileURI,
+				ProjectID:   item.ProjectID,
+				ProjectName: projectInfo.Name,
+			}
+		} else {
+			minting = &structure.MintingInscription{
+				Status:      "transferring",
+				FileURI:     item.FileURI,
+				ProjectID:   item.ProjectID,
+				ProjectName: projectInfo.Name,
+			}
 		}
-		result = append(result, minting)
+		result = append(result, *minting)
 	}
 	return result, nil
 }
