@@ -16,10 +16,11 @@ import (
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
-	"rederinghub.io/internal/delivery/crontab_btc_v2"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
 	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
+	"rederinghub.io/internal/delivery/incribe_btc"
+	"rederinghub.io/internal/delivery/mint_nft_btc"
 	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
@@ -116,7 +117,7 @@ func startServer() {
 	}, redisClient)
 
 	moralis := nfts.NewMoralisNfts(conf, cache)
-	ord := ord_service.NewBtcOrd(conf,  cache)
+	ord := ord_service.NewBtcOrd(conf, cache)
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis)
@@ -168,7 +169,10 @@ func startServer() {
 	cron := crontab.NewScronHandler(&g, *uc)
 	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
 	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	btcCronV2 := crontab_btc_v2.NewScronBTCHandler(&g, *uc)
+	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+
+	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
@@ -194,8 +198,13 @@ func startServer() {
 	}
 
 	servers["btc_crontab_v2"] = delivery.AddedServer{
-		Server:  btcCronV2,
+		Server:  inscribeCron,
 		Enabled: conf.Crontab.BTCV2Enabled,
+	}
+
+	servers["mint_nft_btc"] = delivery.AddedServer{
+		Server:  mintNftBtcCron,
+		Enabled: conf.Crontab.MintNftBtcEnabled,
 	}
 
 	servers["marketplace_crontab"] = delivery.AddedServer{
