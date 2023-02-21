@@ -135,8 +135,8 @@ func (a S3Adapter) CompleteMultipartUpload(ctx context.Context, uploadID string)
 			PartNumber: item.PartNumber,
 		})
 	}
-	sort.Slice(completedParts, func(i, j int) bool {
-		return *completedParts[i].PartNumber < *completedParts[j].PartNumber
+	sort.Slice(s3CompletedPart, func(i, j int) bool {
+		return *s3CompletedPart[i].PartNumber < *s3CompletedPart[j].PartNumber
 	})
 	key, err := a.GetKeyFromUploadID(uploadID)
 	if err != nil {
@@ -144,12 +144,12 @@ func (a S3Adapter) CompleteMultipartUpload(ctx context.Context, uploadID string)
 	}
 
 	completeInput := &s3.CompleteMultipartUploadInput{
-		Bucket:   &a.bucketName,
-		Key:      &key,
-		UploadId: &uploadID,
+		Bucket: &a.bucketName,
+		Key:    &key,
 		MultipartUpload: &s3.CompletedMultipartUpload{
 			Parts: s3CompletedPart,
 		},
+		UploadId: &uploadID,
 	}
 	resp, err := a.s3Client.CompleteMultipartUploadWithContext(ctx, completeInput)
 	if err != nil {

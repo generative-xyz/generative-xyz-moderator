@@ -9,7 +9,7 @@ import (
 
 func (u Usecase) CreateViewProjectActivity(projectID string) {
 	err := u.Repo.InsertActitvy(&entity.Activity{
-		Type: entity.View,
+		Type:      entity.View,
 		ProjectID: projectID,
 	})
 
@@ -21,7 +21,7 @@ func (u Usecase) CreateViewProjectActivity(projectID string) {
 func (u Usecase) CreateMintActivity(inscriptionID string, value string) {
 	iValue, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-			iValue = 0
+		iValue = 0
 	}
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
@@ -31,9 +31,9 @@ func (u Usecase) CreateMintActivity(inscriptionID string, value string) {
 	}
 
 	err = u.Repo.InsertActitvy(&entity.Activity{
-		Type: entity.Mint,
+		Type:      entity.Mint,
 		Reference: inscriptionID,
-		Value: iValue,
+		Value:     iValue,
 		ProjectID: tokenUri.ProjectID,
 	})
 
@@ -41,12 +41,13 @@ func (u Usecase) CreateMintActivity(inscriptionID string, value string) {
 		fmt.Printf("CreateMintActivity.%s.Error:%s", inscriptionID, err.Error())
 		return
 	}
+
 }
 
 func (u Usecase) CreateBuyActivity(inscriptionID string, value string) {
 	iValue, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-			iValue = 0
+		iValue = 0
 	}
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
@@ -56,9 +57,9 @@ func (u Usecase) CreateBuyActivity(inscriptionID string, value string) {
 	}
 
 	err = u.Repo.InsertActitvy(&entity.Activity{
-		Type: entity.Buy,
+		Type:      entity.Buy,
 		Reference: inscriptionID,
-		Value: iValue,
+		Value:     iValue,
 		ProjectID: tokenUri.ProjectID,
 	})
 
