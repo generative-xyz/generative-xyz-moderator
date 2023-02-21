@@ -35,6 +35,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//api
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
+	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
@@ -52,6 +53,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	files.HandleFunc("/deflate", h.deflate).Methods("POST")
+
+	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
+	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
+	files.HandleFunc("/multipart/{uploadID}", h.CreateMultipartUpload).Methods("POST")
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()

@@ -101,7 +101,7 @@ func main() {
 
 func startServer() {
 	log.Println("starting server ...")
-	cache := redis.NewRedisCache(conf.Redis)
+	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	t := tracer.NewTracing(logger)
 	r := mux.NewRouter()
 
@@ -110,6 +110,13 @@ func startServer() {
 		logger.Error("Cannot init gcs", err)
 		return
 	}
+	s3Adapter := googlecloud.NewS3Adapter(googlecloud.S3AdapterConfig{
+		BucketName: conf.Gcs.Bucket,
+		Endpoint:   conf.Gcs.Endpoint,
+		Region:     conf.Gcs.Region,
+		AccessKey:  conf.Gcs.AccessKey,
+		SecretKey:  conf.Gcs.SecretKey,
+	}, redisClient)
 
 	moralis := nfts.NewMoralisNfts(conf, t, cache)
 	ord := ord_service.NewBtcOrd(conf, t, cache)
@@ -132,6 +139,7 @@ func startServer() {
 		Cache:           cache,
 		Auth2:           *auth2Service,
 		GCS:             gcs,
+		S3Adapter:       s3Adapter,
 		MoralisNFT:      *moralis,
 		CovalentNFT:     *covalent,
 		Blockchain:      *ethClient,
@@ -189,18 +197,18 @@ func startServer() {
 		Enabled: conf.Crontab.BTCEnabled,
 	}
 
-	servers["btc_crontab_v2"] =  delivery.AddedServer{
-		Server: btcCronV2,
+	servers["btc_crontab_v2"] = delivery.AddedServer{
+		Server:  btcCronV2,
 		Enabled: conf.Crontab.BTCV2Enabled,
 	}
-	
-	servers["marketplace_crontab"] =  delivery.AddedServer{
-		Server: mkCron,
+
+	servers["marketplace_crontab"] = delivery.AddedServer{
+		Server:  mkCron,
 		Enabled: conf.Crontab.MarketPlaceEnabled,
 	}
 
-	servers["trending_crontab"] =  delivery.AddedServer{
-		Server: trendingCron,
+	servers["trending_crontab"] = delivery.AddedServer{
+		Server:  trendingCron,
 		Enabled: conf.Crontab.TrendingEnabled,
 	}
 

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/flate"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
 	"github.com/tdewolff/minify/v2/html"
@@ -27,6 +29,36 @@ import (
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 )
+
+type File interface {
+	io.ReadSeeker
+}
+
+func (u Usecase) CreateMultipartUpload(ctx context.Context, rootSpan opentracing.Span, group string, fileName string) (*string, error) {
+	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, group, fileName)
+	return uploadID, err
+}
+
+func (u Usecase) UploadPart(ctx context.Context, rootSpan opentracing.Span, uploadID string, file File, fileSize int64, partNumber int) error {
+	span, log := u.StartSpan("UploadFile", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	if err := u.S3Adapter.UploadPart(uploadID, file, fileSize, partNumber); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u Usecase) CompleteMultipartUpload(ctx context.Context, rootSpan opentracing.Span, uploadID string) (*string, error) {
+	span, log := u.StartSpan("CompleteMultipartUpload", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	data, err := u.S3Adapter.CompleteMultipartUpload(ctx, uploadID)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return data, nil
+}
 
 func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity.Files, error) {
 	span, log := u.StartSpan("UploadFile", rootSpan)

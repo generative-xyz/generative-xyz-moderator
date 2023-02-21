@@ -1185,6 +1185,150 @@
                 }
             }
         },
+        "/files/multipart": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create multipart upload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Create multipart upload",
+                "parameters": [
+                    {
+                        "description": "Create multipart upload request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateMultipartUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/files/multipart/{uploadID}": {
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Upload multipart file",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload multipart file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "upload ID",
+                        "name": "uploadID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Finish multipart upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Finish multipart upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "upload ID",
+                        "name": "uploadID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.MultipartUploadResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/info/{ID}": {
             "get": {
                 "description": "get inscribe info",
@@ -2946,6 +3090,59 @@
                 }
             }
         },
+        "/tokens/{tokenID}/thumbnail": {
+            "post": {
+                "description": "Update token's thumbnail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "Update token's thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateTokenThumbnailReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/trait/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token's traits",
@@ -3173,6 +3370,17 @@
                 }
             }
         },
+        "request.CreateMultipartUploadRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateProjectReq": {
             "type": "object",
             "properties": {
@@ -3332,6 +3540,14 @@
                 }
             }
         },
+        "request.UpdateTokenThumbnailReq": {
+            "type": "object",
+            "properties": {
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateTokentReq": {
             "type": "object",
             "properties": {
@@ -3415,6 +3631,14 @@
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.FileResponse": {
+            "type": "object",
+            "properties": {
+                "uploadId": {
                     "type": "string"
                 }
             }
@@ -3520,6 +3744,14 @@
                 }
             }
         },
+        "response.MultipartUploadResponse": {
+            "type": "object",
+            "properties": {
+                "fileUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "response.NftMintingDetail": {
             "type": "object",
             "properties": {
@@ -3555,7 +3787,10 @@
                 "walletAddress": {
                     "type": "string"
                 },
-                "wallet_address_btc": {
+                "walletAddressBtc": {
+                    "type": "string"
+                },
+                "walletAddressBtcTaproot": {
                     "type": "string"
                 }
             }
