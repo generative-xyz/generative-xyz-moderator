@@ -52,6 +52,18 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	// cal min price:
+	mintPriceStr := "0"
+	mintPriceInt, err := strconv.Atoi(p.MintPrice)
+	if err != nil {
+		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	networkFee, err := strconv.Atoi(p.NetworkFee)
+	if err == nil {
+		mintPriceInt += networkFee
+	}
+
 	// check type:
 	if input.PayType == "btc" { // TODO: move to const config
 		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
@@ -59,6 +71,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", err.Error(), err)
 			return nil, err
 		}
+		mintPriceStr = strconv.Itoa(mintPriceInt)
 	} else if input.PayType == "eth" {
 		ethClient := eth.NewClient(nil)
 
@@ -67,6 +80,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", err.Error(), err)
 			return nil, err
 		}
+		mintPriceStr, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+		fmt.Println("mintPriceStr: ", mintPriceStr)
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {
@@ -95,22 +114,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
 
-	mintPrice, err := strconv.Atoi(p.MintPrice)
-	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
-		return nil, err
-	}
-	networkFee, err := strconv.Atoi(p.NetworkFee)
-	if err == nil {
-		mintPrice += networkFee
-	}
-
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
 	}
 
-	walletAddress.Amount = strconv.Itoa(mintPrice)
+	walletAddress.Amount = mintPriceStr
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.Status = entity.StatusMint_Pending
 	walletAddress.ProjectID = input.ProjectID
@@ -210,7 +219,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "compare balance err", err.Error(), true)
 
-			item.Status = entity.StatusMint_NotEnoughBalance
+			item.Status = entity.StatusMint_NeedToRefund
+			item.ReasonRefund = "Not enough balance"
 			u.Repo.UpdateMintNftBtc(&item)
 			continue
 		}
@@ -250,6 +260,24 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if err != nil {
 			u.Logger.Error("JobMint_MintNftBtc.FindProjectByTokenID", err.Error(), err)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
+			continue
+		}
+
+		// check Project and make sure index < max supply
+		if p.MintingInfo.Index >= p.MaxSupply {
+
+			// update need to return:
+			item.ReasonRefund = "project is minted out"
+			item.Status = entity.StatusMint_NeedToRefund
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
+			}
+			err = fmt.Errorf("project %s is minted out", item.ProjectID)
+			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
 			continue
 		}
 
@@ -315,10 +343,10 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		mintData := ord_service.MintRequest{
 			WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 			FileUrl:    baseUrl.String(),
-			// FeeRate:    entity.DEFAULT_FEE_RATE, //auto
-			DryRun:    false,
-			RequestId: item.UUID,      // to track log
-			ProjectID: item.ProjectID, // to track log
+			FeeRate:    entity.DEFAULT_FEE_RATE, //auto
+			DryRun:     false,
+			RequestId:  item.UUID,      // to track log
+			ProjectID:  item.ProjectID, // to track log
 		}
 
 		u.Logger.Info("mintData", mintData)
@@ -326,7 +354,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		resp, err := u.OrdService.Mint(mintData)
 		if err != nil {
 			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "OrdService", err.Error(), true)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, err.Error(), true)
 			continue
 		}
 		u.Logger.Info("mint.resp", resp)
@@ -426,6 +454,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				_, err = u.Repo.UpdateMintNftBtc(&item)
 				if err != nil {
 					fmt.Printf("Could not JobMint_CheckTxMintSend id %s - with err: %v", item.ID, err)
+					continue
 				}
 			}
 		} else {
@@ -439,6 +468,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			if err != nil {
 				fmt.Printf("Could not bs - with err: %v", err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error(), true)
+				continue
 			}
 
 			// just check 1 confirm:
@@ -449,6 +479,29 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				if err != nil {
 					fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				}
+				// update project, token info when mint success:
+				if item.Status == entity.StatusMint_Minted {
+					// create entity.TokenURI
+					_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
+					if err != nil {
+						fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
+						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
+						continue
+					}
+
+					err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+					if err != nil {
+						u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+						continue
+					}
+					item.IsUpdatedNftInfo = true
+					_, err = u.Repo.UpdateMintNftBtc(&item)
+					if err != nil {
+						fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+					}
+				}
+
 			}
 		}
 	}
