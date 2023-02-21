@@ -171,24 +171,19 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	if tokenID != "" {
 		f.TokenIDs = append(f.TokenIDs, tokenID)
 	}
-	
-	if contractAddress != "" {
+if contractAddress != "" {
 		f.ContractAddress = &contractAddress
 	}
-	
-	if geNftAddr != "" {
+if geNftAddr != "" {
 		f.GenNFTAddr = &geNftAddr
 	}
-	
-	if ownerAddress != "" {
+if ownerAddress != "" {
 		f.OwnerAddr = &ownerAddress
 	}
-	
-	if creatorAddress != "" {
+if creatorAddress != "" {
 		f.CreatorAddr = &creatorAddress
 	}
-	
-	if keyword != "" {
+if keyword != "" {
 		f.Keyword = &keyword
 	}
 

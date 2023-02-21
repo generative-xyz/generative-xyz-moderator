@@ -1253,11 +1253,24 @@
                 "summary": "Upload multipart file",
                 "parameters": [
                     {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "upload ID",
                         "name": "uploadID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "part number",
+                        "name": "partNumber",
+                        "in": "query"
                     }
                 ],
                 "responses": {

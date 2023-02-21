@@ -20,21 +20,19 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /categories [GET]
 func (h *httpDelivery) getCategories(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getCategorys", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	f := structure.FilterCategories{}
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.BaseFilters =*baseF
 
-	data, err := h.Usecase.GetCategories(span, f)
+	data, err := h.Usecase.GetCategories(f)
 	if err != nil {
-		log.Error("h.Usecase.GetCategorys", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetCategorys", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -47,15 +45,14 @@ func (h *httpDelivery) getCategories(w http.ResponseWriter, r *http.Request) {
 		respItem := &response.CategoryResp{}
 		err := response.CopyEntityToRes(respItem, &conf)
 		if err != nil {
-			log.Error("response.CopyEntityToRes", err.Error(), err)
+			h.Logger.Error("response.CopyEntityToRes", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-	
-		resp = append(resp, *respItem)
+	resp = append(resp, *respItem)
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(data, resp), "")
 }
 
@@ -69,38 +66,36 @@ func (h *httpDelivery) getCategories(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /categories [POST]
 func (h *httpDelivery) createCategory(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("createCategory", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	var reqBody request.CreateCategoryRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.Validate()
 	if err != nil {
-		log.Error("reqBody.Validate", err.Error(), err)
+		h.Logger.Error("reqBody.Validate", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	category, err := h.Usecase.CreateCategory(span, structure.CategoryData{
+	category, err := h.Usecase.CreateCategory(structure.CategoryData{
 		Name: *reqBody.Name,
 	})
 
 	if err != nil {
-		log.Error("h.Usecase.CreateCategory", err.Error(), err)
+		h.Logger.Error("h.Usecase.CreateCategory", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	resp := &response.CategoryResp{}
 	response.CopyEntityToRes(resp, category)
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -114,17 +109,15 @@ func (h *httpDelivery) createCategory(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /categories/{id} [DELETE]
 func (h *httpDelivery) deleteCategory(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("deleteCategorys", r)
-	defer h.Tracer.FinishSpan(span, log )
 	vars := mux.Vars(r)
 	id := vars["id"]
-	err := h.Usecase.DeleteCategory(span, id)
+	err := h.Usecase.DeleteCategory(id)
 	if err != nil {
-		log.Error("h.Usecase.DeleteCategory", err.Error(), err)
+		h.Logger.Error("h.Usecase.DeleteCategory", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
@@ -139,8 +132,6 @@ func (h *httpDelivery) deleteCategory(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /categories/{id} [PUT]
 func (h *httpDelivery) updateCategory(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("updateCategory", r)
-	defer h.Tracer.FinishSpan(span, log )
 	vars := mux.Vars(r)
 	id := vars["id"]
 
@@ -148,18 +139,18 @@ func (h *httpDelivery) updateCategory(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	cat,  err := h.Usecase.UpdateCategory(span, structure.UpdateCategoryData{
+	cat,  err := h.Usecase.UpdateCategory(structure.UpdateCategoryData{
 		Name: reqBody.Name,
 		ID: &id,
 	})
 
 	if err != nil {
-		log.Error("h.Usecase.UpdateCategory", err.Error(), err)
+		h.Logger.Error("h.Usecase.UpdateCategory", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -167,7 +158,7 @@ func (h *httpDelivery) updateCategory(w http.ResponseWriter, r *http.Request) {
 	resp := &response.CategoryResp{}
 	response.CopyEntityToRes(resp, cat)
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -181,19 +172,17 @@ func (h *httpDelivery) updateCategory(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /categories/{id} [GET]
 func (h *httpDelivery) getCategory(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getCategory", r)
-	defer h.Tracer.FinishSpan(span, log )
 	vars := mux.Vars(r)
 	id := vars["id"]
-	category, err := h.Usecase.GetCategory(span, id)
+	category, err := h.Usecase.GetCategory(id)
 	if err != nil {
-		log.Error("h.Usecase.GetCategory", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetCategory", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	resp := &response.CategoryResp{}
 	response.CopyEntityToRes(resp, category)
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
