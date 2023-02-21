@@ -183,8 +183,8 @@ func (r Repository) ListMintingETHByWalletAddress(address string) ([]entity.ETHW
 	confs := []entity.ETHWalletAddress{}
 	f := bson.M{}
 	f["isConfirm"] = true
-	f["isMinted"] = true
 	f["user_address"] = address
+	f["mintResponse.issent"] = false
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_ETH_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
