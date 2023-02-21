@@ -153,8 +153,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	signedEth := api.PathPrefix("/eth").Subrouter()
 	signedEth.Use(h.MiddleWare.AccessToken)
 	signedEth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
-
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
+
+	// request-mint (new flow)
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -177,7 +180,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
-	wallet.Use(h.MiddleWare.AccessToken)
+	// wallet.Use(h.MiddleWare.AccessToken)
 	wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
@@ -199,7 +202,6 @@ func (h *httpDelivery) RegisterDocumentRoutes() {
 		httpSwagger.DomID("#swagger-ui"),
 	))
 }
-
 
 func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "It work!", "")
