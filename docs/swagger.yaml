@@ -361,9 +361,11 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
-      wallet_address_btc:
-        type: string
       walletAddress:
+        type: string
+      walletAddressBtc:
+        type: string
+      walletAddressBtcTaproot:
         type: string
     type: object
   response.ProfileSocial:
@@ -2439,6 +2441,30 @@ paths:
       summary: get token's traits
       tags:
       - Token for Opensea
+  /user/artist:
+    get:
+      consumes:
+      - application/json
+      description: get list Artist
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get list Artist
+      tags:
+      - Artist
 securityDefinitions:
   Api-Key:
     in: header
