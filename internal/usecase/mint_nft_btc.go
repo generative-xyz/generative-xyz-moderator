@@ -52,6 +52,18 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	// cal min price:
+	mintPriceStr := "0"
+	mintPriceInt, err := strconv.Atoi(p.MintPrice)
+	if err != nil {
+		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+	networkFee, err := strconv.Atoi(p.NetworkFee)
+	if err == nil {
+		mintPriceInt += networkFee
+	}
+
 	// check type:
 	if input.PayType == "btc" { // TODO: move to const config
 		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
@@ -59,6 +71,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", err.Error(), err)
 			return nil, err
 		}
+		mintPriceStr = strconv.Itoa(mintPriceInt)
 	} else if input.PayType == "eth" {
 		ethClient := eth.NewClient(nil)
 
@@ -67,6 +80,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", err.Error(), err)
 			return nil, err
 		}
+		mintPriceStr, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+		fmt.Println("mintPriceStr: ", mintPriceStr)
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {
@@ -95,22 +114,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
 
-	mintPrice, err := strconv.Atoi(p.MintPrice)
-	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
-		return nil, err
-	}
-	networkFee, err := strconv.Atoi(p.NetworkFee)
-	if err == nil {
-		mintPrice += networkFee
-	}
-
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
 	}
 
-	walletAddress.Amount = strconv.Itoa(mintPrice)
+	walletAddress.Amount = mintPriceStr
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.Status = entity.StatusMint_Pending
 	walletAddress.ProjectID = input.ProjectID
@@ -334,10 +343,10 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		mintData := ord_service.MintRequest{
 			WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
 			FileUrl:    baseUrl.String(),
-			// FeeRate:    entity.DEFAULT_FEE_RATE, //auto
-			DryRun:    false,
-			RequestId: item.UUID,      // to track log
-			ProjectID: item.ProjectID, // to track log
+			FeeRate:    entity.DEFAULT_FEE_RATE, //auto
+			DryRun:     false,
+			RequestId:  item.UUID,      // to track log
+			ProjectID:  item.ProjectID, // to track log
 		}
 
 		u.Logger.Info("mintData", mintData)
@@ -345,7 +354,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		resp, err := u.OrdService.Mint(mintData)
 		if err != nil {
 			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "OrdService", err.Error(), true)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, err.Error(), true)
 			continue
 		}
 		u.Logger.Info("mint.resp", resp)
