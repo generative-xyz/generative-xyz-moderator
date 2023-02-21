@@ -150,6 +150,12 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 			log.SetData("user.WalletAddressBTCTaproot.Updated", true)
 		}
 	}
+	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
+		if user.WalletAddressBTC == "" {
+			user.WalletAddressBTC = *data.AddressBTCSegwit
+			log.SetData("user.WalletAddressBTC.Updated", true)
+		}
+	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
@@ -401,6 +407,7 @@ func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken stri
 		err = errors.New("Access token is invaild")
 		log.Error("u.Cache.GetData", err.Error(), err)
 		return nil, err
+
 	}
 
 	log.SetData("cached.UserID", userID)
@@ -411,6 +418,8 @@ func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken stri
 		log.Error("u.Auth2.ValidateToken", err.Error(), err)
 		return nil, err
 	}
+
+	// userID = &claim.Uid
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")

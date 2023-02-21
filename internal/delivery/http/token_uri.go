@@ -596,3 +596,56 @@ func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Req
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
+
+
+// UserCredits godoc
+// @Summary Update token's thumbnail
+// @Description Update token's thumbnail
+// @Tags Tokens
+// @Accept  json
+// @Produce  json
+// @Param tokenID path string true "token ID"
+// @Param request body request.UpdateTokenThumbnailReq true "Request body"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /tokens/{tokenID}/thumbnail [POST]
+func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("updateTokenThumbnail", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	tokenID := vars["tokenID"]
+	span.SetTag("tokenID", tokenID)
+
+	var reqBody request.UpdateTokenThumbnailReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	token, err := h.Usecase.UpdateTokenThumbnail(span, structure.UpdateTokenThumbnailReq{
+		TokenID:        tokenID,
+		Thumbnail:       *reqBody.Thumbnail,
+	})
+
+	if err != nil {
+		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("h.Usecase.GetToken", token)
+	resp, err := h.tokenToResp(token)
+	if err != nil {
+		err := errors.New("Cannot parse products")
+		log.Error("tokenToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	log.SetData("resp.token", token)
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}

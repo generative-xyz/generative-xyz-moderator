@@ -2,11 +2,14 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -19,7 +22,7 @@ import (
 // @Router /admin/redis [GET]
 func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getRedisKeys", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	res, err := h.Usecase.GetAllRedis(span)
 
@@ -33,7 +36,6 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
 }
 
-
 // UserCredits godoc
 // @Summary Get Redis
 // @Description Get Redis
@@ -45,12 +47,12 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/redis/{key} [GET]
 func (h *httpDelivery) getRedis(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("getRedis", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var err error
 	vars := mux.Vars(r)
 	redisKey := vars["key"]
-	
+
 	res, err := h.Usecase.GetRedis(span, redisKey)
 
 	if err != nil {
@@ -74,7 +76,7 @@ func (h *httpDelivery) getRedis(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/redis [POST]
 func (h *httpDelivery) upsertRedis(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("upsertRedis", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.UpsertRedisRequest
 	decoder := json.NewDecoder(r.Body)
@@ -107,12 +109,12 @@ func (h *httpDelivery) upsertRedis(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/redis/{key} [DELETE]
 func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("deleteRedis", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 
 	var err error
 	vars := mux.Vars(r)
 	redisKey := vars["key"]
-	
+
 	err = h.Usecase.DeleteRedis(span, redisKey)
 
 	if err != nil {
@@ -125,7 +127,6 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
 }
 
-
 // UserCredits godoc
 // @Summary Delete Redis
 // @Description Delete Redis
@@ -136,7 +137,7 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 // @Router /admin/redis [DELETE]
 func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("deleteAllRedis", r)
-	defer h.Tracer.FinishSpan(span, log )
+	defer h.Tracer.FinishSpan(span, log)
 	res, err := h.Usecase.DeleteAllRedis(span)
 
 	if err != nil {
@@ -144,6 +145,62 @@ func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+}
+
+//  Auto listing godoc
+// @Summary Auto listing
+// @Description  Auto listing
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Param request body request.ListNftIdsReq true " Auto listing"
+// @Success 200 {object} response.JsonResponse{data=true/false}
+// @Router /admin/auto-listing [POST]
+func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("autoListing", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(span, userWalletAddr)
+	if err != nil {
+		log.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		log.Error("permission", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var reqBody request.ListNftIdsReq
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&reqBody)
+	if err != nil {
+		log.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	res := h.Usecase.AutoListing(span, &reqBody)
 
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")

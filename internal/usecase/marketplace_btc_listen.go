@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -372,11 +374,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			destinations := make(map[string]int)
 
 			destinations[nftListing.SellerAddress] = amountWithChargee
-			if artistAddress != "" {
+			if artistAddress != "" && royaltyFee > 0 {
 				destinations[artistAddress] = royaltyFee
 			}
 
-			destinations[serviceFeeAddress] = serviceFee
+			if serviceFee > 0 {
+				destinations[serviceFeeAddress] = serviceFee
+			}
 
 			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
 			if err != nil {
@@ -773,4 +777,49 @@ func (u Usecase) SendTokenMKPTest(rootSpan opentracing.Span, walletName, receive
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "return now...")
 
 	return resp, err
+}
+
+// admin
+// check receive of the nft:
+func (u Usecase) AutoListing(rootSpan opentracing.Span, reqs *request.ListNftIdsReq) interface{} {
+
+	span, log := u.StartSpan("AutoListing", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	var listIdSuccess []string
+
+	if reqs != nil {
+		for _, v := range reqs.InscriptionID {
+			//v.Inscription
+			listing := entity.MarketplaceBTCListing{
+				SellOrdAddress: reqs.SellOrdAddress,
+				SellerAddress:  reqs.SellerAddress,
+				HoldOrdAddress: "",
+				ServiceFee:     "0",
+				Price:          reqs.Price,
+				IsConfirm:      true,
+				IsSold:         false,
+				ExpiredAt:      time.Now().Add(time.Hour * 1),
+				Name:           "",
+				Description:    "",
+				InscriptionID:  v,
+			}
+			// get first:
+			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)
+			if nftList != nil && nftList.IsConfirm && !nftList.IsSold {
+				log.Error("AutoListing.Repo.FindBtcNFTListingByNFTID", "", errors.New("item exist"))
+				continue
+			}
+
+			// check if listing is created or not
+			err := u.Repo.CreateMarketplaceListingBTC(&listing)
+			if err != nil {
+				log.Error("AutoListing.Repo.CreateMarketplaceBTCListing", "", err)
+				continue
+			}
+			listIdSuccess = append(listIdSuccess, v)
+		}
+	}
+
+	return listIdSuccess
 }

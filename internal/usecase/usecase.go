@@ -41,6 +41,7 @@ type Usecase struct {
 	MqttClient      mqttClient.IDeviceMqtt
 	Auth2           oauth2service.Auth2
 	GCS             googlecloud.IGcstorage
+	S3Adapter  googlecloud.S3Adapter
 	MoralisNft      nfts.MoralisNfts
 	CovalentNft     nfts.CovalentNfts
 	Blockchain      blockchain.Blockchain
@@ -60,6 +61,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.Cache = global.Cache
 	u.Auth2 = global.Auth2
 	u.GCS = global.GCS
+	u.S3Adapter = global.S3Adapter
 	u.MoralisNft = global.MoralisNFT
 	u.CovalentNft = global.CovalentNFT
 	u.Blockchain = global.Blockchain
