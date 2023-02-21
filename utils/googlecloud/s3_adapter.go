@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -134,7 +135,9 @@ func (a S3Adapter) CompleteMultipartUpload(ctx context.Context, uploadID string)
 			PartNumber: item.PartNumber,
 		})
 	}
-
+	sort.Slice(completedParts, func(i, j int) bool {
+		return *completedParts[i].PartNumber < *completedParts[j].PartNumber
+	})
 	key, err := a.GetKeyFromUploadID(uploadID)
 	if err != nil {
 		return nil, err
