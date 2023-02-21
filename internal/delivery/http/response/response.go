@@ -5,10 +5,8 @@ import (
 	"net/http"
 
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/utils/tracer"
 
 	"github.com/jinzhu/copier"
-	"github.com/opentracing/opentracing-go"
 )
 
 type IResponse interface {
@@ -33,9 +31,6 @@ type IHttpResponse interface {
 	RespondWithError(w http.ResponseWriter, httpCode int, appCode int, payload error)
 	RespondSuccess(w http.ResponseWriter, httpCode int, appCode int, payload interface{}, customerMessage string)
 	RespondWithoutContainer(w http.ResponseWriter, httpCode int, payload interface{})
-	SetTrace(tracer tracer.ITracer)
-	SetSpan(rootSpan opentracing.Span)
-	SetLog(tracer tracer.ITracer, rootSpan opentracing.Span)
 }
 
 type JsonResponse struct {
@@ -50,25 +45,11 @@ type RespondErr struct {
 }
 
 type httpResponse struct {
-	RootSpan opentracing.Span
-	Tracer   tracer.ITracer
+	
 }
 
 func NewHttpResponse() *httpResponse {
 	return new(httpResponse)
-}
-
-func (h *httpResponse) SetTrace(tracer tracer.ITracer) {
-	h.Tracer = tracer
-}
-
-func (h *httpResponse) SetSpan(rootSpan opentracing.Span) {
-	h.RootSpan = rootSpan
-}
-
-func (h *httpResponse) SetLog(tracer tracer.ITracer, rootSpan opentracing.Span) {
-	h.Tracer = tracer
-	h.RootSpan = rootSpan
 }
 
 func (h *httpResponse) RespondWithError(w http.ResponseWriter, httpCode int, appCode int, payload error) {
@@ -101,16 +82,6 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 		jsr.Status = false
 	}
 
-	if h.Tracer != nil && h.RootSpan != nil {
-		span := h.Tracer.StartSpanFromRoot(h.RootSpan, "respondWithJSON")
-		defer span.Finish()
-
-		span.LogFields(
-			//h.Tracer.LogObject("response.Json", jsr),
-			h.Tracer.LogInt("response.code", code),
-		)
-	}
-
 	response, _ := json.Marshal(jsr)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpCode)
@@ -122,15 +93,6 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 
 
 func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode int, payload interface{}) {
-
-	if h.Tracer != nil && h.RootSpan != nil {
-		span := h.Tracer.StartSpanFromRoot(h.RootSpan, "respondWithJSON")
-		defer span.Finish()
-
-		// span.LogFields(
-		// 	h.Tracer.LogObject("response.Json", payload),
-		// )
-	}
 
 	response, _ := json.Marshal(payload)
 	w.Header().Set("Content-Type", "application/json")

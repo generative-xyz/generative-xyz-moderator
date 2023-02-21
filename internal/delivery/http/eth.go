@@ -24,15 +24,13 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/receive-address [POST]
 func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.ethGetReceiveWalletAddress", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
+	
 
 	var reqBody request.CreateEthWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -40,22 +38,22 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	reqUsecase := &structure.EthWalletAddressData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	ethWallet, err := h.Usecase.CreateETHWalletAddress(span, *reqUsecase)
+	ethWallet, err := h.Usecase.CreateETHWalletAddress(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+		h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("ethWallet", ethWallet)
+	h.Logger.Info("ethWallet", ethWallet)
 	resp, err := h.EthWalletAddressToResp(ethWallet)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -74,26 +72,24 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/receive-address/whitelist [POST]
 func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.ethGetReceiveWhitelistedWalletAddress", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 
 	var reqBody request.CreateWhitelistedEthWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -101,21 +97,21 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 	reqUsecase := &structure.EthWalletAddressData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, span, userWalletAddr, *reqUsecase)
+	ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, userWalletAddr, *reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+		h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("ethWallet", ethWallet)
+	h.Logger.Info("ethWallet", ethWallet)
 	resp, err := h.EthWalletAddressToResp(ethWallet)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -133,15 +129,15 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/mint [POST]
 // func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
-// 	span, log := h.StartSpan("httpDelivery.mintEth", r)
-// 	defer h.Tracer.FinishSpan(span, log)
-// 	h.Response.SetLog(h.Tracer, span)
+// 	
+// 	
+// 	
 
 // 	var reqBody request.CreateMintReq
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+// 		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -149,22 +145,22 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // 	reqUsecase := &structure.EthMintData{}
 // 	err = copier.Copy(reqUsecase, reqBody)
 // 	if err != nil {
-// 		log.Error("copier.Copy", err.Error(), err)
+// 		h.Logger.Error("copier.Copy", err.Error(), err)
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
 
-// 	ethWallet, err := h.Usecase.ETHMint(span, *reqUsecase)
+// 	ethWallet, err := h.Usecase.ETHMint(*reqUsecase)
 // 	if err != nil {
-// 		log.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
+// 		h.Logger.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
 
-// 	log.SetData("ethWallet", ethWallet)
+// 	h.Logger.Info("ethWallet", ethWallet)
 // 	resp, err := h.EthToResp(ethWallet)
 // 	if err != nil {
-// 		log.Error(" h.proposalToResp", err.Error(), err)
+// 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}

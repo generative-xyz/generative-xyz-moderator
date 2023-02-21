@@ -30,7 +30,6 @@ func (r Repository) FilterProposal(filter entity.FilterProposals) (*entity.Pagin
 	for _, raw := range t.Data {
 		p :=&entity.QueriedProposal{}
 		pResp :=&entity.Proposal{}
-		
 		marshallErr := bson.Unmarshal(raw, &p)
 		if marshallErr == nil {
 			err = copier.Copy(pResp, p)
@@ -132,7 +131,6 @@ func (r Repository) AggregateData(dbName string, page int64, limit int64, filter
 	}
 
 	matchStage := bson.M{
-		
 		"$match" : filter,
 	}
 

@@ -14,9 +14,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 
@@ -83,6 +83,30 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 	return &gcStorage, nil
 }
 
+func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket string, waitgroup *sync.WaitGroup) error {
+	defer waitgroup.Done()
+	fmt.Printf("processing unzip for file %s %s to %s", baseDir, f.Name, outputBucket)
+	buffer := make([]byte, 32*1024)
+	r, err := f.Open()
+	if err != nil {
+		fmt.Println(baseDir, outputBucket, err)
+		return fmt.Errorf("Open: %v", err)
+	}
+	defer r.Close()
+
+	p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
+	w := g.client.Bucket(outputBucket).Object(p).NewWriter(g.ctx)
+	defer w.Close()
+
+	_, err = io.CopyBuffer(w, r, buffer)
+	if err != nil {
+		fmt.Println(baseDir, outputBucket, err)
+		return fmt.Errorf("io.Copy: %v", err)
+	}
+
+	return nil
+}
+
 func (g gcstorage) UnzipFile(object string) error {
 	r, err := g.client.Bucket(os.Getenv("GCS_BUCKET")).Object(object).NewReader(g.ctx)
 	if err != nil {
@@ -100,66 +124,51 @@ func (g gcstorage) UnzipFile(object string) error {
 	}
 
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
-	buffer := make([]byte, 32*1024)
 	outputBucket := g.bucketName
-
-	fmt.Println(baseDir)
-	for i, f := range zr.File {
+	groups := make(map[string]*zip.File)
+	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
-		err := func() error {
-			r, err := f.Open()
-			if err != nil {
-				return fmt.Errorf("Open: %v", err)
-			}
-			defer r.Close()
-
-			if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
-				return nil
-			}
-	
-			if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
-				return nil
-			}
-			
-			p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
-			spew.Dump(f.Name)
-			spew.Dump(p)
-			w := g.client.Bucket(outputBucket).Object(p).NewWriter(g.ctx)
-			defer w.Close()
-
-			_, err = io.CopyBuffer(w, r, buffer)
-			if err != nil {
-				return fmt.Errorf("io.Copy: %v", err)
-			}
-
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			return nil
-		}()
-
-
-		fmt.Printf("Procesed %d / %d files \n", i+1, len(zr.File))
-		if err != nil {
-			//.fmt.Errorf("%s",err.Error())
-			fmt.Errorf("%v", err)
-			return err
 		}
-		
+
+		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
+			return nil
+		}
+
+		groups[f.Name] = f
+		if len(groups) == 500 {
+			var wg sync.WaitGroup
+			for _, fileData := range groups {
+				wg.Add(1)
+				go g.processUnzip(fileData, baseDir, outputBucket, &wg)
+			}
+			wg.Wait()
+			fmt.Println("process", len(groups), " files for ", outputBucket)
+			groups = make(map[string]*zip.File)
+		}
+	}
+
+	if len(groups) > 0 {
+		var wg sync.WaitGroup
+		for _, fileData := range groups {
+			wg.Add(1)
+			go g.processUnzip(fileData, baseDir, outputBucket, &wg)
+		}
+		wg.Wait()
+		groups = make(map[string]*zip.File)
 	}
 
 	return nil
 }
 
-
 func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) {
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
 
-	now := time.Now().Unix()
-	fname := strings.ToLower(file.FileHeader.Filename)
-	fname = strings.ReplaceAll(fname, " ", "_")
-	fname = strings.TrimSpace(fname)
-	fname = fmt.Sprintf("%d-%s", now, fname)
+	fname := NormalizeFileName(file.FileHeader.Filename)
 	path := fmt.Sprintf("upload/%s", fname)
 	if file.Path != nil {
 		if *file.Path != "" {

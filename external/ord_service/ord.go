@@ -11,25 +11,20 @@ import (
 
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
-
-	"github.com/opentracing/opentracing-go"
 )
 
 type BtcOrd struct {
 	conf            *config.Config
-	tracer          tracer.ITracer
-	rootSpan opentracing.Span
+	
 	serverURL string
 	cache redis.IRedisCache
 }
 
-func NewBtcOrd(conf *config.Config, t tracer.ITracer, cache redis.IRedisCache) *BtcOrd {
+func NewBtcOrd(conf *config.Config,  cache redis.IRedisCache) *BtcOrd {
 
 	serverURL := os.Getenv("ORD_SERVER")
     return &BtcOrd{
 		conf:            conf,
-		tracer:          t,
 		serverURL: serverURL,
 		cache: cache,
 	}
@@ -59,8 +54,7 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error){
 	if err != nil {
 		return nil, err
 	}
-	
-	resp := &ExecRespose{}
+resp := &ExecRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
 		return nil, err
@@ -89,8 +83,7 @@ func (m BtcOrd) Mint(f MintRequest) (*MintRespose, error){
 	if err != nil {
 		return nil, err
 	}
-	
-	resp := &MintRespose{}
+resp := &MintRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
 		return nil, err
@@ -115,8 +108,7 @@ func (m BtcOrd) request(fullUrl string, method string, headers map[string]string
 			req.Header.Add(key,  val)
 		}
 	}
-	
-	req.Header.Add("accept", "application/json")
+req.Header.Add("accept", "application/json")
 	req.Header.Add("content-type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)

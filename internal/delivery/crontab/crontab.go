@@ -5,13 +5,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
 
 	"gopkg.in/robfig/cron.v2"
 )
@@ -19,7 +17,6 @@ import (
 
 type ScronHandler struct {
 	Logger   logger.Ilogger
-	Tracer   tracer.ITracer
 	Cache    redis.IRedisCache
 	Usecase    usecase.Usecase
 }
@@ -27,7 +24,6 @@ type ScronHandler struct {
 func NewScronHandler(global *global.Global, uc usecase.Usecase) *ScronHandler {
 	return &ScronHandler{
 		Logger: global.Logger,
-		Tracer: global.Tracer,
 		Cache: global.Cache,
 		Usecase: uc,
 	}
@@ -42,26 +38,17 @@ func (h ScronHandler) StartServer() {
 	//check device's statues each 1 hours
 	c.AddFunc(disPatchOn, func() {
 
-		span := h.Tracer.StartSpan("DispatchCron.CRYPTO_PING")
-		defer span.Finish()
+		h.Logger.Info("dispatch", disPatchOn)
+		h.Logger.Info("time", time.Now().UTC())
 
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
-		log.SetTag("cron", true)
-		log.SetData("dispatch", disPatchOn)
-		log.SetData("time", time.Now().UTC())
-
-		err := h.Usecase.PrepareData(span)
+		err := h.Usecase.PrepareData()
 		if err != nil {
-			log.Error("error when prepare data for crontab", err.Error(), err)
+			h.Logger.Error(err)
 			return
 		}
 
 		chanDone := make(chan bool, 7)
-		go func (chanDone chan bool)  {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.tokens")
-			defer span.Finish()
+			go func (chanDone chan bool)  {
 
 			defer func() {
 				chanDone <- true
@@ -69,134 +56,95 @@ func (h ScronHandler) StartServer() {
 
 			projects, err :=  h.Usecase.Repo.GetAllProjects(entity.FilterProjects{})
 			if err != nil {
-				log.Error("h.Usecase.GetAllProjects", err.Error(), err)
+				h.Logger.Error(err)
 			}
 
 			processed := 0
 			for _, project := range projects {
-				
-				if processed % 5 == 0 {
+						if processed % 5 == 0 {
 					time.Sleep(10 * time.Second)
 				}
 
-				go func(span opentracing.Span, project entity.Projects) {
+				go func( project entity.Projects) {
 					//TO DO: this function will be improved
-					err := h.Usecase.GetTokensOfAProjectFromChain(span, project)
+					err := h.Usecase.GetTokensOfAProjectFromChain(project)
 					if err != nil {
-						log.Error("h.Usecase.UpdateTokensFromChain", err.Error(), err)
+						h.Logger.Error(err)
 					}
-				}(span, project)
+				}(project)
 				processed ++
 			}
 		}(chanDone)
-		
 		go func (chanDone chan bool)  {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.project")
-			defer span.Finish()
-
 			defer func() {
 				chanDone <- true
 			}()
 
-			err := h.Usecase.GetProjectsFromChain(span)
+			err := h.Usecase.GetProjectsFromChain()
 			if err != nil {
-				log.Error("h.Usecase.GetProjectsFromChain", err.Error(), err)
+				h.Logger.Error(err)
 			}
-		}(chanDone)		
-
+		}(chanDone)
 		go func (chanDone chan bool)  {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.UpdateAvatar")
-			defer span.Finish()
-
 			defer func() {
 				chanDone <- true
 			}()
 
-			h.Usecase.UpdateUserAvatars(span)
+			h.Usecase.UpdateUserAvatars()
 		}(chanDone)
-			
-		go func (chanDone chan bool) {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncTokenAndMarketplaceData")
-			defer span.Finish()
-
+			go func (chanDone chan bool) {
 			defer func() {
 				chanDone <- true
 			}()
-			
-			err := h.Usecase.SyncTokenAndMarketplaceData(span)
+				err := h.Usecase.SyncTokenAndMarketplaceData()
 			if err != nil {
-				log.Error("h.Usecase.SyncTokenAndMarketplaceData", err.Error(), err)
+				h.Logger.Error(err)
 			}
 		}(chanDone)
 
 		go func (chanDone chan bool) {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncUserStats")
-			defer span.Finish()
-
 			defer func() {
 				chanDone <- true
 			}()
-			
-			err := h.Usecase.SyncUserStats(span)
+				err := h.Usecase.SyncUserStats()
 			if err != nil {
-				log.Error("h.Usecase.SyncUserStats", err.Error(), err)
+				h.Logger.Error(err)
 			}
 		}(chanDone)
 
 		go func (chanDone chan bool) {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncLeaderboard")
-			defer span.Finish()
-
 			defer func() {
 				chanDone <- true
 			}()
-			
-			err := h.Usecase.SyncLeaderboard(span)
+				err := h.Usecase.SyncLeaderboard()
 			if err != nil {
-				log.Error("h.Usecase.SyncLeaderboard", err.Error(), err)
+				h.Logger.Error(err)
 			}
 		}(chanDone)
 
 		go func (chanDone chan bool) {
-			span := h.Tracer.StartSpanFromRoot(span, "DispatchCron.CRYPTO_PING.SyncProjectsStats")
-			defer span.Finish()
-
-			defer func() {
+				defer func() {
 				chanDone <- true
 			}()
-			
-			err := h.Usecase.SyncProjectsStats(span)
+				err := h.Usecase.SyncProjectsStats()
 			if err != nil {
-				log.Error("h.Usecase.SyncProjectsStats", err.Error(), err)
+				h.Logger.Error(err)
 			}
 		}(chanDone)
 
 	})
-	
-	//alway a minute crontab
+//alway a minute crontab
 	c.AddFunc("*/1 * * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.OneMinute")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
-		err := h.Usecase.UpdateProposalState(span)
+		err := h.Usecase.UpdateProposalState()
 		if err != nil {
-			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+			h.Logger.Error(err)
 		}
 	})
 
 	c.AddFunc("0 0 * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.Everyday")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
-		err := h.Usecase.SnapShotOldRankAndOldBalance(span)
+		err := h.Usecase.SnapShotOldRankAndOldBalance()
 		if err != nil {
-			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+			h.Logger.Error(err)
 		}
 	})
 
