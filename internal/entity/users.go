@@ -25,6 +25,10 @@ type FilterUsers struct {
 	IsUpdatedAvatar  *bool
 }
 
+type FilteArtist struct {
+	BaseFilters
+}
+
 type UserStats struct {
 	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
 	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`

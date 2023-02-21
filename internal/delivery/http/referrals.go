@@ -22,8 +22,6 @@ import (
 // @Success 200 {object} response.JsonResponse{data=bool}
 // @Router /referrals/{referrerID} [POST]
 func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.createReferral", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	ctx := r.Context()
 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
@@ -31,24 +29,24 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		err := errors.New( "Token is incorect")
-		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	vars := mux.Vars(r)
 	referrerID := vars["referrerID"]
-	span.SetTag("referrerID", referrerID)
+	
 
-	err := h.Usecase.CreateReferral(span, referrerID, referreeID)
+	err := h.Usecase.CreateReferral(referrerID, referreeID)
 
 	if err != nil {
-		log.Error("h.Usecase.CreateReferral", err.Error(), err)
+		h.Logger.Error("h.Usecase.CreateReferral", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
 
@@ -64,13 +62,10 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /referrals [GET]
 func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("referrals", r)
-	defer h.Tracer.FinishSpan(span, log)
 	var err error
-	
-	baseF, err := h.BaseFilters(r)
+baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -81,7 +76,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		err := errors.New( "Token is incorect")
-		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -89,9 +84,9 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	f := structure.FilterReferrals{}
 	f.BaseFilters = *baseF
 	f.ReferrerID = &referrerID
-	uReferrals, err := h.Usecase.GetReferrals(span, f)
+	uReferrals, err := h.Usecase.GetReferrals(f)
 	if err != nil {
-		log.Error("h.Usecase.GetReferrals", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetReferrals", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -103,7 +98,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 		p, err := h.referralToResp(&referral)
 		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
+			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -111,7 +106,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 		pResp = append(pResp, *p)
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uReferrals, pResp), "")
 }
 

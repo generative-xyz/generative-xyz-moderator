@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"github.com/jinzhu/copier"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
@@ -11,9 +10,8 @@ const (
 	DEFAULT_REFERRAL_PERCENT = 3
 )
 
-func (u Usecase) CreateReferral(rootSpan opentracing.Span, referrerID string, referreeID string) error {
-	span, log := u.StartSpan("CreateReferral", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
+
 
 	referrer, err := u.Repo.FindUserByID(referrerID)
 	if err != nil {
@@ -39,24 +37,23 @@ func (u Usecase) CreateReferral(rootSpan opentracing.Span, referrerID string, re
 	return nil
 }
 
-func (u Usecase) GetReferrals(rootSpan opentracing.Span, req structure.FilterReferrals) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetReferrals", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Pagination, error) {
+
 
 	pe := &entity.FilterReferrals{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
 	referrals, err := u.Repo.GetReferrals(*pe)
 	if err != nil {
-		log.Error("u.Repo.FilterReferrals", err.Error(), err)
+		u.Logger.Error("u.Repo.FilterReferrals", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("referrals", referrals.Total)
+	u.Logger.Info("referrals", referrals.Total)
 	return referrals, nil
 }
 

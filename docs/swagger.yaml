@@ -1371,10 +1371,19 @@ paths:
     put:
       description: Upload multipart file
       parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
       - description: upload ID
         in: path
         name: uploadID
         required: true
+        type: string
+      - description: part number
+        in: query
+        name: partNumber
         type: string
       produces:
       - multipart/form-data
@@ -2577,6 +2586,30 @@ paths:
       summary: get token's traits
       tags:
       - Token for Opensea
+  /user/artist:
+    get:
+      consumes:
+      - application/json
+      description: get list Artist
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get list Artist
+      tags:
+      - Artist
 securityDefinitions:
   Api-Key:
     in: header
