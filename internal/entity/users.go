@@ -33,8 +33,19 @@ type UserStats struct {
 	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
 	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`
 	OutputMinted      int32 `bson:"output_minted" json:"output_minted"`
+	VolumeMinted      int32 `bson:"volume_minted" json:"volume_minted"`
 }
 
+type UserResponse struct {
+	Users    `json:",inline"`
+	Projects []*ProjectBasicInfo `json:"projects"`
+}
+
+type ProjectBasicInfo struct {
+	Id            string `json:"id"`
+	Name          string `json:"name"`
+	WalletAddress string `json:"wallet_address"`
+}
 type Users struct {
 	BaseEntity              `bson:",inline" json:"-"`
 	ID                      string        `bson:"id" json:"id,omitempty"`
