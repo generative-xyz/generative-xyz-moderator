@@ -183,8 +183,8 @@ func (r Repository) ListMintingByWalletAddress(address string) ([]entity.BTCWall
 	confs := []entity.BTCWalletAddress{}
 	f := bson.M{}
 	f["isConfirm"] = true
-	f["isMinted"] = true
 	f["origin_user_address"] = address
+	f["mintResponse.issent"] = false
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
