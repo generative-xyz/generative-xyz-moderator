@@ -116,7 +116,6 @@ func (r Repository) ListProcessingWalletAddress() ([]entity.BTCWalletAddress, er
 	return confs, nil
 }
 
-
 func (r Repository) ListMintingWalletAddress() ([]entity.BTCWalletAddress, error) {
 	confs := []entity.BTCWalletAddress{}
 	f := bson.M{}
@@ -157,7 +156,7 @@ func (r Repository) ListBTCAddress() ([]entity.BTCWalletAddress, error) {
 	return confs, nil
 }
 
-//list to claim btc:
+// list to claim btc:
 func (r Repository) ListWalletAddressToClaimBTC() ([]entity.BTCWalletAddress, error) {
 	resp := []entity.BTCWalletAddress{}
 
@@ -178,4 +177,23 @@ func (r Repository) ListWalletAddressToClaimBTC() ([]entity.BTCWalletAddress, er
 	}
 
 	return resp, nil
+}
+
+func (r Repository) ListMintingByWalletAddress(address string) ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["isMinted"] = true
+	f["user_address"] = address
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
 }
