@@ -25,7 +25,7 @@ const (
 
 	StatusMint_TxMintFailed // 8: tx mint failed
 
-	StatusMint_NotEnoughBalance // 9: balance not enough
+	StatusMint_NeedToRefund // 9: balance not enough or mint out...
 
 	StatusMint_Refunding // 10: refunding
 	StatusMint_Refunded  // 11: refunding
@@ -48,7 +48,7 @@ var StatusMintToText = map[StatusMint]string{
 
 	StatusMint_TxMintFailed: "mint failed",
 
-	StatusMint_NotEnoughBalance: "not enough balance",
+	StatusMint_NeedToRefund: "waiting to refund",
 
 	StatusMint_Refunding: "refunding",
 	StatusMint_Refunded:  "refunded",
@@ -86,13 +86,16 @@ type MintNftBtc struct {
 	ProjectID string `bson:"projectID"` //projectID
 
 	// just log for users, not using for the job checking.
-	IsConfirm    bool `bson:"isConfirm"`
-	IsMinted     bool `bson:"isMinted"`
-	IsSentUser   bool `bson:"isSentUser"`
-	IsSentMaster bool `bson:"isSentMaster"`
+	IsConfirm        bool `bson:"isConfirm"`
+	IsMinted         bool `bson:"isMinted"`
+	IsSentUser       bool `bson:"isSentUser"`
+	IsSentMaster     bool `bson:"isSentMaster"`
+	IsUpdatedNftInfo bool `bson:"isUpdatedNftInfo"`
 
 	OutputMintNFT interface{} `bson:"output_mint_nft"`
 	OutputSendNFT interface{} `bson:"output_send_nft"`
+
+	ReasonRefund string `bson:"reasonRefund"`
 }
 
 func (u MintNftBtc) TableName() string {
