@@ -809,6 +809,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			continue
 		}
 		var minting *structure.MintingInscription
+		if time.Since(*item.CreatedAt) >= 48*time.Hour {
+			continue // timeout if  waited for 2 days
+		}
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
 				Status:       "waiting for funds",
@@ -836,6 +839,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			}
 		}
+		itemIDMap[item.UUID] = struct{}{}
 		result = append(result, *minting)
 	}
 
@@ -846,6 +850,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		}
 		if _, ok := itemIDMap[item.UUID]; ok {
 			continue
+		}
+		if time.Since(*item.CreatedAt) >= 48*time.Hour {
+			continue // timeout if  waited for 2 days
 		}
 		var minting *structure.MintingInscription
 		if !item.IsConfirm {
@@ -875,6 +882,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			}
 		}
+		itemIDMap[item.UUID] = struct{}{}
 		result = append(result, *minting)
 	}
 
