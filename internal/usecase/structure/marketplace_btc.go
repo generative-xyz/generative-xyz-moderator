@@ -43,3 +43,7 @@ type MarketplaceNFTDetail struct {
 	InscriptionIndex string           `json:"inscription_index"`
 	Inscription      *entity.TokenUri `json:"inscription"`
 }
+
+type MarketplaceCollectionStats struct {
+	FloorPrice uint64 `json:"floor_price"`
+}
