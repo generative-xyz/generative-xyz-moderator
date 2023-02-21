@@ -210,8 +210,22 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 	if err != nil {
 		return nil, err
 	}
+	data := []*entity.UserResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			return nil, err
+		}
+		projects := []*entity.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &entity.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
 
-	resp.Result = users
+		d := &entity.UserResponse{Users: user, Projects: projects}
+		data = append(data, d)
+	}
+
+	resp.Result = data
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit
