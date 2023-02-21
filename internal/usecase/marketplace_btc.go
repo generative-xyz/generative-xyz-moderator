@@ -13,7 +13,7 @@ import (
 	"rederinghub.io/utils/btc"
 )
 
-func (u Usecase) BTCMarketplaceListingNFT( listingInfo structure.MarketplaceBTC_ListingInfo) (*entity.MarketplaceBTCListing, error) {
+func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_ListingInfo) (*entity.MarketplaceBTCListing, error) {
 
 	listing := entity.MarketplaceBTCListing{
 		SellOrdAddress: listingInfo.SellOrdAddress,
@@ -44,7 +44,7 @@ func (u Usecase) BTCMarketplaceListingNFT( listingInfo structure.MarketplaceBTC_
 	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	listing.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func( offer entity.MarketplaceOffers) {
-	// // 	
+	// //
 
 	// 	profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
 	// 	if err != nil {
@@ -68,7 +68,6 @@ func (u Usecase) BTCMarketplaceListingNFT( listingInfo structure.MarketplaceBTC_
 
 	// }
 
-	
 	// check if listing is created or not
 	err = u.Repo.CreateMarketplaceListingBTC(&listing)
 	if err != nil {
@@ -78,7 +77,7 @@ func (u Usecase) BTCMarketplaceListingNFT( listingInfo structure.MarketplaceBTC_
 	return &listing, nil
 }
 
-func (u Usecase) BTCMarketplaceListNFT( filter *entity.FilterString, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
+func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
 
 	result := []structure.MarketplaceNFTDetail{}
 	var nftList []entity.MarketplaceBTCListingFilterPipeline
@@ -215,7 +214,7 @@ func (u Usecase) BTCMarketplaceListNFT( filter *entity.FilterString, buyableOnly
 	return result, nil
 }
 
-func (u Usecase) BTCMarketplaceBuyOrder( orderInfo structure.MarketplaceBTC_BuyOrderInfo) (string, error) {
+func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOrderInfo) (string, error) {
 
 	order := entity.MarketplaceBTCBuyOrder{
 		InscriptionID: orderInfo.InscriptionID,
@@ -234,7 +233,7 @@ func (u Usecase) BTCMarketplaceBuyOrder( orderInfo structure.MarketplaceBTC_BuyO
 
 	// order.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func( offer entity.MarketplaceOffers) {
-	// // 	
+	// //
 
 	// 	profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
 	// 	if err != nil {
@@ -258,8 +257,6 @@ func (u Usecase) BTCMarketplaceBuyOrder( orderInfo structure.MarketplaceBTC_BuyO
 
 	// }
 
-	
-	
 	// check if listing is created or not
 	err = u.Repo.CreateMarketplaceBuyOrder(&order)
 	if err != nil {
@@ -323,7 +320,7 @@ func (u Usecase) BTCMarketplaceFilterInfo() (interface{}, error) {
 
 	listCollectionFilterMapReturn := map[string]interface{}{}
 
-	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 1)
+	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 1) //TODO: @tri check this why offset is 1
 	for _, v := range listingOrder {
 		collectionFilter := CollectionFilter{
 			Name:  v.CollectionName,
@@ -376,4 +373,14 @@ func (u Usecase) BTCMarketplaceFilterInfo() (interface{}, error) {
 	listCollectionFilterMapReturn["inscriptionID"] = listNftIDFilterMap
 
 	return listCollectionFilterMapReturn, nil
+}
+
+func (u Usecase) GetCollectionMarketplaceStats(collectionID string) (*structure.MarketplaceCollectionStats, error) {
+	var result structure.MarketplaceCollectionStats
+	floorPrice, err := u.Repo.RetrieveFloorPriceOfCollection(collectionID)
+	if err != nil {
+		return nil, err
+	}
+	result.FloorPrice = floorPrice
+	return &result, nil
 }
