@@ -44,6 +44,7 @@ type Users struct {
 	CreatedAt               *time.Time    `bson:"created_at" json:"created_at,omitempty"`
 	ProfileSocial           ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
 	Stats                   UserStats     `bson:"stats" json:"stats"`
+	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 }
 
 type ProfileSocial struct {
