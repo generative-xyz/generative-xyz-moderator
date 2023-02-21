@@ -19,9 +19,6 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /user/artist [GET]
 func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.listArtist", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
 
 	// baseF, err := h.BaseFilters(r)
 	// if err != nil {
@@ -33,15 +30,15 @@ func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		log.Error("parse page param to int", err.Error(), err)
+		h.Logger.Error("parse page param to int", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	span.SetTag("page", page)
+	
 	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		log.Error("parse limit param to int", err.Error(), err)
+		h.Logger.Error("parse limit param to int", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -50,14 +47,13 @@ func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters.Limit = int64(limit)
 	f.BaseFilters.Page = int64(page)
 
-	result, err := h.Usecase.ListArtist(span, f)
+	result, err := h.Usecase.ListArtist(f)
 	if err != nil {
-		log.Error("httpDelivery.listArtist.Usecase.ListArtist", err.Error(), err)
+		h.Logger.Error("httpDelivery.listArtist.Usecase.ListArtist", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	pagResp := h.PaginationResp(result, result.Result)
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, pagResp, "")
 }
