@@ -19,7 +19,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateOrdBTCWalletAddress( input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+func (u Usecase) CreateOrdBTCWalletAddress(input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
 	u.Logger.Info("input", input)
 
 	// find Project and make sure index < max supply
@@ -43,7 +43,7 @@ func (u Usecase) CreateOrdBTCWalletAddress( input structure.BctWalletAddressData
 	}
 
 	userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-	
+
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -103,7 +103,6 @@ func (u Usecase) CreateOrdBTCWalletAddress( input structure.BctWalletAddressData
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
 
-	
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
 	if err != nil {
 		u.Logger.Error(err)
@@ -113,7 +112,7 @@ func (u Usecase) CreateOrdBTCWalletAddress( input structure.BctWalletAddressData
 	return walletAddress, nil
 }
 
-func (u Usecase) CreateSegwitBTCWalletAddress( input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+func (u Usecase) CreateSegwitBTCWalletAddress(input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
 	walletAddress := &entity.BTCWalletAddress{}
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
 	if err != nil {
@@ -151,7 +150,6 @@ func (u Usecase) CreateSegwitBTCWalletAddress( input structure.BctWalletAddressD
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
 
-	
 	err = u.Repo.InsertBtcWalletAddress(walletAddress)
 	if err != nil {
 		u.Logger.Error(err)
@@ -161,9 +159,8 @@ func (u Usecase) CreateSegwitBTCWalletAddress( input structure.BctWalletAddressD
 	return walletAddress, nil
 }
 
-func (u Usecase) CheckBalanceWalletAddress( input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
+func (u Usecase) CheckBalanceWalletAddress(input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
 
-	
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
 		u.Logger.Error(err)
@@ -179,12 +176,10 @@ func (u Usecase) CheckBalanceWalletAddress( input structure.CheckBalance) (*enti
 	return balance, nil
 }
 
-func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoputRespose, *string, error) {
+func (u Usecase) BTCMint(input structure.BctMintData) (*ord_service.MintStdoputRespose, *string, error) {
 	eth := &entity.ETHWalletAddress{}
 	mintype := entity.BIT
 	u.Logger.Info("input", input)
-	
-	
 
 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
 	if err != nil {
@@ -282,7 +277,7 @@ func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoput
 		u.Logger.Error(err)
 		return nil, nil, err
 	}
-	u.Logger.Info("mint.resp",resp)
+	u.Logger.Info("mint.resp", resp)
 	//update btc or eth here
 	if mintype == entity.BIT {
 		btc.IsMinted = true
@@ -294,7 +289,7 @@ func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoput
 		}
 		u.Logger.Info("updated", updated)
 
-	}else{
+	} else {
 		eth.IsMinted = true
 		btc.FileURI = baseUrl.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
@@ -312,7 +307,7 @@ func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoput
 	}
 	u.Logger.Info("project.Updated", updated)
 
-	u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]",mintype, btc.ProjectID), btc.OrdAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
+	u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", mintype, btc.ProjectID), btc.OrdAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", btc.UserAddress, resp.Stdout))
 	tmpText := resp.Stdout
 	//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
 	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
@@ -335,7 +330,7 @@ func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoput
 		}
 		u.Logger.Info("updated", updated)
 
-	}else{
+	} else {
 		eth.MintResponse = entity.MintStdoputResponse(*btcMintResp)
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
 		if err != nil {
@@ -360,23 +355,19 @@ func (u Usecase) BTCMint( input structure.BctMintData) (*ord_service.MintStdoput
 		ProccessID:    btc.UUID,
 	})
 
-	
 	return btcMintResp, &btc.FileURI, nil
 }
 
-func (u Usecase) ReadGCSFolder( input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
+func (u Usecase) ReadGCSFolder(input structure.BctWalletAddressData) (*entity.BTCWalletAddress, error) {
 	u.Logger.Info("input", input)
 	u.GCS.ReadFolder("btc-projects/project-1/")
 	return nil, nil
 }
 
-func (u Usecase) UpdateBtcMintedStatus( btcWallet *entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
+func (u Usecase) UpdateBtcMintedStatus(btcWallet *entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 	u.Logger.Info("input", btcWallet)
 
 	btcWallet.IsMinted = true
-	
-	
-	
 
 	updated, err := u.Repo.UpdateBtcWalletAddressByOrdAddr(btcWallet.OrdAddress, btcWallet)
 	if err != nil {
@@ -388,10 +379,10 @@ func (u Usecase) UpdateBtcMintedStatus( btcWallet *entity.BTCWalletAddress) (*en
 	return btcWallet, nil
 }
 
-func (u Usecase) GetBalanceSegwitBTCWallet( userAddress string) (string, error) {
+func (u Usecase) GetBalanceSegwitBTCWallet(userAddress string) (string, error) {
 
 	u.Logger.Info("userAddress", userAddress)
-	
+
 	_, bs, err := u.buildBTCClient()
 	if err != nil {
 		u.Logger.Error(err)
@@ -413,7 +404,7 @@ func (u Usecase) GetBalanceSegwitBTCWallet( userAddress string) (string, error) 
 	return balance.String(), nil
 }
 
-func (u Usecase) GetBalanceOrdBTCWallet( userAddress string) (string, error) {
+func (u Usecase) GetBalanceOrdBTCWallet(userAddress string) (string, error) {
 	balanceRequest := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -436,9 +427,7 @@ func (u Usecase) GetBalanceOrdBTCWallet( userAddress string) (string, error) {
 	return balance, nil
 }
 
-func (u Usecase) CheckBalance( btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
-
-	
+func (u Usecase) CheckBalance(btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 
 	//TODO - removed checking ORD, only Segwit is used
 	balance, err := u.GetBalanceSegwitBTCWallet(btc.OrdAddress)
@@ -462,7 +451,7 @@ func (u Usecase) CheckBalance( btc entity.BTCWalletAddress) (*entity.BTCWalletAd
 	return &btc, nil
 }
 
-func (u Usecase) BalanceLogic( btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
+func (u Usecase) BalanceLogic(btc entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
 	balance, err := u.CheckBalance(btc)
 	if err != nil {
 		u.Logger.Error(err)
@@ -485,11 +474,8 @@ func (u Usecase) BalanceLogic( btc entity.BTCWalletAddress) (*entity.BTCWalletAd
 	return &btc, nil
 }
 
-func (u Usecase) MintLogic( btc *entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
-var err error
-
-	
-	
+func (u Usecase) MintLogic(btc *entity.BTCWalletAddress) (*entity.BTCWalletAddress, error) {
+	var err error
 
 	//if this was minted, skip it
 	if btc.IsMinted {
@@ -503,12 +489,12 @@ var err error
 		u.Logger.Error(err)
 		return nil, err
 	}
-if btc.MintResponse.Inscription != "" {
+	if btc.MintResponse.Inscription != "" {
 		err = errors.New(fmt.Sprintf("This btc has Inscription %s", btc.MintResponse.Inscription))
 		u.Logger.Error(err)
 		return nil, err
 	}
-if btc.MintResponse.Reveal != "" {
+	if btc.MintResponse.Reveal != "" {
 		err = errors.New(fmt.Sprintf("This btc has revealID %s", btc.MintResponse.Reveal))
 		u.Logger.Error(err)
 		return nil, err
@@ -518,7 +504,7 @@ if btc.MintResponse.Reveal != "" {
 	return btc, nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) WaitingForBalancing() ([]entity.BTCWalletAddress, error) {
 	addreses, err := u.Repo.ListProcessingWalletAddress()
 	if err != nil {
@@ -528,9 +514,8 @@ func (u Usecase) WaitingForBalancing() ([]entity.BTCWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.BTCWalletAddress) {
-		
-		
+		func(item entity.BTCWalletAddress) {
+
 			newItem, err := u.BalanceLogic(item)
 			if err != nil {
 				u.Logger.Error(err)
@@ -572,9 +557,8 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.BTCWalletAddress) {
-		
-		
+		func(item entity.BTCWalletAddress) {
+
 			if item.MintResponse.Inscription != "" {
 				err = errors.New("Token is being minted")
 				u.Logger.Error(err)
@@ -587,8 +571,6 @@ func (u Usecase) WaitingForMinting() ([]entity.BTCWalletAddress, error) {
 				u.Logger.Error(err)
 				return
 			}
-
-
 
 		}(item)
 
@@ -610,10 +592,8 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.BTCWalletAddress) {
-		
+		func(item entity.BTCWalletAddress) {
 
-		
 			addr := item.OriginUserAddress
 			if addr == "" {
 				addr = item.UserAddress
@@ -626,11 +606,11 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 				u.Notify(fmt.Sprintf("[Error][BTC][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 				return
 			}
-				u.Logger.Info("txInfo", txInfo)
+			u.Logger.Info("txInfo", txInfo)
 			if txInfo.Confirmations > 1 {
 				sentTokenResp, err := u.SendToken(addr, item.MintResponse.Inscription)
 				if err != nil {
-					u.Notify(fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
+					u.Notify(fmt.Sprintf("[Error][BTC][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 					u.Logger.Error(err)
 					return
 				}
@@ -676,10 +656,10 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					u.Logger.Error(err)
 					return
 				}
-			}else{
+			} else {
 				u.Logger.Info("checkTx.Inscription.Existed", false)
 			}
-			}(item)
+		}(item)
 
 		time.Sleep(5 * time.Second)
 	}
@@ -689,10 +669,8 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 
 //End Mint flow
 
-func (u Usecase) SendToken( receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
+func (u Usecase) SendToken(receiveAddr string, inscriptionID string) (*ord_service.ExecRespose, error) {
 
-	
-	
 	sendTokenReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -702,7 +680,7 @@ func (u Usecase) SendToken( receiveAddr string, inscriptionID string) (*ord_serv
 			receiveAddr,
 			inscriptionID,
 			"--fee-rate",
-			fmt.Sprintf("%d",  entity.DEFAULT_FEE_RATE),
+			fmt.Sprintf("%d", entity.DEFAULT_FEE_RATE),
 		}}
 
 	u.Logger.Info("sendTokenReq", sendTokenReq)
@@ -718,7 +696,7 @@ func (u Usecase) SendToken( receiveAddr string, inscriptionID string) (*ord_serv
 
 }
 
-func (u Usecase) Notify( title string, userAddress string, content string) {
+func (u Usecase) Notify(title string, userAddress string, content string) {
 
 	//slack
 	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), "", userAddress)
@@ -729,9 +707,9 @@ func (u Usecase) Notify( title string, userAddress string, content string) {
 	}
 }
 
-func (u Usecase) NotifyWithChannel( channelID string, title string, userAddress string, content string) {
+func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress string, content string) {
 	//slack
-	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"),"", userAddress)
+	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), "", userAddress)
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
@@ -739,7 +717,7 @@ func (u Usecase) NotifyWithChannel( channelID string, title string, userAddress 
 	}
 }
 
-//phuong:
+// phuong:
 // send btc from segwit address to master address - it does not call our ORD server
 func (u Usecase) JobBtcSendBtcToMaster() error {
 
@@ -777,4 +755,36 @@ func (u Usecase) JobBtcSendBtcToMaster() error {
 	}
 
 	return nil
+}
+
+func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
+	result := []structure.MintingInscription{}
+	listBTC, err := u.Repo.ListMintingByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+
+	listETH, err := u.Repo.ListMintingETHByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range listBTC {
+		minting := structure.MintingInscription{
+			Status:    "minting",
+			FileURI:   item.FileURI,
+			ProjectID: item.ProjectID,
+		}
+		result = append(result, minting)
+	}
+
+	for _, item := range listETH {
+		minting := structure.MintingInscription{
+			Status:    "minting",
+			FileURI:   item.FileURI,
+			ProjectID: item.ProjectID,
+		}
+		result = append(result, minting)
+	}
+	return result, nil
 }
