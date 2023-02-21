@@ -23,11 +23,9 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateETHWalletAddress( input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
-
+func (u Usecase) CreateETHWalletAddress(input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
-	
 
 	walletAddress := &entity.ETHWalletAddress{}
 	err := copier.Copy(walletAddress, input)
@@ -86,7 +84,6 @@ func (u Usecase) CreateETHWalletAddress( input structure.EthWalletAddressData) (
 	walletAddress.Balance = "0"
 	walletAddress.BalanceCheckTime = 0
 
-	
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
 	if err != nil {
 		u.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
@@ -96,8 +93,7 @@ func (u Usecase) CreateETHWalletAddress( input structure.EthWalletAddressData) (
 	return walletAddress, nil
 }
 
-func (u Usecase) IsWhitelistedAddress(ctx context.Context,  userAddr string, whitelistedAddrs []string) (bool, error) {
-
+func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whitelistedAddrs []string) (bool, error) {
 
 	u.Logger.Info("whitelistedAddrs", whitelistedAddrs)
 	if len(whitelistedAddrs) == 0 {
@@ -137,11 +133,9 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context,  userAddr string, whi
 	return false, nil
 }
 
-func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context,  userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
-
+func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
-	
 
 	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
 	if err == nil {
@@ -246,7 +240,6 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context,  userAdd
 	walletAddress.BalanceCheckTime = 0
 	walletAddress.DelegatedAddress = userAddr
 
-	
 	err = u.Repo.InsertEthWalletAddress(walletAddress)
 	if err != nil {
 		u.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
@@ -256,11 +249,9 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context,  userAdd
 	return walletAddress, nil
 }
 
-func (u Usecase) ETHMint( input structure.BctMintData) (*entity.ETHWalletAddress, error) {
-
+func (u Usecase) ETHMint(input structure.BctMintData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
-	
 
 	ethAddress, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
 	if err != nil {
@@ -282,7 +273,6 @@ func (u Usecase) ETHMint( input structure.BctMintData) (*entity.ETHWalletAddress
 		return nil, err
 	}
 	//u.Logger.Info("found.Project", p)
-	
 
 	//prepare data for mint
 	// - Get project.AnimationURL
@@ -343,14 +333,14 @@ func (u Usecase) ETHMint( input structure.BctMintData) (*entity.ETHWalletAddress
 	return ethAddress, nil
 }
 
-func (u Usecase) ReadGCSFolderETH( input structure.BctWalletAddressData) (*entity.ETHWalletAddress, error) {
+func (u Usecase) ReadGCSFolderETH(input structure.BctWalletAddressData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
 	u.GCS.ReadFolder("btc-projects/project-1/")
 	return nil, nil
 }
 
-func (u Usecase) UpdateEthMintedStatus( ethWallet *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+func (u Usecase) UpdateEthMintedStatus(ethWallet *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", ethWallet)
 	ethWallet.IsMinted = true
@@ -365,8 +355,7 @@ func (u Usecase) UpdateEthMintedStatus( ethWallet *entity.ETHWalletAddress) (*en
 	return ethWallet, nil
 }
 
-func (u Usecase) BalanceETHLogic( ethEntity entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
-
+func (u Usecase) BalanceETHLogic(ethEntity entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 
 	// check eth balance:
 	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
@@ -425,7 +414,7 @@ func (u Usecase) BalanceETHLogic( ethEntity entity.ETHWalletAddress) (*entity.ET
 	return &ethEntity, nil
 }
 
-func (u Usecase) MintLogicETH( ethEntity *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
+func (u Usecase) MintLogicETH(ethEntity *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 
 	var err error
 
@@ -449,7 +438,6 @@ func (u Usecase) MintLogicETH( ethEntity *entity.ETHWalletAddress) (*entity.ETHW
 //Mint flow
 func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 
-
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 	if err != nil {
 		u.Logger.Error("WaitingForETHBalancing.ListProcessingWalletAddress", err.Error(), err)
@@ -458,9 +446,8 @@ func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.ETHWalletAddress) {
-					
-			
+		func(item entity.ETHWalletAddress) {
+
 			newItem, err := u.BalanceETHLogic(item)
 			if err != nil {
 				u.Logger.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
@@ -481,7 +468,7 @@ func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 				ProjectID:     item.ProjectID,
 				Action:        entity.BLANCE,
 				Type:          entity.ETH,
-				ProccessID: item.UUID,
+				ProccessID:    item.UUID,
 			})
 		}(item)
 
@@ -491,9 +478,7 @@ func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 	return nil, nil
 }
 
-
 func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
-
 
 	addreses, err := u.Repo.ListMintingETHWalletAddress()
 	if err != nil {
@@ -503,10 +488,9 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.ETHWalletAddress) {
-					
-			
-				if item.MintResponse.Inscription != "" {
+		func(item entity.ETHWalletAddress) {
+
+			if item.MintResponse.Inscription != "" {
 				err = errors.New("Token is being minted")
 				u.Logger.Error("Token.minted", err.Error(), err)
 				return
@@ -517,7 +501,7 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 				u.Logger.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
 				return
 			}
-			}(item)
+		}(item)
 
 		time.Sleep(2 * time.Second)
 	}
@@ -526,7 +510,6 @@ func (u Usecase) WaitingForETHMinting() ([]entity.ETHWalletAddress, error) {
 }
 
 func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
-
 
 	addreses, err := u.Repo.ListETHAddress()
 	if err != nil {
@@ -538,8 +521,8 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("addreses", addreses)
 	for _, item := range addreses {
-		func( item entity.ETHWalletAddress) {
-		
+		func(item entity.ETHWalletAddress) {
+
 			u.Logger.Info("userWallet", item.UserAddress)
 			u.Logger.Info("ordWalletAddress", item.OrdAddress)
 
@@ -552,10 +535,10 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 			}
 
 			u.Logger.Info("txInfo", txInfo)
-			if txInfo.Confirmations > 1 { 
+			if txInfo.Confirmations > 1 {
 				sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
 				if err != nil {
-					u.Notify(fmt.Sprintf("[Error][ETH][SendToken][projectID %s]", item.ProjectID), item.InscriptionID,  fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
+					u.Notify(fmt.Sprintf("[Error][ETH][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
@@ -570,7 +553,7 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 					Action:        entity.SENT,
 					ProjectID:     item.ProjectID,
 					Type:          entity.ETH,
-					ProccessID: item.UUID,
+					ProccessID:    item.UUID,
 				})
 
 				u.Notify(fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
@@ -599,11 +582,10 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
 					return
 				}
-			}else{
+			} else {
 				u.Logger.Info("checkTx.Inscription.Existed", false)
 			}
 
-	
 		}(item)
 		time.Sleep(5 * time.Second)
 	}
@@ -612,8 +594,7 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 }
 
 //Mint flow
-func (u Usecase) convertBTCToETH( amount string) (string, error) {
-
+func (u Usecase) convertBTCToETH(amount string) (string, error) {
 
 	//amount = "0.1"
 	powIntput := math.Pow10(8)
