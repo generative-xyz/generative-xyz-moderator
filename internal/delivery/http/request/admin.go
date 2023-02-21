@@ -6,9 +6,9 @@ type UpsertRedisRequest struct {
 }
 
 type ListNftIdsReq struct {
-	InscriptionID []string `json:"inscriptionID"`
+	InscriptionID []string `json:"inscriptionIDs"`
 
 	SellOrdAddress string `json:"seller_ord_address"`
 	SellerAddress  string `json:"seller_address"`
-	Price          string `json:"amount"`
+	Price          string `json:"price"`
 }
