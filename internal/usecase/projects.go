@@ -368,6 +368,27 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdatePr
 	return p, nil
 }
 
+func (u Usecase) ReportProject(rootSpan opentracing.Span, tokenId string) (*entity.Projects, error) {
+	span, log := u.StartSpan("ReportProject", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	p, err := u.Repo.FindProjectByTokenID(tokenId)
+	if err != nil {
+		log.Error("ReportProject.FindProjectBy", err.Error(), err)
+		return nil, err
+	}
+
+	p.ReportCount += 1
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		log.Error("UpdateProject.ReportProject", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return p, nil
+}
+
 func (u Usecase) GetProjectByGenNFTAddr(rootSpan opentracing.Span, genNFTAddr string) (*entity.Projects, error) {
 	span, log := u.StartSpan("GetProjects", rootSpan)
 	defer u.Tracer.FinishSpan(span, log)

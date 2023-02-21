@@ -2559,6 +2559,38 @@
                 }
             }
         },
+        "/project/{projectID}/report": {
+            "post": {
+                "description": "Update projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/referrals": {
             "get": {
                 "security": [
@@ -3555,7 +3587,7 @@
                 "walletAddress": {
                     "type": "string"
                 },
-                "wallet_address_btc": {
+                "walletAddressBtc": {
                     "type": "string"
                 }
             }

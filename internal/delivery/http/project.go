@@ -576,6 +576,39 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+// UserCredits godoc
+// @Summary Update project
+// @Description Update projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param projectID path string true "projectID adress"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{projectID}/report [POST]
+func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
+	span, log := h.StartSpan("reportProject", r)
+	defer h.Tracer.FinishSpan(span, log)
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+
+	message, err := h.Usecase.ReportProject(span, projectID)
+	if err != nil {
+		log.Error("h.Usecase.reportProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		log.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.SetLog(h.Tracer, span)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
 
 // UserCredits godoc
 // @Summary Update project's categories
@@ -594,7 +627,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
-	
+
 	var reqBody request.UpdateBTCProjectCategoriesReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -605,7 +638,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 	}
 
 	reqUsecase := &structure.UpdateBTCProjectReq{
-		ProjectID: &projectID,
+		ProjectID:  &projectID,
 		Categories: reqBody.Categories,
 	}
 
