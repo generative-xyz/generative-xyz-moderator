@@ -974,9 +974,6 @@ func (u Usecase) getNftContractDetailInternal( client *ethclient.Client, contrac
 }
 
 func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
-
-
-	
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
 		u.Logger.Error("http.Get", err.Error(), err)
@@ -995,8 +992,11 @@ func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*
 	zipLink := zipPayload.ZipLink
 
 	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	groupIndex := strings.Index(zipLink, "btc-projects/")
+	strLen := len(zipLink)
 	// TODO
-	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
+	zipLink = zipLink[groupIndex:strLen]
+	spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
 		u.Logger.Error("http.Get", err.Error(), err)
