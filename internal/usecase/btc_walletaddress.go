@@ -793,7 +793,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	listETH = append(listETH, listETH1...)
 	listETH = append(listETH, listETH2...)
 
-	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NotEnoughBalance, entity.StatusMint_Refunding})
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding})
 	if err != nil {
 		return nil, err
 	}
@@ -806,25 +806,28 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		var minting *structure.MintingInscription
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:      "waiting for funds",
-				FileURI:     item.FileURI,
-				ProjectID:   item.ProjectID,
-				ProjectName: projectInfo.Name,
+				Status:       "waiting for funds",
+				FileURI:      item.FileURI,
+				ProjectID:    item.ProjectID,
+				ProjectImage: projectInfo.Thumbnail,
+				ProjectName:  projectInfo.Name,
 			}
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
-					Status:      "minting",
-					FileURI:     item.FileURI,
-					ProjectID:   item.ProjectID,
-					ProjectName: projectInfo.Name,
+					Status:       "minting",
+					FileURI:      item.FileURI,
+					ProjectID:    item.ProjectID,
+					ProjectImage: projectInfo.Thumbnail,
+					ProjectName:  projectInfo.Name,
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					Status:      "transferring",
-					FileURI:     item.FileURI,
-					ProjectID:   item.ProjectID,
-					ProjectName: projectInfo.Name,
+					Status:       "transferring",
+					FileURI:      item.FileURI,
+					ProjectID:    item.ProjectID,
+					ProjectImage: projectInfo.Thumbnail,
+					ProjectName:  projectInfo.Name,
 				}
 			}
 		}
@@ -839,25 +842,28 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		var minting *structure.MintingInscription
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:      "waiting for funds",
-				FileURI:     item.FileURI,
-				ProjectID:   item.ProjectID,
-				ProjectName: projectInfo.Name,
+				Status:       "waiting for funds",
+				FileURI:      item.FileURI,
+				ProjectID:    item.ProjectID,
+				ProjectImage: projectInfo.Thumbnail,
+				ProjectName:  projectInfo.Name,
 			}
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
-					Status:      "minting",
-					FileURI:     item.FileURI,
-					ProjectID:   item.ProjectID,
-					ProjectName: projectInfo.Name,
+					Status:       "minting",
+					FileURI:      item.FileURI,
+					ProjectID:    item.ProjectID,
+					ProjectImage: projectInfo.Thumbnail,
+					ProjectName:  projectInfo.Name,
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					Status:      "transferring",
-					FileURI:     item.FileURI,
-					ProjectID:   item.ProjectID,
-					ProjectName: projectInfo.Name,
+					Status:       "transferring",
+					FileURI:      item.FileURI,
+					ProjectID:    item.ProjectID,
+					ProjectImage: projectInfo.Thumbnail,
+					ProjectName:  projectInfo.Name,
 				}
 			}
 		}
@@ -870,10 +876,11 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			return nil, err
 		}
 		minting := structure.MintingInscription{
-			Status:      entity.StatusMintToText[item.Status],
-			FileURI:     item.FileURI,
-			ProjectID:   item.ProjectID,
-			ProjectName: projectInfo.Name,
+			Status:       entity.StatusMintToText[item.Status],
+			FileURI:      item.FileURI,
+			ProjectID:    item.ProjectID,
+			ProjectImage: projectInfo.Thumbnail,
+			ProjectName:  projectInfo.Name,
 		}
 		result = append(result, minting)
 	}
