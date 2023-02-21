@@ -307,11 +307,12 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
-	if filter.Name != nil && len(*filter.Name) >= 2 {
+	if filter.Name != nil && len(*filter.Name) >= 3 {
 		if *filter.Name != "" {
 			f["$or"] = []bson.M{
 				{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
 				{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.wallet_address": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
 			}
 		}
 	}

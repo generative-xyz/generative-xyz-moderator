@@ -76,8 +76,6 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 // check receive of the nft:
 func (u Usecase) BtcChecktListNft() error {
 
-
-
 	btcClient, bs, err := u.buildBTCClient()
 
 	if err != nil {
@@ -183,8 +181,6 @@ func (u Usecase) BtcChecktListNft() error {
 func (u Usecase) BtcCheckReceivedBuyingNft() error {
 
 	fmt.Printf("go BtcCheckReceivedBuyingNft....")
-
-
 
 	_, bs, err := u.buildBTCClient()
 
@@ -296,7 +292,6 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 
 // send btc for buy order records:
 func (u Usecase) BtcSendBTCForBuyOrder() error {
-
 
 	_, bs, err := u.buildBTCClient()
 
@@ -427,8 +422,6 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 
 func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 
-
-
 	btcClient, bs, err := u.buildBTCClient()
 
 	if err != nil {
@@ -493,7 +486,6 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 
 // send nft for buy order records:
 func (u Usecase) BtcSendNFTForBuyOrder() error {
-
 
 	// get list buy order status = StatusBuy_ReceivedFund:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_ReceivedFund)
@@ -585,8 +577,6 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 }
 
 func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
-
-
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -690,9 +680,6 @@ func (u Usecase) SendTokenMKP(receiveAddr string, inscriptionID string) (*ord_se
 
 func (u Usecase) GetMasterNfts() (*ord_service.ExecRespose, error) {
 
-
-	
-	
 	listNFTsReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -730,11 +717,7 @@ func (u *Usecase) trackHistory(id, name, table string, status interface{}, reque
 }
 
 // tesst:
-func (u Usecase) SendTokenMKPTest( walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
-
-
-	
-	
+func (u Usecase) SendTokenMKPTest(walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", inscriptionID, receiveAddr, walletName, "before call ord_service.ExecRequest")
 
