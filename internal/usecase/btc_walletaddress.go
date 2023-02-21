@@ -291,7 +291,7 @@ func (u Usecase) BTCMint(input structure.BctMintData) (*ord_service.MintStdoputR
 
 	} else {
 		eth.IsMinted = true
-		btc.FileURI = baseUrl.String()
+		eth.FileURI = baseUrl.String()
 		updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(eth.OrdAddress, eth)
 		if err != nil {
 			u.Logger.Error(err)
