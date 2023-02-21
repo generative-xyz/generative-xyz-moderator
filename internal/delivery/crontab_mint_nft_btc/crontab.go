@@ -53,17 +53,17 @@ func (h CronMintNftBtcHandler) StartServer() {
 
 		}(&wg)
 
-		// job send btc to ord address:
+		// job send nft to user:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobMin_SendNftToUser()
+			h.Usecase.JobMint_SendNftToUser()
 
 		}(&wg)
 
 		// job send nft to user:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobMin_SendNftToUser()
+			h.Usecase.JobMint_SendFundToMaster()
 
 		}(&wg)
 		h.Logger.Info("wait", "wait")
