@@ -1155,7 +1155,9 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	}*/
 
 	pe.Images = images
-	pe.IsFullChain = true
+	if len(images) > 0 {
+		pe.IsFullChain = true
+	}
 	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
