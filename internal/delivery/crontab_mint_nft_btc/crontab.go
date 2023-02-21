@@ -30,7 +30,7 @@ func (h CronMintNftBtcHandler) StartServer() {
 	var wg sync.WaitGroup
 
 	for {
-		wg.Add(5)
+		wg.Add(6)
 
 		// job check balance:
 		go func(wg *sync.WaitGroup) {
@@ -60,12 +60,20 @@ func (h CronMintNftBtcHandler) StartServer() {
 
 		}(&wg)
 
-		// job send nft to user:
+		// job send btc to master wallet:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			h.Usecase.JobMint_SendFundToMaster()
 
 		}(&wg)
+
+		// job refund btc/eth
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.JobMint_RefundBtc()
+
+		}(&wg)
+
 		h.Logger.Info("wait", "wait")
 		wg.Wait()
 		time.Sleep(5 * time.Minute)
