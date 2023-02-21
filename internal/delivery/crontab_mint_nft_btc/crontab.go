@@ -39,6 +39,13 @@ func (h CronMintNftBtcHandler) StartServer() {
 
 		}(&wg)
 
+		// job mint nft:
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.JobMint_MintNftBtc()
+
+		}(&wg)
+
 		// job check tx:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
@@ -49,14 +56,7 @@ func (h CronMintNftBtcHandler) StartServer() {
 		// job send btc to ord address:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobInscribeSendBTCToOrdWallet()
-
-		}(&wg)
-
-		// job mint nft:
-		go func(wg *sync.WaitGroup) {
-			defer wg.Done()
-			h.Usecase.JobMint_MintNftBtc()
+			h.Usecase.JobMin_SendNftToUser()
 
 		}(&wg)
 
