@@ -769,6 +769,11 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		return nil, err
 	}
 
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NotEnoughBalance, entity.StatusMint_Refunding})
+	if err != nil {
+		return nil, err
+	}
+
 	for _, item := range listBTC {
 		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
@@ -816,5 +821,20 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		}
 		result = append(result, *minting)
 	}
+
+	for _, item := range listMintV2 {
+		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+		if err != nil {
+			return nil, err
+		}
+		minting := structure.MintingInscription{
+			Status:      entity.StatusMintToText[item.Status],
+			FileURI:     item.FileURI,
+			ProjectID:   item.ProjectID,
+			ProjectName: projectInfo.Name,
+		}
+		result = append(result, minting)
+	}
+
 	return result, nil
 }
