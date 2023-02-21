@@ -4,17 +4,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
 )
 
 type ScronMarketplaceHandler struct {
 	Logger  logger.Ilogger
-	Tracer  tracer.ITracer
+	
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
@@ -22,7 +20,6 @@ type ScronMarketplaceHandler struct {
 func NewScronMarketPlace(global *global.Global, uc usecase.Usecase) *ScronMarketplaceHandler {
 	return &ScronMarketplaceHandler{
 		Logger:  global.Logger,
-		Tracer:  global.Tracer,
 		Cache:   global.Cache,
 		Usecase: uc,
 	}
@@ -35,64 +32,43 @@ func (h ScronMarketplaceHandler) StartServer() {
 	for {
 		wg.Add(6)
 
-		span := h.Tracer.StartSpan("ScronMarketPlace.DispatchCron")
-		defer span.Finish()
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcChecktListNft()
 
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
+		}(&wg)
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcChecktListNft")
-			defer wg.Done()
-			defer span.Finish()
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcCheckReceivedBuyingNft()
 
-			h.Usecase.BtcChecktListNft(span)
+		}(&wg)
 
-		}(span, &wg)
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcSendBTCForBuyOrder()
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcCheckReceivedBuyingNft")
-			defer wg.Done()
-			defer span.Finish()
+		}(&wg)
 
-			h.Usecase.BtcCheckReceivedBuyingNft(span)
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcCheckSendBTCForBuyOrder()
 
-		}(span, &wg)
+		}(&wg)
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcSendBTCForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcSendNFTForBuyOrder()
 
-			h.Usecase.BtcSendBTCForBuyOrder(span)
+		}(&wg)
 
-		}(span, &wg)
+		go func( wg *sync.WaitGroup) {
+				defer wg.Done()
+			h.Usecase.BtcCheckSendNFTForBuyOrder()
 
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcCheckSendBTCForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcCheckSendBTCForBuyOrder(span)
+		}(&wg)
 
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcSendNFTForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcSendNFTForBuyOrder(span)
-
-		}(span, &wg)
-
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "ScronMarketPlace.BtcCheckSendNFTForBuyOrder")
-			defer wg.Done()
-			defer span.Finish()
-			h.Usecase.BtcCheckSendNFTForBuyOrder(span)
-
-		}(span, &wg)
-
-		log.SetData("MaketPlace.wait", "wait")
+		h.Logger.Info("MaketPlace.wait", "wait")
 		wg.Wait()
 		time.Sleep(5 * time.Minute)
 	}

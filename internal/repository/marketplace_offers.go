@@ -40,8 +40,7 @@ func (r Repository) FindOfferByOfferingID(offeringID string) (*entity.Marketplac
 
 func (r Repository) AcceptOfferByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceOffers{}
-	
-	f := bson.D{
+f := bson.D{
 		{Key: "offering_id", Value: offeringID,},
 	}
 
@@ -58,14 +57,12 @@ func (r Repository) AcceptOfferByOfferingID(offeringID string) error {
 	obj.Finished = true
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-	
-	return err
+return err
 }
 
 func (r Repository) CancelOfferByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceOffers{}
-	
-	f := bson.D{
+f := bson.D{
 		{Key: "offering_id", Value: offeringID,},
 	}
 
@@ -81,8 +78,7 @@ func (r Repository) CancelOfferByOfferingID(offeringID string) error {
 
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-	
-	return err
+return err
 }
 
 func (r Repository) filterOffers(filter entity.FilterMarketplaceOffers) bson.M {
@@ -94,38 +90,32 @@ func (r Repository) filterOffers(filter entity.FilterMarketplaceOffers) bson.M {
 			f["collection_contract"] = *filter.CollectionContract
 		}
 	}
-	
-	if filter.TokenId != nil {
+if filter.TokenId != nil {
 		if *filter.TokenId != "" {
 			f["token_id"] = *filter.TokenId
 		}
 	}
-	
-	if filter.Erc20Token != nil {
+if filter.Erc20Token != nil {
 		if *filter.Erc20Token != "" {
 			f["erc_20_token"] = *filter.Erc20Token
 		}
 	}
-	
-	if filter.BuyerAddress != nil {
+if filter.BuyerAddress != nil {
 		if *filter.BuyerAddress != "" {
 			f["buyer"] = *filter.BuyerAddress
 		}
 	}
-	
-	if filter.Closed != nil {
+if filter.Closed != nil {
 		f["closed"] = *filter.Closed
 	}
-	
-	if filter.Finished != nil {
+if filter.Finished != nil {
 		f["finished"] = *filter.Finished
 	}
 
 	if filter.OwnerAddress != nil {
 		f["owner_address"] = filter.OwnerAddress
 	}
-	
-	return f
+return f
 }
 
 func (r Repository) FilterMarketplaceOffers(filter entity.FilterMarketplaceOffers) (*entity.Pagination, error)  {
@@ -137,8 +127,7 @@ func (r Repository) FilterMarketplaceOffers(filter entity.FilterMarketplaceOffer
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = confs
+resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit

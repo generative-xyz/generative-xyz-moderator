@@ -1,59 +1,58 @@
 package logger
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/sirupsen/logrus"
 )
 
 type Ilogger interface {
-	Info(message string, fields ...zapcore.Field)
-	Error(message string, fields ...interface{})
-	Warning(message string, fields ...interface{})
+	Info(fields ...interface{})
+	Error(fields ...interface{})
+	Warning(fields ...interface{})
 }
 
 type logger struct {
-	Module *zap.Logger
+	Module *logrus.Logger
 }
 
 func NewLogger() *logger {
-	log := new(logger)
+	l := &logger{}
 
-	m, err := zap.Config{
-		Encoding:    "console",
-		Level:       zap.NewAtomicLevelAt(zapcore.InfoLevel),
-		OutputPaths: []string{"stdout"},
-		EncoderConfig: zapcore.EncoderConfig{
-			MessageKey:  "message", // <--
-			LevelKey:    "level",
-			EncodeLevel: zapcore.CapitalLevelEncoder,
 
-			TimeKey:    "time",
-			EncodeTime: zapcore.ISO8601TimeEncoder,
+	formatter := &logrus.JSONFormatter{}
+	// formatter.SetColorScheme(&prefixed.ColorScheme{
+	// 	InfoLevelStyle:  "green",
+	// 	WarnLevelStyle:  "yellow",
+	// 	ErrorLevelStyle: "red",
+	// 	FatalLevelStyle: "red",
+	// 	PanicLevelStyle: "red",
+	// 	DebugLevelStyle: "blue",
+	// 	PrefixStyle:     "cyan",
+	// 	TimestampStyle:  "black+h",
+	// 	// InfoLevelStyle: "green+b",
+	// 	// PrefixStyle:    "blue+b",
+	// 	// TimestampStyle: "white+h",
+	// })
 
-			CallerKey:    "caller",
-			EncodeCaller: zapcore.ShortCallerEncoder,
-		},
-		DisableCaller: true,
-	}.Build()
-	if err != nil {
-		panic(err)
-	}
-	log.Module = m
-	return log
+	logrus.ParseLevel("debug")
+	logrus.SetFormatter(formatter)
+	logrus.SetReportCaller(true)
+	l.Module = logrus.StandardLogger()
+
+	return l
 }
 
-func (l *logger) Info(message string, fields ...zapcore.Field) {
-	l.Module.Info(message, fields...)
+func (l *logger) Info(fields ...interface{}) {
+	l.Module.Info(fields...)
 }
 
-func (l *logger) Error(message string, fields ...interface{}) {
-	l.Module.Sugar().Error(message, fields)
+func (l *logger) Error(fields ...interface{}) {
+	l.Module.Error(fields...)
 }
 
-func (l *logger) Warning(message string, fields ...interface{}) {
-	l.Module.Sugar().Warn(message, fields)
+func (l *logger) Warning(fields ...interface{}) {
+	l.Module.Warn(fields...)
 }
 
-func (l *logger) Fatal(message string, fields ...interface{}) {
-	l.Module.Sugar().Fatal(message, fields)
+func (l *logger) Fatal(fields ...interface{}) {
+	l.Module.Fatal(fields ...)
 }

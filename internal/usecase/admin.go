@@ -1,12 +1,6 @@
 package usecase
 
-import (
-	"github.com/opentracing/opentracing-go"
-)
-
-func (u Usecase) GetAllRedis(rootSpan opentracing.Span) ([]string, error) {
-	span, log := u.StartSpan("GetAllRedis", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetAllRedis() ([]string, error) {
 	//var res *string
 	var err error
 
@@ -17,9 +11,7 @@ func (u Usecase) GetAllRedis(rootSpan opentracing.Span) ([]string, error) {
 	return res, err
 }
 
-func (u Usecase) DeleteAllRedis(rootSpan opentracing.Span) ([]string, error) {
-	span, log := u.StartSpan("DeleteAllRedis", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) DeleteAllRedis() ([]string, error) {
 	//var res *string
 	var err error
 
@@ -38,9 +30,7 @@ func (u Usecase) DeleteAllRedis(rootSpan opentracing.Span) ([]string, error) {
 	return res, err
 }
 
-func (u Usecase) GetRedis(rootSpan opentracing.Span, key string) (*string, error) {
-	span, log := u.StartSpan("GetRedis", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetRedis( key string) (*string, error) {
 	var res *string
 	var err error
 
@@ -49,9 +39,7 @@ func (u Usecase) GetRedis(rootSpan opentracing.Span, key string) (*string, error
 	return res, err
 }
 
-func (u Usecase) UpsertRedis(rootSpan opentracing.Span, key string, value string) (*string, error) {
-	span, log := u.StartSpan("UpsertRedis", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpsertRedis( key string, value string) (*string, error) {
 	var res *string
 	var err error
 
@@ -65,9 +53,7 @@ func (u Usecase) UpsertRedis(rootSpan opentracing.Span, key string, value string
 	return res, err
 }
 
-func (u Usecase) DeleteRedis(rootSpan opentracing.Span, key string) error {
-	span, log := u.StartSpan("DeleteRedis", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) DeleteRedis( key string) error {
 	var err error
 	err = u.Cache.Delete(key)
 	return err

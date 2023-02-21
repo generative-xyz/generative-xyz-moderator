@@ -127,6 +127,5 @@ func (c CovalentNfts) GetAllTokenHolder(f CovalentGetAllTokenHolderRequest) ([]C
 		page++
 		time.Sleep(1 * time.Second)
 	}
-	
-	return resps, nil
+return resps, nil
 }
