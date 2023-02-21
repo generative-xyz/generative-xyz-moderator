@@ -17,6 +17,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
+	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/incribe_btc"
@@ -174,6 +175,8 @@ func startServer() {
 	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
 
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
@@ -215,6 +218,11 @@ func startServer() {
 	servers["trending_crontab"] = delivery.AddedServer{
 		Server:  trendingCron,
 		Enabled: conf.Crontab.TrendingEnabled,
+	}
+
+	servers["ordinal_collections_crontab"] = delivery.AddedServer{
+		Server:  ordinalCron,
+		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{

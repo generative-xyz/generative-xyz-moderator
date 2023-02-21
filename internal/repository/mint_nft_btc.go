@@ -108,3 +108,22 @@ func (r Repository) CreateMintNftBtcLog(logs *entity.MintNftBtcLogs) error {
 	}
 	return nil
 }
+
+func (r Repository) ListMintNftBtcByStatusAndAddress(address string, statuses []entity.StatusMint) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"origin_user_address": address,
+		"status":              bson.M{"$in": statuses},
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

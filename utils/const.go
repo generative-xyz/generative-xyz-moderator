@@ -104,6 +104,8 @@ const (
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
 	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
+	COLLECTION_COLLECTION_META					string = "collection_metas"
+	COLLECTION_COLLECTION_INSCRIPTION		string = "collection_inscriptions"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

@@ -382,6 +382,7 @@ func (u Usecase) ValidateAccessToken( accessToken string) (*oauth2service.Signed
 		err = errors.New("Access token is invaild")
 		u.Logger.Error(err)
 		return nil, err
+
 	}
 
 	u.Logger.Info("cached.UserID", userID)
@@ -392,6 +393,8 @@ func (u Usecase) ValidateAccessToken( accessToken string) (*oauth2service.Signed
 		u.Logger.Error(err)
 		return nil, err
 	}
+
+	// userID = &claim.Uid
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")

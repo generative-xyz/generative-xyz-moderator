@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"rederinghub.io/external/ord_service"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -73,8 +75,6 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 
 // check receive of the nft:
 func (u Usecase) BtcChecktListNft() error {
-
-
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -181,8 +181,6 @@ func (u Usecase) BtcChecktListNft() error {
 func (u Usecase) BtcCheckReceivedBuyingNft() error {
 
 	fmt.Printf("go BtcCheckReceivedBuyingNft....")
-
-
 
 	_, bs, err := u.buildBTCClient()
 
@@ -295,7 +293,6 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 // send btc for buy order records:
 func (u Usecase) BtcSendBTCForBuyOrder() error {
 
-
 	_, bs, err := u.buildBTCClient()
 
 	if err != nil {
@@ -368,11 +365,13 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 			destinations := make(map[string]int)
 
 			destinations[nftListing.SellerAddress] = amountWithChargee
-			if artistAddress != "" {
+			if artistAddress != "" && royaltyFee > 0 {
 				destinations[artistAddress] = royaltyFee
 			}
 
-			destinations[serviceFeeAddress] = serviceFee
+			if serviceFee > 0 {
+				destinations[serviceFeeAddress] = serviceFee
+			}
 
 			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
 			if err != nil {
@@ -422,8 +421,6 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 }
 
 func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
-
-
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -489,7 +486,6 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 
 // send nft for buy order records:
 func (u Usecase) BtcSendNFTForBuyOrder() error {
-
 
 	// get list buy order status = StatusBuy_ReceivedFund:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_ReceivedFund)
@@ -581,8 +577,6 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 }
 
 func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
-
-
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -686,9 +680,6 @@ func (u Usecase) SendTokenMKP(receiveAddr string, inscriptionID string) (*ord_se
 
 func (u Usecase) GetMasterNfts() (*ord_service.ExecRespose, error) {
 
-
-	
-	
 	listNFTsReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -726,11 +717,7 @@ func (u *Usecase) trackHistory(id, name, table string, status interface{}, reque
 }
 
 // tesst:
-func (u Usecase) SendTokenMKPTest( walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
-
-
-	
-	
+func (u Usecase) SendTokenMKPTest(walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", inscriptionID, receiveAddr, walletName, "before call ord_service.ExecRequest")
 
@@ -764,4 +751,45 @@ func (u Usecase) SendTokenMKPTest( walletName, receiveAddr, inscriptionID string
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "return now...")
 
 	return resp, err
+}
+
+// admin
+// check receive of the nft:
+func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
+	var listIdSuccess []string
+
+	if reqs != nil {
+		for _, v := range reqs.InscriptionID {
+			//v.Inscription
+			listing := entity.MarketplaceBTCListing{
+				SellOrdAddress: reqs.SellOrdAddress,
+				SellerAddress:  reqs.SellerAddress,
+				HoldOrdAddress: "",
+				ServiceFee:     "0",
+				Price:          reqs.Price,
+				IsConfirm:      true,
+				IsSold:         false,
+				ExpiredAt:      time.Now().Add(time.Hour * 1),
+				Name:           "",
+				Description:    "",
+				InscriptionID:  v,
+			}
+			// get first:
+			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)
+			if nftList != nil && nftList.IsConfirm && !nftList.IsSold {
+				u.Logger.Error("AutoListing.Repo.FindBtcNFTListingByNFTID", "", errors.New("item exist"))
+				continue
+			}
+
+			// check if listing is created or not
+			err := u.Repo.CreateMarketplaceListingBTC(&listing)
+			if err != nil {
+				u.Logger.Error("AutoListing.Repo.CreateMarketplaceBTCListing", "", err)
+				continue
+			}
+			listIdSuccess = append(listIdSuccess, v)
+		}
+	}
+
+	return listIdSuccess
 }
