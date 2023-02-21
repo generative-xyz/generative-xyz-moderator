@@ -36,16 +36,6 @@ type UserStats struct {
 	VolumeMinted      int32 `bson:"volume_minted" json:"volume_minted"`
 }
 
-type UserResponse struct {
-	Users    `json:",inline"`
-	Projects []*ProjectBasicInfo `json:"projects"`
-}
-
-type ProjectBasicInfo struct {
-	Id            string `json:"id"`
-	Name          string `json:"name"`
-	WalletAddress string `json:"wallet_address"`
-}
 type Users struct {
 	BaseEntity              `bson:",inline" json:"-"`
 	ID                      string        `bson:"id" json:"id,omitempty"`
@@ -59,6 +49,7 @@ type Users struct {
 	CreatedAt               *time.Time    `bson:"created_at" json:"created_at,omitempty"`
 	ProfileSocial           ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
 	Stats                   UserStats     `bson:"stats" json:"stats"`
+	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 }
 
 type ProfileSocial struct {

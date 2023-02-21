@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -210,18 +211,21 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 	if err != nil {
 		return nil, err
 	}
-	data := []*entity.UserResponse{}
+
+	data := []*response.ArtistResponse{}
 	for _, user := range users {
 		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
 		if err != nil {
 			return nil, err
 		}
-		projects := []*entity.ProjectBasicInfo{}
+
+		projects := []*response.ProjectBasicInfo{}
 		for _, p := range uProjects {
-			projects = append(projects, &entity.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
 		}
 
-		d := &entity.UserResponse{Users: user, Projects: projects}
+		d := &response.ArtistResponse{Projects: projects}
+		response.CopyEntityToRes(d, &user)
 		data = append(data, d)
 	}
 

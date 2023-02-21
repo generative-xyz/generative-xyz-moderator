@@ -116,6 +116,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/redis", h.deleteAllRedis).Methods("DELETE")
 	admin.HandleFunc("/redis/{key}", h.deleteRedis).Methods("DELETE")
 
+	admin.Use(h.MiddleWare.AccessToken)
+	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
+
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
@@ -167,6 +170,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
 	marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
 	marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
+	marketplaceBTC.HandleFunc("/collection-stats", h.btcMarketplaceCollectionStats).Methods("GET")
 
 	referral := api.PathPrefix("/referrals").Subrouter()
 	referral.Use(h.MiddleWare.AccessToken)

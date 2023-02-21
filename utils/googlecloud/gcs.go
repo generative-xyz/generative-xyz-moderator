@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 
@@ -126,16 +127,17 @@ func (g gcstorage) UnzipFile(object string) error {
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
 	outputBucket := g.bucketName
 	groups := make(map[string]*zip.File)
+	spew.Dump( len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
-			return nil
+			continue
 		}
 
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
-			return nil
+			continue
 		}
 
 		groups[f.Name] = f

@@ -34,7 +34,8 @@ type File interface {
 }
 
 func (u Usecase) CreateMultipartUpload(ctx context.Context, group string, fileName string) (*string, error) {
-	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, group, fileName)
+	//TODO 
+	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, "btc-projects/"+group, fileName)
 	return uploadID, err
 }
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -47,106 +46,106 @@ func (h ScronHandler) StartServer() {
 			return
 		}
 
-		chanDone := make(chan bool, 7)
-			go func (chanDone chan bool)  {
+		// chanDone := make(chan bool, 1)
+		// go func (chanDone chan bool)  {
 
-			defer func() {
-				chanDone <- true
-			}()
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
 
-			projects, err :=  h.Usecase.Repo.GetAllProjects(entity.FilterProjects{})
-			if err != nil {
-				h.Logger.Error(err)
-			}
+		// 	projects, err :=  h.Usecase.Repo.GetAllProjects(entity.FilterProjects{})
+		// 	if err != nil {
+		// 		h.Logger.Error(err)
+		// 	}
 
-			processed := 0
-			for _, project := range projects {
-						if processed % 5 == 0 {
-					time.Sleep(10 * time.Second)
-				}
+		// 	processed := 0
+		// 	for _, project := range projects {
+		// 				if processed % 5 == 0 {
+		// 			time.Sleep(10 * time.Second)
+		// 		}
 
-				go func( project entity.Projects) {
-					//TO DO: this function will be improved
-					err := h.Usecase.GetTokensOfAProjectFromChain(project)
-					if err != nil {
-						h.Logger.Error(err)
-					}
-				}(project)
-				processed ++
-			}
-		}(chanDone)
-		go func (chanDone chan bool)  {
-			defer func() {
-				chanDone <- true
-			}()
+		// 		go func( project entity.Projects) {
+		// 			//TO DO: this function will be improved
+		// 			err := h.Usecase.GetTokensOfAProjectFromChain(project)
+		// 			if err != nil {
+		// 				h.Logger.Error(err)
+		// 			}
+		// 		}(project)
+		// 		processed ++
+		// 	}
+		// }(chanDone)
+		// go func (chanDone chan bool)  {
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
 
-			err := h.Usecase.GetProjectsFromChain()
-			if err != nil {
-				h.Logger.Error(err)
-			}
-		}(chanDone)
-		go func (chanDone chan bool)  {
-			defer func() {
-				chanDone <- true
-			}()
+		// 	err := h.Usecase.GetProjectsFromChain()
+		// 	if err != nil {
+		// 		h.Logger.Error(err)
+		// 	}
+		// }(chanDone)
+		// go func (chanDone chan bool)  {
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
 
-			h.Usecase.UpdateUserAvatars()
-		}(chanDone)
-			go func (chanDone chan bool) {
-			defer func() {
-				chanDone <- true
-			}()
-				err := h.Usecase.SyncTokenAndMarketplaceData()
-			if err != nil {
-				h.Logger.Error(err)
-			}
-		}(chanDone)
+		// 	h.Usecase.UpdateUserAvatars()
+		// }(chanDone)
+		// 	go func (chanDone chan bool) {
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
+		// 		err := h.Usecase.SyncTokenAndMarketplaceData()
+		// 	if err != nil {
+		// 		h.Logger.Error(err)
+		// 	}
+		// }(chanDone)
 
-		go func (chanDone chan bool) {
-			defer func() {
-				chanDone <- true
-			}()
-				err := h.Usecase.SyncUserStats()
-			if err != nil {
-				h.Logger.Error(err)
-			}
-		}(chanDone)
+		// go func (chanDone chan bool) {
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
+		err = h.Usecase.SyncUserStats()
+		if err != nil {
+			h.Logger.Error(err)
+		}
+		// }(chanDone)
 
-		go func (chanDone chan bool) {
-			defer func() {
-				chanDone <- true
-			}()
-				err := h.Usecase.SyncLeaderboard()
-			if err != nil {
-				h.Logger.Error(err)
-			}
-		}(chanDone)
+		// go func (chanDone chan bool) {
+		// 	defer func() {
+		// 		chanDone <- true
+		// 	}()
+		// 		err := h.Usecase.SyncLeaderboard()
+		// 	if err != nil {
+		// 		h.Logger.Error(err)
+		// 	}
+		// }(chanDone)
 
-		go func (chanDone chan bool) {
-				defer func() {
-				chanDone <- true
-			}()
-				err := h.Usecase.SyncProjectsStats()
-			if err != nil {
-				h.Logger.Error(err)
-			}
-		}(chanDone)
+		// go func (chanDone chan bool) {
+		// 		defer func() {
+		// 		chanDone <- true
+		// 	}()
+		// 		err := h.Usecase.SyncProjectsStats()
+		// 	if err != nil {
+		// 		h.Logger.Error(err)
+		// 	}
+		// }(chanDone)
 
 	})
 //alway a minute crontab
-	c.AddFunc("*/1 * * * *", func() {
-		err := h.Usecase.UpdateProposalState()
-		if err != nil {
-			h.Logger.Error(err)
-		}
-	})
+	// c.AddFunc("*/1 * * * *", func() {
+	// 	err := h.Usecase.UpdateProposalState()
+	// 	if err != nil {
+	// 		h.Logger.Error(err)
+	// 	}
+	// })
 
-	c.AddFunc("0 0 * * *", func() {
-		err := h.Usecase.SnapShotOldRankAndOldBalance()
-		if err != nil {
-			h.Logger.Error(err)
-		}
-	})
+	// c.AddFunc("0 0 * * *", func() {
+	// 	err := h.Usecase.SnapShotOldRankAndOldBalance()
+	// 	if err != nil {
+	// 		h.Logger.Error(err)
+	// 	}
+	// })
 
 	c.Start()
 }

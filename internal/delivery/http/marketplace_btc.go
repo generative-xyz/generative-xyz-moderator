@@ -352,6 +352,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
+
 	result := h.Usecase.JobMint_MintNftBtc()
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
@@ -414,4 +415,20 @@ func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *htt
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+}
+
+func (h *httpDelivery) btcMarketplaceCollectionStats(w http.ResponseWriter, r *http.Request) {
+	collectionID := r.URL.Query().Get("collection_id")
+	_ = collectionID // not use for now
+
+	projectID := r.URL.Query().Get("project_id")
+
+	result, err := h.Usecase.GetCollectionMarketplaceStats(projectID)
+	if err != nil {
+		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
