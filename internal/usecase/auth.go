@@ -407,6 +407,7 @@ func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken stri
 		err = errors.New("Access token is invaild")
 		log.Error("u.Cache.GetData", err.Error(), err)
 		return nil, err
+
 	}
 
 	log.SetData("cached.UserID", userID)
@@ -417,6 +418,8 @@ func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken stri
 		log.Error("u.Auth2.ValidateToken", err.Error(), err)
 		return nil, err
 	}
+
+	// userID = &claim.Uid
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")
