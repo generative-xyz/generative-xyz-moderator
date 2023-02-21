@@ -114,6 +114,13 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.CreateMultipartUploadRequest:
+    properties:
+      fileName:
+        type: string
+      group:
+        type: string
+    type: object
   request.CreateProjectReq:
     properties:
       categories:
@@ -273,6 +280,11 @@ definitions:
       url:
         type: string
     type: object
+  response.FileResponse:
+    properties:
+      uploadId:
+        type: string
+    type: object
   response.GeneratedMessage:
     properties:
       message:
@@ -340,6 +352,11 @@ definitions:
       message:
         type: string
     type: object
+  response.MultipartUploadResponse:
+    properties:
+      fileUrl:
+        type: string
+    type: object
   response.NftMintingDetail:
     properties:
       index:
@@ -361,9 +378,11 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
-      wallet_address_btc:
-        type: string
       walletAddress:
+        type: string
+      walletAddressBtc:
+        type: string
+      walletAddressBtcTaproot:
         type: string
     type: object
   response.ProfileSocial:
@@ -1285,6 +1304,97 @@ paths:
       security:
       - Authorization: []
       summary: Upload file
+      tags:
+      - Files
+  /files/multipart:
+    post:
+      consumes:
+      - application/json
+      description: Create multipart upload.
+      parameters:
+      - description: Create multipart upload request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateMultipartUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create multipart upload
+      tags:
+      - Files
+  /files/multipart/{uploadID}:
+    post:
+      consumes:
+      - application/json
+      description: Finish multipart upload
+      parameters:
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.MultipartUploadResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Finish multipart upload
+      tags:
+      - Files
+    put:
+      description: Upload multipart file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      - description: part number
+        in: query
+        name: partNumber
+        type: string
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload multipart file
       tags:
       - Files
   /inscribe/info/{ID}:

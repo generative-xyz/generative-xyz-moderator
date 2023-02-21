@@ -29,6 +29,7 @@ type Global struct {
 	Tracer           tracer.ITracer
 	Auth2            oauth2service.Auth2
 	GCS              googlecloud.IGcstorage
+	S3Adapter        googlecloud.S3Adapter
 	MoralisNFT       nfts.MoralisNfts
 	CovalentNFT      nfts.CovalentNfts
 	OrdService       *ord_service.BtcOrd

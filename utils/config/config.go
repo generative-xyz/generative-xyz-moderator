@@ -121,6 +121,10 @@ type GCS struct {
 	ProjectId string
 	Bucket    string
 	Auth      string
+	Endpoint  string
+	Region    string
+	AccessKey string
+	SecretKey string
 }
 
 type RedisConfig struct {
@@ -239,6 +243,10 @@ func NewConfig() (*Config, error) {
 			ProjectId: os.Getenv("GCS_PROJECT_ID"),
 			Bucket:    os.Getenv("GCS_BUCKET"),
 			Auth:      os.Getenv("GCS_AUTH"),
+			Endpoint:  os.Getenv("GCS_ENDPOINT"),
+			Region:    os.Getenv("GCS_REGION"),
+			AccessKey: os.Getenv("GCS_ACCESS_KEY"),
+			SecretKey: os.Getenv("GCS_SECRET_KEY"),
 		},
 		Moralis: MoralisConfig{
 			Key:   os.Getenv("MORALIS_KEY"),
