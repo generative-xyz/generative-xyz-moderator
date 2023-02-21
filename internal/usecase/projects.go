@@ -169,6 +169,17 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 			animationURL = *req.AnimationURL
 			maxSize := helpers.CalcOrigBinaryLength(animationURL)
 			pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
+			htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(animationURL, "data:text/html;base64,", ""))
+			if err == nil {
+				isFullChain, err := helpers.IsFullChain(string(htmlContent))
+				if err == nil {
+					pe.IsFullChain = isFullChain
+				} else {
+					// TODO log
+				}
+			} else {
+				// TODO log
+			}
 			nftTokenURI["animation_url"] = animationURL
 		}
 	}
