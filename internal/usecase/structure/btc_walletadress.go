@@ -18,6 +18,6 @@ type CheckBalance struct {
 
 type MintingInscription struct {
 	Status    string `json:"status"`
-	FileURI   string `bson:"fileURI"`
-	ProjectID string `bson:"projectID"`
+	FileURI   string `json:"fileURI"`
+	ProjectID string `json:"projectID"`
 }
