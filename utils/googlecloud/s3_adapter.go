@@ -149,6 +149,7 @@ func (a S3Adapter) CompleteMultipartUpload(ctx context.Context, uploadID string)
 		MultipartUpload: &s3.CompletedMultipartUpload{
 			Parts: s3CompletedPart,
 		},
+		UploadId: &uploadID,
 	}
 	resp, err := a.s3Client.CompleteMultipartUploadWithContext(ctx, completeInput)
 	if err != nil {
