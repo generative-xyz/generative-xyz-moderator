@@ -94,7 +94,9 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 }
 
 func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalletInfo, error) {
-	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
+	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
+
+	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false", address)
 	fmt.Println("url", url)
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
@@ -116,12 +118,6 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 		}
 	}(res)
 
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getInscriptionByOutput Response status != 200")
-	}
-
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, errors.New("Read body failed")
@@ -129,6 +125,9 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
 	}
 
 	return &result, nil

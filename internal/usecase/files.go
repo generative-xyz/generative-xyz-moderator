@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/flate"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
 	"github.com/tdewolff/minify/v2/html"
@@ -28,13 +29,36 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity.Files, error) {
-	span, log := u.StartSpan("UploadFile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+type File interface {
+	io.ReadSeeker
+}
+
+func (u Usecase) CreateMultipartUpload(ctx context.Context, group string, fileName string) (*string, error) {
+	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, group, fileName)
+	return uploadID, err
+}
+
+func (u Usecase) UploadPart(ctx context.Context, uploadID string, file File, fileSize int64, partNumber int) error {
+
+	if err := u.S3Adapter.UploadPart(uploadID, file, fileSize, partNumber); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u Usecase) CompleteMultipartUpload(ctx context.Context, uploadID string) (*string, error) {
+	data, err := u.S3Adapter.CompleteMultipartUpload(ctx, uploadID)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return data, nil
+}
+
+func (u Usecase) UploadFile(r *http.Request) (*entity.Files, error) {
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		log.Error("r.FormFile.File", err.Error(), err)
+		u.Logger.Error("r.FormFile.File", err.Error(), err)
 		return nil, err
 	}
 
@@ -44,11 +68,11 @@ func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		log.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("uploaded", uploaded)
+	u.Logger.Info("uploaded", uploaded)
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
@@ -60,11 +84,11 @@ func (u Usecase) UploadFile(rootSpan opentracing.Span, r *http.Request) (*entity
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
 	if err != nil {
-		log.Error("u.Repo.InsertOne", err.Error(), err)
+		u.Logger.Error("u.Repo.InsertOne", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("inserted.FileModel", fileModel)
+	u.Logger.Info("inserted.FileModel", fileModel)
 	return fileModel, nil
 }
 
@@ -76,9 +100,8 @@ func (u Usecase) Deflate(inflated []byte) []byte {
 	return b.Bytes()
 }
 
-func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDataResp) (*structure.MinifyDataResp, error) {
-	span, log := u.StartSpan("MinifyFiles", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyDataResp, error) {
+
 	resp := make(map[string]structure.FileContentReq)
 
 	m := minify.New()
@@ -106,30 +129,29 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 		return nil
 	})
 
-	
 	client, err := helpers.EthDialer()
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		u.Logger.Error("ethclient.Dial", err.Error(), err)
 		return nil, err
 	}
 
 	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
 	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
 	if err != nil {
-		log.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		u.Logger.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
 		return nil, err
 	}
 
 	for fileName, fileInfo := range input.Files {
 		bytes, err := helpers.Base64Decode(fileInfo.Content)
 		if err != nil {
-			log.Error("helpers.Base64Decode.fileInfo.Content", err.Error(), err)
+			u.Logger.Error("helpers.Base64Decode.fileInfo.Content", err.Error(), err)
 			return nil, err
 		}
 
 		out, err := m.String(fileInfo.MediaType, string(bytes))
 		if err != nil {
-			log.Error("m.String", err.Error(), err)
+			u.Logger.Error("m.String", err.Error(), err)
 			return nil, err
 		}
 		deflate := u.Deflate([]byte(out))
@@ -140,78 +162,72 @@ func (u Usecase) MinifyFiles(rootSpan opentracing.Span, input structure.MinifyDa
 			script = ""
 		}
 
-		log.SetData("inflate", inflate)
+		u.Logger.Info("inflate", inflate)
 		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out, Deflate: script}
 	}
 
 	return &structure.MinifyDataResp{Files: resp}, nil
 }
 
-func (u Usecase) DeflateString(rootSpan opentracing.Span, input *structure.DeflateDataResp) error {
-	span, log := u.StartSpan("CheckDeflate", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) DeflateString(input *structure.DeflateDataResp) error {
+
 	//TODO implement here
 
 	client, err := helpers.EthDialer()
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		u.Logger.Error("ethclient.Dial", err.Error(), err)
 		return err
 	}
 
 	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
 	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
 	if err != nil {
-		log.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		u.Logger.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
 		return err
 	}
-	
 	inputByte := []byte(input.Data)
 	deflate := u.Deflate(inputByte)
 	script := helpers.Base64Encode(deflate)
-	
-	log.SetData("len(deflate)", len(deflate))
-	log.SetData("len(inputByte)", len(inputByte))
+	u.Logger.Info("len(deflate)", len(deflate))
+	u.Logger.Info("len(inputByte)", len(inputByte))
 	if len(deflate) > len(inputByte) {
 		input.Data = ""
 		return nil
 	}
-	
 	inflate, _ := gDataNft.InflateString(nil, script)
 	if inflate.Err != 0 || inflate.Result != input.Data {
-		log.SetData("inflate.Err", inflate.Err)
+		u.Logger.Info("inflate.Err", inflate.Err)
 		input.Data = ""
 		return nil
 	}
-	log.SetData("inflate", inflate)
+	u.Logger.Info("inflate", inflate)
 	input.Data = script
-	return  nil
+	return nil
 }
 
-func (u Usecase) UploadProjectFiles(rootSpan opentracing.Span, r *http.Request) (*entity.Files, error) {
-	span, log := u.StartSpan("UploadProjectFiles", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	projectName := r.FormValue("projectName")
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		log.Error("r.FormFile.File", err.Error(), err)
+		u.Logger.Error("r.FormFile.File", err.Error(), err)
 		return nil, err
 	}
 
-	key :=  helpers.GenerateSlug(projectName)
+	key := helpers.GenerateSlug(projectName)
 	key = fmt.Sprintf("btc-projects/%s", key)
 	gf := googlecloud.GcsFile{
 		FileHeader: handler,
-		Path: &key,
+		Path:       &key,
 	}
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		log.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("uploaded", uploaded)
+	u.Logger.Info("uploaded", uploaded)
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
 		FileName: uploaded.Name,
@@ -222,10 +238,10 @@ func (u Usecase) UploadProjectFiles(rootSpan opentracing.Span, r *http.Request) 
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
 	if err != nil {
-		log.Error("u.Repo.InsertOne", err.Error(), err)
+		u.Logger.Error("u.Repo.InsertOne", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("inserted.FileModel", fileModel)
+	u.Logger.Info("inserted.FileModel", fileModel)
 	return fileModel, nil
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
@@ -33,159 +32,146 @@ type projectStatChan struct {
 	Err error
 }
 
-func (u Usecase) ResolveMarketplaceListTokenEvent(rootSpan opentracing.Span, chainLog  types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplaceListTokenEvent", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplaceListTokenEvent( chainLog  types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParseListingToken(chainLog)
 	blocknumber := chainLog.BlockNumber
 
 	if err != nil {
-		log.Error("cannot parse list token event", "", err)
+		u.Logger.Error("cannot parse list token event", "", err)
 		return err
 	}
 
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetData("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	
+	u.Logger.Info("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
-	err = u.ListToken(span, event, blocknumber)
+	err = u.ListToken(event, blocknumber)
 
 	if err != nil {
-		log.Error("fail when resolve list token event", "", err)
+		u.Logger.Error("fail when resolve list token event", "", err)
 	}
 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplacePurchaseTokenEvent(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplacePurchaseTokenEvent", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplacePurchaseTokenEvent( chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParsePurchaseToken(chainLog)
 	if err != nil {
-		log.Error("cannot parse purchase token event", "", err)
+		u.Logger.Error("cannot parse purchase token event", "", err)
 		return err
 	}
 
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	
+	u.Logger.Info("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
-	err = u.PurchaseToken(span, event)
+	err = u.PurchaseToken(event)
 
 	if err != nil {
-		log.Error("fail when resolve purchase token event", "", err)
+		u.Logger.Error("fail when resolve purchase token event", "", err)
 	}
 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceMakeOffer(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplaceMakeOffer", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplaceMakeOffer( chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParseMakeOffer(chainLog)
 	blocknumber := chainLog.BlockNumber
 
 	if err != nil {
-		log.Error("cannot parse make offer event", "", err)
+		u.Logger.Error("cannot parse make offer event", "", err)
 		return err
 	}
 
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetData("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	
+	u.Logger.Info("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
-	err = u.MakeOffer(span, event, blocknumber)
+	err = u.MakeOffer(event, blocknumber)
 
 	if err != nil {
-		log.Error("fail when resolve make offer event", "", err)
+		u.Logger.Error("fail when resolve make offer event", "", err)
 	}
 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceAcceptOfferEvent(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplaceAcceptOfferEvent", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplaceAcceptOfferEvent( chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParseAcceptMakeOffer(chainLog)
 	if err != nil {
-		log.Error("cannot parse accept offer event", "", err)
+		u.Logger.Error("cannot parse accept offer event", "", err)
 		return err
 	}
 
-	log.SetData("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	u.Logger.Info("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 	
-	err = u.AcceptMakeOffer(span, event)
+err = u.AcceptMakeOffer(event)
 
 	if err != nil {
-		log.Error("fail when resolve accept offer event", "", err)
+		u.Logger.Error("fail when resolve accept offer event", "", err)
 	}
 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelListing(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplaceCancelListing", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplaceCancelListing( chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParseCancelListing(chainLog)
 	if err != nil {
-		log.Error("cannot parse cancel listing event", "", err)
+		u.Logger.Error("cannot parse cancel listing event", "", err)
 		return err
 	}
 
-	log.SetData("resolved-cancel-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	err = u.CancelListing(span, event)
+	u.Logger.Info("resolved-cancel-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	
+	err = u.CancelListing(event)
 
 	if err != nil {
-		log.Error("fail when resolve cancel listing event", "", err)
+		u.Logger.Error("fail when resolve cancel listing event", "", err)
 	}
 
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelOffer(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("ResolveMarketplaceCancelOffer", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) ResolveMarketplaceCancelOffer( chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
 	if  err != nil {
-		log.Error("cannot init marketplace contract", "", err)
+		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
 	event, err := marketplaceContract.ParseCancelMakeOffer(chainLog)
 	if err != nil {
-		log.Error("cannot parse cancel offer event", "", err)
+		u.Logger.Error("cannot parse cancel offer event", "", err)
 		return err
 	}
 
-	log.SetData("resolved-cancel-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	log.SetTag("OfferingID", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	err = u.CancelOffer(span, event)
+	u.Logger.Info("resolved-cancel-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
+	
+	err = u.CancelOffer(event)
 
 	if err != nil {
-		log.Error("fail when resolve cancel offer event", "", err)
+		u.Logger.Error("fail when resolve cancel offer event", "", err)
 	}
 
 	return nil
@@ -193,10 +179,9 @@ func (u Usecase) ResolveMarketplaceCancelOffer(rootSpan opentracing.Span, chainL
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
-	span, log := u.StartSpanWithoutRoot("UpdateProjectWithListener.GetProjectDetail")
-	defer u.Tracer.FinishSpan(span, log )
-	log.SetTag("transaction_hash", txnHash)
-	log.SetData("chainLog", chainLog)
+	_ =txnHash
+	
+	u.Logger.Info("chainLog", chainLog)
 	topics := chainLog.Topics
 
 	tokenIDStr :=  helpers.HexaNumberToInteger(topics[3].String())
@@ -204,33 +189,28 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	tokenIDStr = fmt.Sprintf("%d",tokenID)
 	contractAddr := strings.ToLower(chainLog.Address.String()) 
 
-	u.UpdateProjectFromChain(span, contractAddr, tokenIDStr)
+	u.UpdateProjectFromChain(contractAddr, tokenIDStr)
 }
 
-func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr string, tokenIDStr string) (*entity.Projects, error) {
-	span, log := u.StartSpan("UpdateProjectFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
+func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string) (*entity.Projects, error) {
 
 	pChan := make(chan projectChan, 1)
 	pDChan := make(chan projectDetailChan, 1)
 	pSChan := make(chan projectStatChan, 1)
+	u.Logger.Info("contractAddr", contractAddr)
+	u.Logger.Info("tokenIDStr", tokenIDStr)
 	
-	log.SetData("contractAddr", contractAddr)
-	log.SetData("tokenIDStr", tokenIDStr)
-	log.SetTag("contractAddr", contractAddr)
-	log.SetTag("tokenIDStr", tokenIDStr)
+	
 	tokenIDInt, err := strconv.Atoi(tokenIDStr)
 	if err != nil {
-		log.Error("UpdateProjectFromChain.Atoi.tokenIDStr", err.Error(), err)
+		u.Logger.Error("UpdateProjectFromChain.Atoi.tokenIDStr", err.Error(), err)
 		return nil, err
 	}
 
-	go func(rootSpan opentracing.Span, pChan chan projectChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("UpdateProjectFromChain.GetProjectDetail", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
+	go func( pChan chan projectChan, contractAddr string, tokenIDStr string) {
 
-		log.SetTag("contractAddr",contractAddr)
-		log.SetTag("tokenIDStr",tokenIDStr)
+		
+		
 
 		project := &entity.Projects{}
 		var err error
@@ -251,22 +231,19 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 
 				err = u.Repo.CreateProject(project)
 				if err != nil {
-					log.Error("UpdateProjectFromChain.CreateProject", err.Error(), err)
+					u.Logger.Error("UpdateProjectFromChain.CreateProject", err.Error(), err)
 					return
 				}
 
 		}else{
-			log.Error("UpdateProjectFromChain.FindProjectBy", err.Error(), err)
+			u.Logger.Error("UpdateProjectFromChain.FindProjectBy", err.Error(), err)
 			return
 		}
 	}
 
-	}(span, pChan, contractAddr, tokenIDStr)
+	}(pChan, contractAddr, tokenIDStr)
 
-	go func(rootSpan opentracing.Span, pDChan chan projectDetailChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("UpdateProjectFromChain.getProjectDetailFromChainWithoutCache", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
-		
+	go func( pDChan chan projectDetailChan, contractAddr string, tokenIDStr string) {
 		projectDetail := &structure.ProjectDetail{}
 		var err error
 
@@ -277,21 +254,19 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			}
 		}()
 
-		projectDetail, err = u.getProjectDetailFromChainWithoutCache(span, structure.GetProjectDetailMessageReq{
+		projectDetail, err = u.getProjectDetailFromChainWithoutCache(structure.GetProjectDetailMessageReq{
 			ContractAddress:  contractAddr,
 			ProjectID:  tokenIDStr,
 		})
 		if err != nil {
-			log.Error("UpdateProjectFromChain.getProjectDetailFromChainWithoutCache.GetProjectDetail", err.Error(), err)
+			u.Logger.Error("UpdateProjectFromChain.getProjectDetailFromChainWithoutCache.GetProjectDetail", err.Error(), err)
 			return
 		}
 	
 
-	}(span, pDChan, contractAddr, tokenIDStr)
+	}(pDChan, contractAddr, tokenIDStr)
 
-	go func(rootSpan opentracing.Span, pDChan chan projectStatChan, contractAddr string, tokenIDStr string) {
-		span, log := u.StartSpan("UpdateProjectFromChain.GetUpdatedProjectStats", rootSpan)
-		defer u.Tracer.FinishSpan(span, log )
+	go func( pDChan chan projectStatChan, contractAddr string, tokenIDStr string) {
 		projectStat := &entity.ProjectStat{}
 		traitStat := make([]entity.TraitStat, 0)
 		var err error
@@ -304,15 +279,15 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			}
 		}()
 
-		projectStat, traitStat, err = u.GetUpdatedProjectStats(span, structure.GetProjectReq{
+		projectStat, traitStat, err = u.GetUpdatedProjectStats(structure.GetProjectReq{
 			ContractAddr: contractAddr,
 			TokenID: tokenIDStr,
 		})
 		if err != nil {
-			log.Error("UpdateProjectFromChain.GetUpdatedProjectStats.error", err.Error(), err)
+			u.Logger.Error("UpdateProjectFromChain.GetUpdatedProjectStats.error", err.Error(), err)
 			return
 		}
-	}(span, pSChan, contractAddr, tokenIDStr)
+	}(pSChan, contractAddr, tokenIDStr)
 
 	projectFChan := <- pChan
 	projectDetailFChan := <- pDChan
@@ -320,14 +295,13 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 
 	err = projectFChan.Err 
 	if err != nil {
-		log.Error("projectFChan.Err ", err.Error(), err)
+		u.Logger.Error("projectFChan.Err ", err.Error(), err)
 		return nil, err
 	}
 
 	project := projectFChan.Data
-	log.SetData("project", project)
-	
-	//get creator profile
+	u.Logger.Info("project", project)
+//get creator profile
 	getProfile := func(profileChan chan structure.ProfileChan, address string) {
 		var user *entity.Users
 		var err error
@@ -339,7 +313,7 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 			}
 		}()
 
-		user, err = u.GetUserProfileByWalletAddress(span, strings.ToLower(address))
+		user, err = u.GetUserProfileByWalletAddress(strings.ToLower(address))
 		if err != nil {
 			return
 		}
@@ -357,13 +331,12 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 
 	err = projectDetailFChan.Err
 	if err != nil {
-		log.Error("projectDetailFChan.Err ", err.Error(), err)
+		u.Logger.Error("projectDetailFChan.Err ", err.Error(), err)
 		//return nil, err
 	}else{
 
-		
 		projectDetail := projectDetailFChan.Data
-		//log.SetData("projectDetail", projectDetail)
+		//u.Logger.Info("projectDetail", projectDetail)
 		project.IsSynced = true
 		project.Name = projectDetail.ProjectDetail.Name
 		project.CreatorName = projectDetail.ProjectDetail.Creator
@@ -417,69 +390,65 @@ func (u Usecase) UpdateProjectFromChain(rootSpan opentracing.Span, contractAddr 
 					Err: err,
 				}
 			}()
-			span, _ := u.StartSpanWithoutRoot("getNftContractDetail.GetNftMintedTime")
-			mintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+	
+			mintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
 				ContractAddress: project.ContractAddress,
 				TokenID: project.TokenID,
 			})
 		}(mintedTimeChan)
 		mintedTimeFChan := <-mintedTimeChan
 		if mintedTimeFChan.Err != nil {
-			log.Error("mintedTimeFChan.Err ", mintedTimeFChan.Err.Error(), mintedTimeFChan.Err)
+			u.Logger.Error("mintedTimeFChan.Err ", mintedTimeFChan.Err.Error(), mintedTimeFChan.Err)
 		} else {
 			project.BlockNumberMinted = mintedTimeFChan.NftMintedTime.BlockNumberMinted
 			project.MintedTime = mintedTimeFChan.NftMintedTime.MintedTime
 		}
 	}
 
-	
-	project.TokenIDInt = int64(tokenIDInt)
+project.TokenIDInt = int64(tokenIDInt)
 
 	if usrFromChan.Err != nil {
-		log.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
+		u.Logger.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
 	}else{
 		project.CreatorProfile = *usrFromChan.Data
 	}
 
 	if projectStatFChan.Err != nil {
-		log.Error("projectStatFChan.Err", projectStatFChan.Err.Error(), projectStatFChan.Err)
+		u.Logger.Error("projectStatFChan.Err", projectStatFChan.Err.Error(), projectStatFChan.Err)
 	} else {
 		project.Stats = *projectStatFChan.Data
 		project.TraitsStat = projectStatFChan.DataTrait
 	}
 
-	log.SetData("project",project)
+	u.Logger.Info("project",project)
 	updated, err := u.Repo.UpdateProject(project.UUID, project)
 	if err != nil {
-		log.Error(" u.UpdateProject", err.Error(), err)
+		u.Logger.Error(" u.UpdateProject", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("projectUUID", project.UUID)
-	log.SetData("updated",updated)
+	u.Logger.Info("projectUUID", project.UUID)
+	u.Logger.Info("updated",updated)
 	return  project, nil
 }
 
-func (u Usecase) GetProjectsFromChain(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.GetProjectsFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log )
-	
-	contractAddress := os.Getenv("GENERATIVE_PROJECT")
+func (u Usecase) GetProjectsFromChain() error {
+contractAddress := os.Getenv("GENERATIVE_PROJECT")
 	mProjects, err := u.MoralisNft.GetNftByContract(contractAddress, nfts.MoralisFilter{})
 	if err != nil {
-		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+		u.Logger.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
 		return err
 	}
 
-	log.SetData("contractAddress", contractAddress)
-	log.SetTag("contractAddress", contractAddress)
+	u.Logger.Info("contractAddress", contractAddress)
+	
 	for _, mProject := range mProjects.Result {
-		_, err := u.UpdateProjectFromChain(span, contractAddress, mProject.TokenID)
+		_, err := u.UpdateProjectFromChain(contractAddress, mProject.TokenID)
 		if err != nil {
-			log.Error("u.Repo.FindProjectBy", err.Error(), err)
+			u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
 			return err
 		}
 		//resp = append(resp, *p)
-		//log.SetData("p", *p)
+		//u.Logger.Info("p", *p)
 	}
 
 	return nil

@@ -4,17 +4,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
 )
 
 type ScronBTCHandler struct {
 	Logger  logger.Ilogger
-	Tracer  tracer.ITracer
+	
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
@@ -22,7 +20,6 @@ type ScronBTCHandler struct {
 func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHandler {
 	return &ScronBTCHandler{
 		Logger:  global.Logger,
-		Tracer:  global.Tracer,
 		Cache:   global.Cache,
 		Usecase: uc,
 	}
@@ -35,68 +32,44 @@ func (h ScronBTCHandler) StartServer() {
 	for {
 		wg.Add(5)
 
-		span := h.Tracer.StartSpan("ScronBTCHandler.DispatchCron")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
 
 		// job check tx:
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeCheckTxSend")
+		go func( wg *sync.WaitGroup) {
 			defer wg.Done()
-			defer span.Finish()
+			h.Usecase.JobInscribeCheckTxSend()
 
-			h.Usecase.JobInscribeCheckTxSend(span)
-
-		}(span, &wg)
+		}(&wg)
 
 		// job check balance:
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.CheckBlance")
+		go func( wg *sync.WaitGroup) {
 			defer wg.Done()
-			defer span.Finish()
+			h.Usecase.JobInscribeWaitingBalance()
 
-			h.Usecase.JobInscribeWaitingBalance(span)
-
-		}(span, &wg)
+		}(&wg)
 
 		// job send btc to ord address:
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeSendBTCToOrdWallet")
+		go func( wg *sync.WaitGroup) {
 			defer wg.Done()
-			defer span.Finish()
+			h.Usecase.JobInscribeSendBTCToOrdWallet()
 
-			h.Usecase.JobInscribeSendBTCToOrdWallet(span)
-
-		}(span, &wg)
+		}(&wg)
 
 		// job mint nft:
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
-
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeMintNft")
+		go func( wg *sync.WaitGroup) {
 			defer wg.Done()
-			defer span.Finish()
+			h.Usecase.JobInscribeMintNft()
 
-			h.Usecase.JobInscribeMintNft(span)
-
-		}(span, &wg)
+		}(&wg)
 
 		// job send nft to user:
-		go func(rootSpan opentracing.Span, wg *sync.WaitGroup) {
+		go func( wg *sync.WaitGroup) {
 
-			span := h.Tracer.StartSpanFromRoot(rootSpan, "Inscribe.JobInscribeSendNft")
-			defer wg.Done()
-			defer span.Finish()
+				defer wg.Done()
+			h.Usecase.JobInscribeSendNft()
 
-			h.Usecase.JobInscribeSendNft(span)
+		}(&wg)
 
-		}(span, &wg)
-
-		log.SetData("wait", "wait")
+		h.Logger.Info("wait", "wait")
 		wg.Wait()
 		time.Sleep(5 * time.Minute)
 	}

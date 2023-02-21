@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
-	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"rederinghub.io/external/nfts"
@@ -27,9 +26,8 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
-	span, log := u.StartSpan("RunAndCap", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
+
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
 	strAttrs := []entity.TokenUriAttrStr{}
@@ -37,11 +35,11 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		return nil, errors.New("Token is empty")
 	}
 
-	log.SetTag("tokenID", token.TokenID)
-	log.SetTag("contractAddress", token.ContractAddress)
+	
+	
 	resp := &structure.TokenAnimationURI{}
 
-	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
+	u.Logger.Info("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
 
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
 		resp = &structure.TokenAnimationURI{
@@ -55,12 +53,12 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		return resp, nil
 	}
 
-	log.SetTag("tokenID", token.TokenID)
-	log.SetTag("contractAddress", token.ContractAddress)
+	
+	
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
-		log.Error("RunAndCap.ParseBool", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -93,7 +91,7 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	)
 
 	if err != nil {
-		log.Error("chromedp.Run.err.generativeTraits", err.Error(), err)
+		u.Logger.Error(err)
 	}
 
 	for key, item := range traits {
@@ -123,9 +121,9 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+				u.Logger.Error(err)
 			} else {
-				log.SetData("uploaded", uploaded)
+				u.Logger.Info("uploaded", uploaded)
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
@@ -140,39 +138,37 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		IsUpdated:   true,
 	}
 
-	log.SetData("structure.TokenAnimationURI.IsUpdated", resp.IsUpdated)
+	u.Logger.Info("structure.TokenAnimationURI.IsUpdated", resp.IsUpdated)
 	return resp, nil
 }
 
-func (u Usecase) GetTokenByTokenID(rootSpan opentracing.Span, tokenID string, captureTimeout int) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetTokenByTokenID( tokenID string, captureTimeout int) (*entity.TokenUri, error) {
 
-	log.SetTag("tokenID", tokenID)
+
+	
 
 	tokenID = strings.ToLower(tokenID)
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
-		log.Error("u.Repo.FindTokenBy", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	///log.SetData("tokenUri", tokenUri)
-	log.SetData("tokenID", tokenUri.TokenID)
+	///u.Logger.Info("tokenUri", tokenUri)
+	u.Logger.Info("tokenID", tokenUri.TokenID)
 	return tokenUri, nil
 }
 
-func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("GetToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetToken( req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 
-	log.SetData("req", req)
-	log.SetTag("tokenID", req.TokenID)
-	log.SetTag("contractAdress", req.ContractAddress)
+
+	u.Logger.Info("req", req)
+	
+	
 
 	defer func() {
-		go u.getTokenInfo(span, req)
+		go u.getTokenInfo(req)
 	}()
 
 	contractAddress := strings.ToLower(req.ContractAddress)
@@ -180,43 +176,42 @@ func (u Usecase) GetToken(rootSpan opentracing.Span, req structure.GetTokenMessa
 
 	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
 	if err != nil {
-		log.Error("u.Repo.FindTokenBy", err.Error(), err)
+		u.Logger.Error(err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			token, err := u.getTokenInfo(span, req)
+			token, err := u.getTokenInfo(req)
 			if err != nil {
-				log.Error("u.GetLiveToken", err.Error(), err)
+				u.Logger.Error(err)
 				return nil, err
 			}
-			log.SetData("live.tokenUri", token.TokenID)
-			log.SetData("tokenID", token.TokenID)
+			u.Logger.Info("live.tokenUri", token.TokenID)
+			u.Logger.Info("tokenID", token.TokenID)
 			return token, nil
 		} else {
 			return nil, err
 		}
 	}
 
-	///log.SetData("tokenUri", tokenUri)
-	log.SetData("tokenID", tokenUri.TokenID)
+	///u.Logger.Info("tokenUri", tokenUri)
+	u.Logger.Info("tokenID", tokenUri.TokenID)
 	return tokenUri, nil
 }
 
-func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("Usecase.getTokenInfo", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) getTokenInfo( req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
 
-	log.SetData("req", req)
+
+	u.Logger.Info("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
 	fAddr := strings.ToLower(req.ContractAddress)
 	isUpdated := false
 
 	dataObject, err := u.Repo.FindTokenByWithoutCache(fAddr, req.TokenID)
 	if err != nil {
-		log.Error("u.Repo.FindTokenBy", err.Error(), err)
+		u.Logger.Error(err)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			dataObject = &entity.TokenUri{}
 			isUpdated = true
 		} else {
-			log.Error("u.Repo.FindTokenBy", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
 	}
@@ -228,7 +223,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -238,12 +233,12 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		return nil, errors.New("cannot convert tokenID")
 	}
 	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
-	nftProjectDetail, err := u.getProjectDetailFromChain(span, structure.GetProjectDetailMessageReq{
+	nftProjectDetail, err := u.getProjectDetailFromChain(structure.GetProjectDetailMessageReq{
 		ContractAddress: addr.String(),
 		ProjectID:       projectID.String(),
 	})
 	if err != nil {
-		log.Error("u.getNftContractDetail", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -299,15 +294,15 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 			}
 		}()
 
-		nftMintedTime, err = u.GetNftMintedTime(span, structure.GetNftMintedTimeReq{
+		nftMintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
 			ContractAddress: genNFTAddr,
 			TokenID:         req.TokenID,
 		})
 	}(mftMintedTimeChan, strings.ToLower(parentAddr.String()))
 
-	log.SetData("nftProject", nftProject)
-	log.SetData("parentAddr", parentAddr)
-	//log.SetData("tokenUriData", tokenUriData)
+	u.Logger.Info("nftProject", nftProject)
+	u.Logger.Info("parentAddr", parentAddr)
+	//u.Logger.Info("tokenUriData", tokenUriData)
 
 	dataObject.ContractAddress = strings.ToLower(req.ContractAddress)
 	dataObject.CreatorAddr = strings.ToLower(nftProject.Creator)
@@ -320,27 +315,27 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
 
-	log.SetData("dataObject.ContractAddress", dataObject.ContractAddress)
-	log.SetData("dataObject.Creator", dataObject.Creator)
-	log.SetData("dataObject.TokenID", dataObject.TokenID)
-	log.SetData("dataObject.ProjectID", dataObject.ProjectID)
+	u.Logger.Info("dataObject.ContractAddress", dataObject.ContractAddress)
+	u.Logger.Info("dataObject.Creator", dataObject.Creator)
+	u.Logger.Info("dataObject.TokenID", dataObject.TokenID)
+	u.Logger.Info("dataObject.ProjectID", dataObject.ProjectID)
 
-	log.SetTag("contractAddress", dataObject.ContractAddress)
-	log.SetTag("creator", dataObject.Creator)
-	log.SetTag("ownerAddr", dataObject.OwnerAddr)
-	log.SetTag("tokenID", dataObject.TokenID)
-	log.SetTag("projectID", dataObject.ProjectID)
+	
+	
+	
+	
+	
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
-		log.Error("u.GetProjectDetail", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	dataObject.Project = project
 	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
 	if err != nil {
-		log.Error("u.Repo.FindUserByWalletAddress.creator", err.Error(), err)
+		u.Logger.Error(err)
 		creator = &entity.Users{}
 	}
 	dataObject.Creator = creator
@@ -353,11 +348,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 
 			ownerAddr := strings.ToLower(nft.Owner)
 
-			log.SetData("dataObject.OwnerAddr.old", dataObject.OwnerAddr)
-			log.SetData("dataObject.OwnerAddr.new", ownerAddr)
+			u.Logger.Info("dataObject.OwnerAddr.old", dataObject.OwnerAddr)
+			u.Logger.Info("dataObject.OwnerAddr.new", ownerAddr)
 			owner, err := u.Repo.FindUserByWalletAddress(ownerAddr)
 			if err != nil {
-				log.Error("u.Repo.FindUserByWalletAddress.owner", err.Error(), err)
+				u.Logger.Error(err)
 				//return nil, err
 				owner = &entity.Users{}
 			}
@@ -374,7 +369,7 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		}
 
 	} else {
-		log.Error(" u.GetNftMintedTime", mftMintedTime.Err.Error(), mftMintedTime.Err)
+		u.Logger.Error(" u.GetNftMintedTime", mftMintedTime.Err.Error(), mftMintedTime.Err)
 	}
 
 	tokenFChan := <-tokendatachan
@@ -387,13 +382,13 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		dataObject.Image = tokenFChan.Data.Image
 
 	} else {
-		log.Error("tokenFChan.Err", tokenFChan.Err.Error(), tokenFChan.Err)
+		u.Logger.Error("tokenFChan.Err", tokenFChan.Err.Error(), tokenFChan.Err)
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	log.SetData(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), true)
+	u.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), true)
 
 	isAddress := func(s *string) bool {
 		if s == nil {
@@ -403,11 +398,11 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	}
 
 	if dataObject.MinterAddress != nil {
-		log.SetData(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), true)
+		u.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), true)
 	}
 
 	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
-		log.SetData("Update minter address", true)
+		u.Logger.Info("Update minter address", true)
 		dataObject.MinterAddress = &dataObject.OwnerAddr
 		isUpdated = true
 	}
@@ -415,10 +410,10 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 	if isUpdated {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
 		if err != nil {
-			log.Error("u.Repo.UpdateOne", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
-		log.SetData("updated", updated)
+		u.Logger.Info("updated", updated)
 	}
 
 	//capture image
@@ -427,9 +422,9 @@ func (u Usecase) getTokenInfo(rootSpan opentracing.Span, req structure.GetTokenM
 		ContractAddress: dataObject.ContractAddress,
 	}}
 
-	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 	if err != nil {
-		log.Error("ProducerWithTrace", err.Error(), err)
+		u.Logger.Error(err)
 	}
 
 	return dataObject, nil
@@ -455,27 +450,23 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 	return &value, nil
 }
 
-func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("Usecase.UpdateTokensFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpdateTokensFromChain() error {
+
 
 	//TODO - we will use pagination instead of all
 	tokens, err := u.Repo.GetAllTokens()
 	if err != nil {
-		log.Error("GetAllTokens", err.Error(), err)
+		u.Logger.Error(err)
 		return err
 	}
 
-	log.SetData("tokens.Count", len(tokens))
+	u.Logger.Info("tokens.Count", len(tokens))
 	for _, token := range tokens {
-		span, log := u.StartSpan("UpdateTokensFromChain.loop", span)
 
-		log.SetTag("tokenID", token.TokenID)
-		log.SetTag("genNFTAddr", token.GenNFTAddr)
 
-		_, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
+		_, err := u.GetToken(structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
 		if err != nil {
-			log.Error(fmt.Sprintf("u.GetToken_%s_%s", token.ContractAddress, token.TokenID), err.Error(), err)
+			u.Logger.Error(err)
 			return err
 		}
 	}
@@ -483,42 +474,41 @@ func (u Usecase) UpdateTokensFromChain(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetTokensByContract", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetTokensByContract( contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
+
 
 	client, err := helpers.EthDialer()
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	contractAddr := common.HexToAddress(contractAddress)
 	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
 	if err != nil {
-		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	project, err := gNft.Project(nil)
 	if err != nil {
-		log.Error("gNft.Project", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 	parentAddr := project.ProjectAddr
 
 	resp, err := u.MoralisNft.GetNftByContract(contractAddress, filter)
 	if err != nil {
-		log.Error("u.MoralisNft.GetNftByContract", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 	parentAddrStr := parentAddr.String()
 	result := []entity.TokenUri{}
 	for _, item := range resp.Result {
 		tokenID := item.TokenID
-		token, err := u.GetToken(span, structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
+		token, err := u.GetToken(structure.GetTokenMessageReq{ContractAddress: parentAddrStr, TokenID: tokenID}, 5)
 		if err != nil {
-			log.Error("u.getTokenInfo", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
 		result = append(result, *token)
@@ -533,34 +523,30 @@ func (u Usecase) GetTokensByContract(rootSpan opentracing.Span, contractAddress 
 	return p, nil
 }
 
-func (u Usecase) FilterTokens(rootSpan opentracing.Span, filter structure.FilterTokens) (*entity.Pagination, error) {
-	span, log := u.StartSpan("FilterTokens", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) FilterTokens( filter structure.FilterTokens) (*entity.Pagination, error) {
 
 	pe := &entity.FilterTokenUris{}
-	log.SetData("log", log)
 	err := copier.Copy(pe, filter)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	tokens, err := u.Repo.FilterTokenUri(*pe)
 	if err != nil {
-		log.Error("u.Repo.FilterTokenUri", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetData("tokens", tokens.Total)
+	u.Logger.Info("tokens", tokens.Total)
 	return tokens, nil
 }
 
-func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateTokenReq) (*entity.TokenUri, error) {
-	span, log := u.StartSpan("UpdateToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpdateToken( req structure.UpdateTokenReq) (*entity.TokenUri, error) {
+
 	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)
 	if err != nil {
-		log.Error("UpdateProject.FindTokenBy", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -570,17 +556,16 @@ func (u Usecase) UpdateToken(rootSpan opentracing.Span, req structure.UpdateToke
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(req.ContracAddress, req.TokenID, p)
 	if err != nil {
-		log.Error("UpdateProject.UpdateOrInsertTokenUri", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return p, nil
 }
 
-func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project entity.Projects) error {
-	span, log := u.StartSpan("GetTokensOfAProjectFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
+
 	contractAddres := project.ContractAddress
 	genAddress := project.GenNFTAddr
 	// projectID := project.TokenID
@@ -589,7 +574,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 	chain := os.Getenv("MORALIS_CHAIN")
 	nfts, err := u.MoralisNft.GetNftByContract(genAddress, nfts.MoralisFilter{Chain: &chain})
 	if err != nil {
-		log.Error("GetTokensOfAProjectFromChain.GetNftByContract", err.Error(), err)
+		u.Logger.Error(err)
 		return err
 	}
 
@@ -600,12 +585,12 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 			time.Sleep(10 * time.Second)
 		}
 
-		go func(span opentracing.Span, contractAddres string, tokenID string) {
-			u.GetToken(span, structure.GetTokenMessageReq{
+		go func( contractAddres string, tokenID string) {
+			u.GetToken(structure.GetTokenMessageReq{
 				ContractAddress: contractAddres,
 				TokenID:         tokenID,
 			}, 20)
-		}(span, contractAddres, token.TokenID)
+		}(contractAddres, token.TokenID)
 
 		processed++
 	}
@@ -613,18 +598,17 @@ func (u Usecase) GetTokensOfAProjectFromChain(rootSpan opentracing.Span, project
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI( projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
 
-	span, log := u.StartSpan("CreateBTCTokenURI", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+
 	// find project by projectID
-	log.SetData(utils.TOKEN_ID_TAG, tokenID)
-	log.SetData(utils.PROJECT_ID_TAG, projectID)
-	log.SetData("mintedURL", mintedURL)
+	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
+	u.Logger.Info(utils.PROJECT_ID_TAG, projectID)
+	u.Logger.Info("mintedURL", mintedURL)
 
 	project, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
-		log.Error("CreateBTCTokenURI.Project", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -648,18 +632,18 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 	tokenUri.IsOnchain = false
 
 	nftTokenUri := project.NftTokenUri
-	log.SetData("nftTokenUri", nftTokenUri)
+	u.Logger.Info("nftTokenUri", nftTokenUri)
 
 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
 	err = helpers.Base64DecodeRaw(project.NftTokenUri, projectNftTokenUri)
 	if err != nil {
-		log.Error("BTCMint.helpers.Base64DecodeRaw", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	imageURI := ""
 	if projectNftTokenUri.AnimationUrl != "" {
-		log.SetData("nftTokenUri", len(nftTokenUri))
+		u.Logger.Info("nftTokenUri", len(nftTokenUri))
 		base64Data := strings.Replace(nftTokenUri, "data:application/json;base64,", "", 1)
 
 		type Data struct {
@@ -683,12 +667,12 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 		tokenUri.Image = mintedURL
 		tokenUri.ParsedImage = &mintedURL
 		tokenUri.ThumbnailCapturedAt = &now
-		log.SetData("mintedURL", mintedURL)
+		u.Logger.Info("mintedURL", mintedURL)
 	}
 
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
-		log.Error("u.Repo.UpdateOrInsertTokenUri", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 	// after update, increase index field in project to 1
@@ -707,17 +691,16 @@ func (u Usecase) CreateBTCTokenURI(rootSpan opentracing.Span, projectID string, 
 		ContractAddress: pTokenUri.ContractAddress,
 	}}
 
-	err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 	if err != nil {
-		log.Error("ProducerWithTrace", err.Error(), err)
+		u.Logger.Error(err)
 	}
 
 	return pTokenUri, nil
 }
 
-func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structure.MarketplaceNFTDetail, error) {
-	span, log := u.StartSpan("GetAllListListingWithRule", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetAllListListingWithRule() ([]structure.MarketplaceNFTDetail, error) {
+
 	result := []structure.MarketplaceNFTDetail{}
 	var nftList []entity.MarketplaceBTCListingFilterPipeline
 	var err error
@@ -764,7 +747,7 @@ func (u Usecase) GetAllListListingWithRule(rootSpan opentracing.Span) ([]structu
 	return result, nil
 }
 
-func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
+func (u Usecase) GetListingDetail( inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
 	// addon for check isBuyable (contact Phuong)
 
 	isBuyable := true
@@ -805,4 +788,42 @@ func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID strin
 	}
 	return &nftInfo, nil
 
+}
+
+func (u Usecase) UpdateTokenThumbnail( req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
+
+
+	
+
+	token, err := u.Repo.FindTokenByTokenID(req.TokenID)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	if strings.Index(token.Image, ".glb") == -1 {
+		err = errors.New("Token's image is not a glb file")
+		u.Logger.Error(err)
+		return nil, err
+	}
+now := time.Now().Unix()
+uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now) )
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	u.Logger.Info("uploaded", uploaded)
+	thumb := fmt.Sprintf("%s/upload/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+
+	token.Image = thumb
+	token.Thumbnail = thumb
+
+	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	u.Logger.Info("updated", updated)
+	return token, nil
 }

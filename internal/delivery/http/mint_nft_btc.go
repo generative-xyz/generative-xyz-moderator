@@ -21,15 +21,12 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /mint-nft-btc/receive-address [POST]
 func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.createMintReceiveAddress", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
 
 	var reqBody request.CreateMintReceiveAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.MintNftBtc.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.MintNftBtc.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -37,19 +34,18 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	reqUsecase := &structure.MintNftBtcData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(span, *reqUsecase)
+	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
+		h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("mintNftBtcWallet", mintNftBtcWallet)
 	resp := h.MintNftBtcToResp(mintNftBtcWallet)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")

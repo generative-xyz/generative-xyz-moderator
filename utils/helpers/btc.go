@@ -3,13 +3,14 @@ package helpers
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"hash"
+
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"golang.org/x/crypto/ripemd160"
-	"hash"
 )
 
 // Calculate the hash of hasher over buf.
@@ -24,8 +25,8 @@ func Hash160(buf []byte) []byte {
 }
 
 // GetAddressFromPubKey gets a bscript.Address from a bec.PublicKey
-func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*btcutil.AddressWitnessPubKeyHash, error) {
-	temp, err := btcutil.NewAddressWitnessPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
+func GetAddressFromPubKey(publicKey *btcec.PublicKey, compressed bool) (*btcutil.AddressPubKeyHash, error) {
+	temp, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
 	if err != nil {
 		return nil, err
 	}

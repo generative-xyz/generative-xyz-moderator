@@ -3,10 +3,9 @@ package structure
 type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
-
-	Name        *string
-	IsHidden    *bool
-	CategoryIds []string
+	Name          *string
+	CategoryIds   []string
+	IsHidden      *bool
 }
 
 type FilterProposal struct {
