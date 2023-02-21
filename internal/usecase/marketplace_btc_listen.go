@@ -372,11 +372,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			destinations := make(map[string]int)
 
 			destinations[nftListing.SellerAddress] = amountWithChargee
-			if artistAddress != "" {
+			if artistAddress != "" && royaltyFee > 0 {
 				destinations[artistAddress] = royaltyFee
 			}
 
-			destinations[serviceFeeAddress] = serviceFee
+			if serviceFee > 0 {
+				destinations[serviceFeeAddress] = serviceFee
+			}
 
 			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
 			if err != nil {
