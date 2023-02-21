@@ -20,7 +20,6 @@ import (
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
-	
 
 	var reqBody request.CreateMarketplaceBTCListing
 	decoder := json.NewDecoder(r.Body)
@@ -167,7 +166,6 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
@@ -175,7 +173,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 
 	vars := mux.Vars(r)
 	inscriptionID := vars["ID"]
-	
+
 	var nft *entity.MarketplaceBTCListing
 	var err error
 	isBuyable := true
@@ -242,12 +240,11 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 		nftInfo.ContentLength = inscribeInfo.ContentLength
 	}
 	//h.Logger.Info("resp.Proposal", resp)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
 }
 
 func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.Request) {
-	
 
 	var reqBody request.ListingFee
 	decoder := json.NewDecoder(r.Body)
@@ -297,7 +294,6 @@ func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.R
 }
 
 func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *http.Request) {
-	
 
 	var reqBody request.CreateMarketplaceBTCBuyOrder
 	decoder := json.NewDecoder(r.Body)
@@ -356,8 +352,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-
-	result := h.Usecase.JobInscribeMintNft()
+	result := h.Usecase.JobMint_MintNftBtc()
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
@@ -371,8 +366,8 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
 
-	// 
-	// 
+	//
+	//
 
 	// var reqBody request.SendNFT
 	// decoder := json.NewDecoder(r.Body)
@@ -405,7 +400,6 @@ func (h *httpDelivery) btcMarketplaceFilterInfo(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
@@ -419,6 +413,5 @@ func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *htt
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
