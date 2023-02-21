@@ -806,3 +806,44 @@ func (u Usecase) GetListingDetail(rootSpan opentracing.Span, inscriptionID strin
 	return &nftInfo, nil
 
 }
+
+func (u Usecase) UpdateTokenThumbnail(rootSpan opentracing.Span, req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
+	span, log := u.StartSpan("UpdateToken", rootSpan)
+	defer u.Tracer.FinishSpan(span, log)
+
+	log.SetTag(utils.TOKEN_ID_TAG, req.TokenID)
+
+	token, err := u.Repo.FindTokenByTokenID(req.TokenID)
+	if err != nil {
+		log.Error("u.Repo.FindTokenByTokenID", err.Error(), err)
+		return nil, err
+	}
+
+	if strings.Index(token.Image, ".glb") == -1 {
+		err = errors.New("Token's image is not a glb file")
+		log.Error("glb.Validate.Fail", err.Error(), err)
+		return nil, err
+	}
+	
+	now := time.Now().Unix()
+	
+	uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now) )
+	if err != nil {
+		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+		return nil, err
+	}
+	log.SetData("uploaded", uploaded)
+	thumb := fmt.Sprintf("%s/upload/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+
+	token.Image = thumb
+	token.Thumbnail = thumb
+
+	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
+	if err != nil {
+		log.Error("u.Repo.UpdateOrInsertTokenUri", err.Error(), err)
+		return nil, err
+	}
+
+	log.SetData("updated", updated)
+	return token, nil
+}

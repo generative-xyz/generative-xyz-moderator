@@ -114,6 +114,13 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.CreateMultipartUploadRequest:
+    properties:
+      fileName:
+        type: string
+      group:
+        type: string
+    type: object
   request.CreateProjectReq:
     properties:
       categories:
@@ -217,6 +224,11 @@ definitions:
       priority:
         type: integer
     type: object
+  request.UpdateTokenThumbnailReq:
+    properties:
+      thumbnail:
+        type: string
+    type: object
   request.UpdateTokentReq:
     properties:
       priority:
@@ -271,6 +283,11 @@ definitions:
       uploadedBy:
         type: string
       url:
+        type: string
+    type: object
+  response.FileResponse:
+    properties:
+      uploadId:
         type: string
     type: object
   response.GeneratedMessage:
@@ -338,6 +355,11 @@ definitions:
   response.LogoutResponse:
     properties:
       message:
+        type: string
+    type: object
+  response.MultipartUploadResponse:
+    properties:
+      fileUrl:
         type: string
     type: object
   response.NftMintingDetail:
@@ -1287,6 +1309,88 @@ paths:
       security:
       - Authorization: []
       summary: Upload file
+      tags:
+      - Files
+  /files/multipart:
+    post:
+      consumes:
+      - application/json
+      description: Create multipart upload.
+      parameters:
+      - description: Create multipart upload request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateMultipartUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create multipart upload
+      tags:
+      - Files
+  /files/multipart/{uploadID}:
+    post:
+      consumes:
+      - application/json
+      description: Finish multipart upload
+      parameters:
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.MultipartUploadResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Finish multipart upload
+      tags:
+      - Files
+    put:
+      description: Upload multipart file
+      parameters:
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload multipart file
       tags:
       - Files
   /inscribe/info/{ID}:
@@ -2377,6 +2481,38 @@ paths:
                   $ref: '#/definitions/response.InternalTokenURIResp'
               type: object
       summary: get token uri data
+      tags:
+      - Tokens
+  /tokens/{tokenID}/thumbnail:
+    post:
+      consumes:
+      - application/json
+      description: Update token's thumbnail
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateTokenThumbnailReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: Update token's thumbnail
       tags:
       - Tokens
   /tokens/traits/{contractAddress}/{tokenID}:
