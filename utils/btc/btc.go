@@ -49,7 +49,12 @@ func (bs *BlockcypherService) EstimateFeeTransactionWithPreferenceFromSegwitAddr
 	outAddrs := make(map[string]big.Int)
 
 	for addr, amount := range destinations {
-		outAddrs[addr] = *big.NewInt(int64(amount))
+		if curA, ok := outAddrs[addr]; !ok {
+			outAddrs[addr] = *big.NewInt(int64(amount))
+		} else {
+			newA := big.NewInt(0)
+			outAddrs[addr] = *newA.Add(&curA, big.NewInt(int64(amount)))
+		}
 	}
 
 	tx := TempNewTXMultiOut(from, outAddrs)
@@ -81,7 +86,12 @@ func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddressMult
 	outAddrs := make(map[string]big.Int)
 
 	for addr, amount := range destinations {
-		outAddrs[addr] = *big.NewInt(int64(amount))
+		if curA, ok := outAddrs[addr]; !ok {
+			outAddrs[addr] = *big.NewInt(int64(amount))
+		} else {
+			newA := big.NewInt(0)
+			outAddrs[addr] = *newA.Add(&curA, big.NewInt(int64(amount)))
+		}
 	}
 
 	tx := TempNewTXMultiOut(from, outAddrs)
