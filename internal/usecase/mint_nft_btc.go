@@ -210,7 +210,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "compare balance err", err.Error(), true)
 
-			item.Status = entity.StatusMint_NotEnoughBalance
+			item.Status = entity.StatusMint_NeedToRefund
+			item.ReasonRefund = "Not enough balance"
 			u.Repo.UpdateMintNftBtc(&item)
 			continue
 		}
@@ -250,6 +251,24 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if err != nil {
 			u.Logger.Error("JobMint_MintNftBtc.FindProjectByTokenID", err.Error(), err)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
+			continue
+		}
+
+		// check Project and make sure index < max supply
+		if p.MintingInfo.Index >= p.MaxSupply {
+
+			// update need to return:
+			item.ReasonRefund = "project is minted out"
+			item.Status = entity.StatusMint_NeedToRefund
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
+			}
+			err = fmt.Errorf("project %s is minted out", item.ProjectID)
+			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
 			continue
 		}
 
@@ -426,6 +445,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				_, err = u.Repo.UpdateMintNftBtc(&item)
 				if err != nil {
 					fmt.Printf("Could not JobMint_CheckTxMintSend id %s - with err: %v", item.ID, err)
+					continue
 				}
 			}
 		} else {
@@ -439,6 +459,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			if err != nil {
 				fmt.Printf("Could not bs - with err: %v", err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error(), true)
+				continue
 			}
 
 			// just check 1 confirm:
@@ -449,6 +470,29 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				if err != nil {
 					fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				}
+				// update project, token info when mint success:
+				if item.Status == entity.StatusMint_Minted {
+					// create entity.TokenURI
+					_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
+					if err != nil {
+						fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
+						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
+						continue
+					}
+
+					err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+					if err != nil {
+						u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+						continue
+					}
+					item.IsUpdatedNftInfo = true
+					_, err = u.Repo.UpdateMintNftBtc(&item)
+					if err != nil {
+						fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+					}
+				}
+
 			}
 		}
 	}
