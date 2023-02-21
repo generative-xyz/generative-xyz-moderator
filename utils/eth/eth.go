@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/sha3"
 )
 
 type Client struct {
@@ -213,225 +212,69 @@ func (c *Client) ValidateAddress(address string) bool {
 	return common.IsHexAddress(address)
 }
 
-// transfer:
-func (c *Client) Transfer(senderPrivKey, receiverAddress string, amount *big.Int) (string, error) {
-	privateKey, err := crypto.HexToECDSA(senderPrivKey)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-	publicKey := privateKey.Public()
-	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
-	}
-
-	gasLimit := uint64(100000)
-	gasPrice, err := c.SuggestGasPrice(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
-	}
-
-	fee := new(big.Int)
-	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
-
-	value := new(big.Int)
-	value = amount
-
-	toAddress := common.HexToAddress(receiverAddress)
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
-	chainID, err := c.NetworkID(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "c.NetworkID")
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "types.SignTx")
-	}
-	err = c.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return "", errors.Wrap(err, "c.SendTransaction")
-	}
-	return signedTx.Hash().Hex(), nil
-}
-
-func (c *Client) TransferWithNoneNumber(
-	senderPrivKey,
-	receiverAddress string,
-	amount *big.Int,
-	gasPrice *big.Int,
-	nonce uint64) (string, error) {
-	privateKey, err := crypto.HexToECDSA(senderPrivKey)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	if gasPrice.Uint64() <= 0 {
-		return "", errors.Wrap(err, "GasPrice is empty")
-	}
-
-	gasLimit := uint64(100000)
-
-	fee := new(big.Int)
-	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
-
-	value := new(big.Int)
-	value = amount
-
-	toAddress := common.HexToAddress(receiverAddress)
-
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
-	chainID, err := c.NetworkID(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "c.NetworkID")
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "types.SignTx")
-	}
-
-	err = c.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return "", errors.Wrap(err, "c.SendTransaction")
-	}
-	return signedTx.Hash().Hex(), nil
-}
-
-// transfer:
-func (c *Client) TransferFastest(senderPrivKey, receiverAddress string, amount *big.Int) (string, error) {
-	privateKey, err := crypto.HexToECDSA(senderPrivKey)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-	publicKey := privateKey.Public()
-	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
-	}
-
-	gasLimit := uint64(100000)
-
-	if err != nil {
-		return "", errors.Wrap(err, "zap.NewProduction")
-	}
-
-	gasPrice, err := c.SuggestGasPrice(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
-	}
-
-	fee := new(big.Int)
-	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
-
-	value := new(big.Int)
-	value = amount
-
-	toAddress := common.HexToAddress(receiverAddress)
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
-	chainID, err := c.NetworkID(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "c.NetworkID")
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "types.SignTx")
-	}
-	err = c.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return "", errors.Wrap(err, "c.SendTransaction")
-	}
-	return signedTx.Hash().Hex(), nil
-}
-
-func (c *Client) TransferToken(senderPrivKey, receiverAddress, tokenContract string, amount *big.Int) (string, error) {
-	privateKey, err := crypto.HexToECDSA(senderPrivKey)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
-	}
-
-	value := big.NewInt(0) // eth amount
-
-	gasPrice, err := c.SuggestGasPrice(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
-	}
-
-	toAddress := common.HexToAddress(receiverAddress)
-	tokenAddress := common.HexToAddress(tokenContract)
-
-	transferFnSignature := []byte("transfer(address,uint256)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(transferFnSignature)
-	methodID := hash.Sum(nil)[:4]
-	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
-	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-	data = append(data, paddedAmount...)
-
-	gasLimit := uint64(100000)
-	tx := types.NewTransaction(nonce, tokenAddress, value, gasLimit, gasPrice, data)
-
-	chainID, err := c.NetworkID(context.Background())
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	err = c.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return "", errors.Wrap(err, "crypto.HexToECDSA")
-	}
-
-	return signedTx.Hash().Hex(), nil
-}
-
-func (c *Client) GetInfoErc20(txID string) (*big.Int, string, error) {
-	tx, _, err := c.TransactionByHash(context.Background(), common.HexToHash(txID))
-	if err != nil {
-		return nil, "", errors.Wrap(err, "c.TransactionByHash")
-	}
-	amount := tx.Data()[len(tx.Data())-32:]
-	hexAmount := common.Bytes2Hex(amount)
-	intAmount := new(big.Int)
-	intAmount.SetString(hexAmount, 16)
-
-	address := tx.Data()[4 : len(tx.Data())-32]
-	hexAddress := common.Bytes2Hex(address)
-	add := common.HexToAddress(hexAddress)
-
-	return intAmount, add.Hex(), nil
-}
-
 func ConvertWeiFromEther(val float64) *big.Int {
 	return new(big.Int).Mul(big.NewInt(int64(val*1e3)), big.NewInt(1e15))
+}
+
+// Transfer max
+func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, error) {
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	// Get the balance of the account
+	balance, err := c.eth.BalanceAt(context.Background(), fromAddress, nil)
+
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	// Create the transaction
+	gasPrice, err := c.eth.SuggestGasPrice(context.Background())
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
+	}
+
+	gasLimit := uint64(21000) // limit for sending ETH
+	value := new(big.Int).Sub(balance, new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(gasLimit)))
+
+	fmt.Println("amount ETH to send: ", value)
+
+	toAddress := common.HexToAddress(receiveAddress)
+	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
+
+	// Sign the transaction
+	chainID, err := c.NetworkID(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "c.NetworkID")
+	}
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	// Send the transaction
+	err = c.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	fmt.Printf("Sent %s ETH from %s to %s\n", value.String(), fromAddress.Hex(), toAddress.Hex())
+
+	return signedTx.Hash().Hex(), nil
 }

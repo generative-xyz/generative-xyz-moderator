@@ -44,6 +44,8 @@ type Config struct {
 	BlockcypherAPI   string
 	BlockcypherToken string
 
+	MASTER_ADDRESS_CLAIM_BTC, MASTER_ADDRESS_CLAIM_ETH string
+
 	MarketBTCServiceFeeAddress string
 
 	OtherCategoryID string
@@ -65,12 +67,12 @@ type MQTTConfig struct {
 }
 
 type CronTabConfig struct {
-	Enabled            bool
-	BTCEnabled         bool
-	MarketPlaceEnabled bool
-	BTCV2Enabled       bool
-	TrendingEnabled    bool
-	MintNftBtcEnabled  bool
+	Enabled                  bool
+	BTCEnabled               bool
+	MarketPlaceEnabled       bool
+	BTCV2Enabled             bool
+	TrendingEnabled          bool
+	MintNftBtcEnabled        bool
 	OrdinalCollectionEnabled bool
 }
 
@@ -293,12 +295,12 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:            crontabStart,
-			BTCEnabled:         crontabBtcStart,
-			BTCV2Enabled:       crontabBtcV2Start,
-			MarketPlaceEnabled: crontabMKStart,
-			TrendingEnabled:    crontabTrendingStart,
-			MintNftBtcEnabled:  crontabMintNftBtcStart,
+			Enabled:                  crontabStart,
+			BTCEnabled:               crontabBtcStart,
+			BTCV2Enabled:             crontabBtcV2Start,
+			MarketPlaceEnabled:       crontabMKStart,
+			TrendingEnabled:          crontabTrendingStart,
+			MintNftBtcEnabled:        crontabMintNftBtcStart,
 			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
 		},
 		GENToken: GENToken{
@@ -311,6 +313,9 @@ func NewConfig() (*Config, error) {
 
 		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
+
+		MASTER_ADDRESS_CLAIM_BTC: os.Getenv("MASTER_ADDRESS_CLAIM_BTC"),
+		MASTER_ADDRESS_CLAIM_ETH: os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
 
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
 		OtherCategoryID:            os.Getenv("OTHER_CATEGORY_ID"),
