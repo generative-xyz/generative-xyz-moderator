@@ -770,19 +770,29 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	}
 
 	for _, item := range listBTC {
+		projectInfo, err := u.Repo.FindProject(item.ProjectID)
+		if err != nil {
+			return nil, err
+		}
 		minting := structure.MintingInscription{
-			Status:    "minting",
-			FileURI:   item.FileURI,
-			ProjectID: item.ProjectID,
+			Status:      "minting",
+			FileURI:     item.FileURI,
+			ProjectID:   item.ProjectID,
+			ProjectName: projectInfo.Name,
 		}
 		result = append(result, minting)
 	}
 
 	for _, item := range listETH {
+		projectInfo, err := u.Repo.FindProject(item.ProjectID)
+		if err != nil {
+			return nil, err
+		}
 		minting := structure.MintingInscription{
-			Status:    "minting",
-			FileURI:   item.FileURI,
-			ProjectID: item.ProjectID,
+			Status:      "minting",
+			FileURI:     item.FileURI,
+			ProjectID:   item.ProjectID,
+			ProjectName: projectInfo.Name,
 		}
 		result = append(result, minting)
 	}
