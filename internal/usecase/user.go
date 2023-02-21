@@ -1,11 +1,10 @@
 package usecase
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 )
 
-func (u Usecase) ListArtist(rootSpan opentracing.Span, req entity.FilteArtist) (*entity.Pagination, error) {
+func (u Usecase) ListArtist(req entity.FilteArtist) (*entity.Pagination, error) {
 
 	artists, err := u.Repo.ListArtist(req)
 	if err != nil {
