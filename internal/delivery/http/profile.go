@@ -24,36 +24,34 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile [GET]
 func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.profile", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	ctx := r.Context()
 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
 	userID, ok := iUserID.(string)
 	if !ok {
 		err := errors.New("Token is incorect")
-		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	profile, err := h.Usecase.UserProfile(span, userID)
+	profile, err := h.Usecase.UserProfile(userID)
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GenerateMessage(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("profile", profile)
+	h.Logger.Info("profile", profile)
 
 	resp, err := h.profileToResp(profile)
 	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
+		h.Logger.Error("h.profileToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -67,22 +65,20 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.LogoutResponse}
 // @Router /profile/logout [POST]
 func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.logout", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	ctx := r.Context()
 	iToken := ctx.Value(utils.AUTH_TOKEN)
 	token, ok := iToken.(string)
 	if !ok {
 		err := errors.New("Token is incorect")
-		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	isLogedOut, err := h.Usecase.Logout(span, token)
+	isLogedOut, err := h.Usecase.Logout(token)
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GenerateMessage(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -96,7 +92,7 @@ func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 		Message: msg,
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -111,15 +107,13 @@ func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile [PUT]
 func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.updateProfile", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	ctx := r.Context()
 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
 	userID, ok := iUserID.(string)
 	if !ok {
 		err := errors.New("Token is incorect")
-		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -128,7 +122,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -136,29 +130,29 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	updateProfile := &structure.UpdateProfile{}
 	err = copier.Copy(updateProfile, reqBody)
 	if err != nil {
-		log.Error("copier.Copy.structure.UpdateProfile", err.Error(), err)
+		h.Logger.Error("copier.Copy.structure.UpdateProfile", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("input.Data", updateProfile)
-	profile, err := h.Usecase.UpdateUserProfile(span, userID, *updateProfile)
+	h.Logger.Info("input.Data", updateProfile)
+	profile, err := h.Usecase.UpdateUserProfile(userID, *updateProfile)
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage", err.Error(), err)
+		h.Logger.Error("h.Usecase.GenerateMessage", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("updated.profile", profile)
+	h.Logger.Info("updated.profile", profile)
 	resp, err := h.profileToResp(profile)
 	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
+		h.Logger.Error("h.profileToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("respond.profile", profile)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("respond.profile", profile)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -175,17 +169,10 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /profile/projects [GET]
 func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getUserProjects", r)
-	defer h.Tracer.FinishSpan(span, log)
-
 	var err error
-	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
-
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -195,7 +182,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		log.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -205,9 +192,9 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	f.WalletAddress = &walletAddress
 	f.SortBy = "created_at"
 	f.Sort = 1
-	uProjects, err := h.Usecase.GetProjects(span, f)
+	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
-		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -219,7 +206,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 
 		p, err := h.projectToResp(&project)
 		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
+			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -227,7 +214,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 		pResp = append(pResp, *p)
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
@@ -252,25 +239,23 @@ func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileRe
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/wallet/{walletAddress} [GET]
 func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.profileByWallet", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(span, walletAddress)
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
 	if err != nil {
-		log.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
 		profile = &entity.Users{}
 	}
 
-	log.SetData("profile", profile)
+	h.Logger.Info("profile", profile)
 	resp, err := h.profileToResp(profile)
 	if err != nil {
-		log.Error("h.profileToResp", err.Error(), err)
+		h.Logger.Error("h.profileToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

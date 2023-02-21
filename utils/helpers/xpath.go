@@ -25,7 +25,16 @@ func IsFullChain(htmlDoc string) (bool, error) {
 		return false, nil
 	}
 
+	scripts = GetElements(html, "/html/body/script[@src]")
+	if len(scripts) > 0 {
+		return false, nil
+	}
+
 	links := GetElements(html, "/html/head/link[@href]")
+	if len(links) > 0 {
+		return false, nil
+	}
+	links = GetElements(html, "/html/body/link[@href]")
 	if len(links) > 0 {
 		return false, nil
 	}

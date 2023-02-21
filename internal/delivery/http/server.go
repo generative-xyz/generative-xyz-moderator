@@ -12,7 +12,6 @@ import (
 	"rederinghub.io/utils/global"
 	_logger "rederinghub.io/utils/logger"
 	_redis "rederinghub.io/utils/redis"
-	_tracer "rederinghub.io/utils/tracer"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -27,7 +26,6 @@ type deliveryConfig struct {
 	Config   *config.Config
 	Response _httpResponse.IHttpResponse
 	Logger   _logger.Ilogger
-	Tracer   _tracer.ITracer
 	Cache    _redis.IRedisCache
 }
 
@@ -36,7 +34,6 @@ func (dc *deliveryConfig) LoadConfig(g *global.Global) {
 	dc.Config = g.Conf
 	dc.Response = _httpResponse.NewHttpResponse()
 	dc.Logger = g.Logger
-	dc.Tracer = g.Tracer
 	dc.Cache = g.Cache
 }
 
@@ -56,9 +53,7 @@ func NewHandler(global *global.Global, uc usecase.Usecase) (*httpDelivery, error
 }
 
 func (h *httpDelivery) StartServer() {
-	
 	h.Logger.Info("httpDelivery.StartServer - Starting http-server")
-
 	h.registerRoutes()
 	h.Handler.NotFoundHandler = h.Handler.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 	credentials := handlers.AllowCredentials()
@@ -68,7 +63,6 @@ func (h *httpDelivery) StartServer() {
 	hCORS := handlers.CORS(credentials, methods, origins, headers)(h.Handler)
 
 	timeOut := h.Config.Context.TimeOut * 10
-	
 	srv := &http.Server{
 		Handler: hCORS,
 		Addr:    fmt.Sprintf(":%s",h.Config.ServicePort),

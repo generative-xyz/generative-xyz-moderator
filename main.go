@@ -10,6 +10,7 @@ import (
 
 	"rederinghub.io/utils/delegate"
 
+	"github.com/gorilla/mux"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
@@ -32,9 +33,6 @@ import (
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/slack"
-	"rederinghub.io/utils/tracer"
-
-	"github.com/gorilla/mux"
 )
 
 var conf *config.Config
@@ -102,7 +100,6 @@ func main() {
 func startServer() {
 	log.Println("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
-	t := tracer.NewTracing(logger)
 	r := mux.NewRouter()
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
@@ -118,11 +115,11 @@ func startServer() {
 		SecretKey:  conf.Gcs.SecretKey,
 	}, redisClient)
 
-	moralis := nfts.NewMoralisNfts(conf, t, cache)
-	ord := ord_service.NewBtcOrd(conf, t, cache)
+	moralis := nfts.NewMoralisNfts(conf, cache)
+	ord := ord_service.NewBtcOrd(conf,  cache)
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
-	rPubsub := redis.NewPubsubClient(conf.Redis, t)
+	rPubsub := redis.NewPubsubClient(conf.Redis)
 	delegateService, err := delegate.NewService(ethClient.GetClient())
 	if err != nil {
 		logger.Error("error initializing delegate service", err)
@@ -131,7 +128,6 @@ func startServer() {
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Tracer:          t,
 		Logger:          logger,
 		MuxRouter:       r,
 		Conf:            conf,

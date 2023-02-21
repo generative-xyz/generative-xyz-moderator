@@ -1253,11 +1253,24 @@
                 "summary": "Upload multipart file",
                 "parameters": [
                     {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "string",
                         "description": "upload ID",
                         "name": "uploadID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "part number",
+                        "name": "partNumber",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3189,6 +3202,43 @@
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/artist": {
+            "get": {
+                "description": "get list Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Artist"
+                ],
+                "summary": "get list Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }

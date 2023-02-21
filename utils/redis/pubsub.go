@@ -5,11 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"rederinghub.io/utils/config"
-	"rederinghub.io/utils/tracer"
-
 	"github.com/go-redis/redis"
-	"github.com/opentracing/opentracing-go"
+	"rederinghub.io/utils/config"
 )
 
 type PubSubPayload struct {
@@ -23,17 +20,15 @@ type IPubSubClient interface {
 	GetChannelName(name string) string
 	GetChannelNames(channels ...string)
 	Parsepayload(payload string) (interface{}, map[string]string, error)
-	ProducerWithTrace(rootSpan opentracing.Span, channel string, payload PubSubPayload) error
 }
 
 type pubsub struct {
 	cfg    config.RedisConfig
 	client *redis.Client
 	ctx    context.Context
-	tracer        tracer.ITracer
 }
 
-func NewPubsubClient(cfg config.RedisConfig, tracer  tracer.ITracer) *pubsub {
+func NewPubsubClient(cfg config.RedisConfig) *pubsub {
 	r := new(pubsub)
 	ctx := context.Background()
 
@@ -42,7 +37,6 @@ func NewPubsubClient(cfg config.RedisConfig, tracer  tracer.ITracer) *pubsub {
 		Password: cfg.Password, // no password set
 		DB:       0,            // use default DB
 	})
-	r.tracer  = tracer
 	r.cfg = cfg
 	r.client = rdb
 	r.ctx = ctx
@@ -87,34 +81,4 @@ func (r *pubsub) Parsepayload(payload string) (interface{}, map[string]string, e
 		return nil, nil, err
 	}
 	return p.Data, p.InjectionTracing, nil
-}
-
-func (r *pubsub) ProducerWithTrace(rootSpan opentracing.Span, channel string, payload PubSubPayload) error {
-	span :=  r.tracer.StartSpanFromRoot(rootSpan, "ProducerWithTrace")
-	log := tracer.NewTraceLog()
-	defer r.tracer.FinishSpan(span, log)
-
-	//span.Tracer().Inject(span.Context(), opentracing.Binary, bytesData)
-	textInjection := map[string]string{}
-
-	channel = r.GetChannelName(channel)
-	log.SetData("channel", channel)
-
-	span.Tracer().Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(textInjection))
-
-	payload.InjectionTracing = textInjection
-	bytesData, err := json.Marshal(payload)
-	if err != nil {
-		log.Error("ProducerWithTrace.json.Marshal", err.Error(), err)
-		return err
-	}
-	stringData := string(bytesData)
-	err = r.client.Publish(channel, stringData).Err()
-	if err != nil {
-		log.Error("ProducerWithTrace.Publish", err.Error(), err)
-		return err
-	}
-
-	log.SetData("ProducerWithTrace.message",fmt.Sprintf("pubsub.Producer - Success - Published message into channel %s successfully", channel))
-	return nil
 }
