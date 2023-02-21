@@ -108,7 +108,7 @@ func (a S3Adapter) GetS3CompletedPart(uploadID string) (parts []*CompletedPart, 
 
 func (a S3Adapter) CreateMultiplePartsUpload(ctx context.Context, group string, fileName string) (*string, error) {
 	fileName = NormalizeFileName(fileName)
-	uploadPath := fmt.Sprintf("multipart/%s/%s", group, fileName)
+	uploadPath := fmt.Sprintf("%s/%s", group, fileName)
 	var resp, err = a.s3Client.CreateMultipartUploadWithContext(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: &a.bucketName,
 		Key:    &uploadPath,
