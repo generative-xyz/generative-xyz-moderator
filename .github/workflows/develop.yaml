@@ -1,23 +1,21 @@
-name: Docker Image CI
+name: Docker develop build
 
 on:
   push:
-    # Allow gpu branches build
-    branches: [ "staging", "develop", "gpu-staging", "gpu-develop"]
-    tags:
-      - 'v**'
-      - 'gpu-v**'
+    branches: [ "develop"]
 
 jobs:
   build-and-push-to-gcr:
     runs-on: self-hosted
+    concurrency:
+      group: build_develop
     steps:
       - uses: rtCamp/action-cleanup@master
       - uses: actions/checkout@v2
       - name: Get the tag name
         id: get_tag_name
         run: |
-          if [[ $GITHUB_REF_NAME == 'staging' || $GITHUB_REF_NAME == 'develop' || $GITHUB_REF_NAME == 'gpu-staging' || $GITHUB_REF_NAME == 'gpu-develop' ]]; then
+          if [[ $GITHUB_REF_NAME == 'staging' || $GITHUB_REF_NAME == 'develop' ]]; then
             short_sha=$(echo $GITHUB_SHA | head -c 7)
             echo "IMAGE_TAG=${GITHUB_REF_NAME}-${short_sha}" >> $GITHUB_ENV
           else
