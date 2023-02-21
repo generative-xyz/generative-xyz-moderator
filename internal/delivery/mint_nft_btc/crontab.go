@@ -1,4 +1,4 @@
-package crontab_btc_v2
+package mint_nft_btc
 
 import (
 	"sync"
@@ -10,65 +10,62 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-type ScronBTCHandler struct {
-	Logger  logger.Ilogger
-	
+type CronMintNftBtcHandler struct {
+	Logger logger.Ilogger
+
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
 
-func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHandler {
-	return &ScronBTCHandler{
+func NewCronMintNftBtcHandler(global *global.Global, uc usecase.Usecase) *CronMintNftBtcHandler {
+	return &CronMintNftBtcHandler{
 		Logger:  global.Logger,
 		Cache:   global.Cache,
 		Usecase: uc,
 	}
 }
 
-func (h ScronBTCHandler) StartServer() {
+func (h CronMintNftBtcHandler) StartServer() {
 
 	var wg sync.WaitGroup
 
 	for {
 		wg.Add(5)
 
-
-		// job check tx:
-		go func( wg *sync.WaitGroup) {
+		// job check balance:
+		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobInscribeCheckTxSend()
+			h.Usecase.JobMint_CheckBalance()
 
 		}(&wg)
 
-		// job check balance:
-		go func( wg *sync.WaitGroup) {
+		// job check tx:
+		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobInscribeWaitingBalance()
+			h.Usecase.JobMint_CheckTxMintSend()
 
 		}(&wg)
 
 		// job send btc to ord address:
-		go func( wg *sync.WaitGroup) {
+		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			h.Usecase.JobInscribeSendBTCToOrdWallet()
 
 		}(&wg)
 
 		// job mint nft:
-		go func( wg *sync.WaitGroup) {
+		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobInscribeMintNft()
+			h.Usecase.JobMint_MintNftBtc()
 
 		}(&wg)
 
 		// job send nft to user:
-		go func( wg *sync.WaitGroup) {
-
-				defer wg.Done()
-			h.Usecase.JobInscribeSendNft()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.JobMin_SendNftToUser()
 
 		}(&wg)
-
 		h.Logger.Info("wait", "wait")
 		wg.Wait()
 		time.Sleep(5 * time.Minute)

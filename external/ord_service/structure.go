@@ -10,6 +10,9 @@ type MintRequest struct {
 	FeeRate           int    `json:"feeRate"`
 	DryRun            bool   `json:"dryRun"`
 	AutoFeeRateSelect bool   `json:"autoFeeRateSelect"`
+
+	RequestId string `json:"requestId"`
+	ProjectID string `json:"projectID"`
 }
 
 type ExecRespose struct {
