@@ -82,8 +82,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}, nil
 }
 
-func (u Usecase) CreateInscribeBTC( input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
-
+func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
 	u.Logger.Info("input", input)
 
@@ -114,8 +113,6 @@ func (u Usecase) CreateInscribeBTC( input structure.InscribeBtcReceiveAddrRespRe
 
 	// create wallet name
 	userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-
-	
 
 	// create master wallet:
 	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
@@ -185,8 +182,6 @@ func (u Usecase) CreateInscribeBTC( input structure.InscribeBtcReceiveAddrRespRe
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 
-	
-
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
 		u.Logger.Error("u.CreateInscribeBTC.InsertInscribeBTC", err.Error(), err)
@@ -196,7 +191,7 @@ func (u Usecase) CreateInscribeBTC( input structure.InscribeBtcReceiveAddrRespRe
 	return walletAddress, nil
 }
 
-func (u Usecase) ListInscribeBTC( limit, page int64) (*entity.Pagination, error) {
+func (u Usecase) ListInscribeBTC(limit, page int64) (*entity.Pagination, error) {
 	return u.Repo.ListInscribeBTC(entity.FilterInscribeBT{
 		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
 	})
@@ -224,8 +219,6 @@ func (u Usecase) RetryInscribeBTC(id string) error {
 // JOBs:
 // step 1: job check balance for list inscribe
 func (u Usecase) JobInscribeWaitingBalance() error {
-
-
 
 	_, bs, err := u.buildBTCClient()
 
@@ -307,8 +300,6 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 // step 2: job send all fund from segwit address to ord wallet:
 func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 
-
-
 	_, bs, err := u.buildBTCClient()
 
 	if err != nil {
@@ -358,8 +349,6 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 
 // job check 3 tx send: tx user send to temp wallet, tx mint, tx send nft to user
 func (u Usecase) JobInscribeCheckTxSend() error {
-
-
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -439,8 +428,6 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 
 // job 4: mint nft:
 func (u Usecase) JobInscribeMintNft() error {
-
-
 
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd})
 	if len(listTosendBtc) == 0 {
@@ -553,7 +540,6 @@ func (u Usecase) JobInscribeMintNft() error {
 // send nft for buy order records:
 func (u Usecase) JobInscribeSendNft() error {
 
-
 	// get list buy order status = StatusInscribe_Minted:
 	listTosendNft, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_Minted})
 	if len(listTosendNft) == 0 {
@@ -661,11 +647,8 @@ func (u Usecase) SendTokenByWallet(receiveAddr, inscriptionID, walletAddressName
 	return resp, err
 }
 
-func (u Usecase) GetNftsOwnerOf( walletName string) (*ord_service.ExecRespose, error) {
+func (u Usecase) GetNftsOwnerOf(walletName string) (*ord_service.ExecRespose, error) {
 
-
-	
-	
 	listNFTsReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
