@@ -20,23 +20,24 @@ type IEntity interface {
 	IEntityNoID
 }
 
-type SortType int 
+type SortType int
+
 const (
-	SORT_ASC SortType = 1
-	SORT_DESC SortType = -1	
+	SORT_ASC  SortType = 1
+	SORT_DESC SortType = -1
 )
 
 type BaseFilters struct {
-	Page int64
-	Limit int64
+	Page   int64
+	Limit  int64
 	SortBy string
-	Sort SortType
+	Sort   SortType
 }
 
 type Pagination struct {
-	Result interface{} 
-	Page int64 
-	PageSize int64 
-	Total int64 
-	Currsor string 
+	Result   interface{}
+	Page     int64
+	PageSize int64
+	Total    int64
+	Currsor  string
 }
