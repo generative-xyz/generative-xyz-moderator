@@ -11,8 +11,8 @@ import (
 )
 
 type ScronMarketplaceHandler struct {
-	Logger  logger.Ilogger
-	
+	Logger logger.Ilogger
+
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
@@ -30,42 +30,47 @@ func (h ScronMarketplaceHandler) StartServer() {
 	var wg sync.WaitGroup
 
 	for {
-		wg.Add(6)
+		wg.Add(7)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcChecktListNft()
 
 		}(&wg)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcCheckReceivedBuyingNft()
 
 		}(&wg)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcSendBTCForBuyOrder()
 
 		}(&wg)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcCheckSendBTCForBuyOrder()
 
 		}(&wg)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcSendNFTForBuyOrder()
 
 		}(&wg)
 
-		go func( wg *sync.WaitGroup) {
-				defer wg.Done()
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
 			h.Usecase.BtcCheckSendNFTForBuyOrder()
 
+		}(&wg)
+
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.BTCMarketplaceUpdateNftInfo()
 		}(&wg)
 
 		h.Logger.Info("MaketPlace.wait", "wait")
