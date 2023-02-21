@@ -44,6 +44,14 @@ func (u Usecase) CreateMintReceiveAddress(rootSpan opentracing.Span, input struc
 
 	log.SetData("found.Project", p.ID)
 
+	// find Project and make sure index < max supply
+	if p.MintingInfo.Index >= p.MaxSupply {
+		err = fmt.Errorf("project %s is minted out", input.ProjectID)
+		log.Error("projectIsMintedOut", err.Error(), err)
+		return nil, err
+	}
+
+	// verify paytype:
 	if input.PayType != utils.NETWORK_BTC && input.PayType != utils.NETWORK_ETH {
 		err = errors.New("only support payType is eth or btc")
 		log.Error("u.CreateMintReceiveAddress.Check(payType)", err.Error(), err)
