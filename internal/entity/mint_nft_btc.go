@@ -66,7 +66,7 @@ type MintNftBtc struct {
 
 	PayType string `bson:"payType"` // eth/btc...
 
-	ReceiveAddress string `bson:"receiveAddress"` // address is generated for receive user fund.
+	ReceiveAddress string `bson:"receiveAddress"` // address generated to receive coin from users.
 	PrivateKey     string `bson:"privateKey"`     // private key of the receive wallet.
 
 	Balance string `bson:"balance"` // balance after check
@@ -78,6 +78,7 @@ type MintNftBtc struct {
 	TxMintNft    string `bson:"tx_mint_nft"`
 	TxSendNft    string `bson:"tx_send_nft"`
 	TxSendMaster string `bson:"tx_send_master"`
+	TxRefund     string `bson:"tx_refund"`
 
 	FileURI string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 
@@ -86,16 +87,19 @@ type MintNftBtc struct {
 	ProjectID string `bson:"projectID"` //projectID
 
 	// just log for users, not using for the job checking.
-	IsConfirm        bool `bson:"isConfirm"`
-	IsMinted         bool `bson:"isMinted"`
-	IsSentUser       bool `bson:"isSentUser"`
-	IsSentMaster     bool `bson:"isSentMaster"`
-	IsUpdatedNftInfo bool `bson:"isUpdatedNftInfo"`
+	IsConfirm        bool `bson:"isConfirm"`        // rereive fund
+	IsMinted         bool `bson:"isMinted"`         // minted
+	IsSentUser       bool `bson:"isSentUser"`       // sent nft to user
+	IsSentMaster     bool `bson:"isSentMaster"`     // withdrawn to master wallet
+	IsRefund         bool `bson:"isRefund"`         // refund btc to btc
+	IsUpdatedNftInfo bool `bson:"isUpdatedNftInfo"` // update project info
 
-	OutputMintNFT interface{} `bson:"output_mint_nft"`
-	OutputSendNFT interface{} `bson:"output_send_nft"`
+	OutputMintNFT interface{} `bson:"output_mint_nft"` // output from mint nft execute
+	OutputSendNFT interface{} `bson:"output_send_nft"` // output from send nft execute
 
-	ReasonRefund string `bson:"reasonRefund"`
+	ReasonRefund string `bson:"reason_refund"` // the rason of refund
+
+	AmountSentMaster uint64 `bson:"amount_sent_master"` // amount withdrawn to the master wallet
 }
 
 func (u MintNftBtc) TableName() string {
