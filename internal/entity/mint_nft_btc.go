@@ -48,7 +48,7 @@ var StatusMintToText = map[StatusMint]string{
 
 	StatusMint_TxMintFailed: "mint failed",
 
-	StatusMint_NotEnoughBalance: "not enough balance",
+	StatusMint_NeedToRefund: "waiting to refund",
 
 	StatusMint_Refunding: "refunding",
 	StatusMint_Refunded:  "refunded",
