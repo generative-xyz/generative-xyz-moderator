@@ -311,7 +311,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		if *filter.Name != "" {
 			f["$or"] = []bson.M{
 				{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
-				{"creatorName": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
 			}
 		}
 	}
