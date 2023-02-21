@@ -1371,10 +1371,19 @@ paths:
     put:
       description: Upload multipart file
       parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
       - description: upload ID
         in: path
         name: uploadID
         required: true
+        type: string
+      - description: part number
+        in: query
+        name: partNumber
         type: string
       produces:
       - multipart/form-data

@@ -98,7 +98,9 @@ func (h *httpDelivery) CreateMultipartUpload(w http.ResponseWriter, r *http.Requ
 // @Content-Type: multipart/form-data
 // @Security Authorization
 // @Produce  multipart/form-data
+// @Param file formData file true "file"
 // @Param uploadID path string true "upload ID"
+// @Param partNumber query string  false  "part number"
 // @Success 200 {object} response.JsonResponse{data=response.FileRes}
 // @Router /files/multipart/{uploadID} [PUT]
 func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +110,7 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	_, handler, err := r.FormFile("file")
-	if err == nil {
+	if err != nil {
 		err = errors.Wrap(err, "error getting file from part")
 		log.Error("h.Usecase.UploadFile", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -125,7 +127,7 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 		partNumber, err = strconv.Atoi(partNumberStr)
 	}
 
-	if err == nil {
+	if err != nil {
 		err = errors.Wrap(err, "error getting partNumber from reqeust")
 		log.Error("h.Usecase.UploadFile", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -133,7 +135,7 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, err := handler.Open()
-	if err == nil {
+	if err != nil {
 		err = errors.Wrap(err, "error open file from handler")
 		log.Error("FileHandlerError", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -217,7 +219,6 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 }
 
-
 // UserCredits godoc
 // @Summary Deflate a string
 // @Description Deflate a string
@@ -229,8 +230,8 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 // @Router /files/deflate [POST]
 func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 	span, log := h.StartSpan("httpDelivery.deflate", r)
-	defer h.Tracer.FinishSpan(span, log )
-	
+	defer h.Tracer.FinishSpan(span, log)
+
 	reqBody := &structure.DeflateDataResp{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(reqBody)
@@ -239,7 +240,7 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	err = h.Usecase.DeflateString(span, reqBody)
 	if err != nil {
 		log.Error(" h.Usecase.DeflateString", err.Error(), err)
@@ -250,4 +251,3 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
 }
-
