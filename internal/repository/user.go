@@ -201,14 +201,31 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 	filter1[utils.KEY_DELETED_AT] = nil
 	filter1["stats.collection_created"] = bson.M{"$gt": 0}
 
-	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{}, []Sort{
-		{Sort: entity.SORT_DESC, SortBy: "stats.collection_created"},
-	}, &users)
+	p, err := r.Paginate(
+		utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{},
+		[]Sort{
+			{Sort: entity.SORT_DESC, SortBy: "stats.collection_created"},
+			{Sort: entity.SORT_DESC, SortBy: "stats.volume_minted"},
+		}, &users)
 	if err != nil {
 		return nil, err
 	}
+	data := []*entity.UserResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			return nil, err
+		}
+		projects := []*entity.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &entity.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
 
-	resp.Result = users
+		d := &entity.UserResponse{Users: user, Projects: projects}
+		data = append(data, d)
+	}
+
+	resp.Result = data
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit

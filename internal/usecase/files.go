@@ -33,13 +33,12 @@ type File interface {
 	io.ReadSeeker
 }
 
-func (u Usecase) CreateMultipartUpload(ctx context.Context,  group string, fileName string) (*string, error) {
+func (u Usecase) CreateMultipartUpload(ctx context.Context, group string, fileName string) (*string, error) {
 	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, group, fileName)
 	return uploadID, err
 }
 
-func (u Usecase) UploadPart(ctx context.Context,  uploadID string, file File, fileSize int64, partNumber int) error {
-
+func (u Usecase) UploadPart(ctx context.Context, uploadID string, file File, fileSize int64, partNumber int) error {
 
 	if err := u.S3Adapter.UploadPart(uploadID, file, fileSize, partNumber); err != nil {
 		return err
@@ -47,9 +46,7 @@ func (u Usecase) UploadPart(ctx context.Context,  uploadID string, file File, fi
 	return nil
 }
 
-func (u Usecase) CompleteMultipartUpload(ctx context.Context,  uploadID string) (*string, error) {
-
-
+func (u Usecase) CompleteMultipartUpload(ctx context.Context, uploadID string) (*string, error) {
 	data, err := u.S3Adapter.CompleteMultipartUpload(ctx, uploadID)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -57,8 +54,7 @@ func (u Usecase) CompleteMultipartUpload(ctx context.Context,  uploadID string) 
 	return data, nil
 }
 
-func (u Usecase) UploadFile( r *http.Request) (*entity.Files, error) {
-
+func (u Usecase) UploadFile(r *http.Request) (*entity.Files, error) {
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -104,7 +100,7 @@ func (u Usecase) Deflate(inflated []byte) []byte {
 	return b.Bytes()
 }
 
-func (u Usecase) MinifyFiles( input structure.MinifyDataResp) (*structure.MinifyDataResp, error) {
+func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyDataResp, error) {
 
 	resp := make(map[string]structure.FileContentReq)
 
@@ -133,7 +129,7 @@ func (u Usecase) MinifyFiles( input structure.MinifyDataResp) (*structure.Minify
 		return nil
 	})
 
-client, err := helpers.EthDialer()
+	client, err := helpers.EthDialer()
 	if err != nil {
 		u.Logger.Error("ethclient.Dial", err.Error(), err)
 		return nil, err
@@ -173,7 +169,7 @@ client, err := helpers.EthDialer()
 	return &structure.MinifyDataResp{Files: resp}, nil
 }
 
-func (u Usecase) DeflateString( input *structure.DeflateDataResp) error {
+func (u Usecase) DeflateString(input *structure.DeflateDataResp) error {
 
 	//TODO implement here
 
@@ -189,16 +185,16 @@ func (u Usecase) DeflateString( input *structure.DeflateDataResp) error {
 		u.Logger.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
 		return err
 	}
-inputByte := []byte(input.Data)
+	inputByte := []byte(input.Data)
 	deflate := u.Deflate(inputByte)
 	script := helpers.Base64Encode(deflate)
-u.Logger.Info("len(deflate)", len(deflate))
+	u.Logger.Info("len(deflate)", len(deflate))
 	u.Logger.Info("len(inputByte)", len(inputByte))
 	if len(deflate) > len(inputByte) {
 		input.Data = ""
 		return nil
 	}
-inflate, _ := gDataNft.InflateString(nil, script)
+	inflate, _ := gDataNft.InflateString(nil, script)
 	if inflate.Err != 0 || inflate.Result != input.Data {
 		u.Logger.Info("inflate.Err", inflate.Err)
 		input.Data = ""
@@ -206,11 +202,10 @@ inflate, _ := gDataNft.InflateString(nil, script)
 	}
 	u.Logger.Info("inflate", inflate)
 	input.Data = script
-	return  nil
+	return nil
 }
 
-func (u Usecase) UploadProjectFiles( r *http.Request) (*entity.Files, error) {
-
+func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	projectName := r.FormValue("projectName")
 	_, handler, err := r.FormFile("file")
@@ -219,11 +214,11 @@ func (u Usecase) UploadProjectFiles( r *http.Request) (*entity.Files, error) {
 		return nil, err
 	}
 
-	key :=  helpers.GenerateSlug(projectName)
+	key := helpers.GenerateSlug(projectName)
 	key = fmt.Sprintf("btc-projects/%s", key)
 	gf := googlecloud.GcsFile{
 		FileHeader: handler,
-		Path: &key,
+		Path:       &key,
 	}
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
