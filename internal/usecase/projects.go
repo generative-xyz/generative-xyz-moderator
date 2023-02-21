@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -18,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
-	"github.com/opentracing/opentracing-go"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -34,23 +32,22 @@ type uploadFileChan struct {
 	Err     error
 }
 
-func (u Usecase) CreateProject(rootSpan opentracing.Span, req structure.CreateProjectReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("CreateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) CreateProject( req structure.CreateProjectReq) (*entity.Projects, error) {
+
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		log.Error("u.Repo.CreateProject", err.Error(), err)
+		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("pe", pe)
+	u.Logger.Info("pe", pe)
 	return pe, nil
 }
 
@@ -65,7 +62,8 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		log.Fatal(err)
+		u.Logger.Error(err)
+		return 0
 	} else {
 		type feeRate struct {
 			fastestFee  int
@@ -79,7 +77,8 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 		err = json.Unmarshal(responseData, &feeRateObj)
 		if err != nil {
-			log.Fatal(err)
+			u.Logger.Error(err)
+			return 0
 		}
 		if feeRateObj.fastestFee > 0 {
 			feeRateValue = int64(feeRateObj.fastestFee)
@@ -90,13 +89,12 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 }
 
-func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.CreateBtcProjectReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("CreateBTCProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.Projects, error) {
+
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
@@ -104,13 +102,13 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		minMint, ok := big.NewFloat(0).SetString("0.01")
 		if !ok {
 			err = errors.New("Cannot convert number")
-			log.Error("validate.convert.number", err.Error(), err)
+			u.Logger.Error("validate.convert.number", err.Error(), err)
 			return nil, err
 		}
 
 		if mintPrice.Cmp(minMint) == -1 {
 			err = errors.New("mintPrice must be greater than 0.01")
-			log.Error("validate.Min.Fee.Fail", err.Error(), err)
+			u.Logger.Error("validate.Min.Fee.Fail", err.Error(), err)
 			return nil, err
 		}
 	*/
@@ -118,7 +116,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
-		log.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
+		u.Logger.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
 		return nil, err
 	}
 	maxID = maxID + 1
@@ -139,7 +137,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
 	if err != nil {
-		log.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
 		return nil, err
 	}
 
@@ -147,11 +145,11 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 		creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
 		updated, err := u.Repo.UpdateUserByID(creatorAddrr.UUID, creatorAddrr)
 		if err != nil {
-			log.Error("u.Repo.UpdateUserByID", err.Error(), err)
+			u.Logger.Error("u.Repo.UpdateUserByID", err.Error(), err)
 
 		} else {
-			log.SetData("updated.creatorAddrr", creatorAddrr)
-			log.SetData("updated", updated)
+			u.Logger.Info("updated.creatorAddrr", creatorAddrr)
+			u.Logger.Info("updated", updated)
 		}
 	}
 
@@ -186,7 +184,7 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
-		log.Error("json.Marshal.nftTokenURI", err.Error(), err)
+		u.Logger.Error("json.Marshal.nftTokenURI", err.Error(), err)
 		return nil, err
 	}
 	nftToken := helpers.Base64Encode(bytes)
@@ -200,7 +198,6 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
-	pe.TraceID = u.Tracer.TraceID(span)
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
@@ -211,50 +208,49 @@ func (u Usecase) CreateBTCProject(rootSpan opentracing.Span, req structure.Creat
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		log.Error("u.Repo.CreateProject", err.Error(), err)
+		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
 		return nil, err
 	}
 
 	if isPubsub {
-		err = u.PubSub.ProducerWithTrace(span, utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
+		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
-			log.Error("u.Repo.CreateProject", err.Error(), err)
+			u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
 			//return nil, err
 		}
 	}
 
-	log.SetData("pe", pe)
-	log.SetData("pe.isPubsub", isPubsub)
+	u.Logger.Info("pe", pe)
+	u.Logger.Info("pe.isPubsub", isPubsub)
 
-	u.NotifyWithChannel(rootSpan, os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
+	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
 }
 
-func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("UpdateBTCProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpdateBTCProject( req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
+
 
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
 	if req.CreatetorAddress == nil {
 		err := errors.New("CreatorAddress is requeried")
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
 	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
 	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
 		err := errors.New("Only owner can update this project")
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
@@ -281,7 +277,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	if req.MaxSupply != nil && *req.MaxSupply != 0 && *req.MaxSupply != p.MaxSupply {
 		// if p.MintingInfo.Index > 0 {
 		// 	err := errors.New("Project is minted, cannot update max supply")
-		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	u.Logger.Error("pjID.minted", err.Error(), err)
 		// 	return nil, err
 		// }
 
@@ -291,13 +287,13 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 	if req.Royalty != nil {
 		// if *req.Royalty > 2500 {
 		// 	err := errors.New("Royalty must be less than 25")
-		// 	log.Error("pjID.empty", err.Error(), err)
+		// 	u.Logger.Error("pjID.empty", err.Error(), err)
 		// 	return nil, err
 		// }
 
 		// if *req.Royalty != p.Royalty && p.MintingInfo.Index > 0 {
 		// 	err := errors.New("Project is minted, cannot update max supply")
-		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	u.Logger.Error("pjID.minted", err.Error(), err)
 		// 	return nil, err
 		// }
 
@@ -309,7 +305,7 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 		reqMfFStr := helpers.StringToBTCAmount(*req.MintPrice)
 		// if p.MintingInfo.Index > 0 && mFStr != reqMfFStr.String() {
 		// 	err := errors.New("Project is minted, cannot update mint price")
-		// 	log.Error("pjID.minted", err.Error(), err)
+		// 	u.Logger.Error("pjID.minted", err.Error(), err)
 		// 	return nil, err
 		// }
 		p.MintPrice = reqMfFStr.String()
@@ -317,27 +313,26 @@ func (u Usecase) UpdateBTCProject(rootSpan opentracing.Span, req structure.Updat
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		log.Error("updated", err.Error(), err)
+		u.Logger.Error("updated", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return p, nil
 }
 
-func (u Usecase) SetCategoriesForBTCProject(rootSpan opentracing.Span, req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("SetCategoriesForBTCProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SetCategoriesForBTCProject( req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
+
 
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
 	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
-		log.Error("pjID.empty", err.Error(), err)
+		u.Logger.Error("pjID.empty", err.Error(), err)
 		return nil, err
 	}
 
@@ -347,20 +342,19 @@ func (u Usecase) SetCategoriesForBTCProject(rootSpan opentracing.Span, req struc
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		log.Error("updated", err.Error(), err)
+		u.Logger.Error("updated", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return p, nil
 }
 
-func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdateProjectReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("UpdateProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpdateProject( req structure.UpdateProjectReq) (*entity.Projects, error) {
+
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
-		log.Error("UpdateProject.FindProjectBy", err.Error(), err)
+		u.Logger.Error("UpdateProject.FindProjectBy", err.Error(), err)
 		return nil, err
 	}
 
@@ -371,50 +365,47 @@ func (u Usecase) UpdateProject(rootSpan opentracing.Span, req structure.UpdatePr
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		log.Error("UpdateProject.UpdateProject", err.Error(), err)
+		u.Logger.Error("UpdateProject.UpdateProject", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return p, nil
 }
 
-func (u Usecase) GetProjectByGenNFTAddr(rootSpan opentracing.Span, genNFTAddr string) (*entity.Projects, error) {
-	span, log := u.StartSpan("GetProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetProjectByGenNFTAddr( genNFTAddr string) (*entity.Projects, error) {
+
 	project, err := u.Repo.FindProjectByGenNFTAddr(genNFTAddr)
 	return project, err
 }
 
-func (u Usecase) GetProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
-		log.Error("u.Repo.GetProjects", err.Error(), err)
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("projects", projects.Total)
+	u.Logger.Info("projects", projects.Total)
 	return projects, nil
 }
 
-func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, error) {
-	span, log := u.StartSpan("GetRandomProject", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetRandomProject() (*entity.Projects, error) {
+
 
 	caddr := os.Getenv("RANDOM_PR_CONTRACT")
 	pID := os.Getenv("RANDOM_PR_PROJECT")
 
 	if caddr != "" && pID != "" {
-		return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+		return u.GetProjectDetail(structure.GetProjectDetailMessageReq{
 			ContractAddress: caddr,
 			ProjectID:       pID,
 		})
@@ -435,7 +426,7 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 	if err != nil {
 		p, err := u.Repo.GetAllProjects(entity.FilterProjects{})
 		if err != nil {
-			log.Error("u.Repo.GetProjects", err.Error(), err)
+			u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
 			return nil, err
 		}
 		u.Cache.SetData(key, p)
@@ -446,13 +437,13 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 	bytes := []byte(*cached)
 	err = json.Unmarshal(bytes, &projects)
 	if err != nil {
-		log.Error("json.Unmarshal", err.Error(), err)
+		u.Logger.Error("json.Unmarshal", err.Error(), err)
 		return nil, err
 	}
 
 	if len(projects) == 0 {
 		err := errors.New("Project are not found")
-		log.Error("Projects.are.not.found", err.Error(), err)
+		u.Logger.Error("Projects.are.not.found", err.Error(), err)
 		return nil, err
 	}
 
@@ -462,60 +453,56 @@ func (u Usecase) GetRandomProject(rootSpan opentracing.Span) (*entity.Projects, 
 	//TODO - cache will be applied here
 
 	projectRand := projects[rand]
-	return u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+	return u.GetProjectDetail(structure.GetProjectDetailMessageReq{
 		ContractAddress: projectRand.ContractAddress,
 		ProjectID:       projectRand.TokenID,
 	})
 }
 
-func (u Usecase) GetMintedOutProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetMintedOutProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetMintedOutProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
 	pe.WalletAddress = req.WalletAddress
 	projects, err := u.Repo.GetMintedOutProjects(*pe)
 	if err != nil {
-		log.Error("u.Repo.GetMintedOutProjects", err.Error(), err)
+		u.Logger.Error("u.Repo.GetMintedOutProjects", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("projects", projects.Total)
+	u.Logger.Info("projects", projects.Total)
 	return projects, nil
 }
 
-func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	span, log := u.StartSpan("GetProjectDetail", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+
 
 	// defer func  ()  {
 	// 	//alway update project in a separated process
-	// 	go func(rootSpan opentracing.Span) {
-	// 		span, log := u.StartSpan("GetProjectDetail.GetProjectFromChain", rootSpan)
-	// 		defer u.Tracer.FinishSpan(span, log)
-
-	// 		_, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
+	// 	go func() {
+	// 	// 
+	// 		_, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 	// 		if err != nil {
-	// 	log.Error("u.Repo.FindProjectBy", err.Error(), err)
+	// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
 	// 	return
 	// 		}
 
-	// 	}(span)
+	// 	}()
 	// }()
 
-	log.SetTag("ProjectID", req.ProjectID)
-	log.SetTag("ContractAddress", req.ContractAddress)
+	
+	
 
 	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
-		// p, err := u.UpdateProjectFromChain(span, req.ContractAddress, req.ProjectID)
+		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		// if err != nil {
-		// 	log.Error("u.Repo.FindProjectBy", err.Error(), err)
+		// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
 		// 	return nil, err
 		// }
 		// return p, nil
@@ -525,7 +512,7 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	if err != nil {
 		return nil, err
 	}
-	ethPrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	ethPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +520,7 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 
 	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
 	if err == nil {
-		ethNetworkFeePrice, err := u.convertBTCToETH(span, fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethNetworkFeePrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			return nil, err
 		}
@@ -543,30 +530,28 @@ func (u Usecase) GetProjectDetail(rootSpan opentracing.Span, req structure.GetPr
 	return c, nil
 }
 
-func (u Usecase) GetRecentWorksProjects(rootSpan opentracing.Span, req structure.FilterProjects) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetRecentWorksProjects", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetRecentWorksProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
 
 	pe.WalletAddress = req.WalletAddress
 	projects, err := u.Repo.GetRecentWorksProjects(*pe)
 	if err != nil {
-		log.Error("u.Repo.GetRecentWorksProjects", err.Error(), err)
+		u.Logger.Error("u.Repo.GetRecentWorksProjects", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("projects", projects.Total)
+	u.Logger.Info("projects", projects.Total)
 	return projects, nil
 }
 
-func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
-	span, log := u.StartSpan("SyncProjectStats", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetUpdatedProjectStats( req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
+
 	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
 	if err != nil {
 		return nil, nil, err
@@ -591,13 +576,13 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 
 	allListings, err = u.Repo.GetAllListingByCollectionContract(project.GenNFTAddr)
 	if err != nil {
-		log.Error("u.Repo.GetAllListingByCollectionContract", err.Error(), err)
+		u.Logger.Error("u.Repo.GetAllListingByCollectionContract", err.Error(), err)
 		return nil, nil, err
 	}
 
 	allOffers, err = u.Repo.GetAllOfferByCollectionContract(project.GenNFTAddr)
 	if err != nil {
-		log.Error("u.Repo.GetAllOfferByCollectionContract", err.Error(), err)
+		u.Logger.Error("u.Repo.GetAllOfferByCollectionContract", err.Error(), err)
 		return nil, nil, err
 	}
 
@@ -615,12 +600,12 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		price, ok := price.SetString(listing.Price, 10)
 		if !ok {
 			err := errors.New("fail to convert price to big int")
-			log.Error("fail to convert price to big int", err.Error(), err)
+			u.Logger.Error("fail to convert price to big int", err.Error(), err)
 			continue
 		}
 		durationTime, err := strconv.ParseInt(listing.DurationTime, 10, 64)
 		if err != nil {
-			log.Error("fail to parse duration time", err.Error(), err)
+			u.Logger.Error("fail to parse duration time", err.Error(), err)
 			continue
 		}
 
@@ -653,12 +638,12 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 		price, ok := price.SetString(offer.Price, 10)
 		if !ok {
 			err := errors.New("fail to convert price to big int")
-			log.Error("fail to convert price to big int", err.Error(), err)
+			u.Logger.Error("fail to convert price to big int", err.Error(), err)
 			continue
 		}
 		durationTime, err := strconv.ParseInt(offer.DurationTime, 10, 64)
 		if err != nil {
-			log.Error("fail to parse duration time", err.Error(), err)
+			u.Logger.Error("fail to parse duration time", err.Error(), err)
 			continue
 		}
 
@@ -755,18 +740,17 @@ func (u Usecase) GetUpdatedProjectStats(rootSpan opentracing.Span, req structure
 	}, traitsStat, nil
 }
 
-func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
-	span, log := u.StartSpan("getProjectDetailFromChainWithoutCache", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) getProjectDetailFromChainWithoutCache( req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
-	log.SetData("req", req)
+	u.Logger.Info("req", req)
 
 	addr := common.HexToAddress(req.ContractAddress)
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
 	if err != nil {
-		log.Error("ethclient.Dial", err.Error(), err)
+		u.Logger.Error("ethclient.Dial", err.Error(), err)
 		return nil, err
 	}
 
@@ -775,32 +759,31 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(rootSpan opentracing.Span
 	if !ok {
 		return nil, errors.New("cannot convert tokenID")
 	}
-	contractDetail, err := u.getNftContractDetailInternal(span, client, addr, *projectID)
+	contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
 	if err != nil {
-		log.Error("u.getNftContractDetailInternal", err.Error(), err)
+		u.Logger.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err
 	}
-	//log.SetData("contractDetail", contractDetail)
+	//u.Logger.Info("contractDetail", contractDetail)
 	u.Cache.SetData(contractDataKey, contractDetail)
 	return contractDetail, nil
 }
 
 // Get from chain with cache
-func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
-	span, log := u.StartSpan("getProjectDetailFromChain", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) getProjectDetailFromChain( req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+
 	contractDataKey := helpers.ProjectDetailKey(req.ContractAddress, req.ProjectID)
 
 	//u.Cache.Delete(contractDataKey)
 	data, err := u.Cache.GetData(contractDataKey)
 	if err != nil {
-		log.SetData("req", req)
+		u.Logger.Info("req", req)
 
 		addr := common.HexToAddress(req.ContractAddress)
 		// call to contract to get emotion
 		client, err := helpers.EthDialer()
 		if err != nil {
-			log.Error("ethclient.Dial", err.Error(), err)
+			u.Logger.Error("ethclient.Dial", err.Error(), err)
 			return nil, err
 		}
 
@@ -809,12 +792,12 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 		if !ok {
 			return nil, errors.New("cannot convert tokenID")
 		}
-		contractDetail, err := u.getNftContractDetailInternal(span, client, addr, *projectID)
+		contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
 		if err != nil {
-			log.Error("u.getNftContractDetail", err.Error(), err)
+			u.Logger.Error("u.getNftContractDetail", err.Error(), err)
 			return nil, err
 		}
-		log.SetData("contractDetail", contractDetail)
+		u.Logger.Info("contractDetail", contractDetail)
 		u.Cache.SetData(contractDataKey, contractDetail)
 		return contractDetail, nil
 	}
@@ -822,7 +805,7 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 	contractDetail := &structure.ProjectDetail{}
 	err = helpers.ParseCache(data, contractDetail)
 	if err != nil {
-		log.Error("helpers.ParseCache", err.Error(), err)
+		u.Logger.Error("helpers.ParseCache", err.Error(), err)
 		return nil, err
 	}
 
@@ -830,16 +813,15 @@ func (u Usecase) getProjectDetailFromChain(rootSpan opentracing.Span, req struct
 }
 
 // Internal get project detail
-func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
-	span, log := u.StartSpan("getNftContractDetailInternal", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) getNftContractDetailInternal( client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
 
-	log.SetTag("contractAddress", contractAddr)
-	log.SetTag("projectID", projectID)
+
+	
+	
 
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
-		log.Error("generative_project_contract.NewGenerativeProjectContract", err.Error(), err)
+		u.Logger.Error("generative_project_contract.NewGenerativeProjectContract", err.Error(), err)
 		return nil, err
 	}
 
@@ -916,18 +898,18 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 	}
 
 	if statusFromChain.Err != nil {
-		log.Error("statusFromChain.Err", statusFromChain.Err.Error(), statusFromChain.Err)
+		u.Logger.Error("statusFromChain.Err", statusFromChain.Err.Error(), statusFromChain.Err)
 		return nil, statusFromChain.Err
 	}
 
 	if tokenFromChain.Err != nil {
-		log.Error("tokenFromChain.Err", tokenFromChain.Err.Error(), tokenFromChain.Err)
+		u.Logger.Error("tokenFromChain.Err", tokenFromChain.Err.Error(), tokenFromChain.Err)
 		return nil, tokenFromChain.Err
 	}
 
 	gNftProject, err := generative_nft_contract.NewGenerativeNftContract(detailFromChain.ProjectDetail.GenNFTAddr, client)
 	if err != nil {
-		log.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
+		u.Logger.Error("generative_nft_contract.NewGenerativeNftContract", err.Error(), err)
 		return nil, err
 	}
 
@@ -974,7 +956,7 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 		NftTokenUri:   *tokenFromChain.TokenURI,
 	}
 
-	log.SetData("resp", resp)
+	u.Logger.Info("resp", resp)
 	if dataFromNftPChan.Err == nil && dataFromNftPChan.Data != nil {
 		resp.NftProjectDetail = *dataFromNftPChan.Data
 	} else {
@@ -987,21 +969,17 @@ func (u Usecase) getNftContractDetailInternal(rootSpan opentracing.Span, client 
 		}
 	}
 
-	log.SetData("resp", resp)
+	u.Logger.Info("resp", resp)
 	return resp, nil
 }
 
-func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
-	span, log := u.StartSpan("UnzipProjectFile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetTag(utils.PROJECT_ID_TAG, zipPayload.ProjectID)
+func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
-		log.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("project", pe)
+	u.Logger.Info("project", pe)
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -1009,23 +987,26 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 
-	log.SetData("zipPayload", zipPayload)
+	u.Logger.Info("zipPayload", zipPayload)
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
 	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	groupIndex := strings.Index(zipLink, "btc-projects/")
+	strLen := len(zipLink)
 	// TODO
-	zipLink = strings.ReplaceAll(zipLink, fmt.Sprintf("%s/", os.Getenv("GCS_DOMAIN")), "")
+	zipLink = zipLink[groupIndex:strLen]
+	spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
-		log.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
 	if err != nil {
-		log.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
 	maxSize := uint64(0)
@@ -1051,7 +1032,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	/*resp, err := http.Get(zipLink)
 	if err != nil {
-		log.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -1060,23 +1041,23 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	out, err := os.Create(fileName)
 	if err != nil {
-		log.Error("os.Create", err.Error(), err)
+		u.Logger.Error("os.Create", err.Error(), err)
 		return nil, err
 	}
 	defer out.Close()
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Error("os.Create", err.Error(), err)
+		u.Logger.Error("os.Create", err.Error(), err)
 		return nil, err
 	}
 
 	zf, err := zip.OpenReader(fileName)
 	if err != nil {
-		log.Error("zip.OpenReader", err.Error(), err)
+		u.Logger.Error("zip.OpenReader", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("zf.File", len(zf.File))
+	u.Logger.Info("zf.File", len(zf.File))
 	processingFiles := []*zip.File{}
 	for _, file := range zf.File {
 		if strings.Index(file.Name, "__MACOSX") > -1 {
@@ -1089,22 +1070,22 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 		processingFiles = append(processingFiles, file)
 	}
-	log.SetData("processingFiles", processingFiles)
+	u.Logger.Info("processingFiles", processingFiles)
 	uploadChan := make(chan uploadFileChan, len(processingFiles))
 
 	maxSize := uint64(0)
 	groups := make(map[string][]byte)
 	for _, file := range processingFiles {
-		log.SetData("fileName", file.Name)
-		log.SetData("UncompressedSize64", file.UncompressedSize64)
+		u.Logger.Info("fileName", file.Name)
+		u.Logger.Info("UncompressedSize64", file.UncompressedSize64)
 		maxFileSize := uint64(400000)
 
-		log.SetData("maxFileSize", maxFileSize)
+		u.Logger.Info("maxFileSize", maxFileSize)
 		size := file.UncompressedSize64
 
 		if size > maxFileSize {
 			err := errors.New(fmt.Sprintf("%s, size: %d Max file size must be less than 400kb", file.Name, size))
-			log.Error("maxFileSize", err.Error(), err)
+			u.Logger.Error("maxFileSize", err.Error(), err)
 			return nil, err
 		}
 		if size > maxSize {
@@ -1113,7 +1094,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 		fC, err := helpers.ReadFile(file)
 		if err != nil {
-			log.Error("zip.OpenReader", err.Error(), err)
+			u.Logger.Error("zip.OpenReader", err.Error(), err)
 			return nil, err
 		}
 
@@ -1121,7 +1102,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 			var wg sync.WaitGroup
 			for fileName, fileData := range groups {
 				wg.Add(1)
-				go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
+				go u.UploadFileZip(fileData, uploadChan, pe.Name, fileName, &wg)
 			}
 			wg.Wait()
 			groups = make(map[string][]byte)
@@ -1134,7 +1115,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 		var wg sync.WaitGroup
 		for fileName, fileData := range groups {
 			wg.Add(1)
-			go u.UploadFileZip(span, fileData, uploadChan, pe.Name, fileName, &wg)
+			go u.UploadFileZip(fileData, uploadChan, pe.Name, fileName, &wg)
 		}
 		wg.Wait()
 		groups = make(map[string][]byte)
@@ -1143,7 +1124,7 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 	for i := 0; i < len(processingFiles); i++ {
 		dataFromChan := <-uploadChan
 		if dataFromChan.Err != nil {
-			log.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
+			u.Logger.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
 			if pe.MaxSupply < int64(i) {
 				return nil, dataFromChan.Err
 			}
@@ -1167,17 +1148,16 @@ func (u Usecase) UnzipProjectFile(rootSpan opentracing.Span, zipPayload *structu
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
-		log.Error("u.Repo.UpdateProject", err.Error(), err)
+		u.Logger.Error("u.Repo.UpdateProject", err.Error(), err)
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return pe, nil
 }
 
-func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
-	span, log := u.StartSpan("CreateBTCProject.UploadFile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UploadFileZip( fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
+
 	var err error
 	var uploadedUrl *string
 
@@ -1197,11 +1177,11 @@ func (u Usecase) UploadFileZip(rootSpan opentracing.Span, fc []byte, uploadChan 
 	uploadFileName := fmt.Sprintf("%s/%s", key, fileName)
 	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, uploadFileName)
 	if err != nil {
-		log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+		u.Logger.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
 		return
 	}
 
-	log.SetData("uploaded", uploaded)
+	u.Logger.Info("uploaded", uploaded)
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	uploadedUrl = &cdnURL
 

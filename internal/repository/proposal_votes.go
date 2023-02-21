@@ -11,15 +11,13 @@ func (r Repository) CreateProposalVotes(obj *entity.ProposalVotes) error {
 	if err != nil {
 		return err
 	}
-	
-	return  nil
+return  nil
 }
 
 func (r Repository) FilterProposalVotes(filter entity.FilterProposalVotes) (*entity.Pagination, error) {
 	pro := []entity.ProposalVotes{}
 	resp := &entity.Pagination{}
-	
-	f := r.filterProposalVotes(filter)
+f := r.filterProposalVotes(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "created_at"
 	}
@@ -28,8 +26,7 @@ func (r Repository) FilterProposalVotes(filter entity.FilterProposalVotes) (*ent
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = pro
+resp.Result = pro
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
@@ -45,7 +42,6 @@ func (r Repository) SelectedProposalVoteFields() bson.D {
 		{"weight", 1},
 		{"created_at", 1},
 		{"reason", 1},
-		
 	}
 	return f
 }
@@ -65,8 +61,7 @@ func (r Repository) filterProposalVotes(filter entity.FilterProposalVotes) bson.
 			f["voter"] = *filter.Voter
 		}
 	}
-	
-	if filter.ProposalID != nil {
+if filter.ProposalID != nil {
 		f["proposalID"] = *filter.ProposalID
 	}
 

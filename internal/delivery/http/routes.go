@@ -11,9 +11,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
-	"rederinghub.io/utils/tracer"
 
-	"github.com/opentracing/opentracing-go"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -23,7 +21,6 @@ func (h *httpDelivery) registerRoutes() {
 }
 
 func (h *httpDelivery) RegisterV1Routes() {
-	h.Handler.Use(h.MiddleWare.Tracer)
 	h.Handler.Use(h.MiddleWare.LoggingMiddleware)
 	h.Handler.HandleFunc("/", h.healthCheck).Methods("GET")
 
@@ -56,7 +53,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
 	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
-	files.HandleFunc("/multipart/{uploadID}", h.CreateMultipartUpload).Methods("POST")
+	files.HandleFunc("/multipart/{uploadID}", h.CompleteMultipartUpload).Methods("POST")
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
@@ -159,8 +156,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	signedEth := api.PathPrefix("/eth").Subrouter()
 	signedEth.Use(h.MiddleWare.AccessToken)
 	signedEth.HandleFunc("/receive-address/whitelist", h.ethGetReceiveWhitelistedWalletAddress).Methods("POST")
-
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
+
+	// request-mint (new flow)
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -183,8 +183,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
+	// wallet.Use(h.MiddleWare.AccessToken)
 	wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
+	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
@@ -204,23 +206,7 @@ func (h *httpDelivery) RegisterDocumentRoutes() {
 	))
 }
 
-func (h *httpDelivery) StartSpan(name string, r *http.Request) (opentracing.Span, *tracer.TraceLog) {
-	span := h.Tracer.StartSpanFromHeaderInjection(r.Header, name)
-	log := tracer.NewTraceLog()
-	return span, log
-}
-
-func (h *httpDelivery) StartSpanFromRoot(rootSpan opentracing.Span, optName string) (opentracing.Span, *tracer.TraceLog) {
-	span := h.Tracer.StartSpanFromRoot(rootSpan, optName)
-	log := tracer.NewTraceLog()
-	return span, log
-}
-
 func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
-	span := h.Tracer.StartSpan("healthCheck")
-	h.Response.SetTrace(h.Tracer)
-	h.Response.SetSpan(span)
-	defer span.Finish()
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "It work!", "")
 }
 

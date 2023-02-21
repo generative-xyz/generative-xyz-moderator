@@ -174,8 +174,7 @@ func CreateIcon(name *string) string  {
 	data := []byte(*name)
     identicon := hashInput(data)
     identicon = pipe(identicon, pickColor, buildGrid, filterOddSquares, buildPixelMap)
-	
-	myImage := drawRectangle(identicon)
+myImage := drawRectangle(identicon)
 	var buff bytes.Buffer
     png.Encode(&buff, myImage)	
     encodedString := base64.StdEncoding.EncodeToString(buff.Bytes())

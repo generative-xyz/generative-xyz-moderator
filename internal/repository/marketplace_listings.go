@@ -40,8 +40,7 @@ func (r Repository) FindListingByOfferingID(offeringID string) (*entity.Marketpl
 
 func (r Repository) PurchaseTokenByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
-	
-	f := bson.D{
+f := bson.D{
 		{Key: "offering_id", Value: offeringID,},
 	}
 
@@ -58,14 +57,12 @@ func (r Repository) PurchaseTokenByOfferingID(offeringID string) error {
 	obj.Finished = true
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-	
-	return err
+return err
 }
 
 func (r Repository) CancelListingByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
-	
-	f := bson.D{
+f := bson.D{
 		{Key: "offering_id", Value: offeringID,},
 	}
 
@@ -81,8 +78,7 @@ func (r Repository) CancelListingByOfferingID(offeringID string) error {
 
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-	
-	return err
+return err
 }
 
 func (r Repository) filterListings(filter entity.FilterMarketplaceListings) bson.M {
@@ -94,34 +90,28 @@ func (r Repository) filterListings(filter entity.FilterMarketplaceListings) bson
 			f["collection_contract"] = *filter.CollectionContract
 		}
 	}
-	
-	if filter.TokenId != nil {
+if filter.TokenId != nil {
 		if *filter.TokenId != "" {
 			f["token_id"] = *filter.TokenId
 		}
 	}
-	
-	if filter.Erc20Token != nil {
+if filter.Erc20Token != nil {
 		if *filter.Erc20Token != "" {
 			f["erc_20_token"] = *filter.Erc20Token
 		}
 	}
-	
-	if filter.SellerAddress != nil {
+if filter.SellerAddress != nil {
 		if *filter.SellerAddress != "" {
 			f["seller"] = *filter.SellerAddress
 		}
 	}
-	
-	if filter.Closed != nil {
+if filter.Closed != nil {
 		f["closed"] = *filter.Closed
 	}
-	
-	if filter.Finished != nil {
+if filter.Finished != nil {
 		f["finished"] = *filter.Finished
 	}
-	
-	return f
+return f
 }
 
 func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceListings) (*entity.Pagination, error)  {
@@ -133,8 +123,7 @@ func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceLis
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = confs
+resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit

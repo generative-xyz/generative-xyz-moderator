@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -29,56 +28,49 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /marketplace/listing/{genNFTAddr}/token/{tokenID} [GET]
 func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getListingViaGenAddressTokenID", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	tokenID := vars["tokenID"]
-	
-	bf, err := h.BaseFilters(r)
+bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	
-	closed := r.URL.Query().Get("closed")
+closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkListing{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-	
-	if finished != "" {
+if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-	
-	f.CollectionContract = &genNFTAddr
+f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
 	f.BaseFilters = *bf
-	
-	resp, err := h.getMkListings(span, f)
+resp, err := h.getMkListings(f)
 	if err != nil {
-		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
@@ -99,56 +91,49 @@ func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *
 // @Success 200 {object} response.JsonResponse{}
 // @Router /marketplace/offers/{genNFTAddr}/token/{tokenID} [GET]
 func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getOffersViaGenAddressTokenID", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	tokenID := vars["tokenID"]
-	
-	bf, err := h.BaseFilters(r)
+bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	
-	closed := r.URL.Query().Get("closed")
+closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkOffers{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-	
-	if finished != "" {
+if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-	
-	f.CollectionContract = &genNFTAddr
+f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
 	f.BaseFilters = *bf
-	
-	resp, err := h.getMkOffers(span, f)
+resp, err := h.getMkOffers(f)
 	if err != nil {
-		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 }
 
@@ -166,54 +151,47 @@ func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *h
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /marketplace/wallet/{walletAddress}/listing [GET]
 func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("ListingOfAProfile", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	
-	bf, err := h.BaseFilters(r)
+bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	
-	closed := r.URL.Query().Get("closed")
+closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkListing{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-	
-	if finished != "" {
+if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-	
-	f.SellerAddress = &walletAddress
+f.SellerAddress = &walletAddress
 	f.BaseFilters = *bf
-	
-	resp, err := h.getMkListings(span, f)
+resp, err := h.getMkListings(f)
 	if err != nil {
-		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 
 }
@@ -233,38 +211,33 @@ func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request)
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /marketplace/wallet/{walletAddress}/offer [GET]
 func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("OfferOfAProfile", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	
-	bf, err := h.BaseFilters(r)
+bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	
-	closed := r.URL.Query().Get("closed")
+closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	isNftOwner := r.URL.Query().Get("is_nft_owner")
 	f := structure.FilterMkOffers{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			log.Error("strconv.ParseBool.closed", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-	
-	if finished != "" {
+if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			log.Error("strconv.ParseBool.finished", err.Error(), err)
+			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -275,29 +248,25 @@ func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
 	} else {
 		f.OwnerAddress = &walletAddress
 	}
-	
-	f.BaseFilters = *bf
-	
-	resp, err := h.getMkOffers(span, f)
+f.BaseFilters = *bf
+resp, err := h.getMkOffers(f)
 	if err != nil {
-		log.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
 
 }
 
-func (h *httpDelivery) getMkListings(rootSpan opentracing.Span, f  structure.FilterMkListing) (*response.PaginationResponse, error) {
-	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
-	defer h.Tracer.FinishSpan(span, log )
+func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.PaginationResponse, error) {
 
 
-	pag, err := h.Usecase.FilterMKListing(span, f)
+	pag, err := h.Usecase.FilterMKListing(f)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
 		return nil, err
 	}
 
@@ -306,15 +275,14 @@ func (h *httpDelivery) getMkListings(rootSpan opentracing.Span, f  structure.Fil
 	mkData, ok := (iMkData).([]entity.MarketplaceListings)
 	if !ok {
 		err := errors.New( "Cannot parse MarketplaceListings")
-		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
 		return nil, err
 	}
 
-	for _, mk := range mkData {	
-		resp, err := h.mkListingToResp(&mk)
+	for _, mk := range mkData {	resp, err := h.mkListingToResp(&mk)
 		if err != nil {
 			err := errors.New( "Cannot parse MarketplaceListin")
-			log.Error("tokenToResp",  err.Error(), err)
+			h.Logger.Error("tokenToResp",  err.Error(), err)
 			return nil, err
 		}
 		respItems = append(respItems, *resp)
@@ -343,14 +311,12 @@ func (h *httpDelivery) mkListingToResp(input *entity.MarketplaceListings) (*resp
 
 
 
-func (h *httpDelivery) getMkOffers(rootSpan opentracing.Span, f  structure.FilterMkOffers) (*response.PaginationResponse, error) {
-	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
-	defer h.Tracer.FinishSpan(span, log )
+func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.PaginationResponse, error) {
 
 
-	pag, err := h.Usecase.FilterMKOffers(span, f)
+	pag, err := h.Usecase.FilterMKOffers(f)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
 		return nil, err
 	}
 
@@ -359,15 +325,14 @@ func (h *httpDelivery) getMkOffers(rootSpan opentracing.Span, f  structure.Filte
 	mkData, ok := (iMkData).([]entity.MarketplaceOffers)
 	if !ok {
 		err := errors.New( "Cannot parse MarketplaceOffers")
-		log.Error("ctx.Value.Token",  err.Error(), err)
+		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
 		return nil, err
 	}
 
-	for _, mk := range mkData {	
-		resp, err := h.mkOfferToResp(&mk)
+	for _, mk := range mkData {	resp, err := h.mkOfferToResp(&mk)
 		if err != nil {
 			err := errors.New( "Cannot parse mkOfferToResp")
-			log.Error("tokenToResp",  err.Error(), err)
+			h.Logger.Error("tokenToResp",  err.Error(), err)
 			return nil, err
 		}
 		respItems = append(respItems, *resp)
@@ -403,25 +368,23 @@ func (h *httpDelivery) mkOfferToResp(input *entity.MarketplaceOffers) (*response
 // @Success 200 {object} response.JsonResponse{}
 // @Router /marketplace/stats/{genNFTAddr} [GET]
 func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getCollectionStats", r)
-	defer h.Tracer.FinishSpan(span, log)
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	span.SetTag("genNFTAddr", genNFTAddr)
-	project, err := h.Usecase.GetProjectByGenNFTAddr(span, genNFTAddr)
+	
+	project, err := h.Usecase.GetProjectByGenNFTAddr(genNFTAddr)
 	if  err != nil {
-		log.Error(" h.GetProjectByGenNFTAddr", err.Error(), err)
+		h.Logger.Error(" h.GetProjectByGenNFTAddr", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 	resp, err := h.projectToStatResp(project)
 	if  err != nil {
-		log.Error(" h.projectToStatResp", err.Error(), err)
+		h.Logger.Error(" h.projectToStatResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-	log.SetData("project", project)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("project", project)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
 

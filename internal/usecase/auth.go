@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/opentracing/opentracing-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -25,25 +24,22 @@ import (
 	"rederinghub.io/utils/oauth2service"
 )
 
-func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.GenerateMessage) (*string, error) {
-	span, log := u.StartSpan("GenerateMessage", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	addrr := data.Address
+func (u Usecase) GenerateMessage( data structure.GenerateMessage) (*string, error) {
+addrr := data.Address
 	addrr = strings.ToLower(addrr)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, addrr)
+	
 
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
-		log.Error("rand.Read", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 	message := fmt.Sprintf("%x-%x-%x-%x-%x",
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 
 	message = fmt.Sprintf(utils.NONCE_MESSAGE_FORMAT, message)
-	log.SetData("message", message)
+	u.Logger.Info("message", message)
 
 	now := time.Now().UTC()
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
@@ -55,22 +51,22 @@ func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.Gener
 			user.Message = message
 			user.CreatedAt = &now
 
-			log.SetData("inserted.User", user)
+			u.Logger.Info("inserted.User", user)
 			err = u.Repo.CreateUser(user)
 			if err != nil {
-				log.Error("u.Repo.CreateUser", err.Error(), err)
+				u.Logger.Error(err)
 				return nil, err
 			}
 
 			return &message, nil
 
 		} else {
-			log.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
 	}
 
-	log.SetData("user", user)
+	u.Logger.Info("user", user)
 	user.Message = message
 	user.UpdatedAt = &now
 	user.IsVerified = false
@@ -79,47 +75,45 @@ func (u Usecase) GenerateMessage(rootSpan opentracing.Span, data structure.Gener
 		return nil, err
 	}
 
-	log.SetData("updated", updated)
-	log.SetData("updated.User", message)
+	u.Logger.Info("updated", updated)
+	u.Logger.Info("updated.User", message)
 	return &message, nil
 }
 
-func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyMessage) (*structure.VerifyResponse, error) {
-	span, log := u.StartSpan("VerifyMessage", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) VerifyMessage( data structure.VerifyMessage) (*structure.VerifyResponse, error) {
 
-	log.SetData("input", data)
+	u.Logger.Info("input", data)
 	addrr := strings.ToLower(data.Address)
 	signature := data.Signature
-	log.SetData("wallet_address", addrr)
+	u.Logger.Info("wallet_address", addrr)
 
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
 	if err != nil {
-		log.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
-	log.SetData("user", user)
+	u.Logger.Info("user", user)
 
 	var isVeried = false
 	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
-		isVeried, err = u.verifyBTCSegwit(span, signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
+		isVeried, err = u.verifyBTCSegwit( signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
 		if err != nil {
-			log.Error("u.verify", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
-		log.SetData("isVeried", isVeried)
+		u.Logger.Info("isVeried", isVeried)
 	} else {
-		isVeried, err = u.verify(span, signature, data.Address, user.Message)
+		isVeried, err = u.verify(signature, data.Address, user.Message)
 		if err != nil {
-			log.Error("u.verify", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		}
-		log.SetData("isVeried", isVeried)
+		u.Logger.Info("isVeried", isVeried)
 	}
 
 	if !isVeried {
 		err := errors.New("Cannot verify wallet address")
-		log.Error("u.verify", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -131,41 +125,41 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	userID := user.UUID
 	token, refreshToken, err := u.Auth2.GenerateAllTokens(user.WalletAddress, "", "", "", userID)
 	if err != nil {
-		log.Error("u.Auth2.GenerateAllTokens", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetData("token", token)
+	u.Logger.Info("token", token)
 	tokenMd5 := helpers.GenerateMd5String(token)
-	log.SetData("tokenMd5", tokenMd5)
+	u.Logger.Info("tokenMd5", tokenMd5)
 	err = u.Cache.SetDataWithExpireTime(tokenMd5, userID, int(utils.TOKEN_CACHE_EXPIRED_TIME))
 	if err != nil {
-		log.Error("Login.Redis.SetData", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	if data.AddressBTC != nil && *data.AddressBTC != "" {
 		if user.WalletAddressBTCTaproot == "" {
 			user.WalletAddressBTCTaproot = *data.AddressBTC
-			log.SetData("user.WalletAddressBTCTaproot.Updated", true)
+			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
 		}
 	}
 	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		if user.WalletAddressBTC == "" {
 			user.WalletAddressBTC = *data.AddressBTCSegwit
-			log.SetData("user.WalletAddressBTC.Updated", true)
+			u.Logger.Info("user.WalletAddressBTC.Updated", true)
 		}
 	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
-		log.Error("u.Repo.UpdateUserByWalletAddress", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetData("updated.Info", updated)
-	log.SetData("generated.Token", token)
-	log.SetData("generated.refreshToken", refreshToken)
+	u.Logger.Info("updated.Info", updated)
+	u.Logger.Info("generated.Token", token)
+	u.Logger.Info("generated.refreshToken", refreshToken)
 
 	verified := structure.VerifyResponse{
 		Token:        token,
@@ -176,9 +170,7 @@ func (u Usecase) VerifyMessage(rootSpan opentracing.Span, data structure.VerifyM
 	return &verified, nil
 }
 
-func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
-	span, log := u.StartSpan("verifyBTCSegwit", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) verifyBTCSegwit( signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
 
 	// Reconstruct the pubkey
 	publicKey, wasCompressed, err := helpers.PubKeyFromSignature(signatureHex, msgStr, hBSV)
@@ -205,15 +197,12 @@ func (u Usecase) verifyBTCSegwit(rootSpan opentracing.Span, signatureHex string,
 	)
 }
 
-func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer string, msgStr string) (bool, error) {
-	span, log := u.StartSpan("verify", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) verify( signatureHex string, signer string, msgStr string) (bool, error) {
+	u.Logger.Info("input.signatureHex", signatureHex)
+	u.Logger.Info("input.signer", signer)
+	u.Logger.Info("input.msgStr", msgStr)
 
-	log.SetData("input.signatureHex", signatureHex)
-	log.SetData("input.signer", signer)
-	log.SetData("input.msgStr", msgStr)
-
-	log.SetTag(utils.WALLET_ADDRESS_TAG, signer)
+	
 
 	sig := hexutil.MustDecode(signatureHex)
 
@@ -226,7 +215,7 @@ func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer s
 
 	recovered, err := crypto.SigToPub(msgHash, sig)
 	if err != nil {
-		log.Error("crypto.SigToPub", err.Error(), err)
+		u.Logger.Error(err)
 		return false, err
 	}
 
@@ -234,65 +223,58 @@ func (u Usecase) verify(rootSpan opentracing.Span, signatureHex string, signer s
 	signerHex := recoveredAddr.Hex()
 	isVerified := strings.ToLower(signer) == strings.ToLower(signerHex)
 
-	log.SetData("recoveredAddr", recoveredAddr)
-	log.SetData("signerHex", signerHex)
-	log.SetData("isVerified", isVerified)
+	u.Logger.Info("recoveredAddr", recoveredAddr)
+	u.Logger.Info("signerHex", signerHex)
+	u.Logger.Info("isVerified", isVerified)
 	return isVerified, nil
 }
 
-func (u Usecase) UserProfile(rootSpan opentracing.Span, userID string) (*entity.Users, error) {
-	span, log := u.StartSpan("UserProfile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UserProfile( userID string) (*entity.Users, error) {
 
-	log.SetData("input.userID", userID)
+	u.Logger.Info("input.userID", userID)
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		log.Error("u.Auth2.ValidateToken", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	
 	return user, nil
 }
 
-func (u Usecase) GetUserProfileByWalletAddress(rootSpan opentracing.Span, userAddr string) (*entity.Users, error) {
-	span, log := u.StartSpan("GetUserProfileByWalletAddress", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetUserProfileByWalletAddress( userAddr string) (*entity.Users, error) {
 
-	log.SetData("input.userAddr", userAddr)
+	u.Logger.Info("input.userAddr", userAddr)
 	user, err := u.Repo.FindUserByWalletAddress(userAddr)
 	if err != nil {
-		log.Error("u.GetUserProfileByWalletAddress", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	
 	return user, nil
 }
 
-func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, data structure.UpdateProfile) (*entity.Users, error) {
-	span, log := u.StartSpan("UserProfile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetData("input.UserID", userID)
-	log.SetData("input.data", data)
+func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile) (*entity.Users, error) {
+u.Logger.Info("input.UserID", userID)
+	u.Logger.Info("input.data", data)
 
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		log.Error("u.Repo.FindUserByID", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	
 	if data.DisplayName != nil {
 		user.DisplayName = *data.DisplayName
 	}
 
 	if data.Avatar != nil && *data.Avatar != "" {
 		user.Avatar = *data.Avatar
-		uploaded, err := u.UploadUserAvatar(span, *user)
+		uploaded, err := u.UploadUserAvatar( *user)
 		if err != nil {
-			log.Error("u.UploadUserAvatar", err.Error(), err)
+			u.Logger.Error(err)
 		} else {
 			user.Avatar = *uploaded
 		}
@@ -341,22 +323,19 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 
 	updated, err := u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
-		log.Error("u.Repo.UpdateUserByID", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	//update project's creator profile
-	go func(rootspan opentracing.Span, user entity.Users) {
-
-		span, log := u.StartSpan("UserProfile.Routine.Projects", rootSpan)
-		defer u.Tracer.FinishSpan(span, log)
+	go func( user entity.Users) {
 
 		projects, err := u.Repo.GetAllProjects(entity.FilterProjects{
 			WalletAddress: &user.WalletAddress,
 		})
 
 		if err != nil {
-			log.Error("u.Repo.GetAllProjects", err.Error(), err)
+			u.Logger.Error(err)
 			return
 		}
 
@@ -368,54 +347,50 @@ func (u Usecase) UpdateUserProfile(rootSpan opentracing.Span, userID string, dat
 
 			updated, err := u.Repo.UpdateProject(p.UUID, &p)
 			if err != nil {
-				log.Error("u.Repo.UpdateProject", err.Error(), err)
+				u.Logger.Error(err)
 				continue
 			}
 
-			log.SetData(fmt.Sprintf("p.%s.updated", p.UUID), updated)
+			u.Logger.Info(fmt.Sprintf("p.%s.updated", p.UUID), updated)
 		}
 
-	}(span, *user)
+	}( *user)
 
-	log.SetData("updated", updated)
+	u.Logger.Info("updated", updated)
 	return user, nil
 }
 
-func (u Usecase) Logout(rootSpan opentracing.Span, accessToken string) (bool, error) {
-	span, log := u.StartSpan("Logout", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) Logout( accessToken string) (bool, error) {
 
 	tokenMd5 := helpers.GenerateMd5String(accessToken)
 	err := u.Cache.Delete(tokenMd5)
 	if err != nil {
-		log.Error("u.Cache.Delete", err.Error(), err)
+		u.Logger.Error(err)
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken string) (*oauth2service.SignedDetails, error) {
-	span, log := u.StartSpan("ValidateAccessToken", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) ValidateAccessToken( accessToken string) (*oauth2service.SignedDetails, error) {
 
 	tokenMd5 := helpers.GenerateMd5String(accessToken)
-	log.SetData("tokenMd5", tokenMd5)
+	u.Logger.Info("tokenMd5", tokenMd5)
 
 	userID, err := u.Cache.GetData(tokenMd5)
 	if err != nil {
 		err = errors.New("Access token is invaild")
-		log.Error("u.Cache.GetData", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 
 	}
 
-	log.SetData("cached.UserID", userID)
+	u.Logger.Info("cached.UserID", userID)
 
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
 	if err != nil {
-		log.Error("u.Auth2.ValidateToken", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -423,34 +398,30 @@ func (u Usecase) ValidateAccessToken(rootSpan opentracing.Span, accessToken stri
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")
-		log.Error("userID.Empty", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
 	timeT := time.Unix(claim.ExpiresAt, 0)
-	log.SetData("claim.Exp", timeT)
-	log.SetData("claim", claim)
+	u.Logger.Info("claim.Exp", timeT)
+	u.Logger.Info("claim", claim)
 	return claim, err
 }
 
-func (u Usecase) UserProfileByWallet(rootSpan opentracing.Span, walletAddress string) (*entity.Users, error) {
-	span, log := u.StartSpan("UserProfile", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UserProfileByWallet( walletAddress string) (*entity.Users, error) {
 
-	log.SetData("input.walletAddress", walletAddress)
+	u.Logger.Info("input.walletAddress", walletAddress)
 	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
 	if err != nil {
-		log.Error("u.Auth2.ValidateToken", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 
-	log.SetTag(utils.WALLET_ADDRESS_TAG, user.WalletAddress)
+	
 	return user, nil
 }
 
-func (u Usecase) UploadUserAvatar(rootSpan opentracing.Span, user entity.Users) (*string, error) {
-	span, log := u.StartSpan("UploadUserAvatar", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UploadUserAvatar( user entity.Users) (*string, error) {
 	thumbnail := ""
 	base64Image := user.Avatar
 	i := strings.Index(base64Image, ",")
@@ -459,10 +430,10 @@ func (u Usecase) UploadUserAvatar(rootSpan opentracing.Span, user entity.Users) 
 		name := fmt.Sprintf("thumb/%s.png", user.WalletAddress)
 		uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 		if err != nil {
-			log.Error("u.GCS.UploadBaseToBucket", err.Error(), err)
+			u.Logger.Error(err)
 			return nil, err
 		} else {
-			log.SetData("uploaded", uploaded)
+			u.Logger.Info("uploaded", uploaded)
 			thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
 
@@ -471,12 +442,10 @@ func (u Usecase) UploadUserAvatar(rootSpan opentracing.Span, user entity.Users) 
 	return &user.Avatar, nil
 }
 
-func (u Usecase) UpdateUserAvatars(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("UpdateUserAvatars", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) UpdateUserAvatars() error {
 	users, err := u.Repo.GetAllUsers(entity.FilterUsers{IsUpdatedAvatar: nil})
 	if err != nil {
-		log.Error("UpdateUserAvatars.GetAllUsers", err.Error(), err)
+		u.Logger.Error(err)
 		return err
 	}
 
@@ -486,9 +455,9 @@ func (u Usecase) UpdateUserAvatars(rootSpan opentracing.Span) error {
 		}
 
 		if true {
-			uploadedAvatar, err := u.UploadUserAvatar(span, user)
+			uploadedAvatar, err := u.UploadUserAvatar( user)
 			if err != nil {
-				log.Error("UpdateUserAvatars.UploadUserAvatar", err.Error(), err)
+				u.Logger.Error(err)
 				continue
 			}
 
@@ -497,10 +466,10 @@ func (u Usecase) UpdateUserAvatars(rootSpan opentracing.Span) error {
 			user.IsUpdatedAvatar = &aUpdated
 			updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, &user)
 			if err != nil {
-				log.Error("UpdateUserAvatars.UpdateUserByWalletAddress", err.Error(), err)
+				u.Logger.Error(err)
 				continue
 			}
-			log.SetData("updated", updated)
+			u.Logger.Info("updated", updated)
 		}
 	}
 	return nil

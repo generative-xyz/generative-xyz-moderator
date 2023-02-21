@@ -7,8 +7,7 @@ type CreateCategoryRequest struct {
 }
 
 func (r CreateCategoryRequest) Validate() error {
-	
-	if r.Name == nil  {
+if r.Name == nil  {
 		return errors.New("Name is required")
 	}
 

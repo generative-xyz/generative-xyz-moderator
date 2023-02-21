@@ -10,15 +10,18 @@ import (
 
 	"rederinghub.io/utils/delegate"
 
+	"github.com/gorilla/mux"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
-	"rederinghub.io/internal/delivery/crontab_btc_v2"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
+	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
+	"rederinghub.io/internal/delivery/incribe_btc"
+	"rederinghub.io/internal/delivery/mint_nft_btc"
 	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
@@ -32,9 +35,6 @@ import (
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/slack"
-	"rederinghub.io/utils/tracer"
-
-	"github.com/gorilla/mux"
 )
 
 var conf *config.Config
@@ -102,7 +102,6 @@ func main() {
 func startServer() {
 	log.Println("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
-	t := tracer.NewTracing(logger)
 	r := mux.NewRouter()
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
@@ -118,11 +117,11 @@ func startServer() {
 		SecretKey:  conf.Gcs.SecretKey,
 	}, redisClient)
 
-	moralis := nfts.NewMoralisNfts(conf, t, cache)
-	ord := ord_service.NewBtcOrd(conf, t, cache)
+	moralis := nfts.NewMoralisNfts(conf, cache)
+	ord := ord_service.NewBtcOrd(conf, cache)
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
-	rPubsub := redis.NewPubsubClient(conf.Redis, t)
+	rPubsub := redis.NewPubsubClient(conf.Redis)
 	delegateService, err := delegate.NewService(ethClient.GetClient())
 	if err != nil {
 		logger.Error("error initializing delegate service", err)
@@ -131,7 +130,6 @@ func startServer() {
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Tracer:          t,
 		Logger:          logger,
 		MuxRouter:       r,
 		Conf:            conf,
@@ -172,8 +170,13 @@ func startServer() {
 	cron := crontab.NewScronHandler(&g, *uc)
 	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
 	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	btcCronV2 := crontab_btc_v2.NewScronBTCHandler(&g, *uc)
+	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+
+	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
@@ -198,8 +201,13 @@ func startServer() {
 	}
 
 	servers["btc_crontab_v2"] = delivery.AddedServer{
-		Server:  btcCronV2,
+		Server:  inscribeCron,
 		Enabled: conf.Crontab.BTCV2Enabled,
+	}
+
+	servers["mint_nft_btc"] = delivery.AddedServer{
+		Server:  mintNftBtcCron,
+		Enabled: conf.Crontab.MintNftBtcEnabled,
 	}
 
 	servers["marketplace_crontab"] = delivery.AddedServer{
@@ -210,6 +218,11 @@ func startServer() {
 	servers["trending_crontab"] = delivery.AddedServer{
 		Server:  trendingCron,
 		Enabled: conf.Crontab.TrendingEnabled,
+	}
+
+	servers["ordinal_collections_crontab"] = delivery.AddedServer{
+		Server:  ordinalCron,
+		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{

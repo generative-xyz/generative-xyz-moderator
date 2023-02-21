@@ -49,8 +49,7 @@ func NewMongo(dsn string) (*mongoCN, error) {
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		return nil, err
 	}
-	
-	p.Cnn = client
+p.Cnn = client
 	return p, nil
 }
 
