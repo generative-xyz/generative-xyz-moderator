@@ -759,15 +759,39 @@ func (u Usecase) JobBtcSendBtcToMaster() error {
 
 func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
 	result := []structure.MintingInscription{}
-	listBTC, err := u.Repo.ListMintingByWalletAddress(address)
+	listBTC, err := u.Repo.ListMintingWaitingForFundByWalletAddress(address)
 	if err != nil {
 		return nil, err
 	}
+
+	listBTC1, err := u.Repo.ListMintingByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+
+	listBTC2, err := u.Repo.ListMintingWaitingToSendByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	listBTC = append(listBTC, listBTC1...)
+	listBTC = append(listBTC, listBTC2...)
 
 	listETH, err := u.Repo.ListMintingETHByWalletAddress(address)
 	if err != nil {
 		return nil, err
 	}
+
+	listETH1, err := u.Repo.ListMintingETHByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+
+	listETH2, err := u.Repo.ListMintingWaitingToSendETHByWalletAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	listETH = append(listETH, listETH1...)
+	listETH = append(listETH, listETH2...)
 
 	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NotEnoughBalance, entity.StatusMint_Refunding})
 	if err != nil {
@@ -780,19 +804,28 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			return nil, err
 		}
 		var minting *structure.MintingInscription
-		if !item.IsMinted {
+		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:      "minting",
+				Status:      "waiting for funds",
 				FileURI:     item.FileURI,
 				ProjectID:   item.ProjectID,
 				ProjectName: projectInfo.Name,
 			}
 		} else {
-			minting = &structure.MintingInscription{
-				Status:      "transferring",
-				FileURI:     item.FileURI,
-				ProjectID:   item.ProjectID,
-				ProjectName: projectInfo.Name,
+			if !item.IsMinted {
+				minting = &structure.MintingInscription{
+					Status:      "minting",
+					FileURI:     item.FileURI,
+					ProjectID:   item.ProjectID,
+					ProjectName: projectInfo.Name,
+				}
+			} else {
+				minting = &structure.MintingInscription{
+					Status:      "transferring",
+					FileURI:     item.FileURI,
+					ProjectID:   item.ProjectID,
+					ProjectName: projectInfo.Name,
+				}
 			}
 		}
 		result = append(result, *minting)
@@ -804,19 +837,28 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			return nil, err
 		}
 		var minting *structure.MintingInscription
-		if !item.IsMinted {
+		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:      "minting",
+				Status:      "waiting for funds",
 				FileURI:     item.FileURI,
 				ProjectID:   item.ProjectID,
 				ProjectName: projectInfo.Name,
 			}
 		} else {
-			minting = &structure.MintingInscription{
-				Status:      "transferring",
-				FileURI:     item.FileURI,
-				ProjectID:   item.ProjectID,
-				ProjectName: projectInfo.Name,
+			if !item.IsMinted {
+				minting = &structure.MintingInscription{
+					Status:      "minting",
+					FileURI:     item.FileURI,
+					ProjectID:   item.ProjectID,
+					ProjectName: projectInfo.Name,
+				}
+			} else {
+				minting = &structure.MintingInscription{
+					Status:      "transferring",
+					FileURI:     item.FileURI,
+					ProjectID:   item.ProjectID,
+					ProjectName: projectInfo.Name,
+				}
 			}
 		}
 		result = append(result, *minting)

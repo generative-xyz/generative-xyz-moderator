@@ -34,8 +34,8 @@ const (
 )
 
 var StatusMintToText = map[StatusMint]string{
-	StatusMint_Pending:      "pending",
-	StatusMint_ReceivedFund: "received fund",
+	StatusMint_Pending:      "waiting for funds",
+	StatusMint_ReceivedFund: "received funds",
 
 	StatusMint_Minting: "minting",
 	StatusMint_Minted:  "minted",

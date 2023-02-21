@@ -184,7 +184,45 @@ func (r Repository) ListMintingByWalletAddress(address string) ([]entity.BTCWall
 	f := bson.M{}
 	f["isConfirm"] = true
 	f["origin_user_address"] = address
+	f["isMinted"] = false
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListMintingWaitingToSendByWalletAddress(address string) ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = true
+	f["origin_user_address"] = address
+	f["isMinted"] = true
 	f["mintResponse.issent"] = false
+	opts := options.Find()
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListMintingWaitingForFundByWalletAddress(address string) ([]entity.BTCWalletAddress, error) {
+	confs := []entity.BTCWalletAddress{}
+	f := bson.M{}
+	f["isConfirm"] = false
+	f["origin_user_address"] = address
 	opts := options.Find()
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_WALLET_ADDRESS).Find(context.TODO(), f, opts)
 	if err != nil {
