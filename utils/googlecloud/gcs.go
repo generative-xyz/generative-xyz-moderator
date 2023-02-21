@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 
 	"cloud.google.com/go/storage"
+	"github.com/davecgh/go-spew/spew"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -118,11 +118,11 @@ func (g gcstorage) UnzipFile(object string) error {
 			if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 				return nil
 			}
-	
+
 			if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
 				return nil
 			}
-			
+
 			p := filepath.Join(baseDir, helpers.GenerateSlug(f.Name))
 			spew.Dump(f.Name)
 			spew.Dump(p)
@@ -137,29 +137,23 @@ func (g gcstorage) UnzipFile(object string) error {
 			return nil
 		}()
 
-
 		fmt.Printf("Procesed %d / %d files \n", i+1, len(zr.File))
 		if err != nil {
 			//.fmt.Errorf("%s",err.Error())
 			fmt.Errorf("%v", err)
 			return err
 		}
-		
+
 	}
 
 	return nil
 }
 
-
 func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) {
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
 
-	now := time.Now().Unix()
-	fname := strings.ToLower(file.FileHeader.Filename)
-	fname = strings.ReplaceAll(fname, " ", "_")
-	fname = strings.TrimSpace(fname)
-	fname = fmt.Sprintf("%d-%s", now, fname)
+	fname := NormalizeFileName(file.FileHeader.Filename)
 	path := fmt.Sprintf("upload/%s", fname)
 	if file.Path != nil {
 		if *file.Path != "" {
