@@ -40,7 +40,7 @@ func (h *httpDelivery) getUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uUsers, uUsers), "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uUsers, uUsers.Result), "")
 }
 
 // Artist godoc
