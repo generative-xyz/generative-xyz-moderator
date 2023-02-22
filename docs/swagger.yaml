@@ -415,6 +415,8 @@ definitions:
         type: string
       twitter:
         type: string
+      twitter_verified:
+        type: boolean
       web:
         type: string
     type: object
@@ -2054,7 +2056,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete projects
+      description: Delete BTC projects
       parameters:
       - description: contract adress
         in: path
@@ -2075,7 +2077,7 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       security:
       - Authorization: []
-      summary: Delete project
+      summary: Delete BTC project
       tags:
       - Project
     put:
