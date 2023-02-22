@@ -882,12 +882,6 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			txToCheck = item.TxSendMaster
 		}
 
-		_, err := chainhash.NewHashFromStr(txToCheck)
-		if err != nil {
-			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
-			continue
-		}
-
 		amountSent := ""
 
 		if item.PayType == utils.NETWORK_ETH {
