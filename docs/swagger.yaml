@@ -161,6 +161,19 @@ definitions:
       address:
         type: string
     type: object
+  request.ListNftIdsReq:
+    properties:
+      inscriptionIDs:
+        items:
+          type: string
+        type: array
+      price:
+        type: string
+      seller_address:
+        type: string
+      seller_ord_address:
+        type: string
+    type: object
   request.ProfileSocial:
     properties:
       discord:
@@ -599,6 +612,33 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /admin/auto-listing:
+    post:
+      consumes:
+      - application/json
+      description: Auto listing
+      parameters:
+      - description: ' Auto listing'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ListNftIdsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+      summary: Auto listing
+      tags:
+      - Admin
   /admin/redis:
     delete:
       consumes:
@@ -1655,6 +1695,28 @@ paths:
       summary: User profile's selling nft
       tags:
       - MarketPlace
+  /mint-nft-btc/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a btc/eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBtcWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: BTC/ETH Generate receive wallet address
+      tags:
+      - BTC/ETH
   /nfts/{contractAddress}/nft_holders:
     get:
       consumes:
@@ -2586,6 +2648,34 @@ paths:
       summary: get token's traits
       tags:
       - Token for Opensea
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: get users
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: search
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get users
+      tags:
+      - User
   /user/artist:
     get:
       consumes:
@@ -2609,7 +2699,7 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       summary: get list Artist
       tags:
-      - Artist
+      - User
 securityDefinitions:
   Api-Key:
     in: header
