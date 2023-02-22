@@ -809,11 +809,13 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			continue
 		}
 		var minting *structure.MintingInscription
-		if time.Since(*item.CreatedAt) >= 6*time.Hour {
-			continue // timeout if  waited for 6 hours
+		if time.Since(*item.CreatedAt) >= 2*time.Hour {
+			continue // timeout if  waited for 2 hours
 		}
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
+				ID:           item.UUID,
+				CreatedAt:    item.CreatedAt,
 				Status:       "waiting for funds",
 				FileURI:      item.FileURI,
 				ProjectID:    item.ProjectID,
@@ -823,6 +825,8 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
 					Status:       "minting",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
@@ -831,6 +835,8 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
 					Status:       "transferring",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
@@ -851,12 +857,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if _, ok := itemIDMap[item.UUID]; ok {
 			continue
 		}
-		if time.Since(*item.CreatedAt) >= 6*time.Hour {
-			continue // timeout if  waited for 6 hours
+		if time.Since(*item.CreatedAt) >= 2*time.Hour {
+			continue // timeout if  waited for 2 hours
 		}
 		var minting *structure.MintingInscription
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
+				ID:           item.UUID,
+				CreatedAt:    item.CreatedAt,
 				Status:       "waiting for funds",
 				FileURI:      item.FileURI,
 				ProjectID:    item.ProjectID,
@@ -866,6 +874,8 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
 					Status:       "minting",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
@@ -874,6 +884,8 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
 					Status:       "transferring",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
@@ -892,6 +904,8 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			return nil, err
 		}
 		minting := structure.MintingInscription{
+			ID:           item.UUID,
+			CreatedAt:    item.CreatedAt,
 			Status:       entity.StatusMintToText[item.Status],
 			FileURI:      item.FileURI,
 			ProjectID:    item.ProjectID,
