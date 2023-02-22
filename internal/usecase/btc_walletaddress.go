@@ -865,7 +865,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	listETH = append(listETH, listETH1...)
 	listETH = append(listETH, listETH2...)
 
-	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
 	if err != nil {
 		return nil, err
 	}
