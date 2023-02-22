@@ -40,22 +40,7 @@ func (h *httpDelivery) getUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uResp := []response.ProfileResponse{}
-	iUsers := uUsers.Result
-	users := iUsers.([]entity.Users)
-	for _, user := range users {
-		d := &response.ProfileResponse{}
-		err := response.CopyEntityToRes(d, &user)
-		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-
-		uResp = append(uResp, *d)
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uUsers, uResp), "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uUsers, uUsers), "")
 }
 
 // Artist godoc
