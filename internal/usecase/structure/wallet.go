@@ -59,8 +59,8 @@ type BlockCypherWalletInfo struct {
 
 type WalletInfo struct {
 	BlockCypherWalletInfo
-	Inscriptions          []WalletInscriptionInfo `json:"inscriptions"`
-	InscriptionsByOutputs map[string][]string     `json:"inscriptions_by_outputs"`
+	Inscriptions          []WalletInscriptionInfo                `json:"inscriptions"`
+	InscriptionsByOutputs map[string][]WalletInscriptionByOutput `json:"inscriptions_by_outputs"`
 }
 
 type WalletInscriptionInfo struct {
@@ -71,4 +71,9 @@ type WalletInscriptionInfo struct {
 	ProjectID     string `json:"project_id"`
 	ProjecName    string `json:"project_name"`
 	Thumbnail     string `json:"thumbnail"`
+}
+
+type WalletInscriptionByOutput struct {
+	InscriptionID string `json:"inscription_id"`
+	Offset        int64  `json:"offset"`
 }
