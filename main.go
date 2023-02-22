@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
@@ -54,6 +55,7 @@ func init() {
 	}
 
 	l := _logger.NewLogger()
+	l.ErrorAny("config", zap.Any("_logger", l))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
