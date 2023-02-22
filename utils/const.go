@@ -81,6 +81,7 @@ const (
 	KEY_DELETED_AT         string = "deleted_at"
 	KEY_PROJECT_ID         string = "project_id"
 	KEY_LISTING_CONTRACT   string = "collection_contract"
+	KEY_BTC_WALLET_INFO    string = "btc_wallet_info"
 
 	COLLECTION_USERS                    string = "users"
 	COLLECTION_TOKEN_URI                string = "token_uri"
@@ -104,8 +105,8 @@ const (
 	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
 	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
 	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
-	COLLECTION_COLLECTION_META					string = "collection_metas"
-	COLLECTION_COLLECTION_INSCRIPTION		string = "collection_inscriptions"
+	COLLECTION_COLLECTION_META          string = "collection_metas"
+	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
