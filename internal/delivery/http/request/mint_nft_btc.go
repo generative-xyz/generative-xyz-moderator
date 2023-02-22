@@ -1,7 +1,8 @@
 package request
 
 type CreateMintReceiveAddressReq struct {
-	WalletAddress string `json:"walletAddress"`
-	ProjectID     string `json:"projectID"`
-	PayType       string `json:"payType"`
+	WalletAddress     string `json:"walletAddress"`
+	ProjectID         string `json:"projectID"`
+	PayType           string `json:"payType"`
+	RefundUserAddress string `json:"refundUserAddress"`
 }
