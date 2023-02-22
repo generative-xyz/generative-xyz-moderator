@@ -975,6 +975,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if err != nil {
 			return nil, err
 		}
+		if time.Since(item.ExpiredAt) >= 1*time.Second {
+			continue
+		}
 		status := ""
 		switch item.Status {
 		case entity.StatusMint_NeedToRefund, entity.StatusMint_TxRefundFailed:
