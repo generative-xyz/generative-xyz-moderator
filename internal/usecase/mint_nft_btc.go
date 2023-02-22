@@ -14,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"gopkg.in/mgo.v2/bson"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -392,6 +393,28 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			continue
 		}
 
+		tmpText := resp.Stdout
+		//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
+		jsonStr := strings.ReplaceAll(tmpText, "\n", "")
+		jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+		var btcMintResp ord_service.MintStdoputRespose
+
+		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
+		if err != nil {
+			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
+			continue
+		}
+
+		item.TxMintNft = btcMintResp.Reveal
+		item.InscriptionID = btcMintResp.Inscription
+		// TODO: update item
+		_, err = u.Repo.UpdateMintNftBtc(&item)
+		if err != nil {
+			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
+		}
+
 		// update project:
 		updated, err := u.Repo.UpdateProject(p.UUID, p)
 		if err != nil {
@@ -416,38 +439,10 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
 			continue
 		}
-		// _, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
-		// if err != nil {
-		// 	fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-		// 	go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
-		// }
-		item.IsUpdatedNftInfo = true
-		_, err = u.Repo.UpdateMintNftBtc(&item)
+		_, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
 		if err != nil {
-			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
-		}
-
-		tmpText := resp.Stdout
-		//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
-		jsonStr := strings.ReplaceAll(tmpText, "\n", "")
-		jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
-
-		var btcMintResp ord_service.MintStdoputRespose
-
-		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
-		if err != nil {
-			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
-			continue
-		}
-
-		item.TxMintNft = btcMintResp.Reveal
-		item.InscriptionID = btcMintResp.Inscription
-		// TODO: update item
-		_, err = u.Repo.UpdateMintNftBtc(&item)
-		if err != nil {
-			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
+			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
 		}
 
 		go u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", item.PayType, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
