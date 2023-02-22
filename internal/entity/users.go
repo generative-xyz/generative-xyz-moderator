@@ -54,12 +54,13 @@ type Users struct {
 }
 
 type ProfileSocial struct {
-	Web       string `bson:"web" json:"web,omitempty"`
-	Twitter   string `bson:"twitter" json:"twitter,omitempty"`
-	Discord   string `bson:"discord" json:"discord,omitempty"`
-	Medium    string `bson:"medium" json:"medium,omitempty"`
-	Instagram string `bson:"instagram" json:"instagram,omitempty"`
-	EtherScan string `bson:"etherScan" json:"ether_scan,omitempty"`
+	Web             string `bson:"web" json:"web,omitempty"`
+	Twitter         string `bson:"twitter" json:"twitter,omitempty"`
+	Discord         string `bson:"discord" json:"discord,omitempty"`
+	Medium          string `bson:"medium" json:"medium,omitempty"`
+	Instagram       string `bson:"instagram" json:"instagram,omitempty"`
+	EtherScan       string `bson:"etherScan" json:"ether_scan,omitempty"`
+	TwitterVerified bool   `bson:"twitter_verified" json:"twitterVerified,omitempty"`
 }
 
 func (u Users) TableName() string {

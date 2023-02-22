@@ -44,8 +44,6 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Logger.Info("reqUsecase", reqUsecase)
-	
-	
 
 	message, err := h.Usecase.CreateProject(*reqUsecase)
 	if err != nil {
@@ -61,7 +59,6 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -119,7 +116,6 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -137,7 +133,6 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
-	
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
@@ -182,7 +177,55 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Delete BTC project
+// @Description Delete BTC projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contract adress"
+// @Param projectID path string true "projectID adress"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID} [DELETE]
+func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.UpdateBTCProjectReq{}
+	reqUsecase.CreatetorAddress = &walletAddress
+	reqUsecase.ProjectID = &projectID
+
+	h.Logger.Info("reqUsecase", reqUsecase)
+
+	message, err := h.Usecase.DeleteBTCProject(*reqUsecase)
+	if err != nil {
+		h.Logger.Error("h.Usecase.DeleteProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		h.Logger.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -200,10 +243,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	projectID := vars["projectID"]
-	
 
 	project, err := h.Usecase.GetProjectDetail(structure.GetProjectDetailMessageReq{
 		ContractAddress: contractAddress,
@@ -226,7 +267,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
 
 	h.Logger.Info("resp.project", resp)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -291,7 +332,6 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
@@ -339,7 +379,6 @@ func (h *httpDelivery) getMintedOutProjects(w http.ResponseWriter, r *http.Reque
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
@@ -368,7 +407,6 @@ func (h *httpDelivery) getRandomProject(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -431,9 +469,17 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		resp.TraitStat = traitStat
 	}
 
-	profileResp, err := h.profileToResp(&input.CreatorProfile)
-	if err == nil {
-		resp.CreatorProfile = *profileResp
+	profile, err := h.Usecase.UserProfileByWallet(input.CreatorAddrr)
+	if err == nil && profile != nil && profile.ProfileSocial.TwitterVerified {
+		profileResp, err := h.profileToResp(profile)
+		if err == nil {
+			resp.CreatorProfile = *profileResp
+		}
+	} else {
+		profileResp, err := h.profileToResp(&input.CreatorProfile)
+		if err == nil {
+			resp.CreatorProfile = *profileResp
+		}
 	}
 
 	resp.MintPriceEth = input.MintPriceEth
@@ -485,7 +531,6 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
@@ -522,8 +567,6 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Logger.Info("reqUsecase", reqUsecase)
-	
-	
 
 	message, err := h.Usecase.UpdateProject(*reqUsecase)
 	if err != nil {
@@ -539,10 +582,8 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 
 // UserCredits godoc
 // @Summary Update project's categories
@@ -559,7 +600,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
-var reqBody request.UpdateBTCProjectCategoriesReq
+	var reqBody request.UpdateBTCProjectCategoriesReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
@@ -569,12 +610,11 @@ var reqBody request.UpdateBTCProjectCategoriesReq
 	}
 
 	reqUsecase := &structure.UpdateBTCProjectReq{
-		ProjectID: &projectID,
+		ProjectID:  &projectID,
 		Categories: reqBody.Categories,
 	}
 
 	h.Logger.Info("reqUsecase", reqUsecase)
-	
 
 	message, err := h.Usecase.SetCategoriesForBTCProject(*reqUsecase)
 	if err != nil {
@@ -590,7 +630,6 @@ var reqBody request.UpdateBTCProjectCategoriesReq
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -620,6 +659,5 @@ func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

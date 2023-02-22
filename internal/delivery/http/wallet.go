@@ -21,7 +21,7 @@ func (h *httpDelivery) inscriptionByOutput(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := h.Usecase.InscriptionsByOutputs(reqBody.Outputs)
+	result, _, err := h.Usecase.InscriptionsByOutputs(reqBody.Outputs)
 	if err != nil {
 		h.Logger.Error("httpDelivery.inscriptionByOutput.Usecase.InscriptionsByOutputs", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

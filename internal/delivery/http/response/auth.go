@@ -41,12 +41,13 @@ type ProjectBasicInfo struct {
 }
 
 type ProfileSocial struct {
-	Web       string `json:"web"`
-	Twitter   string `json:"twitter"`
-	Discord   string `json:"discord"`
-	Medium    string `json:"medium"`
-	Instagram string `json:"instagram"`
-	EtherScan string `json:"etherScan"`
+	Web             string `json:"web"`
+	Twitter         string `json:"twitter"`
+	Discord         string `json:"discord"`
+	Medium          string `json:"medium"`
+	Instagram       string `json:"instagram"`
+	EtherScan       string `json:"etherScan"`
+	TwitterVerified bool   `json:"twitterVerified"`
 }
 
 type LogoutResponse struct {

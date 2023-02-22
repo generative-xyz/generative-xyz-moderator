@@ -101,6 +101,20 @@ func (r Repository) UpdateMintNftBtc(model *entity.MintNftBtc) (*mongo.UpdateRes
 	return result, nil
 }
 
+// update seet filter
+func (r Repository) UpdateMintNftBtcByFilter(uuid string, updateFilter bson.M) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{Key: "uuid", Value: uuid},
+	}
+
+	result, err := r.DB.Collection(utils.MINT_NFT_BTC).UpdateOne(context.TODO(), f, updateFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) CreateMintNftBtcLog(logs *entity.MintNftBtcLogs) error {
 	err := r.InsertOne(logs.TableName(), logs)
 	if err != nil {

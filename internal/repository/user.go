@@ -28,7 +28,7 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 		return resp, nil
 	}
 
-	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, walletAddress}})
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, primitive.Regex{Pattern: walletAddress, Options: "i"}}})
 	if err != nil {
 		return nil, err
 	}
