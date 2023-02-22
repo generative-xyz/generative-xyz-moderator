@@ -461,14 +461,14 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	return p, nil
 }
 
-func (u Usecase) ReportProject(tokenId string) (*entity.Projects, error) {
+func (u Usecase) ReportProject(tokenId, iWalletAddress string) (*entity.Projects, error) {
 	p, err := u.Repo.FindProjectByTokenID(tokenId)
 	if err != nil {
 		u.Logger.Error("ReportProject.FindProjectBy", err.Error(), err)
 		return nil, err
 	}
 
-	p.ReportCount += 1
+	p.ReportUsers = append(p.ReportUsers, iWalletAddress)
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)

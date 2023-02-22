@@ -93,7 +93,7 @@ type Projects struct {
 	MintedImages           []MintedImages     `bson:"mintedImages" json:"mintedImages"` //if user uses links instead of animation URL
 	IsFullChain            bool               `bson:"isFullChain" json:"isFullChain"`
 	TraceID                string             `bson:"traceID" json:"traceID"` //TO find log easily
-	ReportCount            int64              `bson:"reportCount" json:"reportCount"`
+	ReportUsers            []string           `bson:"reportUsers" json:"reportUsers"`
 }
 
 type MintedImages struct {

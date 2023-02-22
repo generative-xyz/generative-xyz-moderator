@@ -594,28 +594,26 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 // @Param projectID path string true "projectID adress"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{projectID}/report [POST]
+// @Security Authorization
 func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("reportProject", r)
-	defer h.Tracer.FinishSpan(span, log)
-
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
-
-	message, err := h.Usecase.ReportProject(span, projectID)
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+	message, err := h.Usecase.ReportProject(projectID, iWalletAddress)
 	if err != nil {
-		log.Error("h.Usecase.reportProject", err.Error(), err)
+		h.Logger.Error("h.Usecase.reportProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp, err := h.projectToResp(message)
 	if err != nil {
-		log.Error("h.projectToResp", err.Error(), err)
+		h.Logger.Error("h.projectToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

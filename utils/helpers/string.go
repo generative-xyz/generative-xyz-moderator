@@ -85,12 +85,10 @@ func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, `}`, "")
 	key = strings.ReplaceAll(key, `!`, "")
 	key = strings.ReplaceAll(key, `=`, "")
-//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
+	//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	key = strings.ToLower(key)
 	return key
 }
-
-
 
 func Base64Decode(base64Str string) ([]byte, error) {
 	sDec, err := b64.StdEncoding.DecodeString(base64Str)
@@ -247,6 +245,15 @@ func CalcOrigBinaryLength(datas string) int {
 	// so orig length ==  (l*6 - eq*2) / 8
 
 	return (l*3 - eq) / 4
+}
+
+func SliceStringContains(slice []string, target string) bool {
+	for _, e := range slice {
+		if e == target {
+			return true
+		}
+	}
+	return false
 }
 
 func StringToBTCAmount(price string) *big.Float {
