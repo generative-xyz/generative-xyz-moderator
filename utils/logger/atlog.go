@@ -121,7 +121,7 @@ func init() {
 }
 
 // InitLoggerDefault -- format json
-func InitLoggerDefault(enableDebug bool) {
+func InitLoggerDefault(enableDebug bool) *autoLogger {
 	// init production encoder config
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -140,10 +140,11 @@ func InitLoggerDefault(enableDebug bool) {
 	sugarLog := logger.Sugar()
 	cfgParams := make(map[string]interface{})
 	atLog = &autoLogger{sugarLog, cfgParams, logger}
+	return atLog
 }
 
 // InitLoggerDefaultDev -- format text
-func InitLoggerDefaultDev() {
+func InitLoggerDefaultDev() *autoLogger {
 	// init development encoder config
 	encoderCfg := zap.NewDevelopmentEncoderConfig()
 	// init development config
@@ -156,6 +157,7 @@ func InitLoggerDefaultDev() {
 	sugarLog := logger.Sugar()
 	cfgParams := make(map[string]interface{})
 	atLog = &autoLogger{sugarLog, cfgParams, logger}
+	return atLog
 }
 
 // GetLoggerInstanceFromContext returns the logger instance from context

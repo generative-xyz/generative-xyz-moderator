@@ -23,7 +23,7 @@ require (
 	github.com/swaggo/http-swagger v1.1.2
 	github.com/swaggo/swag v1.8.2
 	github.com/tdewolff/minify/v2 v2.12.4
-	go.mongodb.org/mongo-driver v1.10.2
+	go.mongodb.org/mongo-driver v1.11.2
 	golang.org/x/crypto v0.6.0
 	google.golang.org/api v0.105.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
