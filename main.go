@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/signal"
+
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
@@ -16,12 +18,12 @@ import (
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
+	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
+	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
-	"rederinghub.io/internal/delivery/incribe_btc"
-	"rederinghub.io/internal/delivery/mint_nft_btc"
 	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
@@ -55,6 +57,7 @@ func init() {
 	}
 
 	l := _logger.NewLogger()
+	l.LogAny("config", zap.Any("config.NewConfig", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
