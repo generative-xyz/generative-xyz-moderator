@@ -20,7 +20,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
 	walletBasicInfo, err := getWalletInfo(address, apiToken, u.Logger)
 	if err != nil {
-		u.Logger.Info("GetBTCWalletInfo apiToken debug err", err)
+		u.Logger.Error("GetBTCWalletInfo apiToken debug err", err)
 		return nil, err
 	}
 
