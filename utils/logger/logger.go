@@ -17,20 +17,8 @@ type logger struct {
 
 func NewLogger() *logger {
 	l := &logger{}
-	
-	// init development encoder config
-	//encoderCfg := zap.NewProductionConfig()
-	// init development config
-	cfg := zap.NewProductionConfig()
-	//cfg.EncoderConfig = encoderCfg
-	cfg.OutputPaths = []string{"stdout"}
-	// build logger
-	logger, _ := cfg.Build()
-
-	sugarLog := logger.Sugar()
-	cfgParams := make(map[string]interface{})
-	atlog := &autoLogger{sugarLog, cfgParams, logger}
-	l.Module = atlog
+	log := InitLoggerDefaultDev()
+	l.Module = log
 	return l
 }
 
