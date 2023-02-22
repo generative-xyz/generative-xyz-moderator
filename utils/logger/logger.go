@@ -1,58 +1,63 @@
 package logger
 
-import (
-	"github.com/sirupsen/logrus"
-)
+import "go.uber.org/zap"
 
 type Ilogger interface {
+	LogAny(message string, fields ...zap.Field)
 	Info(fields ...interface{})
 	Error(fields ...interface{})
+	ErrorAny(message string, fields ...zap.Field)
 	Warning(fields ...interface{})
+	Infof(format string, fields ...interface{}) 
 }
 
 type logger struct {
-	Module *logrus.Logger
+	Module *autoLogger
 }
 
 func NewLogger() *logger {
 	l := &logger{}
+	
+	// init development encoder config
+	//encoderCfg := zap.NewProductionConfig()
+	// init development config
+	cfg := zap.NewProductionConfig()
+	//cfg.EncoderConfig = encoderCfg
+	cfg.OutputPaths = []string{"stdout"}
+	// build logger
+	logger, _ := cfg.Build()
 
-
-	formatter := &logrus.JSONFormatter{}
-	// formatter.SetColorScheme(&prefixed.ColorScheme{
-	// 	InfoLevelStyle:  "green",
-	// 	WarnLevelStyle:  "yellow",
-	// 	ErrorLevelStyle: "red",
-	// 	FatalLevelStyle: "red",
-	// 	PanicLevelStyle: "red",
-	// 	DebugLevelStyle: "blue",
-	// 	PrefixStyle:     "cyan",
-	// 	TimestampStyle:  "black+h",
-	// 	// InfoLevelStyle: "green+b",
-	// 	// PrefixStyle:    "blue+b",
-	// 	// TimestampStyle: "white+h",
-	// })
-
-	logrus.ParseLevel("debug")
-	logrus.SetFormatter(formatter)
-	logrus.SetReportCaller(true)
-	l.Module = logrus.StandardLogger()
-
+	sugarLog := logger.Sugar()
+	cfgParams := make(map[string]interface{})
+	atlog := &autoLogger{sugarLog, cfgParams, logger}
+	l.Module = atlog
 	return l
 }
 
 func (l *logger) Info(fields ...interface{}) {
-	l.Module.Info(fields...)
+	l.Module.SugaredLogger.Info(fields...)
+}
+
+func (l *logger) Infof(format string, fields ...interface{}) {
+	l.Module.SugaredLogger.Infof(format,fields)
 }
 
 func (l *logger) Error(fields ...interface{}) {
-	l.Module.Error(fields...)
+	l.Module.SugaredLogger.Error(fields...)
 }
 
 func (l *logger) Warning(fields ...interface{}) {
-	l.Module.Warn(fields...)
+	l.Module.SugaredLogger.Warn(fields...)
 }
 
 func (l *logger) Fatal(fields ...interface{}) {
-	l.Module.Fatal(fields ...)
+	l.Module.SugaredLogger.Fatal(fields ...)
+}
+
+func (l *logger) LogAny(message string, fields ...zap.Field) {
+	l.Module.Logger.Info(message, fields ...)
+}
+
+func (l *logger) ErrorAny(message string, fields ...zap.Field) {
+	l.Module.Logger.Error(message, fields ...)
 }
