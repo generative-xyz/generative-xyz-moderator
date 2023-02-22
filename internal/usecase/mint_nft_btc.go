@@ -391,6 +391,28 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		}
 		u.Logger.Info("project.Updated", updated)
 
+		fmt.Println("update project, token info when minting ...")
+
+		// create entity.TokenURI
+		_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
+		if err != nil {
+			fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
+			continue
+		}
+
+		err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+		if err != nil {
+			u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+			continue
+		}
+		_, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
+		if err != nil {
+			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
+		}
+
 		tmpText := resp.Stdout
 		//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
 		jsonStr := strings.ReplaceAll(tmpText, "\n", "")
@@ -505,29 +527,6 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			if err != nil {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				continue
-			}
-			fmt.Println("update project, token info when mint success...")
-			if item.Status == entity.StatusMint_Minted {
-
-				// create entity.TokenURI
-				_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
-				if err != nil {
-					fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
-					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
-					continue
-				}
-
-				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
-				if err != nil {
-					u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
-					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
-					continue
-				}
-				_, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
-				if err != nil {
-					fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
-				}
 			}
 		}
 
