@@ -111,8 +111,8 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
-			now := time.Now().UTC().String()
-			name := fmt.Sprintf("thumb/%s-%s-%s.png", token.ContractAddress, token.TokenID, now)
+			now := time.Now().UTC().Unix()
+			name := fmt.Sprintf("thumb/%s-%d.png", token.TokenID, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
