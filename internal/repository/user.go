@@ -188,7 +188,24 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 		return nil, err
 	}
 
-	resp.Result = users
+	data := []*response.ArtistResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		projects := []*response.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
+
+		d := &response.ArtistResponse{Projects: projects}
+		response.CopyEntityToRes(d, &user)
+		data = append(data, d)
+	}
+
+	resp.Result = data
 	//resp.Limit = p.Pagination.PerPage
 	resp.Page = p.Pagination.Page
 	// resp.Next = p.Pagination.Next
