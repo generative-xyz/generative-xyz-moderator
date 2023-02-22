@@ -217,11 +217,11 @@ func ConvertWeiFromEther(val float64) *big.Int {
 }
 
 // Transfer max
-func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, error) {
+func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, string, error) {
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return "", "0", err
 	}
 	publicKey := privateKey.Public()
 	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
@@ -233,19 +233,19 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, erro
 
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return "", "0", err
 	}
 
 	// Create the transaction
 	gasPrice, err := c.eth.SuggestGasPrice(context.Background())
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return "", "0", err
 	}
 
 	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
-		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
+		return "", "0", errors.Wrap(err, "s.ethClient.PendingNonceAt")
 	}
 
 	gasLimit := uint64(21000) // limit for sending ETH
@@ -259,22 +259,22 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, erro
 	// Sign the transaction
 	chainID, err := c.NetworkID(context.Background())
 	if err != nil {
-		return "", errors.Wrap(err, "c.NetworkID")
+		return "", "0", errors.Wrap(err, "c.NetworkID")
 	}
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return "", "0", err
 	}
 
 	// Send the transaction
 	err = c.SendTransaction(context.Background(), signedTx)
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return "", "0", err
 	}
 
 	fmt.Printf("Sent %s ETH from %s to %s\n", value.String(), fromAddress.Hex(), toAddress.Hex())
 
-	return signedTx.Hash().Hex(), nil
+	return signedTx.Hash().Hex(), value.String(), nil
 }
