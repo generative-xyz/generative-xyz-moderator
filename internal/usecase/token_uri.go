@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
@@ -34,13 +35,8 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 	if token == nil {
 		return nil, errors.New("Token is empty")
 	}
-
-	
-	
 	resp := &structure.TokenAnimationURI{}
-
-	u.Logger.Info("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
-
+	u.Logger.LogAny("RunAndCap", zap.Any("token", token))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -52,9 +48,6 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		}
 		return resp, nil
 	}
-
-	
-	
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
@@ -80,6 +73,8 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 		imageURL = fileURI
 	}
+	u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
+	u.Logger.LogAny("RunAndCap", zap.Any("fileURI", imageURL))
 
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
@@ -91,7 +86,7 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 	)
 
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.Error("RunAndCap", zap.Any("chromedp.Run", err))
 	}
 
 	for key, item := range traits {
@@ -121,9 +116,9 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				u.Logger.Error(err)
+				u.Logger.ErrorAny("RunAndCap", zap.Any("UploadBaseToBucket", err))
 			} else {
-				u.Logger.Info("uploaded", uploaded)
+				u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
@@ -138,7 +133,7 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		IsUpdated:   true,
 	}
 
-	u.Logger.Info("structure.TokenAnimationURI.IsUpdated", resp.IsUpdated)
+	u.Logger.LogAny("RunAndCap", zap.Any("resp", resp))
 	return resp, nil
 }
 
