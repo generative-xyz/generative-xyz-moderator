@@ -383,6 +383,33 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	return p, nil
 }
 
+func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
+
+	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
+		return nil, err
+	}
+	if p.CreatorAddrr != *req.CreatetorAddress {
+		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
+		return nil, err
+	}
+
+	p.IsSynced = false
+	p.Status = false
+	p.IsHidden = true
+
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
+		return nil, err
+	}
+
+	u.Logger.Info("updated", updated)
+	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
+	return p, nil
+}
+
 func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {
