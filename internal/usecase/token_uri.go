@@ -822,3 +822,63 @@ uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/tok
 	u.Logger.Info("updated", updated)
 	return token, nil
 }
+
+// When go to this, you need to make sure that meta's project is created
+func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
+	// find project by projectID
+	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	tokenUri := entity.TokenUri{}
+	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.TokenID = inscription.ID
+	blockNumberMinted := "31012412"
+	tokenUri.BlockNumberMinted = &blockNumberMinted
+	tokenUri.Creator = &project.CreatorProfile
+	tokenUri.CreatorAddr = project.CreatorAddrr
+	tokenUri.Description = project.Description
+	tokenUri.GenNFTAddr = project.GenNFTAddr
+
+	mintedTime := time.Now()
+	tokenUri.MintedTime = &mintedTime
+	tokenUri.Name = inscription.Meta.Name
+	tokenUri.Project = project
+	tokenUri.ProjectID = project.TokenID
+	tokenUri.ProjectIDInt = project.TokenIDInt
+	tokenUri.IsOnchain = false
+	tokenUri.CreatedByCollectionInscription = true
+
+	nftTokenUri := project.NftTokenUri
+	u.Logger.Info("nftTokenUri", nftTokenUri)
+
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err = helpers.Base64DecodeRaw(project.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	imageURI := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", inscription.ID)
+	tokenUri.AnimationURL = ""
+	tokenUri.Thumbnail = imageURI
+	tokenUri.Image = imageURI
+	tokenUri.ParsedImage = &imageURI
+	tokenUri.ThumbnailCapturedAt = &now
+	u.Logger.Info("mintedURL", imageURI)
+
+	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	return pTokenUri, nil
+}
