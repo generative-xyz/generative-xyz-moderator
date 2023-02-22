@@ -452,3 +452,20 @@ func (r Repository) UpdateTokenOwnerAddr(tokenId string, addr string) error {
 	}
 	return err
 }
+
+func (r Repository) FindOneTokenByListOfTokenIds(tokenIds []string) (*entity.TokenUri, error) {
+	resp := &entity.TokenUri{}
+	filter := bson.D{
+		{Key: "token_id", Value: bson.M{"$in": tokenIds}},
+	}
+	usr, err := r.FilterOne(entity.TokenUri{}.TableName(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}

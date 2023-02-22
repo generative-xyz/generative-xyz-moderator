@@ -20,7 +20,8 @@ type CollectionInscription struct {
 			Percent   string `bson:"percent" json:"percent"`
 		} `bson:"attributes" json:"attributes"`
 	} `bson:"meta" json:"meta"`
-	CollectionInscriptionIcon string `bson:"collection_inscription_icon" json:"collection_inscription_icon"`
+	CollectionInscriptionIcon string `bson:"collection_inscription_icon"`
+	TokenCreated bool `bson:"token_created"`
 }
 
 func (u CollectionInscription) TableName() string { 
