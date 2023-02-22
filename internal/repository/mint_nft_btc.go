@@ -141,3 +141,19 @@ func (r Repository) ListMintNftBtcByStatusAndAddress(address string, statuses []
 
 	return resp, nil
 }
+
+func (r Repository) UpdateTokenInscriptionIndexForMint(tokenId string, inscriptionIndex string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"inscription_index": inscriptionIndex,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
