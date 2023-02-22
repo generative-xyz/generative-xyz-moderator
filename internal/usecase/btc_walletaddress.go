@@ -816,7 +816,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			minting = &structure.MintingInscription{
 				ID:           item.UUID,
 				CreatedAt:    item.CreatedAt,
-				Status:       "waiting for funds",
+				Status:       "Waiting for payment",
 				FileURI:      item.FileURI,
 				ProjectID:    item.ProjectID,
 				ProjectImage: projectInfo.Thumbnail,
@@ -827,7 +827,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				minting = &structure.MintingInscription{
 					ID:           item.UUID,
 					CreatedAt:    item.CreatedAt,
-					Status:       "minting",
+					Status:       "Minting",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
@@ -837,7 +837,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				minting = &structure.MintingInscription{
 					ID:           item.UUID,
 					CreatedAt:    item.CreatedAt,
-					Status:       "transferring",
+					Status:       "Transferring",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
