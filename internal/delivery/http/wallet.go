@@ -32,7 +32,6 @@ func (h *httpDelivery) inscriptionByOutput(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *httpDelivery) walletInfo(w http.ResponseWriter, r *http.Request) {
-
 	address := r.URL.Query().Get("address")
 
 	if address == "" {
