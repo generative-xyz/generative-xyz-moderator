@@ -36,15 +36,14 @@ const (
 
 var StatusMintToText = map[StatusMint]string{
 
-	StatusMint_Pending:      "Waiting for payment",
+	StatusMint_Pending: "Waiting for payment",
 
-	StatusMint_WaitingForConfirms: "Waiting for confirmations",
+	StatusMint_WaitingForConfirms: "Waiting for payment confirmation",
 
-	StatusMint_ReceivedFund: "Payment received",
-
+	StatusMint_ReceivedFund: "Minting",
 
 	StatusMint_Minting: "Minting",
-	StatusMint_Minted:  "Minted",
+	StatusMint_Minted:  "Transferring",
 
 	StatusMint_SendingNFTToUser: "Transferring",
 	StatusMint_SentNFTToUser:    "Transferred",
@@ -59,7 +58,7 @@ var StatusMintToText = map[StatusMint]string{
 	StatusMint_Refunding: "Refunding",
 	StatusMint_Refunded:  "Refunded",
 
-	StatusMint_TxRefundFailed: "Refund failed",
+	StatusMint_TxRefundFailed: "Refunding",
 }
 
 type MintNftBtc struct {
