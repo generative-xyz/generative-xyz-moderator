@@ -1,8 +1,6 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -325,9 +323,6 @@ func NewConfig() (*Config, error) {
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
 	}
-
-	c, _ := json.MarshalIndent(conf, "", "\t")
-	fmt.Println("Config:", string(c))
 
 	return conf, nil
 }

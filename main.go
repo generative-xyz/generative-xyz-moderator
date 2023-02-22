@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/signal"
+
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
@@ -29,6 +31,7 @@ import (
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
+	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
@@ -54,6 +57,7 @@ func init() {
 	}
 
 	l := _logger.NewLogger()
+	l.LogAny("config", zap.Any("config.NewConfig", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
@@ -142,6 +146,7 @@ func startServer() {
 		CovalentNFT:     *covalent,
 		Blockchain:      *ethClient,
 		Slack:           *slack,
+		DiscordClient:   discordclient.NewCLient(),
 		Pubsub:          rPubsub,
 		OrdService:      ord,
 		DelegateService: delegateService,

@@ -73,20 +73,24 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
+
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
+
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
 
 	projectAuth := api.PathPrefix("/project").Subrouter()
 	projectAuth.Use(h.MiddleWare.AccessToken)
+	projectAuth.HandleFunc("/{projectID}/report", h.reportProject).Methods("POST")
 	projectAuth.HandleFunc("/btc", h.createBTCProject).Methods("POST")
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
+	projectAuth.HandleFunc("/{contractAddress}/{projectID}", h.deleteBTCProject).Methods("DELETE")
 
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
@@ -190,6 +194,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
+	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
 }
 

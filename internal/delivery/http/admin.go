@@ -134,7 +134,7 @@ func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param request body request.ListNftIdsReq true " Auto listing"
-// @Success 200 {object} response.JsonResponse{data=true/false}
+// @Success 200 {object} response.JsonResponse{data=bool}
 // @Router /admin/auto-listing [POST]
 func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 
