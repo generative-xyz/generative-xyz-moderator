@@ -907,13 +907,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					ID:           item.UUID,
-					CreatedAt:    item.CreatedAt,
-					Status:       "Transferring",
-					FileURI:      item.FileURI,
-					ProjectID:    item.ProjectID,
-					ProjectImage: projectInfo.Thumbnail,
-					ProjectName:  projectInfo.Name,
+					ID:            item.UUID,
+					CreatedAt:     item.CreatedAt,
+					Status:        "Transferring",
+					FileURI:       item.FileURI,
+					ProjectID:     item.ProjectID,
+					ProjectImage:  projectInfo.Thumbnail,
+					ProjectName:   projectInfo.Name,
+					InscriptionID: item.InscriptionID,
 				}
 			}
 		}
@@ -956,13 +957,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					ID:           item.UUID,
-					CreatedAt:    item.CreatedAt,
-					Status:       "Transferring",
-					FileURI:      item.FileURI,
-					ProjectID:    item.ProjectID,
-					ProjectImage: projectInfo.Thumbnail,
-					ProjectName:  projectInfo.Name,
+					ID:            item.UUID,
+					CreatedAt:     item.CreatedAt,
+					Status:        "Transferring",
+					FileURI:       item.FileURI,
+					ProjectID:     item.ProjectID,
+					ProjectImage:  projectInfo.Thumbnail,
+					ProjectName:   projectInfo.Name,
+					InscriptionID: item.InscriptionID,
 				}
 			}
 		}
@@ -989,13 +991,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			status = entity.StatusMintToText[item.Status]
 		}
 		minting := structure.MintingInscription{
-			ID:           item.UUID,
-			CreatedAt:    item.CreatedAt,
-			Status:       status,
-			FileURI:      item.FileURI,
-			ProjectID:    item.ProjectID,
-			ProjectImage: projectInfo.Thumbnail,
-			ProjectName:  projectInfo.Name,
+			ID:            item.UUID,
+			CreatedAt:     item.CreatedAt,
+			Status:        status,
+			FileURI:       item.FileURI,
+			ProjectID:     item.ProjectID,
+			ProjectImage:  projectInfo.Thumbnail,
+			ProjectName:   projectInfo.Name,
+			InscriptionID: item.InscriptionID,
 		}
 		result = append(result, minting)
 	}
