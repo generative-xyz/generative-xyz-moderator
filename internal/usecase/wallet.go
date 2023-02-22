@@ -15,7 +15,7 @@ import (
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
 	var result structure.WalletInfo
-	apiToken := u.Config.BlockcypherAPI
+	apiToken := u.Config.BlockcypherToken
 	walletBasicInfo, err := getWalletInfo(address, apiToken)
 	if err != nil {
 		return nil, err
