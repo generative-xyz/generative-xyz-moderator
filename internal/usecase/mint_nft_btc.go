@@ -762,7 +762,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 // send send max fund to master address:
 func (u Usecase) JobMint_SendFundToMaster() error {
 
-	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_Minted)})
+	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_SentNFTToUser)})
 
 	if len(listToSentMaster) == 0 {
 		return nil
