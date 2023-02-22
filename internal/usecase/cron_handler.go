@@ -73,7 +73,7 @@ func (u Usecase) SyncUserStats() error {
 	for _, project := range u.gData.AllProjects {
 		addressToCollectionCreated[project.CreatorAddrr]++
 
-		if project.MintingInfo.Index == 0 {
+		if project.MintingInfo.Index == 0 || project.IsHidden {
 			continue
 		}
 
