@@ -184,9 +184,12 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 		s = r.SortProjects()
 	} else {
 		s = []Sort{
-			{SortBy: "priority", Sort: entity.SORT_DESC}, //priority is alway used in sorting
 			{SortBy: filter.SortBy, Sort: filter.Sort},
 			{SortBy: "tokenid", Sort: entity.SORT_DESC},
+		}
+
+		if filter.SortBy == "stats.trending_score" {
+			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC} )
 		}
 	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)

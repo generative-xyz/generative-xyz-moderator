@@ -55,6 +55,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 			return nil, nil, err
 		}
 		if len(inscriptions.Inscriptions) > 0 {
+			outputInscMap[output] = inscriptions.Inscriptions
 			for _, insc := range inscriptions.Inscriptions {
 				data, err := getInscriptionByID(ordServer, insc)
 				if err != nil {
@@ -64,12 +65,19 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 				if err != nil {
 					return nil, nil, err
 				}
-				result[output] = append(result[output], structure.WalletInscriptionInfo{
+				inscWalletInfo := structure.WalletInscriptionInfo{
 					InscriptionID: data.InscriptionID,
 					Number:        data.Number,
 					ContentType:   data.ContentType,
 					Offset:        offset,
-				})
+				}
+				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
+				if internalInfo != nil {
+					inscWalletInfo.ProjectID = internalInfo.ProjectID
+					inscWalletInfo.ProjecName = internalInfo.Project.Name
+					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+				}
+				result[output] = append(result[output], inscWalletInfo)
 			}
 		}
 	}
