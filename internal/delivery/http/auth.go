@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 
@@ -37,7 +38,7 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Logger.Info("request.decoder", decoder)
+	h.Logger.LogAny("generateMessage", zap.Any("reqBody", reqBody))
 	message, err := h.Usecase.GenerateMessage(structure.GenerateMessage{
 		Address: *reqBody.Address,
 	})
@@ -49,7 +50,6 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Logger.Info("resp.message", message)
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.GeneratedMessage{Message: *message}, "")
 }
 
