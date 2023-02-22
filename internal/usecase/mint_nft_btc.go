@@ -888,7 +888,6 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			status, err := ethClient.GetTransaction(context, txToCheck)
-			fmt.Println("status, err", status, err)
 			if err == nil {
 				if status > 0 {
 					confirm = 1
