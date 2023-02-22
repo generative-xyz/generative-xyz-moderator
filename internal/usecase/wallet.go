@@ -20,6 +20,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	if err != nil {
 		return nil, err
 	}
+	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
 
 	result.BlockCypherWalletInfo = *walletBasicInfo
 	outcoins := []string{}
@@ -175,6 +176,7 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 
 	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 	fmt.Println("url", url)
+
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
