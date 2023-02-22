@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"os"
 	"sort"
@@ -16,7 +17,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u *Usecase) PrepareData() (error) {
+func (u *Usecase) PrepareData() error {
 	allListings, err := u.Repo.GetAllListings()
 	if err != nil {
 		return err
@@ -39,12 +40,16 @@ func (u *Usecase) PrepareData() (error) {
 	}
 	u.gData = gData{
 		AllListings: allListings,
-		AllOffers: allOffers,
-		AllTokens: allTokens,
-		AllProfile: allProfiles,
+		AllOffers:   allOffers,
+		AllTokens:   allTokens,
+		AllProfile:  allProfiles,
 		AllProjects: allProjects,
 	}
 	return nil
+}
+
+func roundTo8DecimalPlaces(x float64) float64 {
+	return math.Ceil(x*100000000) / 100000000
 }
 
 func (u Usecase) SyncUserStats() error {
@@ -52,12 +57,14 @@ func (u Usecase) SyncUserStats() error {
 	addressToCollectionCreated := make(map[string]int32)
 	addressToNftMinted := make(map[string]int32)
 	addressToOutputMinted := make(map[string]int32)
+	addressToVolumeMinted := make(map[string]float64)
 
 	for _, token := range u.gData.AllTokens {
 		u.Logger.Info(fmt.Sprintf("tokenId=%s", token.TokenID), token.TokenID)
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
 		}
+
 		if token.CreatorAddr != "" {
 			addressToOutputMinted[token.CreatorAddr]++
 		}
@@ -65,11 +72,23 @@ func (u Usecase) SyncUserStats() error {
 
 	for _, project := range u.gData.AllProjects {
 		addressToCollectionCreated[project.CreatorAddrr]++
+
+		if project.MintingInfo.Index == 0 {
+			continue
+		}
+
+		if _, ok := addressToVolumeMinted[project.CreatorAddrr]; !ok {
+			addressToVolumeMinted[project.CreatorAddrr] = 0
+		}
+
+		mintPrice, _ := strconv.ParseInt(project.MintPrice, 10, 64)
+		amount := mintPrice * project.MintingInfo.Index
+		addressToVolumeMinted[project.CreatorAddrr] += roundTo8DecimalPlaces(float64(amount))
 	}
 
 	wg := new(sync.WaitGroup)
 
-	updateUserStats := func (wg *sync.WaitGroup, address string, stats entity.UserStats) {
+	updateUserStats := func(wg *sync.WaitGroup, address string, stats entity.UserStats) {
 		defer wg.Done()
 		//u.Logger.Info(fmt.Sprintf("update user stats address=%s", address), stats)
 		u.Repo.UpdateUserStats(address, stats)
@@ -81,27 +100,38 @@ func (u Usecase) SyncUserStats() error {
 		collectionCreated := addressToCollectionCreated[user.WalletAddress]
 		nftMinted := addressToNftMinted[user.WalletAddress]
 		outputMinted := addressToOutputMinted[user.WalletAddress]
+		volumeMint := addressToVolumeMinted[user.WalletAddress]
+
 		u.Logger.Info(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
 		if collectionCreated != user.Stats.CollectionCreated {
 			user.Stats.CollectionCreated = collectionCreated
-			update = true			}
+			update = true
+		}
+
 		if nftMinted != user.Stats.NftMinted {
 			user.Stats.NftMinted = nftMinted
 			update = true
 		}
+
 		if outputMinted != user.Stats.OutputMinted {
 			user.Stats.OutputMinted = outputMinted
 			update = true
 		}
+
+		if volumeMint != user.Stats.VolumeMinted {
+			user.Stats.VolumeMinted = volumeMint
+			update = true
+		}
+
 		if update {
 			wg.Add(1)
 
 			go updateUserStats(wg, user.WalletAddress, user.Stats)
-			if processed % 5 == 0 {
+			if processed%5 == 0 {
 				time.Sleep(5 * time.Second)
 			}
 
-			processed ++
+			processed++
 		}
 	}
 
@@ -130,7 +160,7 @@ func (u Usecase) SyncTokenAndMarketplaceData() error {
 		err := u.syncMarketplaceOfferTokenOwner(&gData)
 		errChan <- err
 	}(wg, errChan)
-wg.Wait()
+	wg.Wait()
 	close(errChan)
 
 	for e := range errChan {
@@ -144,7 +174,7 @@ wg.Wait()
 }
 
 // synchronize token data
-func (u Usecase) syncMarketplaceDurationAndTokenPrice( gData *gData) error {
+func (u Usecase) syncMarketplaceDurationAndTokenPrice(gData *gData) error {
 	allListings := u.gData.AllListings
 	allOffers := u.gData.AllOffers
 	allTokens := u.gData.AllTokens
@@ -169,7 +199,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice( gData *gData) error {
 			return activeListings[i].CreatedAt.After(*activeListings[j].CreatedAt)
 		}
 		return activeListings[i].BlockNumber > activeListings[j].BlockNumber
-	});
+	})
 
 	curTime := time.Now().Unix()
 	// update listing/offer that closed
@@ -199,7 +229,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice( gData *gData) error {
 			}
 		}
 	}
-// map from token id to price
+	// map from token id to price
 	fromTokenIdToPrice := make(map[string]int64)
 	for _, listing := range activeListings {
 		if _, ok := fromTokenIdToPrice[listing.TokenId]; !ok && !listing.Closed {
@@ -250,30 +280,30 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice( gData *gData) error {
 	return nil
 }
 
-func (u Usecase) syncMarketplaceOfferTokenOwner( gData *gData) error {
+func (u Usecase) syncMarketplaceOfferTokenOwner(gData *gData) error {
 
 	allListings := gData.AllListings
 	allOffers := gData.AllOffers
 	allTokens := gData.AllTokens
-tokenIdToToken := make(map[string]entity.TokenUri)
+	tokenIdToToken := make(map[string]entity.TokenUri)
 	for _, token := range allTokens {
 		tokenIdToToken[token.TokenID] = token
 	}
 
-	updateListingOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
+	updateListingOwner := func(wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
 		u.Logger.Info(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateListingOwnerAddress(offeringID, ownerAddress)
 	}
 
-	updateOfferOwner := func (wg *sync.WaitGroup, offeringID string, ownerAddress string) {
+	updateOfferOwner := func(wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
 		u.Logger.Info(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
 		u.Repo.UpdateOfferOwnerAddress(offeringID, ownerAddress)
 	}
 
 	wg := new(sync.WaitGroup)
-counter := 0;
+	counter := 0
 
 	for _, listing := range allListings {
 		token, ok := tokenIdToToken[listing.TokenId]
@@ -282,7 +312,7 @@ counter := 0;
 		}
 		if listing.OwnerAddress == nil || *listing.OwnerAddress != token.OwnerAddr {
 			counter++
-			if counter % 20 == 0 {
+			if counter%20 == 0 {
 				time.Sleep(time.Second)
 			}
 			wg.Add(1)
@@ -297,7 +327,7 @@ counter := 0;
 		}
 		if offer.OwnerAddress == nil || *offer.OwnerAddress != token.OwnerAddr {
 			counter++
-			if counter % 20 == 0 {
+			if counter%20 == 0 {
 				time.Sleep(time.Second)
 			}
 			wg.Add(1)
@@ -313,41 +343,41 @@ counter := 0;
 func (u Usecase) GetTheCurrentBlockNumber() error {
 	block, err := u.Blockchain.GetBlockNumber()
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", err.Error(), err)
 		return err
 	}
 
-	u.Logger.Info("block",block)
+	u.Logger.Info("block", block)
 	return nil
 }
 
 func (u Usecase) UpdateProposalState() error {
 	block, err := u.Blockchain.GetBlock()
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", err.Error(), err)
 		return err
 	}
 
 	proposals, err := u.Repo.AllProposals(entity.FilterProposals{})
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.AllProposals",err.Error(), err)
+		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.AllProposals", err.Error(), err)
 		return err
 	}
 
 	addr := common.HexToAddress(os.Getenv("DAO_PROPOSAL_CONTRACT"))
 	daoContract, err := generative_dao.NewGenerativeDao(addr, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error(err)
 		return err
 	}
 
 	processed := 0
 	processChain := make(chan bool, len(proposals))
-for _, proposal := range proposals {
+	for _, proposal := range proposals {
 
-		go func ( proposal entity.Proposal)  {
+		go func(proposal entity.Proposal) {
 
-			defer func(){
+			defer func() {
 				processChain <- true
 			}()
 
@@ -357,19 +387,19 @@ for _, proposal := range proposals {
 				state, err := daoContract.State(nil, n)
 				if err == nil {
 					proposal.State = state
-				}else{
+				} else {
 					u.Logger.Error(err)
 				}
 
 				vote, err := daoContract.Proposals(nil, n)
 				if err != nil {
 					u.Logger.Error(err)
-				}else{
+				} else {
 					//createdProposal.State = state
 					u.Logger.Info("daoContract.Proposals.vote", vote)
 				}
 
-				forVote :=  helpers.ParseBigToFloat(vote.ForVotes)
+				forVote := helpers.ParseBigToFloat(vote.ForVotes)
 				againstVote := helpers.ParseBigToFloat(vote.AgainstVotes)
 				abstainVote := helpers.ParseBigToFloat(vote.AbstainVotes)
 				percentFor := float64(0)
@@ -378,56 +408,56 @@ for _, proposal := range proposals {
 
 				total := forVote + againstVote + abstainVote
 				if total != 0 {
-					percentFor =  float64((forVote / total ) * 100)
-					percentAgainst =  float64((againstVote / total ) * 100)
-					percentAbstain =  float64((abstainVote / total ) * 100)
+					percentFor = float64((forVote / total) * 100)
+					percentAgainst = float64((againstVote / total) * 100)
+					percentAbstain = float64((abstainVote / total) * 100)
 				}
 
 				proposal.Vote = entity.ProposalVote{
-					For: vote.ForVotes.String(),
-					ForNum: forVote,
-					Against: vote.AgainstVotes.String(),
-					Abstain: vote.AbstainVotes.String(),
-					Total: fmt.Sprintf("%f", total),
-					TotalNum: total,
-					PercentFor: percentFor,
+					For:            vote.ForVotes.String(),
+					ForNum:         forVote,
+					Against:        vote.AgainstVotes.String(),
+					Abstain:        vote.AbstainVotes.String(),
+					Total:          fmt.Sprintf("%f", total),
+					TotalNum:       total,
+					PercentFor:     percentFor,
 					PercentAgainst: percentAgainst,
 					PercentAbstain: percentAbstain,
 				}
 
 				if proposal.ProposalID == "35751750717610809166312996604681477486540366891662940411672289868284123500445" {
- 					test :=  helpers.ParseBigToFloat(vote.ForVotes)
+					test := helpers.ParseBigToFloat(vote.ForVotes)
 					spew.Dump(proposal.Vote)
 					_ = test
 				}
 			}
-		proposal.CurrentBlock = block.Number.Int64()
-			proposal.CurrentBlockTime = helpers.ParseUintToUnixTime(block.Time) 
+			proposal.CurrentBlock = block.Number.Int64()
+			proposal.CurrentBlockTime = helpers.ParseUintToUnixTime(block.Time)
 
-			stB, err :=  u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.StartBlock))
+			stB, err := u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.StartBlock))
 			if err == nil {
-				proposal.StartBlockTime = helpers.ParseUintToUnixTime(stB.Time()) 
+				proposal.StartBlockTime = helpers.ParseUintToUnixTime(stB.Time())
 			}
 
-			eBB, err :=  u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.EndBlock))
+			eBB, err := u.Blockchain.GetBlockByNumber(*big.NewInt(proposal.EndBlock))
 			if err == nil {
 				proposal.EndBlockTime = helpers.ParseUintToUnixTime(eBB.Time())
 			}
-				 
+
 			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
 			if err != nil {
 				u.Logger.Error(err)
 			}
 			u.Logger.Info("Updated", updated)
-			}(proposal)
+		}(proposal)
 
-		if processed % 10 == 0{
+		if processed%10 == 0 {
 			time.Sleep(5 * time.Second)
 		}
 	}
 
-	for i := 0; i< len(proposals) ; i ++ {
-		<- processChain
+	for i := 0; i < len(proposals); i++ {
+		<-processChain
 	}
 
 	return nil
@@ -448,7 +478,7 @@ func (u Usecase) SyncLeaderboard() error {
 
 	addressToOldRank := make(map[string]*int32)
 	addressToOldBalance := make(map[string]*string)
-for _, tokenHolder := range allTokenHolders {
+	for _, tokenHolder := range allTokenHolders {
 		addressToOldRank[tokenHolder.Address] = tokenHolder.OldRank
 		addressToOldBalance[tokenHolder.Address] = tokenHolder.OldBalance
 	}
@@ -480,7 +510,7 @@ for _, tokenHolder := range allTokenHolders {
 		if !ok {
 			addressToProjects[project.CreatorAddrr] = []entity.Projects{}
 		}
-		addressToProjects[project.CreatorAddrr] = append(addressToProjects[project.CreatorAddrr], project) 
+		addressToProjects[project.CreatorAddrr] = append(addressToProjects[project.CreatorAddrr], project)
 	}
 
 	// map from user's address to set of owner of user's token
@@ -504,19 +534,19 @@ for _, tokenHolder := range allTokenHolders {
 		for i := l; i < r; i++ {
 			_tokenHolder := &allNewTokenHolders[i]
 			tokenHolder := entity.TokenHolder{
-				ContractDecimals: _tokenHolder.ContractDecimals,
-				ContractName: _tokenHolder.ContractName,
+				ContractDecimals:     _tokenHolder.ContractDecimals,
+				ContractName:         _tokenHolder.ContractName,
 				ContractTickerSymbol: _tokenHolder.ContractTickerSymbol,
-				ContractAddress: _tokenHolder.ContractAddress,
-				SupportsErc: _tokenHolder.SupportsErc,
-				LogoURL: _tokenHolder.LogoURL,
-				Address: _tokenHolder.Address,
-				Balance: _tokenHolder.Balance,
-				TotalSupply: _tokenHolder.TotalSupply,
-				BlockHeight: _tokenHolder.BlockHeight,
-				CurrentRank: int32(l + 1),
-				OldRank: addressToOldRank[_tokenHolder.Address],
-				OldBalance: addressToOldBalance[_tokenHolder.Address],
+				ContractAddress:      _tokenHolder.ContractAddress,
+				SupportsErc:          _tokenHolder.SupportsErc,
+				LogoURL:              _tokenHolder.LogoURL,
+				Address:              _tokenHolder.Address,
+				Balance:              _tokenHolder.Balance,
+				TotalSupply:          _tokenHolder.TotalSupply,
+				BlockHeight:          _tokenHolder.BlockHeight,
+				CurrentRank:          int32(l + 1),
+				OldRank:              addressToOldRank[_tokenHolder.Address],
+				OldBalance:           addressToOldBalance[_tokenHolder.Address],
 			}
 			profile, ok := addressToProfile[_tokenHolder.Address]
 			pProfile := &profile
@@ -569,9 +599,10 @@ func (u Usecase) SyncProjectsStats() error {
 			if err != nil {
 				return err
 			}
-			if processed % 10 == 0 {
+			if processed%10 == 0 {
 				time.Sleep(1 * time.Second)
-			}			}
+			}
+		}
 	}
 
 	return nil
@@ -599,7 +630,7 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 		if err == nil && profile != nil {
 			u.Repo.UpdateTokenOwner(inscribeInfo.ID, profile)
 		}
-		if processed % 10 == 0 {
+		if processed%10 == 0 {
 			time.Sleep(time.Second)
 		}
 	}
@@ -607,15 +638,15 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 }
 
 const (
-	INF_TRENDING_SCORE   	         int64 = 9223372036854775807 // max int64 value
-	SATOSHI_EACH_BTC							 int64 = 100000000
+	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
+	SATOSHI_EACH_BTC               int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
 func (u Usecase) SyncProjectTrending() error {
 
-	// All btc activities, which include Mint and Buy activity 
+	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
 		return err
@@ -645,7 +676,7 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
-		trendingScore := countView * TRENDING_SCORE_EACH_VIEW +  volumnInBtc * TRENDING_SCORE_EACH_BTC_VOLUMN
+		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN
 
 		isWhitelistedProject := false
 		isBoostedProject := false
@@ -672,7 +703,7 @@ func (u Usecase) SyncProjectTrending() error {
 
 		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 
-		if processed % 10 == 0 {
+		if processed%10 == 0 {
 			time.Sleep(1 * time.Second)
 		}
 	}
