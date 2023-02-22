@@ -14,7 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"gopkg.in/mgo.v2/bson"
+	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -447,6 +447,9 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		go u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", item.PayType, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
 
+		// try to update inscription_index
+		go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+
 	}
 
 	return nil
@@ -538,8 +541,12 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				continue
 			}
-		}
+			if item.Status == entity.StatusMint_Minted {
+				// update inscription_index for token uri
+				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+			}
 
+		}
 	}
 
 	return nil
@@ -973,4 +980,13 @@ func (u *Usecase) trackMintNftBtcHistory(id, name, table string, status interfac
 		}
 	}
 
+}
+func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) error {
+	inscribeInfo, err := u.GetInscribeInfo(inscriptionID)
+	if err != nil {
+		return err
+	}
+	u.Repo.UpdateTokenInscriptionIndexForMint(inscriptionID, inscribeInfo.Index)
+
+	return nil
 }
