@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,11 +12,13 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -643,6 +646,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 				}
 
 				go u.CreateMintActivity(item.InscriptionID, item.Amount)
+				go u.NotifyNFTMinted(item.UserAddress, item.InscriptionID, item.MintResponse.Fees)
 
 				//TODO: - create entity.TokenURI
 				_, err = u.CreateBTCTokenURI(item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
@@ -665,6 +669,74 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 	}
 
 	return nil, nil
+}
+
+func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkFee int) {
+	domain := os.Getenv("DOMAIN")
+	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
+	u.Logger.Info(
+		"NotifyNFTMinted",
+		zap.String("userAddr", userAddr),
+		zap.String("inscriptionID", inscriptionID),
+		zap.Int("networkFee", networkFee),
+	)
+
+	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err))
+		return
+	}
+
+	user, err := u.Repo.FindUserByWalletAddress(userAddr)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress failed", zap.Any("err", err))
+		return
+	}
+
+	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
+		return
+	}
+
+	fields := make([]discordclient.Field, 0)
+	addFields := func(fields []discordclient.Field, name string, value string) []discordclient.Field {
+		if value == "" {
+			return fields
+		}
+		return append(fields, discordclient.Field{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	fields = addFields(fields, "Total Price", u.resolveMintPriceBTC(project.MintPrice))
+	fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
+
+	discordMsg := discordclient.Message{
+		Username: "Satoshi 27",
+		Embeds: []discordclient.Embed{{
+			Title: fmt.Sprintf("just minted a %s", project.Name),
+			Url:   fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID), // todo
+			Author: discordclient.Author{
+				Name:    u.resolveShortName(user.DisplayName, user.WalletAddress),
+				Url:     fmt.Sprintf("%s/profile/%s", domain, user.WalletAddress),
+				IconUrl: user.Avatar,
+			},
+			Fields: fields,
+			Image: discordclient.Image{
+				Url: tokenUri.Thumbnail,
+			},
+		}},
+	}
+	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFn()
+
+	u.Logger.Info("sending message to discord", discordMsg)
+
+	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
+		u.Logger.Error("error sending message to discord", err)
+	}
 }
 
 //End Mint flow
@@ -793,7 +865,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	listETH = append(listETH, listETH1...)
 	listETH = append(listETH, listETH2...)
 
-	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding})
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
 	if err != nil {
 		return nil, err
 	}
@@ -809,12 +881,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			continue
 		}
 		var minting *structure.MintingInscription
-		if time.Since(*item.CreatedAt) >= 6*time.Hour {
-			continue // timeout if  waited for 6 hours
+		if time.Since(*item.CreatedAt) >= 2*time.Hour {
+			continue // timeout if  waited for 2 hours
 		}
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:       "waiting for funds",
+				ID:           item.UUID,
+				CreatedAt:    item.CreatedAt,
+				Status:       "Waiting for payment",
 				FileURI:      item.FileURI,
 				ProjectID:    item.ProjectID,
 				ProjectImage: projectInfo.Thumbnail,
@@ -823,7 +897,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
-					Status:       "minting",
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
+					Status:       "Minting",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
@@ -831,7 +907,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					Status:       "transferring",
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
+					Status:       "Transferring",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
@@ -851,13 +929,15 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if _, ok := itemIDMap[item.UUID]; ok {
 			continue
 		}
-		if time.Since(*item.CreatedAt) >= 6*time.Hour {
-			continue // timeout if  waited for 6 hours
+		if time.Since(*item.CreatedAt) >= 2*time.Hour {
+			continue // timeout if  waited for 2 hours
 		}
 		var minting *structure.MintingInscription
 		if !item.IsConfirm {
 			minting = &structure.MintingInscription{
-				Status:       "waiting for funds",
+				ID:           item.UUID,
+				CreatedAt:    item.CreatedAt,
+				Status:       "Waiting for payment",
 				FileURI:      item.FileURI,
 				ProjectID:    item.ProjectID,
 				ProjectImage: projectInfo.Thumbnail,
@@ -866,7 +946,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		} else {
 			if !item.IsMinted {
 				minting = &structure.MintingInscription{
-					Status:       "minting",
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
+					Status:       "Minting",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
@@ -874,7 +956,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 				}
 			} else {
 				minting = &structure.MintingInscription{
-					Status:       "transferring",
+					ID:           item.UUID,
+					CreatedAt:    item.CreatedAt,
+					Status:       "Transferring",
 					FileURI:      item.FileURI,
 					ProjectID:    item.ProjectID,
 					ProjectImage: projectInfo.Thumbnail,
@@ -891,8 +975,19 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if err != nil {
 			return nil, err
 		}
+		status := ""
+		switch item.Status {
+		case entity.StatusMint_NeedToRefund, entity.StatusMint_TxRefundFailed:
+			status = entity.StatusMintToText[entity.StatusMint_Refunding]
+		case entity.StatusMint_TxMintFailed:
+			status = entity.StatusMintToText[entity.StatusMint_Minting]
+		default:
+			status = entity.StatusMintToText[item.Status]
+		}
 		minting := structure.MintingInscription{
-			Status:       entity.StatusMintToText[item.Status],
+			ID:           item.UUID,
+			CreatedAt:    item.CreatedAt,
+			Status:       status,
 			FileURI:      item.FileURI,
 			ProjectID:    item.ProjectID,
 			ProjectImage: projectInfo.Thumbnail,

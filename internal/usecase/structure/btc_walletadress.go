@@ -1,5 +1,7 @@
 package structure
 
+import "time"
+
 type BctWalletAddressData struct {
 	WalletAddress string `json:"walletAddress"`
 	ProjectID     string `json:"projectID"`
@@ -17,9 +19,11 @@ type CheckBalance struct {
 }
 
 type MintingInscription struct {
-	Status       string `json:"status"`
-	FileURI      string `json:"fileURI"`
-	ProjectImage string `json:"projectImage"`
-	ProjectID    string `json:"projectID"`
-	ProjectName  string `json:"projectName"`
+	ID           string     `json:"id"`
+	CreatedAt    *time.Time `json:"createdAt"`
+	Status       string     `json:"status"`
+	FileURI      string     `json:"fileURI"`
+	ProjectImage string     `json:"projectImage"`
+	ProjectID    string     `json:"projectID"`
+	ProjectName  string     `json:"projectName"`
 }
