@@ -11,30 +11,34 @@ import (
 type StatusMint int
 
 const (
-	StatusMint_Pending      StatusMint = iota // 0: pending: waiting for fund
-	StatusMint_ReceivedFund                   // 1: received fund from user
+	StatusMint_Pending            StatusMint = iota // 0: pending: waiting for payment
+	StatusMint_WaitingForConfirms                   // 1: Waiting for confirmations 0 of 6
+	StatusMint_ReceivedFund                         // 2: received fund from user
 
-	StatusMint_Minting // 2: minting
-	StatusMint_Minted  // 3: mint success
+	StatusMint_Minting // 3: minting
+	StatusMint_Minted  // 4: mint success
 
-	StatusMint_SendingNFTToUser // 4: sending nft to user
-	StatusMint_SentNFTToUser    // 5: send nft to user success:
+	StatusMint_SendingNFTToUser // 5: sending nft to user
+	StatusMint_SentNFTToUser    // 6: send nft to user success:
 
-	StatusMint_SendingFundToMaster // 6: sending nft to user
-	StatusMint_SentFundToMaster    // 7: send btc to master:
+	StatusMint_SendingFundToMaster // 7: sending nft to user
+	StatusMint_SentFundToMaster    // 8: send btc to master:
 
-	StatusMint_TxMintFailed // 8: tx mint failed
+	StatusMint_TxMintFailed // 9: tx mint failed
 
-	StatusMint_NeedToRefund // 9: balance not enough or mint out...
+	StatusMint_NeedToRefund // 10: balance not enough or mint out...
 
-	StatusMint_Refunding // 10: refunding
-	StatusMint_Refunded  // 11: refunding
+	StatusMint_Refunding // 11: refunding
+	StatusMint_Refunded  // 12: refunding
 
-	StatusMint_TxRefundFailed // 12: tx refund fund failed
+	StatusMint_TxRefundFailed // 13: tx refund fund failed
 )
 
 var StatusMintToText = map[StatusMint]string{
-	StatusMint_Pending:      "waiting for funds",
+	StatusMint_Pending: "waiting for funds",
+
+	StatusMint_WaitingForConfirms: "Waiting for confirmations",
+
 	StatusMint_ReceivedFund: "received funds",
 
 	StatusMint_Minting: "minting",
@@ -76,6 +80,7 @@ type MintNftBtc struct {
 
 	Status StatusMint `bson:"status"` // status for record
 
+	TxReceived   string `bson:"tx_received"` // tx received fund from user.
 	TxMintNft    string `bson:"tx_mint_nft"`
 	TxSendNft    string `bson:"tx_send_nft"`
 	TxSendMaster string `bson:"tx_send_master"`
