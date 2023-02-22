@@ -1182,6 +1182,40 @@ func (u Usecase) Update1M02Collections(projectID string) {
 }
 
 
+func (u Usecase) CapturImage(projectID string) {
+	span, log := u.StartSpanWithoutRoot("captureImage")
+	defer u.Tracer.FinishSpan(span, log)
+
+
+	tokens, err := u.Repo.GetAllTokensByProjectID(projectID)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindProjectByTokenID", err.Error(), err)
+		return 
+	}
+
+	for _, p := range tokens{
+		resp, err := u.RunAndCap(span, &p, 15)
+		if err != nil {
+			u.Logger.Error("u.Repo.RunAndCap", err.Error(), err)
+			return 
+		}
+
+		p.Thumbnail = resp.Thumbnail
+		p.Image = resp.Thumbnail
+		
+		
+		spew.Dump(resp.Thumbnail)
+		_, err = u.Repo.UpdateOrInsertTokenUri(p.ContractAddress, p.TokenID, &p)
+		if err != nil {
+			u.Logger.Error("UpdateOrInsertTokenUri", err.Error(), err)
+			return 
+		}
+	}
+	
+	
+}
+
+
 
 func (u Usecase) ReportMinted() {
 	span, log := u.StartSpanWithoutRoot("ReportMinted")

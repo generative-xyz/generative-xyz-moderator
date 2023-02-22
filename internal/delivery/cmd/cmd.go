@@ -27,7 +27,7 @@ func NewCMDHandler(global *global.Global, uc usecase.Usecase) *CMDHandler {
 
 
 func (h CMDHandler) StartServer() {	
-	h.Usecase.ReportMinted()
+	h.Usecase.CapturImage(`1000001`)
 	// h.Usecase.ChangeProjectCreatorProfile("1000103","0xDA1958529ACCed8834FEf1D0e48a8cebD618f159" )
 	// h.Usecase.ChangeProjectCreatorProfile("1000104","0xDA1958529ACCed8834FEf1D0e48a8cebD618f159" )
 	// h.Usecase.ChangeProjectCreatorProfile("1000105","0xDA1958529ACCed8834FEf1D0e48a8cebD618f159" )

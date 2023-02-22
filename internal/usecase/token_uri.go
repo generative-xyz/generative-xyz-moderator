@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -41,32 +42,32 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	log.SetTag("contractAddress", token.ContractAddress)
 	resp := &structure.TokenAnimationURI{}
 
-	log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
+	//log.SetData("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
 
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail:   token.Thumbnail,
-			Traits:      token.ParsedAttributes,
-			TraitsStr:   token.ParsedAttributesStr,
-			CapturedAt:  token.ThumbnailCapturedAt,
-			IsUpdated:   false,
-		}
-		return resp, nil
-	}
+	// if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
+	// 	resp = &structure.TokenAnimationURI{
+	// 		ParsedImage: *token.ParsedImage,
+	// 		Thumbnail:   token.Thumbnail,
+	// 		Traits:      token.ParsedAttributes,
+	// 		TraitsStr:   token.ParsedAttributesStr,
+	// 		CapturedAt:  token.ThumbnailCapturedAt,
+	// 		IsUpdated:   false,
+	// 	}
+	// 	return resp, nil
+	// }
 
-	log.SetTag("tokenID", token.TokenID)
-	log.SetTag("contractAddress", token.ContractAddress)
+	//log.SetTag("tokenID", token.TokenID)
+	//log.SetTag("contractAddress", token.ContractAddress)
 
-	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	_, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
 		log.Error("RunAndCap.ParseBool", err.Error(), err)
 		return nil, err
 	}
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
-		chromedp.Flag("headless", eCH),
+		//chromedp.ExecPath("google-chrome"),
+		//chromedp.Flag("headless", eCH),
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
 	)
@@ -74,15 +75,16 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 	cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	imageURL := token.AnimationURL
-	htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
+	// imageURL := token.AnimationURL
+	// htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
 
-	uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
-	if err == nil {
-		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
-		imageURL = fileURI
-	}
-
+	// //uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
+	//if err == nil {
+		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID), token.TokenID)
+		imageURL := fileURI
+	//}
+	spew.Dump(imageURL)
+	
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
@@ -118,8 +120,8 @@ func (u Usecase) RunAndCap(rootSpan opentracing.Span, token *entity.TokenUri, ca
 		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
-			now := time.Now().UTC().String()
-			name := fmt.Sprintf("thumb/%s-%s-%s.png", token.ContractAddress, token.TokenID, now)
+			now := time.Now().UTC().Unix()
+			name := fmt.Sprintf("thumb/%s-%d.png", token.TokenID, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
