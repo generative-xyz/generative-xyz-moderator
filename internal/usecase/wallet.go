@@ -39,13 +39,13 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]string, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://ordinals-explorer-v5-dev.generative.xyz"
 	}
-	outputInscMap := make(map[string][]string)
+	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
 	for _, output := range outputs {
 		if _, ok := result[output]; ok {
 			continue
@@ -55,7 +55,6 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 			return nil, nil, err
 		}
 		if len(inscriptions.Inscriptions) > 0 {
-			outputInscMap[output] = inscriptions.Inscriptions
 			for _, insc := range inscriptions.Inscriptions {
 				data, err := getInscriptionByID(ordServer, insc)
 				if err != nil {
@@ -71,6 +70,10 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 					ContentType:   data.ContentType,
 					Offset:        offset,
 				}
+				inscWalletByOutput := structure.WalletInscriptionByOutput{
+					InscriptionID: data.InscriptionID,
+					Offset:        offset,
+				}
 				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
 				if internalInfo != nil {
 					inscWalletInfo.ProjectID = internalInfo.ProjectID
@@ -78,6 +81,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
 				}
 				result[output] = append(result[output], inscWalletInfo)
+				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
 			}
 		}
 	}
