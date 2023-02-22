@@ -34,26 +34,26 @@ const (
 )
 
 var StatusMintToText = map[StatusMint]string{
-	StatusMint_Pending:      "waiting for funds",
-	StatusMint_ReceivedFund: "received funds",
+	StatusMint_Pending:      "Waiting for payment",
+	StatusMint_ReceivedFund: "Payment received",
 
-	StatusMint_Minting: "minting",
-	StatusMint_Minted:  "minted",
+	StatusMint_Minting: "Minting",
+	StatusMint_Minted:  "Minted",
 
-	StatusMint_SendingNFTToUser: "transferring",
-	StatusMint_SentNFTToUser:    "transferred",
+	StatusMint_SendingNFTToUser: "Transferring",
+	StatusMint_SentNFTToUser:    "Transferred",
 
-	StatusMint_SendingFundToMaster: "sending funds to master",
-	StatusMint_SentFundToMaster:    "sent funds to master",
+	StatusMint_SendingFundToMaster: "Sending funds to master",
+	StatusMint_SentFundToMaster:    "Sent funds to master",
 
-	StatusMint_TxMintFailed: "mint failed",
+	StatusMint_TxMintFailed: "Mint failed",
 
-	StatusMint_NeedToRefund: "waiting to refund",
+	StatusMint_NeedToRefund: "Waiting to refund",
 
-	StatusMint_Refunding: "refunding",
-	StatusMint_Refunded:  "refunded",
+	StatusMint_Refunding: "Refunding",
+	StatusMint_Refunded:  "Refunded",
 
-	StatusMint_TxRefundFailed: "refund failed",
+	StatusMint_TxRefundFailed: "Refund failed",
 }
 
 type MintNftBtc struct {
