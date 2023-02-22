@@ -885,7 +885,6 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 		amountSent := ""
 
 		if item.PayType == utils.NETWORK_ETH {
-			fmt.Println("PayType", "eth")
 			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			status, err := ethClient.GetTransaction(context, txToCheck)
