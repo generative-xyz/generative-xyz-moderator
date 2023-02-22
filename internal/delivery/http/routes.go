@@ -190,6 +190,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
+	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
 }
 
