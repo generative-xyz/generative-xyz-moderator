@@ -2654,7 +2654,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Delete projects",
+                "description": "Delete BTC projects",
                 "consumes": [
                     "application/json"
                 ],
@@ -2664,7 +2664,7 @@ const docTemplate = `{
                 "tags": [
                     "Project"
                 ],
-                "summary": "Delete project",
+                "summary": "Delete BTC project",
                 "parameters": [
                     {
                         "type": "string",
@@ -4055,6 +4055,9 @@ const docTemplate = `{
                 },
                 "twitter": {
                     "type": "string"
+                },
+                "twitter_verified": {
+                    "type": "boolean"
                 },
                 "web": {
                     "type": "string"
