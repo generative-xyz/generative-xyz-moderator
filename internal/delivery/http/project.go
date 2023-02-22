@@ -586,6 +586,38 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary Update project
+// @Description Update projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param projectID path string true "projectID adress"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{projectID}/report [POST]
+// @Security Authorization
+func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+	message, err := h.Usecase.ReportProject(projectID, iWalletAddress)
+	if err != nil {
+		h.Logger.Error("h.Usecase.reportProject", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		h.Logger.Error("h.projectToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
 // @Summary Update project's categories
 // @Description  Update project's categories
 // @Tags Project
@@ -600,6 +632,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
+
 	var reqBody request.UpdateBTCProjectCategoriesReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
