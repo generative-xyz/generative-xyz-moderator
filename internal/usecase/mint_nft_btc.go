@@ -14,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -26,6 +27,11 @@ import (
 
 // for api create a new mint:
 func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*entity.MintNftBtc, error) {
+
+	if len(input.ProjectID) == 0 || len(input.WalletAddress) == 0 || len(input.RefundUserAddress) == 0 {
+		return nil, errors.New("data invalid")
+	}
+
 	walletAddress := &entity.MintNftBtc{}
 
 	receiveAddress := ""
@@ -65,14 +71,14 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	// check type:
-	if input.PayType == "btc" { // TODO: move to const config
+	if input.PayType == utils.NETWORK_BTC {
 		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
 		if err != nil {
 			u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", err.Error(), err)
 			return nil, err
 		}
 		mintPriceStr = strconv.Itoa(mintPriceInt)
-	} else if input.PayType == "eth" {
+	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
 
 		privateKey, _, receiveAddress, err = ethClient.GenerateAddress()
@@ -111,6 +117,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	walletAddress.PrivateKey = privateKeyEnCrypt
 	walletAddress.ReceiveAddress = receiveAddress
+	walletAddress.RefundUserAdress = input.RefundUserAddress
 
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
 
@@ -338,11 +345,11 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Parse(FileURI)", err.Error(), true)
 			continue
 		}
-
+		_ = baseUrl
 		// start call rpc mint nft now:
 		mintData := ord_service.MintRequest{
 			WalletName: os.Getenv("ORD_MASTER_ADDRESS"),
-			FileUrl:    baseUrl.String(),
+			FileUrl:    baseUrl.String(),        // TODO remove this
 			FeeRate:    entity.DEFAULT_FEE_RATE, //auto
 			DryRun:     false,
 			RequestId:  item.UUID,      // to track log
@@ -358,6 +365,9 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			continue
 		}
 		u.Logger.Info("mint.resp", resp)
+
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintOK", resp, false)
+
 		//update
 		// if not err => update status ok now:
 		//TODO: handle log err: Database already open. Cannot acquire lock
@@ -417,6 +427,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 
 	if err != nil {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
 		return err
 	}
 
@@ -428,18 +439,16 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 
 	for _, item := range listTxToCheck {
 
-		txHashDb := item.TxMintNft
-		item.Status = entity.StatusMint_Minted
+		var txToCheck string
+		var confirm int64 = -1
 
 		if item.Status == entity.StatusMint_Minting {
-			item.IsMinted = true
+			txToCheck = item.TxMintNft
 		} else if item.Status == entity.StatusMint_SendingNFTToUser {
-			txHashDb = item.TxSendNft
-			item.IsSentUser = true
-			item.Status = entity.StatusMint_SentNFTToUser
+			txToCheck = item.TxSendNft
 		}
 
-		txHash, err := chainhash.NewHashFromStr(txHashDb)
+		txHash, err := chainhash.NewHashFromStr(txToCheck)
 		if err != nil {
 			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
 			continue
@@ -448,69 +457,87 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 		txResponse, err := btcClient.GetTransaction(txHash)
 
 		if err == nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations, false)
-			if txResponse.Confirmations >= 1 {
-				// send btc ok now:
-				_, err = u.Repo.UpdateMintNftBtc(&item)
-				if err != nil {
-					fmt.Printf("Could not JobMint_CheckTxMintSend id %s - with err: %v", item.ID, err)
-					continue
-				}
-			}
-		} else {
-			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error(), false)
+			confirm = txResponse.Confirmations
 
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.", false)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txToCheck, confirm, false)
 
-			// check with api:
-			txInfo, err := bs.CheckTx(txHashDb)
-			if err != nil {
-				fmt.Printf("Could not bs - with err: %v", err)
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error(), true)
+			if confirm <= 0 {
 				continue
 			}
 
-			// just check 1 confirm:
-			if txInfo.Confirmations >= 1 {
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations, true)
-				// tx ok now:
-				_, err = u.Repo.UpdateMintNftBtc(&item)
-				if err != nil {
-					fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-				}
-				// update project, token info when mint success:
-				if item.Status == entity.StatusMint_Minted {
-					// create entity.TokenURI
-					_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
-					if err != nil {
-						fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
-						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
-						continue
-					}
+		} else {
+			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txToCheck, err.Error(), false)
 
-					err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
-					if err != nil {
-						u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
-						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
-						continue
-					}
-					item.IsUpdatedNftInfo = true
-					_, err = u.Repo.UpdateMintNftBtc(&item)
-					if err != nil {
-						fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-					}
-				}
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, "Begin check tx via api.", false)
 
+			// check with api:
+			txInfo, err := bs.CheckTx(txToCheck)
+			if err != nil {
+				fmt.Printf("Could not bs - with err: %v", err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
+				continue
+			}
+
+			confirm = int64(txInfo.Confirmations)
+
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, txInfo.Confirmations, false)
+
+			if confirm <= 0 {
+				continue
 			}
 		}
+
+		// just check 1 confirm:
+		if confirm >= 1 {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, confirm, true)
+			// tx ok now:
+
+			if item.Status == entity.StatusMint_Minting {
+				item.Status = entity.StatusMint_Minted
+				item.IsMinted = true
+			} else if item.Status == entity.StatusMint_SendingNFTToUser {
+				item.Status = entity.StatusMint_SentNFTToUser
+				item.IsSentUser = true
+			}
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				continue
+			}
+			fmt.Println("update project, token info when mint success...")
+			if item.Status == entity.StatusMint_Minted {
+
+				// create entity.TokenURI
+				_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
+				if err != nil {
+					fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
+					continue
+				}
+
+				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+					continue
+				}
+				_, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
+				if err != nil {
+					fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
+				}
+			}
+		}
+
 	}
 
 	return nil
 }
 
 // job 4: send nft:
-func (u Usecase) JobMin_SendNftToUser() error {
+func (u Usecase) JobMint_SendNftToUser() error {
 
 	// get list buy order status = StatusInscribe_Minted:
 	listTosendNft, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Minted})
@@ -619,11 +646,109 @@ func (u Usecase) JobMin_SendNftToUser() error {
 	return nil
 }
 
-// job 5:
-// send btc from segwit address to master address - it does not call our ORD server
+// job 6:
+// refund btc to users:
+func (u Usecase) JobMint_RefundBtc() error {
+
+	listToRefund, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_NeedToRefund)})
+
+	if len(listToRefund) == 0 {
+		return nil
+	}
+
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
+		return err
+	}
+
+	// eth:
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
+
+	for _, item := range listToRefund {
+
+		if len(item.RefundUserAdress) == 0 {
+			continue
+		}
+
+		if item.PayType == utils.NETWORK_BTC {
+
+			if len(os.Getenv("SECRET_KEY")) == 0 {
+				err = errors.New("please config SECRET_KEY")
+				u.Logger.Error("u.JobMint_RefundBtc.GenerateAddress", err.Error(), err)
+				continue
+			}
+
+			// the user address to refund:
+			btcRefundAddress := item.RefundUserAdress
+
+			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", btcRefundAddress), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
+				continue
+			}
+
+			// send user now:
+			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, btcRefundAddress, -1, btc.PreferenceMedium)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", btcRefundAddress), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
+				continue
+			}
+			// save tx:
+			item.TxRefund = tx
+			item.Status = entity.StatusMint_Refunding
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", btcRefundAddress), err.Error(), err)
+				continue
+			}
+		} else if item.PayType == utils.NETWORK_ETH {
+
+			ethAdressRefund := item.RefundUserAdress
+
+			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", ethAdressRefund), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
+				continue
+			}
+			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.ethClient.TransferMax", err.Error(), true)
+				continue
+			}
+			// save tx:
+			item.TxRefund = tx
+			item.AmountRefundUser = value
+			item.Status = entity.StatusMint_Refunding
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", ethAdressRefund), err.Error(), err)
+				continue
+			}
+
+		}
+		time.Sleep(3 * time.Second)
+	}
+
+	return nil
+}
+
+// job 7:
+// send send max fund to master address:
 func (u Usecase) JobMint_SendFundToMaster() error {
 
-	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_Minting)})
+	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_Minted)})
 
 	if len(listToSentMaster) == 0 {
 		return nil
@@ -633,8 +758,17 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	if err != nil {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		go u.trackMintNftBtcHistory("", "JobMint_SendFundToMaster", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
 		return err
 	}
+
+	// eth:
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMint_SendFundToMaster", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
 
 	for _, item := range listToSentMaster {
 
@@ -643,21 +777,21 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			if len(os.Getenv("SECRET_KEY")) == 0 {
 				err = errors.New("please config SECRET_KEY")
 				u.Logger.Error("u.JobMint_SendFundToMaster.GenerateAddress", err.Error(), err)
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SECRET_KEY.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SECRET_KEY.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
 				continue
 			}
 
 			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 			if err != nil {
-				u.Logger.Error("u.JobMint_SendFundToMaster.Decrypt", err.Error(), err)
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
 
 			// send master now:
-			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, utils.MASTER_ADDRESS, -1, btc.PreferenceMedium)
+			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceMedium)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
 				continue
 			}
@@ -666,13 +800,139 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			item.Status = entity.StatusMint_SendingFundToMaster // TODO: need to a job to check tx.
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobBtcSendBtcToMaster.UpdateBtcWalletAddress.%s.Error", utils.MASTER_ADDRESS), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
 				continue
 			}
 		} else if item.PayType == utils.NETWORK_ETH {
-			// TODO: add code to send ETH master address
+			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.DecryptToString", err.Error(), true)
+				continue
+			}
+			tx, amount, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.ethClient.TransferMax.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.ethClient.TransferMax", err.Error(), true)
+				continue
+			}
+			// save tx:
+			item.TxSendMaster = tx
+			item.AmountSentMaster = amount
+			item.Status = entity.StatusMint_SendingFundToMaster
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				continue
+			}
+
 		}
 		time.Sleep(3 * time.Second)
+	}
+
+	return nil
+}
+
+// job 8: check tx send master, refund user:
+func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
+
+	_, bs, err := u.buildBTCClient()
+
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMasterAndRefund", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
+		return err
+	}
+
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMint_CheckBalance", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
+
+	// get list pending tx:
+	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Refunding, entity.StatusMint_SendingFundToMaster})
+	if len(listTxToCheck) == 0 {
+		return nil
+	}
+
+	for _, item := range listTxToCheck {
+
+		var txToCheck string
+		var confirm int64 = -1
+
+		if item.Status == entity.StatusMint_Refunding {
+			txToCheck = item.TxRefund
+		} else if item.Status == entity.StatusMint_SendingFundToMaster {
+			txToCheck = item.TxSendMaster
+		}
+
+		_, err := chainhash.NewHashFromStr(txToCheck)
+		if err != nil {
+			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+			continue
+		}
+
+		amountSent := ""
+
+		if item.PayType == utils.NETWORK_ETH {
+			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			status, err := ethClient.GetTransaction(context, txToCheck)
+			if err == nil {
+				if status > 0 {
+					confirm = 1
+
+				} else {
+					continue
+				}
+			} else {
+				// if error maybe tx is pending or rejected
+				// TODO check timeout to detect tx is rejected or not.
+			}
+		} else {
+			// check with api btc:
+			txInfo, err := bs.CheckTx(txToCheck)
+			if err != nil {
+				fmt.Printf("Could not bs - with err: %v", err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMasterAndRefund", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
+				continue
+			}
+
+			confirm = int64(txInfo.Confirmations)
+			amountSent = txInfo.Total.String()
+
+		}
+
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMasterAndRefund", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, confirm, false)
+
+		// just check 1 confirm:
+		if confirm >= 1 {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMasterAndRefund", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, confirm, true)
+			// tx ok now:
+
+			if item.Status == entity.StatusMint_Refunding {
+				item.Status = entity.StatusMint_Refunded
+				item.IsRefund = true
+				if item.PayType == utils.NETWORK_BTC {
+					item.AmountRefundUser = amountSent
+				}
+			} else if item.Status == entity.StatusMint_SendingFundToMaster {
+				item.Status = entity.StatusMint_SentFundToMaster
+				item.IsSentMaster = true
+				if item.PayType == utils.NETWORK_BTC {
+					item.AmountSentMaster = amountSent
+				}
+			}
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not JobMint_CheckTxMasterAndRefund id %s - with err: %v", item.ID, err)
+				continue
+			}
+		}
+
 	}
 
 	return nil

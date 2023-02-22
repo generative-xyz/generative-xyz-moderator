@@ -8,6 +8,52 @@
     },
     "basePath": "/rederinghub.io/v1",
     "paths": {
+        "/admin/auto-listing": {
+            "post": {
+                "description": "Auto listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Auto listing",
+                "parameters": [
+                    {
+                        "description": " Auto listing",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ListNftIdsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/redis": {
             "get": {
                 "description": "Get Redis",
@@ -1732,6 +1778,40 @@
                 }
             }
         },
+        "/mint-nft-btc/receive-address": {
+            "post": {
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC/ETH"
+                ],
+                "summary": "BTC/ETH Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a btc/eth wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBtcWalletAddressReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/nfts/{contractAddress}/nft_holders": {
             "get": {
                 "description": "get token holder",
@@ -2559,6 +2639,48 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Delete BTC projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Delete BTC project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract adress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/project/{contractAddress}/{projectID}/categories": {
@@ -3207,6 +3329,49 @@
                 }
             }
         },
+        "/user": {
+            "get": {
+                "description": "get users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "get users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/artist": {
             "get": {
                 "description": "get list Artist",
@@ -3217,7 +3382,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Artist"
+                    "User"
                 ],
                 "summary": "get list Artist",
                 "parameters": [
@@ -3489,6 +3654,26 @@
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ListNftIdsReq": {
+            "type": "object",
+            "properties": {
+                "inscriptionIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "price": {
+                    "type": "string"
+                },
+                "seller_address": {
+                    "type": "string"
+                },
+                "seller_ord_address": {
                     "type": "string"
                 }
             }
@@ -3862,6 +4047,9 @@
                 },
                 "twitter": {
                     "type": "string"
+                },
+                "twitter_verified": {
+                    "type": "boolean"
                 },
                 "web": {
                     "type": "string"
