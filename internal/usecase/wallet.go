@@ -11,16 +11,18 @@ import (
 	"strings"
 
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
 	var result structure.WalletInfo
 	apiToken := u.Config.BlockcypherToken
-	walletBasicInfo, err := getWalletInfo(address, apiToken)
+	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
+	walletBasicInfo, err := getWalletInfo(address, apiToken, u.Logger)
 	if err != nil {
+		u.Logger.Info("GetBTCWalletInfo apiToken debug err", err)
 		return nil, err
 	}
-	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
 
 	result.BlockCypherWalletInfo = *walletBasicInfo
 	outcoins := []string{}
@@ -171,12 +173,10 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 	return &result, nil
 }
 
-func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalletInfo, error) {
+func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*structure.BlockCypherWalletInfo, error) {
 	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 
 	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
-	fmt.Println("url", url)
-
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -206,7 +206,7 @@ func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalle
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error + " " + url)
 	}
 
 	return &result, nil
