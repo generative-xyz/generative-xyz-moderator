@@ -289,7 +289,6 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
 }
 
-
 func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {
