@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -37,17 +38,17 @@ func (u Usecase) CreateProject( req structure.CreateProjectReq) (*entity.Project
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		u.Logger.Error("copier.Copy", err.Error(), err)
+		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
 		return nil, err
 	}
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
+		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
 		return nil, err
 	}
 
-	u.Logger.Info("pe", pe)
+	u.Logger.ErrorAny("CreateProject", zap.Any("project", pe))
 	return pe, nil
 }
 
@@ -94,7 +95,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		u.Logger.Error("copier.Copy", err.Error(), err)
+		u.Logger.ErrorAny("CreateBTCProject", zap.Any("copier.Copy", err))
 		return nil, err
 	}
 
@@ -116,7 +117,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
-		u.Logger.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
+		u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.GetMaxBtcProjectID", err))
 		return nil, err
 	}
 	maxID = maxID + 1
@@ -137,7 +138,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
 	if err != nil {
-		u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.FindUserByWalletAddress", err))
 		return nil, err
 	}
 
@@ -145,7 +146,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 		creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
 		updated, err := u.Repo.UpdateUserByID(creatorAddrr.UUID, creatorAddrr)
 		if err != nil {
-			u.Logger.Error("u.Repo.UpdateUserByID", err.Error(), err)
+			u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.UpdateUserByID", err))
 
 		} else {
 			u.Logger.Info("updated.creatorAddrr", creatorAddrr)
@@ -172,11 +173,14 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 				isFullChain, err := helpers.IsFullChain(string(htmlContent))
 				if err == nil {
 					pe.IsFullChain = isFullChain
+					u.Logger.LogAny("CreateBTCProject", zap.Any("isFullChain", isFullChain))
 				} else {
 					// TODO log
+					u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 				}
 			} else {
 				// TODO log
+				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
 		}
@@ -184,7 +188,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
-		u.Logger.Error("json.Marshal.nftTokenURI", err.Error(), err)
+		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
 		return nil, err
 	}
 	nftToken := helpers.Base64Encode(bytes)
@@ -208,10 +212,11 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
+		u.Logger.ErrorAny("CreateBTCProject", zap.Any("CreateProject", err))
 		return nil, err
 	}
 
+	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	if isPubsub {
 		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
@@ -219,9 +224,6 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 			//return nil, err
 		}
 	}
-
-	u.Logger.Info("pe", pe)
-	u.Logger.Info("pe.isPubsub", isPubsub)
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	return pe, nil
@@ -354,7 +356,7 @@ func (u Usecase) UpdateProject( req structure.UpdateProjectReq) (*entity.Project
 
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
-		u.Logger.Error("UpdateProject.FindProjectBy", err.Error(), err)
+		u.Logger.ErrorAny("UpdateProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
 
@@ -365,11 +367,12 @@ func (u Usecase) UpdateProject( req structure.UpdateProjectReq) (*entity.Project
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		u.Logger.Error("UpdateProject.UpdateProject", err.Error(), err)
+		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
 	}
 
 	u.Logger.Info("updated", updated)
+	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
 	return p, nil
 }
 
@@ -480,24 +483,7 @@ func (u Usecase) GetMintedOutProjects( req structure.FilterProjects) (*entity.Pa
 }
 
 func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-
-
-	// defer func  ()  {
-	// 	//alway update project in a separated process
-	// 	go func() {
-	// 	// 
-	// 		_, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
-	// 		if err != nil {
-	// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
-	// 	return
-	// 		}
-
-	// 	}()
-	// }()
-
-	
-	
-
+	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
@@ -510,10 +496,12 @@ func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*e
 	}
 	mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
 	if err != nil {
+		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
 		return nil, err
 	}
 	ethPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
+		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 		return nil, err
 	}
 	c.MintPriceEth = ethPrice
@@ -522,11 +510,12 @@ func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*e
 	if err == nil {
 		ethNetworkFeePrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
+			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
 		}
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
-
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
