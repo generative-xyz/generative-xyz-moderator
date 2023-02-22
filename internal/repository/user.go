@@ -210,8 +210,8 @@ func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, e
 	p, err := r.Paginate(
 		utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{},
 		[]Sort{
-			{Sort: entity.SORT_DESC, SortBy: "stats.collection_created"},
 			{Sort: entity.SORT_DESC, SortBy: "stats.volume_minted"},
+			{Sort: entity.SORT_DESC, SortBy: "stats.collection_created"},
 		}, &users)
 	if err != nil {
 		return nil, err
