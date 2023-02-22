@@ -8,6 +8,7 @@ import (
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/delegate"
+	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/logger"
@@ -38,6 +39,7 @@ type Usecase struct {
 	CovalentNft     nfts.CovalentNfts
 	Blockchain      blockchain.Blockchain
 	Slack           slack.Slack
+	DiscordClient *discordclient.Client
 	OrdService      *ord_service.BtcOrd
 	gData           gData
 	DelegateService *delegate.Service
@@ -57,6 +59,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.CovalentNft = global.CovalentNFT
 	u.Blockchain = global.Blockchain
 	u.Slack = global.Slack
+	u.DiscordClient = global.DiscordClient
 	u.OrdService = global.OrdService
 	u.DelegateService = global.DelegateService
 	return u, nil
