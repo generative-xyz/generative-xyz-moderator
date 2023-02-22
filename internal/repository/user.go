@@ -5,10 +5,12 @@ import (
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -155,23 +157,26 @@ func (r Repository) FindUserByAutoUserID(autoUserID int32) (*entity.Users, error
 	return resp, nil
 }
 
-func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, error) {
+func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination, error) {
 	users := []entity.Users{}
 	resp := &entity.Pagination{}
 
 	filter1 := bson.M{}
 	filter1[utils.KEY_DELETED_AT] = nil
 
-	if filter.Email != nil {
-		if *filter.Email != "" {
-			filter1["email"] = *filter.Email
+	if filter.Email != nil && *filter.Email != "" {
+		filter1["email"] = *filter.Email
+	}
+
+	if filter.Search != nil && len(*filter.Search) >= 3 {
+		filter1["$or"] = []bson.M{
+			{"display_name": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 		}
 	}
 
-	if filter.WalletAddress != nil {
-		if *filter.WalletAddress != "" {
-			filter1["wallet_address"] = *filter.WalletAddress
-		}
+	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
+		filter1["wallet_address"] = *filter.WalletAddress
 	}
 
 	if filter.UserType != nil {
