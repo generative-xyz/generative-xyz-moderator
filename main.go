@@ -29,6 +29,7 @@ import (
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
+	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
@@ -142,6 +143,7 @@ func startServer() {
 		CovalentNFT:     *covalent,
 		Blockchain:      *ethClient,
 		Slack:           *slack,
+		DiscordClient:   discordclient.NewCLient(),
 		Pubsub:          rPubsub,
 		OrdService:      ord,
 		DelegateService: delegateService,
