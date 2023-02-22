@@ -169,6 +169,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 	for _, item := range listPending {
 
+		time.Sleep(1 * time.Second)
+
 		// check balance:
 		balance := big.NewInt(0)
 		confirm := -1
@@ -186,6 +188,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 			balance, err = ethClient.GetBalance(ctx, item.ReceiveAddress)
 			fmt.Println("GetBalance eth response: ", balance, err)
+
+			confirm = 1
 		}
 
 		if err != nil {
@@ -231,19 +235,25 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 
-		// received fund:
-		item.Status = entity.StatusMint_ReceivedFund
-		item.IsConfirm = true
+		if confirm == 0 {
+			item.Status = entity.StatusMint_WaitingForConfirms
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_WaitingForConfirms", "0", true)
+		}
+		if confirm >= 1 {
+			// received fund:
+			item.Status = entity.StatusMint_ReceivedFund
+			item.IsConfirm = true
+
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_ReceivedFund", "ok", true)
+			u.Logger.Info(fmt.Sprintf("JobMint_CheckBalance.CheckReceiveFund.%s", item.ReceiveAddress), item)
+			go u.Notify("JobMint_CheckBalance", item.ReceiveAddress, fmt.Sprintf("%s received %s %d from [UUID] %s", item.ReceiveAddress, item.PayType, item.Status, item.UUID))
+		}
 
 		_, err = u.Repo.UpdateMintNftBtc(&item)
 		if err != nil {
 			fmt.Printf("Could not UpdateMintNftBtc uuid %s - with err: %v", item.UUID, err)
 			continue
 		}
-
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_ReceivedFund", "ok", true)
-		u.Logger.Info(fmt.Sprintf("JobMint_CheckBalance.CheckReceiveFund.%s", item.ReceiveAddress), item)
-		go u.Notify("JobMint_CheckBalance", item.ReceiveAddress, fmt.Sprintf("%s received %s %d from [UUID] %s", item.ReceiveAddress, item.PayType, item.Status, item.UUID))
 
 	}
 
