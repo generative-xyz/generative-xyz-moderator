@@ -17,7 +17,7 @@ type logger struct {
 
 func NewLogger() *logger {
 	l := &logger{}
-	log := InitLoggerDefaultDev()
+	log := InitLoggerDefault(true)
 	l.Module = log
 	return l
 }
