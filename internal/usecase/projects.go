@@ -33,7 +33,7 @@ type uploadFileChan struct {
 	Err     error
 }
 
-func (u Usecase) CreateProject( req structure.CreateProjectReq) (*entity.Projects, error) {
+func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects, error) {
 
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
@@ -90,7 +90,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 }
 
-func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.Projects, error) {
+func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
 
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
@@ -158,11 +158,9 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 	animationURL := ""
 	zipLink := req.ZipLink
 	if zipLink != nil && *zipLink != "" {
-
 		pe.IsHidden = true
 		isPubsub = true
 		pe.Status = false
-
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
@@ -175,11 +173,9 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 					pe.IsFullChain = isFullChain
 					u.Logger.LogAny("CreateBTCProject", zap.Any("isFullChain", isFullChain))
 				} else {
-					// TODO log
 					u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 				}
 			} else {
-				// TODO log
 				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
@@ -229,8 +225,7 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 	return pe, nil
 }
 
-func (u Usecase) UpdateBTCProject( req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
-
+func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
@@ -323,8 +318,7 @@ func (u Usecase) UpdateBTCProject( req structure.UpdateBTCProjectReq) (*entity.P
 	return p, nil
 }
 
-func (u Usecase) SetCategoriesForBTCProject( req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
-
+func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {
 		err := errors.New("ProjectID is requeried")
@@ -352,7 +346,7 @@ func (u Usecase) SetCategoriesForBTCProject( req structure.UpdateBTCProjectReq) 
 	return p, nil
 }
 
-func (u Usecase) UpdateProject( req structure.UpdateProjectReq) (*entity.Projects, error) {
+func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects, error) {
 
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
@@ -376,13 +370,13 @@ func (u Usecase) UpdateProject( req structure.UpdateProjectReq) (*entity.Project
 	return p, nil
 }
 
-func (u Usecase) GetProjectByGenNFTAddr( genNFTAddr string) (*entity.Projects, error) {
+func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {
 
 	project, err := u.Repo.FindProjectByGenNFTAddr(genNFTAddr)
 	return project, err
 }
 
-func (u Usecase) GetProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
@@ -402,7 +396,6 @@ func (u Usecase) GetProjects( req structure.FilterProjects) (*entity.Pagination,
 }
 
 func (u Usecase) GetRandomProject() (*entity.Projects, error) {
-
 
 	caddr := os.Getenv("RANDOM_PR_CONTRACT")
 	pID := os.Getenv("RANDOM_PR_PROJECT")
@@ -462,7 +455,7 @@ func (u Usecase) GetRandomProject() (*entity.Projects, error) {
 	})
 }
 
-func (u Usecase) GetMintedOutProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
@@ -482,7 +475,7 @@ func (u Usecase) GetMintedOutProjects( req structure.FilterProjects) (*entity.Pa
 	return projects, nil
 }
 
-func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
@@ -519,7 +512,7 @@ func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*e
 	return c, nil
 }
 
-func (u Usecase) GetRecentWorksProjects( req structure.FilterProjects) (*entity.Pagination, error) {
+func (u Usecase) GetRecentWorksProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
@@ -539,7 +532,7 @@ func (u Usecase) GetRecentWorksProjects( req structure.FilterProjects) (*entity.
 	return projects, nil
 }
 
-func (u Usecase) GetUpdatedProjectStats( req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
+func (u Usecase) GetUpdatedProjectStats(req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
 
 	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
 	if err != nil {
@@ -729,7 +722,7 @@ func (u Usecase) GetUpdatedProjectStats( req structure.GetProjectReq) (*entity.P
 	}, traitsStat, nil
 }
 
-func (u Usecase) getProjectDetailFromChainWithoutCache( req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+func (u Usecase) getProjectDetailFromChainWithoutCache(req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
 
 	contractDataKey := fmt.Sprintf("detail.%s.%s", req.ContractAddress, req.ProjectID)
 
@@ -759,7 +752,7 @@ func (u Usecase) getProjectDetailFromChainWithoutCache( req structure.GetProject
 }
 
 // Get from chain with cache
-func (u Usecase) getProjectDetailFromChain( req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
+func (u Usecase) getProjectDetailFromChain(req structure.GetProjectDetailMessageReq) (*structure.ProjectDetail, error) {
 
 	contractDataKey := helpers.ProjectDetailKey(req.ContractAddress, req.ProjectID)
 
@@ -802,11 +795,7 @@ func (u Usecase) getProjectDetailFromChain( req structure.GetProjectDetailMessag
 }
 
 // Internal get project detail
-func (u Usecase) getNftContractDetailInternal( client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
-
-
-	
-	
+func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
 
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
@@ -962,7 +951,7 @@ func (u Usecase) getNftContractDetailInternal( client *ethclient.Client, contrac
 	return resp, nil
 }
 
-func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
+func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
 		u.Logger.Error("http.Get", err.Error(), err)
@@ -983,7 +972,6 @@ func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*
 	spew.Dump(os.Getenv("GCS_DOMAIN"))
 	groupIndex := strings.Index(zipLink, "btc-projects/")
 	strLen := len(zipLink)
-	// TODO
 	zipLink = zipLink[groupIndex:strLen]
 	spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
@@ -1000,12 +988,9 @@ func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*
 	}
 	maxSize := uint64(0)
 	for _, f := range files {
-		//TODO check f.Name is not empty
-
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
 		}
-
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower(".DS_Store")) > -1 {
 			continue
 		}
@@ -1019,114 +1004,25 @@ func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*
 	}
 	//
 
-	/*resp, err := http.Get(zipLink)
-	if err != nil {
-		u.Logger.Error("http.Get", err.Error(), err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	fileName := fmt.Sprintf("%s.zip", helpers.GenerateSlug(pe.Name))
-
-	out, err := os.Create(fileName)
-	if err != nil {
-		u.Logger.Error("os.Create", err.Error(), err)
-		return nil, err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		u.Logger.Error("os.Create", err.Error(), err)
-		return nil, err
-	}
-
-	zf, err := zip.OpenReader(fileName)
-	if err != nil {
-		u.Logger.Error("zip.OpenReader", err.Error(), err)
-		return nil, err
-	}
-
-	u.Logger.Info("zf.File", len(zf.File))
-	processingFiles := []*zip.File{}
-	for _, file := range zf.File {
-		if strings.Index(file.Name, "__MACOSX") > -1 {
-			continue
-		}
-
-		if strings.Index(file.Name, ".DS_Store") > -1 {
-			continue
-		}
-
-		processingFiles = append(processingFiles, file)
-	}
-	u.Logger.Info("processingFiles", processingFiles)
-	uploadChan := make(chan uploadFileChan, len(processingFiles))
-
-	maxSize := uint64(0)
-	groups := make(map[string][]byte)
-	for _, file := range processingFiles {
-		u.Logger.Info("fileName", file.Name)
-		u.Logger.Info("UncompressedSize64", file.UncompressedSize64)
-		maxFileSize := uint64(400000)
-
-		u.Logger.Info("maxFileSize", maxFileSize)
-		size := file.UncompressedSize64
-
-		if size > maxFileSize {
-			err := errors.New(fmt.Sprintf("%s, size: %d Max file size must be less than 400kb", file.Name, size))
-			u.Logger.Error("maxFileSize", err.Error(), err)
-			return nil, err
-		}
-		if size > maxSize {
-			maxSize = size
-		}
-
-		fC, err := helpers.ReadFile(file)
-		if err != nil {
-			u.Logger.Error("zip.OpenReader", err.Error(), err)
-			return nil, err
-		}
-
-		if len(groups) == 100 {
-			var wg sync.WaitGroup
-			for fileName, fileData := range groups {
-				wg.Add(1)
-				go u.UploadFileZip(fileData, uploadChan, pe.Name, fileName, &wg)
-			}
-			wg.Wait()
-			groups = make(map[string][]byte)
-		} else {
-			groups[file.Name] = fC
-		}
-	}
-
-	if len(groups) > 0 {
-		var wg sync.WaitGroup
-		for fileName, fileData := range groups {
-			wg.Add(1)
-			go u.UploadFileZip(fileData, uploadChan, pe.Name, fileName, &wg)
-		}
-		wg.Wait()
-		groups = make(map[string][]byte)
-	}
-
-	for i := 0; i < len(processingFiles); i++ {
-		dataFromChan := <-uploadChan
-		if dataFromChan.Err != nil {
-			u.Logger.Error("dataFromChan.Err", dataFromChan.Err.Error(), dataFromChan.Err)
-			if pe.MaxSupply < int64(i) {
-				return nil, dataFromChan.Err
-			}
-		}
-
-		images = append(images, *dataFromChan.FileURL)
-		animationURL := *dataFromChan.FileURL
-		nftTokenURI["image"] = animationURL
-	}*/
-
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
+		if len(pe.Images) == 1 {
+			// edition
+			if pe.MaxSupply > 1 {
+				//-> clone for maxsupply - 1 files
+				for i := 1; i < int(pe.MaxSupply); i++ {
+					pe.Images = append(pe.Images, pe.Images[0])
+				}
+			}
+		} else {
+			// list file
+			if len(pe.Images) < int(pe.MaxSupply) {
+				// max supply need to equal max files
+				pe.MaxSupply = int64(len(pe.Images))
+			}
+		}
+
 	}
 	pe.IsHidden = false
 	pe.Status = true
@@ -1145,7 +1041,7 @@ func (u Usecase) UnzipProjectFile( zipPayload *structure.ProjectUnzipPayload) (*
 	return pe, nil
 }
 
-func (u Usecase) UploadFileZip( fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
+func (u Usecase) UploadFileZip(fc []byte, uploadChan chan uploadFileChan, peName string, fileName string, wg *sync.WaitGroup) {
 
 	var err error
 	var uploadedUrl *string
