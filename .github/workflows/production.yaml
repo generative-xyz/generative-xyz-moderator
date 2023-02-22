@@ -10,6 +10,7 @@ jobs:
     runs-on: self-hosted
     concurrency:
       group: build_production
+      cancel-in-progress: false
     steps:
       - uses: rtCamp/action-cleanup@master
       - uses: actions/checkout@v2
