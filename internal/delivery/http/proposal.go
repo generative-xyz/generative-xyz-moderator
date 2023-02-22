@@ -28,12 +28,10 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals [GET]
 func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.proposals", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -48,21 +46,19 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 	if proposer != "" {
 		f.Proposer = &proposer
 	}
-	
-	if proposalID != "" {
+if proposalID != "" {
 		f.ProposalID = &proposalID
 	}
-	
-	if state != "" {
+if state != "" {
 		stateINT, err := strconv.Atoi(state)
 		if err ==   nil {
 			f.State = &stateINT
 		}
 	}
 
-	uProposals, err := h.Usecase.GetProposals(span, f)
+	uProposals, err := h.Usecase.GetProposals(f)
 	if err != nil {
-		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -74,7 +70,7 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 
 		p, err := h.proposalToResp(&proItem)
 		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
+			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -83,7 +79,7 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success,  h.PaginationResp(uProposals, pResp), "")
 }
 
@@ -97,29 +93,26 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals/{proposalID} [GET]
 func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getProposal", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	proposalID := vars["proposalID"]
-	span.SetTag("proposalID", proposalID)
+	
 
-	proposal, err := h.Usecase.GetProposal(span, proposalID)
+	proposal, err := h.Usecase.GetProposal(proposalID)
 	if err != nil {
-		log.Error("h.Usecase.GetProposal", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProposal", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
 	resp, err := h.proposalToResp(proposal)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
+h.Logger.Info("resp.Proposal", resp)
 	
-	log.SetData("resp.Proposal", resp)
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
 
@@ -138,16 +131,14 @@ func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals/{proposalID}/votes [GET]
 func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getProposalVotes", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	proposalID := vars["proposalID"]
-	span.SetTag("proposalID", proposalID)
+	
 
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -160,7 +151,7 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 	if support != "" {
 		supportInt, err := strconv.Atoi(support)
 		if err != nil {
-			log.Error("strconv.Atoi", err.Error(), err)
+			h.Logger.Error("strconv.Atoi", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -173,9 +164,9 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 	}
 
 
-	paginationData, err := h.Usecase.GetProposalVotes(span, f)
+	paginationData, err := h.Usecase.GetProposalVotes(f)
 	if err != nil {
-		log.Error("h.Usecase.GetProposal", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProposal", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -184,20 +175,18 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 	iPro := paginationData.Result
 	pro := iPro.([]entity.ProposalVotes)
 	for _, proItem := range pro {
-		
 		tmp := &response.ProposalVotesResp{}
 		err := response.CopyEntityToRes(tmp, &proItem)
 		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
+			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 
 		pResp = append(pResp, *tmp)
 	}
+//h.Logger.Info("resp.Proposal", resp)
 	
-	//log.SetData("resp.Proposal", resp)
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp) , "")
 }
 
@@ -211,14 +200,12 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals [POST]
 func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.createDraftProposals", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	var reqBody request.CreateProposalReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -226,27 +213,27 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 	reqUsecase := &structure.CreateProposaltReq{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	uProposals, err := h.Usecase.CreateDraftProposal(span, *reqUsecase)
+	uProposals, err := h.Usecase.CreateDraftProposal(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	log.SetData("uProposals", uProposals)
+	h.Logger.Info("uProposals", uProposals)
 	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -262,32 +249,30 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 // @Success 200 {object} response.JsonResponse{}
 // @Router /dao/proposals/{ID}/{proposalID} [PUT]
 func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.createDraftProposals", r)
-	defer h.Tracer.FinishSpan(span, log )
 
 	vars := mux.Vars(r)
 	iD := vars["ID"]
-	span.SetTag("iD", iD)
+	
 
 	proposalID := vars["proposalID"]
-	span.SetTag("proposalID", proposalID)
+	
 
-	uProposals, err := h.Usecase.MapOffToOnChainProposal(span, iD, proposalID)
+	uProposals, err := h.Usecase.MapOffToOnChainProposal(iD, proposalID)
 	if err != nil {
-		log.Error("h.Usecase.MapOffToOnChainProposal", err.Error(), err)
+		h.Logger.Error("h.Usecase.MapOffToOnChainProposal", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	log.SetData("uProposals", uProposals)
+	h.Logger.Info("uProposals", uProposals)
 	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -302,8 +287,7 @@ func (h *httpDelivery) proposalToResp(input *entity.Proposal) (*response.Proposa
 	if resp.Title  == "" && input.ProposalDetail.Title != "" {
 		resp.Title = input.ProposalDetail.Title
 	}
-	
-	resp.Description = input.ProposalDetail.Description
+resp.Description = input.ProposalDetail.Description
 	resp.TokenType = input.ProposalDetail.TokenType
 	resp.ReceiverAddress = input.ProposalDetail.ReceiverAddress
 	return resp, nil

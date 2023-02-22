@@ -114,6 +114,13 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.CreateMultipartUploadRequest:
+    properties:
+      fileName:
+        type: string
+      group:
+        type: string
+    type: object
   request.CreateProjectReq:
     properties:
       categories:
@@ -152,6 +159,19 @@ definitions:
   request.GenerateMessageRequest:
     properties:
       address:
+        type: string
+    type: object
+  request.ListNftIdsReq:
+    properties:
+      inscriptionIDs:
+        items:
+          type: string
+        type: array
+      price:
+        type: string
+      seller_address:
+        type: string
+      seller_ord_address:
         type: string
     type: object
   request.ProfileSocial:
@@ -217,6 +237,11 @@ definitions:
       priority:
         type: integer
     type: object
+  request.UpdateTokenThumbnailReq:
+    properties:
+      thumbnail:
+        type: string
+    type: object
   request.UpdateTokentReq:
     properties:
       priority:
@@ -271,6 +296,11 @@ definitions:
       uploadedBy:
         type: string
       url:
+        type: string
+    type: object
+  response.FileResponse:
+    properties:
+      uploadId:
         type: string
     type: object
   response.GeneratedMessage:
@@ -340,6 +370,11 @@ definitions:
       message:
         type: string
     type: object
+  response.MultipartUploadResponse:
+    properties:
+      fileUrl:
+        type: string
+    type: object
   response.NftMintingDetail:
     properties:
       index:
@@ -365,6 +400,8 @@ definitions:
         type: string
       walletAddressBtc:
         type: string
+      walletAddressBtcTaproot:
+        type: string
     type: object
   response.ProfileSocial:
     properties:
@@ -378,6 +415,8 @@ definitions:
         type: string
       twitter:
         type: string
+      twitterVerified:
+        type: boolean
       web:
         type: string
     type: object
@@ -575,6 +614,33 @@ info:
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
+  /admin/auto-listing:
+    post:
+      consumes:
+      - application/json
+      description: Auto listing
+      parameters:
+      - description: ' Auto listing'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ListNftIdsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+      summary: Auto listing
+      tags:
+      - Admin
   /admin/redis:
     delete:
       consumes:
@@ -1287,6 +1353,97 @@ paths:
       summary: Upload file
       tags:
       - Files
+  /files/multipart:
+    post:
+      consumes:
+      - application/json
+      description: Create multipart upload.
+      parameters:
+      - description: Create multipart upload request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateMultipartUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Create multipart upload
+      tags:
+      - Files
+  /files/multipart/{uploadID}:
+    post:
+      consumes:
+      - application/json
+      description: Finish multipart upload
+      parameters:
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.MultipartUploadResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: Finish multipart upload
+      tags:
+      - Files
+    put:
+      description: Upload multipart file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: upload ID
+        in: path
+        name: uploadID
+        required: true
+        type: string
+      - description: part number
+        in: query
+        name: partNumber
+        type: string
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.FileRes'
+              type: object
+      security:
+      - Authorization: []
+      summary: Upload multipart file
+      tags:
+      - Files
   /inscribe/info/{ID}:
     get:
       consumes:
@@ -1540,6 +1697,28 @@ paths:
       summary: User profile's selling nft
       tags:
       - MarketPlace
+  /mint-nft-btc/receive-address:
+    post:
+      consumes:
+      - application/json
+      description: Generate receive wallet address
+      parameters:
+      - description: Create a btc/eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBtcWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: BTC/ETH Generate receive wallet address
+      tags:
+      - BTC/ETH
   /nfts/{contractAddress}/nft_holders:
     get:
       consumes:
@@ -1874,6 +2053,33 @@ paths:
       tags:
       - Project
   /project/{contractAddress}/{projectID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete BTC projects
+      parameters:
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID adress
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete BTC project
+      tags:
+      - Project
     put:
       consumes:
       - application/json
@@ -2398,6 +2604,38 @@ paths:
       summary: get token uri data
       tags:
       - Tokens
+  /tokens/{tokenID}/thumbnail:
+    post:
+      consumes:
+      - application/json
+      description: Update token's thumbnail
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateTokenThumbnailReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.InternalTokenURIResp'
+              type: object
+      summary: Update token's thumbnail
+      tags:
+      - Tokens
   /tokens/traits/{contractAddress}/{tokenID}:
     get:
       consumes:
@@ -2460,6 +2698,58 @@ paths:
       summary: get token's traits
       tags:
       - Token for Opensea
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: get users
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: search
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get users
+      tags:
+      - User
+  /user/artist:
+    get:
+      consumes:
+      - application/json
+      description: get list Artist
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get list Artist
+      tags:
+      - User
 securityDefinitions:
   Api-Key:
     in: header

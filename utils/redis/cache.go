@@ -29,7 +29,7 @@ type redisCache struct {
 	ctx    context.Context
 }
 
-func NewRedisCache(cfg config.RedisConfig) *redisCache {
+func NewRedisCache(cfg config.RedisConfig) (*redisCache, *redis.Client) {
 	r := new(redisCache)
 	ctx := context.Background()
 	redisDB, err := strconv.Atoi(cfg.DB)
@@ -45,7 +45,7 @@ func NewRedisCache(cfg config.RedisConfig) *redisCache {
 	r.cfg = cfg
 	r.client = rdb
 	r.ctx = ctx
-	return r
+	return r, rdb
 }
 
 func (r *redisCache) SetStringData(key string, value string) error {

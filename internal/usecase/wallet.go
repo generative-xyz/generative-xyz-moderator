@@ -7,13 +7,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"rederinghub.io/internal/usecase/structure"
 )
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
 	var result structure.WalletInfo
-	apiToken := u.Config.BlockcypherAPI
+	apiToken := u.Config.BlockcypherToken
 	walletBasicInfo, err := getWalletInfo(address, apiToken)
 	if err != nil {
 		return nil, err
@@ -25,36 +27,71 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
 		outcoins = append(outcoins, o)
 	}
-	inscriptions, err := u.InscriptionsByOutputs(outcoins)
+	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins)
 	if err != nil {
 		return nil, err
 	}
-	result.Inscriptions = inscriptions
+	result.InscriptionsByOutputs = outputInscMap
+	for _, item := range inscriptions {
+		result.Inscriptions = append(result.Inscriptions, item...)
+	}
+
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string]string, error) {
-	result := make(map[string]string)
+func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, error) {
+	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://ordinals-explorer-v5-dev.generative.xyz"
 	}
+	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
 	for _, output := range outputs {
-		inscription, err := getInscriptionByOutput(ordServer, output)
-		if err != nil {
-			return nil, err
+		if _, ok := result[output]; ok {
+			continue
 		}
-		if len(inscription.Inscriptions) > 0 {
-			result[output] = inscription.Inscriptions[0]
+		inscriptions, err := getInscriptionByOutput(ordServer, output)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(inscriptions.Inscriptions) > 0 {
+			for _, insc := range inscriptions.Inscriptions {
+				data, err := getInscriptionByID(ordServer, insc)
+				if err != nil {
+					return nil, nil, err
+				}
+				offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
+				if err != nil {
+					return nil, nil, err
+				}
+				inscWalletInfo := structure.WalletInscriptionInfo{
+					InscriptionID: data.InscriptionID,
+					Number:        data.Number,
+					ContentType:   data.ContentType,
+					Offset:        offset,
+				}
+				inscWalletByOutput := structure.WalletInscriptionByOutput{
+					InscriptionID: data.InscriptionID,
+					Offset:        offset,
+				}
+				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
+				if internalInfo != nil {
+					inscWalletInfo.ProjectID = internalInfo.ProjectID
+					inscWalletInfo.ProjecName = internalInfo.Project.Name
+					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+				}
+				result[output] = append(result[output], inscWalletInfo)
+				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+			}
 		}
 	}
-	return result, nil
+	return result, outputInscMap, nil
 }
 
-func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfo, error) {
+func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfoByOutput, error) {
 	url := fmt.Sprintf("%s/api/output/%s", ordServer, output)
 	fmt.Println("url", url)
-	var result structure.InscriptionOrdInfo
+	var result structure.InscriptionOrdInfoByOutput
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -90,13 +127,53 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 	}
 
 	return &result, nil
+}
 
+func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID, error) {
+	url := fmt.Sprintf("%s/api/inscription/%s", ordServer, id)
+	fmt.Println("url", url)
+	var result structure.InscriptionOrdInfoByID
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getInscriptionByOutput Response status != 200")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Read body failed")
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func getWalletInfo(address string, apiToken string) (*structure.BlockCypherWalletInfo, error) {
 	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 
-	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false", address)
+	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 	fmt.Println("url", url)
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
