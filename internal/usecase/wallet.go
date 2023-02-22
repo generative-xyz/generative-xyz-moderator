@@ -55,6 +55,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 			return nil, nil, err
 		}
 		if len(inscriptions.Inscriptions) > 0 {
+			outputInscMap[output] = inscriptions.Inscriptions
 			for _, insc := range inscriptions.Inscriptions {
 				data, err := getInscriptionByID(ordServer, insc)
 				if err != nil {

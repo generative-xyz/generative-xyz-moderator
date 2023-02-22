@@ -60,7 +60,7 @@ type BlockCypherWalletInfo struct {
 type WalletInfo struct {
 	BlockCypherWalletInfo
 	Inscriptions          []WalletInscriptionInfo `json:"inscriptions"`
-	InscriptionsByOutputs map[string][]string     `json:inscriptions_by_outputs"`
+	InscriptionsByOutputs map[string][]string     `json:"inscriptions_by_outputs"`
 }
 
 type WalletInscriptionInfo struct {
