@@ -61,6 +61,7 @@ type MintNftBtc struct {
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
 
 	OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
+	RefundUserAdress  string `bson:"refund_user_address"`
 
 	Amount string `bson:"amount"` // amount required
 
@@ -99,7 +100,8 @@ type MintNftBtc struct {
 
 	ReasonRefund string `bson:"reason_refund"` // the rason of refund
 
-	AmountSentMaster uint64 `bson:"amount_sent_master"` // amount withdrawn to the master wallet
+	AmountSentMaster string `bson:"amount_sent_master"` // amount withdrawn to the master wallet
+	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
 }
 
 func (u MintNftBtc) TableName() string {
