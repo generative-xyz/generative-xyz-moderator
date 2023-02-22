@@ -2282,6 +2282,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: Update project
       tags:
       - Project

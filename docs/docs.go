@@ -2848,6 +2848,11 @@ const docTemplate = `{
         },
         "/project/{projectID}/report": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "Update projects",
                 "consumes": [
                     "application/json"
