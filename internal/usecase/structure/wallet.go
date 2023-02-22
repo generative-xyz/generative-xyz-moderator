@@ -69,6 +69,6 @@ type WalletInscriptionInfo struct {
 	Number        int    `json:"number"`
 	ContentType   string `json:"content_type"`
 	ProjectID     string `json:"project_id"`
-	ProjecName    string `json:"projec_name"`
+	ProjecName    string `json:"project_name"`
 	Thumbnail     string `json:"thumbnail"`
 }
