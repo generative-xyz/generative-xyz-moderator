@@ -277,7 +277,7 @@ func (u Usecase) resolveMintPriceBTC(priceStr string) string {
 	if err != nil {
 		return priceStr
 	}
-	return fmt.Sprintf("%.2f BTC", float64(price)/1e8)
+	return strconv.FormatFloat(float64(price)/1e8, 'f', -1, 64) + " BTC"
 
 }
 
