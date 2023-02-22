@@ -18,6 +18,7 @@ const (
 
 type FilterUsers struct {
 	BaseFilters
+	Search           *string
 	Email            *string
 	WalletAddress    *string
 	WalletAddressBTC *string
@@ -30,10 +31,10 @@ type FilteArtist struct {
 }
 
 type UserStats struct {
-	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
-	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`
-	OutputMinted      int32 `bson:"output_minted" json:"output_minted"`
-	VolumeMinted      int32 `bson:"volume_minted" json:"volume_minted"`
+	CollectionCreated int32   `bson:"collection_created" json:"collection_created"`
+	NftMinted         int32   `bson:"nft_minted" json:"nft_minted"`
+	OutputMinted      int32   `bson:"output_minted" json:"output_minted"`
+	VolumeMinted      float64 `bson:"volume_minted" json:"volume_minted"`
 }
 
 type Users struct {
@@ -53,12 +54,13 @@ type Users struct {
 }
 
 type ProfileSocial struct {
-	Web       string `bson:"web" json:"web,omitempty"`
-	Twitter   string `bson:"twitter" json:"twitter,omitempty"`
-	Discord   string `bson:"discord" json:"discord,omitempty"`
-	Medium    string `bson:"medium" json:"medium,omitempty"`
-	Instagram string `bson:"instagram" json:"instagram,omitempty"`
-	EtherScan string `bson:"etherScan" json:"ether_scan,omitempty"`
+	Web             string `bson:"web" json:"web,omitempty"`
+	Twitter         string `bson:"twitter" json:"twitter,omitempty"`
+	Discord         string `bson:"discord" json:"discord,omitempty"`
+	Medium          string `bson:"medium" json:"medium,omitempty"`
+	Instagram       string `bson:"instagram" json:"instagram,omitempty"`
+	EtherScan       string `bson:"etherScan" json:"ether_scan,omitempty"`
+	TwitterVerified bool   `bson:"twitter_verified" json:"twitterVerified,omitempty"`
 }
 
 func (u Users) TableName() string {

@@ -40,7 +40,6 @@ func NewHttpTxConsumer(global *global.Global,uc usecase.Usecase, cfg config.Conf
 	txConsumer.BatchLogSize = cfg.TxConsumerConfig.BatchLogSize
 	txConsumer.Addresses = make([]common.Address, 0)
 	for _, address := range cfg.TxConsumerConfig.Addresses {
-		fmt.Println(address)
 		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
 	}
 	txConsumer.Cache = global.Cache

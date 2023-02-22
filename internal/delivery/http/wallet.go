@@ -21,7 +21,7 @@ func (h *httpDelivery) inscriptionByOutput(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := h.Usecase.InscriptionsByOutputs(reqBody.Outputs)
+	result, _, err := h.Usecase.InscriptionsByOutputs(reqBody.Outputs)
 	if err != nil {
 		h.Logger.Error("httpDelivery.inscriptionByOutput.Usecase.InscriptionsByOutputs", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -32,7 +32,6 @@ func (h *httpDelivery) inscriptionByOutput(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *httpDelivery) walletInfo(w http.ResponseWriter, r *http.Request) {
-
 	address := r.URL.Query().Get("address")
 
 	if address == "" {

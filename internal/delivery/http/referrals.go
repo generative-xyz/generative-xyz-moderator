@@ -56,6 +56,8 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 // @Tags Referral
 // @Accept  json
 // @Produce  json
+// @Param referrerID query string false "Filter by referrerID"
+// @Param referreeID query string false "filter project referreeID"
 // @Param limit query int false "limit"
 // @Param page query int false "page"
 // @Security Authorization
@@ -63,12 +65,15 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 // @Router /referrals [GET]
 func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	var err error
-baseF, err := h.BaseFilters(r)
+	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	referrerID := r.URL.Query().Get("referrerID")
+	referreeID := r.URL.Query().Get("referreeID")
 
 	ctx := r.Context()
 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
@@ -84,6 +89,7 @@ baseF, err := h.BaseFilters(r)
 	f := structure.FilterReferrals{}
 	f.BaseFilters = *baseF
 	f.ReferrerID = &referrerID
+	f.ReferreeID = &referreeID
 	uReferrals, err := h.Usecase.GetReferrals(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetReferrals", err.Error(), err)
