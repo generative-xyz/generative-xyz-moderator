@@ -34,7 +34,7 @@ type UserStats struct {
 	CollectionCreated int32 `bson:"collection_created" json:"collection_created"`
 	NftMinted         int32 `bson:"nft_minted" json:"nft_minted"`
 	OutputMinted      int32 `bson:"output_minted" json:"output_minted"`
-	VolumeMinted      int32 `bson:"volume_minted" json:"volume_minted"`
+	VolumeMinted      int64 `bson:"volume_minted" json:"volume_minted"`
 }
 
 type Users struct {
