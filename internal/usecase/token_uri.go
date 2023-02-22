@@ -27,7 +27,7 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
+func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
 
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
@@ -137,10 +137,7 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 	return resp, nil
 }
 
-func (u Usecase) GetTokenByTokenID( tokenID string, captureTimeout int) (*entity.TokenUri, error) {
-
-
-	
+func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.TokenUri, error) {
 
 	tokenID = strings.ToLower(tokenID)
 
@@ -155,12 +152,9 @@ func (u Usecase) GetTokenByTokenID( tokenID string, captureTimeout int) (*entity
 	return tokenUri, nil
 }
 
-func (u Usecase) GetToken( req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-
+func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 
 	u.Logger.Info("req", req)
-	
-	
 
 	defer func() {
 		go u.getTokenInfo(req)
@@ -191,8 +185,7 @@ func (u Usecase) GetToken( req structure.GetTokenMessageReq, captureTimeout int)
 	return tokenUri, nil
 }
 
-func (u Usecase) getTokenInfo( req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
-
+func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
 
 	u.Logger.Info("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
@@ -314,12 +307,6 @@ func (u Usecase) getTokenInfo( req structure.GetTokenMessageReq) (*entity.TokenU
 	u.Logger.Info("dataObject.Creator", dataObject.Creator)
 	u.Logger.Info("dataObject.TokenID", dataObject.TokenID)
 	u.Logger.Info("dataObject.ProjectID", dataObject.ProjectID)
-
-	
-	
-	
-	
-	
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
@@ -447,7 +434,6 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 
 func (u Usecase) UpdateTokensFromChain() error {
 
-
 	//TODO - we will use pagination instead of all
 	tokens, err := u.Repo.GetAllTokens()
 	if err != nil {
@@ -457,7 +443,6 @@ func (u Usecase) UpdateTokensFromChain() error {
 
 	u.Logger.Info("tokens.Count", len(tokens))
 	for _, token := range tokens {
-
 
 		_, err := u.GetToken(structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
 		if err != nil {
@@ -469,8 +454,7 @@ func (u Usecase) UpdateTokensFromChain() error {
 	return nil
 }
 
-func (u Usecase) GetTokensByContract( contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
-
+func (u Usecase) GetTokensByContract(contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
 
 	client, err := helpers.EthDialer()
 	if err != nil {
@@ -518,7 +502,7 @@ func (u Usecase) GetTokensByContract( contractAddress string, filter nfts.Morali
 	return p, nil
 }
 
-func (u Usecase) FilterTokens( filter structure.FilterTokens) (*entity.Pagination, error) {
+func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination, error) {
 
 	pe := &entity.FilterTokenUris{}
 	err := copier.Copy(pe, filter)
@@ -537,7 +521,7 @@ func (u Usecase) FilterTokens( filter structure.FilterTokens) (*entity.Paginatio
 	return tokens, nil
 }
 
-func (u Usecase) UpdateToken( req structure.UpdateTokenReq) (*entity.TokenUri, error) {
+func (u Usecase) UpdateToken(req structure.UpdateTokenReq) (*entity.TokenUri, error) {
 
 	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)
 	if err != nil {
@@ -559,7 +543,7 @@ func (u Usecase) UpdateToken( req structure.UpdateTokenReq) (*entity.TokenUri, e
 	return p, nil
 }
 
-func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
+func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 
 	contractAddres := project.ContractAddress
 	genAddress := project.GenNFTAddr
@@ -580,7 +564,7 @@ func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
 			time.Sleep(10 * time.Second)
 		}
 
-		go func( contractAddres string, tokenID string) {
+		go func(contractAddres string, tokenID string) {
 			u.GetToken(structure.GetTokenMessageReq{
 				ContractAddress: contractAddres,
 				TokenID:         tokenID,
@@ -593,8 +577,7 @@ func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI( projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
-
+func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -742,7 +725,7 @@ func (u Usecase) GetAllListListingWithRule() ([]structure.MarketplaceNFTDetail, 
 	return result, nil
 }
 
-func (u Usecase) GetListingDetail( inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
+func (u Usecase) GetListingDetail(inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
 	// addon for check isBuyable (contact Phuong)
 
 	isBuyable := true
@@ -785,10 +768,7 @@ func (u Usecase) GetListingDetail( inscriptionID string) (*structure.Marketplace
 
 }
 
-func (u Usecase) UpdateTokenThumbnail( req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
-
-
-	
+func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
 
 	token, err := u.Repo.FindTokenByTokenID(req.TokenID)
 	if err != nil {
@@ -801,14 +781,14 @@ func (u Usecase) UpdateTokenThumbnail( req structure.UpdateTokenThumbnailReq) (*
 		u.Logger.Error(err)
 		return nil, err
 	}
-now := time.Now().Unix()
-uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now) )
+	now := time.Now().Unix()
+	uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now))
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/upload/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	thumb := fmt.Sprintf("%s/upload/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 
 	token.Image = thumb
 	token.Thumbnail = thumb
@@ -822,6 +802,7 @@ uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/tok
 	u.Logger.Info("updated", updated)
 	return token, nil
 }
+
 
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
@@ -882,3 +863,4 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 
 	return pTokenUri, nil
 }
+
