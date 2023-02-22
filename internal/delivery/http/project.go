@@ -469,9 +469,17 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		resp.TraitStat = traitStat
 	}
 
-	profileResp, err := h.profileToResp(&input.CreatorProfile)
-	if err == nil {
-		resp.CreatorProfile = *profileResp
+	profile, err := h.Usecase.UserProfileByWallet(input.CreatorAddrr)
+	if err == nil && profile != nil && profile.ProfileSocial.TwitterVerified {
+		profileResp, err := h.profileToResp(profile)
+		if err == nil {
+			resp.CreatorProfile = *profileResp
+		}
+	} else {
+		profileResp, err := h.profileToResp(&input.CreatorProfile)
+		if err == nil {
+			resp.CreatorProfile = *profileResp
+		}
 	}
 
 	resp.MintPriceEth = input.MintPriceEth
