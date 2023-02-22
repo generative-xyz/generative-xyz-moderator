@@ -2,7 +2,7 @@ package structure
 
 import "time"
 
-type InscriptionOrdInfo struct {
+type InscriptionOrdInfoByOutput struct {
 	Outpoint string      `json:"outpoint"`
 	List     interface{} `json:"list"`
 	Chain    string      `json:"chain"`
@@ -11,6 +11,24 @@ type InscriptionOrdInfo struct {
 		ScriptPubkey string `json:"script_pubkey"`
 	} `json:"output"`
 	Inscriptions []string `json:"inscriptions"`
+}
+
+type InscriptionOrdInfoByID struct {
+	Chain         string `json:"chain"`
+	GenesisFee    int    `json:"genesis_fee"`
+	GenesisHeight int    `json:"genesis_height"`
+	ContentType   string `json:"content_type"`
+	InscriptionID string `json:"inscription_id"`
+	Next          string `json:"next"`
+	Number        int    `json:"number"`
+	Output        struct {
+		Value        int    `json:"value"`
+		ScriptPubkey string `json:"script_pubkey"`
+	} `json:"output"`
+	Previous  string      `json:"previous"`
+	Sat       interface{} `json:"sat"`
+	Satpoint  string      `json:"satpoint"`
+	Timestamp string      `json:"timestamp"`
 }
 
 type BlockCypherWalletInfo struct {
@@ -41,5 +59,13 @@ type BlockCypherWalletInfo struct {
 
 type WalletInfo struct {
 	BlockCypherWalletInfo
-	Inscriptions map[string]string `json:"inscriptions"`
+	Inscriptions          []WalletInscriptionInfo `json:"inscriptions"`
+	InscriptionsByOutputs map[string][]string     `json:inscriptions_by_outputs"`
+}
+
+type WalletInscriptionInfo struct {
+	InscriptionID string `json:"inscription_id"`
+	Offset        int64  `json:"offset"`
+	Number        int    `json:"number"`
+	ContentType   string `json:"content_type"`
 }
