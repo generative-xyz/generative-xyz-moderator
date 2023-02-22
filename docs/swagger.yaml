@@ -415,7 +415,7 @@ definitions:
         type: string
       twitter:
         type: string
-      twitter_verified:
+      twitterVerified:
         type: boolean
       web:
         type: string
@@ -2262,6 +2262,29 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's tokens
+      tags:
+      - Project
+  /project/{projectID}/report:
+    post:
+      consumes:
+      - application/json
+      description: Update projects
+      parameters:
+      - description: projectID adress
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Update project
       tags:
       - Project
   /project/btc:

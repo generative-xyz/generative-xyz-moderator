@@ -2846,6 +2846,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/{projectID}/report": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/referrals": {
             "get": {
                 "security": [
@@ -4056,7 +4093,7 @@ const docTemplate = `{
                 "twitter": {
                     "type": "string"
                 },
-                "twitter_verified": {
+                "twitterVerified": {
                     "type": "boolean"
                 },
                 "web": {
