@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 
@@ -20,38 +21,35 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.GeneratedMessage}
 // @Router /auth/nonce [POST]
 func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("generateMessage", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.GenerateMessageRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.SelfValidate()
 	if err != nil {
-		log.Error("reqBody.SelfValidate", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("request.decoder", decoder)
-	message, err := h.Usecase.GenerateMessage(span, structure.GenerateMessage{
+	h.Logger.LogAny("generateMessage", zap.Any("reqBody", reqBody))
+	message, err := h.Usecase.GenerateMessage(structure.GenerateMessage{
 		Address: *reqBody.Address,
 	})
 
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("resp.message", message)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("resp.message", message)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.GeneratedMessage{Message: *message}, "")
 }
 
@@ -65,26 +63,24 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.VerifyResponse}
 // @Router /auth/nonce/verify [POST]
 func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("messages.Verify", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	var reqBody request.VerifyMessageRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.SelfValidate()
 	if err != nil {
-		log.Error("reqBody.SelfValidate", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("request.decoder", decoder)
+	h.Logger.Info("request.decoder", decoder)
 	verifyMessage := structure.VerifyMessage{
 		Signature:        *reqBody.Sinature,
 		Address:          *reqBody.Address,         //eth
@@ -92,11 +88,11 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		AddressBTCSegwit: reqBody.AddressBTCSegwit, //btc segwit address -> use for verify signature
 		MessagePrefix:    reqBody.MessagePrefix,    //btc prefix message
 	}
-	verified, err := h.Usecase.VerifyMessage(span, verifyMessage)
+	verified, err := h.Usecase.VerifyMessage(verifyMessage)
 
-	log.SetData("verified", verified)
+	h.Logger.Info("verified", verified)
 	if err != nil {
-		log.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		h.Logger.Error(err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -107,6 +103,6 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: verified.RefreshToken,
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

@@ -5,17 +5,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	nftStructure "rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
 
-func (u Usecase) GetNftTransactions(rootSpan opentracing.Span, req structure.GetNftTransactionsReq) (*nftStructure.CovalentGetNftTransactionResponse, error) {
-	span, log := u.StartSpan("GetNftTransactions", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetNftTransactions(req structure.GetNftTransactionsReq) (*nftStructure.CovalentGetNftTransactionResponse, error) {
 
-	log.SetData("req", req)
 	resp, err := u.CovalentNft.GetNftTransactions(nftStructure.CovalentNftTransactionFilter{
 		Chain:           req.Chain,
 		ContractAddress: req.ContractAddress,
@@ -24,10 +20,7 @@ func (u Usecase) GetNftTransactions(rootSpan opentracing.Span, req structure.Get
 	return resp, err
 }
 
-func (u Usecase) GetAllTokenHolder(rootSpan opentracing.Span) ([]structure.TokenHolder, error) {
-	span, log := u.StartSpan("GetAllTokenHolder", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
+func (u Usecase) GetAllTokenHolder() ([]structure.TokenHolder, error) {
 	covalentResps, err := u.CovalentNft.GetAllTokenHolder(nftStructure.CovalentGetAllTokenHolderRequest{
 		ContractAddress: u.Config.GENToken.Contract,
 		Limit:           100,
@@ -57,13 +50,8 @@ func (u Usecase) GetAllTokenHolder(rootSpan opentracing.Span) ([]structure.Token
 	return tokenHolders, nil
 }
 
-func (u Usecase) GetTokenHolders(rootSpan opentracing.Span, req structure.GetTokenHolderRequest) (*entity.Pagination, error) {
-	span, log := u.StartSpan("GetTokenHolders", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetData("req", req)
-
-	bf := entity.BaseFilters{
+func (u Usecase) GetTokenHolders(req structure.GetTokenHolderRequest) (*entity.Pagination, error) {
+bf := entity.BaseFilters{
 		Page: int64(req.Page),
 		Limit: int64(req.Limit),
 		SortBy: "current_rank",
@@ -77,18 +65,11 @@ func (u Usecase) GetTokenHolders(rootSpan opentracing.Span, req structure.GetTok
 	return resp, err
 }
 
-func (u Usecase) GetNftMintedTime(rootSpan opentracing.Span, req structure.GetNftMintedTimeReq) (*structure.NftMintedTime, error) {
-	span, log := u.StartSpan("GetNftMintedTime", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetData("req", req)
-	log.SetTag("tokenID", req.TokenID)
-	log.SetTag("contractAddress", req.ContractAddress)
-
-	// try to get block number minted and minted time from moralis
+func (u Usecase) GetNftMintedTime( req structure.GetNftMintedTimeReq) (*structure.NftMintedTime, error) {
+// try to get block number minted and minted time from moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
 	if err != nil {
-		log.Error("u.GetNftMintedTime.MoralisNft.GetNftByContractAndTokenID", err.Error(), err)
+		u.Logger.Error(err)
 		return nil, err
 	}
 	blockNumber := nft.BlockNumberMinted

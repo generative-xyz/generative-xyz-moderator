@@ -161,6 +161,20 @@ func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mon
 	return result, nil
 }
 
+func (r Repository) GetProjectsByWalletAddress(add string) ([]entity.Projects, error) {
+	confs := []entity.Projects{}
+	filter := entity.FilterProjects{}
+	filter.WalletAddress = &add
+	f := r.FilterProjects(filter)
+	s := r.SortProjects()
+	_, err := r.Paginate(utils.COLLECTION_PROJECTS, 1, 10, f, r.SelectedProjectFields(), s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
 func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
@@ -170,9 +184,12 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 		s = r.SortProjects()
 	} else {
 		s = []Sort{
-			{SortBy: "priority", Sort:  entity.SORT_DESC}, //priority is alway used in sorting
 			{SortBy: filter.SortBy, Sort: filter.Sort},
 			{SortBy: "tokenid", Sort: entity.SORT_DESC},
+		}
+
+		if filter.SortBy == "stats.trending_score" {
+			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC} )
 		}
 	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
@@ -293,16 +310,20 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
-	if filter.Name != nil {
+	if filter.Name != nil && len(*filter.Name) >= 3 {
 		if *filter.Name != "" {
-			f["$text"] = bson.M{"$search": *filter.Name}
+			f["$or"] = []bson.M{
+				{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.wallet_address": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+			}
 		}
 	}
 
 	if filter.CategoryIds != nil && len(filter.CategoryIds) > 0 {
 		f["categories"] = bson.M{"$all": filter.CategoryIds}
 	}
-	
+
 	if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
 	}

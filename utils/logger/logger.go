@@ -1,59 +1,51 @@
 package logger
 
-import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-)
+import "go.uber.org/zap"
 
 type Ilogger interface {
-	Info(message string, fields ...zapcore.Field)
-	Error(message string, fields ...interface{})
-	Warning(message string, fields ...interface{})
+	LogAny(message string, fields ...zap.Field)
+	Info(fields ...interface{})
+	Error(fields ...interface{})
+	ErrorAny(message string, fields ...zap.Field)
+	Warning(fields ...interface{})
+	Infof(format string, fields ...interface{}) 
 }
 
 type logger struct {
-	Module *zap.Logger
+	Module *autoLogger
 }
 
 func NewLogger() *logger {
-	log := new(logger)
-
-	m, err := zap.Config{
-		Encoding:    "console",
-		Level:       zap.NewAtomicLevelAt(zapcore.InfoLevel),
-		OutputPaths: []string{"stdout"},
-		EncoderConfig: zapcore.EncoderConfig{
-			MessageKey:  "message", // <--
-			LevelKey:    "level",
-			EncodeLevel: zapcore.CapitalLevelEncoder,
-
-			TimeKey:    "time",
-			EncodeTime: zapcore.ISO8601TimeEncoder,
-
-			CallerKey:    "caller",
-			EncodeCaller: zapcore.ShortCallerEncoder,
-		},
-		DisableCaller: true,
-	}.Build()
-	if err != nil {
-		panic(err)
-	}
-	log.Module = m
-	return log
+	l := &logger{}
+	log := InitLoggerDefault(true)
+	l.Module = log
+	return l
 }
 
-func (l *logger) Info(message string, fields ...zapcore.Field) {
-	l.Module.Info(message, fields...)
+func (l *logger) Info(fields ...interface{}) {
+	l.Module.SugaredLogger.Info(fields...)
 }
 
-func (l *logger) Error(message string, fields ...interface{}) {
-	l.Module.Sugar().Error(message, fields)
+func (l *logger) Infof(format string, fields ...interface{}) {
+	l.Module.SugaredLogger.Infof(format,fields)
 }
 
-func (l *logger) Warning(message string, fields ...interface{}) {
-	l.Module.Sugar().Warn(message, fields)
+func (l *logger) Error(fields ...interface{}) {
+	l.Module.SugaredLogger.Error(fields...)
 }
 
-func (l *logger) Fatal(message string, fields ...interface{}) {
-	l.Module.Sugar().Fatal(message, fields)
+func (l *logger) Warning(fields ...interface{}) {
+	l.Module.SugaredLogger.Warn(fields...)
+}
+
+func (l *logger) Fatal(fields ...interface{}) {
+	l.Module.SugaredLogger.Fatal(fields ...)
+}
+
+func (l *logger) LogAny(message string, fields ...zap.Field) {
+	l.Module.Logger.Info(message, fields ...)
+}
+
+func (l *logger) ErrorAny(message string, fields ...zap.Field) {
+	l.Module.Logger.Error(message, fields ...)
 }

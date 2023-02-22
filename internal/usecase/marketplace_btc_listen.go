@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/external/ord_service"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -73,10 +74,7 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 }
 
 // check receive of the nft:
-func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
-
-	span, log := u.StartSpan("BtcChecktListNft", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) BtcChecktListNft() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -180,12 +178,9 @@ func (u Usecase) BtcChecktListNft(rootSpan opentracing.Span) error {
 }
 
 // check receive BTC for buying the nft:
-func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
+func (u Usecase) BtcCheckReceivedBuyingNft() error {
 
 	fmt.Printf("go BtcCheckReceivedBuyingNft....")
-
-	span, log := u.StartSpan("BtcCheckReceivedBuyingNft", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
 
 	_, bs, err := u.buildBTCClient()
 
@@ -236,8 +231,8 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 
 			// update StatusBuy_NeedToRefund now for listing:
 			item.Status = entity.StatusBuy_NeedToRefund
-			log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
-			u.Notify(rootSpan, "WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+			u.Logger.Info(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
+			u.Notify("WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
 
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
@@ -287,8 +282,8 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 		}
 
 		go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
-		log.SetData(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
-		u.Notify(rootSpan, "WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+		u.Logger.Info(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
+		u.Notify("WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
 
 	}
 
@@ -296,9 +291,7 @@ func (u Usecase) BtcCheckReceivedBuyingNft(rootSpan opentracing.Span) error {
 }
 
 // send btc for buy order records:
-func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("BtcSendBTCForBuyOrder", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) BtcSendBTCForBuyOrder() error {
 
 	_, bs, err := u.buildBTCClient()
 
@@ -346,15 +339,15 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 
 			royaltyFee := int(0)
 			artistAddress := ""
-			tokenUri, err := u.GetTokenByTokenID(span, item.InscriptionID, 0)
+			tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
 			if err == nil {
-				projectDetail, err := u.GetProjectDetail(span, structure.GetProjectDetailMessageReq{
+				projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
 					ContractAddress: tokenUri.ContractAddress,
 					ProjectID:       tokenUri.ProjectID,
 				})
 				if err == nil {
 					if projectDetail.Royalty > 0 {
-						creator, err := u.GetUserProfileByWalletAddress(span, projectDetail.CreatorAddrr)
+						creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 						if err == nil {
 							if creator.WalletAddressBTC != "" {
 								royaltyFeePercent := float64(projectDetail.Royalty) / 10000
@@ -372,11 +365,13 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 			destinations := make(map[string]int)
 
 			destinations[nftListing.SellerAddress] = amountWithChargee
-			if artistAddress != "" {
+			if artistAddress != "" && royaltyFee > 0 {
 				destinations[artistAddress] = royaltyFee
 			}
 
-			destinations[serviceFeeAddress] = serviceFee
+			if serviceFee > 0 {
+				destinations[serviceFeeAddress] = serviceFee
+			}
 
 			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
 			if err != nil {
@@ -425,10 +420,7 @@ func (u Usecase) BtcSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 	return nil
 }
 
-func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
-
-	span, log := u.StartSpan("BtcCheckSendBTCForBuyOrder", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -493,9 +485,7 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder(rootSpan opentracing.Span) error {
 }
 
 // send nft for buy order records:
-func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
-	span, log := u.StartSpan("BtcSendBTCForBuyOrder", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) BtcSendNFTForBuyOrder() error {
 
 	// get list buy order status = StatusBuy_ReceivedFund:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_ReceivedFund)
@@ -507,7 +497,7 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 		if item.Status == entity.StatusBuy_ReceivedFund {
 
 			// check nft in master wallet or not:
-			listNFTsRep, err := u.GetMasterNfts(span)
+			listNFTsRep, err := u.GetMasterNfts()
 			if err != nil {
 				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.Error", err.Error())
 				continue
@@ -546,7 +536,7 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 			go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
 			if err != nil {
-				log.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
 				continue
 			}
 
@@ -561,7 +551,7 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err.Error())
-				log.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
+				u.Logger.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
 				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.UpdateBTCNFTBuyOrder", err.Error())
 				continue
 			}
@@ -576,20 +566,17 @@ func (u Usecase) BtcSendNFTForBuyOrder(rootSpan opentracing.Span) error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-				log.Error("BtcSendNFTForBuyOrder.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
+				u.Logger.Error("BtcSendNFTForBuyOrder.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
 				go u.trackHistory(item.ID.String(), "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "u.Repo.UpdateBTCNFTBuyOrder", err.Error())
 			}
 			// save log:
-			log.SetData(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
+			u.Logger.Info(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
 		}
 	}
 	return nil
 }
 
-func (u Usecase) BtcCheckSendNFTForBuyOrder(rootSpan opentracing.Span) error {
-
-	span, log := u.StartSpan("BtcCheckSendNFTForBuyOrder", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -691,12 +678,8 @@ func (u Usecase) SendTokenMKP(receiveAddr string, inscriptionID string) (*ord_se
 	return resp, err
 }
 
-func (u Usecase) GetMasterNfts(rootSpan opentracing.Span) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan(fmt.Sprintf("GetMasterNfts.%s", "inscriptions"), rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) GetMasterNfts() (*ord_service.ExecRespose, error) {
 
-	log.SetTag(utils.TOKEN_ID_TAG, "inscriptions")
-	log.SetTag(utils.WALLET_ADDRESS_TAG, "ord_marketplace_master")
 	listNFTsReq := ord_service.ExecRequest{
 		Args: []string{
 			"--wallet",
@@ -705,15 +688,15 @@ func (u Usecase) GetMasterNfts(rootSpan opentracing.Span) (*ord_service.ExecResp
 			"inscriptions",
 		}}
 
-	log.SetData("listNFTsReq", listNFTsReq)
+	u.Logger.Info("listNFTsReq", listNFTsReq)
 	resp, err := u.OrdService.Exec(listNFTsReq)
-	defer u.Notify(rootSpan, "GetMasterNfts", "ord_marketplace_master", "inscriptions")
+	defer u.Notify("GetMasterNfts", "ord_marketplace_master", "inscriptions")
 	if err != nil {
-		log.SetData("u.OrdService.Exec.Error", err.Error())
-		log.Error("u.OrdService.Exec", err.Error(), err)
+		u.Logger.Info("u.OrdService.Exec.Error", err.Error())
+		u.Logger.Error("u.OrdService.Exec", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("listNFTsRep", resp)
+	u.Logger.Info("listNFTsRep", resp)
 	return resp, err
 }
 
@@ -734,12 +717,7 @@ func (u *Usecase) trackHistory(id, name, table string, status interface{}, reque
 }
 
 // tesst:
-func (u Usecase) SendTokenMKPTest(rootSpan opentracing.Span, walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
-	span, log := u.StartSpan(fmt.Sprintf("SendTokenMKPTest.%s", inscriptionID), rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-
-	log.SetTag(utils.TOKEN_ID_TAG, inscriptionID)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, receiveAddr)
+func (u Usecase) SendTokenMKPTest(walletName, receiveAddr, inscriptionID string) (*ord_service.ExecRespose, error) {
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", inscriptionID, receiveAddr, walletName, "before call ord_service.ExecRequest")
 
@@ -755,22 +733,63 @@ func (u Usecase) SendTokenMKPTest(rootSpan opentracing.Span, walletName, receive
 			"15",
 		}}
 
-	log.SetData("sendTokenReq", sendTokenReq)
+	u.Logger.Info("sendTokenReq", sendTokenReq)
 
 	resp, err := u.OrdService.Exec(sendTokenReq)
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "after call OrdService.Exec")
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "SendTokenMKP.JsonTransform", resp)
 
-	defer u.Notify(rootSpan, "SendTokenMKPTest", receiveAddr, inscriptionID)
+	defer u.Notify("SendTokenMKPTest", receiveAddr, inscriptionID)
 	if err != nil {
-		log.SetData("u.OrdService.Exec.Error", err.Error())
-		log.Error("u.OrdService.Exec", err.Error(), err)
+		u.Logger.Info("u.OrdService.Exec.Error", err.Error())
+		u.Logger.Error("u.OrdService.Exec", err.Error(), err)
 		return nil, err
 	}
-	log.SetData("sendTokenRes", resp)
+	u.Logger.Info("sendTokenRes", resp)
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "return now...")
 
 	return resp, err
+}
+
+// admin
+// check receive of the nft:
+func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
+	var listIdSuccess []string
+
+	if reqs != nil {
+		for _, v := range reqs.InscriptionID {
+			//v.Inscription
+			listing := entity.MarketplaceBTCListing{
+				SellOrdAddress: reqs.SellOrdAddress,
+				SellerAddress:  reqs.SellerAddress,
+				HoldOrdAddress: "",
+				ServiceFee:     "0",
+				Price:          reqs.Price,
+				IsConfirm:      true,
+				IsSold:         false,
+				ExpiredAt:      time.Now().Add(time.Hour * 1),
+				Name:           "",
+				Description:    "",
+				InscriptionID:  v,
+			}
+			// get first:
+			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)
+			if nftList != nil && nftList.IsConfirm && !nftList.IsSold {
+				u.Logger.Error("AutoListing.Repo.FindBtcNFTListingByNFTID", "", errors.New("item exist"))
+				continue
+			}
+
+			// check if listing is created or not
+			err := u.Repo.CreateMarketplaceListingBTC(&listing)
+			if err != nil {
+				u.Logger.Error("AutoListing.Repo.CreateMarketplaceBTCListing", "", err)
+				continue
+			}
+			listIdSuccess = append(listIdSuccess, v)
+		}
+	}
+
+	return listIdSuccess
 }
