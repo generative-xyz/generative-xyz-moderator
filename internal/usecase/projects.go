@@ -93,6 +93,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 }
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
+	u.Logger.LogAny("CreateBTCProject", zap.Any("CreateBtcProjectReq", req))
 
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
@@ -101,20 +102,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		return nil, err
 	}
 
-	/*
-		minMint, ok := big.NewFloat(0).SetString("0.01")
-		if !ok {
-			err = errors.New("Cannot convert number")
-			u.Logger.Error("validate.convert.number", err.Error(), err)
-			return nil, err
-		}
-
-		if mintPrice.Cmp(minMint) == -1 {
-			err = errors.New("mintPrice must be greater than 0.01")
-			u.Logger.Error("validate.Min.Fee.Fail", err.Error(), err)
-			return nil, err
-		}
-	*/
 
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
@@ -137,7 +124,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.FindUserByWalletAddress", err))
@@ -184,6 +170,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
+	
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
@@ -208,13 +195,13 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
 
+	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("CreateProject", err))
 		return nil, err
 	}
 
-	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	if isPubsub {
 		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
@@ -225,7 +212,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
-
+	
 	return pe, nil
 }
 
