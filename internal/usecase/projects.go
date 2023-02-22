@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
+	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
 )
@@ -224,8 +226,71 @@ func (u Usecase) CreateBTCProject( req structure.CreateBtcProjectReq) (*entity.P
 	u.Logger.Info("pe.isPubsub", isPubsub)
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
+	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
+
 	return pe, nil
 }
+
+func (u Usecase) NotifyCreateNewProjectToDiscord(pe *entity.Projects, creatorAddrr *entity.Users) {
+	domain := os.Getenv("DOMAIN")
+	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
+	fields := make([]discordclient.Field, 0)
+	addFields := func(fields []discordclient.Field, name string, value string) []discordclient.Field {
+		if value == "" {
+			return fields
+		}
+		return append(fields, discordclient.Field{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(pe.MintPrice))
+	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", pe.MaxSupply))
+	discordMsg := discordclient.Message{
+		Username: "Satoshi 27",
+		Embeds: []discordclient.Embed{{
+			Title:       fmt.Sprintf("just launched %s", pe.Name),
+			Url:         fmt.Sprintf("%s/generative/%s", domain, pe.GenNFTAddr),
+			Description: pe.Description,
+			Author: discordclient.Author{
+				Name:    u.resolveShortName(creatorAddrr.DisplayName, creatorAddrr.WalletAddress),
+				Url:     fmt.Sprintf("%s/profile/%s", domain, creatorAddrr.WalletAddress),
+				IconUrl: creatorAddrr.Avatar,
+			},
+			Fields: fields,
+			Image: discordclient.Image{
+				Url: pe.Thumbnail,
+			},
+		}},
+	}
+	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFn()
+
+	u.Logger.Info("sending message to discord", discordMsg)
+
+	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
+		u.Logger.Error("error sending message to discord", err)
+	}
+}
+
+func (u Usecase) resolveMintPriceBTC(priceStr string) string {
+	price, err := strconv.Atoi(priceStr)
+	if err != nil {
+		return priceStr
+	}
+	return fmt.Sprintf("%.2f BTC", float64(price)/1e8)
+
+}
+
+func (u Usecase) resolveShortName(userName string, userAddr string) string {
+	if userName != "" {
+		return userName
+	}
+
+	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
+}
+
 
 func (u Usecase) UpdateBTCProject( req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
@@ -485,7 +550,7 @@ func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*e
 	// defer func  ()  {
 	// 	//alway update project in a separated process
 	// 	go func() {
-	// 	// 
+	// 	//
 	// 		_, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 	// 		if err != nil {
 	// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
@@ -495,8 +560,8 @@ func (u Usecase) GetProjectDetail( req structure.GetProjectDetailMessageReq) (*e
 	// 	}()
 	// }()
 
-	
-	
+
+
 
 	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
@@ -816,8 +881,8 @@ func (u Usecase) getProjectDetailFromChain( req structure.GetProjectDetailMessag
 func (u Usecase) getNftContractDetailInternal( client *ethclient.Client, contractAddr common.Address, projectID big.Int) (*structure.ProjectDetail, error) {
 
 
-	
-	
+
+
 
 	gProject, err := generative_project_contract.NewGenerativeProjectContract(contractAddr, client)
 	if err != nil {
