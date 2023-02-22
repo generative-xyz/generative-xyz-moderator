@@ -2051,6 +2051,33 @@ paths:
       tags:
       - Project
   /project/{contractAddress}/{projectID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete projects
+      parameters:
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID adress
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Delete project
+      tags:
+      - Project
     put:
       consumes:
       - application/json
