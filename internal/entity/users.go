@@ -18,6 +18,7 @@ const (
 
 type FilterUsers struct {
 	BaseFilters
+	Search           *string
 	Email            *string
 	WalletAddress    *string
 	WalletAddressBTC *string
