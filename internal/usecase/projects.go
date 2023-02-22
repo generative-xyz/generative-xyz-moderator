@@ -1170,3 +1170,101 @@ func (u Usecase) UploadFileZip(fc []byte, uploadChan chan uploadFileChan, peName
 	uploadedUrl = &cdnURL
 
 }
+
+func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*entity.Projects, error) {
+	u.Logger.Info(fmt.Sprintf("Start create project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+	pe := &entity.Projects{}
+
+	mPrice := helpers.StringToBTCAmount("0")
+	
+	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
+
+	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	pe.MintPrice = mPrice.String()
+	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
+	pe.IsHidden = true
+	pe.Status = true
+	pe.IsSynced = true
+	nftTokenURI := make(map[string]interface{})
+	nftTokenURI["name"] = meta.Name
+	nftTokenURI["description"] = meta.Description
+	nftTokenURI["image"] = thumbnail
+	nftTokenURI["animation_url"] = ""
+	nftTokenURI["attributes"] = []string{}
+
+	pe.CreatorAddrr = "0x0000000000000000000000000000000000000000"
+	creatorAddrr, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+	if err != nil {
+		u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+		return nil, err
+	}
+
+	pe.CreatorName = creatorAddrr.DisplayName
+
+	bytes, err := json.Marshal(nftTokenURI)
+	if err != nil {
+		u.Logger.Error("json.Marshal.nftTokenURI", err.Error(), err)
+		return nil, err
+	}
+	nftToken := helpers.Base64Encode(bytes)
+	now := time.Now().UTC()
+
+	pe.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
+	pe.ProcessingImages = []string{}
+	pe.MintedImages = nil
+	pe.MintedTime = &now
+	pe.CreatorProfile = *creatorAddrr
+	pe.CreatorAddrrBTC = creatorAddrr.WalletAddressBTC
+	pe.LimitSupply = 0
+	pe.GenNFTAddr = pe.TokenID
+	
+	pe.Name = meta.Name
+	pe.Description = meta.Description
+	maxSupply, err := strconv.ParseInt(meta.Supply, 10, 64)
+	if err != nil {
+		maxSupply = 0
+	}
+	pe.MaxSupply = maxSupply
+	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
+	var index int64
+	if err != nil {
+		index = 0		
+	} else {
+		index = *countIndex
+	}
+	pe.MintingInfo.Index = index
+
+	if pe.Categories == nil || len(pe.Categories) == 0 {
+		pe.Categories = []string{u.Config.OtherCategoryID}
+	}
+
+	pe.Royalty = meta.Royalty
+	pe.SocialTwitter = meta.TwitterLink
+	pe.SocialDiscord = meta.DiscordLink
+	pe.SocialWeb = meta.WebsiteLink
+	pe.Thumbnail = thumbnail
+
+	maxID, err := u.Repo.GetMaxBtcProjectID()
+	if err != nil {
+		u.Logger.Error("u.Repo.GetMaxBtcProjectID", err.Error(), err)
+		return nil, err
+	}
+	maxID = maxID + 1
+	pe.TokenIDInt = maxID
+	pe.TokenID = fmt.Sprintf("%d", maxID)
+	pe.GenNFTAddr = pe.TokenID
+	pe.InscriptionIcon = meta.InscriptionIcon
+	pe.CreatedByCollectionMeta = true
+	blockNumberMinted := "0"
+	pe.BlockNumberMinted = &blockNumberMinted
+
+	err = u.Repo.CreateProject(pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.CreateProjectFromInscription", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info(fmt.Sprintf("Done create project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+
+	return pe, nil
+}

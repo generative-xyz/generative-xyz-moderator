@@ -74,6 +74,7 @@ MinterAddress *string `bson:"minter_address"`
 	IsOnchain bool `bson:"isOnchain"` 
 	InscriptionIndex string `bson:"inscription_index"`
 	SyncedInscriptionInfo bool `bson:"synced_inscription_info"`
+	CreatedByCollectionInscription bool `bson:"created_by_collection_inscription"`
 }
 
 type TokenUriAttr struct {

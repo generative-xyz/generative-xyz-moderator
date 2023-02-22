@@ -126,4 +126,22 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 		}
 	})
 	c.Start()
+
+	go func() {
+		for {
+			err := h.Usecase.CreateProjectsFromMetas()
+			if err != nil {
+				h.Logger.Error("error at cronjob create projects from metas", err.Error(), err)
+				return
+			}
+			err = h.Usecase.CreateTokensFromCollectionInscriptions()
+			if err != nil {
+				h.Logger.Error("error at cronjob create tokens from collection inscription", err.Error(), err)
+				return
+			}
+			// Sleep 5 minutes after recreate again
+			time.Sleep(5 * time.Minute)
+		}
+	}()
+
 }
