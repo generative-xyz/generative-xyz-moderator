@@ -24,10 +24,8 @@ func TestClient_SendMessage(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test send simple discord message",
-			fields: fields{
-				WebhookURL: "https://discord.com/api/webhooks/1075257578910666784/9RCSGaDGeAgLn59wWk6L4SB-P6A9wUxWy0qO_uN-EYJb3BCnn25kp8ID42ixYCkllyMf",
-			},
+			name:   "test send simple discord message",
+			fields: fields{},
 			args: args{
 				message: Message{
 					Username: "Test Bot",
@@ -39,10 +37,8 @@ func TestClient_SendMessage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &Client{
-				WebhookURL: tt.fields.WebhookURL,
-			}
-			if err := c.SendMessage(ctx, tt.args.message); (err != nil) != tt.wantErr {
+			c := &Client{}
+			if err := c.SendMessage(ctx, "https://discord.com/api/webhooks/1075257578910666784/9RCSGaDGeAgLn59wWk6L4SB-P6A9wUxWy0qO_uN-EYJb3BCnn25kp8ID42ixYCkllyMf", tt.args.message); (err != nil) != tt.wantErr {
 				t.Errorf("SendMessage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
