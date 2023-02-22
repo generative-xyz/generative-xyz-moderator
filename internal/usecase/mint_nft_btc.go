@@ -432,13 +432,6 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
 			continue
 		}
-
-		err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
-		if err != nil {
-			u.Logger.Error(fmt.Sprintf("JobMint_MintNftBtc.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
-			continue
-		}
 		_, err = u.Repo.UpdateMintNftBtcByFilter(item.UUID, bson.M{"$set": bson.M{"isUpdatedNftInfo": true}})
 		if err != nil {
 			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
@@ -542,6 +535,11 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				continue
 			}
 			if item.Status == entity.StatusMint_Minted {
+				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+				}
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
 			}
