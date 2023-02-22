@@ -92,7 +92,8 @@ type Projects struct {
 	ProcessingImages       []string           `bson:"processingImages" json:"processingImages"`
 	MintedImages           []MintedImages     `bson:"mintedImages" json:"mintedImages"` //if user uses links instead of animation URL
 	IsFullChain            bool               `bson:"isFullChain" json:"isFullChain"`
-	TraceID            string               `bson:"traceID" json:"traceID"` //TO find log easily
+	TraceID                string             `bson:"traceID" json:"traceID"` //TO find log easily
+	ReportUsers            []string           `bson:"reportUsers" json:"reportUsers"`
 }
 
 type MintedImages struct {
@@ -114,8 +115,8 @@ type FilterProjects struct {
 	BaseFilters
 	WalletAddress *string
 	Name          *string
-	IsHidden          *bool
-	CategoryIds 	[]string
+	IsHidden      *bool
+	CategoryIds   []string
 }
 
 func (u Projects) TableName() string {

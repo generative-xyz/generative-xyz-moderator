@@ -73,6 +73,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
+
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
@@ -85,6 +86,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	projectAuth := api.PathPrefix("/project").Subrouter()
 	projectAuth.Use(h.MiddleWare.AccessToken)
+	projectAuth.HandleFunc("/{projectID}/report", h.reportProject).Methods("POST")
 	projectAuth.HandleFunc("/btc", h.createBTCProject).Methods("POST")
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
