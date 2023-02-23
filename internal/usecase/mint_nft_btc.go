@@ -124,7 +124,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
-	// for anaylist:
+	// for analytics:
 	walletAddress.ProjectNetworkFee = networkFee
 	walletAddress.ProjectMintPrice = mintPriceInt
 	walletAddress.BtcRate = btcRate

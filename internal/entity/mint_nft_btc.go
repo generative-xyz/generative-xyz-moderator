@@ -109,7 +109,7 @@ type MintNftBtc struct {
 	AmountSentMaster string `bson:"amount_sent_master"` // amount withdrawn to the master wallet
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
 
-	// for anaylist:
+	// for analytics:
 	BtcRate           float64 `bson:"btc_rate"`
 	EthRate           float64 `bson:"eth_rate"`
 	ProjectMintPrice  int     `bson:"project_mint_price"`
