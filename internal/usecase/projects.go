@@ -451,19 +451,30 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	return p, nil
 }
 
-func (u Usecase) ReportProject(tokenId, iWalletAddress string) (*entity.Projects, error) {
+func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*entity.Projects, error) {
 	p, err := u.Repo.FindProjectByTokenID(tokenId)
 	if err != nil {
 		u.Logger.Error("ReportProject.FindProjectBy", err.Error(), err)
 		return nil, err
 	}
 
-	if helpers.SliceStringContains(p.ReportUsers, iWalletAddress) {
-		return nil, errors.New("You have already reported before.")
+	for _, r := range p.ReportUsers {
+		if r.ReportUserAddress == iWalletAddress {
+			return nil, errors.New("You have already reported before.")
+		}
 	}
 
-	p.ReportUsers = append(p.ReportUsers, iWalletAddress)
+	rep := &entity.ReportProject{
+		ReportUserAddress: iWalletAddress,
+		OriginalLink:      originalLink,
+	}
+
+	p.ReportUsers = append(p.ReportUsers, rep)
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if len(p.ReportUsers) >= 3 {
+		p.IsHidden = true
+	}
+
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)
 		return nil, err

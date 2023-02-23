@@ -189,6 +189,11 @@ definitions:
       web:
         type: string
     type: object
+  request.ReportProjectReq:
+    properties:
+      originalLink:
+        type: string
+    type: object
   request.UpdateBTCProjectCategoriesReq:
     properties:
       categories:
@@ -2275,6 +2280,12 @@ paths:
         name: projectID
         required: true
         type: string
+      - description: Report Project request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ReportProjectReq'
       produces:
       - application/json
       responses:

@@ -26,7 +26,7 @@ type ProjectResp struct {
 	Name                   string           `json:"name"`
 	CreatorAddr            string           `json:"creatorAddr"`
 	CreatorAddrrBTC        string           `json:"creatorAddrrBTC"`
-	Categories 						 []string				  `json:"categories"`
+	Categories             []string         `json:"categories"`
 	License                string           `json:"license"`
 	Desc                   string           `json:"desc"`
 	Image                  string           `json:"image"`
@@ -53,7 +53,14 @@ type ProjectResp struct {
 	CloseMintUnixTimestamp int              `json:"closeMintUnixTimestamp"`
 	WhiteListEthContracts  []string         `json:"whiteListEthContracts"`
 	IsHidden               bool             `json:"isHidden"`
-	TotalImages               int             `json:"totalImages"`
+	EditableIsHidden       bool             `json:"editableIsHidden"`
+	TotalImages            int              `json:"totalImages"`
+	ReportUsers            []*ReportProject `json:"reportUsers"`
+}
+
+type ReportProject struct {
+	OriginalLink      string `json:"originalLink"`
+	ReportUserAddress string `json:"reportUserAddress"`
 }
 
 type ProjectStatResp struct {
