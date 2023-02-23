@@ -250,7 +250,7 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 				Tx:      mintItem.TxSendNft,
 			}
 		} else {
-			statusMap["6"] = statusprogressStruct{
+			statusMap["5"] = statusprogressStruct{
 				Message: "Completed",
 				Status:  false,
 				Tx:      mintItem.TxSendNft,
