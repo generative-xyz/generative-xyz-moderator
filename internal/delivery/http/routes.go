@@ -196,6 +196,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
+
+	tokenUri := api.PathPrefix("/token-uri").Subrouter()
+	tokenUri.HandleFunc("", h.getTokenUris).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

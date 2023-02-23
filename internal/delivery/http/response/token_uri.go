@@ -18,6 +18,24 @@ type TokenStat struct {
 	Price *string `json:"price,omitempty"`
 }
 
+type ExternalTokenURIResp struct {
+	BaseResponse
+	TokenID          string `json:"tokenID"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	Image            string `json:"image"`
+	AnimationURL     string `json:"animationUrl"`
+	InscriptionIndex string `json:"inscriptionIndex"`
+	Buyable          bool   `json:"buyable"`
+	IsCompleted      bool   `json:"isCompleted"`
+	PriceBTC         string `json:"priceBTC"`
+	OrderID          string `json:"orderID"`
+	ProjectName      string `json:"projectName"`
+	ProjectID        string `json:"projectID"`
+	Thumbnail        string `json:"thumbnail"`
+	Priority         int    `json:"priority"`
+}
+
 type InternalTokenURIResp struct {
 	BaseResponse
 	TokenID          string           `json:"tokenID"`

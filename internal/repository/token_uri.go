@@ -9,6 +9,7 @@ import (
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -135,6 +136,13 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 				f["token_id_mini"] = *filter.Keyword
 			}
 
+		}
+	}
+
+	if filter.Search != nil && len(*filter.Search) >= 3 {
+		f["$or"] = []bson.M{
+			{"token_id": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"inscription_index": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 		}
 	}
 
@@ -386,7 +394,7 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 	tokens := []entity.TokenUri{}
 
 	f := bson.M{
-		"project_id_int" : bson.M{"$gt" : 1000000},
+		"project_id_int":          bson.M{"$gt": 1000000},
 		"synced_inscription_info": bson.M{"$ne": true},
 	}
 	f[utils.KEY_DELETED_AT] = nil
@@ -409,7 +417,7 @@ func (r Repository) UpdateTokenInscriptionIndex(tokenId string, inscriptionIndex
 	}
 	update := bson.M{
 		"$set": bson.M{
-			"inscription_index": inscriptionIndex,
+			"inscription_index":       inscriptionIndex,
 			"synced_inscription_info": true,
 		},
 	}
@@ -427,7 +435,7 @@ func (r Repository) UpdateTokenOwner(tokenId string, owner *entity.Users) error 
 	update := bson.M{
 		"$set": bson.M{
 			"owner_addrress": owner.WalletAddressBTC,
-			"owner": owner,
+			"owner":          owner,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
