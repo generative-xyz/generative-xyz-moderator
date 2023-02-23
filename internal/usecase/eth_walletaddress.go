@@ -627,8 +627,8 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	// amountMintBTCBigInt := web3.FloatAsInt(amountMintBTC, 8)
 
 	u.Logger.Info("amountMintBTC", amountMintBTC.String())
-	//btcToETH := btcPrice / ethPrice
-	btcToETH := 14.27
+	btcToETH := btcPrice / ethPrice
+	// btcToETH := 14.27 // remove hardcode, why tri hardcode this??
 
 	rate := new(big.Float)
 	rate.SetFloat64(btcToETH)
