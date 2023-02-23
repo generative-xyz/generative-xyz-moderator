@@ -38,11 +38,9 @@ require (
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/gocolly/colly v1.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/rs/zerolog v1.15.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.6.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.47.0
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
 
 require (

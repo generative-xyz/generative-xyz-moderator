@@ -91,7 +91,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
 	projectAuth.HandleFunc("/{contractAddress}/{projectID}", h.deleteBTCProject).Methods("DELETE")
-	projectAuth.HandleFunc("/{contractAddress}/{projectID}/force-delete", h.deleteBTCProject).Methods("GET")
 
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
