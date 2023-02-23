@@ -111,8 +111,8 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
-			now := time.Now().UTC().String()
-			name := fmt.Sprintf("thumb/%s-%s-%s.png", token.ContractAddress, token.TokenID, now)
+			now := time.Now().UTC().Unix()
+			name := fmt.Sprintf("thumb/%s-%d.png", token.TokenID, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
@@ -503,7 +503,6 @@ func (u Usecase) GetTokensByContract(contractAddress string, filter nfts.Moralis
 }
 
 func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination, error) {
-
 	pe := &entity.FilterTokenUris{}
 	err := copier.Copy(pe, filter)
 	if err != nil {
@@ -803,7 +802,6 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 	return token, nil
 }
 
-
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
 	// find project by projectID
@@ -863,4 +861,3 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 
 	return pTokenUri, nil
 }
-

@@ -148,6 +148,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		pe.IsHidden = true
 		isPubsub = true
 		pe.Status = false
+		pe.IsSynced = false
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
@@ -374,7 +375,14 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
-	if p.CreatorAddrr != *req.CreatetorAddress {
+	whitelist := make(map[string]bool)
+	whitelist["0xe23fcb129d6ea1b847202b14a56f957e5a464f64"] = true // andy
+	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
+	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
+	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
+	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
+	whitelist["0xd77f54424cc2bd2a7315b1018e53548f62f690c0"] = true // anne
+	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
@@ -423,7 +431,6 @@ func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (
 }
 
 func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects, error) {
-
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.FindProjectBy", err))
@@ -435,6 +442,9 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 		p.Priority = &priority
 	}
 
+	if len(p.ReportUsers) >= u.Config.MaxReportCount {
+		p.IsHidden = true
+	}
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
@@ -446,19 +456,30 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	return p, nil
 }
 
-func (u Usecase) ReportProject(tokenId, iWalletAddress string) (*entity.Projects, error) {
+func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*entity.Projects, error) {
 	p, err := u.Repo.FindProjectByTokenID(tokenId)
 	if err != nil {
 		u.Logger.Error("ReportProject.FindProjectBy", err.Error(), err)
 		return nil, err
 	}
 
-	if helpers.SliceStringContains(p.ReportUsers, iWalletAddress) {
-		return nil, errors.New("You have already reported before.")
+	for _, r := range p.ReportUsers {
+		if r.ReportUserAddress == iWalletAddress {
+			return nil, errors.New("You have already reported before.")
+		}
 	}
 
-	p.ReportUsers = append(p.ReportUsers, iWalletAddress)
+	rep := &entity.ReportProject{
+		ReportUserAddress: iWalletAddress,
+		OriginalLink:      originalLink,
+	}
+
+	p.ReportUsers = append(p.ReportUsers, rep)
+	if len(p.ReportUsers) >= u.Config.MaxReportCount {
+		p.IsHidden = true
+	}
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
+
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)
 		return nil, err
@@ -1265,4 +1286,23 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	u.Logger.Info(fmt.Sprintf("Done create project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
 
 	return pe, nil
+}
+
+func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+	
+	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err) )
+	}
+
+	pIDs := []string{}
+	for _, item := range p {
+		pIDs = append(pIDs, item.TokenID)
+	}
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+
+	data, _ := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	
+	return data, nil
 }

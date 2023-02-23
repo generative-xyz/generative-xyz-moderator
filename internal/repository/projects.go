@@ -91,8 +91,6 @@ func (r Repository) findProjectBy(contractAddress string, tokenID string) (*enti
 	return resp, nil
 }
 
-
-
 func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
@@ -108,7 +106,6 @@ func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.
 	return resp, nil
 }
 
-
 func (r Repository) FindProjectByInscriptionIcon(inscription_icon string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"inscription_icon", inscription_icon}})
@@ -123,7 +120,6 @@ func (r Repository) FindProjectByInscriptionIcon(inscription_icon string) (*enti
 
 	return resp, nil
 }
-
 
 func (r Repository) CreateProject(data *entity.Projects) error {
 	data.ContractAddress = strings.ToLower(data.ContractAddress)
@@ -204,11 +200,12 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	} else {
 		s = []Sort{
 			{SortBy: filter.SortBy, Sort: filter.Sort},
-			{SortBy: "tokenid", Sort: entity.SORT_DESC},
+			//{SortBy: "tokenid", Sort: entity.SORT_DESC},
 		}
 
 		if filter.SortBy == "stats.trending_score" {
-			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC} )
+			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
+			s = append(s, Sort{SortBy: "stats.trending_score", Sort: entity.SORT_DESC})
 		}
 	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
@@ -317,6 +314,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
+
 	//f["isHidden"] = false
 
 	if filter.WalletAddress != nil {
@@ -465,18 +463,19 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"mintedImages", 1},
 		{"whiteListEthContracts", 1},
 		{"isFullChain", 1},
+		{"reportUsers", 1},
 	}
 	return f
 }
 
 func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon string) error {
 	f := bson.D{
-		{Key: "tokenid", Value: projectID,},
+		{Key: "tokenid", Value: projectID},
 	}
 
 	update := bson.M{
 		"$set": bson.M{
-			"inscription_icon": true,
+			"inscription_icon": inscriptionIcon,
 		},
 	}
 
@@ -486,5 +485,5 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 	}
 
 	return err
-} 
+}
 

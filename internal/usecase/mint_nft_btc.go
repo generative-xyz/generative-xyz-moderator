@@ -466,6 +466,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		item.TxMintNft = btcMintResp.Reveal
 		item.InscriptionID = btcMintResp.Inscription
+		item.MintFee = btcMintResp.Fees
 		// TODO: update item
 		_, err = u.Repo.UpdateMintNftBtc(&item)
 		if err != nil {
@@ -599,6 +600,8 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				}
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+				go u.NotifyNFTMinted(item.UserAddress, item.InscriptionID, item.MintFee)
+
 			}
 
 		}
@@ -942,11 +945,9 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 		amountSent := ""
 
 		if item.PayType == utils.NETWORK_ETH {
-			fmt.Println("PayType", "eth")
 			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			status, err := ethClient.GetTransaction(context, txToCheck)
-			fmt.Println("status, err", status, err)
 			if err == nil {
 				if status > 0 {
 					confirm = 1
