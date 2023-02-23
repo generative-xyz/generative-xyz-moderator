@@ -73,9 +73,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 		imageURL = fileURI
 	}
-	u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
-	u.Logger.LogAny("RunAndCap", zap.Any("fileURI", imageURL))
-
+	u.Logger.LogAny("RunAndCap",zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
@@ -86,7 +84,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 	)
 
 	if err != nil {
-		u.Logger.Error("RunAndCap", zap.Any("chromedp.Run", err))
+		u.Logger.Error("RunAndCap", zap.Any("chromedp.Run", zap.Error(err)))
 	}
 
 	for key, item := range traits {
@@ -116,7 +114,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				u.Logger.ErrorAny("RunAndCap", zap.Any("UploadBaseToBucket", err))
+				u.Logger.ErrorAny("RunAndCap", zap.Any("UploadBaseToBucket", zap.Error(err)))
 			} else {
 				u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
@@ -133,7 +131,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 		IsUpdated:   true,
 	}
 
-	u.Logger.LogAny("RunAndCap", zap.Any("resp", resp))
+	u.Logger.LogAny("RunAndCap",zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded), zap.Any("resp", resp))
 	return resp, nil
 }
 
