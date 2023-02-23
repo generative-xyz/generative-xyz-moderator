@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
+	"go.uber.org/zap"
 
 	// "github.com/btcsuite/btcd/btcec/v2"
 	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
@@ -250,10 +251,9 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 	return user, nil
 }
 
-func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) (*entity.Users, error) {
-	u.Logger.Info("input.UserID", userID)
-	u.Logger.Info("input.data", data)
-
+func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile) (*entity.Users, error) {
+	
+	isUpdateWalletAddress := false
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
 		u.Logger.Error(err)
@@ -280,10 +280,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 	}
 
 	if data.WalletAddressBTC != nil {
-		user.WalletAddressBTC = *data.WalletAddressBTC
-	}
-
-	if data.WalletAddressBTC != nil {
+		isUpdateWalletAddress = true
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
 
@@ -315,7 +312,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.ProfileSocial.EtherScan = *data.ProfileSocial.EtherScan
 	}
 
-	updated, err := u.Repo.UpdateUserByID(userID, user)
+	_, err = u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
@@ -339,18 +336,22 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 			}
 			p.CreatorProfile = user
 
-			updated, err := u.Repo.UpdateProject(p.UUID, &p)
+			_, err := u.Repo.UpdateProject(p.UUID, &p)
 			if err != nil {
 				u.Logger.Error(err)
 				continue
 			}
 
-			u.Logger.Info(fmt.Sprintf("p.%s.updated", p.UUID), updated)
+			
 		}
 
 	}(*user)
 
-	u.Logger.Info("updated", updated)
+	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID),zap.Any("input", data), zap.Any("user", user))
+	if isUpdateWalletAddress {
+		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[User BTC wallet address has been updated][User %s]", helpers.CreateProjectLink(user.WalletAddress, user.DisplayName)),"", fmt.Sprintf("BTC wallet address was changed from %s to %s", user.WalletAddressBTC,  *data.WalletAddressBTC))
+	}
+
 	return user, nil
 }
 
