@@ -470,10 +470,10 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	}
 
 	p.ReportUsers = append(p.ReportUsers, rep)
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
 	}
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
 
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)
