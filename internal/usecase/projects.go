@@ -209,7 +209,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
+	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName) ))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
@@ -1288,6 +1288,18 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	return pe, nil
 }
 
+type Volumes struct {
+	Items []Volume `json:"items"`
+	TotalBTC float64 `json:"totalAmountBTC"`
+	TotalETH float64 `json:"totalAmountETH"`
+}
+
+type Volume struct {
+	ProjectID string `json:"projectID"`
+	PayType string `json:"payType"`
+	Amount string `json:"amount"`
+}
+
 func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
 	
@@ -1302,7 +1314,24 @@ func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 	}
 	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
 
-	data, _ := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	
-	return data, nil
+	data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err) )
+	}
+
+	resp := Volumes{}
+	for _, item := range  data.Items {
+		tmp := Volume{
+			ProjectID: item.ID.ProjectID,
+			PayType: item.ID.Paytype,
+			Amount: fmt.Sprintf("%d", int(item.Amount)),
+		}
+		resp.Items = append(resp.Items, tmp)
+	}
+
+	resp.TotalBTC = data.TotalBTC
+	resp.TotalETH = data.TotalETH
+
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
+	return resp, nil
 }

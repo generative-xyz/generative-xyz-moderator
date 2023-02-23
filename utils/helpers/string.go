@@ -154,6 +154,12 @@ func CreateTokenLink(projectID string, tokenID string, tokenName string) string 
 	return fmt.Sprintf("<%s|%s>", link, tokenName)
 }
 
+
+func CreateProjectLink(projectID string, priojectName string) string {
+	link := fmt.Sprintf("%s/generative/%s", os.Getenv("DOMAIN"), projectID)
+	return fmt.Sprintf("<%s|%s>", link, priojectName)
+}
+
 func ParseBigToFloat(number *big.Int) float64 {
 	numStr := number.String()
 
