@@ -108,6 +108,8 @@ type MintNftBtc struct {
 
 	AmountSentMaster string `bson:"amount_sent_master"` // amount withdrawn to the master wallet
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
+
+	MintFee int `bson:"mint_fee"`
 }
 
 func (u MintNftBtc) TableName() string {
