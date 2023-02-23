@@ -175,7 +175,11 @@ func CreateBTCOrdWallet(userWallet string) string {
 }
 
 func GetExternalPrice(tokenSymbol string) (float64, error) {
-	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
+	binanceAPI := os.Getenv("BINANCE_API")
+	if binanceAPI == "" {
+		binanceAPI = "https://api.binance.com"
+	}
+	binancePriceURL := fmt.Sprintf("%v/api/v3/ticker/price?symbol=", binanceAPI)
 	var price struct {
 		Symbol string `json:"symbol"`
 		Price  string `json:"price"`
