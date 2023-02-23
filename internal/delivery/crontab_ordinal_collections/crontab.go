@@ -129,11 +129,11 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 			h.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", err.Error(), err)
 		}
 	})
-	c.AddFunc("0 */1 * * *", func() {
+	c.AddFunc("*/15 * * * *", func() {
 		source := "https://github.com/generative-xyz/ordinals-collections.git"
 		err := h.crawlOrdinalCollection(source)
 		if err != nil {
-			h.Logger.Error("DispatchCron.EveryOneHour.SyncGenerativeCollections", err.Error(), err)
+			h.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", err.Error(), err)
 		}
 	})
 	c.Start()
