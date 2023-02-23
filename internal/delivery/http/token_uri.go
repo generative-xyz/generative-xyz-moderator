@@ -716,3 +716,29 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
+
+// UserCredits godoc
+// @Summary get volume by wallet
+// @Description get volume by wallet
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string false "Filter project via wallet address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /profile/wallet/{walletAddress}/volume [GET]
+func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]	
+	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
+}

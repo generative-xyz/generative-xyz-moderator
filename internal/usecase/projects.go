@@ -148,6 +148,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		pe.IsHidden = true
 		isPubsub = true
 		pe.Status = false
+		pe.IsSynced = false
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
@@ -1285,4 +1286,23 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	u.Logger.Info(fmt.Sprintf("Done create project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
 
 	return pe, nil
+}
+
+func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+	
+	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err) )
+	}
+
+	pIDs := []string{}
+	for _, item := range p {
+		pIDs = append(pIDs, item.TokenID)
+	}
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+
+	data, _ := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	
+	return data, nil
 }

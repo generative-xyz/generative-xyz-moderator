@@ -93,7 +93,7 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 	if err != nil {
 		return err
 	}
-	u.Logger.Info("Start create tokens from inscription len(uncreatedMetas)=%v", len(uncreatedInscription))
+	u.Logger.Info("c len(uncreatedMetas)=%v", len(uncreatedInscription))
 	processed := 0
 	for _, inscription := range uncreatedInscription {
 		u.Logger.Info(fmt.Sprintf("Trying to create token from collection inscription %s %s", inscription.Meta.Name, inscription.ID))
