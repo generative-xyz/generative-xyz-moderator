@@ -2260,6 +2260,49 @@ var doc = `{
                 }
             }
         },
+        "/profile/wallet/{walletAddress}/volume": {
+            "get": {
+                "description": "get volume by wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "get volume by wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via wallet address",
+                        "name": "walletAddress",
+                        "in": "path"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -2878,6 +2921,15 @@ var doc = `{
                         "name": "projectID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Report Project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ReportProjectReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2988,6 +3040,55 @@ var doc = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/token-uri": {
+            "get": {
+                "description": "get tokenUris",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get list tokenUris",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -3765,6 +3866,14 @@ var doc = `{
                 }
             }
         },
+        "request.ReportProjectReq": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UpdateBTCProjectCategoriesReq": {
             "type": "object",
             "properties": {
@@ -4153,6 +4262,9 @@ var doc = `{
                 "desc": {
                     "type": "string"
                 },
+                "editableIsHidden": {
+                    "type": "boolean"
+                },
                 "genNFTAddr": {
                     "type": "string"
                 },
@@ -4212,6 +4324,12 @@ var doc = `{
                 },
                 "projectURI": {
                     "type": "string"
+                },
+                "reportUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ReportProject"
+                    }
                 },
                 "reservers": {
                     "type": "array",
@@ -4288,6 +4406,17 @@ var doc = `{
             "type": "object",
             "properties": {
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ReportProject": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
+                    "type": "string"
+                },
+                "reportUserAddress": {
                     "type": "string"
                 }
             }

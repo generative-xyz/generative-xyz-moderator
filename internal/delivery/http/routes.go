@@ -61,6 +61,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/volume", h.getVolumeByWallet).Methods("GET")
 
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
@@ -200,6 +201,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
+
+	tokenUri := api.PathPrefix("/token-uri").Subrouter()
+	tokenUri.HandleFunc("", h.getTokenUris).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
