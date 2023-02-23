@@ -49,6 +49,7 @@ type Config struct {
 	OtherCategoryID string
 
 	TrendingConfig TrendingConfig
+	MaxReportCount int
 }
 
 type TrendingConfig struct {
@@ -208,6 +209,10 @@ func NewConfig() (*Config, error) {
 	whitelistedTrendingProjectID := strings.Split(os.Getenv("TRENDING_WHITELISTED_PROJECT_IDS"), ",")
 	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
 	trendingBoostedWeight, _ := strconv.Atoi(os.Getenv("TRENDING_BOOSTED_WEIGHT"))
+	maxReportCount, _ := strconv.Atoi(os.Getenv("MAX_REPORT_COUNT"))
+	if maxReportCount == 0 {
+		maxReportCount = 3
+	}
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -322,6 +327,7 @@ func NewConfig() (*Config, error) {
 			BoostedCategoryID:    boostedTrendingCategoryID,
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
+		MaxReportCount: maxReportCount,
 	}
 
 	return conf, nil
