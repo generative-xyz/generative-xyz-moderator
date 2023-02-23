@@ -65,6 +65,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
 		return nil, err
 	}
+	projectMintPrice := mintPriceInt
 	networkFee, err := strconv.Atoi(p.NetworkFee)
 	if err == nil {
 		mintPriceInt += networkFee
@@ -130,7 +131,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	// for analytics:
 	walletAddress.ProjectNetworkFee = networkFee
-	walletAddress.ProjectMintPrice = mintPriceInt
+	walletAddress.ProjectMintPrice = projectMintPrice
 	walletAddress.BtcRate = btcRate
 	walletAddress.EthRate = ethRate
 
