@@ -174,8 +174,8 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		return nil, errors.New("item not found")
 	}
 
-	projectInfo, _ := u.Repo.FindProjectByTokenID(mintItem.OriginUserAddress)
-	if mintItem == nil {
+	projectInfo, _ := u.Repo.FindProjectByTokenID(mintItem.ProjectID)
+	if projectInfo == nil {
 		return nil, errors.New("item not found")
 	}
 
