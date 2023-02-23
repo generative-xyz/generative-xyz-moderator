@@ -167,7 +167,7 @@ func (r Repository) UpdateCancelMintNftBtc(uuid string) error {
 			"status": -1,
 		},
 	}
-	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	_, err := r.DB.Collection(utils.MINT_NFT_BTC).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}
