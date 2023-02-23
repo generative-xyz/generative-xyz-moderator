@@ -3,29 +3,25 @@ package usecase
 import (
 	"encoding/json"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase/structure"
 )
 
 func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
-
-
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		u.Logger.Error("PubSubCreateTokenThumbnai.json.Marshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("json.Marshal", err))
 		return
 	}
 
 	tokenURI := &structure.TokenImagePayload{}
 	err = json.Unmarshal(bytes, tokenURI)
 	if err != nil {
-		u.Logger.Error("PubSubCreateTokenThumbnai.json.Unmarshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("json.Unmarshal", err))
 		return
 	}
 
-	u.Logger.Info("payload", tokenURI)
-	u.Logger.Info("tokenID", tokenURI.TokenID)
-	
-
+	u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("tokenURI", tokenURI))
 	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
 		u.Logger.Error("PubSubCreateTokenThumbnai.FindTokenBy", err.Error(), err)
@@ -33,7 +29,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 	}
 
 	
-resp, err := u.RunAndCap(token, 20)
+   resp, err := u.RunAndCap(token, 20)
 	if err != nil {
 		u.Logger.Error("PubSubCreateTokenThumbnai.RunAndCap", err.Error(), err)
 		return
@@ -53,11 +49,10 @@ resp, err := u.RunAndCap(token, 20)
 
 		updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
 		if err != nil {
-			u.Logger.Error("PubSubCreateTokenThumbnai.UpdateOrInsertTokenUri", err.Error(), err)
+			u.Logger.ErrorAny("PubSubCreateTokenThumbnai",zap.Any("UpdateOrInsertTokenUri", err))
 		}
 		u.Logger.Info("updated", updated)
 	}
-
 }
 
 func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {

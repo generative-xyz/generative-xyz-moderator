@@ -91,6 +91,8 @@ func (r Repository) findProjectBy(contractAddress string, tokenID string) (*enti
 	return resp, nil
 }
 
+
+
 func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
@@ -105,6 +107,23 @@ func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.
 
 	return resp, nil
 }
+
+
+func (r Repository) FindProjectByInscriptionIcon(inscription_icon string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"inscription_icon", inscription_icon}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 
 func (r Repository) CreateProject(data *entity.Projects) error {
 	data.ContractAddress = strings.ToLower(data.ContractAddress)
@@ -449,3 +468,23 @@ func (r Repository) SelectedProjectFields() bson.D {
 	}
 	return f
 }
+
+func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon string) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID,},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"inscription_icon": inscriptionIcon,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+} 
+
