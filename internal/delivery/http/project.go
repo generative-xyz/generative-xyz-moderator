@@ -484,6 +484,12 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 
 	resp.MintPriceEth = input.MintPriceEth
 	resp.NetworkFeeEth = input.NetworkFeeEth
+	resp.ReportUsers = []*response.ReportProject{}
+	for _, r := range input.ReportUsers {
+		resp.ReportUsers = append(resp.ReportUsers, &response.ReportProject{ReportUserAddress: r.ReportUserAddress, OriginalLink: r.OriginalLink})
+	}
+
+	resp.EditableIsHidden = len(input.ReportUsers) >= 3
 
 	return resp, nil
 }
@@ -592,6 +598,7 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param projectID path string true "projectID adress"
+// @Param request body request.ReportProjectReq true "Report Project request"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{projectID}/report [POST]
 // @Security Authorization
@@ -600,7 +607,17 @@ func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
 	projectID := vars["projectID"]
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
-	message, err := h.Usecase.ReportProject(projectID, iWalletAddress)
+
+	var reqBody request.ReportProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	message, err := h.Usecase.ReportProject(projectID, iWalletAddress, reqBody.OriginalLink)
 	if err != nil {
 		h.Logger.Error("h.Usecase.reportProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

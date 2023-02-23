@@ -102,7 +102,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		return nil, err
 	}
 
-
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
@@ -170,7 +169,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
@@ -212,7 +210,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
-	
+
 	return pe, nil
 }
 
@@ -448,19 +446,30 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	return p, nil
 }
 
-func (u Usecase) ReportProject(tokenId, iWalletAddress string) (*entity.Projects, error) {
+func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*entity.Projects, error) {
 	p, err := u.Repo.FindProjectByTokenID(tokenId)
 	if err != nil {
 		u.Logger.Error("ReportProject.FindProjectBy", err.Error(), err)
 		return nil, err
 	}
 
-	if helpers.SliceStringContains(p.ReportUsers, iWalletAddress) {
-		return nil, errors.New("You have already reported before.")
+	for _, r := range p.ReportUsers {
+		if r.ReportUserAddress == iWalletAddress {
+			return nil, errors.New("You have already reported before.")
+		}
 	}
 
-	p.ReportUsers = append(p.ReportUsers, iWalletAddress)
+	rep := &entity.ReportProject{
+		ReportUserAddress: iWalletAddress,
+		OriginalLink:      originalLink,
+	}
+
+	p.ReportUsers = append(p.ReportUsers, rep)
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if len(p.ReportUsers) >= 3 {
+		p.IsHidden = true
+	}
+
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)
 		return nil, err
@@ -1176,7 +1185,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe := &entity.Projects{}
 
 	mPrice := helpers.StringToBTCAmount("0")
-	
+
 	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
@@ -1217,7 +1226,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatorAddrrBTC = creatorAddrr.WalletAddressBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
-	
+
 	pe.Name = meta.Name
 	pe.Description = meta.Description
 	maxSupply, err := strconv.ParseInt(meta.Supply, 10, 64)
@@ -1228,7 +1237,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
 	var index int64
 	if err != nil {
-		index = 0		
+		index = 0
 	} else {
 		index = *countIndex
 	}
