@@ -30,7 +30,7 @@ func NewScronOrdinalCollectionHandler(global *global.Global, uc usecase.Usecase)
 	}
 }
 
-func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath string) error {
+func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath string, source string) error {
 	collectionMetaFilePath := fmt.Sprintf("%s/meta.json", collectionFoldersPath)
 	collectionInscriptionFilePath := fmt.Sprintf("%s/inscriptions.json", collectionFoldersPath)
 	metaJsonFile, err := os.Open(collectionMetaFilePath)
@@ -54,6 +54,8 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	json.Unmarshal(byteValue, &meta)
 	byteValue, _ = ioutil.ReadAll(inscrJsonFile)
 	json.Unmarshal(byteValue, &inscriptions)
+
+	meta.Source = source
 
 	_, err = h.Usecase.Repo.FindCollectionMetaByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
@@ -80,6 +82,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		}
 		processed++
 		inscription.CollectionInscriptionIcon = meta.InscriptionIcon
+		inscription.Source = source
 		h.Usecase.Repo.InsertCollectionInscription(&inscription)
 
 		if processed % 10 == 0 {
@@ -92,12 +95,12 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	return nil
 }
 
-func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection() error {
+func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection(source string) error {
 	uuid := uuid.New().String()
 	folder_path := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
 
 	_, err := git.PlainClone(folder_path, false, &git.CloneOptions{
-		URL:      "https://github.com/ordinals-wallet/ordinals-collections.git",
+		URL:      source,
 		Progress: os.Stdout,
 	})
 
@@ -111,18 +114,26 @@ func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection() error {
 		return err
 	}
 	for _, f := range collectionFolders {
-		h.syncCollection(fmt.Sprintf("%s/%s", collectionFoldersPath, f.Name()))
+		h.syncCollection(fmt.Sprintf("%s/%s", collectionFoldersPath, f.Name()), source)
 	}
 	return nil
 }
 
 func (h ScronOrdinalCollectionHandler) StartServer() {
 	c := cron.New()
-	// cronjob to sync projects trending
+	// cronjob to sync ordinals collection
 	c.AddFunc("0 */2 * * *", func() {
-		err := h.crawlOrdinalCollection()
+		source := "https://github.com/ordinals-wallet/ordinals-collections.git"
+		err := h.crawlOrdinalCollection(source)
 		if err != nil {
-			fmt.Println("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+			h.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", err.Error(), err)
+		}
+	})
+	c.AddFunc("0 */1 * * *", func() {
+		source := "https://github.com/generative-xyz/ordinals-collections.git"
+		err := h.crawlOrdinalCollection(source)
+		if err != nil {
+			h.Logger.Error("DispatchCron.EveryOneHour.SyncGenerativeCollections", err.Error(), err)
 		}
 	})
 	c.Start()
@@ -140,7 +151,7 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 				return
 			}
 			// Sleep 5 minutes after recreate again
-			time.Sleep(5 * time.Minute)
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
