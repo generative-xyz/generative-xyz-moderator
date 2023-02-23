@@ -277,6 +277,9 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		TxMint:         mintItem.TxMintNft,
 		TxSendNft:      mintItem.TxSendNft,
 
+		Amount:  mintItem.Amount,
+		PayType: mintItem.PayType,
+
 		ProgressStatus: statusMap,
 	}
 	return minting, nil
