@@ -200,10 +200,10 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 	}
 	statusMap["2"] = statusprogressStruct{
 		Message: entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
-		Status:  int(mintItem.Status) >= 1,
+		Status:  int(mintItem.Status) > 1,
 	}
 
-	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded {
+	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded || mintItem.Status == entity.StatusMint_TxRefundFailed {
 		statusMap["3"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_Refunding],
 			Status:  mintItem.Status == entity.StatusMint_Refunding,
@@ -227,34 +227,27 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 
 		statusMap["3"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_Minting],
-			Status:  mintItem.Status == entity.StatusMint_Minting,
+			Status:  mintItem.IsMinted,
 			Tx:      mintItem.TxMintNft,
 		}
 		if mintItem.IsMinted {
 			statusMap["3"] = statusprogressStruct{
 				Message: entity.StatusMintToText[entity.StatusMint_Minted],
-				Status:  mintItem.Status == entity.StatusMint_Minted,
+				Status:  mintItem.IsMinted,
 				Tx:      mintItem.TxMintNft,
 			}
 		}
 
 		statusMap["4"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_SendingNFTToUser],
-			Status:  mintItem.Status == entity.StatusMint_SendingNFTToUser,
+			Status:  mintItem.IsSentUser,
 			Tx:      mintItem.TxSendNft,
 		}
-		if mintItem.IsSentUser {
-			statusMap["5"] = statusprogressStruct{
-				Message: "Completed",
-				Status:  true,
-				Tx:      mintItem.TxSendNft,
-			}
-		} else {
-			statusMap["5"] = statusprogressStruct{
-				Message: "Completed",
-				Status:  false,
-				Tx:      mintItem.TxSendNft,
-			}
+
+		statusMap["5"] = statusprogressStruct{
+			Message: "Completed",
+			Status:  mintItem.IsSentUser,
+			Tx:      mintItem.TxSendNft,
 		}
 
 	}
