@@ -489,7 +489,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		resp.ReportUsers = append(resp.ReportUsers, &response.ReportProject{ReportUserAddress: r.ReportUserAddress, OriginalLink: r.OriginalLink})
 	}
 
-	resp.EditableIsHidden = len(input.ReportUsers) >= 3
+	resp.EditableIsHidden = len(input.ReportUsers) >= h.Config.MaxReportCount
 
 	return resp, nil
 }
