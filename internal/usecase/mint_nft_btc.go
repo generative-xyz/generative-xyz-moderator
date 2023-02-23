@@ -70,6 +70,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		mintPriceInt += networkFee
 	}
 
+	var btcRate, ethRate float64
+
 	// check type:
 	if input.PayType == utils.NETWORK_BTC {
 		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
@@ -78,6 +80,9 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			return nil, err
 		}
 		mintPriceStr = strconv.Itoa(mintPriceInt)
+
+		_, btcRate, ethRate, err = u.convertBTCToETH("1")
+
 	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
 
@@ -86,7 +91,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", err.Error(), err)
 			return nil, err
 		}
-		mintPriceStr, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+		mintPriceStr, btcRate, ethRate, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 		if err != nil {
 			u.Logger.Error("convertBTCToETH", err.Error(), err)
 			return nil, err
@@ -119,6 +124,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
+	// for anaylist:
+	walletAddress.ProjectNetworkFee = networkFee
+	walletAddress.ProjectMintPrice = mintPriceInt
+	walletAddress.BtcRate = btcRate
+	walletAddress.EthRate = ethRate
+
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
 
 	expiredTime := utils.INSCRIBE_TIMEOUT
@@ -141,6 +152,52 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	return walletAddress, nil
+}
+
+func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
+	mintItem, _ := u.Repo.FindMintNftBtcByNftID(uuid)
+	if mintItem == nil {
+		return errors.New("item not found")
+	}
+	if !strings.EqualFold(wallet, mintItem.OriginUserAddress) {
+		return errors.New("perminsion denied")
+	}
+	if mintItem.Status != entity.StatusMint_Pending {
+		return errors.New("Can not cancel this, the item is in progress.")
+	}
+	return u.Repo.UpdateCancelMintNftBtc(mintItem.UUID)
+}
+
+func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription, error) {
+	mintItem, _ := u.Repo.FindMintNftBtcByNftID(uuid)
+	if mintItem == nil {
+		return nil, errors.New("item not found")
+	}
+
+	projectInfo, _ := u.Repo.FindProjectByTokenID(mintItem.OriginUserAddress)
+	if mintItem == nil {
+		return nil, errors.New("item not found")
+	}
+
+	isCancel := int(mintItem.Status) == 0
+
+	minting := &structure.MintingInscription{
+		ID:            mintItem.UUID,
+		CreatedAt:     mintItem.CreatedAt,
+		Status:        entity.StatusMintToText[mintItem.Status],
+		StatusIndex:   int(mintItem.Status),
+		FileURI:       mintItem.FileURI,
+		ProjectID:     mintItem.ProjectID,
+		ProjectImage:  projectInfo.Thumbnail,
+		ProjectName:   projectInfo.Name,
+		InscriptionID: mintItem.InscriptionID,
+
+		ReceiveAddress: mintItem.ReceiveAddress,
+		IsCancel:       isCancel,
+		TxMint:         mintItem.TxMintNft,
+		TxSendNft:      mintItem.TxSendNft,
+	}
+	return minting, nil
 }
 
 // JOBs mint begin:

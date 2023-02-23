@@ -102,7 +102,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		return nil, err
 	}
 
-
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
@@ -170,7 +169,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
@@ -212,7 +210,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
-	
+
 	return pe, nil
 }
 
@@ -591,7 +589,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
 		return nil, err
 	}
-	ethPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 		return nil, err
@@ -600,7 +598,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
 	if err == nil {
-		ethNetworkFeePrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
@@ -1176,7 +1174,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe := &entity.Projects{}
 
 	mPrice := helpers.StringToBTCAmount("0")
-	
+
 	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
@@ -1217,7 +1215,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatorAddrrBTC = creatorAddrr.WalletAddressBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
-	
+
 	pe.Name = meta.Name
 	pe.Description = meta.Description
 	maxSupply, err := strconv.ParseInt(meta.Supply, 10, 64)
@@ -1228,7 +1226,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
 	var index int64
 	if err != nil {
-		index = 0		
+		index = 0
 	} else {
 		index = *countIndex
 	}
