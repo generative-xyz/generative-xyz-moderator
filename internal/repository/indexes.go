@@ -92,9 +92,22 @@ func (r Repository) CreateBTCWalletIndexModel() ([]string, error) {
 	return r.CreateIndexes(collection, models)
 }
 
+func (r Repository) CreateMintBTCCIndexModel() ([]string, error) {
+	collection := entity.MintNftBtc{}.TableName()
+ 	models :=  []mongo.IndexModel{
+		{ Keys: bson.M{"projectID": -1,}, Options: options.Index().SetName("mbtc_projectID_desc"),} ,
+		{ Keys: bson.M{"payType": -1,}, Options: options.Index().SetName("mbtc_paytype_desc"),} ,
+		{ Keys: bson.M{"inscriptionID": -1,}, Options: options.Index().SetName("mbtc_ins_desc"),} ,
+		{ Keys: bson.M{"user_address": -1,}, Options: options.Index().SetName("mbtc_uaddr_desc"),} ,
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
+
 func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexModel) ([]string, error) {
  	col := r.DB.Collection(collectionName)
-opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
+	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
 	ctx, _ := context.WithTimeout(context.Background(), 15*time.Second)
 	ind, err := col.Indexes().CreateMany(ctx, models, opts)
 	if err != nil {

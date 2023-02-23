@@ -148,6 +148,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		pe.IsHidden = true
 		isPubsub = true
 		pe.Status = false
+		pe.IsSynced = false
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
@@ -208,7 +209,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
+	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName) ))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
@@ -609,7 +610,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
 		return nil, err
 	}
-	ethPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 		return nil, err
@@ -618,7 +619,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
 	if err == nil {
-		ethNetworkFeePrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
@@ -1285,4 +1286,52 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	u.Logger.Info(fmt.Sprintf("Done create project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
 
 	return pe, nil
+}
+
+type Volumes struct {
+	Items []Volume `json:"items"`
+	TotalBTC float64 `json:"totalAmountBTC"`
+	TotalETH float64 `json:"totalAmountETH"`
+}
+
+type Volume struct {
+	ProjectID string `json:"projectID"`
+	PayType string `json:"payType"`
+	Amount string `json:"amount"`
+}
+
+func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+	
+	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err) )
+	}
+
+	pIDs := []string{}
+	for _, item := range p {
+		pIDs = append(pIDs, item.TokenID)
+	}
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+
+	data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err) )
+	}
+
+	resp := Volumes{}
+	for _, item := range  data.Items {
+		tmp := Volume{
+			ProjectID: item.ID.ProjectID,
+			PayType: item.ID.Paytype,
+			Amount: fmt.Sprintf("%d", int(item.Amount)),
+		}
+		resp.Items = append(resp.Items, tmp)
+	}
+
+	resp.TotalBTC = data.TotalBTC
+	resp.TotalETH = data.TotalETH
+
+	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
+	return resp, nil
 }

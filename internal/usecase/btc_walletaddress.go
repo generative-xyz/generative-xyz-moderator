@@ -982,6 +982,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if time.Since(item.ExpiredAt) >= 1*time.Second && item.Status == entity.StatusMint_Pending {
 			continue
 		}
+		if (item.Status) == -1 {
+			continue
+		}
 		switch item.Status {
 		case entity.StatusMint_NeedToRefund, entity.StatusMint_TxRefundFailed:
 			status = entity.StatusMintToText[entity.StatusMint_Refunding]
@@ -999,6 +1002,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			ProjectImage:  projectInfo.Thumbnail,
 			ProjectName:   projectInfo.Name,
 			InscriptionID: item.InscriptionID,
+			IsCancel:      int(item.Status) == 0,
 		}
 		result = append(result, minting)
 	}

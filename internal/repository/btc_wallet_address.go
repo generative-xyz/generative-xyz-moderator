@@ -235,3 +235,4 @@ func (r Repository) ListMintingWaitingForFundByWalletAddress(address string) ([]
 
 	return confs, nil
 }
+
