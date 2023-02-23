@@ -159,6 +159,13 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 	if mintItem == nil {
 		return errors.New("item not found")
 	}
+
+	if int(mintItem.Status) == -1 {
+		return nil
+	}
+
+	fmt.Println("mintItem.OriginUserAddress", mintItem.OriginUserAddress)
+
 	if !strings.EqualFold(wallet, mintItem.OriginUserAddress) {
 		return errors.New("perminsion denied")
 	}
@@ -179,6 +186,59 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		return nil, errors.New("item not found")
 	}
 
+	type statusprogressStruct struct {
+		Message string `json:"message"`
+		Status  bool   `json:"status"`
+		Tx      string `json:"tx"`
+	}
+
+	statusMap := make(map[string]statusprogressStruct)
+
+	statusMap["1"] = statusprogressStruct{
+		Message: entity.StatusMintToText[entity.StatusMint_Pending],
+		Status:  mintItem.IsConfirm,
+	}
+	statusMap["2"] = statusprogressStruct{
+		Message: entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
+		Status:  mintItem.IsMinted,
+	}
+
+	statusMap["3"] = statusprogressStruct{
+		Message: entity.StatusMintToText[entity.StatusMint_Minting],
+		Status:  mintItem.Status == entity.StatusMint_Minting,
+		Tx:      mintItem.TxMintNft,
+	}
+
+	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding {
+		statusMap["3"] = statusprogressStruct{
+			Message: entity.StatusMintToText[entity.StatusMint_Refunding],
+			Status:  mintItem.Status == entity.StatusMint_Refunding,
+			Tx:      mintItem.TxRefund,
+		}
+		statusMap["4"] = statusprogressStruct{
+			Message: entity.StatusMintToText[entity.StatusMint_Refunded],
+			Status:  mintItem.Status == entity.StatusMint_Refunded,
+			Tx:      mintItem.TxSendNft,
+		}
+	} else {
+		statusMap["4"] = statusprogressStruct{
+			Message: entity.StatusMintToText[entity.StatusMint_Minted],
+			Status:  mintItem.Status == entity.StatusMint_Minted,
+			Tx:      mintItem.TxMintNft,
+		}
+		statusMap["5"] = statusprogressStruct{
+			Message: entity.StatusMintToText[entity.StatusMint_SendingNFTToUser],
+			Status:  mintItem.Status == entity.StatusMint_SendingNFTToUser,
+			Tx:      mintItem.TxSendNft,
+		}
+
+		statusMap["6"] = statusprogressStruct{
+			Message: "Completed",
+			Status:  mintItem.Status == entity.StatusMint_SentNFTToUser || mintItem.Status == entity.StatusMint_SendingFundToMaster || mintItem.Status == entity.StatusMint_SentFundToMaster,
+			Tx:      mintItem.TxSendNft,
+		}
+	}
+
 	isCancel := int(mintItem.Status) == 0
 
 	minting := &structure.MintingInscription{
@@ -196,6 +256,8 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		IsCancel:       isCancel,
 		TxMint:         mintItem.TxMintNft,
 		TxSendNft:      mintItem.TxSendNft,
+
+		ProgressStatus: statusMap,
 	}
 	return minting, nil
 }
