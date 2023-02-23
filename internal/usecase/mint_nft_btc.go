@@ -196,47 +196,67 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 
 	statusMap["1"] = statusprogressStruct{
 		Message: entity.StatusMintToText[entity.StatusMint_Pending],
-		Status:  mintItem.IsConfirm,
+		Status:  int(mintItem.Status) > 0,
 	}
 	statusMap["2"] = statusprogressStruct{
 		Message: entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
-		Status:  mintItem.IsMinted,
+		Status:  int(mintItem.Status) >= 1,
 	}
 
-	statusMap["3"] = statusprogressStruct{
-		Message: entity.StatusMintToText[entity.StatusMint_Minting],
-		Status:  mintItem.Status == entity.StatusMint_Minting,
-		Tx:      mintItem.TxMintNft,
-	}
-
-	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding {
+	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded {
 		statusMap["3"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_Refunding],
 			Status:  mintItem.Status == entity.StatusMint_Refunding,
 			Tx:      mintItem.TxRefund,
 		}
-		statusMap["4"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Refunded],
-			Status:  mintItem.Status == entity.StatusMint_Refunded,
-			Tx:      mintItem.TxSendNft,
+		if mintItem.IsRefund {
+			statusMap["3"] = statusprogressStruct{
+				Message: entity.StatusMintToText[entity.StatusMint_Refunded],
+				Status:  mintItem.Status == entity.StatusMint_Refunded,
+				Tx:      mintItem.TxRefund,
+			}
+		} else {
+			statusMap["3"] = statusprogressStruct{
+				Message: entity.StatusMintToText[entity.StatusMint_Refunding],
+				Status:  false,
+				Tx:      mintItem.TxRefund,
+			}
 		}
+
 	} else {
-		statusMap["4"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Minted],
-			Status:  mintItem.Status == entity.StatusMint_Minted,
+
+		statusMap["3"] = statusprogressStruct{
+			Message: entity.StatusMintToText[entity.StatusMint_Minting],
+			Status:  mintItem.Status == entity.StatusMint_Minting,
 			Tx:      mintItem.TxMintNft,
 		}
-		statusMap["5"] = statusprogressStruct{
+		if mintItem.IsMinted {
+			statusMap["3"] = statusprogressStruct{
+				Message: entity.StatusMintToText[entity.StatusMint_Minted],
+				Status:  mintItem.Status == entity.StatusMint_Minted,
+				Tx:      mintItem.TxMintNft,
+			}
+		}
+
+		statusMap["4"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_SendingNFTToUser],
 			Status:  mintItem.Status == entity.StatusMint_SendingNFTToUser,
 			Tx:      mintItem.TxSendNft,
 		}
-
-		statusMap["6"] = statusprogressStruct{
-			Message: "Completed",
-			Status:  mintItem.Status == entity.StatusMint_SentNFTToUser || mintItem.Status == entity.StatusMint_SendingFundToMaster || mintItem.Status == entity.StatusMint_SentFundToMaster,
-			Tx:      mintItem.TxSendNft,
+		if mintItem.IsSentUser {
+			statusMap["5"] = statusprogressStruct{
+				Message: "Completed",
+				Status:  true,
+				Tx:      mintItem.TxSendNft,
+			}
+		} else {
+			statusMap["6"] = statusprogressStruct{
+				Message: "Completed",
+				Status:  false,
+				Tx:      mintItem.TxSendNft,
+			}
 		}
+
 	}
 
 	isCancel := int(mintItem.Status) == 0
