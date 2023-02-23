@@ -376,7 +376,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 	if err != nil {
 		err = errors.New("Access token is invaild")
 		u.Logger.Error(err)
-		return nil, err
+		// return nil, err
 
 	}
 
@@ -389,7 +389,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 		return nil, err
 	}
 
-	// userID = &claim.Uid
+	userID = &claim.Uid
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")
