@@ -610,7 +610,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
 		return nil, err
 	}
-	ethPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 		return nil, err
@@ -619,7 +619,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
 	if err == nil {
-		ethNetworkFeePrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err

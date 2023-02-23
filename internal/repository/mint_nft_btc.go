@@ -28,11 +28,11 @@ func (r Repository) FindMintNftBtc(key string) (*entity.MintNftBtc, error) {
 	return resp, nil
 }
 
-func (r Repository) FindMintNftBtcByNftID(uuid string) (*entity.MintNftBtcResp, error) {
+func (r Repository) FindMintNftBtcByNftID(uuid string) (*entity.MintNftBtc, error) {
 
 	log.Println("uuid:", uuid)
 
-	resp := &entity.MintNftBtcResp{}
+	resp := &entity.MintNftBtc{}
 	usr, err := r.FilterOne(entity.MintNftBtc{}.TableName(), bson.D{{"uuid", uuid}})
 	if err != nil {
 		return nil, err
@@ -149,6 +149,22 @@ func (r Repository) UpdateTokenInscriptionIndexForMint(tokenId string, inscripti
 	update := bson.M{
 		"$set": bson.M{
 			"inscription_index": inscriptionIndex,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) UpdateCancelMintNftBtc(uuid string) error {
+	filter := bson.D{
+		{Key: "uuid", Value: uuid},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status": -1,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
