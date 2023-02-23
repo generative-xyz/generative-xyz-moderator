@@ -409,6 +409,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		item.TxMintNft = btcMintResp.Reveal
 		item.InscriptionID = btcMintResp.Inscription
+		item.MintFee = btcMintResp.Fees
 		// TODO: update item
 		_, err = u.Repo.UpdateMintNftBtc(&item)
 		if err != nil {
@@ -542,6 +543,8 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				}
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+				go u.NotifyNFTMinted(item.UserAddress, item.InscriptionID, item.MintFee)
+
 			}
 
 		}
