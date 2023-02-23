@@ -26,4 +26,6 @@ type MintingInscription struct {
 	TxSendNft      string `json:"txSendNft"`
 
 	IsCancel bool `json:"isCancel"`
+
+	ProgressStatus interface{} `json:"progressStatus"`
 }
