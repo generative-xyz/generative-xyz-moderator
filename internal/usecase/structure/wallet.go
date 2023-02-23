@@ -74,6 +74,6 @@ type WalletInscriptionInfo struct {
 }
 
 type WalletInscriptionByOutput struct {
-	InscriptionID string `json:"inscription_id"`
+	InscriptionID string `json:"id"`
 	Offset        int64  `json:"offset"`
 }
