@@ -102,19 +102,19 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Request) {
 
-	ctx := r.Context()
-	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	// ctx := r.Context()
+	// iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 
-	fmt.Println("iWalletAddress", iWalletAddress)
+	// fmt.Println("iWalletAddress", iWalletAddress)
 
-	userWalletAddr, ok := iWalletAddress.(string)
-	if !ok {
-		err := errors.New("wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	fmt.Println("userWalletAddr", userWalletAddr)
+	// userWalletAddr, ok := iWalletAddress.(string)
+	// if !ok {
+	// 	err := errors.New("wallet address is incorect")
+	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+	// fmt.Println("userWalletAddr", userWalletAddr)
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
