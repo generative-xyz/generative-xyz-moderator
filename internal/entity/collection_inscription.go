@@ -22,6 +22,7 @@ type CollectionInscription struct {
 	} `bson:"meta" json:"meta"`
 	CollectionInscriptionIcon string `bson:"collection_inscription_icon"`
 	TokenCreated bool `bson:"token_created"`
+	Source       string `bson:"source"`
 }
 
 func (u CollectionInscription) TableName() string { 

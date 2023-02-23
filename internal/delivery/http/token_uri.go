@@ -30,10 +30,8 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	tokenID := vars["tokenID"]
-	
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
 	h.Logger.Info("captureTimeout", captureTimeout)
@@ -79,10 +77,8 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	tokenID := vars["tokenID"]
-	
 
 	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
@@ -116,10 +112,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	tokenID := vars["tokenID"]
-	
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
 	h.Logger.Info("captureTimeout", captureTimeout)
@@ -140,7 +134,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.Logger.Info("h.Usecase.GetToken", token.TokenID)
-	
+
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New("Cannot parse products")
@@ -161,7 +155,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.Logger.Info("resp.token", token.TokenID)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -179,10 +173,8 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	tokenID := vars["tokenID"]
-	
 
 	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
@@ -198,7 +190,7 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 	resp := response.InternalTokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
 	h.Logger.Info("resp.message", message)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -228,7 +220,7 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	h.Logger.Info("genNFTAddr", genNFTAddr)
-	
+
 	f := structure.FilterTokens{}
 	err := f.CreateFilter(r)
 	if err != nil {
@@ -277,7 +269,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
 	h.Logger.Info("walletAddress", walletAddress)
-	
+
 	f := structure.FilterTokens{}
 	f.CreateFilter(r)
 	f.OwnerAddr = &walletAddress
@@ -323,7 +315,6 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	var err error
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	
 
 	hidden := false
 	baseF, err := h.BaseFilters(r)
@@ -339,14 +330,14 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-currentUserWalletAddress, ok := iWalletAddress.(string)
+	currentUserWalletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		f.IsHidden = &hidden
 	}
 
 	if ok && currentUserWalletAddress != walletAddress {
 		f.IsHidden = &hidden
-	}	
+	}
 
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
@@ -370,11 +361,55 @@ currentUserWalletAddress, ok := iWalletAddress.(string)
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
-func (h *httpDelivery) getTokens( f structure.FilterTokens) (*response.PaginationResponse, error) {
+// UserCredits godoc
+// @Summary get list tokenUris
+// @Description get tokenUris
+// @Tags TokenUri
+// @Accept  json
+// @Produce  json
+// @Param page query string false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /token-uri [GET]
+func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
+	f := structure.FilterTokens{}
+	err := f.CreateFilter(r)
+	if err != nil {
+		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	if len(*f.Search) < 3 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Term search minimum is 3 characters"))
+	}
+
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	resp, err := h.getTokensForSearch(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	//
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+
+}
+
+func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.PaginationResponse, error) {
 	pag, err := h.Usecase.FilterTokens(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
@@ -427,7 +462,67 @@ func (h *httpDelivery) getTokens( f structure.FilterTokens) (*response.Paginatio
 
 	resp := h.PaginationResp(pag, respItems)
 	return &resp, nil
+}
 
+func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.PaginationResponse, error) {
+	pag, err := h.Usecase.FilterTokens(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		return nil, err
+	}
+
+	respItems := []response.ExternalTokenURIResp{}
+	tokens := []entity.TokenUri{}
+	iTokensData := pag.Result
+
+	bytes, err := json.Marshal(iTokensData)
+	if err != nil {
+		err := errors.New("Cannot parse respItems")
+		h.Logger.Error("respItems", err.Error(), err)
+		return nil, err
+	}
+
+	err = json.Unmarshal(bytes, &tokens)
+	if err != nil {
+		err := errors.New("Cannot Unmarshal")
+		h.Logger.Error("Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		resp, err := h.tokenExternalToResp(&token)
+		if err != nil {
+			err := errors.New("Cannot parse products")
+			h.Logger.Error("tokenToResp", err.Error(), err)
+			return nil, err
+		}
+		respItems = append(respItems, *resp)
+	}
+
+	resp := h.PaginationResp(pag, respItems)
+	return &resp, nil
+}
+
+func (h *httpDelivery) tokenExternalToResp(input *entity.TokenUri) (*response.ExternalTokenURIResp, error) {
+	resp := &response.ExternalTokenURIResp{}
+	err := response.CopyEntityToResNoID(resp, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.ParsedImage != nil {
+		resp.Image = *input.ParsedImage
+	} else {
+		resp.Image = input.Thumbnail
+	}
+
+	resp.InscriptionIndex = input.InscriptionIndex
+	if input.Project != nil {
+		resp.ProjectName = input.Project.Name
+		resp.ProjectID = input.Project.TokenID
+	}
+
+	return resp, nil
 }
 
 func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
@@ -535,10 +630,8 @@ func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Req
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	
 
 	tokenID := vars["tokenID"]
-	
 
 	var reqBody request.UpdateTokentReq
 	decoder := json.NewDecoder(r.Body)
@@ -571,10 +664,9 @@ func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Req
 	}
 
 	h.Logger.Info("resp.token", token)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 
 // UserCredits godoc
 // @Summary Update token's thumbnail
@@ -590,7 +682,6 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 
 	vars := mux.Vars(r)
 	tokenID := vars["tokenID"]
-	
 
 	var reqBody request.UpdateTokenThumbnailReq
 	decoder := json.NewDecoder(r.Body)
@@ -602,8 +693,8 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 	}
 
 	token, err := h.Usecase.UpdateTokenThumbnail(structure.UpdateTokenThumbnailReq{
-		TokenID:        tokenID,
-		Thumbnail:       *reqBody.Thumbnail,
+		TokenID:   tokenID,
+		Thumbnail: *reqBody.Thumbnail,
 	})
 
 	if err != nil {
@@ -622,6 +713,32 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.Logger.Info("resp.token", token)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary get volume by wallet
+// @Description get volume by wallet
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string false "Filter project via wallet address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /profile/wallet/{walletAddress}/volume [GET]
+func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]	
+	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
 }
