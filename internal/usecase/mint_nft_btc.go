@@ -82,6 +82,10 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		mintPriceStr = strconv.Itoa(mintPriceInt)
 
 		_, btcRate, ethRate, err = u.convertBTCToETH("1")
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
 
 	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
