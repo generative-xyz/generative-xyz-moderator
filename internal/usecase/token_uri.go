@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
@@ -26,7 +27,7 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
+func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
 
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
@@ -34,13 +35,8 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 	if token == nil {
 		return nil, errors.New("Token is empty")
 	}
-
-	
-	
 	resp := &structure.TokenAnimationURI{}
-
-	u.Logger.Info("token.ThumbnailCapturedAt", token.ThumbnailCapturedAt)
-
+	u.Logger.LogAny("RunAndCap", zap.Any("token", token))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -52,9 +48,6 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		}
 		return resp, nil
 	}
-
-	
-	
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
@@ -80,6 +73,8 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 		imageURL = fileURI
 	}
+	u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
+	u.Logger.LogAny("RunAndCap", zap.Any("fileURI", imageURL))
 
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
@@ -91,7 +86,7 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 	)
 
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.Error("RunAndCap", zap.Any("chromedp.Run", err))
 	}
 
 	for key, item := range traits {
@@ -116,14 +111,14 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		base64Image := image
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
-			now := time.Now().UTC().String()
-			name := fmt.Sprintf("thumb/%s-%s-%s.png", token.ContractAddress, token.TokenID, now)
+			now := time.Now().UTC().Unix()
+			name := fmt.Sprintf("thumb/%s-%d.png", token.TokenID, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				u.Logger.Error(err)
+				u.Logger.ErrorAny("RunAndCap", zap.Any("UploadBaseToBucket", err))
 			} else {
-				u.Logger.Info("uploaded", uploaded)
+				u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
@@ -138,14 +133,11 @@ func (u Usecase) RunAndCap( token *entity.TokenUri, captureTimeout int) (*struct
 		IsUpdated:   true,
 	}
 
-	u.Logger.Info("structure.TokenAnimationURI.IsUpdated", resp.IsUpdated)
+	u.Logger.LogAny("RunAndCap", zap.Any("resp", resp))
 	return resp, nil
 }
 
-func (u Usecase) GetTokenByTokenID( tokenID string, captureTimeout int) (*entity.TokenUri, error) {
-
-
-	
+func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.TokenUri, error) {
 
 	tokenID = strings.ToLower(tokenID)
 
@@ -160,12 +152,9 @@ func (u Usecase) GetTokenByTokenID( tokenID string, captureTimeout int) (*entity
 	return tokenUri, nil
 }
 
-func (u Usecase) GetToken( req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-
+func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 
 	u.Logger.Info("req", req)
-	
-	
 
 	defer func() {
 		go u.getTokenInfo(req)
@@ -196,8 +185,7 @@ func (u Usecase) GetToken( req structure.GetTokenMessageReq, captureTimeout int)
 	return tokenUri, nil
 }
 
-func (u Usecase) getTokenInfo( req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
-
+func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUri, error) {
 
 	u.Logger.Info("req", req)
 	addr := common.HexToAddress(req.ContractAddress)
@@ -319,12 +307,6 @@ func (u Usecase) getTokenInfo( req structure.GetTokenMessageReq) (*entity.TokenU
 	u.Logger.Info("dataObject.Creator", dataObject.Creator)
 	u.Logger.Info("dataObject.TokenID", dataObject.TokenID)
 	u.Logger.Info("dataObject.ProjectID", dataObject.ProjectID)
-
-	
-	
-	
-	
-	
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
@@ -452,7 +434,6 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 
 func (u Usecase) UpdateTokensFromChain() error {
 
-
 	//TODO - we will use pagination instead of all
 	tokens, err := u.Repo.GetAllTokens()
 	if err != nil {
@@ -462,7 +443,6 @@ func (u Usecase) UpdateTokensFromChain() error {
 
 	u.Logger.Info("tokens.Count", len(tokens))
 	for _, token := range tokens {
-
 
 		_, err := u.GetToken(structure.GetTokenMessageReq{ContractAddress: token.ContractAddress, TokenID: token.TokenID}, 5)
 		if err != nil {
@@ -474,8 +454,7 @@ func (u Usecase) UpdateTokensFromChain() error {
 	return nil
 }
 
-func (u Usecase) GetTokensByContract( contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
-
+func (u Usecase) GetTokensByContract(contractAddress string, filter nfts.MoralisFilter) (*entity.Pagination, error) {
 
 	client, err := helpers.EthDialer()
 	if err != nil {
@@ -523,7 +502,7 @@ func (u Usecase) GetTokensByContract( contractAddress string, filter nfts.Morali
 	return p, nil
 }
 
-func (u Usecase) FilterTokens( filter structure.FilterTokens) (*entity.Pagination, error) {
+func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination, error) {
 
 	pe := &entity.FilterTokenUris{}
 	err := copier.Copy(pe, filter)
@@ -542,7 +521,7 @@ func (u Usecase) FilterTokens( filter structure.FilterTokens) (*entity.Paginatio
 	return tokens, nil
 }
 
-func (u Usecase) UpdateToken( req structure.UpdateTokenReq) (*entity.TokenUri, error) {
+func (u Usecase) UpdateToken(req structure.UpdateTokenReq) (*entity.TokenUri, error) {
 
 	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)
 	if err != nil {
@@ -564,7 +543,7 @@ func (u Usecase) UpdateToken( req structure.UpdateTokenReq) (*entity.TokenUri, e
 	return p, nil
 }
 
-func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
+func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 
 	contractAddres := project.ContractAddress
 	genAddress := project.GenNFTAddr
@@ -585,7 +564,7 @@ func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
 			time.Sleep(10 * time.Second)
 		}
 
-		go func( contractAddres string, tokenID string) {
+		go func(contractAddres string, tokenID string) {
 			u.GetToken(structure.GetTokenMessageReq{
 				ContractAddress: contractAddres,
 				TokenID:         tokenID,
@@ -598,8 +577,7 @@ func (u Usecase) GetTokensOfAProjectFromChain( project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI( projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
-
+func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -747,7 +725,7 @@ func (u Usecase) GetAllListListingWithRule() ([]structure.MarketplaceNFTDetail, 
 	return result, nil
 }
 
-func (u Usecase) GetListingDetail( inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
+func (u Usecase) GetListingDetail(inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
 	// addon for check isBuyable (contact Phuong)
 
 	isBuyable := true
@@ -790,10 +768,7 @@ func (u Usecase) GetListingDetail( inscriptionID string) (*structure.Marketplace
 
 }
 
-func (u Usecase) UpdateTokenThumbnail( req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
-
-
-	
+func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*entity.TokenUri, error) {
 
 	token, err := u.Repo.FindTokenByTokenID(req.TokenID)
 	if err != nil {
@@ -806,14 +781,14 @@ func (u Usecase) UpdateTokenThumbnail( req structure.UpdateTokenThumbnailReq) (*
 		u.Logger.Error(err)
 		return nil, err
 	}
-now := time.Now().Unix()
-uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now) )
+	now := time.Now().Unix()
+	uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now))
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/upload/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	thumb := fmt.Sprintf("%s/upload/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 
 	token.Image = thumb
 	token.Thumbnail = thumb
@@ -827,3 +802,65 @@ uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/tok
 	u.Logger.Info("updated", updated)
 	return token, nil
 }
+
+
+// When go to this, you need to make sure that meta's project is created
+func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
+	// find project by projectID
+	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	tokenUri := entity.TokenUri{}
+	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.TokenID = inscription.ID
+	blockNumberMinted := "31012412"
+	tokenUri.BlockNumberMinted = &blockNumberMinted
+	tokenUri.Creator = &project.CreatorProfile
+	tokenUri.CreatorAddr = project.CreatorAddrr
+	tokenUri.Description = project.Description
+	tokenUri.GenNFTAddr = project.GenNFTAddr
+
+	mintedTime := time.Now()
+	tokenUri.MintedTime = &mintedTime
+	tokenUri.Name = inscription.Meta.Name
+	tokenUri.Project = project
+	tokenUri.ProjectID = project.TokenID
+	tokenUri.ProjectIDInt = project.TokenIDInt
+	tokenUri.IsOnchain = false
+	tokenUri.CreatedByCollectionInscription = true
+
+	nftTokenUri := project.NftTokenUri
+	u.Logger.Info("nftTokenUri", nftTokenUri)
+
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err = helpers.Base64DecodeRaw(project.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	now := time.Now().UTC()
+	imageURI := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", inscription.ID)
+	tokenUri.AnimationURL = ""
+	tokenUri.Thumbnail = imageURI
+	tokenUri.Image = imageURI
+	tokenUri.ParsedImage = &imageURI
+	tokenUri.ThumbnailCapturedAt = &now
+	u.Logger.Info("mintedURL", imageURI)
+
+	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	return pTokenUri, nil
+}
+

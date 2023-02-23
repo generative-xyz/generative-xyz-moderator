@@ -2895,6 +2895,18 @@
                 "summary": "get referrals",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Filter by referrerID",
+                        "name": "referrerID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project referreeID",
+                        "name": "referreeID",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",

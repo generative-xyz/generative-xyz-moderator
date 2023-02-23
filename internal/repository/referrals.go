@@ -2,6 +2,7 @@ package repository
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
@@ -17,10 +18,10 @@ func (r Repository) InsertReferral(data *entity.Referral) error {
 func (r Repository) FilterReferrals(filter entity.FilterReferrals) bson.M {
 	f := bson.M{}
 	if filter.ReferreeID != nil {
-		f["referree_id"] = filter.ReferreeID
+		f["referree_id"] = primitive.Regex{Pattern:  *filter.ReferreeID, Options: "i"}
 	}
 	if filter.ReferrerID != nil {
-		f["referrer_id"] = filter.ReferrerID
+		f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
 	}
 	return f
 }

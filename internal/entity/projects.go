@@ -94,6 +94,8 @@ type Projects struct {
 	IsFullChain            bool               `bson:"isFullChain" json:"isFullChain"`
 	TraceID                string             `bson:"traceID" json:"traceID"` //TO find log easily
 	ReportUsers            []string           `bson:"reportUsers" json:"reportUsers"`
+	InscriptionIcon 	 string 							`bson:"inscription_icon" json:"inscriptionIcon"`
+	CreatedByCollectionMeta bool 						`bson:"created_by_collection_meta" json:"created_by_collection_meta"`
 }
 
 type MintedImages struct {

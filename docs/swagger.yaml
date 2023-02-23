@@ -2403,6 +2403,14 @@ paths:
       - application/json
       description: get referrals
       parameters:
+      - description: Filter by referrerID
+        in: query
+        name: referrerID
+        type: string
+      - description: filter project referreeID
+        in: query
+        name: referreeID
+        type: string
       - description: limit
         in: query
         name: limit

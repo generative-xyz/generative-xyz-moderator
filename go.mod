@@ -42,6 +42,7 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.6.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.47.0
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
 
 require (
