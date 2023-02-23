@@ -796,8 +796,8 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 			},
 		},
 		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
-		bson.D{{"$limit", limit}},
 		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
 	})
 	if err != nil {
 		return nil, err

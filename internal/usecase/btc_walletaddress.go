@@ -710,13 +710,13 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 		})
 	}
 
-	fields = addFields(fields, "Total Price", u.resolveMintPriceBTC(project.MintPrice))
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice))
 	fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
 
 	discordMsg := discordclient.Message{
 		Username: "Satoshi 27",
 		Embeds: []discordclient.Embed{{
-			Title: fmt.Sprintf("just minted a %s", project.Name),
+			Title: fmt.Sprintf("just minted a %s.", project.Name),
 			Url:   fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID), // todo
 			Author: discordclient.Author{
 				Name:    u.resolveShortName(user.DisplayName, user.WalletAddress),

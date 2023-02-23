@@ -189,6 +189,11 @@ definitions:
       web:
         type: string
     type: object
+  request.ReportProjectReq:
+    properties:
+      originalLink:
+        type: string
+    type: object
   request.UpdateBTCProjectCategoriesReq:
     properties:
       categories:
@@ -442,6 +447,8 @@ definitions:
         $ref: '#/definitions/response.ProfileResponse'
       desc:
         type: string
+      editableIsHidden:
+        type: boolean
       genNFTAddr:
         type: string
       id:
@@ -482,6 +489,10 @@ definitions:
         type: integer
       projectURI:
         type: string
+      reportUsers:
+        items:
+          $ref: '#/definitions/response.ReportProject'
+        type: array
       reservers:
         items:
           type: string
@@ -532,6 +543,13 @@ definitions:
   response.RedisResponse:
     properties:
       value:
+        type: string
+    type: object
+  response.ReportProject:
+    properties:
+      originalLink:
+        type: string
+      reportUserAddress:
         type: string
     type: object
   response.RespondErr:
@@ -1986,6 +2004,35 @@ paths:
       summary: get  projects by wallet
       tags:
       - Profile
+  /profile/wallet/{walletAddress}/volume:
+    get:
+      consumes:
+      - application/json
+      description: get volume by wallet
+      parameters:
+      - description: Filter project via wallet address
+        in: path
+        name: walletAddress
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get volume by wallet
+      tags:
+      - Profile
   /project:
     get:
       consumes:
@@ -2275,6 +2322,12 @@ paths:
         name: projectID
         required: true
         type: string
+      - description: Report Project request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ReportProjectReq'
       produces:
       - application/json
       responses:
@@ -2459,6 +2512,39 @@ paths:
       summary: Create referral
       tags:
       - Referral
+  /token-uri:
+    get:
+      consumes:
+      - application/json
+      description: get tokenUris
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get list tokenUris
+      tags:
+      - TokenUri
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
