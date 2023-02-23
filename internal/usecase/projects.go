@@ -102,7 +102,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		return nil, err
 	}
 
-
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
@@ -170,7 +169,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
 		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
@@ -212,7 +210,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][projectID %s]", pe.TokenID), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", pe.Name, pe.CreatorAddrr))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
-	
+
 	return pe, nil
 }
 
@@ -376,7 +374,11 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
-	if p.CreatorAddrr != *req.CreatetorAddress {
+	whitelist := make(map[string]bool)
+	whitelist["0xe23fcb129d6ea1b847202b14a56f957e5a464f64"] = true // andy
+	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
+	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
+	if p.CreatorAddrr != *req.CreatetorAddress && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
@@ -1176,7 +1178,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe := &entity.Projects{}
 
 	mPrice := helpers.StringToBTCAmount("0")
-	
+
 	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
@@ -1217,7 +1219,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatorAddrrBTC = creatorAddrr.WalletAddressBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
-	
+
 	pe.Name = meta.Name
 	pe.Description = meta.Description
 	maxSupply, err := strconv.ParseInt(meta.Supply, 10, 64)
@@ -1228,7 +1230,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
 	var index int64
 	if err != nil {
-		index = 0		
+		index = 0
 	} else {
 		index = *countIndex
 	}
