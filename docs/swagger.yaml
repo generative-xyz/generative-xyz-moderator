@@ -447,6 +447,8 @@ definitions:
         $ref: '#/definitions/response.ProfileResponse'
       desc:
         type: string
+      editableIsHidden:
+        type: boolean
       genNFTAddr:
         type: string
       id:
@@ -487,6 +489,10 @@ definitions:
         type: integer
       projectURI:
         type: string
+      reportUsers:
+        items:
+          $ref: '#/definitions/response.ReportProject'
+        type: array
       reservers:
         items:
           type: string
@@ -537,6 +543,13 @@ definitions:
   response.RedisResponse:
     properties:
       value:
+        type: string
+    type: object
+  response.ReportProject:
+    properties:
+      originalLink:
+        type: string
+      reportUserAddress:
         type: string
     type: object
   response.RespondErr:
@@ -2470,6 +2483,39 @@ paths:
       summary: Create referral
       tags:
       - Referral
+  /token-uri:
+    get:
+      consumes:
+      - application/json
+      description: get tokenUris
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get list tokenUris
+      tags:
+      - TokenUri
   /token/{contractAddress}/{tokenID}:
     get:
       consumes:
