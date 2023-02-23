@@ -61,6 +61,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/volume", h.getVolumeByWallet).Methods("GET")
 
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
@@ -165,6 +166,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// request-mint (new flow)
 	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
+	mintNftBtc.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
+
+	mintNftBtcAuth := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtcAuth.Use(h.MiddleWare.AccessToken)
+	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")

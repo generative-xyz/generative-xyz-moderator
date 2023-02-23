@@ -62,7 +62,7 @@ return err
 
 func (r Repository) CancelListingByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
-f := bson.D{
+	f := bson.D{
 		{Key: "offering_id", Value: offeringID,},
 	}
 

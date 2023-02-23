@@ -68,7 +68,7 @@ func (u Usecase) CreateETHWalletAddress(input structure.EthWalletAddressData) (*
 			mintPriceInt += networkFee
 		}
 	}
-	mintPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	mintPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		u.Logger.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
@@ -204,7 +204,7 @@ func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, userAddr
 			mintPriceInt += networkFee
 		}
 	}
-	mintPrice, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
+	mintPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 	if err != nil {
 		u.Logger.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
@@ -594,7 +594,7 @@ func (u Usecase) WaitingForETHMinted() ([]entity.ETHWalletAddress, error) {
 }
 
 //Mint flow
-func (u Usecase) convertBTCToETH(amount string) (string, error) {
+func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
 
 	//amount = "0.1"
 	powIntput := math.Pow10(8)
@@ -613,14 +613,14 @@ func (u Usecase) convertBTCToETH(amount string) (string, error) {
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
 		u.Logger.Error("strconv.getExternalPrice", err.Error(), err)
-		return "", err
+		return "", 0, 0, err
 	}
 
 	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
 		u.Logger.Error("strconv.getExternalPrice", err.Error(), err)
-		return "", err
+		return "", 0, 0, err
 	}
 	u.Logger.Info("ethPrice", ethPrice)
 
@@ -647,7 +647,7 @@ func (u Usecase) convertBTCToETH(amount string) (string, error) {
 	result := new(big.Int)
 	amountMintBTC.Int(result)
 
-	return result.String(), nil
+	return result.String(), btcPrice, ethPrice, nil
 }
 
 // containsIgnoreCase ...
