@@ -108,6 +108,12 @@ type MintNftBtc struct {
 
 	AmountSentMaster string `bson:"amount_sent_master"` // amount withdrawn to the master wallet
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
+
+	// for anaylist:
+	BtcRate           float64 `bson:"btc_rate"`
+	EthRate           float64 `bson:"eth_rate"`
+	ProjectMintPrice  int     `bson:"project_mint_price"`
+	ProjectNetworkFee int     `bson:"project_network_fee"`
 }
 
 func (u MintNftBtc) TableName() string {
@@ -152,4 +158,6 @@ type MintNftBtcResp struct {
 
 	TxSendNft string `bson:"tx_send_nft"`
 	TxMintNft string `bson:"tx_mint_nft"`
+
+	OriginUserAddress string `bson:"origin_user_address"`
 }
