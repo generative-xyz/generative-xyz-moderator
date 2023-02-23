@@ -503,7 +503,6 @@ func (u Usecase) GetTokensByContract(contractAddress string, filter nfts.Moralis
 }
 
 func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination, error) {
-
 	pe := &entity.FilterTokenUris{}
 	err := copier.Copy(pe, filter)
 	if err != nil {
@@ -803,7 +802,6 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 	return token, nil
 }
 
-
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
 	// find project by projectID
@@ -863,4 +861,3 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 
 	return pTokenUri, nil
 }
-

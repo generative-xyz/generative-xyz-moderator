@@ -2995,6 +2995,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/token-uri": {
+            "get": {
+                "description": "get tokenUris",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get list tokenUris",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token uri data",
@@ -4163,6 +4212,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "editableIsHidden": {
+                    "type": "boolean"
+                },
                 "genNFTAddr": {
                     "type": "string"
                 },
@@ -4222,6 +4274,12 @@ const docTemplate = `{
                 },
                 "projectURI": {
                     "type": "string"
+                },
+                "reportUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ReportProject"
+                    }
                 },
                 "reservers": {
                     "type": "array",
@@ -4298,6 +4356,17 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ReportProject": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
+                    "type": "string"
+                },
+                "reportUserAddress": {
                     "type": "string"
                 }
             }
