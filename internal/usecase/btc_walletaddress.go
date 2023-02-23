@@ -999,6 +999,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			ProjectImage:  projectInfo.Thumbnail,
 			ProjectName:   projectInfo.Name,
 			InscriptionID: item.InscriptionID,
+			IsCancel:      int(item.Status) == 0,
 		}
 		result = append(result, minting)
 	}
