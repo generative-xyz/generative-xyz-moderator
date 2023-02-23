@@ -2863,6 +2863,15 @@
                         "name": "projectID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Report Project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ReportProjectReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -3746,6 +3755,14 @@
                     "type": "string"
                 },
                 "web": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ReportProjectReq": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
                     "type": "string"
                 }
             }
