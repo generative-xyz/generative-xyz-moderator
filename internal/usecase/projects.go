@@ -380,6 +380,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
 	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
 	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
+	whitelist["0xd77f54424cc2bd2a7315b1018e53548f62f690c0"] = true // anne
 	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
