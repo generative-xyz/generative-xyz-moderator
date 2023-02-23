@@ -379,6 +379,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
 	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
 	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
+	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
 	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
@@ -470,10 +471,10 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	}
 
 	p.ReportUsers = append(p.ReportUsers, rep)
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
-	if len(p.ReportUsers) >= 3 {
+	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
 	}
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
 
 	if err != nil {
 		u.Logger.Error("UpdateProject.ReportProject", err.Error(), err)
