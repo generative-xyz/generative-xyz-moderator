@@ -476,7 +476,7 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 
 	update := bson.M{
 		"$set": bson.M{
-			"inscription_icon": true,
+			"inscription_icon": inscriptionIcon,
 		},
 	}
 
