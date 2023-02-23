@@ -430,7 +430,6 @@ func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (
 }
 
 func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects, error) {
-
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.FindProjectBy", err))
@@ -442,6 +441,9 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 		p.Priority = &priority
 	}
 
+	if len(p.ReportUsers) >= u.Config.MaxReportCount {
+		p.IsHidden = true
+	}
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
