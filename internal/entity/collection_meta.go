@@ -17,8 +17,9 @@ type CollectionMeta struct {
 	DiscordLink     string `bson:"discord_link" json:"discord_link"`
 	WebsiteLink     string `bson:"website_link" json:"website_link"`
 	ProjectCreated  bool `bson:"project_created"`
-	Royalty					int  `bson:"royalty"`
+	Royalty					string  `bson:"royalty" json:"royalty"`
 	Source          string `bson:"source"`
+	WalletAddress   string `bson:"wallet_address" json:"wallet_address"`
 }
 
 func (u CollectionMeta) TableName() string { 

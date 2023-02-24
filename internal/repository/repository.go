@@ -334,8 +334,13 @@ func (r Repository) CreateCollectionIndexes() error {
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateMintBTCCIndexModel()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.CreateWalletTrackTxIndexModel()
 	if err != nil {
 		return err
 	}

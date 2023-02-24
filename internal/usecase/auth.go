@@ -143,12 +143,15 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 			user.WalletAddressBTCTaproot = *data.AddressBTC
 			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
 		}
-	}
-	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		if user.WalletAddressBTC == "" {
-			user.WalletAddressBTC = *data.AddressBTCSegwit
+			user.WalletAddressBTC = *data.AddressBTC
 			u.Logger.Info("user.WalletAddressBTC.Updated", true)
 		}
+	}
+
+	if user.WalletAddressPayment == "" {
+		user.WalletAddressPayment = user.WalletAddress
+		u.Logger.Info("user.WalletAddressPayment.Updated", true)
 	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
@@ -251,10 +254,39 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 	return user, nil
 }
 
+<<<<<<< HEAD
+=======
+func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Users, error) {
+
+	u.Logger.Info("input.userAddr", userAddr)
+	user, err := u.Repo.FindUserByBtcAddressTaproot(userAddr)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
+
+	u.Logger.Info("input.userAddr", userAddr)
+	user, err := u.Repo.FindUserByBtcAddress(userAddr)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
+>>>>>>> f259532d3f73bee4d73ef47d64fe7844f8084dba
 func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) (*entity.Users, error) {
 
 	isUpdateWalletAddress := false
 	oldBtcAdress := ""
+	isUpdateWalletAddressPayment := false
+	oldAdressPayment := ""
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
@@ -284,6 +316,12 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		isUpdateWalletAddress = true
 		oldBtcAdress = user.WalletAddressBTC
 		user.WalletAddressBTC = *data.WalletAddressBTC
+	}
+
+	if data.WalletAddressPayment != nil && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
+		isUpdateWalletAddressPayment = true
+		oldAdressPayment = user.WalletAddressPayment
+		user.WalletAddressPayment = *data.WalletAddressPayment
 	}
 
 	if data.ProfileSocial.Discord != nil {
@@ -351,7 +389,15 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
+<<<<<<< HEAD
 		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+=======
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+	}
+
+	if isUpdateWalletAddressPayment {
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
+>>>>>>> f259532d3f73bee4d73ef47d64fe7844f8084dba
 	}
 
 	return user, nil

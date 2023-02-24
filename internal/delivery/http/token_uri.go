@@ -153,9 +153,6 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			resp.IsCompleted = nft.IsCompleted
 		}
 	}
-
-	h.Logger.Info("resp.token", token.TokenID)
-
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -532,11 +529,12 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 		return nil, err
 	}
 	resp.Attributes = input.ParsedAttributes
-	if input.ParsedImage != nil {
-		resp.Image = *input.ParsedImage
-	} else {
-		resp.Image = input.Thumbnail
-	}
+	// if input.ParsedImage != nil {
+	// 	resp.Image = *input.ParsedImage
+	// } else {
+	// 	resp.Image = input.Thumbnail
+	// }
+	resp.Image = input.Thumbnail
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)

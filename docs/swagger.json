@@ -1810,6 +1810,38 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "cancel the mint request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC/ETH"
+                ],
+                "summary": "cancel the mint request",
+                "parameters": [
+                    {
+                        "description": "Create a btc/eth wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBtcWalletAddressReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/nfts/{contractAddress}/nft_holders": {
@@ -4184,6 +4216,9 @@
                     "type": "string"
                 },
                 "walletAddressBtcTaproot": {
+                    "type": "string"
+                },
+                "walletAddressPayment": {
                     "type": "string"
                 }
             }

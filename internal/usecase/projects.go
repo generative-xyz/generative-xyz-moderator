@@ -167,6 +167,14 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
+
+			//Html
+			htmlUrl, err := u.parseAnimationURL(*pe)
+			if err == nil {
+				animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+				pe.AnimationHtml = &animationHtml
+			}	
+			
 		}
 	}
 
@@ -209,7 +217,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName) ))
+	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
 	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
@@ -486,6 +494,13 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	}
 	u.Logger.Info("updated", updated)
 
+	u.NotifyWithChannel(
+		os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+		fmt.Sprintf("[Project is reported][projectID %s]", p.TokenID),
+		"",
+		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
+	)
+
 	return p, nil
 }
 
@@ -626,6 +641,28 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
+
+	go func() {
+		//upload animation URL
+		if c.AnimationHtml == nil {
+		
+			htmlUrl, err := u.parseAnimationURL(*c)
+			if err != nil {
+				return
+			}
+		
+			animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+			c.AnimationHtml = &animationHtml
+
+			_, err = u.Repo.UpdateProject(c.UUID, c)
+			if err != nil {
+				return
+			}
+		}
+	
+	}()
+
+
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
@@ -1072,10 +1109,10 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
-		u.Logger.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), zap.Error(err))
 		return nil, err
 	}
-	
+
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -1083,7 +1120,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 
-	
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe))
+
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
@@ -1104,6 +1142,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
 		return nil, err
 	}
+
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
 	for _, f := range files {
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
@@ -1121,7 +1161,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 	}
 	//
-
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1155,7 +1195,9 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)),"", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+
+	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
 }
@@ -1203,7 +1245,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.MintPrice = mPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = true
-	pe.Status = true
+	pe.Status = false
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = meta.Name
@@ -1213,10 +1255,18 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	nftTokenURI["attributes"] = []string{}
 
 	pe.CreatorAddrr = "0x0000000000000000000000000000000000000000"
+	if meta.WalletAddress != "" {
+		pe.CreatorAddrr = meta.WalletAddress
+	}
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 	if err != nil {
 		u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
-		return nil, err
+		pe.CreatorAddrr = "0x0000000000000000000000000000000000000000"
+		creatorAddrr, err = u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+		if err != nil {
+			u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+			return nil, err
+		}
 	}
 
 	pe.CreatorName = creatorAddrr.DisplayName
@@ -1255,10 +1305,14 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.MintingInfo.Index = index
 
 	if pe.Categories == nil || len(pe.Categories) == 0 {
-		pe.Categories = []string{u.Config.OtherCategoryID}
+		pe.Categories = []string{u.Config.UnverifiedCategoryID}
 	}
 
-	pe.Royalty = meta.Royalty
+	royalty, err := strconv.Atoi(meta.Royalty)
+	if err != nil {
+		royalty = 0
+	}
+	pe.Royalty = royalty
 	pe.SocialTwitter = meta.TwitterLink
 	pe.SocialDiscord = meta.DiscordLink
 	pe.SocialWeb = meta.WebsiteLink
@@ -1277,6 +1331,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatedByCollectionMeta = true
 	blockNumberMinted := "0"
 	pe.BlockNumberMinted = &blockNumberMinted
+	pe.Source = meta.Source
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
@@ -1290,23 +1345,23 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 }
 
 type Volumes struct {
-	Items []Volume `json:"items"`
-	TotalBTC float64 `json:"totalAmountBTC"`
-	TotalETH float64 `json:"totalAmountETH"`
+	Items    []Volume `json:"items"`
+	TotalBTC float64  `json:"totalAmountBTC"`
+	TotalETH float64  `json:"totalAmountETH"`
 }
 
 type Volume struct {
 	ProjectID string `json:"projectID"`
-	PayType string `json:"payType"`
-	Amount string `json:"amount"`
+	PayType   string `json:"payType"`
+	Amount    string `json:"amount"`
 }
 
 func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
-	
+
 	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
 	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err) )
+		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
 	}
 
 	pIDs := []string{}
@@ -1317,15 +1372,15 @@ func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 
 	data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
 	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err) )
+		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
 	}
 
 	resp := Volumes{}
-	for _, item := range  data.Items {
+	for _, item := range data.Items {
 		tmp := Volume{
 			ProjectID: item.ID.ProjectID,
-			PayType: item.ID.Paytype,
-			Amount: fmt.Sprintf("%d", int(item.Amount)),
+			PayType:   item.ID.Paytype,
+			Amount:    fmt.Sprintf("%d", int(item.Amount)),
 		}
 		resp.Items = append(resp.Items, tmp)
 	}
