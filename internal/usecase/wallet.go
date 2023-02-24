@@ -256,11 +256,12 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 
 func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error {
 	trackTx := entity.WalletTrackTx{
-		Address:       address,
-		Txhash:        tx.Txhash,
-		Type:          tx.Type,
-		Amount:        tx.Amount,
-		InscriptionID: tx.InscriptionID,
+		Address:           address,
+		Txhash:            tx.Txhash,
+		Type:              tx.Type,
+		Amount:            tx.Amount,
+		InscriptionID:     tx.InscriptionID,
+		InscriptionNumber: tx.InscriptionNumber,
 	}
 	return u.Repo.CreateTrackTx(&trackTx)
 }
@@ -274,10 +275,11 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 
 	for _, tx := range txList {
 		trackTx := structure.WalletTrackTx{
-			Txhash:        tx.Txhash,
-			Type:          tx.Type,
-			Amount:        tx.Amount,
-			InscriptionID: tx.InscriptionID,
+			Txhash:            tx.Txhash,
+			Type:              tx.Type,
+			Amount:            tx.Amount,
+			InscriptionID:     tx.InscriptionID,
+			InscriptionNumber: tx.InscriptionNumber,
 		}
 		_, bs, err := u.buildBTCClient()
 		if err != nil {
