@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
@@ -251,4 +252,44 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 
 	return &result, nil
 
+}
+
+func (u Usecase) TrackWalletTx(address string, txhash string) error {
+	trackTx := entity.WalletTrackTx{
+		Address: address,
+		Txhash:  txhash,
+	}
+	return u.Repo.CreateTrackTx(&trackTx)
+}
+
+func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]structure.WalletTrackTx, error) {
+	var result []structure.WalletTrackTx
+	txList, err := u.Repo.GetTrackTxs(address, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tx := range txList {
+		trackTx := structure.WalletTrackTx{
+			Txhash: tx.Txhash,
+		}
+		_, bs, err := u.buildBTCClient()
+		if err != nil {
+			fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+			return nil, err
+		}
+
+		txStatus, err := bs.CheckTx(tx.Txhash)
+		if err != nil {
+			trackTx.Status = "Failed"
+		} else {
+			if txStatus.Confirmations > 0 {
+				trackTx.Status = "Success"
+			}
+			trackTx.Status = "Pending"
+		}
+
+		result = append(result, trackTx)
+	}
+	return result, nil
 }
