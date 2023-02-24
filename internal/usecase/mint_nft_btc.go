@@ -403,6 +403,10 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
+	
+	if true {
+		return nil
+	}
 
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
