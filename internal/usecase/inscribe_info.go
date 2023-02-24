@@ -12,10 +12,8 @@ import (
 
 
 func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) {
-
-
 	url := fmt.Sprintf("https://ordinals-explorer.generative.xyz/inscription/%s", id)
-dts := []string{}
+	dts := []string{}
 	dds := []string{}
 	hrefs := []string{}
 	var inscribeIndex string
@@ -24,22 +22,39 @@ dts := []string{}
 	var err error
 
 	c.OnHTML("dl", func(e *colly.HTMLElement) {
+		if e == nil {
+			err = fmt.Errorf("something went wrong went crawl inscribe id")
+			return
+		}
 		e.ForEach("dt", func(id int, e *colly.HTMLElement) {
+			if e == nil {
+				err = fmt.Errorf("something went wrong went crawl inscribe id")
+				return
+			}
 			dts = append(dts, e.Text)
 		})
 		e.ForEach("dd", func(id int, e *colly.HTMLElement) {
+			if e == nil {
+				err = fmt.Errorf("something went wrong went crawl inscribe id")
+				return
+			}
 			dds = append(dds, e.Text)
 			hrefs = append(hrefs, e.ChildAttr("a", "href"))
 		})
 	})
-c.OnHTML("h1", func(e *colly.HTMLElement) {
+	c.OnHTML("h1", func(e *colly.HTMLElement) {
+		if e == nil {
+			err = fmt.Errorf("something went wrong went crawl inscribe id")
+			return
+		}
 		text := e.Text
 		inscribeIndex = strings.Replace(text, "Inscription ", "", -1)
 	})
 
 	c.OnError(func(r *colly.Response, e error) {
-		u.Logger.Error(fmt.Sprintf("request to url %s failed", url), err.Error(), err)
-		err = e
+		// u.Logger.Error(fmt.Sprintf("request to url %s failed", url), err.Error(), err)
+		// err = e
+		err = fmt.Errorf("something went wrong went crawl inscribe id")
 	})
 
 
