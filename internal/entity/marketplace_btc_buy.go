@@ -29,12 +29,19 @@ type MarketplaceBTCBuyOrder struct {
 	ItemID        string    `bson:"item_id"`
 	InscriptionID string    `bson:"inscriptionID"` // nftID in btc
 	Status        BuyStatus `bson:"status"`
-	ErrCount      int       `bson:"err_count"`
 
-	SegwitAddress string `bson:"segwit_address"`
+	PayType string `bson:"pay_type"`
 
-	ReceivedBalance       string      `bson:"received_balance"`
-	SegwitKey             string      `bson:"segwit_key"`
+	Price   string  `bson:"price"` //maybe eth/btc
+	BtcRate float64 `bson:"btc_rate"`
+	EthRate float64 `bson:"eth_rate"`
+
+	ErrCount int `bson:"err_count"`
+
+	ReceiveAddress  string `bson:"receive_address"` // address generated to receive coin from users.
+	PrivateKey      string `bson:"privateKey"`      // private key of the receive wallet.
+	ReceivedBalance string `bson:"received_balance"`
+
 	ExpiredAt             time.Time   `bson:"expired_at"`
 	RawData               string      `bson:"raw_data"` // raw data of sending btc (for retry)
 	UTXO                  string      `bson:"utxo"`
@@ -44,6 +51,9 @@ type MarketplaceBTCBuyOrder struct {
 	FeeChargeBTCBuyer     int         `bson:"fee_charge_btc_buyer"`
 	RoyaltyChargeBTCBuyer int         `bson:"royalty_charge_btc_buyer"`
 	AmountBTCSentSeller   int         `bson:"amount_btc_send_seller"`
+
+	SegwitAddress string `bson:"segwit_address"` // remove for new flow
+	SegwitKey     string `bson:"segwit_key"`     // remove for new flow
 }
 
 func (u MarketplaceBTCBuyOrder) TableName() string {

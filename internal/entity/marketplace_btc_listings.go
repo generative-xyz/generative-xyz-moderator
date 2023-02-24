@@ -18,28 +18,41 @@ import (
 // 	Finished           *bool
 // }
 
-type SellerPaymentInfo struct {
-	Network       string `bson:"network"`
-	SellerAddress string `bson:"seller_address"` // address to receive fund from buyer
-	Price         string `bson:"price"`          // price by network
-	TokenID       string `bson:"token_id"`       // maybe: native token, erc20 token like usdt, busd...,
-}
+type StatusListing int
+
+const (
+	StatusListing_Pending        StatusListing = iota // 0: pending: waiting for fund.
+	StatusListing_ReceivedNft                         // 1: received nft from seller // isConfirm true.
+	StatusListing_RequestdCancel                      // 3: user requested a cancel.
+	StatusListing_Canceling                           // 4: submit send nft back to the seller.
+	StatusListing_Canceled                            // 5: send nft success.
+	StatusListing_TxCancelFailed                      // 6 tx cancel failed, need to retry.
+	StatusListing_Invalid                             // 7 the listing invalid // not show on the mkp.
+)
 
 type MarketplaceBTCListing struct {
 	BaseEntity `bson:",inline"`
 
-	SellOrdAddress string `bson:"seller_ord_address"` // refund nft when cancel
-	HoldOrdAddress string `bson:"hold_ord_address"`   // address temp that user send nft
+	HoldOrdAddress string `bson:"hold_ord_address"` // address temp to receive nft from user.
 
-	SellerAddress string `bson:"seller_address"` // address to receive btc from buyer
-	Price         string `bson:"amount"`         // amount by btc
+	SellOrdAddress string `bson:"seller_ord_address"` // the address to refund nft, it is same the address in PayType if pay btc.
 
-	SellerPaymentInfo []SellerPaymentInfo `bson:"sellerPaymentInfo"`
+	SellerAddress string `bson:"seller_address"` // old flow, it's segwit address, new flow dont need
 
-	ServiceFee    string    `bson:"service_fee"`
-	IsConfirm     bool      `bson:"isConfirm"`
-	IsSold        bool      `bson:"isSold"`
+	ServiceFee string `bson:"service_fee"`
+
+	Status StatusListing `bson:"status"` // TODO: need to migrate old data.
+
+	Price string `bson:"amount"` // amount by btc
+
+	PayType map[string]string `bson:"pay_type"` // {"eth": <seller_receive_payment_address>, "btc": <seller_receive_payment_address>, ...}
+
+	IsConfirm bool `bson:"isConfirm"`
+	IsSold    bool `bson:"isSold"`
+	IsCancel  bool `bson:"isCancel"`
+
 	TxNFT         string    `bson:"tx_nft"`
+	TxCancel      string    `bson:"tx_cancel"`
 	InscriptionID string    `bson:"inscriptionID"` // tokenID in btc
 	Name          string    `bson:"name"`
 	Description   string    `bson:"description"`
