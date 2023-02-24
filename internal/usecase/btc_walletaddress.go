@@ -646,7 +646,7 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 				}
 
 				go u.CreateMintActivity(item.InscriptionID, item.Amount)
-				go u.NotifyNFTMinted(item.UserAddress, item.InscriptionID, item.MintResponse.Fees)
+				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintResponse.Fees)
 
 				//TODO: - create entity.TokenURI
 				_, err = u.CreateBTCTokenURI(item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
