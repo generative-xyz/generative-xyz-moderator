@@ -198,7 +198,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
-	// wallet.HandleFunc("/")
+	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
+	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
