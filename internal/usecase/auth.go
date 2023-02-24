@@ -352,7 +352,7 @@ func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile)
 
 	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID),zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProjectLink(user.WalletAddress, user.DisplayName), user.WalletAddress),"", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress,  *data.WalletAddressBTC))
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress),"", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress,  *data.WalletAddressBTC))
 	}
 
 	return user, nil
