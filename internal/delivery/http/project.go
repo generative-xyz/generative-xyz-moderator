@@ -442,6 +442,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.IsFullChain = input.IsFullChain
 	resp.IsHidden = input.IsHidden
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
+	resp.AnimationHtml = input.AnimationHtml
 	resp.TotalImages = len(input.Images)
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
