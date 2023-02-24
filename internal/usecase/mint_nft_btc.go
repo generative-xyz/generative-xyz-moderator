@@ -232,7 +232,7 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 
 		statusMap["3"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_Minting],
-			Status:  mintItem.IsMinted,
+			Status:  mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
 			Tx:      mintItem.TxMintNft,
 		}
 		if mintItem.IsMinted {
@@ -245,7 +245,7 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 
 		statusMap["4"] = statusprogressStruct{
 			Message: entity.StatusMintToText[entity.StatusMint_SendingNFTToUser],
-			Status:  mintItem.IsSentUser,
+			Status:  mintItem.IsSentUser || mintItem.Status == entity.StatusMint_SendingNFTToUser,
 			Tx:      mintItem.TxSendNft,
 		}
 
