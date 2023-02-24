@@ -171,7 +171,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			//Html
 			htmlUrl, err := u.parseAnimationURL(*pe)
 			if err == nil {
-				animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, pe.TokenID)
+				animationHtml  := fmt.Sprintf("%s", *htmlUrl)
 				pe.AnimationHtml = &animationHtml
 			}	
 			
@@ -651,7 +651,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 				return
 			}
 		
-			animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, c.TokenID)
+			animationHtml  := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
 			_, err = u.Repo.UpdateProject(c.UUID, c)
