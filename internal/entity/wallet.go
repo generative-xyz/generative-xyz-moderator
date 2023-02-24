@@ -8,9 +8,9 @@ import (
 
 type WalletTrackTx struct {
 	BaseEntity `bson:",inline"`
-	Txhash     string `json:"txhash"`
-	Address    string `json:"address"`
-	Status     string `json:"status"`
+	Txhash     string `bson:"txhash"`
+	Address    string `bson:"address"`
+	Status     string `bson:"status"`
 }
 
 func (u WalletTrackTx) TableName() string {
