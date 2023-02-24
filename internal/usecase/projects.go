@@ -167,6 +167,14 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
+
+			//Html
+			htmlUrl, err := u.parseAnimationURL(*pe)
+			if err == nil {
+				animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, pe.TokenID)
+				pe.AnimationHtml = &animationHtml
+			}	
+			
 		}
 	}
 
@@ -633,6 +641,28 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
+
+	go func() {
+		//upload animation URL
+		if c.AnimationHtml == nil {
+		
+			htmlUrl, err := u.parseAnimationURL(*c)
+			if err != nil {
+				return
+			}
+		
+			animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, c.TokenID)
+			c.AnimationHtml = &animationHtml
+
+			_, err = u.Repo.UpdateProject(c.UUID, c)
+			if err != nil {
+				return
+			}
+		}
+	
+	}()
+
+
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
