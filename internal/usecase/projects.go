@@ -489,7 +489,7 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	u.NotifyWithChannel(
 		os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
 		fmt.Sprintf("[Project is reported][projectID %s]", p.TokenID),
-		fmt.Sprintf("TraceID: %s", p.TraceID),
+		"",
 		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
 	)
 
