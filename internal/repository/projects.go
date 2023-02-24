@@ -207,6 +207,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
 			s = append(s, Sort{SortBy: "stats.trending_score", Sort: entity.SORT_DESC})
 		}
+		s = append(s, Sort{SortBy: "tokenid", Sort: entity.SORT_ASC})
 	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
@@ -486,4 +487,3 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 
 	return err
 }
-
