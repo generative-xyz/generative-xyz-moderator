@@ -8,12 +8,11 @@ import (
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"rederinghub.io/utils/tracer"
 )
 
 type ScronBTCHandler struct {
 	Logger  logger.Ilogger
-	Tracer  tracer.ITracer
+	
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
@@ -21,7 +20,6 @@ type ScronBTCHandler struct {
 func NewScronBTCHandler(global *global.Global, uc usecase.Usecase) *ScronBTCHandler {
 	return &ScronBTCHandler{
 		Logger:  global.Logger,
-		Tracer:  global.Tracer,
 		Cache:   global.Cache,
 		Usecase: uc,
 	}
@@ -32,8 +30,7 @@ func (h ScronBTCHandler) StartServer() {
 		//it does not call our ORD server
 		for {
 			h.Usecase.JobBtcSendBtcToMaster() // BTC
-			
-			time.Sleep(5 * time.Minute)
+				time.Sleep(5 * time.Minute)
 		}
 	}()
 
@@ -49,14 +46,12 @@ func (h ScronBTCHandler) StartServer() {
 			time.Sleep(5 * time.Minute)
 
 			h.Usecase.WaitingForMinting() // BTC
-				
-			h.Usecase.WaitingForETHMinting() //ETH
+					h.Usecase.WaitingForETHMinting() //ETH
 
 
 			//Sleep 15 minutes after mint
 			time.Sleep(15 * time.Minute)
-			
-			h.Usecase.WaitingForMinted() // BTC
+				h.Usecase.WaitingForMinted() // BTC
 
 			h.Usecase.WaitingForETHMinted() //ETH
 
@@ -68,15 +63,9 @@ func (h ScronBTCHandler) StartServer() {
 	c := cron.New()
 	// cronjob to sync inscription index
 	c.AddFunc("*/30 * * * *", func() {
-		span := h.Tracer.StartSpan("DispatchCron.EveryTwentyMinutes")
-		defer span.Finish()
-
-		log := tracer.NewTraceLog()
-		defer log.ToSpan(span)
-
-		err := h.Usecase.SyncTokenInscribeIndex(span)
+		err := h.Usecase.SyncTokenInscribeIndex()
 		if err != nil {
-			log.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+			h.Logger.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
 		}
 	})
 	c.Start()

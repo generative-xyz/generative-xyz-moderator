@@ -1,13 +1,12 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
+
 	"rederinghub.io/utils/slack"
 )
 
@@ -43,11 +42,14 @@ type Config struct {
 	BlockcypherAPI   string
 	BlockcypherToken string
 
+	MASTER_ADDRESS_CLAIM_BTC, MASTER_ADDRESS_CLAIM_ETH string
+
 	MarketBTCServiceFeeAddress string
 
 	OtherCategoryID string
 
 	TrendingConfig TrendingConfig
+	MaxReportCount int
 }
 
 type TrendingConfig struct {
@@ -64,11 +66,13 @@ type MQTTConfig struct {
 }
 
 type CronTabConfig struct {
-	Enabled            bool
-	BTCEnabled         bool
-	MarketPlaceEnabled bool
-	BTCV2Enabled       bool
-	TrendingEnabled		 bool
+	Enabled                  bool
+	BTCEnabled               bool
+	MarketPlaceEnabled       bool
+	BTCV2Enabled             bool
+	TrendingEnabled          bool
+	MintNftBtcEnabled        bool
+	OrdinalCollectionEnabled bool
 }
 
 type MoralisConfig struct {
@@ -121,8 +125,11 @@ type GCS struct {
 	ProjectId string
 	Bucket    string
 	Auth      string
+	Endpoint  string
+	Region    string
+	AccessKey string
+	SecretKey string
 }
-
 type RedisConfig struct {
 	Address  string
 	Password string
@@ -195,11 +202,17 @@ func NewConfig() (*Config, error) {
 	crontabBtcV2Start, _ := strconv.ParseBool(os.Getenv("BTC_CRONTAB_START_V2"))
 	crontabMKStart, _ := strconv.ParseBool(os.Getenv("MAKETPLACE_CRONTAB_START"))
 	crontabTrendingStart, _ := strconv.ParseBool(os.Getenv("TRENDING_CRONTAB_START"))
+	crontabOrdinalCollectionStart, _ := strconv.ParseBool(os.Getenv("ORDINAL_COLLECTION_CRONTAB_START"))
+
+	crontabMintNftBtcStart, _ := strconv.ParseBool(os.Getenv("MINT_NFT_BTC_START"))
 
 	whitelistedTrendingProjectID := strings.Split(os.Getenv("TRENDING_WHITELISTED_PROJECT_IDS"), ",")
 	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
 	trendingBoostedWeight, _ := strconv.Atoi(os.Getenv("TRENDING_BOOSTED_WEIGHT"))
-
+	maxReportCount, _ := strconv.Atoi(os.Getenv("MAX_REPORT_COUNT"))
+	if maxReportCount == 0 {
+		maxReportCount = 3
+	}
 
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -239,6 +252,10 @@ func NewConfig() (*Config, error) {
 			ProjectId: os.Getenv("GCS_PROJECT_ID"),
 			Bucket:    os.Getenv("GCS_BUCKET"),
 			Auth:      os.Getenv("GCS_AUTH"),
+			Endpoint:  os.Getenv("GCS_ENDPOINT"),
+			Region:    os.Getenv("GCS_REGION"),
+			AccessKey: os.Getenv("GCS_ACCESS_KEY"),
+			SecretKey: os.Getenv("GCS_SECRET_KEY"),
 		},
 		Moralis: MoralisConfig{
 			Key:   os.Getenv("MORALIS_KEY"),
@@ -281,11 +298,13 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:            crontabStart,
-			BTCEnabled:         crontabBtcStart,
-			BTCV2Enabled:       crontabBtcV2Start,
-			MarketPlaceEnabled: crontabMKStart,
-			TrendingEnabled: crontabTrendingStart,
+			Enabled:                  crontabStart,
+			BTCEnabled:               crontabBtcStart,
+			BTCV2Enabled:             crontabBtcV2Start,
+			MarketPlaceEnabled:       crontabMKStart,
+			TrendingEnabled:          crontabTrendingStart,
+			MintNftBtcEnabled:        crontabMintNftBtcStart,
+			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
@@ -298,17 +317,18 @@ func NewConfig() (*Config, error) {
 		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
 
+		MASTER_ADDRESS_CLAIM_BTC: os.Getenv("MASTER_ADDRESS_CLAIM_BTC"),
+		MASTER_ADDRESS_CLAIM_ETH: os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
+
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
-		OtherCategoryID: os.Getenv("OTHER_CATEGORY_ID"),
+		OtherCategoryID:            os.Getenv("OTHER_CATEGORY_ID"),
 		TrendingConfig: TrendingConfig{
 			WhitelistedProjectID: whitelistedTrendingProjectID,
-			BoostedCategoryID: boostedTrendingCategoryID,
-			BoostedWeight: int64(trendingBoostedWeight),
+			BoostedCategoryID:    boostedTrendingCategoryID,
+			BoostedWeight:        int64(trendingBoostedWeight),
 		},
+		MaxReportCount: maxReportCount,
 	}
-
-	c, _ := json.MarshalIndent(conf, "", "\t")
-	fmt.Println("Config:", string(c))
 
 	return conf, nil
 }

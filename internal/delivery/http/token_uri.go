@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -28,30 +27,26 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.TokenURIResp}
 // @Router /token/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenURI", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
 
 	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
-	log.SetData("captureTimeout", captureTimeout)
+	h.Logger.Info("captureTimeout", captureTimeout)
 	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
 	if errT != nil {
 		captureTimeoutInt = 5
 	}
 
-	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
+	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
 
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -64,7 +59,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 		Attributes:   message.ParsedAttributes,
 	}
 
-	log.SetData("resp.message", message.TokenID)
+	h.Logger.Info("resp.message", message.TokenID)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
@@ -79,30 +74,26 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.TokenTraitsResp}
 // @Router /trait/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenTrait", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
 
 	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
 
-	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
+	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, 5)
 
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.TokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
-	log.SetData("resp.message", message)
+	h.Logger.Info("resp.message", message)
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
@@ -118,47 +109,43 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /tokens/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenURIWithResp", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
 
 	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
-	log.SetData("captureTimeout", captureTimeout)
+	h.Logger.Info("captureTimeout", captureTimeout)
 	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
 	if errT != nil {
 		captureTimeoutInt = 5
 	}
 
-	token, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
+	token, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
 
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("h.Usecase.GetToken", token.TokenID)
-	log.SetTag("tokenID", token.TokenID)
+	h.Logger.Info("h.Usecase.GetToken", token.TokenID)
+
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New("Cannot parse products")
-		log.Error("tokenToResp", err.Error(), err)
+		h.Logger.Error("tokenToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):
-		nft, _ := h.Usecase.GetListingDetail(span, tokenID)
+		nft, _ := h.Usecase.GetListingDetail(tokenID)
 		if nft != nil {
 			resp.Buyable = nft.Buyable
 			resp.PriceBTC = nft.Price
@@ -167,8 +154,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	log.SetData("resp.token", token.TokenID)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("resp.token", token.TokenID)
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -183,31 +170,27 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenTraitsResp}
 // @Router /tokens/traits/{contractAddress}/{tokenID} [GET]
 func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("tokenTrait", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
 
 	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
 
-	message, err := h.Usecase.GetToken(span, structure.GetTokenMessageReq{
+	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, 5)
 
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.InternalTokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
-	log.SetData("resp.message", message)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("resp.message", message)
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -233,37 +216,35 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{genNFTAddr}/tokens [GET]
 func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.TokensOfAProfile", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	log.SetData("genNFTAddr", genNFTAddr)
-	log.SetTag(utils.GEN_NFT_ADDRESS_TAG, genNFTAddr)
+	h.Logger.Info("genNFTAddr", genNFTAddr)
+
 	f := structure.FilterTokens{}
 	err := f.CreateFilter(r)
 	if err != nil {
-		log.Error("f.CreateFilter", err.Error(), err)
+		h.Logger.Error("f.CreateFilter", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.GenNFTAddr = &genNFTAddr
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	f.BaseFilters = *bf
-	resp, err := h.getTokens(span, f)
+	resp, err := h.getTokens(f)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	//h.Response.SetLog(h.Tracer, span)
+	//
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -284,20 +265,18 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /profile/wallet/{walletAddress}/nfts [GET]
 func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.TokensOfAProfile", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	log.SetData("walletAddress", walletAddress)
-	log.SetTag(utils.WALLET_ADDRESS_TAG, walletAddress)
+	h.Logger.Info("walletAddress", walletAddress)
+
 	f := structure.FilterTokens{}
 	f.CreateFilter(r)
 	f.OwnerAddr = &walletAddress
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -308,14 +287,14 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 		f.TokenIDs = append(f.TokenIDs, tokenID)
 	}
 
-	resp, err := h.getTokens(span, f)
+	resp, err := h.getTokens(f)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	//h.Response.SetLog(h.Tracer, span)
+	//
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 
 }
@@ -332,17 +311,15 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /profile/wallet/{walletAddress}/projects [GET]
 func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getProjectsByWallet", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	var err error
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	span.SetTag("walletAddress", walletAddress)
 
+	hidden := false
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("BaseFilters", err.Error(), err)
+		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -351,12 +328,20 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
 
-	hidden := true
-	f.IssHidden = &hidden
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	currentUserWalletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		f.IsHidden = &hidden
+	}
 
-	uProjects, err := h.Usecase.GetProjects(span, f)
+	if ok && currentUserWalletAddress != walletAddress {
+		f.IsHidden = &hidden
+	}
+
+	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
-		log.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -368,7 +353,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 		p, err := h.projectToResp(&project)
 		if err != nil {
-			log.Error("copier.Copy", err.Error(), err)
+			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -376,16 +361,58 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		pResp = append(pResp, *p)
 	}
 
-	h.Response.SetLog(h.Tracer, span)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
-func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTokens) (*response.PaginationResponse, error) {
-	span, log := h.StartSpanFromRoot(rootSpan, "httpDelivery.getTokens")
-	defer h.Tracer.FinishSpan(span, log)
-	pag, err := h.Usecase.FilterTokens(span, f)
+// UserCredits godoc
+// @Summary get list tokenUris
+// @Description get tokenUris
+// @Tags TokenUri
+// @Accept  json
+// @Produce  json
+// @Param page query string false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /token-uri [GET]
+func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
+	f := structure.FilterTokens{}
+	err := f.CreateFilter(r)
 	if err != nil {
-		log.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	if len(*f.Search) < 3 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Term search minimum is 3 characters"))
+	}
+
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	resp, err := h.getTokensForSearch(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	//
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+
+}
+
+func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.PaginationResponse, error) {
+	pag, err := h.Usecase.FilterTokens(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
 		return nil, err
 	}
 
@@ -396,25 +423,25 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 	bytes, err := json.Marshal(iTokensData)
 	if err != nil {
 		err := errors.New("Cannot parse respItems")
-		log.Error("respItems", err.Error(), err)
+		h.Logger.Error("respItems", err.Error(), err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &tokens)
 	if err != nil {
 		err := errors.New("Cannot Unmarshal")
-		log.Error("Unmarshal", err.Error(), err)
+		h.Logger.Error("Unmarshal", err.Error(), err)
 		return nil, err
 	}
 
 	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
-	nftListing, _ := h.Usecase.GetAllListListingWithRule(span)
+	nftListing, _ := h.Usecase.GetAllListListingWithRule()
 
 	for _, token := range tokens {
 		resp, err := h.tokenToResp(&token)
 		if err != nil {
 			err := errors.New("Cannot parse products")
-			log.Error("tokenToResp", err.Error(), err)
+			h.Logger.Error("tokenToResp", err.Error(), err)
 			return nil, err
 		}
 
@@ -435,7 +462,67 @@ func (h *httpDelivery) getTokens(rootSpan opentracing.Span, f structure.FilterTo
 
 	resp := h.PaginationResp(pag, respItems)
 	return &resp, nil
+}
 
+func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.PaginationResponse, error) {
+	pag, err := h.Usecase.FilterTokens(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		return nil, err
+	}
+
+	respItems := []response.ExternalTokenURIResp{}
+	tokens := []entity.TokenUri{}
+	iTokensData := pag.Result
+
+	bytes, err := json.Marshal(iTokensData)
+	if err != nil {
+		err := errors.New("Cannot parse respItems")
+		h.Logger.Error("respItems", err.Error(), err)
+		return nil, err
+	}
+
+	err = json.Unmarshal(bytes, &tokens)
+	if err != nil {
+		err := errors.New("Cannot Unmarshal")
+		h.Logger.Error("Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		resp, err := h.tokenExternalToResp(&token)
+		if err != nil {
+			err := errors.New("Cannot parse products")
+			h.Logger.Error("tokenToResp", err.Error(), err)
+			return nil, err
+		}
+		respItems = append(respItems, *resp)
+	}
+
+	resp := h.PaginationResp(pag, respItems)
+	return &resp, nil
+}
+
+func (h *httpDelivery) tokenExternalToResp(input *entity.TokenUri) (*response.ExternalTokenURIResp, error) {
+	resp := &response.ExternalTokenURIResp{}
+	err := response.CopyEntityToResNoID(resp, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.ParsedImage != nil {
+		resp.Image = *input.ParsedImage
+	} else {
+		resp.Image = input.Thumbnail
+	}
+
+	resp.InscriptionIndex = input.InscriptionIndex
+	if input.Project != nil {
+		resp.ProjectName = input.Project.Name
+		resp.ProjectID = input.Project.TokenID
+	}
+
+	return resp, nil
 }
 
 func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
@@ -507,26 +594,24 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 // @Success 200 {object} response.JsonResponse{}
 // @Router /tokens [GET]
 func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.Tokens", r)
-	defer h.Tracer.FinishSpan(span, log)
 	f := structure.FilterTokens{}
 	f.CreateFilter(r)
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		log.Error("h.Tokens.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Tokens.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.BaseFilters = *bf
-	resp, err := h.getTokens(span, f)
+	resp, err := h.getTokens(f)
 	if err != nil {
-		log.Error("h.Tokens.getTokens", err.Error(), err)
+		h.Logger.Error("h.Tokens.getTokens", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	//h.Response.SetLog(h.Tracer, span)
+	//
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -542,47 +627,118 @@ func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
 // @Router /tokens/{contractAddress}/{tokenID} [PUT]
 func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("updatetokenURIWithResp", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
-	span.SetTag("contractAddress", contractAddress)
 
 	tokenID := vars["tokenID"]
-	span.SetTag("tokenID", tokenID)
 
 	var reqBody request.UpdateTokentReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("decoder.Decode", err.Error(), err)
+		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	token, err := h.Usecase.UpdateToken(span, structure.UpdateTokenReq{
+	token, err := h.Usecase.UpdateToken(structure.UpdateTokenReq{
 		ContracAddress: contractAddress,
 		TokenID:        tokenID,
 		Priority:       reqBody.Priority,
 	})
 
 	if err != nil {
-		log.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("h.Usecase.GetToken", token)
+	h.Logger.Info("h.Usecase.GetToken", token)
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New("Cannot parse products")
-		log.Error("tokenToResp", err.Error(), err)
+		h.Logger.Error("tokenToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("resp.token", token)
-	h.Response.SetLog(h.Tracer, span)
+	h.Logger.Info("resp.token", token)
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Update token's thumbnail
+// @Description Update token's thumbnail
+// @Tags Tokens
+// @Accept  json
+// @Produce  json
+// @Param tokenID path string true "token ID"
+// @Param request body request.UpdateTokenThumbnailReq true "Request body"
+// @Success 200 {object} response.JsonResponse{data=response.InternalTokenURIResp}
+// @Router /tokens/{tokenID}/thumbnail [POST]
+func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	tokenID := vars["tokenID"]
+
+	var reqBody request.UpdateTokenThumbnailReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	token, err := h.Usecase.UpdateTokenThumbnail(structure.UpdateTokenThumbnailReq{
+		TokenID:   tokenID,
+		Thumbnail: *reqBody.Thumbnail,
+	})
+
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Logger.Info("h.Usecase.GetToken", token)
+	resp, err := h.tokenToResp(token)
+	if err != nil {
+		err := errors.New("Cannot parse products")
+		h.Logger.Error("tokenToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Logger.Info("resp.token", token)
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary get volume by wallet
+// @Description get volume by wallet
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string false "Filter project via wallet address"
+// @Param limit query int false "limit"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /profile/wallet/{walletAddress}/volume [GET]
+func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	vars := mux.Vars(r)
+	walletAddress := vars["walletAddress"]	
+	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
 }

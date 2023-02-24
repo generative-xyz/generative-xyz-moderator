@@ -84,6 +84,11 @@ type MarketplaceBTCListingFilterPipeline struct {
 	Inscription      *TokenUri `bson:"inscription"`
 }
 
+type MarketplaceBTCListingFloorPrice struct {
+	ID    string `bson:"_id"`
+	Price uint64 `bson:"price"`
+}
+
 func (u MarketplaceBTCListing) TableName() string {
 	return utils.COLLECTION_MARKETPLACE_BTC_LISTING
 }

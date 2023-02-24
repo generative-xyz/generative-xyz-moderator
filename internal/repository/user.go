@@ -3,11 +3,14 @@ package repository
 import (
 	"context"
 
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -16,7 +19,7 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 	resp := &entity.Users{}
 
 	cached, err := r.GetCache(utils.COLLECTION_USERS, walletAddress)
-	if err ==  nil && cached != nil {
+	if err == nil && cached != nil {
 		err = helpers.Transform(cached, resp)
 		if err != nil {
 			return nil, err
@@ -25,7 +28,7 @@ func (r Repository) FindUserByWalletAddress(walletAddress string) (*entity.Users
 		return resp, nil
 	}
 
-	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, walletAddress}})
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS, primitive.Regex{Pattern: walletAddress, Options: "i"}}})
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,6 @@ func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, erro
 	return resp, nil
 }
 
-
 func (r Repository) FindUserByID(userID string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
@@ -75,7 +77,7 @@ func (r Repository) FindUserByEmail(email string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
 	f := bson.D{
-		{"$and", 
+		{"$and",
 			bson.A{
 				bson.D{{"email", email}},
 				bson.D{{utils.KEY_DELETED_AT, nil}},
@@ -128,7 +130,7 @@ func (r Repository) UpdateUserByID(userID string, updateddUser *entity.Users) (*
 func (r Repository) UpdateUserStats(walletAddress string, stats entity.UserStats) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: utils.KEY_WALLET_ADDRESS, Value: walletAddress}}
 	update := bson.M{
-		"$set": bson.M {
+		"$set": bson.M{
 			"stats": stats,
 		},
 	}
@@ -155,35 +157,55 @@ func (r Repository) FindUserByAutoUserID(autoUserID int32) (*entity.Users, error
 	return resp, nil
 }
 
-func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, error)  {
+func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination, error) {
 	users := []entity.Users{}
 	resp := &entity.Pagination{}
 
 	filter1 := bson.M{}
 	filter1[utils.KEY_DELETED_AT] = nil
 
-	if filter.Email != nil {
-		if *filter.Email != "" {
-			filter1["email"] = *filter.Email
+	if filter.Email != nil && *filter.Email != "" {
+		filter1["email"] = *filter.Email
+	}
+
+	if filter.Search != nil && len(*filter.Search) >= 3 {
+		filter1["$or"] = []bson.M{
+			{"display_name": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 		}
 	}
-	
-	if filter.WalletAddress != nil {
-		if *filter.WalletAddress != "" {
-			filter1["wallet_address"] = *filter.WalletAddress
-		}
+
+	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
+		filter1["wallet_address"] = *filter.WalletAddress
 	}
-	
+
 	if filter.UserType != nil {
 		filter1["user_type"] = *filter.UserType
 	}
-	
-	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1,bson.D{}, []Sort{}, &users)
+
+	p, err := r.Paginate(utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{}, []Sort{}, &users)
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = users
+
+	data := []*response.ArtistResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		projects := []*response.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
+
+		d := &response.ArtistResponse{Projects: projects}
+		response.CopyEntityToRes(d, &user)
+		data = append(data, d)
+	}
+
+	resp.Result = data
 	//resp.Limit = p.Pagination.PerPage
 	resp.Page = p.Pagination.Page
 	// resp.Next = p.Pagination.Next
@@ -194,12 +216,54 @@ func (r Repository) ListUsers(filter entity.FilterUsers) (*entity.Pagination, er
 	return resp, nil
 }
 
-func (r Repository) GetAllUsers(filter entity.FilterUsers) ([]entity.Users, error)  {
+func (r Repository) ListArtist(filter entity.FilteArtist) (*entity.Pagination, error) {
+	users := []entity.Users{}
+	resp := &entity.Pagination{}
+
+	filter1 := bson.M{}
+	filter1[utils.KEY_DELETED_AT] = nil
+	filter1["stats.collection_created"] = bson.M{"$gt": 0}
+
+	p, err := r.Paginate(
+		utils.COLLECTION_USERS, filter.Page, filter.Limit, filter1, bson.D{},
+		[]Sort{
+			{Sort: entity.SORT_DESC, SortBy: "stats.volume_minted"},
+			{Sort: entity.SORT_DESC, SortBy: "stats.collection_created"},
+		}, &users)
+	if err != nil {
+		return nil, err
+	}
+
+	data := []*response.ArtistResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		projects := []*response.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
+
+		d := &response.ArtistResponse{Projects: projects}
+		response.CopyEntityToRes(d, &user)
+		data = append(data, d)
+	}
+
+	resp.Result = data
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
+}
+
+func (r Repository) GetAllUsers(filter entity.FilterUsers) ([]entity.Users, error) {
 	users := []entity.Users{}
 	f := bson.M{}
 	if filter.IsUpdatedAvatar != nil {
 		f["is_updated_avatar"] = *filter.IsUpdatedAvatar
-	}else{
+	} else {
 		f["is_updated_avatar"] = nil
 	}
 
@@ -216,7 +280,7 @@ func (r Repository) GetAllUsers(filter entity.FilterUsers) ([]entity.Users, erro
 }
 
 // find all user profile, exclude avatar field for ease of optimization
-func (r Repository) GetAllUserProfiles() ([]entity.Users, error)  {
+func (r Repository) GetAllUserProfiles() ([]entity.Users, error) {
 	users := []entity.Users{}
 	f := bson.M{}
 

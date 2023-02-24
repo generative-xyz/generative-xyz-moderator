@@ -2,51 +2,43 @@ package usecase
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
-	span, log := u.StartSpanFromInjecttion(tracingInjection, "PubSubCreateTokenThumbnail")
-	defer u.Tracer.FinishSpan(span, log)
-
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Error("PubSubCreateTokenThumbnai.json.Marshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("json.Marshal", zap.Error(err)))
 		return
 	}
 
 	tokenURI := &structure.TokenImagePayload{}
 	err = json.Unmarshal(bytes, tokenURI)
 	if err != nil {
-		log.Error("PubSubCreateTokenThumbnai.json.Unmarshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("json.Unmarshal", zap.Error(err)))
 		return
 	}
 
-	log.SetData("payload", tokenURI)
-	log.SetData("tokenID", tokenURI.TokenID)
-	log.SetTag("tokenID", tokenURI.TokenID)
-
+	u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("tokenURI", tokenURI))
 	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
-		log.Error("PubSubCreateTokenThumbnai.FindTokenBy", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("FindTokenByWithoutCache", zap.Error(err)))
 		return
 	}
+
 	
-	log.SetTag("found.tokenID", token.TokenID)
-	log.SetTag("found.tokenID.thumbnail", token.Thumbnail)
-	
-	resp, err := u.RunAndCap(span, token, 20)
+   resp, err := u.RunAndCap(token, 20)
 	if err != nil {
-		log.Error("PubSubCreateTokenThumbnai.RunAndCap", err.Error(), err)
+		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
 		return
 	}
 
-	log.SetData("resp",resp.CapturedAt)
-	log.SetData("IsUpdated",resp.IsUpdated)
-	log.SetData("Thumbnail",resp.Thumbnail)
-	log.SetData("IsUpdated",resp.IsUpdated)
-
+	u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("RunAndCap.resp", resp))
 	if resp.IsUpdated {
 		token.ParsedImage = &resp.ParsedImage
 		token.Thumbnail = resp.Thumbnail
@@ -56,41 +48,35 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 
 		updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
 		if err != nil {
-			log.Error("PubSubCreateTokenThumbnai.UpdateOrInsertTokenUri", err.Error(), err)
+			u.Logger.ErrorAny("PubSubCreateTokenThumbnai",zap.Any("UpdateOrInsertTokenUri", err))
 		}
-		log.SetData("updated", updated)
-	}
+		u.Logger.Info("updated", updated)
+		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)),"", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail) ))
 
+	}
 }
 
 func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {
-	span, log := u.StartSpanFromInjecttion(tracingInjection, "PubSubProjectUnzipl")
-	defer u.Tracer.FinishSpan(span, log)
+
 
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Error("PubSubProjectUnzipl.json.Marshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return
 	}
 
 	pz := &structure.ProjectUnzipPayload{}
 	err = json.Unmarshal(bytes, pz)
 	if err != nil {
-		log.Error("PubSubProjectUnzipl.json.Unmarshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return
 	}
 
-	log.SetData("payload", pz)
-	log.SetData("projectID", pz.ProjectID)
-	log.SetTag("zipLinkkenID", pz.ZipLink)
-
-
-	pe, err := u.UnzipProjectFile(span, pz)
+	_, err = u.UnzipProjectFile(pz)
 	if err != nil {
-		log.Error("PubSubProjectUnzipl.json.Unmarshal", err.Error(), err)
+		u.Logger.ErrorAny("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return
 	}
 
-	log.SetData("project", pe)
 
 }

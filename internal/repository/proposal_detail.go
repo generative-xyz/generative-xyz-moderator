@@ -12,8 +12,7 @@ import (
 func (r Repository) FilterProposalDetail(filter entity.FilterProposals) (*entity.Pagination, error) {
 	pro := []entity.ProposalDetail{}
 	resp := &entity.Pagination{}
-	
-	f := r.filterProposal(filter)
+f := r.filterProposal(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "created_at"
 	}
@@ -22,8 +21,7 @@ func (r Repository) FilterProposalDetail(filter entity.FilterProposals) (*entity
 	if err != nil {
 		return nil, err
 	}
-	
-	resp.Result = pro
+resp.Result = pro
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
@@ -63,8 +61,7 @@ func (r Repository) CreateProposalDetail(obj *entity.ProposalDetail) error {
 	if err != nil {
 		return err
 	}
-	
-	return  nil
+return  nil
 }
 
 func (r Repository) FindProposalDetail(proposalID string) (*entity.ProposalDetail, error) {

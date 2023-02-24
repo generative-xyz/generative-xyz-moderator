@@ -38,3 +38,15 @@ func (s Slack) SendMessageToSlack(pretext string, title string, text string) (st
 
 	return s.postMessage(s.channelId, slack.MsgOptionAttachments(attachment))
 }
+
+
+func (s Slack) SendMessageToSlackWithChannel(channelID string, pretext string, title string, text string) (string, string, error) {
+	attachment := slack.Attachment{
+		Color:   "#1766ff",
+		Pretext: fmt.Sprintf("[%s] %s", s.env, pretext),
+		Title:   title,
+		Text:    text,
+	}
+
+	return s.postMessage(channelID, slack.MsgOptionAttachments(attachment))
+}

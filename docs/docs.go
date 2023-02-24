@@ -23,6 +23,52 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/auto-listing": {
+            "post": {
+                "description": "Auto listing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Auto listing",
+                "parameters": [
+                    {
+                        "description": " Auto listing",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ListNftIdsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/redis": {
             "get": {
                 "description": "Get Redis",
@@ -1200,6 +1246,163 @@ var doc = `{
                 }
             }
         },
+        "/files/multipart": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create multipart upload.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Create multipart upload",
+                "parameters": [
+                    {
+                        "description": "Create multipart upload request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateMultipartUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/files/multipart/{uploadID}": {
+            "put": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Upload multipart file",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload multipart file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "upload ID",
+                        "name": "uploadID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "part number",
+                        "name": "partNumber",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.FileRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Finish multipart upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Finish multipart upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "upload ID",
+                        "name": "uploadID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.MultipartUploadResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/info/{ID}": {
             "get": {
                 "description": "get inscribe info",
@@ -1585,6 +1788,40 @@ var doc = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/mint-nft-btc/receive-address": {
+            "post": {
+                "description": "Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BTC/ETH"
+                ],
+                "summary": "BTC/ETH Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create a btc/eth wallet address request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateBtcWalletAddressReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -2023,6 +2260,49 @@ var doc = `{
                 }
             }
         },
+        "/profile/wallet/{walletAddress}/volume": {
+            "get": {
+                "description": "get volume by wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "get volume by wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via wallet address",
+                        "name": "walletAddress",
+                        "in": "path"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -2417,6 +2697,48 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Delete BTC projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Delete BTC project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contract adress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/project/{contractAddress}/{projectID}/categories": {
@@ -2574,6 +2896,52 @@ var doc = `{
                 }
             }
         },
+        "/project/{projectID}/report": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Report Project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ReportProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/referrals": {
             "get": {
                 "security": [
@@ -2593,6 +2961,18 @@ var doc = `{
                 ],
                 "summary": "get referrals",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by referrerID",
+                        "name": "referrerID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project referreeID",
+                        "name": "referreeID",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "description": "limit",
@@ -2660,6 +3040,55 @@ var doc = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/token-uri": {
+            "get": {
+                "description": "get tokenUris",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get list tokenUris",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -2961,6 +3390,59 @@ var doc = `{
                 }
             }
         },
+        "/tokens/{tokenID}/thumbnail": {
+            "post": {
+                "description": "Update token's thumbnail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "Update token's thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateTokenThumbnailReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.InternalTokenURIResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/trait/{contractAddress}/{tokenID}": {
             "get": {
                 "description": "get token's traits",
@@ -3007,6 +3489,86 @@ var doc = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "description": "get users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "get users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/artist": {
+            "get": {
+                "description": "get list Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "get list Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -3188,6 +3750,17 @@ var doc = `{
                 }
             }
         },
+        "request.CreateMultipartUploadRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateProjectReq": {
             "type": "object",
             "properties": {
@@ -3250,6 +3823,26 @@ var doc = `{
                 }
             }
         },
+        "request.ListNftIdsReq": {
+            "type": "object",
+            "properties": {
+                "inscriptionIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "price": {
+                    "type": "string"
+                },
+                "seller_address": {
+                    "type": "string"
+                },
+                "seller_ord_address": {
+                    "type": "string"
+                }
+            }
+        },
         "request.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -3269,6 +3862,14 @@ var doc = `{
                     "type": "string"
                 },
                 "web": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ReportProjectReq": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
                     "type": "string"
                 }
             }
@@ -3344,6 +3945,14 @@ var doc = `{
             "properties": {
                 "priority": {
                     "type": "integer"
+                }
+            }
+        },
+        "request.UpdateTokenThumbnailReq": {
+            "type": "object",
+            "properties": {
+                "thumbnail": {
+                    "type": "string"
                 }
             }
         },
@@ -3430,6 +4039,14 @@ var doc = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.FileResponse": {
+            "type": "object",
+            "properties": {
+                "uploadId": {
                     "type": "string"
                 }
             }
@@ -3535,6 +4152,14 @@ var doc = `{
                 }
             }
         },
+        "response.MultipartUploadResponse": {
+            "type": "object",
+            "properties": {
+                "fileUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "response.NftMintingDetail": {
             "type": "object",
             "properties": {
@@ -3570,7 +4195,10 @@ var doc = `{
                 "walletAddress": {
                     "type": "string"
                 },
-                "wallet_address_btc": {
+                "walletAddressBtc": {
+                    "type": "string"
+                },
+                "walletAddressBtcTaproot": {
                     "type": "string"
                 }
             }
@@ -3592,6 +4220,9 @@ var doc = `{
                 },
                 "twitter": {
                     "type": "string"
+                },
+                "twitterVerified": {
+                    "type": "boolean"
                 },
                 "web": {
                     "type": "string"
@@ -3630,6 +4261,9 @@ var doc = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "editableIsHidden": {
+                    "type": "boolean"
                 },
                 "genNFTAddr": {
                     "type": "string"
@@ -3690,6 +4324,12 @@ var doc = `{
                 },
                 "projectURI": {
                     "type": "string"
+                },
+                "reportUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ReportProject"
+                    }
                 },
                 "reservers": {
                     "type": "array",
@@ -3766,6 +4406,17 @@ var doc = `{
             "type": "object",
             "properties": {
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ReportProject": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
+                    "type": "string"
+                },
+                "reportUserAddress": {
                     "type": "string"
                 }
             }

@@ -2,7 +2,7 @@ FROM golang:1.18 as builder
 
 RUN apt-get -y update && apt-get -y upgrade && \
     apt-get -y install git && \
-    apt-get -y install make 
+    apt-get -y install make
 
 ARG ENV=dev
 ARG NETRC_USER=user
@@ -25,7 +25,7 @@ RUN go mod download
 
 COPY  . .
 
-RUN  go mod tidy -compat=1.17
+#RUN  go mod tidy -compat=1.17
 
 RUN echo "✅ Build for Linux"; make build
 
@@ -39,6 +39,6 @@ RUN apt-get -y install  software-properties-common && \
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 RUN apt-get -y install ./google-chrome-stable_current_amd64.deb
 
-WORKDIR /app 
+WORKDIR /app
 
 COPY --from=builder /app/backend-api /app
