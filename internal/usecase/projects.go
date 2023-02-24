@@ -1072,7 +1072,7 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
 	pe, err := u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
-		u.Logger.Error("http.Get", err.Error(), err)
+		u.Logger.Error("http.Get", err.Error(), zap.Error(err))
 		return nil, err
 	}
 	
@@ -1082,7 +1082,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe))
 	
 	images := []string{}
 	zipLink := zipPayload.ZipLink
@@ -1104,6 +1104,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
 		return nil, err
 	}
+
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
 	for _, f := range files {
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
@@ -1121,7 +1123,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 	}
 	//
-
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1155,6 +1157,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
+	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)),"", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
