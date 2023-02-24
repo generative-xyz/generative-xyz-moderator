@@ -149,6 +149,11 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		}
 	}
 
+	if user.WalletAddressPayment == "" {
+		user.WalletAddressPayment = user.WalletAddress
+		u.Logger.Info("user.WalletAddressPayment.Updated", true)
+	}
+
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
 		u.Logger.Error(err)
