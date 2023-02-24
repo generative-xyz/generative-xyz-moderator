@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -87,7 +88,13 @@ func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, `=`, "")
 	//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	key = strings.ToLower(key)
+	key = ReplaceNonUTF8(key)
 	return key
+}
+
+func ReplaceNonUTF8(filename string) string  {
+	re := regexp.MustCompile("[^a-zA-Z0-9./:]")
+	return fmt.Sprintf(re.ReplaceAllString(filename, ""))
 }
 
 func Base64Decode(base64Str string) ([]byte, error) {
