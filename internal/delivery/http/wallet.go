@@ -8,6 +8,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
 
@@ -95,7 +96,7 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Usecase.TrackWalletTx(reqBody.Address, reqBody.Txhash)
+	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID})
 	if err != nil {
 		h.Logger.Error("httpDelivery.trackTx.TrackWalletTx", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
