@@ -96,7 +96,7 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID})
+	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID, InscriptionNumber: reqBody.InscriptionNumber})
 	if err != nil {
 		h.Logger.Error("httpDelivery.trackTx.TrackWalletTx", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

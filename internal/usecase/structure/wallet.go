@@ -83,9 +83,10 @@ type WalletInscriptionByOutput struct {
 }
 
 type WalletTrackTx struct {
-	Txhash        string `json:"txhash"`
-	Type          string `json:"type"`
-	InscriptionID string `json:"inscription_id"`
-	Amount        uint64 `json:"amount"`
-	Status        string `json:"status"`
+	Txhash            string `json:"txhash"`
+	Type              string `json:"type"`
+	InscriptionID     string `json:"inscription_id"`
+	InscriptionNumber uint64 `json:"inscription_number"`
+	Amount            uint64 `json:"amount"`
+	Status            string `json:"status"`
 }
