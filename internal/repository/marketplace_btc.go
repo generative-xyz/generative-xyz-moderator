@@ -164,8 +164,26 @@ func (r Repository) FindBtcNFTListingByOrderIDValid(uuid string) (*entity.Market
 func (r Repository) RetrieveBTCNFTPendingListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		"isConfirm":  false,
+		"status":     entity.StatusListing_Pending,
 		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) LisListingNftByStatus(statuses []entity.StatusListing) ([]entity.MarketplaceBTCListing, error) {
+	resp := []entity.MarketplaceBTCListing{}
+	filter := bson.M{
+		"status": bson.M{"$in": statuses},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)

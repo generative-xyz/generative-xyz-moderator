@@ -251,13 +251,13 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 	return user, nil
 }
 
-func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile) (*entity.Users, error) {
-	
+func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) (*entity.Users, error) {
+
 	isUpdateWalletAddress := false
 	oldBtcAdress := ""
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateUserProfile",zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+		u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		return nil, err
 	}
 
@@ -269,7 +269,7 @@ func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile)
 		user.Avatar = *data.Avatar
 		uploaded, err := u.UploadUserAvatar(*user)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile",zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		} else {
 			user.Avatar = *uploaded
 		}
@@ -280,7 +280,7 @@ func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile)
 		user.Bio = *data.Bio
 	}
 
-	if data.WalletAddressBTC != nil && strings.ToLower(user.WalletAddressBTC) != strings.ToLower( *data.WalletAddressBTC) {
+	if data.WalletAddressBTC != nil && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
 		isUpdateWalletAddress = true
 		oldBtcAdress = user.WalletAddressBTC
 		user.WalletAddressBTC = *data.WalletAddressBTC
@@ -329,7 +329,7 @@ func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile)
 
 		u.Logger.LogAny("UpdateUserProfile", zap.Any("projects", projects))
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile",zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 			return
 		}
 
@@ -341,18 +341,17 @@ func (u Usecase) UpdateUserProfile( userID string, data structure.UpdateProfile)
 
 			_, err := u.Repo.UpdateProject(p.UUID, &p)
 			if err != nil {
-				u.Logger.ErrorAny("UpdateUserProfile",zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+				u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 				continue
 			}
 
-			
 		}
 
 	}(*user)
 
-	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID),zap.Any("input", data), zap.Any("user", user))
+	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress),"", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress,  *data.WalletAddressBTC))
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
 	}
 
 	return user, nil
@@ -379,7 +378,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 	if err != nil {
 		err = errors.New("Access token is invaild")
 		u.Logger.Error(err)
-		return nil, err
+		// return nil, err
 
 	}
 
@@ -392,7 +391,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 		return nil, err
 	}
 
-	// userID = &claim.Uid
+	userID = &claim.Uid
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")

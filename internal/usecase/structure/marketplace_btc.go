@@ -7,19 +7,24 @@ import (
 )
 
 type MarketplaceBTC_ListingInfo struct {
-	InscriptionID  string `json:"inscriptionID"` // tokenID in btc
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	SellOrdAddress string `json:"seller_ord_address"` //user's wallet address from FE
-	SellerAddress  string `json:"seller_address"`
-	Price          string `json:"amount"`
-	ServiceFee     string `json:"service_fee"`
+	InscriptionID string `json:"inscriptionID"` // tokenID in btc
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+
+	Price string `json:"price"`
+
+	SellOrdAddress string `json:"sellOrdAddress"`
+
+	PayType map[string]string `bson:"payType"`
+
+	ServiceFee string `json:"serviceFee"`
 }
 
 type MarketplaceBTC_BuyOrderInfo struct {
 	InscriptionID string `json:"inscriptionID"`   // tokenID in btc
 	OrderID       string `json:"order_id"`        //
 	BuyOrdAddress string `json:"buy_ord_address"` //user's wallet address from FE
+	PayType       string `json:"pay_type"`
 }
 
 type MarketplaceNFTDetail struct {
