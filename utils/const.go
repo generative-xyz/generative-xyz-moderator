@@ -108,6 +108,7 @@ const (
 	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
 	COLLECTION_COLLECTION_META          string = "collection_metas"
 	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
+	WALLET_TRACK_TX                     string = "wallet_track_txs"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
