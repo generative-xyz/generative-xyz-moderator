@@ -167,6 +167,14 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
+
+			//Html
+			htmlUrl, err := u.parseAnimationURL(*pe)
+			if err == nil {
+				animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, pe.TokenID)
+				pe.AnimationHtml = &animationHtml
+			}	
+			
 		}
 	}
 
@@ -489,7 +497,7 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	u.NotifyWithChannel(
 		os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
 		fmt.Sprintf("[Project is reported][projectID %s]", p.TokenID),
-		fmt.Sprintf("TraceID: %s", p.TraceID),
+		"",
 		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
 	)
 
@@ -633,6 +641,28 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
+
+	go func() {
+		//upload animation URL
+		if c.AnimationHtml == nil {
+		
+			htmlUrl, err := u.parseAnimationURL(*c)
+			if err != nil {
+				return
+			}
+		
+			animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, c.TokenID)
+			c.AnimationHtml = &animationHtml
+
+			_, err = u.Repo.UpdateProject(c.UUID, c)
+			if err != nil {
+				return
+			}
+		}
+	
+	}()
+
+
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
@@ -1166,6 +1196,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil

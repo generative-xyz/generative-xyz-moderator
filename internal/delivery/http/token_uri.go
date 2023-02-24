@@ -529,11 +529,12 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 		return nil, err
 	}
 	resp.Attributes = input.ParsedAttributes
-	if input.ParsedImage != nil {
-		resp.Image = *input.ParsedImage
-	} else {
-		resp.Image = input.Thumbnail
-	}
+	// if input.ParsedImage != nil {
+	// 	resp.Image = *input.ParsedImage
+	// } else {
+	// 	resp.Image = input.Thumbnail
+	// }
+	resp.Image = input.Thumbnail
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)

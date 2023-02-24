@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/entity"
@@ -42,3 +44,15 @@ func (r Repository) GetReferrals(filter entity.FilterReferrals) (*entity.Paginat
 	return resp, nil
 }
 
+func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {
+	f := bson.M{
+		"referree_id": referreeID,
+	}
+
+	count, err := r.DB.Collection(entity.Referral{}.TableName()).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
