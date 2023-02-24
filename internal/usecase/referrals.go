@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -8,11 +10,19 @@ import (
 )
 
 const (
-	DEFAULT_REFERRAL_PERCENT = 300
+	DEFAULT_REFERRAL_PERCENT = 100
 )
 
 func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
-
+	// check if referree is referred
+	count, err := u.Repo.CountReferralOfReferee(referreeID)
+	if err != nil {
+		u.Logger.ErrorAny("u.Repo.CountReferralOfReferee", zap.Any("FindUserByID", err))
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("user is referred")
+	}
 	u.Logger.LogAny("CreateReferral", zap.Any("referrerID", referrerID), zap.Any("referreeID", referreeID))
 	referrer, err := u.Repo.FindUserByID(referrerID)
 	if err != nil {

@@ -487,4 +487,3 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 
 	return err
 }
-

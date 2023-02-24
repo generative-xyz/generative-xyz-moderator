@@ -35,11 +35,12 @@ type ProfileResponse struct {
 }
 
 type UpdateProfile struct {
-	DisplayName      *string
-	Bio              *string
-	ProfileSocial    ProfileSocial
-	Avatar           *string
-	WalletAddressBTC *string
+	DisplayName          *string
+	Bio                  *string
+	ProfileSocial        ProfileSocial
+	Avatar               *string
+	WalletAddressBTC     *string
+	WalletAddressPayment *string
 }
 
 type ProfileSocial struct {
