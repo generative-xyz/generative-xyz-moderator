@@ -51,7 +51,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("RunAndCap", zap.Error(err))
 		return nil, err
 	}
 

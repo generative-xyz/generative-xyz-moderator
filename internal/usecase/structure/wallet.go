@@ -81,3 +81,8 @@ type WalletInscriptionByOutput struct {
 	Offset        int64  `json:"offset"`
 	Sat           uint64 `json:"sat"`
 }
+
+type WalletTrackTx struct {
+	Txhash string `json:"txhash"`
+	Status string `json:"status"`
+}

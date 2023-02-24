@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
@@ -600,8 +601,6 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	powIntput := math.Pow10(8)
 	powIntputBig := new(big.Float)
 	powIntputBig.SetFloat64(powIntput)
-
-	u.Logger.Info("amount", amount)
 	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
 	amountMintBTC.Mul(amountMintBTC, powIntputBig)
 	// if err != nil {
@@ -612,41 +611,33 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	_ = amountMintBTC
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
-		u.Logger.Error("strconv.getExternalPrice", err.Error(), err)
+		u.Logger.ErrorAny("convertBTCToETH",zap.Error(err))
 		return "", 0, 0, err
 	}
 
 	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
-		u.Logger.Error("strconv.getExternalPrice", err.Error(), err)
+		u.Logger.ErrorAny("convertBTCToETH",zap.Error(err))
 		return "", 0, 0, err
 	}
-	u.Logger.Info("ethPrice", ethPrice)
 
-	// amountMintBTCBigInt := web3.FloatAsInt(amountMintBTC, 8)
-
-	u.Logger.Info("amountMintBTC", amountMintBTC.String())
 	btcToETH := btcPrice / ethPrice
 	// btcToETH := 14.27 // remove hardcode, why tri hardcode this??
 
 	rate := new(big.Float)
 	rate.SetFloat64(btcToETH)
-	u.Logger.Info("rate", rate.String())
-
 	amountMintBTC.Mul(amountMintBTC, rate)
-	u.Logger.Info("btcToETH", btcToETH)
-
+	
 	pow := math.Pow10(10)
 	powBig := new(big.Float)
 	powBig.SetFloat64(pow)
 
 	amountMintBTC.Mul(amountMintBTC, powBig)
-	u.Logger.Info("amountMintBTC.Mul", btcToETH)
-
 	result := new(big.Int)
 	amountMintBTC.Int(result)
 
+	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice),  zap.Float64("ethPrice", ethPrice) )
 	return result.String(), btcPrice, ethPrice, nil
 }
 

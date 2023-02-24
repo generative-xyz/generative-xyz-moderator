@@ -683,7 +683,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				}
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
-				go u.NotifyNFTMinted(item.UserAddress, item.InscriptionID, item.MintFee)
+				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
 
 			}
 
