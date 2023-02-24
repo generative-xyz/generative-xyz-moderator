@@ -843,6 +843,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	tokenUri.Image = imageURI
 	tokenUri.ParsedImage = &imageURI
 	tokenUri.ThumbnailCapturedAt = &now
+	tokenUri.Source = inscription.Source
 	u.Logger.Info("mintedURL", imageURI)
 
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)

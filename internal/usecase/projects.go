@@ -1213,10 +1213,18 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	nftTokenURI["attributes"] = []string{}
 
 	pe.CreatorAddrr = "0x0000000000000000000000000000000000000000"
+	if meta.WalletAddress != "" {
+		pe.CreatorAddrr = meta.WalletAddress
+	}
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 	if err != nil {
 		u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
-		return nil, err
+		pe.CreatorAddrr = "0x0000000000000000000000000000000000000000"
+		creatorAddrr, err = u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+		if err != nil {
+			u.Logger.Error("u.Repo.FindUserByWalletAddress", err.Error(), err)
+			return nil, err
+		}
 	}
 
 	pe.CreatorName = creatorAddrr.DisplayName
@@ -1255,10 +1263,14 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.MintingInfo.Index = index
 
 	if pe.Categories == nil || len(pe.Categories) == 0 {
-		pe.Categories = []string{u.Config.OtherCategoryID}
+		pe.Categories = []string{u.Config.UnverifiedCategoryID}
 	}
 
-	pe.Royalty = meta.Royalty
+	royalty, err := strconv.Atoi(meta.Royalty)
+	if err != nil {
+		royalty = 0
+	}
+	pe.Royalty = royalty
 	pe.SocialTwitter = meta.TwitterLink
 	pe.SocialDiscord = meta.DiscordLink
 	pe.SocialWeb = meta.WebsiteLink
@@ -1277,6 +1289,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatedByCollectionMeta = true
 	blockNumberMinted := "0"
 	pe.BlockNumberMinted = &blockNumberMinted
+	pe.Source = meta.Source
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {

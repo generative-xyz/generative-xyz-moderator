@@ -96,6 +96,7 @@ type Projects struct {
 	ReportUsers             []*ReportProject   `bson:"reportUsers" json:"reportUsers"`
 	InscriptionIcon         string             `bson:"inscription_icon" json:"inscriptionIcon"`
 	CreatedByCollectionMeta bool               `bson:"created_by_collection_meta" json:"created_by_collection_meta"`
+	Source 									string 						 `bson:"source" json:"source"`
 }
 
 type ReportProject struct {
