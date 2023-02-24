@@ -11,7 +11,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
-	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
@@ -64,7 +63,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		} else {
 			return err
 		}
-	} 
+	}
 
 	insertedInscriptions, err := h.Usecase.Repo.FindCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
@@ -74,7 +73,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	for _, inscription := range insertedInscriptions {
 		insertedIds[inscription.ID] = true
 	}
-	
+
 	processed := 0
 	for _, inscription := range inscriptions {
 		if insertedIds[inscription.ID] {
@@ -85,7 +84,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		inscription.Source = source
 		h.Usecase.Repo.InsertCollectionInscription(&inscription)
 
-		if processed % 10 == 0 {
+		if processed%10 == 0 {
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -120,39 +119,39 @@ func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection(source string) err
 }
 
 func (h ScronOrdinalCollectionHandler) StartServer() {
-	c := cron.New()
-	// cronjob to sync ordinals collection
-	c.AddFunc("0 */2 * * *", func() {
-		source := "https://github.com/ordinals-wallet/ordinals-collections.git"
-		err := h.crawlOrdinalCollection(source)
-		if err != nil {
-			h.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", err.Error(), err)
-		}
-	})
-	c.AddFunc("*/15 * * * *", func() {
-		source := "https://github.com/generative-xyz/ordinals-collections.git"
-		err := h.crawlOrdinalCollection(source)
-		if err != nil {
-			h.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", err.Error(), err)
-		}
-	})
-	c.Start()
-
-	go func() {
-		for {
-			err := h.Usecase.CreateProjectsFromMetas()
-			if err != nil {
-				h.Logger.Error("error at cronjob create projects from metas", err.Error(), err)
-				return
-			}
-			err = h.Usecase.CreateTokensFromCollectionInscriptions()
-			if err != nil {
-				h.Logger.Error("error at cronjob create tokens from collection inscription", err.Error(), err)
-				return
-			}
-			// Sleep 5 minutes after recreate again
-			time.Sleep(1 * time.Minute)
-		}
-	}()
+	//c := cron.New()
+	//// cronjob to sync ordinals collection
+	//c.AddFunc("0 */2 * * *", func() {
+	//	source := "https://github.com/ordinals-wallet/ordinals-collections.git"
+	//	err := h.crawlOrdinalCollection(source)
+	//	if err != nil {
+	//		h.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", err.Error(), err)
+	//	}
+	//})
+	//c.AddFunc("*/15 * * * *", func() {
+	//	source := "https://github.com/generative-xyz/ordinals-collections.git"
+	//	err := h.crawlOrdinalCollection(source)
+	//	if err != nil {
+	//		h.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", err.Error(), err)
+	//	}
+	//})
+	//c.Start()
+	//
+	//go func() {
+	//	for {
+	//		err := h.Usecase.CreateProjectsFromMetas()
+	//		if err != nil {
+	//			h.Logger.Error("error at cronjob create projects from metas", err.Error(), err)
+	//			return
+	//		}
+	//		err = h.Usecase.CreateTokensFromCollectionInscriptions()
+	//		if err != nil {
+	//			h.Logger.Error("error at cronjob create tokens from collection inscription", err.Error(), err)
+	//			return
+	//		}
+	//		// Sleep 5 minutes after recreate again
+	//		time.Sleep(1 * time.Minute)
+	//	}
+	//}()
 
 }
