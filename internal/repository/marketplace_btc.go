@@ -796,8 +796,8 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 			},
 		},
 		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
-		bson.D{{"$limit", limit}},
 		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
 	})
 	if err != nil {
 		return nil, err
@@ -808,4 +808,65 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 	}
 
 	return resp, nil
+}
+
+func (r Repository) RetrieveFloorPriceOfCollection(collectionID string) (uint64, error) {
+	resp := []entity.MarketplaceBTCListingFloorPrice{}
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Aggregate(context.TODO(), bson.A{
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 1},
+					{"isConfirm", 1},
+					{"isSold", 1},
+					{"created_at", 1},
+					{"expired_at", 1},
+					{"amount", 1},
+					{"collection_id", 1},
+				},
+			},
+		},
+		bson.D{
+			{"$match",
+				bson.D{
+					{"collection_id", collectionID},
+					{"isConfirm", true},
+					{"isSold", false},
+					{"amount", bson.D{{"$ne", ""}}},
+				},
+			},
+		},
+		bson.D{{"$addFields", bson.D{{"price", bson.D{{"$toDouble", "$amount"}}}}}},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$_id"},
+					{"price", bson.D{{"$first", "$price"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort",
+				bson.D{
+					{"created_at", -1},
+					{"price", 1},
+				},
+			},
+		},
+		bson.D{{"$limit", 1}},
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return 0, err
+	}
+
+	if len(resp) == 0 {
+		return 0, nil
+	}
+
+	return resp[0].Price, nil
 }

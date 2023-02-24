@@ -106,6 +106,21 @@ func (r Repository) FindProjectByProjectIdWithoutCache(tokenID string) (*entity.
 	return resp, nil
 }
 
+func (r Repository) FindProjectByInscriptionIcon(inscription_icon string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"inscription_icon", inscription_icon}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) CreateProject(data *entity.Projects) error {
 	data.ContractAddress = strings.ToLower(data.ContractAddress)
 	err := r.InsertOne(data.TableName(), data)
@@ -161,6 +176,20 @@ func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mon
 	return result, nil
 }
 
+func (r Repository) GetProjectsByWalletAddress(add string) ([]entity.Projects, error) {
+	confs := []entity.Projects{}
+	filter := entity.FilterProjects{}
+	filter.WalletAddress = &add
+	f := r.FilterProjects(filter)
+	s := r.SortProjects()
+	_, err := r.Paginate(utils.COLLECTION_PROJECTS, 1, 10, f, r.SelectedProjectFields(), s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
+
 func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
@@ -171,7 +200,12 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	} else {
 		s = []Sort{
 			{SortBy: filter.SortBy, Sort: filter.Sort},
-			{SortBy: "tokenid", Sort: entity.SORT_ASC},
+			//{SortBy: "tokenid", Sort: entity.SORT_DESC},
+		}
+
+		if filter.SortBy == "stats.trending_score" {
+			s = append(s, Sort{SortBy: "priority", Sort: entity.SORT_DESC})
+			s = append(s, Sort{SortBy: "stats.trending_score", Sort: entity.SORT_DESC})
 		}
 	}
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
@@ -280,6 +314,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
+
 	//f["isHidden"] = false
 
 	if filter.WalletAddress != nil {
@@ -292,16 +327,20 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
-	if filter.Name != nil {
+	if filter.Name != nil && len(*filter.Name) >= 3 {
 		if *filter.Name != "" {
-			f["$text"] = bson.M{"$search": *filter.Name}
+			f["$or"] = []bson.M{
+				{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+				{"creatorProfile.wallet_address": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+			}
 		}
 	}
 
 	if filter.CategoryIds != nil && len(filter.CategoryIds) > 0 {
 		f["categories"] = bson.M{"$all": filter.CategoryIds}
 	}
-	
+
 	if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
 	}
@@ -424,6 +463,27 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"mintedImages", 1},
 		{"whiteListEthContracts", 1},
 		{"isFullChain", 1},
+		{"reportUsers", 1},
 	}
 	return f
 }
+
+func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon string) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"inscription_icon": inscriptionIcon,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+

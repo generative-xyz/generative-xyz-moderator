@@ -5,26 +5,24 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/opentracing/opentracing-go"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) DAOCastVote(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("DAOCastVote", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-	log.SetData("chainLog", chainLog.Data)
+func (u Usecase) DAOCastVote( chainLog types.Log) error {
+
+	u.Logger.Info("chainLog", chainLog.Data)
 
 	daoContract, err := generative_dao.NewGenerativeDao(chainLog.Address, u.Blockchain.GetClient())
 	if err != nil {
-		log.Error("cannot init DAO contract", err.Error(), err)
+		u.Logger.Error("cannot init DAO contract", err.Error(), err)
 		return err
 	}
 
 	parsedCastVote, err := daoContract.ParseVoteCast(chainLog)
 	if err != nil {
-		log.Error("cannot parse parsedCastVote", err.Error(), err)
+		u.Logger.Error("cannot parse parsedCastVote", err.Error(), err)
 		return err
 	}
 
@@ -37,51 +35,50 @@ func (u Usecase) DAOCastVote(rootSpan opentracing.Span, chainLog types.Log) erro
 		Reason:     parsedCastVote.Reason,
 	}
 
-	log.SetData("parsed.parsedCastVote", obj)
+	u.Logger.Info("parsed.parsedCastVote", obj)
 	err = u.Repo.CreateProposalVotes(obj)
 	if err != nil {
-		log.Error("cannot create CreateProposalVotes", err.Error(), err)
+		u.Logger.Error("cannot create CreateProposalVotes", err.Error(), err)
 		return err
 	}
 
-	u.SendMessageProposalVote(span, *obj)
+	u.SendMessageProposalVote(*obj)
 	return nil
 }
 
-func (u Usecase) DAOProposalCreated(rootSpan opentracing.Span, chainLog types.Log) error {
-	span, log := u.StartSpan("DAOProposalCreated", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
-	log.SetData("chainLog", chainLog.Data)
+func (u Usecase) DAOProposalCreated( chainLog types.Log) error {
+
+	u.Logger.Info("chainLog", chainLog.Data)
 
 	daoContract, err := generative_dao.NewGenerativeDao(chainLog.Address, u.Blockchain.GetClient())
 	if err != nil {
-		log.Error("cannot init DAO contract", err.Error(), err)
+		u.Logger.Error("cannot init DAO contract", err.Error(), err)
 		return err
 	}
 
 	parsedProposal, err := daoContract.ParseProposalCreated(chainLog)
 	if err != nil {
-		log.Error("cannot parse createdProposal", err.Error(), err)
+		u.Logger.Error("cannot parse createdProposal", err.Error(), err)
 		return err
 	}
-	log.SetData("parsed.Data", parsedProposal)
+	u.Logger.Info("parsed.Data", parsedProposal)
 	createdProposal := u.ParseProposal(parsedProposal)
 
 	state, err := daoContract.State(nil, parsedProposal.ProposalId)
 	if err != nil {
-		log.Error("daoContract.State", err.Error(), err)
+		u.Logger.Error("daoContract.State", err.Error(), err)
 	} else {
 		createdProposal.State = state
 	}
 
 	err = u.Repo.CreateProposal(createdProposal)
 	if err != nil {
-		log.Error("cannot create CreateProposal", err.Error(), err)
+		u.Logger.Error("cannot create CreateProposal", err.Error(), err)
 		return err
 	}
 
-	u.SendMessageProposal(span, *createdProposal)
-	log.SetData("createdProposal", createdProposal)
+	u.SendMessageProposal(*createdProposal)
+	u.Logger.Info("createdProposal", createdProposal)
 	return nil
 }
 
@@ -128,9 +125,8 @@ func (u Usecase) ParseRaw(input types.Log) entity.ProposalRaw {
 	return r
 }
 
-func (u Usecase) SendMessageProposal(rootSpan opentracing.Span, createdProposal entity.Proposal) {
-	span, log := u.StartSpan("SendMessageProposal", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SendMessageProposal( createdProposal entity.Proposal) {
+
 
 	//slack
 	preText := fmt.Sprintf("[Proposal %s] has been created by %s", createdProposal.ProposalID, createdProposal.Proposer)
@@ -140,13 +136,12 @@ func (u Usecase) SendMessageProposal(rootSpan opentracing.Span, createdProposal 
 	//title := fmt.Sprintf("Proposal:  %s is %s", createdProposal.ProposalID, event)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 	}
 }
 
-func (u Usecase) SendMessageProposalVote(rootSpan opentracing.Span, createdProposalVote entity.ProposalVotes) {
-	span, log := u.StartSpan("SendMessageProposalVote", rootSpan)
-	defer u.Tracer.FinishSpan(span, log)
+func (u Usecase) SendMessageProposalVote( createdProposalVote entity.ProposalVotes) {
+
 
 	//slack
 	preText := fmt.Sprintf("[Vote][Proposal %s] has been voted", createdProposalVote.ProposalID)
@@ -155,6 +150,6 @@ func (u Usecase) SendMessageProposalVote(rootSpan opentracing.Span, createdPropo
 	//title := ""
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		log.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 	}
 }

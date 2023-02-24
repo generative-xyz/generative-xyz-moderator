@@ -85,13 +85,10 @@ func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, `}`, "")
 	key = strings.ReplaceAll(key, `!`, "")
 	key = strings.ReplaceAll(key, `=`, "")
-	
 	//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	key = strings.ToLower(key)
 	return key
 }
-
-
 
 func Base64Decode(base64Str string) ([]byte, error) {
 	sDec, err := b64.StdEncoding.DecodeString(base64Str)
@@ -157,6 +154,18 @@ func CreateTokenLink(projectID string, tokenID string, tokenName string) string 
 	return fmt.Sprintf("<%s|%s>", link, tokenName)
 }
 
+
+func CreateTokenImageLink(url string) string {
+	link := fmt.Sprintf("%s", url)
+	return fmt.Sprintf("<%s|%s>", link, "Review")
+}
+
+
+func CreateProjectLink(projectID string, priojectName string) string {
+	link := fmt.Sprintf("%s/generative/%s", os.Getenv("DOMAIN"), projectID)
+	return fmt.Sprintf("<%s|%s>", link, priojectName)
+}
+
 func ParseBigToFloat(number *big.Int) float64 {
 	numStr := number.String()
 
@@ -178,7 +187,11 @@ func CreateBTCOrdWallet(userWallet string) string {
 }
 
 func GetExternalPrice(tokenSymbol string) (float64, error) {
-	binancePriceURL := "https://api.binance.com/api/v3/ticker/price?symbol="
+	binanceAPI := os.Getenv("BINANCE_API")
+	if binanceAPI == "" {
+		binanceAPI = "https://api.binance.com"
+	}
+	binancePriceURL := fmt.Sprintf("%v/api/v3/ticker/price?symbol=", binanceAPI)
 	var price struct {
 		Symbol string `json:"symbol"`
 		Price  string `json:"price"`
@@ -248,6 +261,15 @@ func CalcOrigBinaryLength(datas string) int {
 	// so orig length ==  (l*6 - eq*2) / 8
 
 	return (l*3 - eq) / 4
+}
+
+func SliceStringContains(slice []string, target string) bool {
+	for _, e := range slice {
+		if e == target {
+			return true
+		}
+	}
+	return false
 }
 
 func StringToBTCAmount(price string) *big.Float {

@@ -56,8 +56,7 @@ func (h PubsubHandler) StartServer() {
 		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
 			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
 			break
-		}	
-	}
+		}}
 	<-ch
 	return
 }

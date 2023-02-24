@@ -27,15 +27,13 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /inscribe/receive-address [POST]
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.btcCreateInscribeBTC", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
+	
 
 	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcCreateInscribeBTC.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.btcCreateInscribeBTC.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -43,7 +41,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	reqUsecase := &structure.InscribeBtcReceiveAddrRespReq{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -77,17 +75,17 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	btcWallet, err := h.Usecase.CreateInscribeBTC(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcCreateInscribeBTC", btcWallet)
+	h.Logger.Info("btcCreateInscribeBTC", btcWallet)
 	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -112,8 +110,6 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 }
 
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("btcListInscribeBTC", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
@@ -124,52 +120,48 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 		page = 1
 	}
 
-	result, err := h.Usecase.ListInscribeBTC(span, int64(limit), int64(page))
+	result, err := h.Usecase.ListInscribeBTC(int64(limit), int64(page))
 	if err != nil {
-		log.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
 // detail:
 func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("btcDetailInscribeBTC", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	uuid := vars["ID"]
 
 	result, err := h.Usecase.DetailInscribeBTC(uuid)
 	if err != nil {
-		log.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
 }
 
 func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("btcRetryInscribeBTC", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	id := vars["ID"]
 
 	err := h.Usecase.RetryInscribeBTC(id)
 	if err != nil {
-		log.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
@@ -184,26 +176,24 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 // @Success 200 {object} response.JsonResponse{}
 // @Router /inscribe/info/{ID} [GET]
 func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("getInscribeInfo", r)
-	defer h.Tracer.FinishSpan(span, log)
 
 	vars := mux.Vars(r)
 	id := vars["ID"]
-	inscribeInfo, err := h.Usecase.GetInscribeInfo(span, id)
+	inscribeInfo, err := h.Usecase.GetInscribeInfo(id)
 	if err != nil {
-		log.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp, err := h.inscribeInfoToResp(inscribeInfo)
 	if err != nil {
-		log.Error("h.inscribeInfoToResp", err.Error(), err)
+		h.Logger.Error("h.inscribeInfoToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.SetLog(h.Tracer, span)
+	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

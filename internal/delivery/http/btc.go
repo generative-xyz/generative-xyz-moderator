@@ -21,15 +21,11 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /btc/receive-address [POST]
 func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.btcGetReceiveWalletAddress", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
-
 	var reqBody request.CreateBtcWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -37,22 +33,22 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	reqUsecase := &structure.BctWalletAddressData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	btcWallet, err := h.Usecase.CreateSegwitBTCWalletAddress(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CreateSegwitBTCWalletAddress(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CreateSegwitBTCWalletAddress", err.Error(), err)
+		h.Logger.Error("h.Usecase.CreateSegwitBTCWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcWallet", btcWallet)
+	h.Logger.Info("btcWallet", btcWallet)
 	resp, err := h.BtcWalletAddressToResp(btcWallet)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -70,15 +66,13 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 // @Success 200 {object} response.JsonResponse{}
 // @Router /btc/balance [POST]
 func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
-	span, log := h.StartSpan("httpDelivery.checkBalance", r)
-	defer h.Tracer.FinishSpan(span, log)
-	h.Response.SetLog(h.Tracer, span)
+	
 
 	var reqBody request.CheckBalanceAddressReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		log.Error("httpDelivery.checkBalance.Decode", err.Error(), err)
+		h.Logger.Error("httpDelivery.checkBalance.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -86,22 +80,22 @@ func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
 	reqUsecase := &structure.CheckBalance{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		log.Error("copier.Copy", err.Error(), err)
+		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	btcWallet, err := h.Usecase.CheckBalanceWalletAddress(span, *reqUsecase)
+	btcWallet, err := h.Usecase.CheckBalanceWalletAddress(*reqUsecase)
 	if err != nil {
-		log.Error("h.Usecase.CheckBalanceWalletAddress", err.Error(), err)
+		h.Logger.Error("h.Usecase.CheckBalanceWalletAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	log.SetData("btcWallet", btcWallet)
+	h.Logger.Info("btcWallet", btcWallet)
 	resp, err := h.BtcToResp(btcWallet)
 	if err != nil {
-		log.Error(" h.proposalToResp", err.Error(), err)
+		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
