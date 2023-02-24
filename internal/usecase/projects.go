@@ -489,7 +489,7 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	u.NotifyWithChannel(
 		os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
 		fmt.Sprintf("[Project is reported][projectID %s]", p.TokenID),
-		fmt.Sprintf("TraceID: %s", p.TraceID),
+		"",
 		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
 	)
 
@@ -1166,6 +1166,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
