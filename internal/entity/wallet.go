@@ -7,10 +7,13 @@ import (
 )
 
 type WalletTrackTx struct {
-	BaseEntity `bson:",inline"`
-	Txhash     string `bson:"txhash"`
-	Address    string `bson:"address"`
-	Status     string `bson:"status"`
+	BaseEntity    `bson:",inline"`
+	Txhash        string `bson:"txhash"`
+	Address       string `bson:"address"`
+	Status        string `bson:"status"`
+	Type          string `bson:"type"`
+	InscriptionID string `bson:"inscription_id"`
+	Amount        uint64 `bson:"amount"`
 }
 
 func (u WalletTrackTx) TableName() string {
