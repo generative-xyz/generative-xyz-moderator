@@ -81,7 +81,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://ordinals-explorer-dev.generative.xyz"
+		ordServer = "https://dev.generativeexplorer.com"
 	}
 	outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
