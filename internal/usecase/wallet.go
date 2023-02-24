@@ -285,8 +285,9 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 		} else {
 			if txStatus.Confirmations > 0 {
 				trackTx.Status = "Success"
+			} else {
+				trackTx.Status = "Pending"
 			}
-			trackTx.Status = "Pending"
 		}
 
 		result = append(result, trackTx)
