@@ -366,7 +366,11 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 
 			destinations[nftListing.SellerAddress] = amountWithChargee
 			if artistAddress != "" && royaltyFee > 0 {
-				destinations[artistAddress] = royaltyFee
+				if artistAddress == nftListing.SellerAddress {
+					amountWithChargee = amountWithChargee + royaltyFee
+				} else {
+					destinations[artistAddress] = royaltyFee
+				}
 			}
 
 			if serviceFee > 0 {
