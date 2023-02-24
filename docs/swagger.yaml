@@ -407,6 +407,8 @@ definitions:
         type: string
       walletAddressBtcTaproot:
         type: string
+      walletAddressPayment:
+        type: string
     type: object
   response.ProfileSocial:
     properties:
@@ -1716,6 +1718,27 @@ paths:
       tags:
       - MarketPlace
   /mint-nft-btc/receive-address:
+    delete:
+      consumes:
+      - application/json
+      description: cancel the mint request
+      parameters:
+      - description: Create a btc/eth wallet address request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateBtcWalletAddressReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: cancel the mint request
+      tags:
+      - BTC/ETH
     post:
       consumes:
       - application/json
