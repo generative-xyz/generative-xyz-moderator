@@ -155,6 +155,12 @@ func CreateTokenLink(projectID string, tokenID string, tokenName string) string 
 }
 
 
+func CreateTokenImageLink(url string) string {
+	link := fmt.Sprintf("%s", url)
+	return fmt.Sprintf("<%s|%s>", link, "Review")
+}
+
+
 func CreateProjectLink(projectID string, priojectName string) string {
 	link := fmt.Sprintf("%s/generative/%s", os.Getenv("DOMAIN"), projectID)
 	return fmt.Sprintf("<%s|%s>", link, priojectName)
