@@ -644,7 +644,7 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 const (
 	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC               int64 = 100000000
-	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000
+	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 100000
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
