@@ -44,7 +44,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
 		outcoins = append(outcoins, o)
 	}
-	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins)
+	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,16 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	for _, item := range inscriptions {
 		result.Inscriptions = append(result.Inscriptions, item...)
 	}
+	newTxrefs := []structure.TxRef{}
+	for _, outcoin := range result.Txrefs {
+		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
+		satRanges, ok := outputSatRanges[o]
+		if ok {
+			outcoin.SatRanges = satRanges
+			newTxrefs = append(newTxrefs, outcoin)
+		}
+	}
+	result.Txrefs = newTxrefs
 
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
@@ -66,12 +76,13 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://ordinals-explorer-v5-dev.generative.xyz"
+		ordServer = "https://ordinals-explorer-dev.generative.xyz"
 	}
+	outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
 	for _, output := range outputs {
 		if _, ok := result[output]; ok {
@@ -79,17 +90,17 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 		}
 		inscriptions, err := getInscriptionByOutput(ordServer, output)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		if len(inscriptions.Inscriptions) > 0 {
 			for _, insc := range inscriptions.Inscriptions {
 				data, err := getInscriptionByID(ordServer, insc)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 				offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 				inscWalletInfo := structure.WalletInscriptionInfo{
 					InscriptionID: data.InscriptionID,
@@ -100,6 +111,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 				inscWalletByOutput := structure.WalletInscriptionByOutput{
 					InscriptionID: data.InscriptionID,
 					Offset:        offset,
+					Sat:           data.Sat,
 				}
 				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
 				if internalInfo != nil {
@@ -111,8 +123,12 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
 			}
 		}
+		outputSatRanges[output] = inscriptions.List.Unspent
 	}
-	return result, outputInscMap, nil
+	// if len(outputSatRanges) != len(outputs) {
+	// 	return nil, nil, nil, errors.New("")
+	// }
+	return result, outputInscMap, outputSatRanges, nil
 }
 
 func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfoByOutput, error) {
