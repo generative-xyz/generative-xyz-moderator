@@ -1206,7 +1206,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.MintPrice = mPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = true
-	pe.Status = true
+	pe.Status = false
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = meta.Name
