@@ -13,6 +13,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
+
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -687,7 +688,7 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 		return
 	}
 
-	user, err := u.Repo.FindUserByWalletAddress(userAddr)
+	user, err := u.Repo.FindUserByBtcAddress(userAddr)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress failed", zap.Any("err", err))
 		return
