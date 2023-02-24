@@ -5,6 +5,9 @@ type InscriptionByOutput struct {
 }
 
 type TrackTx struct {
-	Txhash  string `json:"txhash"`
-	Address string `json:"address"`
+	Txhash        string `json:"txhash"`
+	Type          string `json:"type"`
+	InscriptionID string `json:"inscription_id"`
+	Amount        uint64 `json:"amount"`
+	Address       string `json:"address"`
 }
