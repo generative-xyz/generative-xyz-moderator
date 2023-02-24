@@ -72,16 +72,17 @@ const (
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
-	KEY_UUID               string = "uuid"
-	KEY_BASE_PRODUCT_KEY   string = "product_key"
-	KEY_ORDER_ID           string = "order_id"
-	KEY_AUTO_USERID        string = "user_id"
-	KEY_WALLET_ADDRESS     string = "wallet_address"
-	KEY_WALLET_ADDRESS_BTC string = "wallet_address_btc"
-	KEY_DELETED_AT         string = "deleted_at"
-	KEY_PROJECT_ID         string = "project_id"
-	KEY_LISTING_CONTRACT   string = "collection_contract"
-	KEY_BTC_WALLET_INFO    string = "btc_wallet_info"
+	KEY_UUID                       string = "uuid"
+	KEY_BASE_PRODUCT_KEY           string = "product_key"
+	KEY_ORDER_ID                   string = "order_id"
+	KEY_AUTO_USERID                string = "user_id"
+	KEY_WALLET_ADDRESS             string = "wallet_address"
+	KEY_WALLET_ADDRESS_BTC         string = "wallet_address_btc"
+	KEY_WALLET_ADDRESS_BTC_TAPROOT string = "wallet_address_btc_taproot"
+	KEY_DELETED_AT                 string = "deleted_at"
+	KEY_PROJECT_ID                 string = "project_id"
+	KEY_LISTING_CONTRACT           string = "collection_contract"
+	KEY_BTC_WALLET_INFO            string = "btc_wallet_info"
 
 	COLLECTION_USERS                    string = "users"
 	COLLECTION_TOKEN_URI                string = "token_uri"
@@ -107,6 +108,7 @@ const (
 	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
 	COLLECTION_COLLECTION_META          string = "collection_metas"
 	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
+	WALLET_TRACK_TX                     string = "wallet_track_txs"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

@@ -415,7 +415,11 @@ func (u Usecase) JobMKP_Payment() error {
 
 				destinations[nftListing.SellerAddress] = amountWithChargee
 				if artistAddress != "" && royaltyFee > 0 {
-					destinations[artistAddress] = royaltyFee
+					if artistAddress == nftListing.SellerAddress {
+						amountWithChargee = amountWithChargee + royaltyFee
+					} else {
+						destinations[artistAddress] = royaltyFee
+					}
 				}
 
 				if serviceFee > 0 {
@@ -493,10 +497,10 @@ func (u Usecase) JobMKP_Payment() error {
 						if projectDetail.Royalty > 0 {
 							creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 							if err == nil {
-								if creator.WalletAddressBTC != "" {
+								if creator.WalletAddressPayment != "" {
 									royaltyFeePercent := float64(projectDetail.Royalty) / 10000
 									royaltyFee = int(float64(totalAmountByEth.Int64()) * royaltyFeePercent)
-									artistAddress = creator.WalletAddressBTC
+									artistAddress = creator.WalletAddressPayment
 								}
 							}
 						}

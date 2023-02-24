@@ -51,6 +51,7 @@ type TokenUri struct {
 	Image               string            `bson:"image" json:"image"`
 	ParsedImage         *string           `bson:"parsed_image" json:"parsed_image"`
 	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
+	AnimationHtml       *string           `bson:"animation_html"`
 	Attributes          string            `bson:"attributes" json:"attributes"`
 	ParsedAttributes    []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
 	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
@@ -77,6 +78,7 @@ type TokenUri struct {
 	InscriptionIndex               string        `bson:"inscription_index"`
 	SyncedInscriptionInfo          bool          `bson:"synced_inscription_info"`
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
+	Source 												 string 			 `bson:"source" json:"source"`
 }
 
 type TokenUriAttr struct {

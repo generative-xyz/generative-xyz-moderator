@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -51,7 +52,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("RunAndCap", zap.Error(err))
 		return nil, err
 	}
 
@@ -123,7 +124,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structu
 	}
 
 	resp = &structure.TokenAnimationURI{
-		ParsedImage: image,
+		ParsedImage: thumbnail,
 		Thumbnail:   thumbnail,
 		Traits:      attrs,
 		TraitsStr:   strAttrs,
@@ -152,11 +153,6 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	u.Logger.LogAny("GetToken", zap.Any("req", req))
-
-	// defer func() {
-	// 	go u.getTokenInfo(req)
-	// }()
-
 	contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
 
@@ -175,6 +171,30 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			return nil, err
 		}
 	}
+
+ 	go func() {
+		//upload animation URL
+		if tokenUri.AnimationHtml == nil {
+			p, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
+			if err != nil {
+				return
+			}
+
+			htmlUrl, err := u.parseAnimationURL(*p)
+			if err != nil {
+				return
+			}
+		
+			animationHtml  := fmt.Sprintf("%s?seed=%s", *htmlUrl, tokenUri.TokenID)
+			tokenUri.AnimationHtml = &animationHtml
+
+			_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
+			if err != nil {
+				return
+			}
+		}
+	
+	}()
 
 	///u.Logger.Info("tokenUri", tokenUri)
 	u.Logger.LogAny("GetToken", zap.Any("req", req), zap.Any("tokenUri", tokenUri))
@@ -843,6 +863,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	tokenUri.Image = imageURI
 	tokenUri.ParsedImage = &imageURI
 	tokenUri.ThumbnailCapturedAt = &now
+	tokenUri.Source = inscription.Source
 	u.Logger.Info("mintedURL", imageURI)
 
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
@@ -856,4 +877,33 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	return pTokenUri, nil
+}
+
+func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
+	base64 := strings.ReplaceAll(project.NftTokenUri,"data:application/json;base64," ,"")
+	jsonData, err := helpers.Base64Decode(base64)
+	if err != nil {
+		return nil, err
+	}
+	resp := &structure.ProjectAnimationUrl{}
+	err = json.Unmarshal(jsonData, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.AnimationUrl == "" {
+		return nil, errors.New("This project doesn't contain html")
+	}
+
+	fName := fmt.Sprintf("btc-projects/%s/index.html", project.TokenID)
+	htmlString := strings.ReplaceAll(resp.AnimationUrl, "data:text/html;base64,", "")
+	uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fName)
+	if err != nil {
+		return nil, err
+	}
+
+	link := fmt.Sprintf("%s/%s/%s", "https://storage.googleapis.com",os.Getenv("GCS_BUCKET"), uploaded.Name)
+	spew.Dump(link)
+	return &link, nil
+
 }

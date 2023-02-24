@@ -51,7 +51,6 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -92,7 +91,6 @@ func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 		Message: msg,
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -152,7 +150,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Logger.Info("respond.profile", profile)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -214,7 +212,6 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
 
@@ -244,8 +241,11 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	walletAddress := vars["walletAddress"]
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
-		profile = &entity.Users{}
+		profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
+		if err != nil {
+			h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+			profile = &entity.Users{}
+		}
 	}
 
 	h.Logger.Info("profile", profile)
@@ -256,6 +256,5 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
