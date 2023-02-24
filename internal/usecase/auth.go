@@ -143,10 +143,8 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 			user.WalletAddressBTCTaproot = *data.AddressBTC
 			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
 		}
-	}
-	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
 		if user.WalletAddressBTC == "" {
-			user.WalletAddressBTC = *data.AddressBTCSegwit
+			user.WalletAddressBTC = *data.AddressBTC
 			u.Logger.Info("user.WalletAddressBTC.Updated", true)
 		}
 	}
