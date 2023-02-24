@@ -218,7 +218,7 @@ func (h *httpDelivery) RegisterDocumentRoutes() {
 		httpSwagger.URL(swaggerURL), //The url pointing to API definition
 		httpSwagger.DeepLinking(true),
 		//httpSwagger.DocExpansion("none"),
-		httpSwagger.DomID("#swagger-ui"),
+		httpSwagger.DomID("swagger-ui"),
 	))
 }
 

@@ -153,9 +153,6 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			resp.IsCompleted = nft.IsCompleted
 		}
 	}
-
-	h.Logger.Info("resp.token", token.TokenID)
-
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
