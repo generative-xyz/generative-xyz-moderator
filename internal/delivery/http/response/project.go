@@ -56,7 +56,7 @@ type ProjectResp struct {
 	EditableIsHidden       bool             `json:"editableIsHidden"`
 	TotalImages            int              `json:"totalImages"`
 	ReportUsers            []*ReportProject `json:"reportUsers"`
-	AnimationHtml       *string           	`json:"animation_html"`
+	AnimationHtml          *string          `json:"animationHtml"`
 }
 
 type ReportProject struct {
