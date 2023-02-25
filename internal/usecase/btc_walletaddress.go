@@ -672,12 +672,12 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 	return nil, nil
 }
 
-func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkFee int) {
+func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
 	u.Logger.Info(
 		"NotifyNFTMinted",
-		zap.String("userAddr", userAddr),
+		zap.String("btcUserAddr", btcUserAddr),
 		zap.String("inscriptionID", inscriptionID),
 		zap.Int("networkFee", networkFee),
 	)
@@ -688,10 +688,16 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 		return
 	}
 
-	user, err := u.Repo.FindUserByBtcAddress(userAddr)
-	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress failed", zap.Any("err", err))
-		return
+	var userAvatar, displayName string
+	{
+		user, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
+		if err != nil {
+			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress failed", zap.Any("err", err))
+		} else {
+			userAvatar = user.Avatar
+			displayName = user.DisplayName
+		}
+
 	}
 
 	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
@@ -720,9 +726,9 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 			Title: fmt.Sprintf("just minted a %s.", project.Name),
 			Url:   fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID), // todo
 			Author: discordclient.Author{
-				Name:    u.resolveShortName(user.DisplayName, user.WalletAddress),
-				Url:     fmt.Sprintf("%s/profile/%s", domain, user.WalletAddress),
-				IconUrl: user.Avatar,
+				Name:    u.resolveShortName(displayName, btcUserAddr),
+				Url:     fmt.Sprintf("%s/profile/%s", domain, btcUserAddr),
+				IconUrl: userAvatar,
 			},
 			Fields: fields,
 			Image: discordclient.Image{
