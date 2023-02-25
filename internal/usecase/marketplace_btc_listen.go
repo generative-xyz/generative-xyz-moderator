@@ -477,60 +477,60 @@ func (u Usecase) JobMKP_Payment() error {
 			} else if item.PayType == utils.NETWORK_ETH {
 				_ = ethClient
 
-				totalAmountByEth, ok := big.NewInt(0).SetString(item.Price, 10)
-				if !ok {
-					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
-					continue
-				}
-				// charge x% total amount:
-				serviceFeeByEth := int(float64(totalAmountByEth.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+				// totalAmountByEth, ok := big.NewInt(0).SetString(item.Price, 10)
+				// if !ok {
+				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
+				// 	continue
+				// }
+				// // charge x% total amount:
+				// serviceFeeByEth := int(float64(totalAmountByEth.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
 
-				royaltyFee := int(0)
-				artistAddress := ""
-				tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
-				if err == nil {
-					projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
-						ContractAddress: tokenUri.ContractAddress,
-						ProjectID:       tokenUri.ProjectID,
-					})
-					if err == nil {
-						if projectDetail.Royalty > 0 {
-							creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
-							if err == nil {
-								if creator.WalletAddressPayment != "" {
-									royaltyFeePercent := float64(projectDetail.Royalty) / 10000
-									royaltyFee = int(float64(totalAmountByEth.Int64()) * royaltyFeePercent)
-									artistAddress = creator.WalletAddressPayment
-								}
-							}
-						}
-					}
-				}
+				// royaltyFee := int(0)
+				// artistAddress := ""
+				// tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
+				// if err == nil {
+				// 	projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
+				// 		ContractAddress: tokenUri.ContractAddress,
+				// 		ProjectID:       tokenUri.ProjectID,
+				// 	})
+				// 	if err == nil {
+				// 		if projectDetail.Royalty > 0 {
+				// 			creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
+				// 			if err == nil {
+				// 				if creator.WalletAddressPayment != "" {
+				// 					royaltyFeePercent := float64(projectDetail.Royalty) / 10000
+				// 					royaltyFee = int(float64(totalAmountByEth.Int64()) * royaltyFeePercent)
+				// 					artistAddress = creator.WalletAddressPayment
+				// 				}
+				// 			}
+				// 		}
+				// 	}
+				// }
 
-				amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
-				fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
+				// amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
+				// fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
 
-				destinations := make(map[string]int)
+				// destinations := make(map[string]int)
 
-				destinations[nftListing.SellerAddress] = amountWithChargee
-				if artistAddress != "" && royaltyFee > 0 {
-					destinations[artistAddress] = royaltyFee
-				}
+				// destinations[nftListing.SellerAddress] = amountWithChargee
+				// if artistAddress != "" && royaltyFee > 0 {
+				// 	destinations[artistAddress] = royaltyFee
+				// }
 
-				if serviceFee > 0 {
-					destinations[serviceFeeAddress] = serviceFee
-				}
+				// if serviceFee > 0 {
+				// 	destinations[serviceFeeAddress] = serviceFee
+				// }
 
-				//TODO: send 3 tx
-				gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
-				if err != nil {
-					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SuggestGasPrice err", err.Error())
-					continue
-				}
-				value := new(big.Int).Sub(balance, new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(gasLimit)))
+				// //TODO: send 3 tx
+				// gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
+				// if err != nil {
+				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SuggestGasPrice err", err.Error())
+				// 	continue
+				// }
+				// value := new(big.Int).Sub(balance, new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(gasLimit)))
 
-				amountWithChargee = amountWithChargee - int(txFee.Int64())
-				destinations[nftListing.SellerAddress] = amountWithChargee
+				// amountWithChargee = amountWithChargee - int(txFee.Int64())
+				// destinations[nftListing.SellerAddress] = amountWithChargee
 
 			}
 
