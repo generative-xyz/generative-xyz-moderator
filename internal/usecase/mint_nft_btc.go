@@ -709,38 +709,40 @@ func (u Usecase) JobMint_SendNftToUser() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "checkEmpty(nftID)", "Nft id empty", true)
 			continue
 		}
-		listNFTsRep, err := u.GetNftsOwnerOf(os.Getenv("ORD_MASTER_ADDRESS"))
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error(), true)
-			continue
-		}
-
-		go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep, false)
-
-		// parse nft data:
-		var resp []struct {
-			Inscription string `json:"inscription"`
-			Location    string `json:"location"`
-			Explorer    string `json:"explorer"`
-		}
-
-		err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error(), true)
-			continue
-		}
-		owner := false
-		for _, nft := range resp {
-			if strings.EqualFold(nft.Inscription, item.InscriptionID) {
-				owner = true
-				break
+		if false {
+			listNFTsRep, err := u.GetNftsOwnerOf(os.Getenv("ORD_MASTER_ADDRESS"))
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error(), true)
+				continue
 			}
 
-		}
+			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep, false)
 
-		if !owner {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner, true)
-			continue
+			// parse nft data:
+			var resp []struct {
+				Inscription string `json:"inscription"`
+				Location    string `json:"location"`
+				Explorer    string `json:"explorer"`
+			}
+
+			err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error(), true)
+				continue
+			}
+			owner := false
+			for _, nft := range resp {
+				if strings.EqualFold(nft.Inscription, item.InscriptionID) {
+					owner = true
+					break
+				}
+
+			}
+
+			if !owner {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner, true)
+				continue
+			}
 		}
 
 		// transfer now:
