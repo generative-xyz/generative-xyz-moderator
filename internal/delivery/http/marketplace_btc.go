@@ -61,7 +61,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// check btc address:
 	ok, _ := btc.ValidateAddress("btc", reqBody.OrdWalletAddress)
 	if !ok {
-		err := fmt.Errorf("invalid RefurnNfAddress")
+		err := fmt.Errorf("invalid ordWalletAddress")
 		h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return

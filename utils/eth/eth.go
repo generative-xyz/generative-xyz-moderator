@@ -282,8 +282,6 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, stri
 
 func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int) (string, error) {
 
-	// 0xcd5485b34c9902527bbee21f69312fe2a73bc802
-
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
 		fmt.Println(err)

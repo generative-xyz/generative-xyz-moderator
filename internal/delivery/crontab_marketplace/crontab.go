@@ -52,7 +52,7 @@ func (h ScronMarketplaceHandler) StartServer() {
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.BtcCheckSendBTCForBuyOrder()
+			h.Usecase.JpbMKP_CheckTxSendPayment()
 
 		}(&wg)
 

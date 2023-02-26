@@ -211,6 +211,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOr
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
 		ExpiredAt:     time.Now().Add(time.Minute * 30),
+		PayType:       orderInfo.PayType,
 	}
 
 	// privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
@@ -301,7 +302,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOr
 			u.Logger.Error("convertBTCToETH", err.Error(), err)
 			return nil, err
 		}
-		fmt.Println("priceStr: ", priceStr)
+		fmt.Println("priceStr ETH: ", priceStr)
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {

@@ -463,11 +463,11 @@ func (u Usecase) JobMKP_Payment() error {
 				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SendTransactionWithPreferenceFromReceiveAddress err", err.Error())
 				// 	continue
 				// }
-				item.FeeChargeBTCBuyer = serviceFee
-				item.RoyaltyChargeBTCBuyer = royaltyFee
-				item.AmountBTCSentSeller = amountWithChargee
-				item.TxSendBTC = txID
-				item.Status = entity.StatusBuy_SendingBTC
+				item.FeeChargeBuyer = uint64(serviceFee)
+				item.RoyaltyChargeBuyer = uint64(royaltyFee)
+				item.AmountSentSeller = uint64(amountWithChargee)
+				item.TxSendPayment = txID
+				item.Status = entity.StatusBuy_SendingPayment
 				item.ErrCount = 0 // reset error count!
 				// TODO: update item
 				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
@@ -477,60 +477,90 @@ func (u Usecase) JobMKP_Payment() error {
 			} else if item.PayType == utils.NETWORK_ETH {
 				_ = ethClient
 
-				// totalAmountByEth, ok := big.NewInt(0).SetString(item.Price, 10)
-				// if !ok {
-				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
-				// 	continue
-				// }
-				// // charge x% total amount:
-				// serviceFeeByEth := int(float64(totalAmountByEth.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+				totalAmountByEth, ok := big.NewInt(0).SetString(item.Price, 10)
+				if !ok {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
+					continue
+				}
+				// charge x% total amount:
+				serviceFeeByEth := uint64(float64(totalAmountByEth.Uint64()) * float64(utils.BUY_NFT_CHARGE) / 100)
 
-				// royaltyFee := int(0)
-				// artistAddress := ""
-				// tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
-				// if err == nil {
-				// 	projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
-				// 		ContractAddress: tokenUri.ContractAddress,
-				// 		ProjectID:       tokenUri.ProjectID,
-				// 	})
-				// 	if err == nil {
-				// 		if projectDetail.Royalty > 0 {
-				// 			creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
-				// 			if err == nil {
-				// 				if creator.WalletAddressPayment != "" {
-				// 					royaltyFeePercent := float64(projectDetail.Royalty) / 10000
-				// 					royaltyFee = int(float64(totalAmountByEth.Int64()) * royaltyFeePercent)
-				// 					artistAddress = creator.WalletAddressPayment
-				// 				}
-				// 			}
-				// 		}
-				// 	}
-				// }
+				royaltyFee := uint64(0)
+				artistAddress := ""
+				tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
+				if err == nil {
+					projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
+						ContractAddress: tokenUri.ContractAddress,
+						ProjectID:       tokenUri.ProjectID,
+					})
+					if err == nil {
+						if projectDetail.Royalty > 0 {
+							creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
+							if err == nil {
+								if creator.WalletAddressPayment != "" {
+									royaltyFeePercent := float64(projectDetail.Royalty) / 10000
+									royaltyFee = uint64(float64(totalAmountByEth.Uint64()) * royaltyFeePercent)
+									artistAddress = creator.WalletAddressPayment
+								}
+							}
+						}
+					}
+				}
 
-				// amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
-				// fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
+				amountWithChargee := uint64(totalAmountByEth.Uint64()) - serviceFeeByEth - royaltyFee
+				fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
 
-				// destinations := make(map[string]int)
+				destinations := make(map[string]*big.Int)
 
-				// destinations[nftListing.SellerAddress] = amountWithChargee
-				// if artistAddress != "" && royaltyFee > 0 {
-				// 	destinations[artistAddress] = royaltyFee
-				// }
+				destinations[nftListing.SellerAddress] = big.NewInt(int64(amountWithChargee))
+				if artistAddress != "" && royaltyFee > 0 {
+					destinations[artistAddress] = big.NewInt(int64(royaltyFee))
+				}
 
-				// if serviceFee > 0 {
-				// 	destinations[serviceFeeAddress] = serviceFee
-				// }
+				if serviceFeeByEth > 0 {
+					destinations[serviceFeeAddress] = big.NewInt(int64(serviceFeeByEth))
+				}
 
-				// //TODO: send 3 tx
-				// gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
-				// if err != nil {
-				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SuggestGasPrice err", err.Error())
-				// 	continue
-				// }
-				// value := new(big.Int).Sub(balance, new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(gasLimit)))
+				//TODO: send to 3 output
+				gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SuggestGasPrice err", err.Error())
+					continue
+				}
 
-				// amountWithChargee = amountWithChargee - int(txFee.Int64())
-				// destinations[nftListing.SellerAddress] = amountWithChargee
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+
+				amountWithChargee = amountWithChargee - txFee.Uint64()
+				destinations[nftListing.SellerAddress] = big.NewInt(int64(amountWithChargee))
+
+				// start send now:
+				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), err.Error(), err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
+					continue
+				}
+
+				txID, err := ethClient.SendMulti(
+					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
+					privateKeyDeCrypt,
+					destinations,
+				)
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "ethClientSendMulti", err.Error())
+					continue
+				}
+				item.FeeChargeBuyer = serviceFeeByEth
+				item.RoyaltyChargeBuyer = royaltyFee
+				item.AmountSentSeller = amountWithChargee
+				item.TxSendPayment = txID
+				item.Status = entity.StatusBuy_SendingPayment
+				item.ErrCount = 0 // reset error count!
+				// TODO: update item
+				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+				if err != nil {
+					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				}
 
 			}
 
@@ -539,7 +569,7 @@ func (u Usecase) JobMKP_Payment() error {
 	return nil
 }
 
-func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
+func (u Usecase) JpbMKP_CheckTxSendPayment() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -548,52 +578,84 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 		return err
 	}
 
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMKP_WaitForBalanceFromBuyer", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
+
 	// get list buy order status = sent nft:
-	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingBTC)
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingPayment)
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
 
 	for _, item := range listTosendBtc {
-		if item.Status == entity.StatusBuy_SendingBTC {
-			txHash, err := chainhash.NewHashFromStr(item.TxSendBTC)
-			if err != nil {
-				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
-				continue
-			}
+		if item.Status == entity.StatusBuy_SendingPayment {
 
-			txResponse, err := btcClient.GetTransaction(txHash)
+			if item.PayType == utils.NETWORK_BTC {
 
-			if err == nil {
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+item.TxSendBTC, txResponse.Confirmations)
-				if txResponse.Confirmations >= 1 {
-					// send btc ok now:
-					item.Status = entity.StatusBuy_SentBTC
-					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
-					if err != nil {
-						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-					}
-				}
-			} else {
-				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendBTC, err.Error())
-
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, "Begin check tx via api.")
-
-				// check with api:
-				txInfo, err := bs.CheckTx(item.TxSendBTC)
+				txHash, err := chainhash.NewHashFromStr(item.TxSendPayment)
 				if err != nil {
-					fmt.Printf("Could not bs - with err: %v", err)
-					go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, err.Error())
+					fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+					continue
 				}
-				if txInfo.Confirmations >= 1 {
-					go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendBTC, txInfo.Confirmations)
-					// send nft ok now:
-					item.Status = entity.StatusBuy_SentBTC
-					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
-					if err != nil {
-						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+
+				txResponse, err := btcClient.GetTransaction(txHash)
+
+				if err == nil {
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+item.TxSendPayment, txResponse.Confirmations)
+					if txResponse.Confirmations >= 1 {
+						// send btc ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
 					}
+				} else {
+					fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendPayment, err.Error())
+
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendPayment, "Begin check tx via api.")
+
+					// check with api:
+					txInfo, err := bs.CheckTx(item.TxSendPayment)
+					if err != nil {
+						fmt.Printf("Could not bs - with err: %v", err)
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendPayment, err.Error())
+					}
+					if txInfo.Confirmations >= 1 {
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendPayment, txInfo.Confirmations)
+						// send nft ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
+					}
+				}
+			} else if item.PayType == utils.NETWORK_ETH {
+				context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				status, err := ethClient.GetTransaction(context, item.TxSendPayment)
+				if err == nil {
+					if status > 0 {
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "ethClient.GetTransaction: "+item.TxSendPayment, status)
+						// send nft ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
+
+					} else {
+						continue
+					}
+				} else {
+					// if error maybe tx is pending or rejected
+					// TODO check timeout to detect tx is rejected or not.
 				}
 			}
 
