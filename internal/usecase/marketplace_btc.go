@@ -337,7 +337,7 @@ func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOr
 		u.Logger.Error("BTCMarketplaceListNFT.Repo.CreateMarketplaceListingBTC", "", err)
 		return nil, err
 	}
-	return order, nil
+	return &order, nil
 }
 
 // get filter info:

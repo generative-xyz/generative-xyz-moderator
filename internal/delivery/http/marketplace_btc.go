@@ -357,8 +357,8 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	}
 
 	resp := response.CreateMarketplaceBTCBuyOrder{
-		ReceiveAddress: depositAddress,
-		TimeoutAt:      fmt.Sprintf("%d", time.Now().Add(time.Minute*15).Unix()),
+		ReceiveAddress: depositAddress.ReceiveAddress,
+		TimeoutAt:      fmt.Sprintf("%d", time.Now().Add(time.Minute*30).Unix()),
 		Price:          depositAddress.Price,
 	}
 
