@@ -313,8 +313,8 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	}
 
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)    // in wei
-	auth.GasLimit = uint64(21000) // in units
+	auth.Value = big.NewInt(0)                  // in wei
+	auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 	auth.GasPrice = gasPrice
 
 	// Create a new instance of the contract with the given address and ABI
