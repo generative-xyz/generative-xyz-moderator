@@ -173,8 +173,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			if err == nil {
 				animationHtml  := fmt.Sprintf("%s", *htmlUrl)
 				pe.AnimationHtml = &animationHtml
-			}	
-			
+			}
+
 		}
 	}
 
@@ -223,36 +223,54 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	return pe, nil
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(pe *entity.Projects, creatorAddrr *entity.Users) {
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
+
+	var category, description string
+	if len(project.Categories) > 0 {
+		// we assume that there are only one category
+		categoryEntity, err := u.GetCategory(project.Categories[0])
+		if err != nil {
+			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			return
+		}
+		category = categoryEntity.Name
+		description = fmt.Sprintf("**%s**\n", category)
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	collectionName := project.Name
+
 	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string) []discordclient.Field {
+	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
 		if value == "" {
 			return fields
 		}
 		return append(fields, discordclient.Field{
-			Name:  name,
-			Value: value,
+			Name:   name,
+			Value:  value,
+			Inline: inline,
 		})
 	}
+	fields = addFields(fields,"", project.Description, false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(pe.MintPrice))
-	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", pe.MaxSupply))
 	discordMsg := discordclient.Message{
 		Username: "Satoshi 27",
+		Content:  "**NEW DROP**",
 		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("just launched %s", pe.Name),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, pe.GenNFTAddr),
-			Description: pe.Description,
-			Author: discordclient.Author{
-				Name:    u.resolveShortName(creatorAddrr.DisplayName, creatorAddrr.WalletAddress),
-				Url:     fmt.Sprintf("%s/profile/%s", domain, creatorAddrr.WalletAddress),
-				IconUrl: creatorAddrr.Avatar,
-			},
+			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
+			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Description: description,
+			//Author: discordclient.Author{
+			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),
+			//	Url:     fmt.Sprintf("%s/profile/%s", domain, owner.WalletAddress),
+			//	IconUrl: owner.Avatar,
+			//},
 			Fields: fields,
 			Image: discordclient.Image{
-				Url: pe.Thumbnail,
+				Url: project.Thumbnail,
 			},
 		}},
 	}
@@ -645,12 +663,12 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	go func() {
 		//upload animation URL
 		if c.AnimationHtml == nil {
-		
+
 			htmlUrl, err := u.parseAnimationURL(*c)
 			if err != nil {
 				return
 			}
-		
+
 			animationHtml  := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
@@ -659,7 +677,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 				return
 			}
 		}
-	
+
 	}()
 
 
