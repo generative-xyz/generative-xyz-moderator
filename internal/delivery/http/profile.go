@@ -258,3 +258,37 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
+
+
+// UserCredits godoc
+// @Summary User profile via wallet address
+// @Description User profile via wallet address
+// @Tags Profile
+// @Accept  json
+// @Produce  json
+// @Param walletAddress path string true "Wallet address"
+// @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
+// @Router /profile/withdraw [POST]
+func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("WalletAddress is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	_ = walletAddress
+
+	
+	// resp, err := h.profileToResp(profile)
+	// if err != nil {
+	// 	h.Logger.Error("h.profileToResp", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+}

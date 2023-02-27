@@ -114,7 +114,7 @@ func (atl *autoLogger) RequestBodyEnabled() bool { return true }
 func (atl *autoLogger) ResponseBodyEnabled() bool { return true }
 
 // AtLog is logger
-var AtLog *autoLogger
+var atLog *autoLogger
 
 func init() {
 	InitLoggerDefaultDev()
@@ -139,8 +139,8 @@ func InitLoggerDefault(enableDebug bool) *autoLogger {
 
 	sugarLog := logger.Sugar()
 	cfgParams := make(map[string]interface{})
-	AtLog = &autoLogger{sugarLog, cfgParams, logger}
-	return AtLog
+	atLog = &autoLogger{sugarLog, cfgParams, logger}
+	return atLog
 }
 
 // InitLoggerDefaultDev -- format text
@@ -156,11 +156,11 @@ func InitLoggerDefaultDev() *autoLogger {
 
 	sugarLog := logger.Sugar()
 	cfgParams := make(map[string]interface{})
-	AtLog = &autoLogger{sugarLog, cfgParams, logger}
-	return AtLog
+	atLog = &autoLogger{sugarLog, cfgParams, logger}
+	return atLog
 }
 
 // GetLoggerInstanceFromContext returns the logger instance from context
 func GetLoggerInstanceFromContext(ctx context.Context) *zap.Logger {
-	return AtLog.Logger.With(AtLog.WithContext(ctx)...)
+	return atLog.Logger.With(atLog.WithContext(ctx)...)
 }

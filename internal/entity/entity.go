@@ -18,9 +18,6 @@ type BaseEntityNoID struct {
 	DeletedAt  *time.Time `bson:"deleted_at"`
 	CreatedAt  *time.Time `bson:"created_at"`
 	UpdatedAt  *time.Time `bson:"updated_at"`
-	IsVerified bool       `bson:"is_verified"`
-	VerifiedAt *time.Time `bson:"verified_at"`
-	Message    string     `bson:"message"`
 }
 
 func (b *BaseEntity) SetID() {
