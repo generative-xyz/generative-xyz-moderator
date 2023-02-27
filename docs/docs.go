@@ -1398,7 +1398,7 @@ const docTemplate = `{
         },
         "/inscribe/info/{ID}": {
             "get": {
-                "description": "get inscribe info",
+                "description": "BTC Info Inscribe",
                 "consumes": [
                     "application/json"
                 ],
@@ -1408,7 +1408,7 @@ const docTemplate = `{
                 "tags": [
                     "Inscribe"
                 ],
-                "summary": "get inscribe info",
+                "summary": "BTC Info Inscribe",
                 "parameters": [
                     {
                         "type": "string",
@@ -1422,7 +1422,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "$ref": "#/definitions/response.InscribeInfoResp"
                         }
                     }
                 }
@@ -1446,6 +1446,38 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
+        "/inscribe/nft-detail/{ID}": {
+            "get": {
+                "description": "BTC NFT Detail Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC NFT Detail Inscribe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.InscribeBTCResp"
                         }
                     }
                 }
@@ -1481,6 +1513,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/response.InscribeBtcResp"
                         }
+                    }
+                }
+            }
+        },
+        "/inscribe/retry/{ID}": {
+            "post": {
+                "description": "BTC Retry Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC Retry Inscribe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -3674,6 +3735,50 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entity.InscribeBTCResp": {
+            "type": "object",
+            "properties": {
+                "expiredAt": {
+                    "type": "string"
+                },
+                "feeRate": {
+                    "description": "Mnemonic          string ` + "`" + `bson:\"mnemonic\"` + "`" + `\nSegwitKey         string ` + "`" + `bson:\"segwit_key\"` + "`" + `\nMintResponse MintStdoputResponse ` + "`" + `bson:\"mintResponse\"` + "`" + ` // after token has been mint\nBalance   string    ` + "`" + `bson:\"balance\"` + "`" + ` // balance after check",
+                    "type": "integer"
+                },
+                "inscriptionID": {
+                    "description": "tokenID in ETH",
+                    "type": "string"
+                },
+                "isConfirm": {
+                    "description": "UserAddress string ` + "`" + `bson:\"user_address\"` + "`" + ` //user's wallet address from FE\nOriginUserAddress string ` + "`" + `bson:\"origin_user_address\"` + "`" + ` //user's wallet address from FE\nAmount            string ` + "`" + `bson:\"amount\"` + "`" + `\nMintFee           string ` + "`" + `bson:\"mint_fee\"` + "`" + `\nSentTokenFee      string ` + "`" + `bson:\"sent_token_fee\"` + "`" + `\nOrdAddress        string ` + "`" + `bson:\"ordAddress\"` + "`" + ` // address is generated from ORD service, which receive all amount\nSegwitAddress     string ` + "`" + `bson:\"segwit_address\"` + "`" + `\nFileURI       string ` + "`" + `bson:\"fileURI\"` + "`" + `       // FileURI will be mount if OrdAddress get all amount",
+                    "type": "boolean"
+                },
+                "isMinted": {
+                    "description": "default: false. If InscriptionID exist which means token is minted, it's true",
+                    "type": "boolean"
+                },
+                "isSuccess": {
+                    "description": "default: false. If InscriptionID was sent to user, it's true",
+                    "type": "boolean"
+                },
+                "status": {
+                    "description": "status for record",
+                    "type": "integer"
+                },
+                "txMintNft": {
+                    "type": "string"
+                },
+                "txSendBTC": {
+                    "type": "string"
+                },
+                "txSendNft": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.Pagination": {
             "type": "object",
             "properties": {
@@ -4218,6 +4323,59 @@ const docTemplate = `{
                 },
                 "userAddress": {
                     "description": "user's wallet address from FE",
+                    "type": "string"
+                }
+            }
+        },
+        "response.InscribeInfoResp": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentLength": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "genesisFee": {
+                    "type": "string"
+                },
+                "genesisHeight": {
+                    "type": "string"
+                },
+                "genesisTransaction": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "outputValue": {
+                    "type": "string"
+                },
+                "preview": {
+                    "type": "string"
+                },
+                "sat": {
+                    "type": "string"
+                },
+                "timestamp": {
                     "type": "string"
                 }
             }
