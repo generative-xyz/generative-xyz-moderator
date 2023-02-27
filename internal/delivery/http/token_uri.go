@@ -3,16 +3,19 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -143,6 +146,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	fmt.Println("resp, err====>", resp, err)
+
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):
 		nft, _ := h.Usecase.GetListingDetail(tokenID)
@@ -151,6 +156,9 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			resp.PriceBTC = nft.Price
 			resp.OrderID = nft.OrderID
 			resp.IsCompleted = nft.IsCompleted
+
+			resp.ListingDetail = nft
+
 		}
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -434,6 +442,21 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
 	nftListing, _ := h.Usecase.GetAllListListingWithRule()
 
+	// get btc, btc rate:
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return nil, err
+	}
+
+	h.Logger.Info("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return nil, err
+	}
+	h.Logger.Info("btcPrice", btcPrice)
+
 	for _, token := range tokens {
 		resp, err := h.tokenToResp(&token)
 		if err != nil {
@@ -449,6 +472,16 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 					resp.PriceBTC = v.Price
 					resp.OrderID = v.OrderID
 					resp.IsCompleted = v.IsCompleted
+
+					listPaymentInfo, err := h.Usecase.GetListingPaymentInfoWithEthBtcPrice(v.PayType, v.Price, btcPrice, ethPrice)
+
+					if err != nil {
+						continue
+					}
+					v.PaymentListingInfo = listPaymentInfo
+
+					resp.ListingDetail = &v
+
 					break
 				}
 			}
@@ -730,7 +763,7 @@ func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request)
 
 	var err error
 	vars := mux.Vars(r)
-	walletAddress := vars["walletAddress"]	
+	walletAddress := vars["walletAddress"]
 	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)

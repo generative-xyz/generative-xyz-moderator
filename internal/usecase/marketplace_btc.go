@@ -1,29 +1,44 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/encrypt"
+	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/helpers"
 )
 
+// api listing....
 func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_ListingInfo) (*entity.MarketplaceBTCListing, error) {
 
+	expiredTime := utils.INSCRIBE_TIMEOUT
+	if u.Config.ENV == "develop" {
+		expiredTime = 1
+	}
+
 	listing := entity.MarketplaceBTCListing{
-		SellOrdAddress: listingInfo.SellOrdAddress,
-		SellerAddress:  listingInfo.SellerAddress,
+
 		HoldOrdAddress: "",
 		Price:          listingInfo.Price,
-		//ServiceFee:     listingInfo.ServiceFee, //Tri comment: ServiceFee is not existed
+		PayType:        listingInfo.PayType,
+
+		ServiceFee:    listingInfo.ServiceFee,
 		IsConfirm:     false,
 		IsSold:        false,
-		ExpiredAt:     time.Now().Add(time.Hour * 1),
+		IsCancel:      false,
+		ExpiredAt:     time.Now().Add(time.Hour * time.Duration(expiredTime)),
 		Name:          listingInfo.Name,
 		Description:   listingInfo.Description,
 		InscriptionID: listingInfo.InscriptionID,
@@ -43,30 +58,6 @@ func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_L
 	}
 	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
 	listing.HoldOrdAddress = holdOrdAddress
-	// sendMessage := func( offer entity.MarketplaceOffers) {
-	// //
-
-	// 	profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
-	// 	if err != nil {
-	// 		u.Logger.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
-	// 		return
-	// 	}
-
-	// 	token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
-	// 	if err != nil {
-	// 		u.Logger.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
-	// 		return
-	// 	}
-
-	// 	preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
-	// 	content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-	// 	title := fmt.Sprintf("User %s made offer with %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
-
-	// 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-	// 		u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
-	// 	}
-
-	// }
 
 	// check if listing is created or not
 	err = u.Repo.CreateMarketplaceListingBTC(&listing)
@@ -77,6 +68,7 @@ func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_L
 	return &listing, nil
 }
 
+// API list listing, support filter ...
 func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly bool, limit, offset int64) ([]structure.MarketplaceNFTDetail, error) {
 
 	result := []structure.MarketplaceNFTDetail{}
@@ -95,7 +87,29 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 	// 	}
 	// }
 
+	// get btc, btc rate:
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return nil, err
+	}
+
+	u.Logger.Info("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return nil, err
+	}
+	u.Logger.Info("btcPrice", btcPrice)
+
 	for _, listing := range nftList {
+
+		// get pyament listing info:
+		paymentListingInfo, err := u.GetListingPaymentInfoWithEthBtcPrice(listing.PayType, listing.Price, btcPrice, ethPrice)
+		if err != nil {
+			return nil, err
+		}
+
 		// if listing.IsSold {
 		// 	if !buyableOnly {
 		// 		nftInfo := structure.MarketplaceNFTDetail{
@@ -115,6 +129,7 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 		// }
 		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(listing.UUID)
 		if err != nil {
+
 			if !buyableOnly {
 				nftInfo := structure.MarketplaceNFTDetail{
 					InscriptionID: listing.InscriptionID,
@@ -131,16 +146,18 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 					InscriptionName:  listing.InscriptionName,
 					InscriptionIndex: listing.InscriptionIndex,
 					CollectionID:     listing.CollectionID,
+
+					PaymentListingInfo: paymentListingInfo,
 				}
-				inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
-				if err != nil {
-					u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-				}
-				if inscribeInfo != nil {
-					nftInfo.InscriptionNumber = inscribeInfo.Index
-					nftInfo.ContentType = inscribeInfo.ContentType
-					nftInfo.ContentLength = inscribeInfo.ContentLength
-				}
+				// inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
+				// if err != nil {
+				// 	u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+				// }
+				// if inscribeInfo != nil {
+				// 	nftInfo.InscriptionNumber = inscribeInfo.Index
+				// 	nftInfo.ContentType = inscribeInfo.ContentType
+				// 	nftInfo.ContentLength = inscribeInfo.ContentLength
+				// }
 				result = append(result, nftInfo)
 				continue
 			}
@@ -177,16 +194,18 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 			InscriptionName:  listing.InscriptionName,
 			InscriptionIndex: listing.InscriptionIndex,
 			CollectionID:     listing.CollectionID,
+
+			PaymentListingInfo: paymentListingInfo,
 		}
-		inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
-		if err != nil {
-			u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-		}
-		if inscribeInfo != nil {
-			nftInfo.InscriptionNumber = inscribeInfo.Index
-			nftInfo.ContentType = inscribeInfo.ContentType
-			nftInfo.ContentLength = inscribeInfo.ContentLength
-		}
+		// inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
+		// if err != nil {
+		// 	u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		// }
+		// if inscribeInfo != nil {
+		// 	nftInfo.InscriptionNumber = inscribeInfo.Index
+		// 	nftInfo.ContentType = inscribeInfo.ContentType
+		// 	nftInfo.ContentLength = inscribeInfo.ContentLength
+		// }
 		if buyableOnly && isAvailable {
 			result = append(result, nftInfo)
 		}
@@ -214,22 +233,23 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 	return result, nil
 }
 
-func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOrderInfo) (string, error) {
+func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOrderInfo) (*entity.MarketplaceBTCBuyOrder, error) {
 
 	order := entity.MarketplaceBTCBuyOrder{
 		InscriptionID: orderInfo.InscriptionID,
 		ItemID:        orderInfo.OrderID,
 		OrdAddress:    orderInfo.BuyOrdAddress,
 		ExpiredAt:     time.Now().Add(time.Minute * 30),
+		PayType:       orderInfo.PayType,
 	}
 
-	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
-	if err != nil {
-		u.Logger.Error("u.OrdService.Exec.create.receive", err.Error(), err)
-		return "", err
-	}
-	order.SegwitAddress = addressSegwit
-	order.SegwitKey = privKey
+	// privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
+	// if err != nil {
+	// 	u.Logger.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+	// 	return nil, err
+	// }
+	// order.SegwitAddress = addressSegwit
+	// order.SegwitKey = privKey
 
 	// order.HoldOrdAddress = holdOrdAddress
 	// sendMessage := func( offer entity.MarketplaceOffers) {
@@ -257,13 +277,176 @@ func (u Usecase) BTCMarketplaceBuyOrder(orderInfo structure.MarketplaceBTC_BuyOr
 
 	// }
 
+	listing, _ := u.Repo.FindBtcNFTListingByOrderIDValid(orderInfo.OrderID)
+
+	if listing == nil {
+		err := errors.New("the listing is invalid")
+		u.Logger.Error("u.FindBtcNFTListingByOrderIDValid.Check(listing)", err.Error(), err)
+		return nil, err
+	}
+
+	// verify paytype:
+	if orderInfo.PayType != utils.NETWORK_BTC && orderInfo.PayType != utils.NETWORK_ETH {
+		err := errors.New("only support payType is eth or btc")
+		u.Logger.Error("u.BTCMarketplaceListNFT.Check(payType)", err.Error(), err)
+		return nil, err
+	}
+
+	// cal min price:
+	priceStr := "0"
+	priceInt, err := strconv.Atoi(listing.Price)
+	if err != nil {
+		u.Logger.Error("u.BTCMarketplaceListNFT.FindProjectByTokenID", err.Error(), err)
+		return nil, err
+	}
+
+	var btcRate, ethRate float64
+	var privateKey, receiveAddress string
+
+	// check type:
+	if orderInfo.PayType == utils.NETWORK_BTC {
+		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
+		if err != nil {
+			u.Logger.Error("u.BTCMarketplaceListNFT.GenerateAddressSegwit", err.Error(), err)
+			return nil, err
+		}
+		priceStr = strconv.Itoa(priceInt)
+
+		_, btcRate, ethRate, err = u.convertBTCToETH("1")
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+
+	} else if orderInfo.PayType == utils.NETWORK_ETH {
+		ethClient := eth.NewClient(nil)
+
+		privateKey, _, receiveAddress, err = ethClient.GenerateAddress()
+		if err != nil {
+			u.Logger.Error("BTCMarketplaceListNFT.ethClient.GenerateAddress", err.Error(), err)
+			return nil, err
+		}
+		priceStr, btcRate, ethRate, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(priceInt)/1e8))
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+		fmt.Println("priceStr ETH: ", priceStr)
+	}
+
+	if len(receiveAddress) == 0 || len(privateKey) == 0 {
+		err = errors.New("can not create the wallet")
+		u.Logger.Error("u.BTCMarketplaceListNFT.GenerateAddress", err.Error(), err)
+		return nil, err
+	}
+
+	// set temp wallet info:
+	order.PayType = orderInfo.PayType
+
+	if len(os.Getenv("SECRET_KEY")) == 0 {
+		err = errors.New("please config SECRET_KEY")
+		u.Logger.Error("u.BTCMarketplaceListNFT.GenerateAddress", err.Error(), err)
+		return nil, err
+	}
+
+	privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
+	if err != nil {
+		u.Logger.Error("u.BTCMarketplaceListNFT.Encrypt", err.Error(), err)
+		return nil, err
+	}
+
+	order.PrivateKey = privateKeyEnCrypt
+	order.ReceiveAddress = receiveAddress
+
+	order.Price = priceStr
+	order.EthRate = ethRate
+	order.BtcRate = btcRate
+
 	// check if listing is created or not
 	err = u.Repo.CreateMarketplaceBuyOrder(&order)
 	if err != nil {
-		u.Logger.Error("BTCMarketplaceListingNFT.Repo.CreateMarketplaceListingBTC", "", err)
-		return "", err
+		u.Logger.Error("BTCMarketplaceListNFT.Repo.CreateMarketplaceListingBTC", "", err)
+		return nil, err
 	}
-	return addressSegwit, nil
+	return &order, nil
+}
+
+// api listing detail:
+func (u Usecase) BTCMarketplaceListingDetail(inscriptionID string) (*structure.MarketplaceNFTDetail, error) {
+
+	var nft *entity.MarketplaceBTCListing
+	var err error
+	isBuyable := true
+	isCompleted := false
+	// lastPrice := int64(0)
+
+	nft, err = u.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
+	if err != nil {
+		isBuyable = false
+		nft, err = u.Repo.FindBtcNFTListingLastSoldByNFTID(inscriptionID)
+
+		if err != nil {
+			u.Logger.Error("FindBtcNFTListingLastSoldByNFTID", err.Error(), err)
+			return nil, err
+		}
+		isCompleted = true
+	}
+
+	// if !nft.IsSold {
+	// 	buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
+	// 	if err != nil {
+	// 		h.Logger.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
+	// 	}
+	// 	currentTime := time.Now()
+	// 	for _, order := range buyOrders {
+	// 		expireTime := order.ExpiredAt
+	// 		// not expired yet still waiting for btc
+	// 		if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+	// 			isBuyable = false
+	// 			break
+	// 		}
+	// 		// could be expired but received btc
+	// 		if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+	// 			isBuyable = false
+	// 			break
+	// 		}
+	// 	}
+	// }
+
+	if nft == nil {
+		return nil, errors.New("nft not found")
+	}
+
+	// get pyament listing info:
+	paymentListingInfo, err := u.getListingPaymentInfo(nft.PayType, nft.Price)
+	if nft == nil {
+		return nil, errors.New("nft not found")
+	}
+
+	nftInfo := &structure.MarketplaceNFTDetail{
+		InscriptionID:      nft.InscriptionID,
+		Name:               nft.Name,
+		Description:        nft.Description,
+		Price:              nft.Price,
+		OrderID:            nft.UUID,
+		IsConfirmed:        nft.IsConfirm,
+		Buyable:            isBuyable,
+		IsCompleted:        isCompleted,
+		PaymentListingInfo: paymentListingInfo,
+		// LastPrice:     lastPrice,
+	}
+	// inscribeInfo, err := h.Usecase.GetInscribeInfo(nftInfo.InscriptionID)
+	// if err != nil {
+	// 	h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+	// }
+	// if inscribeInfo != nil {
+	// 	nftInfo.InscriptionNumber = inscribeInfo.Index
+	// 	nftInfo.ContentType = inscribeInfo.ContentType
+	// 	nftInfo.ContentLength = inscribeInfo.ContentLength
+	// }
+	//h.Logger.Info("resp.Proposal", resp)
+
+	return nftInfo, nil
 }
 
 // get filter info:
@@ -383,4 +566,85 @@ func (u Usecase) GetCollectionMarketplaceStats(collectionID string) (*structure.
 	}
 	result.FloorPrice = floorPrice
 	return &result, nil
+}
+
+func (u Usecase) getListingPaymentInfo(payType map[string]string, btcPrice string) (map[string]structure.PaymentInfoForBuyOrder, error) {
+
+	paymentListingInfo := map[string]structure.PaymentInfoForBuyOrder{}
+
+	addressBtc, okBtc := payType["btc"]
+
+	if okBtc {
+		paymentListingInfo["btc"] = structure.PaymentInfoForBuyOrder{
+			PaymentAddress: addressBtc,
+			Price:          btcPrice,
+		}
+	}
+
+	addressEth, okEth := payType["eth"]
+	if okEth {
+		priceStr := "0"
+		priceInt, err := strconv.Atoi(btcPrice)
+		if err != nil {
+			u.Logger.Error("u.BTCMarketplaceListNFT.GetBTCListingHaveOngoingOrder", err.Error(), err)
+			return nil, err
+		}
+		priceStr, _, _, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(priceInt)/1e8))
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+		fmt.Println("priceStr ETH: ", priceStr)
+		paymentListingInfo["eth"] = structure.PaymentInfoForBuyOrder{
+			PaymentAddress: addressEth,
+			Price:          priceStr,
+		}
+	}
+	// end get pyament listing info
+
+	return paymentListingInfo, nil
+
+}
+
+func (u Usecase) GetListingPaymentInfoWithEthBtcPrice(payType map[string]string, btcPrice string, btcUsdPrice, ethUsdPrice float64) (map[string]structure.PaymentInfoForBuyOrder, error) {
+
+	paymentListingInfo := map[string]structure.PaymentInfoForBuyOrder{}
+
+	addressBtc, okBtc := payType["btc"]
+
+	// okBtc = true
+
+	if okBtc {
+		paymentListingInfo["btc"] = structure.PaymentInfoForBuyOrder{
+			PaymentAddress: addressBtc,
+			Price:          btcPrice,
+		}
+	}
+
+	addressEth, okEth := payType["eth"]
+
+	// okEth = true
+
+	if okEth {
+		priceStr := "0"
+		priceInt, err := strconv.Atoi(btcPrice)
+		if err != nil {
+			u.Logger.Error("u.BTCMarketplaceListNFT.GetBTCListingHaveOngoingOrder", err.Error(), err)
+			return nil, err
+		}
+		priceStr, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(priceInt)/1e8), btcUsdPrice, ethUsdPrice)
+		if err != nil {
+			u.Logger.Error("convertBTCToETH", err.Error(), err)
+			return nil, err
+		}
+		fmt.Println("priceStr ETH: ", priceStr)
+		paymentListingInfo["eth"] = structure.PaymentInfoForBuyOrder{
+			PaymentAddress: addressEth,
+			Price:          priceStr,
+		}
+	}
+	// end get pyament listing info
+
+	return paymentListingInfo, nil
+
 }
