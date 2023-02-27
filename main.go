@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
@@ -98,6 +99,8 @@ func main() {
 		}
 	}()
 
+	
+
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
 	startServer()
@@ -105,6 +108,12 @@ func main() {
 
 func startServer() {
 	log.Println("starting server ...")
+	tracer.Start(
+		tracer.WithEnv(os.Getenv("ENV")),
+		tracer.WithService(os.Getenv("JAEGER_SERVICE_NAME")),
+		tracer.WithLogger(logger.AtLog()),
+	)
+
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	r := mux.NewRouter()
 
@@ -274,6 +283,7 @@ func startServer() {
 	<-ctx.Done() //if your application should wait for other services
 	// to finalize based on context cancellation.
 	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	tracer.Stop()
 	os.Exit(0)
 
 }

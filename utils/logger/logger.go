@@ -9,6 +9,7 @@ type Ilogger interface {
 	ErrorAny(message string, fields ...zap.Field)
 	Warning(fields ...interface{})
 	Infof(format string, fields ...interface{}) 
+	AtLog()  *autoLogger
 }
 
 type logger struct {
@@ -20,6 +21,10 @@ func NewLogger() *logger {
 	log := InitLoggerDefault(true)
 	l.Module = log
 	return l
+}
+
+func (l *logger) AtLog() *autoLogger {
+	return l.Module
 }
 
 func (l *logger) Info(fields ...interface{}) {

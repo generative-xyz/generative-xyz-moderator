@@ -258,6 +258,36 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 	return data, nil
 }
 
+func (r Repository) Aggregate(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
+	paginatedData := New(r.DB.Collection(dbName)).
+		Context(context.TODO()).
+		Limit(int64(limit)).
+		Page(int64(page))
+
+	if len(sorts) > 0 {
+		for _, sort := range sorts {
+			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
+				//sortValue := bson.D{{"created_at", -1}}
+				paginatedData.Sort(sort.SortBy, sort.Sort)
+			}
+		}
+	} else {
+		paginatedData.Sort("created_at", entity.SORT_DESC)
+		paginatedData.Sort(utils.KEY_UUID, entity.SORT_ASC)
+	}
+
+	data, err := paginatedData.
+		Select(selectFields).
+		Decode(returnData).
+		Aggregate(filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (r Repository) CreateCache(dbName string, objID string, obj interface{}) error {
 	bytes, err := bson.Marshal(obj)
 	if err != nil {
@@ -341,6 +371,21 @@ func (r Repository) CreateCollectionIndexes() error {
 	}
 
 	_, err = r.CreateWalletTrackTxIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateReferalIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateVolumnIndexModel()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.CreateCategoryIndexModel()
 	if err != nil {
 		return err
 	}

@@ -54,6 +54,7 @@ func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
 }
 
 func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Pagination, error) {
+	u.Logger.LogAny("GetReferrals", zap.Any("req", req))
 	pe := &entity.FilterReferrals{}
 	err := copier.Copy(pe, req)
 	if err != nil {
@@ -67,7 +68,33 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 		return nil, err
 	}
 
-	u.Logger.Info("referrals", referrals.Total)
+	data := referrals.Result.([]entity.Referral)
+	resp := []structure.ReferalResp{}
+	for _, item := range data {
+		tmp := &structure.ReferalResp{}
+		err = copier.Copy(tmp, item)
+		if err != nil {
+			u.Logger.Error("copier.Copy", err.Error(), err)
+			return nil, err
+		}
+
+		paytype := ""
+		if req.PayType != nil {
+			paytype =  *req.PayType
+		}
+	
+
+		volume, err := u.GetVolumeOfUser(item.Referree.WalletAddress, req.PayType)
+		if err != nil {
+			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: "0", AmountType: paytype }
+		}	else{
+			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: fmt.Sprintf("%d", int(volume.Amount)), AmountType: paytype }
+		}
+		resp = append(resp, *tmp)
+	}
+	
+	referrals.Result = resp
+	u.Logger.LogAny("GetReferrals", zap.Any("req", req), zap.Any("referrals",referrals), zap.Any("referrals", referrals.Total))
 	return referrals, nil
 }
 
