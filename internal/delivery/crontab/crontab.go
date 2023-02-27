@@ -147,7 +147,7 @@ func (h ScronHandler) StartServer() {
 		h.Usecase.AggregateVolumn()
 	})
 
-	c.AddFunc("*/1 * * * *", func() {
+	c.AddFunc("*/10 * * * *", func() {
 		err := h.Usecase.SyncTraitStats()
 		if err != nil {
 			h.Logger.Error("error when sync trait stats", err)
