@@ -28,7 +28,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), utils.HttpRequestTimeoutInSec)
