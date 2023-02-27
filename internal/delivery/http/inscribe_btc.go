@@ -23,8 +23,8 @@ import (
 )
 
 // @Summary BTC Generate receive wallet address
-// @Description Generate receive wallet address
-// @Tags BTC
+// @Description BTC Generate receive wallet address
+// @Tags Inscribe
 // @Accept json
 // @Produce json
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
@@ -115,7 +115,7 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 
 // @Summary BTC List Inscribe
 // @Description BTC List Inscribe
-// @Tags BTC
+// @Tags Inscribe
 // @Accept json
 // @Produce json
 // @Success 200 {object} entity.Pagination{}
@@ -185,7 +185,6 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 
 }
 
-// UserCredits godoc
 // @Summary get inscribe info
 // @Description get inscribe info
 // @Tags Inscribe
