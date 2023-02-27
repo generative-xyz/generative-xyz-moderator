@@ -20,6 +20,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"go.uber.org/zap"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -171,7 +172,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			//Html
 			htmlUrl, err := u.parseAnimationURL(*pe)
 			if err == nil {
-				animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+				animationHtml := fmt.Sprintf("%s", *htmlUrl)
 				pe.AnimationHtml = &animationHtml
 			}
 
@@ -210,6 +211,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 
 	if isPubsub {
+		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
 			u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
@@ -218,7 +220,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
-	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
 }
@@ -252,7 +253,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields,"", project.Description, false)
+	fields = addFields(fields, "", project.Description, false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 
@@ -669,7 +670,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 				return
 			}
 
-			animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+			animationHtml := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
 			_, err = u.Repo.UpdateProject(c.UUID, c)
@@ -679,7 +680,6 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 
 	}()
-
 
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
