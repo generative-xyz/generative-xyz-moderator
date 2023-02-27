@@ -487,3 +487,22 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 
 	return err
 }
+
+func (r Repository) UpdateProjectTraitStats(projectID string, traitStat []entity.TraitStat) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"traitsStat": traitStat,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
