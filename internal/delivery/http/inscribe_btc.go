@@ -10,13 +10,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
-	"gitlab.com/autonomous-ecm/backend/go-autonomous.git/pkg/logger"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/logger"
 )
 
 // @Summary BTC Generate receive wallet address
