@@ -1,22 +1,27 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/encrypt"
+	"rederinghub.io/utils/eth"
 )
 
 func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, error) {
@@ -73,8 +78,9 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 	return txOut, false, nil
 }
 
-// check receive of the nft:
-func (u Usecase) BtcChecktListNft() error {
+//JOBS:
+// job1:  check receive the nft from seller:
+func (u Usecase) JobMKP_BtcChecktListNft() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -152,6 +158,7 @@ func (u Usecase) BtcChecktListNft() error {
 							fmt.Println("found nft for listing: ", "tx: ", hash)
 							found = true
 							item.IsConfirm = true
+							item.Status = entity.StatusListing_ReceivedNft
 							item.TxNFT = hash
 							updated, err := u.Repo.UpdateBTCNFTConfirmListings(&item)
 							fmt.Println("UpdateBTCNFTConfirmListings updated: ", updated)
@@ -177,10 +184,8 @@ func (u Usecase) BtcChecktListNft() error {
 	return nil
 }
 
-// check receive BTC for buying the nft:
-func (u Usecase) BtcCheckReceivedBuyingNft() error {
-
-	fmt.Printf("go BtcCheckReceivedBuyingNft....")
+// job2: check receive fund (eth/btc) from buyer:
+func (u Usecase) JobMKP_WaitForBalanceFromBuyer() error {
 
 	_, bs, err := u.buildBTCClient()
 
@@ -188,6 +193,13 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 		return err
 	}
+
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMKP_WaitForBalanceFromBuyer", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
 
 	listPending, _ := u.Repo.RetrieveBTCNFTPendingBuyOrders()
 	if len(listPending) == 0 {
@@ -199,44 +211,66 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 
 		// check balance:
 
-		balance, confirm, err := bs.GetBalance(item.SegwitAddress)
+		// check balance:
+		balance := big.NewInt(0)
+		confirm := -1
 
-		fmt.Println("GetBalance response: ", balance, confirm, err)
+		if len(item.PayType) == 0 {
+			item.PayType = utils.NETWORK_BTC
+		}
+
+		if item.PayType == utils.NETWORK_BTC {
+			balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
+
+			fmt.Println("GetBalance response: ", balance, confirm, err)
+
+		} else if item.PayType == utils.NETWORK_ETH {
+
+			// check eth balance:
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			balance, err = ethClient.GetBalance(ctx, item.ReceiveAddress)
+			fmt.Println("GetBalance eth response: ", balance, err)
+
+			confirm = 1
+		}
 
 		if err != nil {
-			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "GetBalance - with err", err.Error())
+			fmt.Printf("Could not GetBalance Bitcoin/Ether - with err: %v", err)
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "GetBalance - with err", err.Error())
 			continue
 		}
 		if balance == nil {
 			err = errors.New("balance is nil")
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "GetBalance", err.Error())
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "GetBalance", err.Error())
 			continue
 		}
 
 		if balance.Uint64() == 0 {
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "GetBalance", "0")
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "GetBalance", "0")
 			continue
 		}
 
 		// get amount nft:
 		nftListing, err := u.Repo.FindBtcNFTListingByOrderID(item.ItemID)
 		if err != nil {
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByOrderID err", err.Error())
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "FindBtcNFTListingByOrderID err", err.Error())
 			continue
 		}
 		if nftListing == nil {
 
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "FindBtcNFTListingByOrderID nil", "updated need to refund now")
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "FindBtcNFTListingByOrderID nil", "updated need to refund now")
 
 			// update StatusBuy_NeedToRefund now for listing:
 			item.Status = entity.StatusBuy_NeedToRefund
-			u.Logger.Info(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
-			u.Notify("WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+			u.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), item)
+			u.Notify("WaitingForBTCBalancingOfBuyOrder", item.ReceiveAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.ReceiveAddress, item.ReceivedBalance, item.InscriptionID))
 
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "UpdateBTCNFTBuyOrder err", err.Error())
+				go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "UpdateBTCNFTBuyOrder err", err.Error())
 			}
 			continue
 		}
@@ -244,13 +278,13 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 		amount, ok := big.NewInt(0).SetString(nftListing.Price, 10)
 		if !ok {
 			err := errors.New("cannot parse amount")
-			go u.trackInscribeHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "SetString(amount) err", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "SetString(amount) err", err.Error())
 			continue
 		}
 
 		if amount.Uint64() == 0 {
 			err := errors.New("balance is zero")
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
 			continue
 		}
 
@@ -258,7 +292,7 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
 			fmt.Printf("buy order id: %s err: %v", item.InscriptionID, err)
 
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Receive balance err", err.Error())
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "Receive balance err", err.Error())
 
 			item.Status = entity.StatusBuy_NotEnoughBalance
 			u.Repo.UpdateBTCNFTBuyOrder(&item)
@@ -278,20 +312,20 @@ func (u Usecase) BtcCheckReceivedBuyingNft() error {
 		_, err = u.Repo.UpdateBTCNFTConfirmListings(nftListing)
 		if err != nil {
 			fmt.Printf("Could not UpdateBTCNFTConfirmListings id %s - with err: %v", item.ID, err)
-			go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "UpdateBTCNFTConfirmListings IsSold = true err", err.Error())
+			go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "UpdateBTCNFTConfirmListings IsSold = true err", err.Error())
 		}
 
-		go u.trackHistory(item.ID.String(), "BtcCheckReceivedBuyingNft", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
-		u.Logger.Info(fmt.Sprintf("BtcCheckBuyingNft.CheckReceiveNFT.%s", item.SegwitAddress), item)
-		u.Notify("WaitingForBTCBalancingOfBuyOrder", item.SegwitAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.SegwitAddress, item.ReceivedBalance, item.InscriptionID))
+		go u.trackHistory(item.ID.String(), "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
+		u.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), item)
+		u.Notify("JobMKP_WaitForBalanceFromBuyer", item.ReceiveAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.ReceiveAddress, item.ReceivedBalance, item.InscriptionID))
 
 	}
 
 	return nil
 }
 
-// send btc for buy order records:
-func (u Usecase) BtcSendBTCForBuyOrder() error {
+// send btc/eth for buy order records:
+func (u Usecase) JobMKP_Payment() error {
 
 	_, bs, err := u.buildBTCClient()
 
@@ -299,6 +333,13 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 		return err
 	}
+
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMKP_WaitForBalanceFromBuyer", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
 
 	// get list buy order status = sent nft:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SentNFT)
@@ -316,107 +357,211 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 	for _, item := range listTosendBtc {
 		if item.Status == entity.StatusBuy_SentNFT {
 
-			// get amount nft:
 			nftListing, err := u.Repo.FindBtcNFTListingByOrderIDValid(item.ItemID)
 			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid err", err.Error())
+				go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid err", err.Error())
 				continue
 			}
 			if nftListing == nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid nil", "[]")
+				go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "FindBtcNFTListingByOrderIDValid nil", "[]")
 				continue
 			}
 
-			// Todo cal amount to send user and master
-			// send user first:
-			totalAmount, ok := big.NewInt(0).SetString(nftListing.Price, 10)
-			if !ok {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
-				continue
+			if len(item.PayType) == 0 {
+				item.PayType = utils.NETWORK_BTC
 			}
-			// charge x% total amount:
-			serviceFee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
 
-			royaltyFee := int(0)
-			artistAddress := ""
-			tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
-			if err == nil {
-				projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
-					ContractAddress: tokenUri.ContractAddress,
-					ProjectID:       tokenUri.ProjectID,
-				})
+			// check paid type:
+			if item.PayType == utils.NETWORK_BTC {
+
+				// get amount nft:
+
+				// Todo cal amount to send user and master
+				// send user first:
+				totalAmount, ok := big.NewInt(0).SetString(nftListing.Price, 10)
+				if !ok {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
+					continue
+				}
+				// charge x% total amount:
+				serviceFee := int(float64(totalAmount.Int64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+
+				royaltyFee := int(0)
+				artistAddress := ""
+				tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
 				if err == nil {
-					if projectDetail.Royalty > 0 {
-						creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
-						if err == nil {
-							if creator.WalletAddressBTC != "" {
-								royaltyFeePercent := float64(projectDetail.Royalty) / 10000
-								royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
-								artistAddress = creator.WalletAddressBTC
+					projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
+						ContractAddress: tokenUri.ContractAddress,
+						ProjectID:       tokenUri.ProjectID,
+					})
+					if err == nil {
+						if projectDetail.Royalty > 0 {
+							creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
+							if err == nil {
+								if creator.WalletAddressBTC != "" {
+									royaltyFeePercent := float64(projectDetail.Royalty) / 10000
+									royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
+									artistAddress = creator.WalletAddressBTC
+								}
 							}
 						}
 					}
 				}
-			}
 
-			amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
-			fmt.Println("send btc from", item.SegwitAddress, "to: ", nftListing.SellerAddress)
+				amountWithChargee := int(totalAmount.Uint64()) - serviceFee - royaltyFee
+				fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
 
-			destinations := make(map[string]int)
+				destinations := make(map[string]int)
 
-			destinations[nftListing.SellerAddress] = amountWithChargee
-			if artistAddress != "" && royaltyFee > 0 {
-				if artistAddress == nftListing.SellerAddress {
-					amountWithChargee = amountWithChargee + royaltyFee
-				} else {
-					destinations[artistAddress] = royaltyFee
+				destinations[nftListing.SellerAddress] = amountWithChargee
+				if artistAddress != "" && royaltyFee > 0 {
+					if artistAddress == nftListing.SellerAddress {
+						amountWithChargee = amountWithChargee + royaltyFee
+					} else {
+						destinations[artistAddress] = royaltyFee
+					}
 				}
-			}
 
-			if serviceFee > 0 {
-				destinations[serviceFeeAddress] = serviceFee
-			}
+				if serviceFee > 0 {
+					destinations[serviceFeeAddress] = serviceFee
+				}
 
-			txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.SegwitAddress, destinations, btc.PreferenceMedium)
-			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error())
-				continue
-			}
-			amountWithChargee = amountWithChargee - int(txFee.Int64())
-			destinations[nftListing.SellerAddress] = amountWithChargee
+				txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(item.SegwitKey, item.ReceiveAddress, destinations, btc.PreferenceMedium)
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error())
+					continue
+				}
+				amountWithChargee = amountWithChargee - int(txFee.Int64())
+				destinations[nftListing.SellerAddress] = amountWithChargee
 
-			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddressMultiAddress(
-				item.SegwitKey,
-				item.SegwitAddress,
-				destinations,
-				btc.PreferenceMedium,
-			)
-			if err != nil {
-				go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error())
-				continue
-			}
-			// // transfer now:
-			// txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
-			// 	item.SegwitKey,
-			// 	item.SegwitAddress,
-			// 	nftListing.SellerAddress,
-			// 	amountWithChargee,
-			// 	btc.PreferenceMedium,
-			// )
-			// if err != nil {
-			// 	go u.trackHistory(item.ID.String(), "BtcSendBTCForBuyOrder", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
-			// 	continue
-			// }
-			item.FeeChargeBTCBuyer = serviceFee
-			item.RoyaltyChargeBTCBuyer = royaltyFee
-			item.AmountBTCSentSeller = amountWithChargee
-			item.TxSendBTC = txID
-			item.Status = entity.StatusBuy_SendingBTC
-			item.ErrCount = 0 // reset error count!
-			// TODO: update item
-			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
-			if err != nil {
-				fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), err.Error(), err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
+					continue
+				}
+
+				txID, err := bs.SendTransactionWithPreferenceFromSegwitAddressMultiAddress(
+					privateKeyDeCrypt,
+					item.ReceiveAddress,
+					destinations,
+					btc.PreferenceMedium,
+				)
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SendTransactionWithPreferenceFromReceiveAddressMultiAddress err", err.Error())
+					continue
+				}
+				// // transfer now:
+				// txID, err := bs.SendTransactionWithPreferenceFromReceiveAddress(
+				// 	item.SegwitKey,
+				// 	item.ReceiveAddress,
+				// 	nftListing.SellerAddress,
+				// 	amountWithChargee,
+				// 	btc.PreferenceMedium,
+				// )
+				// if err != nil {
+				// 	go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SendTransactionWithPreferenceFromReceiveAddress err", err.Error())
+				// 	continue
+				// }
+				item.FeeChargeBuyer = uint64(serviceFee)
+				item.RoyaltyChargeBuyer = uint64(royaltyFee)
+				item.AmountSentSeller = uint64(amountWithChargee)
+				item.TxSendPayment = txID
+				item.Status = entity.StatusBuy_SendingPayment
+				item.ErrCount = 0 // reset error count!
+				// TODO: update item
+				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+				if err != nil {
+					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				}
+			} else if item.PayType == utils.NETWORK_ETH {
+				_ = ethClient
+
+				totalAmountByEth, ok := big.NewInt(0).SetString(item.Price, 10)
+				if !ok {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SetString(nftListing.Price)", err.Error())
+					continue
+				}
+				// charge x% total amount:
+				serviceFeeByEth := uint64(float64(totalAmountByEth.Uint64()) * float64(utils.BUY_NFT_CHARGE) / 100)
+
+				royaltyFee := uint64(0)
+				artistAddress := ""
+				tokenUri, err := u.GetTokenByTokenID(item.InscriptionID, 0)
+				if err == nil {
+					projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
+						ContractAddress: tokenUri.ContractAddress,
+						ProjectID:       tokenUri.ProjectID,
+					})
+					if err == nil {
+						if projectDetail.Royalty > 0 {
+							creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
+							if err == nil {
+								if creator.WalletAddressPayment != "" {
+									royaltyFeePercent := float64(projectDetail.Royalty) / 10000
+									royaltyFee = uint64(float64(totalAmountByEth.Uint64()) * royaltyFeePercent)
+									artistAddress = creator.WalletAddressPayment
+								}
+							}
+						}
+					}
+				}
+
+				amountWithChargee := uint64(totalAmountByEth.Uint64()) - serviceFeeByEth - royaltyFee
+				fmt.Println("send btc from", item.ReceiveAddress, "to: ", nftListing.SellerAddress)
+
+				destinations := make(map[string]*big.Int)
+
+				destinations[nftListing.SellerAddress] = big.NewInt(int64(amountWithChargee))
+				if artistAddress != "" && royaltyFee > 0 {
+					destinations[artistAddress] = big.NewInt(int64(royaltyFee))
+				}
+
+				if serviceFeeByEth > 0 {
+					destinations[serviceFeeAddress] = big.NewInt(int64(serviceFeeByEth))
+				}
+
+				//TODO: send to 3 output
+				gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "SuggestGasPrice err", err.Error())
+					continue
+				}
+
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+
+				amountWithChargee = amountWithChargee - txFee.Uint64()
+				destinations[nftListing.SellerAddress] = big.NewInt(int64(amountWithChargee))
+
+				// start send now:
+				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), err.Error(), err)
+					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
+					continue
+				}
+
+				txID, err := ethClient.SendMulti(
+					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
+					privateKeyDeCrypt,
+					destinations,
+				)
+				if err != nil {
+					go u.trackHistory(item.ID.String(), "JobMKP_Payment", item.TableName(), item.Status, "ethClientSendMulti", err.Error())
+					continue
+				}
+				item.FeeChargeBuyer = serviceFeeByEth
+				item.RoyaltyChargeBuyer = royaltyFee
+				item.AmountSentSeller = amountWithChargee
+				item.TxSendPayment = txID
+				item.Status = entity.StatusBuy_SendingPayment
+				item.ErrCount = 0 // reset error count!
+				// TODO: update item
+				_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+				if err != nil {
+					fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+				}
+
 			}
 
 		}
@@ -424,7 +569,7 @@ func (u Usecase) BtcSendBTCForBuyOrder() error {
 	return nil
 }
 
-func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
+func (u Usecase) JpbMKP_CheckTxSendPayment() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -433,52 +578,84 @@ func (u Usecase) BtcCheckSendBTCForBuyOrder() error {
 		return err
 	}
 
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMKP_WaitForBalanceFromBuyer", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
+
 	// get list buy order status = sent nft:
-	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingBTC)
+	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingPayment)
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
 
 	for _, item := range listTosendBtc {
-		if item.Status == entity.StatusBuy_SendingBTC {
-			txHash, err := chainhash.NewHashFromStr(item.TxSendBTC)
-			if err != nil {
-				fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
-				continue
-			}
+		if item.Status == entity.StatusBuy_SendingPayment {
 
-			txResponse, err := btcClient.GetTransaction(txHash)
+			if item.PayType == utils.NETWORK_BTC {
 
-			if err == nil {
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+item.TxSendBTC, txResponse.Confirmations)
-				if txResponse.Confirmations >= 1 {
-					// send btc ok now:
-					item.Status = entity.StatusBuy_SentBTC
-					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
-					if err != nil {
-						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-					}
-				}
-			} else {
-				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendBTC, err.Error())
-
-				go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, "Begin check tx via api.")
-
-				// check with api:
-				txInfo, err := bs.CheckTx(item.TxSendBTC)
+				txHash, err := chainhash.NewHashFromStr(item.TxSendPayment)
 				if err != nil {
-					fmt.Printf("Could not bs - with err: %v", err)
-					go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendBTC, err.Error())
+					fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+					continue
 				}
-				if txInfo.Confirmations >= 1 {
-					go u.trackHistory(item.ID.String(), "BtcCheckSendBTCForBuyOrder", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendBTC, txInfo.Confirmations)
-					// send nft ok now:
-					item.Status = entity.StatusBuy_SentBTC
-					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
-					if err != nil {
-						fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+
+				txResponse, err := btcClient.GetTransaction(txHash)
+
+				if err == nil {
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+item.TxSendPayment, txResponse.Confirmations)
+					if txResponse.Confirmations >= 1 {
+						// send btc ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
 					}
+				} else {
+					fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendPayment, err.Error())
+
+					go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendPayment, "Begin check tx via api.")
+
+					// check with api:
+					txInfo, err := bs.CheckTx(item.TxSendPayment)
+					if err != nil {
+						fmt.Printf("Could not bs - with err: %v", err)
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendPayment, err.Error())
+					}
+					if txInfo.Confirmations >= 1 {
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendPayment, txInfo.Confirmations)
+						// send nft ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
+					}
+				}
+			} else if item.PayType == utils.NETWORK_ETH {
+				context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				status, err := ethClient.GetTransaction(context, item.TxSendPayment)
+				if err == nil {
+					if status > 0 {
+						go u.trackHistory(item.ID.String(), "JpbMKP_CheckTxSendPaymen", item.TableName(), item.Status, "ethClient.GetTransaction: "+item.TxSendPayment, status)
+						// send nft ok now:
+						item.Status = entity.StatusBuy_SentPayment
+						_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
+						if err != nil {
+							fmt.Printf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
+						}
+
+					} else {
+						continue
+					}
+				} else {
+					// if error maybe tx is pending or rejected
+					// TODO check timeout to detect tx is rejected or not.
 				}
 			}
 
