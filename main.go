@@ -99,8 +99,6 @@ func main() {
 		}
 	}()
 
-	
-
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
 	startServer()
@@ -108,12 +106,6 @@ func main() {
 
 func startServer() {
 	log.Println("starting server ...")
-	tracer.Start(
-		tracer.WithEnv(os.Getenv("ENV")),
-		tracer.WithService(os.Getenv("JAEGER_SERVICE_NAME")),
-		tracer.WithLogger(logger.AtLog()),
-	)
-
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	r := mux.NewRouter()
 
