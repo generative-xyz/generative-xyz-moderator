@@ -91,8 +91,8 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqBody.Address == "" || reqBody.Txhash == "" || reqBody.Receiver == "" {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address nor txhash nor receiver cannot be empty"))
+	if reqBody.Address == "" || reqBody.Txhash == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address nor txhash cannot be empty"))
 		return
 	}
 
