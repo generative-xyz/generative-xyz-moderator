@@ -91,12 +91,12 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqBody.Address == "" || reqBody.Txhash == "" {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address nor txhash cannot be empty"))
+	if reqBody.Address == "" || reqBody.Txhash == "" || reqBody.Receiver == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address nor txhash nor receiver cannot be empty"))
 		return
 	}
 
-	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID, InscriptionNumber: reqBody.InscriptionNumber})
+	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID, InscriptionNumber: reqBody.InscriptionNumber, Receiver: reqBody.Receiver})
 	if err != nil {
 		h.Logger.Error("httpDelivery.trackTx.TrackWalletTx", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
