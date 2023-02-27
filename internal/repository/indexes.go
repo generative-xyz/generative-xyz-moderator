@@ -138,15 +138,15 @@ func (r Repository) CreateVolumnIndexModel() ([]string, error) {
 	return r.CreateIndexes(collection, models)
 }
 
-func (r Repository) CreateCategoryIndexModel() ([]string, error) {
-	collection := entity.Categories{}.TableName()
-	models := []mongo.IndexModel{
-		{Keys: bson.M{"priority": -1}, Options: options.Index().SetName("cat_priority_desc")},
+// func (r Repository) CreateCategoryIndexModel() ([]string, error) {
+// 	collection := entity.Categories{}.TableName()
+// 	models := []mongo.IndexModel{
+// 		{Keys: bson.M{"priority": -1}, Options: options.Index().SetName("cat_priority_desc")},
 		
-	}
+// 	}
 
-	return r.CreateIndexes(collection, models)
-}
+// 	return r.CreateIndexes(collection, models)
+// }
 
 func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexModel) ([]string, error) {
 	col := r.DB.Collection(collectionName)
