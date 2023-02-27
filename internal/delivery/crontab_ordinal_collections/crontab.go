@@ -64,7 +64,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		} else {
 			return err
 		}
-	} 
+	}
 
 	insertedInscriptions, err := h.Usecase.Repo.FindCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
@@ -74,7 +74,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	for _, inscription := range insertedInscriptions {
 		insertedIds[inscription.ID] = true
 	}
-	
+
 	processed := 0
 	for _, inscription := range inscriptions {
 		if insertedIds[inscription.ID] {
@@ -85,7 +85,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 		inscription.Source = source
 		h.Usecase.Repo.InsertCollectionInscription(&inscription)
 
-		if processed % 10 == 0 {
+		if processed%10 == 0 {
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -137,7 +137,7 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 		}
 	})
 	c.Start()
-
+	
 	go func() {
 		for {
 			err := h.Usecase.CreateProjectsFromMetas()

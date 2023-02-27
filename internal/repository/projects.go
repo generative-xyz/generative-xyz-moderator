@@ -327,7 +327,7 @@ func StringsToObjects(ids []string) (result []primitive.ObjectID, err error) {
 func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
 
 	//f["isHidden"] = false
 	//
@@ -497,6 +497,25 @@ func (r Repository) SetProjectInscriptionIcon(projectID string, inscriptionIcon 
 	update := bson.M{
 		"$set": bson.M{
 			"inscription_icon": inscriptionIcon,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (r Repository) UpdateProjectTraitStats(projectID string, traitStat []entity.TraitStat) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"traitsStat": traitStat,
 		},
 	}
 

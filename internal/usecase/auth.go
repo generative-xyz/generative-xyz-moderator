@@ -282,6 +282,8 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	isUpdateWalletAddress := false
 	oldBtcAdress := ""
+	isUpdateWalletAddressPayment := false
+	oldAdressPayment := ""
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
 		u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
@@ -311,6 +313,12 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		isUpdateWalletAddress = true
 		oldBtcAdress = user.WalletAddressBTC
 		user.WalletAddressBTC = *data.WalletAddressBTC
+	}
+
+	if data.WalletAddressPayment != nil && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
+		isUpdateWalletAddressPayment = true
+		oldAdressPayment = user.WalletAddressPayment
+		user.WalletAddressPayment = *data.WalletAddressPayment
 	}
 
 	if data.ProfileSocial.Discord != nil {
@@ -378,7 +386,11 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+	}
+
+	if isUpdateWalletAddressPayment {
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
 	}
 
 	return user, nil

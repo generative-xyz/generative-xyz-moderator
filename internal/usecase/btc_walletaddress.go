@@ -671,25 +671,37 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 	return nil, nil
 }
 
-func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkFee int) {
+func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
 	u.Logger.Info(
 		"NotifyNFTMinted",
-		zap.String("userAddr", userAddr),
+		zap.String("btcUserAddr", btcUserAddr),
 		zap.String("inscriptionID", inscriptionID),
 		zap.Int("networkFee", networkFee),
 	)
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err))
+		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
 		return
 	}
 
-	user, err := u.Repo.FindUserByWalletAddress(userAddr)
+	var minterDisplayName string
+	minterAddress := btcUserAddr
+	{
+		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
+		if err == nil {
+			minterDisplayName = minter.DisplayName
+			minterAddress = minter.WalletAddress
+		} else {
+			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
+		}
+	}
+
+	owner, err := u.Repo.FindUserByWalletAddress(tokenUri.OwnerAddr)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress failed", zap.Any("err", err))
+		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress for owner failed", zap.Any("err", err.Error()))
 		return
 	}
 
@@ -698,31 +710,56 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
 		return
 	}
+	var category, description string
+	if len(project.Categories) > 0 {
+		// we assume that there are only one category
+		categoryEntity, err := u.GetCategory(project.Categories[0])
+		if err != nil {
+			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			return
+		}
+		category = categoryEntity.Name
+		description = fmt.Sprintf("**%s**\n", category)
+	}
+
+	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	collectionName := project.Name
+	itemCount := project.MaxSupply
+	mintedCount := project.MintingInfo.Index
 
 	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string) []discordclient.Field {
+	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
 		if value == "" {
 			return fields
 		}
 		return append(fields, discordclient.Field{
-			Name:  name,
-			Value: value,
+			Name:   name,
+			Value:  value,
+			Inline: inline,
 		})
 	}
+	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
+		u.resolveShortName(minterDisplayName, btcUserAddr),
+		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
+	), true)
 
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice))
-	fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
+	fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
+	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
 
 	discordMsg := discordclient.Message{
-		Username: "Satoshi 27",
+		Username:  "Satoshi 27",
+		AvatarUrl: "",
+		Content:   "**NEW MINT**",
 		Embeds: []discordclient.Embed{{
-			Title: fmt.Sprintf("just minted a %s.", project.Name),
-			Url:   fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID), // todo
-			Author: discordclient.Author{
-				Name:    u.resolveShortName(user.DisplayName, user.WalletAddress),
-				Url:     fmt.Sprintf("%s/profile/%s", domain, user.WalletAddress),
-				IconUrl: user.Avatar,
-			},
+			Title:       fmt.Sprintf("%s\n***%s# %d***", ownerName, collectionName, itemCount),
+			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Description: description,
+			//Author: discordclient.Author{
+			//	Name:    u.resolveShortName(minter.DisplayName, minter.WalletAddress),
+			//	Url:     fmt.Sprintf("%s/profile/%s", domain, minter.WalletAddress),
+			//	IconUrl: minter.Avatar,
+			//},
 			Fields: fields,
 			Image: discordclient.Image{
 				Url: tokenUri.Thumbnail,

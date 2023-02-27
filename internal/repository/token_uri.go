@@ -17,7 +17,7 @@ import (
 func (r Repository) FindTokenUrisWithoutCache(f bson.M) ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 
 func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	f := bson.M{}
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
 
 	if filter.CreatorAddr != nil {
 		if *filter.CreatorAddr != "" {
@@ -214,7 +214,7 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
 	f := bson.M{}
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
@@ -231,7 +231,27 @@ func (r Repository) GetAllTokensSeletedFields() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
 	f := bson.M{}
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (r Repository) GetAllTokensHasTraitSeletedFields() ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+
+	f := bson.M{
+		"parsed_attributes.0": bson.M{"$exists": true},
+	}
+	//f[utils.KEY_DELETED_AT] = nil
 	opts := options.Find().SetProjection(r.SelectedTokenFields())
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -397,7 +417,7 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 		"project_id_int":          bson.M{"$gt": 1000000},
 		"synced_inscription_info": bson.M{"$ne": true},
 	}
-	f[utils.KEY_DELETED_AT] = nil
+	//f[utils.KEY_DELETED_AT] = nil
 	opts := options.Find().SetProjection(r.SelectedTokenFields())
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {

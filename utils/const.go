@@ -85,6 +85,7 @@ const (
 	KEY_BTC_WALLET_INFO            string = "btc_wallet_info"
 
 	COLLECTION_USERS                    string = "users"
+	COLLECTION_USER_VOLUMN                  string = "user_volumn"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"

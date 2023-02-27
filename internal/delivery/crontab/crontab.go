@@ -3,14 +3,12 @@ package crontab
 import (
 	"fmt"
 	"os"
-	"time"
 
+	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-
-	"gopkg.in/robfig/cron.v2"
 )
 
 
@@ -33,18 +31,24 @@ func (h ScronHandler) StartServer() {
 	c := cron.New()
 
 	disPatchOn := os.Getenv("CRONTAB_SCHEDULE")
-	h.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))
+	h.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))	
+
 	//check device's statues each 1 hours
 	c.AddFunc(disPatchOn, func() {
 
-		h.Logger.Info("dispatch", disPatchOn)
-		h.Logger.Info("time", time.Now().UTC())
+		// h.Logger.Info("dispatch", disPatchOn)
+		// h.Logger.Info("time", time.Now().UTC())
 
-		err := h.Usecase.PrepareData()
-		if err != nil {
-			h.Logger.Error(err)
-			return
-		}
+		// err := h.Usecase.PrepareData()
+		// if err != nil {
+		// 	h.Logger.Error(err)
+		// 	return
+		// }
+
+		// err = h.Usecase.SyncUserStats()
+		// if err != nil {
+		// 	h.Logger.Error(err)
+		// }
 
 		// chanDone := make(chan bool, 1)
 		// go func (chanDone chan bool)  {
@@ -105,10 +109,7 @@ func (h ScronHandler) StartServer() {
 		// 	defer func() {
 		// 		chanDone <- true
 		// 	}()
-		err = h.Usecase.SyncUserStats()
-		if err != nil {
-			h.Logger.Error(err)
-		}
+		
 		// }(chanDone)
 
 		// go func (chanDone chan bool) {
@@ -132,7 +133,8 @@ func (h ScronHandler) StartServer() {
 		// }(chanDone)
 
 	})
-//alway a minute crontab
+    
+	//alway 10 minutes crontab
 	// c.AddFunc("*/1 * * * *", func() {
 	// 	err := h.Usecase.UpdateProposalState()
 	// 	if err != nil {
@@ -140,12 +142,17 @@ func (h ScronHandler) StartServer() {
 	// 	}
 	// })
 
-	// c.AddFunc("0 0 * * *", func() {
-	// 	err := h.Usecase.SnapShotOldRankAndOldBalance()
-	// 	if err != nil {
-	// 		h.Logger.Error(err)
-	// 	}
-	// })
+	//alway 10 minutes crontab
+	c.AddFunc("*/5 * * * *", func() {
+		h.Usecase.AggregateVolumn()
+	})
+
+	c.AddFunc("*/10 * * * *", func() {
+		err := h.Usecase.SyncTraitStats()
+		if err != nil {
+			h.Logger.Error("error when sync trait stats", err)
+		}
+	})
 
 	c.Start()
 }

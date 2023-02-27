@@ -43,6 +43,7 @@ type InternalTokenURIResp struct {
 	Description      string           `json:"description"`
 	Image            string           `json:"image"`
 	AnimationURL     string           `json:"animationUrl"`
+	AnimationHtml     string           `json:"animationHtml"`
 	Attributes       interface{}      `json:"attributes"`
 	MintedTime       time.Time        `json:"mintedTime"`
 	GenNFTAddr       string           `json:"genNFTAddr"`

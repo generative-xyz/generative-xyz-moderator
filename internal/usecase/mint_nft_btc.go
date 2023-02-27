@@ -403,7 +403,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
-
+		
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
 		// go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "ListMintNftBtcByStatus", "[]")
@@ -582,7 +582,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		go u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", item.PayType, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
 
 		// try to update inscription_index
-		go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+		// go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
 
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"go.uber.org/zap"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -167,6 +168,14 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
+
+			//Html
+			htmlUrl, err := u.parseAnimationURL(*pe)
+			if err == nil {
+				animationHtml := fmt.Sprintf("%s", *htmlUrl)
+				pe.AnimationHtml = &animationHtml
+			}
+
 		}
 	}
 
@@ -207,44 +216,63 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
 			//return nil, err
 		}
+	} else {
+		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 	}
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
-	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(pe *entity.Projects, creatorAddrr *entity.Users) {
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
+
+	var category, description string
+	if len(project.Categories) > 0 {
+		// we assume that there are only one category
+		categoryEntity, err := u.GetCategory(project.Categories[0])
+		if err != nil {
+			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			return
+		}
+		category = categoryEntity.Name
+		description = fmt.Sprintf("**%s**\n", category)
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	collectionName := project.Name
+
 	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string) []discordclient.Field {
+	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
 		if value == "" {
 			return fields
 		}
 		return append(fields, discordclient.Field{
-			Name:  name,
-			Value: value,
+			Name:   name,
+			Value:  value,
+			Inline: inline,
 		})
 	}
+	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(pe.MintPrice))
-	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", pe.MaxSupply))
 	discordMsg := discordclient.Message{
 		Username: "Satoshi 27",
+		Content:  "**NEW DROP**",
 		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("just launched %s", pe.Name),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, pe.GenNFTAddr),
-			Description: pe.Description,
-			Author: discordclient.Author{
-				Name:    u.resolveShortName(creatorAddrr.DisplayName, creatorAddrr.WalletAddress),
-				Url:     fmt.Sprintf("%s/profile/%s", domain, creatorAddrr.WalletAddress),
-				IconUrl: creatorAddrr.Avatar,
-			},
+			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
+			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Description: description,
+			//Author: discordclient.Author{
+			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),
+			//	Url:     fmt.Sprintf("%s/profile/%s", domain, owner.WalletAddress),
+			//	IconUrl: owner.Avatar,
+			//},
 			Fields: fields,
 			Image: discordclient.Image{
-				Url: pe.Thumbnail,
+				Url: project.Thumbnail,
 			},
 		}},
 	}
@@ -632,6 +660,27 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
+
+	go func() {
+		//upload animation URL
+		if c.AnimationHtml == nil {
+
+			htmlUrl, err := u.parseAnimationURL(*c)
+			if err != nil {
+				return
+			}
+
+			animationHtml := fmt.Sprintf("%s", *htmlUrl)
+			c.AnimationHtml = &animationHtml
+
+			_, err = u.Repo.UpdateProject(c.UUID, c)
+			if err != nil {
+				return
+			}
+		}
+
+	}()
+
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
@@ -658,7 +707,7 @@ func (u Usecase) GetRecentWorksProjects(req structure.FilterProjects) (*entity.P
 
 func (u Usecase) GetUpdatedProjectStats(req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
 
-	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
+	project, err := u.Repo.FindProjectByProjectIdWithoutCache(req.TokenID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1167,6 +1216,16 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
+
+	go func() {
+		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+		if err != nil {
+			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
+			return
+		}
+		u.NotifyCreateNewProjectToDiscord(pe, owner)
+	}()
+
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
 }
@@ -1328,35 +1387,35 @@ type Volume struct {
 func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
 
-	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
-	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
-	}
+	// p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
+	// if err != nil {
+	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
+	// }
 
-	pIDs := []string{}
-	for _, item := range p {
-		pIDs = append(pIDs, item.TokenID)
-	}
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+	// pIDs := []string{}
+	// for _, item := range p {
+	// 	pIDs = append(pIDs, item.TokenID)
+	// }
+	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
 
-	data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
-	}
+	// data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	// if err != nil {
+	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
+	// }
 
-	resp := Volumes{}
-	for _, item := range data.Items {
-		tmp := Volume{
-			ProjectID: item.ID.ProjectID,
-			PayType:   item.ID.Paytype,
-			Amount:    fmt.Sprintf("%d", int(item.Amount)),
-		}
-		resp.Items = append(resp.Items, tmp)
-	}
+	// resp := Volumes{}
+	// for _, item := range data.Items {
+	// 	tmp := Volume{
+	// 		ProjectID: item.ID.ProjectID,
+	// 		PayType:   item.ID.Paytype,
+	// 		Amount:    fmt.Sprintf("%d", int(item.Amount)),
+	// 	}
+	// 	resp.Items = append(resp.Items, tmp)
+	// }
 
-	resp.TotalBTC = data.TotalBTC
-	resp.TotalETH = data.TotalETH
+	// resp.TotalBTC = data.TotalBTC
+	// resp.TotalETH = data.TotalETH
 
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
-	return resp, nil
+	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
+	return nil, nil
 }
