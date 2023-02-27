@@ -73,8 +73,10 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("file is invalid"))
 		return
 	}
-
-	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase, userUuid)
+	reqUsecase.SetFields(
+		reqUsecase.WithUserUuid(userUuid),
+	)
+	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase)
 	if err != nil {
 		h.Logger.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

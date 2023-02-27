@@ -82,7 +82,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}, nil
 }
 
-func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq, userUuid string) (*entity.InscribeBTC, error) {
+func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
 	u.Logger.Info("input", input)
 
@@ -181,7 +181,7 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	walletAddress.FeeRate = input.FeeRate
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
-	walletAddress.UserUuid = userUuid
+	walletAddress.UserUuid = input.UserUuid
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
