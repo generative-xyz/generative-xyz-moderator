@@ -10,12 +10,14 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/logger"
 )
 
 // @Summary BTC Generate receive wallet address
@@ -78,7 +80,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.Logger.Info("btcCreateInscribeBTC", btcWallet)
+	logger.AtLog.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
 	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
@@ -140,7 +142,14 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
-// detail:
+// @Summary BTC NFT Detail Inscribe
+// @Description BTC NFT Detail Inscribe
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param ID path string true "inscribe ID"
+// @Success 200 {object} entity.InscribeBTCResp{}
+// @Router /inscribe/nft-detail/{ID} [GET]
 func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -157,6 +166,14 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 
 }
 
+// @Summary BTC Retry Inscribe
+// @Description BTC Retry Inscribe
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param ID path string true "inscribe ID"
+// @Success 200
+// @Router /inscribe/retry/{ID} [POST]
 func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -173,13 +190,13 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 
 }
 
-// @Summary get inscribe info
-// @Description get inscribe info
+// @Summary BTC Info Inscribe
+// @Description BTC Info Inscribe
 // @Tags Inscribe
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param ID path string true "inscribe ID"
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {object} response.InscribeInfoResp{}
 // @Router /inscribe/info/{ID} [GET]
 func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 

@@ -1,5 +1,49 @@
 basePath: /rederinghub.io/v1
 definitions:
+  entity.InscribeBTCResp:
+    properties:
+      expiredAt:
+        type: string
+      feeRate:
+        description: |-
+          Mnemonic          string `bson:"mnemonic"`
+          SegwitKey         string `bson:"segwit_key"`
+          MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
+          Balance   string    `bson:"balance"` // balance after check
+        type: integer
+      inscriptionID:
+        description: tokenID in ETH
+        type: string
+      isConfirm:
+        description: |-
+          UserAddress string `bson:"user_address"` //user's wallet address from FE
+          OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
+          Amount            string `bson:"amount"`
+          MintFee           string `bson:"mint_fee"`
+          SentTokenFee      string `bson:"sent_token_fee"`
+          OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
+          SegwitAddress     string `bson:"segwit_address"`
+          FileURI       string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
+        type: boolean
+      isMinted:
+        description: 'default: false. If InscriptionID exist which means token is
+          minted, it''s true'
+        type: boolean
+      isSuccess:
+        description: 'default: false. If InscriptionID was sent to user, it''s true'
+        type: boolean
+      status:
+        description: status for record
+        type: integer
+      txMintNft:
+        type: string
+      txSendBTC:
+        type: string
+      txSendNft:
+        type: string
+      uuid:
+        type: string
+    type: object
   entity.Pagination:
     properties:
       currsor:
@@ -357,6 +401,41 @@ definitions:
         type: string
       userAddress:
         description: user's wallet address from FE
+        type: string
+    type: object
+  response.InscribeInfoResp:
+    properties:
+      address:
+        type: string
+      content:
+        type: string
+      contentLength:
+        type: string
+      contentType:
+        type: string
+      genesisFee:
+        type: string
+      genesisHeight:
+        type: string
+      genesisTransaction:
+        type: string
+      id:
+        type: string
+      index:
+        type: string
+      location:
+        type: string
+      offset:
+        type: string
+      output:
+        type: string
+      outputValue:
+        type: string
+      preview:
+        type: string
+      sat:
+        type: string
+      timestamp:
         type: string
     type: object
   response.InternalTokenTraitsResp:
@@ -1518,7 +1597,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get inscribe info
+      description: BTC Info Inscribe
       parameters:
       - description: inscribe ID
         in: path
@@ -1531,8 +1610,8 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: get inscribe info
+            $ref: '#/definitions/response.InscribeInfoResp'
+      summary: BTC Info Inscribe
       tags:
       - Inscribe
   /inscribe/list:
@@ -1548,6 +1627,27 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       summary: BTC List Inscribe
+      tags:
+      - Inscribe
+  /inscribe/nft-detail/{ID}:
+    get:
+      consumes:
+      - application/json
+      description: BTC NFT Detail Inscribe
+      parameters:
+      - description: inscribe ID
+        in: path
+        name: ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InscribeBTCResp'
+      summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
   /inscribe/receive-address:
@@ -1570,6 +1670,25 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeBtcResp'
       summary: BTC Generate receive wallet address
+      tags:
+      - Inscribe
+  /inscribe/retry/{ID}:
+    post:
+      consumes:
+      - application/json
+      description: BTC Retry Inscribe
+      parameters:
+      - description: inscribe ID
+        in: path
+        name: ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: BTC Retry Inscribe
       tags:
       - Inscribe
   /marketplace/listing/{genNFTAddr}/token/{tokenID}:
