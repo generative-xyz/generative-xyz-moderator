@@ -48,9 +48,9 @@ type MarketplaceBTCBuyOrder struct {
 	TxSendNFT          string      `bson:"tx_send_nft"`
 	TxSendPayment      string      `bson:"tx_send_payment"`
 	OutputSendNFT      interface{} `bson:"output_send_nft"`
-	FeeChargeBuyer     uint64      `bson:"fee_charge_buyer"`
-	RoyaltyChargeBuyer uint64      `bson:"royalty_charge_buyer"`
-	AmountSentSeller   uint64      `bson:"amount_send_seller"`
+	FeeChargeBuyer     string      `bson:"fee_charge_buyer"`
+	RoyaltyChargeBuyer string      `bson:"royalty_charge_buyer"`
+	AmountSentSeller   string      `bson:"amount_send_seller"`
 
 	SegwitAddress string `bson:"segwit_address"` // remove for new flow
 	SegwitKey     string `bson:"segwit_key"`     // remove for new flow
