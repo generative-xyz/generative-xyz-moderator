@@ -27,9 +27,9 @@ type Author struct {
 }
 
 type Field struct {
-	Name   string `json:"name,omitempty"`
+	Name   string `json:"name"`
 	Value  string `json:"value,omitempty"`
-	Inline bool   `json:"inline,omitempty"`
+	Inline bool   `json:"inline"`
 }
 
 type Thumbnail struct {
