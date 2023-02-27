@@ -611,14 +611,14 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	_ = amountMintBTC
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH",zap.Error(err))
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
 	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH",zap.Error(err))
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
@@ -628,7 +628,7 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	rate := new(big.Float)
 	rate.SetFloat64(btcToETH)
 	amountMintBTC.Mul(amountMintBTC, rate)
-	
+
 	pow := math.Pow10(10)
 	powBig := new(big.Float)
 	powBig.SetFloat64(pow)
@@ -637,7 +637,40 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	result := new(big.Int)
 	amountMintBTC.Int(result)
 
-	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice),  zap.Float64("ethPrice", ethPrice) )
+	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
+	return result.String(), btcPrice, ethPrice, nil
+}
+
+func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPrice float64) (string, float64, float64, error) {
+
+	//amount = "0.1"
+	powIntput := math.Pow10(8)
+	powIntputBig := new(big.Float)
+	powIntputBig.SetFloat64(powIntput)
+	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
+	amountMintBTC.Mul(amountMintBTC, powIntputBig)
+	// if err != nil {
+	// 	u.Logger.Error("strconv.ParseFloat", err.Error(), err)
+	// 	return "", err
+	// }
+
+	_ = amountMintBTC
+	btcToETH := btcPrice / ethPrice
+	// btcToETH := 14.27 // remove hardcode, why tri hardcode this??
+
+	rate := new(big.Float)
+	rate.SetFloat64(btcToETH)
+	amountMintBTC.Mul(amountMintBTC, rate)
+
+	pow := math.Pow10(10)
+	powBig := new(big.Float)
+	powBig.SetFloat64(pow)
+
+	amountMintBTC.Mul(amountMintBTC, powBig)
+	result := new(big.Int)
+	amountMintBTC.Int(result)
+
+	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
 	return result.String(), btcPrice, ethPrice, nil
 }
 

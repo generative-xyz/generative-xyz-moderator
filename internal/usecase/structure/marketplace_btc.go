@@ -27,19 +27,26 @@ type MarketplaceBTC_BuyOrderInfo struct {
 	PayType       string `json:"pay_type"`
 }
 
+type PaymentInfoForBuyOrder struct {
+	PaymentAddress string `json:"paymentAddress"`
+	Price          string `json:"price"`
+	// PriceFloat     float64 `json:"priceFloat"`
+}
+
 type MarketplaceNFTDetail struct {
-	InscriptionID     string    `json:"inscriptionID"`
-	Price             string    `json:"price"`
-	Name              string    `json:"name"`
-	Description       string    `json:"description"`
-	OrderID           string    `json:"orderID"`
-	IsConfirmed       bool      `json:"isConfirmed"`
-	Buyable           bool      `json:"buyable"`
-	IsCompleted       bool      `json:"isCompleted"`
-	CreatedAt         time.Time `json:"createdAt"`
-	InscriptionNumber string    `json:"inscriptionNumber"`
-	ContentType       string    `json:"contentType"`
-	ContentLength     string    `json:"contentLength"`
+	InscriptionID     string            `json:"inscriptionID"`
+	Price             string            `json:"price"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	OrderID           string            `json:"orderID"`
+	IsConfirmed       bool              `json:"isConfirmed"`
+	Buyable           bool              `json:"buyable"`
+	PayType           map[string]string `bson:"pay_type"`
+	IsCompleted       bool              `json:"isCompleted"`
+	CreatedAt         time.Time         `json:"createdAt"`
+	InscriptionNumber string            `json:"inscriptionNumber"`
+	ContentType       string            `json:"contentType"`
+	ContentLength     string            `json:"contentLength"`
 
 	// for filter
 	CollectionID     string           `json:"collection_id"`
@@ -47,6 +54,9 @@ type MarketplaceNFTDetail struct {
 	InscriptionName  string           `json:"inscription_name"`
 	InscriptionIndex string           `json:"inscription_index"`
 	Inscription      *entity.TokenUri `json:"inscription"`
+
+	// paytype:
+	PaymentListingInfo map[string]PaymentInfoForBuyOrder `json:"paymentListingInfo"`
 }
 
 type MarketplaceCollectionStats struct {
