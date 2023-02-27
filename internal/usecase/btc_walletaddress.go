@@ -671,12 +671,12 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 	return nil, nil
 }
 
-func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkFee int) {
+func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
 	u.Logger.Info(
 		"NotifyNFTMinted",
-		zap.String("userAddr", userAddr),
+		zap.String("btcUserAddr", btcUserAddr),
 		zap.String("inscriptionID", inscriptionID),
 		zap.Int("networkFee", networkFee),
 	)
@@ -688,9 +688,9 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 	}
 
 	var minterDisplayName string
-	minterAddress := userAddr
+	minterAddress := btcUserAddr
 	{
-		minter, err := u.Repo.FindUserByBtcAddress(userAddr)
+		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
 		if err == nil {
 			minterDisplayName = minter.DisplayName
 			minterAddress = minter.WalletAddress
@@ -740,7 +740,7 @@ func (u Usecase) NotifyNFTMinted(userAddr string, inscriptionID string, networkF
 	}
 	fields = addFields(fields, "", project.Description, false)
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
-		u.resolveShortName(minterDisplayName, userAddr),
+		u.resolveShortName(minterDisplayName, btcUserAddr),
 		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
 	), true)
 
