@@ -385,10 +385,10 @@ func (r Repository) CreateCollectionIndexes() error {
 		return err
 	}
 
-	_, err = r.CreateCategoryIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateCategoryIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
