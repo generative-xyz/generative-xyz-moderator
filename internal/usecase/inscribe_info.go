@@ -10,8 +10,7 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
-
-func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) {
+func (u Usecase) crawlInscribeWebsite(id string) (*entity.InscribeInfo, error) {
 	url := fmt.Sprintf("https://generativeexplorer.com/inscription/%s", id)
 	dts := []string{}
 	dds := []string{}
@@ -57,7 +56,6 @@ func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) 
 		err = fmt.Errorf("something went wrong went crawl inscribe id")
 	})
 
-
 	c.Visit(url)
 
 	if err != nil {
@@ -77,26 +75,26 @@ func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) 
 	}
 
 	return &entity.InscribeInfo{
-		ID: inscribeInfo["id"],
-		Index: inscribeIndex,
-		Address: inscribeInfo["address"],
-		OutputValue: inscribeInfo["output value"],
-		Preview: inscribeInfoToHref["preview"],
-		Content: inscribeInfoToHref["content"],
-		ContentLength: inscribeInfo["content length"],
-		ContentType: inscribeInfo["content type"],
-		Timestamp: inscribeInfo["timestamp"],
-		GenesisHeight: inscribeInfo["genesis height"],
+		ID:                 inscribeInfo["id"],
+		Index:              inscribeIndex,
+		Address:            inscribeInfo["address"],
+		OutputValue:        inscribeInfo["output value"],
+		Preview:            inscribeInfoToHref["preview"],
+		Content:            inscribeInfoToHref["content"],
+		ContentLength:      inscribeInfo["content length"],
+		ContentType:        inscribeInfo["content type"],
+		Timestamp:          inscribeInfo["timestamp"],
+		GenesisHeight:      inscribeInfo["genesis height"],
 		GenesisTransaction: inscribeInfo["genesis transaction"],
-		Location: inscribeInfo["location"],
-		Output: inscribeInfo["output"],
-		Offset: inscribeInfo["offset"],
+		Location:           inscribeInfo["location"],
+		Output:             inscribeInfo["output"],
+		Offset:             inscribeInfo["offset"],
 	}, nil
 }
 
-func (u Usecase) GetInscribeInfo( id string) (*entity.InscribeInfo, error) {
+func (u Usecase) GetInscribeInfo(id string) (*entity.InscribeInfo, error) {
 
-inscribeInfo, err := u.Repo.GetInscribeInfo(id);
+	inscribeInfo, err := u.Repo.GetInscribeInfo(id)
 	if err != nil {
 		// Failed to find inscribe info in database, try to crawl it from website
 		inscribeInfo, err = u.crawlInscribeWebsite(id)
@@ -114,29 +112,30 @@ inscribeInfo, err := u.Repo.GetInscribeInfo(id);
 	return inscribeInfo, nil
 }
 
-func (u Usecase) SyncInscribeInfo( id string) (*entity.InscribeInfo, bool, error) {
+func (u Usecase) SyncInscribeInfo(id string) (*entity.InscribeInfo, bool, error) {
 
 	updated := false
-// try to find old record in mongo
-	oldInscribeInfo, err := u.Repo.GetInscribeInfo(id);
+	// try to find old record in mongo
+	oldInscribeInfo, err := u.Repo.GetInscribeInfo(id)
 	var newInscribeInfo *entity.InscribeInfo
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// make sure oldInscribeInfo == nil
 			oldInscribeInfo = nil
-			newInscribeInfo, err = u.crawlInscribeWebsite(id) 
+			newInscribeInfo, err = u.crawlInscribeWebsite(id)
 			if err != nil {
 				return nil, updated, err
 			}
 		} else {
-			return nil, updated, err		}
+			return nil, updated, err
+		}
 	}
-// need an update
+	// need an update
 	if oldInscribeInfo == nil || oldInscribeInfo.Address != newInscribeInfo.Address {
 		// update inscribe info document
 		updated = true
 		u.Repo.UpsertTokenUri(id, newInscribeInfo)
-	} 
+	}
 
 	return newInscribeInfo, updated, nil
 }

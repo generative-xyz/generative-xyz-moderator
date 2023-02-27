@@ -3,12 +3,11 @@ package connections
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	mongotrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/go.mongodb.org/mongo-driver/mongo"
 )
-
 
 type mongoCN struct {
 	Cnn *mongo.Client
@@ -16,17 +15,6 @@ type mongoCN struct {
 
 func NewMongo(dsn string) (*mongoCN, error) {
 	p := new(mongoCN)
-	cmdMonitor := &event.CommandMonitor{
-		Started: func(ctx context.Context, evt *event.CommandStartedEvent) {
-			//spew.Dump(evt.Command)
-		},
-		Succeeded:  func(ctx context.Context, evt *event.CommandSucceededEvent) {
-			//spew.Dump(evt.DurationNanos)
-		},
-		Failed:    func(ctx context.Context, evt *event.CommandFailedEvent) {
-			//spew.Dump(evt.Failure)
-		},
-	}
 
 	isLoadbalanced := false
 	maxPoolSize := uint64(10000)
@@ -38,18 +26,19 @@ func NewMongo(dsn string) (*mongoCN, error) {
 	}
 
 	clientOption.ApplyURI(dsn)
-	clientOption.Monitor = cmdMonitor
+	clientOption.Monitor = mongotrace.NewMonitor()
 
-	client, err := mongo.Connect(context.TODO(),clientOption)
-    if err != nil {
-		return nil, err
-	}	
-
-	// Ping the primary
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	ctx := context.Background()
+	client, err := mongo.Connect(ctx, clientOption)
+	if err != nil {
 		return nil, err
 	}
-p.Cnn = client
+
+	// Ping the primary
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		return nil, err
+	}
+	p.Cnn = client
 	return p, nil
 }
 
