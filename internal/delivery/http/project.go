@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/delivery/http/request"
@@ -287,8 +288,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [GET]
 func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
-
 	name := r.URL.Query().Get("name")
+
 	categoriesRaw := r.URL.Query().Get("category")
 
 	categoryIds := strings.Split(categoriesRaw, ",")
@@ -307,6 +308,24 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters = *baseF
 	f.Name = &name
 	f.CategoryIds = categoryIds
+
+	if name != "" {
+		client := search.NewClient(h.Config.AlgoliaApplicationId, h.Config.AlgoliaApiKey)
+		index := client.InitIndex("projects")
+		params := []interface{}{}
+
+		results, err := index.Search(name, params...)
+		if err != nil {
+			err := errors.New("index.Search failed")
+			h.Logger.Error("respItems", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+
+		for _, p := range results.Hits {
+			f.Ids = append(f.Ids, p["objectID"].(string))
+		}
+	}
 
 	hidden := false
 	f.IsHidden = &hidden

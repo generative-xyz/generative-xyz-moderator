@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -386,7 +388,7 @@ func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Term search minimum is 3 characters"))
 	}
 
-	bf, err := h.BaseFilters(r)
+	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
 		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -462,41 +464,64 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 }
 
 func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.PaginationResponse, error) {
-	pag, err := h.Usecase.FilterTokens(f)
-	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
-		return nil, err
+	client := search.NewClient(h.Config.AlgoliaApplicationId, h.Config.AlgoliaApiKey)
+	index := client.InitIndex("token-uris")
+	params := []interface{}{
+		opt.Page(int(f.Page)),
+		opt.HitsPerPage(int(f.Limit)),
 	}
 
-	respItems := []response.ExternalTokenURIResp{}
-	tokens := []entity.TokenUri{}
-	iTokensData := pag.Result
-
-	bytes, err := json.Marshal(iTokensData)
+	results, err := index.Search(*f.Search, params...)
 	if err != nil {
-		err := errors.New("Cannot parse respItems")
+		err := errors.New("index.Search failed")
 		h.Logger.Error("respItems", err.Error(), err)
 		return nil, err
 	}
 
-	err = json.Unmarshal(bytes, &tokens)
-	if err != nil {
-		err := errors.New("Cannot Unmarshal")
-		h.Logger.Error("Unmarshal", err.Error(), err)
-		return nil, err
-	}
+	var tokens []response.ExternalTokenURIResp
+	results.UnmarshalHits(&tokens)
 
-	for _, token := range tokens {
-		resp, err := h.tokenExternalToResp(&token)
-		if err != nil {
-			err := errors.New("Cannot parse products")
-			h.Logger.Error("tokenToResp", err.Error(), err)
-			return nil, err
-		}
-		respItems = append(respItems, *resp)
-	}
+	// pag, err := h.Usecase.FilterTokens(f)
+	// if err != nil {
+	// 	h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+	// 	return nil, err
+	// }
 
-	resp := h.PaginationResp(pag, respItems)
+	// respItems := []response.ExternalTokenURIResp{}
+	// tokens := []entity.TokenUri{}
+	// iTokensData := pag.Result
+
+	// bytes, err := json.Marshal(iTokensData)
+	// if err != nil {
+	// 	err := errors.New("Cannot parse respItems")
+	// 	h.Logger.Error("respItems", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// err = json.Unmarshal(bytes, &tokens)
+	// if err != nil {
+	// 	err := errors.New("Cannot Unmarshal")
+	// 	h.Logger.Error("Unmarshal", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// for _, token := range tokens {
+	// 	resp, err := h.tokenExternalToResp(token)
+	// 	if err != nil {
+	// 		err := errors.New("Cannot parse products")
+	// 		h.Logger.Error("tokenToResp", err.Error(), err)
+	// 		return nil, err
+	// 	}
+	// 	respItems = append(respItems, *resp)
+	// }
+
+	pag := &entity.Pagination{}
+	pag.Result = tokens
+	pag.Page = f.Page
+	pag.Total = int64(results.NbHits)
+	pag.PageSize = f.Limit
+
+	resp := h.PaginationResp(pag, tokens)
 	return &resp, nil
 }
 
@@ -729,7 +754,7 @@ func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request)
 
 	var err error
 	vars := mux.Vars(r)
-	walletAddress := vars["walletAddress"]	
+	walletAddress := vars["walletAddress"]
 	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)

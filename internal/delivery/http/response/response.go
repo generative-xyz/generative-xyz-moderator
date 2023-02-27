@@ -14,9 +14,8 @@ type IResponse interface {
 	GetID() string
 }
 
-
 type BaseResponse struct {
-	ID        string                  `json:"id"`
+	ID string `json:"id"`
 }
 
 func (p *BaseResponse) SetID(ID string) {
@@ -34,18 +33,17 @@ type IHttpResponse interface {
 }
 
 type JsonResponse struct {
-	Error *RespondErr      `json:"error"`
-	Status    bool        `json:"status"`
-	Data    interface{} `json:"data"`
+	Error  *RespondErr `json:"error"`
+	Status bool        `json:"status"`
+	Data   interface{} `json:"data"`
 }
 
 type RespondErr struct {
-	Message string `json:"message"`
-	ErrorCode int `json:"code"`
+	Message   string `json:"message"`
+	ErrorCode int    `json:"code"`
 }
 
 type httpResponse struct {
-	
 }
 
 func NewHttpResponse() *httpResponse {
@@ -70,8 +68,8 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 	}
 
 	jsr := JsonResponse{
-		Data:    payload,
-		Status:    true,
+		Data:   payload,
+		Status: true,
 	}
 
 	if respErr != nil {
@@ -90,7 +88,6 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 		panic(err)
 	}
 }
-
 
 func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode int, payload interface{}) {
 

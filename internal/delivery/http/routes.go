@@ -237,6 +237,40 @@ func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}
 	return resp
 }
 
+func (h *httpDelivery) BaseAlgoliaFilters(r *http.Request) (*structure.BaseFilters, error) {
+	f := &structure.BaseFilters{}
+
+	limitInt := 10
+	pageInt := 0
+	var err error
+
+	limit := r.URL.Query().Get("limit")
+	if limit != "" {
+		limitInt, err = strconv.Atoi(limit)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	page := r.URL.Query().Get("page")
+	if page != "" {
+		pageInt, err = strconv.Atoi(page)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sortQuery := r.URL.Query().Get("sort")
+	sortObject := utils.ParseSort(sortQuery)
+
+	f.SortBy = sortObject.SortBy
+	f.Sort = sortObject.Sort
+	f.Page = int64(pageInt)
+	f.Limit = int64(limitInt)
+
+	return f, nil
+}
+
 func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, error) {
 	f := &structure.BaseFilters{}
 

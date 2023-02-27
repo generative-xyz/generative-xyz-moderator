@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -209,6 +210,7 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 		}
 		s = append(s, Sort{SortBy: "tokenid", Sort: entity.SORT_ASC})
 	}
+
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {
 		return nil, err
@@ -311,12 +313,30 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	return resp, nil
 }
 
+func StringsToObjects(ids []string) (result []primitive.ObjectID, err error) {
+	for _, v := range ids {
+		id, err := primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return nil, errors.WithMessage(err, "StringsToObject parse id error")
+		}
+		result = append(result, id)
+	}
+	return result, nil
+}
+
 func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
 	f["isSynced"] = true
 	f[utils.KEY_DELETED_AT] = nil
 
 	//f["isHidden"] = false
+	//
+	if len(filter.Ids) != 0 {
+		objectIDs, err := StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
 
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
@@ -328,15 +348,15 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
-	if filter.Name != nil && len(*filter.Name) >= 3 {
-		if *filter.Name != "" {
-			f["$or"] = []bson.M{
-				{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
-				{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
-				{"creatorProfile.wallet_address": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
-			}
-		}
-	}
+	// if filter.Name != nil && len(*filter.Name) >= 3 {
+	// 	if *filter.Name != "" {
+	// 		f["$or"] = []bson.M{
+	// 			{"name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+	// 			{"creatorProfile.display_name": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+	// 			{"creatorProfile.wallet_address": primitive.Regex{Pattern: *filter.Name, Options: "i"}},
+	// 		}
+	// 	}
+	// }
 
 	if filter.CategoryIds != nil && len(filter.CategoryIds) > 0 {
 		f["categories"] = bson.M{"$all": filter.CategoryIds}

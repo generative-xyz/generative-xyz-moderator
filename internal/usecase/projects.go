@@ -502,7 +502,6 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 }
 
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
-
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
