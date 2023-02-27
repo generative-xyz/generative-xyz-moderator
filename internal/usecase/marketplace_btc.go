@@ -31,6 +31,7 @@ func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_L
 	listing := entity.MarketplaceBTCListing{
 
 		HoldOrdAddress: "",
+		SellOrdAddress: listingInfo.SellOrdAddress,
 		Price:          listingInfo.Price,
 		PayType:        listingInfo.PayType,
 
