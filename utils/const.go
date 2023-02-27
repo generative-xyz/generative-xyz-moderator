@@ -1,7 +1,5 @@
 package utils
 
-import "time"
-
 type QuerySort struct {
 	Sort   int
 	SortBy string
@@ -132,9 +130,8 @@ const (
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 
-	NETWORK_BTC             = "btc"
-	NETWORK_ETH             = "eth"
-	HttpRequestTimeoutInSec = 15 * time.Second
+	NETWORK_BTC = "btc"
+	NETWORK_ETH = "eth"
 )
 
 type PubSubSendOtp struct {

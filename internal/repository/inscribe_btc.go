@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -47,28 +46,22 @@ func (r Repository) FindInscribeBTCByNftID(uuid string) (*entity.InscribeBTCResp
 	return resp, nil
 }
 
-func (r Repository) InsertInscribeBTC(ctx context.Context, data *entity.InscribeBTC) error {
-	span, ctx := tracer.StartSpanFromContext(ctx, "Repository.InsertInscribeBTC")
-	defer span.Finish()
-	err := r.InsertOneWithContext(ctx, data.TableName(), data)
+func (r Repository) InsertInscribeBTC(data *entity.InscribeBTC) error {
+	err := r.InsertOne(data.TableName(), data)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r Repository) ListInscribeBTC(ctx context.Context, filter *entity.FilterInscribeBT) (*entity.Pagination, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "Repository.ListInscribeBTC")
-	defer span.Finish()
+func (r Repository) ListInscribeBTC(filter entity.FilterInscribeBT) (*entity.Pagination, error) {
 	confs := []entity.InscribeBTCResp{}
 	resp := &entity.Pagination{}
-
-	f := bson.M{}
-	if filter.UserUuid != nil {
-		f["user_uuid"] = *filter.UserUuid
+	f := bson.M{
+		// "isConfirm": true,
 	}
 
-	p, err := r.AggregateWithContext(ctx, entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
+	p, err := r.Paginate(entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
