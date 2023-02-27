@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
@@ -56,8 +57,8 @@ func init() {
 		log.Println("Service RUN on DEBUG mode")
 	}
 
-	l := _logger.NewLogger()
-	l.LogAny("config", zap.Any("config.NewConfig", c))
+	l := _logger.NewLogger(c.Debug)
+	_logger.AtLog.Logger.Info("config", zap.Any("config", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
@@ -104,7 +105,14 @@ func main() {
 }
 
 func startServer() {
-	log.Println("starting server ...")
+	_logger.AtLog.Info("starting server ...")
+
+	tracer.Start(
+		tracer.WithEnv(conf.ENV),
+		tracer.WithService("generative-xyz-moderator"),
+		tracer.WithLogger(_logger.AtLog),
+	)
+
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	r := mux.NewRouter()
 
@@ -182,7 +190,7 @@ func startServer() {
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 
-	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+	ph := pubsub.NewPubsubHandler(*uc, rPubsub)
 
 	servers := make(map[string]delivery.AddedServer)
 	servers["http"] = delivery.AddedServer{
@@ -263,6 +271,8 @@ func startServer() {
 	// // Create a deadline to wait for.
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
+	defer tracer.Stop()
+
 	// // Doesn't block if no connections, but will otherwise wait
 	// // until the timeout deadline.
 	// err := srv.Shutdown(ctx)
@@ -273,7 +283,6 @@ func startServer() {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	<-ctx.Done() //if your application should wait for other services
 	// to finalize based on context cancellation.
-	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	_logger.AtLog.Warn("httpDelivery.StartServer - server is shutting down")
 	os.Exit(0)
-
 }
