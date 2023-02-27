@@ -115,6 +115,39 @@ func (r Repository) CreateWalletTrackTxIndexModel() ([]string, error) {
 	return r.CreateIndexes(collection, models)
 }
 
+func (r Repository) CreateReferalIndexModel() ([]string, error) {
+	collection := entity.Referral{}.TableName()
+	models := []mongo.IndexModel{
+		{Keys: bson.M{"referrer_id": -1}, Options: options.Index().SetName("ref_referrer_id_desc")},
+		{Keys: bson.M{"referree_id": -1}, Options: options.Index().SetName("ref_referree_id_desc")},
+		{Keys: bson.D{{Key: "referrer_id", Value: -1}, {Key: "referree_id", Value: -1}}, Options: options.Index().SetUnique(true)},
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
+func (r Repository) CreateVolumnIndexModel() ([]string, error) {
+	collection := entity.UserVolumn{}.TableName()
+	models := []mongo.IndexModel{
+		{Keys: bson.M{"amountType": -1}, Options: options.Index().SetName("vln_amountType_desc")},
+		{Keys: bson.M{"userID": -1}, Options: options.Index().SetName("vln_userID_desc")},
+		{Keys: bson.M{"projectID": -1}, Options: options.Index().SetName("vln_projectID_desc")},
+		{Keys: bson.D{{Key: "amountType", Value: -1}, {Key: "userID", Value: -1}, {Key: "projectID", Value: -1}}, Options: options.Index().SetUnique(true)},
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
+func (r Repository) CreateCategoryIndexModel() ([]string, error) {
+	collection := entity.Categories{}.TableName()
+	models := []mongo.IndexModel{
+		{Keys: bson.M{"priority": -1}, Options: options.Index().SetName("cat_priority_desc")},
+		
+	}
+
+	return r.CreateIndexes(collection, models)
+}
+
 func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexModel) ([]string, error) {
 	col := r.DB.Collection(collectionName)
 	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
