@@ -11,12 +11,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -29,8 +32,12 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /inscribe/receive-address [POST]
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), time.Second*15)
-	defer cancel()
+	ctx, cancel := context.WithTimeout(r.Context(), utils.HttpRequestTimeoutInSec)
+	span, _ := tracer.StartSpanFromContext(ctx, "httpDelivery.btcCreateInscribeBTC")
+	defer func() {
+		cancel()
+		span.Finish()
+	}()
 	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
@@ -81,10 +88,9 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.Logger.Info("btcCreateInscribeBTC", btcWallet)
+	logger.AtLog.Logger.Info("btcCreateInscribeBTC btcWallet", zap.Any("raw_data", btcWallet))
 	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -110,7 +116,11 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), utils.HttpRequestTimeoutInSec)
-	defer cancel()
+	span, _ := tracer.StartSpanFromContext(ctx, "httpDelivery.btcListInscribeBTC")
+	defer func() {
+		cancel()
+		span.Finish()
+	}()
 	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
