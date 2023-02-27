@@ -39,6 +39,9 @@ type UserStats struct {
 
 type Users struct {
 	BaseEntity              `bson:",inline" json:"-"`
+	IsVerified bool       `bson:"is_verified"`
+	VerifiedAt *time.Time `bson:"verified_at"`
+	Message    string     `bson:"message"`
 	ID                      string        `bson:"id" json:"id,omitempty"`
 	WalletAddress           string        `bson:"wallet_address" json:"wallet_address,omitempty"`                         // eth wallet define user in platform by connect wallet and sign
 	WalletAddressPayment    string        `bson:"wallet_address_payment" json:"wallet_address_payment,omitempty"`         // eth wallet artist receive royalty

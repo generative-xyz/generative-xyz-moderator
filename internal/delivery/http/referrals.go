@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/response"
-	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
@@ -57,7 +56,8 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param referrerID query string false "Filter by referrerID"
-// @Param referreeID query string false "filter project referreeID"
+// @Param referreeID query string false "filter by referreeID"
+// @Param amountType query string false "filter by amountType"
 // @Param limit query int false "limit"
 // @Param page query int false "page"
 // @Security Authorization
@@ -74,6 +74,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 	referrerID := r.URL.Query().Get("referrerID")
 	referreeID := r.URL.Query().Get("referreeID")
+	amountType := r.URL.Query().Get("amountType")
 
 	ctx := r.Context()
 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
@@ -90,6 +91,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters = *baseF
 	f.ReferrerID = &referrerID
 	f.ReferreeID = &referreeID
+	f.PayType = &amountType
 	uReferrals, err := h.Usecase.GetReferrals(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetReferrals", err.Error(), err)
@@ -99,7 +101,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 	pResp := []response.ReferralResp{}
 	iReferrals := uReferrals.Result
-	referrals := iReferrals.([]entity.Referral)
+	referrals := iReferrals.([]structure.ReferalResp)
 	for _, referral := range referrals {
 
 		p, err := h.referralToResp(&referral)
@@ -116,7 +118,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uReferrals, pResp), "")
 }
 
-func (h *httpDelivery) referralToResp(input *entity.Referral) (*response.ReferralResp, error) {
+func (h *httpDelivery) referralToResp(input *structure.ReferalResp) (*response.ReferralResp, error) {
 	resp := response.ReferralResp{}
 	resp.ReferrerID = input.ReferrerID
 	resp.ReferreeID = input.ReferreeID
@@ -130,5 +132,9 @@ func (h *httpDelivery) referralToResp(input *entity.Referral) (*response.Referra
 	}
 	resp.Referree = *referree
 	resp.Referrer = *referrer
+	resp.ReferreeVolumn = response.ReferralVolumnResp{
+		Amount: input.ReferreeVolume.Amount,
+		AmountType: input.ReferreeVolume.AmountType,
+	}
 	return &resp, nil
 }
