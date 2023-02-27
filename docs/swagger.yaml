@@ -1,5 +1,17 @@
 basePath: /rederinghub.io/v1
 definitions:
+  entity.Pagination:
+    properties:
+      currsor:
+        type: string
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      result: {}
+      total:
+        type: integer
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -313,12 +325,48 @@ definitions:
       message:
         type: string
     type: object
+  response.InscribeBtcResp:
+    properties:
+      amount:
+        type: string
+      balance:
+        description: balance after check
+        type: string
+      fileURI:
+        description: FileURI will be mount if OrdAddress get all amount
+        type: string
+      id:
+        type: string
+      inscriptionID:
+        description: tokenID in ETH
+        type: string
+      isConfirm:
+        description: 'default: false, if OrdAddress get all amount it will be set
+          true'
+        type: boolean
+      mintFee:
+        type: string
+      ordAddress:
+        description: address is generated from ORD service, which receive all amount
+        type: string
+      segwitAddress:
+        type: string
+      sentTokenFee:
+        type: string
+      timeout_at:
+        type: string
+      userAddress:
+        description: user's wallet address from FE
+        type: string
+    type: object
   response.InternalTokenTraitsResp:
     properties:
       attributes: {}
     type: object
   response.InternalTokenURIResp:
     properties:
+      animationHtml:
+        type: string
       animationUrl:
         type: string
       attributes: {}
@@ -429,6 +477,8 @@ definitions:
     type: object
   response.ProjectResp:
     properties:
+      animationHtml:
+        type: string
       blockNumberMinted:
         type: string
       categories:
@@ -1485,11 +1535,26 @@ paths:
       summary: get inscribe info
       tags:
       - Inscribe
+  /inscribe/list:
+    get:
+      consumes:
+      - application/json
+      description: BTC List Inscribe
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      summary: BTC List Inscribe
+      tags:
+      - Inscribe
   /inscribe/receive-address:
     post:
       consumes:
       - application/json
-      description: Generate receive wallet address
+      description: BTC Generate receive wallet address
       parameters:
       - description: Create a btc wallet address request
         in: body
@@ -1503,10 +1568,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.JsonResponse'
+            $ref: '#/definitions/response.InscribeBtcResp'
       summary: BTC Generate receive wallet address
       tags:
-      - BTC
+      - Inscribe
   /marketplace/listing/{genNFTAddr}/token/{tokenID}:
     get:
       consumes:
@@ -2056,6 +2121,32 @@ paths:
       summary: get volume by wallet
       tags:
       - Profile
+  /profile/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: User profile via wallet address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ProfileResponse'
+              type: object
+      summary: User profile via wallet address
+      tags:
+      - Profile
   /project:
     get:
       consumes:
@@ -2483,9 +2574,13 @@ paths:
         in: query
         name: referrerID
         type: string
-      - description: filter project referreeID
+      - description: filter by referreeID
         in: query
         name: referreeID
+        type: string
+      - description: filter by amountType
+        in: query
+        name: amountType
         type: string
       - description: limit
         in: query

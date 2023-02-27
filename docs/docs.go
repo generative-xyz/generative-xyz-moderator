@@ -1428,9 +1428,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/inscribe/receive-address": {
-            "post": {
-                "description": "Generate receive wallet address",
+        "/inscribe/list": {
+            "get": {
+                "description": "BTC List Inscribe",
                 "consumes": [
                     "application/json"
                 ],
@@ -1438,7 +1438,30 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "BTC"
+                    "Inscribe"
+                ],
+                "summary": "BTC List Inscribe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
+        "/inscribe/receive-address": {
+            "post": {
+                "description": "BTC Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
                 ],
                 "summary": "BTC Generate receive wallet address",
                 "parameters": [
@@ -1456,7 +1479,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "$ref": "#/definitions/response.InscribeBtcResp"
                         }
                     }
                 }
@@ -2328,6 +2351,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile/withdraw": {
+            "post": {
+                "description": "User profile via wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "User profile via wallet address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -2994,8 +3061,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "filter project referreeID",
+                        "description": "filter by referreeID",
                         "name": "referreeID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter by amountType",
+                        "name": "amountType",
                         "in": "query"
                     },
                     {
@@ -3601,6 +3674,24 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entity.Pagination": {
+            "type": "object",
+            "properties": {
+                "currsor": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "result": {},
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -4084,6 +4175,53 @@ const docTemplate = `{
                 }
             }
         },
+        "response.InscribeBtcResp": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "balance": {
+                    "description": "balance after check",
+                    "type": "string"
+                },
+                "fileURI": {
+                    "description": "FileURI will be mount if OrdAddress get all amount",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inscriptionID": {
+                    "description": "tokenID in ETH",
+                    "type": "string"
+                },
+                "isConfirm": {
+                    "description": "default: false, if OrdAddress get all amount it will be set true",
+                    "type": "boolean"
+                },
+                "mintFee": {
+                    "type": "string"
+                },
+                "ordAddress": {
+                    "description": "address is generated from ORD service, which receive all amount",
+                    "type": "string"
+                },
+                "segwitAddress": {
+                    "type": "string"
+                },
+                "sentTokenFee": {
+                    "type": "string"
+                },
+                "timeout_at": {
+                    "type": "string"
+                },
+                "userAddress": {
+                    "description": "user's wallet address from FE",
+                    "type": "string"
+                }
+            }
+        },
         "response.InternalTokenTraitsResp": {
             "type": "object",
             "properties": {
@@ -4093,6 +4231,9 @@ const docTemplate = `{
         "response.InternalTokenURIResp": {
             "type": "object",
             "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
                 "animationUrl": {
                     "type": "string"
                 },
@@ -4260,6 +4401,9 @@ const docTemplate = `{
         "response.ProjectResp": {
             "type": "object",
             "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
                 "blockNumberMinted": {
                     "type": "string"
                 },
