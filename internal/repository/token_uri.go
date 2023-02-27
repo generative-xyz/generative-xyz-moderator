@@ -245,6 +245,26 @@ func (r Repository) GetAllTokensSeletedFields() ([]entity.TokenUri, error) {
 	return tokens, nil
 }
 
+func (r Repository) GetAllTokensHasTraitSeletedFields() ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+
+	f := bson.M{
+		"parsed_attributes.0": bson.M{"$exists": true},
+	}
+	//f[utils.KEY_DELETED_AT] = nil
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
 func (r Repository) UpdateOrInsertTokenUri(contractAddress string, tokenID string, inputData *entity.TokenUri) (*mongo.UpdateResult, error) {
 	inputData.SetUpdatedAt()
 	inputData.SetCreatedAt()

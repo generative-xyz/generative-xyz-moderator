@@ -707,7 +707,7 @@ func (u Usecase) GetRecentWorksProjects(req structure.FilterProjects) (*entity.P
 
 func (u Usecase) GetUpdatedProjectStats(req structure.GetProjectReq) (*entity.ProjectStat, []entity.TraitStat, error) {
 
-	project, err := u.Repo.FindProjectBy(req.ContractAddr, req.TokenID)
+	project, err := u.Repo.FindProjectByProjectIdWithoutCache(req.TokenID)
 	if err != nil {
 		return nil, nil, err
 	}
