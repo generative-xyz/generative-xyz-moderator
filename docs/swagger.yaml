@@ -1611,6 +1611,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.InscribeInfoResp'
+      security:
+      - Api-Key: []
       summary: BTC Info Inscribe
       tags:
       - Inscribe
@@ -1626,6 +1628,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entity.Pagination'
+      security:
+      - Api-Key: []
       summary: BTC List Inscribe
       tags:
       - Inscribe
@@ -1647,6 +1651,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entity.InscribeBTCResp'
+      security:
+      - Api-Key: []
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
@@ -1669,6 +1675,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.InscribeBtcResp'
+      security:
+      - Api-Key: []
       summary: BTC Generate receive wallet address
       tags:
       - Inscribe
@@ -1688,6 +1696,8 @@ paths:
       responses:
         "200":
           description: OK
+      security:
+      - Api-Key: []
       summary: BTC Retry Inscribe
       tags:
       - Inscribe
