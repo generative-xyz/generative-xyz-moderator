@@ -11,5 +11,4 @@ type TrackTx struct {
 	InscriptionNumber uint64 `json:"inscription_number"`
 	Amount            uint64 `json:"amount"`
 	Address           string `json:"address"`
-	Receiver          string `json:"receiver"`
 }

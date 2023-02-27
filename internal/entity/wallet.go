@@ -15,7 +15,6 @@ type WalletTrackTx struct {
 	InscriptionID     string `bson:"inscription_id"`
 	InscriptionNumber uint64 `bson:"inscription_number"`
 	Amount            uint64 `bson:"amount"`
-	Receiver          string `bson:"receiver"`
 }
 
 func (u WalletTrackTx) TableName() string {

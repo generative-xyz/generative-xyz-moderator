@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/global"
@@ -92,31 +91,6 @@ func (r Repository) InsertOne(dbName string, obj entity.IEntity) error {
 	}
 
 	inserted, err := r.DB.Collection(dbName).InsertOne(context.TODO(), &bData)
-	if err != nil {
-		return err
-	}
-
-	objIDObject := inserted.InsertedID.(primitive.ObjectID)
-	objIDStr := objIDObject.Hex()
-
-	r.CreateCache(dbName, objIDStr, obj)
-	err = obj.Decode(bData)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-func (r Repository) InsertOneWithContext(ctx context.Context, dbName string, obj entity.IEntity) error {
-	obj.SetID()
-	obj.SetCreatedAt()
-
-	bData, err := obj.ToBson()
-	if err != nil {
-		return err
-	}
-
-	inserted, err := r.DB.Collection(dbName).InsertOne(ctx, &bData)
 	if err != nil {
 		return err
 	}
@@ -314,37 +288,6 @@ func (r Repository) Aggregate(dbName string, page int64, limit int64, filter int
 	return data, nil
 }
 
-func (r Repository) AggregateWithContext(ctx context.Context, dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
-	span, ctx := tracer.StartSpanFromContext(ctx, "Repository.AggregateWithContext")
-	defer span.Finish()
-	paginatedData := New(r.DB.Collection(dbName)).
-		Context(ctx).
-		Limit(int64(limit)).
-		Page(int64(page))
-
-	if len(sorts) > 0 {
-		for _, sort := range sorts {
-			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
-				paginatedData.Sort(sort.SortBy, sort.Sort)
-			}
-		}
-	} else {
-		paginatedData.Sort("created_at", entity.SORT_DESC)
-		paginatedData.Sort(utils.KEY_UUID, entity.SORT_ASC)
-	}
-
-	data, err := paginatedData.
-		Select(selectFields).
-		Decode(returnData).
-		Aggregate(filter)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 func (r Repository) CreateCache(dbName string, objID string, obj interface{}) error {
 	bytes, err := bson.Marshal(obj)
 	if err != nil {
@@ -431,13 +374,18 @@ func (r Repository) CreateCollectionIndexes() error {
 	if err != nil {
 		return err
 	}
-
+	
 	_, err = r.CreateReferalIndexModel()
 	if err != nil {
 		return err
 	}
-
+	
 	_, err = r.CreateVolumnIndexModel()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.CreateCategoryIndexModel()
 	if err != nil {
 		return err
 	}
