@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -312,7 +313,10 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	if name != "" {
 		client := search.NewClient(h.Config.AlgoliaApplicationId, h.Config.AlgoliaApiKey)
 		index := client.InitIndex("projects")
-		params := []interface{}{}
+		params := []interface{}{
+			opt.Page(0),
+			opt.HitsPerPage(100),
+		}
 
 		results, err := index.Search(name, params...)
 		if err != nil {
