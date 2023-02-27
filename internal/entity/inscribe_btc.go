@@ -38,6 +38,7 @@ type InscribeBTC struct {
 
 	OutputMintNFT interface{} `bson:"output_mint_nft"`
 	OutputSendNFT interface{} `bson:"output_send_nft"`
+	UserUuid      string      `bson:"user_uuid"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -96,6 +97,7 @@ type FilterInscribeBT struct {
 	OrdAddress    *string
 	IsConfirm     *string
 	InscriptionID *string
+	UserUuid      *string
 }
 
 type InscribeBTCResp struct {
