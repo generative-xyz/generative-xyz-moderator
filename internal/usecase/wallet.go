@@ -214,6 +214,43 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 	return &result, nil
 }
 
+func checkTxInBlockFromOrd(ordServer, txhash string) error {
+	url := fmt.Sprintf("%s/tx/%s", ordServer, txhash)
+	fmt.Println("url", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	if res.StatusCode != http.StatusOK {
+		return errors.New("getInscriptionByOutput Response status != 200")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return errors.New("Read body failed")
+	}
+	if strings.Contains(string(body), "not found") {
+		return errors.New("tx not found")
+	}
+
+	return nil
+}
+
 func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*structure.BlockCypherWalletInfo, error) {
 	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 
@@ -273,7 +310,10 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 	if err != nil {
 		return nil, err
 	}
-
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev.generativeexplorer.com"
+	}
 	for _, tx := range txList {
 		trackTx := structure.WalletTrackTx{
 			Txhash:            tx.Txhash,
@@ -283,21 +323,27 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			InscriptionNumber: tx.InscriptionNumber,
 			Receiver:          tx.Receiver,
 		}
-		_, bs, err := u.buildBTCClient()
-		if err != nil {
-			fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-			return nil, err
-		}
 
-		txStatus, err := bs.CheckTx(tx.Txhash)
-		if err != nil {
-			trackTx.Status = "Failed"
+		if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
+			trackTx.Status = "Success"
 		} else {
-			if txStatus.Confirmations > 0 {
-				trackTx.Status = "Success"
-			} else {
-				trackTx.Status = "Pending"
+			_, bs, err := u.buildBTCClient()
+			if err != nil {
+				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+				return nil, err
 			}
+
+			txStatus, err := bs.CheckTx(tx.Txhash)
+			if err != nil {
+				trackTx.Status = "Failed"
+			} else {
+				if txStatus.Confirmations > 0 {
+					trackTx.Status = "Success"
+				} else {
+					trackTx.Status = "Pending"
+				}
+			}
+
 		}
 
 		result = append(result, trackTx)
