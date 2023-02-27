@@ -10,24 +10,24 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/logger"
 )
 
-// UserCredits godoc
 // @Summary BTC Generate receive wallet address
-// @Description Generate receive wallet address
-// @Tags BTC
-// @Accept  json
-// @Produce  json
+// @Description BTC Generate receive wallet address
+// @Tags Inscribe
+// @Accept json
+// @Produce json
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	
 
 	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
@@ -82,8 +82,8 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.Logger.Info("btcCreateInscribeBTC", btcWallet)
-	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
+	logger.AtLog.Logger.Info("btcCreateInscribeBTC btcWallet", zap.Any("raw_data", btcWallet))
+	resp, err := h.inscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -93,7 +93,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
 	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
@@ -109,6 +109,13 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	return resp, nil
 }
 
+// @Summary BTC List Inscribe
+// @Description BTC List Inscribe
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Success 200 {object} entity.Pagination{}
+// @Router /inscribe/list [GET]
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -127,7 +134,6 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
@@ -144,7 +150,6 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
 }
@@ -161,12 +166,10 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
 
-// UserCredits godoc
 // @Summary get inscribe info
 // @Description get inscribe info
 // @Tags Inscribe
@@ -193,7 +196,6 @@ func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 

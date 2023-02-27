@@ -90,4 +90,5 @@ type WalletTrackTx struct {
 	Amount            uint64 `json:"amount"`
 	Status            string `json:"status"`
 	Receiver          string `json:"receiver"`
+	CreatedAt         uint64 `json:"created_at"`
 }
