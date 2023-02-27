@@ -262,6 +262,7 @@ func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error
 		Amount:            tx.Amount,
 		InscriptionID:     tx.InscriptionID,
 		InscriptionNumber: tx.InscriptionNumber,
+		Receiver:          tx.Receiver,
 	}
 	return u.Repo.CreateTrackTx(&trackTx)
 }
@@ -280,6 +281,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			Amount:            tx.Amount,
 			InscriptionID:     tx.InscriptionID,
 			InscriptionNumber: tx.InscriptionNumber,
+			Receiver:          tx.Receiver,
 		}
 		_, bs, err := u.buildBTCClient()
 		if err != nil {
