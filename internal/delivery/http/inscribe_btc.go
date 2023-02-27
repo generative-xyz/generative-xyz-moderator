@@ -81,7 +81,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	logger.AtLog.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
+	logger.AtLog.Logger.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
 	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
