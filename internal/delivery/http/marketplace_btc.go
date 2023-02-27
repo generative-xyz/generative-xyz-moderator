@@ -193,67 +193,13 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	inscriptionID := vars["ID"]
 
-	var nft *entity.MarketplaceBTCListing
-	var err error
-	isBuyable := true
-	isCompleted := false
-	// lastPrice := int64(0)
+	nftInfo, err := h.Usecase.BTCMarketplaceListingDetail(inscriptionID)
 
-	nft, err = h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
 	if err != nil {
-		isBuyable = false
-		nft, err = h.Usecase.Repo.FindBtcNFTListingLastSoldByNFTID(inscriptionID)
-		if err != nil {
-			h.Logger.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-
-		isCompleted = true
+		h.Logger.Error("h.Usecase.BTCMarketplaceListingDetail", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
-
-	// if !nft.IsSold {
-	// 	buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
-	// 	if err != nil {
-	// 		h.Logger.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
-	// 	}
-	// 	currentTime := time.Now()
-	// 	for _, order := range buyOrders {
-	// 		expireTime := order.ExpiredAt
-	// 		// not expired yet still waiting for btc
-	// 		if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
-	// 			isBuyable = false
-	// 			break
-	// 		}
-	// 		// could be expired but received btc
-	// 		if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
-	// 			isBuyable = false
-	// 			break
-	// 		}
-	// 	}
-	// }
-
-	nftInfo := structure.MarketplaceNFTDetail{
-		InscriptionID: nft.InscriptionID,
-		Name:          nft.Name,
-		Description:   nft.Description,
-		Price:         nft.Price,
-		OrderID:       nft.UUID,
-		IsConfirmed:   nft.IsConfirm,
-		Buyable:       isBuyable,
-		IsCompleted:   isCompleted,
-		// LastPrice:     lastPrice,
-	}
-	inscribeInfo, err := h.Usecase.GetInscribeInfo(nftInfo.InscriptionID)
-	if err != nil {
-		h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-	}
-	if inscribeInfo != nil {
-		nftInfo.InscriptionNumber = inscribeInfo.Index
-		nftInfo.ContentType = inscribeInfo.ContentType
-		nftInfo.ContentLength = inscribeInfo.ContentLength
-	}
-	//h.Logger.Info("resp.Proposal", resp)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
 }
@@ -331,6 +277,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		InscriptionID: reqBody.InscriptionID,
 		OrderID:       reqBody.OrderID,
 		BuyOrdAddress: reqBody.WalletAddress,
+		PayType:       reqBody.PayType,
 	}
 	//TODO: lam uncomment
 	listing, err := h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)

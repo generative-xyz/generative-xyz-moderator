@@ -235,6 +235,9 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 					{"inscription_name", 1},
 					{"inscription", 1},
 					{"inscription_index", 1},
+
+					{"pay_type", 1},
+					{"status", 1},
 				},
 			},
 		},
@@ -260,6 +263,9 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 
 					{"inscription", bson.D{{"$first", "$inscription"}}},
 					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
+
+					{"pay_type", bson.D{{"$first", "$pay_type"}}},
+					{"status", bson.D{{"$first", "$status"}}},
 				},
 			},
 		},
@@ -783,6 +789,9 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"inscription_name", 1},
 					{"inscription", 1},
 					{"inscription_index", 1},
+
+					{"pay_type", 1},
+					{"status", 1},
 				},
 			},
 		},
@@ -810,6 +819,9 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"inscription_name", bson.D{{"$first", "$inscription_name"}}},
 					{"inscription", bson.D{{"$first", "$inscription"}}},
 					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
+
+					{"pay_type", bson.D{{"$first", "$pay_type"}}},
+					{"status", bson.D{{"$first", "$status"}}},
 				},
 			},
 		},

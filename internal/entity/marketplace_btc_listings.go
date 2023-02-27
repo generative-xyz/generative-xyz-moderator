@@ -87,7 +87,7 @@ type MarketplaceBTCListingFilterPipeline struct {
 	CreatedAt     time.Time `bson:"created_at"`
 
 	//listing payment info:
-	PaymentType []string // ["btc", "eth", "usdt"} ....
+	PayType map[string]string `bson:"pay_type"`
 
 	// for filter
 	CollectionID     string    `bson:"collection_id"`
