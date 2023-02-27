@@ -25,6 +25,10 @@ func (r Repository) FilterReferrals(filter entity.FilterReferrals) bson.M {
 	if filter.ReferrerID != nil {
 		f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
 	}
+	
+	// if filter.PayType != nil {
+	// 	f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
+	// }
 	return f
 }
 
