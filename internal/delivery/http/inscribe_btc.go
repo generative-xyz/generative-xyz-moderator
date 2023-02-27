@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 )
 
@@ -26,7 +27,8 @@ import (
 // @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
+	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -41,10 +43,6 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	if reqUsecase == nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
 
@@ -73,7 +71,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase)
+	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase, userUuid)
 	if err != nil {
 		h.Logger.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -115,7 +113,8 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list [GET]
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
+	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 20
@@ -124,8 +123,14 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		page = 1
 	}
-
-	result, err := h.Usecase.ListInscribeBTC(int64(limit), int64(page))
+	req := &entity.FilterInscribeBT{
+		BaseFilters: entity.BaseFilters{
+			Limit: int64(limit),
+			Page:  int64(page),
+		},
+		UserUuid: &userUuid,
+	}
+	result, err := h.Usecase.ListInscribeBTC(req)
 	if err != nil {
 		h.Logger.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
