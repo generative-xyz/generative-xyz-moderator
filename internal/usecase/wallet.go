@@ -315,6 +315,10 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 		ordServer = "https://dev.generativeexplorer.com"
 	}
 	for _, tx := range txList {
+		createdAt := uint64(0)
+		if tx.CreatedAt != nil {
+			createdAt = uint64(tx.CreatedAt.Unix())
+		}
 		trackTx := structure.WalletTrackTx{
 			Txhash:            tx.Txhash,
 			Type:              tx.Type,
@@ -322,6 +326,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			InscriptionID:     tx.InscriptionID,
 			InscriptionNumber: tx.InscriptionNumber,
 			Receiver:          tx.Receiver,
+			CreatedAt:         createdAt,
 		}
 
 		if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
