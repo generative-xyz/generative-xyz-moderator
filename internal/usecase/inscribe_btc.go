@@ -82,7 +82,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}, nil
 }
 
-func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
+func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq, userUuid string) (*entity.InscribeBTC, error) {
 
 	u.Logger.Info("input", input)
 
@@ -181,6 +181,7 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	walletAddress.FeeRate = input.FeeRate
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
+	walletAddress.UserUuid = userUuid
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -191,10 +192,8 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	return walletAddress, nil
 }
 
-func (u Usecase) ListInscribeBTC(limit, page int64) (*entity.Pagination, error) {
-	return u.Repo.ListInscribeBTC(entity.FilterInscribeBT{
-		BaseFilters: entity.BaseFilters{Limit: limit, Page: page},
-	})
+func (u Usecase) ListInscribeBTC(req *entity.FilterInscribeBT) (*entity.Pagination, error) {
+	return u.Repo.ListInscribeBTC(req)
 }
 
 func (u Usecase) DetailInscribeBTC(inscriptionID string) (*entity.InscribeBTCResp, error) {
