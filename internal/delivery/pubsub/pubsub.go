@@ -1,8 +1,6 @@
 package pubsub
 
 import (
-	"fmt"
-
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
@@ -11,15 +9,13 @@ import (
 
 type PubsubHandler struct {
 	usecase usecase.Usecase
-	pubsub     redis.IPubSubClient
-	log logger.Ilogger
+	pubsub  redis.IPubSubClient
 }
 
-func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *PubsubHandler {
+func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient) *PubsubHandler {
 	return &PubsubHandler{
 		usecase: usecase,
-		pubsub:     pubsub,
-		log: log,
+		pubsub:  pubsub,
 	}
 }
 
@@ -38,7 +34,7 @@ func (h PubsubHandler) StartServer() {
 		panic(err)
 	}
 
-	h.log.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
+	logger.AtLog.Infof("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names)
 	// Go channel which receives messages.
 	ch := pubsub.Channel()
 	for msg := range ch {
@@ -56,8 +52,8 @@ func (h PubsubHandler) StartServer() {
 		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
 			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
 			break
-		}}
+		}
+	}
 	<-ch
 	return
 }
-
