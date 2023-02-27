@@ -1359,35 +1359,35 @@ type Volume struct {
 func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
 	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
 
-	p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
-	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
-	}
+	// p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
+	// if err != nil {
+	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
+	// }
 
-	pIDs := []string{}
-	for _, item := range p {
-		pIDs = append(pIDs, item.TokenID)
-	}
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+	// pIDs := []string{}
+	// for _, item := range p {
+	// 	pIDs = append(pIDs, item.TokenID)
+	// }
+	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
 
-	data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
-	}
+	// data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
+	// if err != nil {
+	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
+	// }
 
-	resp := Volumes{}
-	for _, item := range data.Items {
-		tmp := Volume{
-			ProjectID: item.ID.ProjectID,
-			PayType:   item.ID.Paytype,
-			Amount:    fmt.Sprintf("%d", int(item.Amount)),
-		}
-		resp.Items = append(resp.Items, tmp)
-	}
+	// resp := Volumes{}
+	// for _, item := range data.Items {
+	// 	tmp := Volume{
+	// 		ProjectID: item.ID.ProjectID,
+	// 		PayType:   item.ID.Paytype,
+	// 		Amount:    fmt.Sprintf("%d", int(item.Amount)),
+	// 	}
+	// 	resp.Items = append(resp.Items, tmp)
+	// }
 
-	resp.TotalBTC = data.TotalBTC
-	resp.TotalETH = data.TotalETH
+	// resp.TotalBTC = data.TotalBTC
+	// resp.TotalETH = data.TotalETH
 
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
-	return resp, nil
+	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
+	return nil, nil
 }

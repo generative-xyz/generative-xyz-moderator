@@ -106,31 +106,6 @@ func (r Repository) InsertOne(dbName string, obj entity.IEntity) error {
 
 	return nil
 }
-func (r Repository) InsertOneWithContext(ctx context.Context, dbName string, obj entity.IEntity) error {
-	obj.SetID()
-	obj.SetCreatedAt()
-
-	bData, err := obj.ToBson()
-	if err != nil {
-		return err
-	}
-
-	inserted, err := r.DB.Collection(dbName).InsertOne(ctx, &bData)
-	if err != nil {
-		return err
-	}
-
-	objIDObject := inserted.InsertedID.(primitive.ObjectID)
-	objIDStr := objIDObject.Hex()
-
-	r.CreateCache(dbName, objIDStr, obj)
-	err = obj.Decode(bData)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 type queriedChan struct {
 	Err  error
@@ -283,15 +258,16 @@ func (r Repository) Paginate(dbName string, page int64, limit int64, filter inte
 	return data, nil
 }
 
-func (r Repository) PaginateWithContext(ctx context.Context, dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
+func (r Repository) Aggregate(dbName string, page int64, limit int64, filter interface{}, selectFields interface{}, sorts []Sort, returnData interface{}) (*PaginatedData, error) {
 	paginatedData := New(r.DB.Collection(dbName)).
-		Context(ctx).
+		Context(context.TODO()).
 		Limit(int64(limit)).
 		Page(int64(page))
 
 	if len(sorts) > 0 {
 		for _, sort := range sorts {
 			if sort.Sort == entity.SORT_ASC || sort.Sort == entity.SORT_DESC {
+				//sortValue := bson.D{{"created_at", -1}}
 				paginatedData.Sort(sort.SortBy, sort.Sort)
 			}
 		}
@@ -299,14 +275,16 @@ func (r Repository) PaginateWithContext(ctx context.Context, dbName string, page
 		paginatedData.Sort("created_at", entity.SORT_DESC)
 		paginatedData.Sort(utils.KEY_UUID, entity.SORT_ASC)
 	}
+
 	data, err := paginatedData.
 		Select(selectFields).
-		Filter(filter).
 		Decode(returnData).
-		Find()
+		Aggregate(filter)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
@@ -396,6 +374,21 @@ func (r Repository) CreateCollectionIndexes() error {
 	if err != nil {
 		return err
 	}
+	
+	_, err = r.CreateReferalIndexModel()
+	if err != nil {
+		return err
+	}
+	
+	_, err = r.CreateVolumnIndexModel()
+	if err != nil {
+		return err
+	}
+
+	// _, err = r.CreateCategoryIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

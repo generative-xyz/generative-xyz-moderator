@@ -12,7 +12,7 @@ import (
 
 
 func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) {
-	url := fmt.Sprintf("https://ordinals-explorer.generative.xyz/inscription/%s", id)
+	url := fmt.Sprintf("https://generativeexplorer.com/inscription/%s", id)
 	dts := []string{}
 	dds := []string{}
 	hrefs := []string{}
