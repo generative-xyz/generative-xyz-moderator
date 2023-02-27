@@ -1398,6 +1398,11 @@ const docTemplate = `{
         },
         "/inscribe/info/{ID}": {
             "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
                 "description": "BTC Info Inscribe",
                 "consumes": [
                     "application/json"
@@ -1430,6 +1435,11 @@ const docTemplate = `{
         },
         "/inscribe/list": {
             "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
                 "description": "BTC List Inscribe",
                 "consumes": [
                     "application/json"
@@ -1453,6 +1463,11 @@ const docTemplate = `{
         },
         "/inscribe/nft-detail/{ID}": {
             "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
                 "description": "BTC NFT Detail Inscribe",
                 "consumes": [
                     "application/json"
@@ -1485,6 +1500,11 @@ const docTemplate = `{
         },
         "/inscribe/receive-address": {
             "post": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
                 "description": "BTC Generate receive wallet address",
                 "consumes": [
                     "application/json"
@@ -1519,6 +1539,11 @@ const docTemplate = `{
         },
         "/inscribe/retry/{ID}": {
             "post": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
                 "description": "BTC Retry Inscribe",
                 "consumes": [
                     "application/json"
