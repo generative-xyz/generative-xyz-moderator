@@ -29,6 +29,7 @@ func ParseSort(key string) QuerySort {
 
 const (
 	MAX_CHECK_BALANCE int    = 15
+	PERCENT_EARNING int    = 900
 	API_KEY           string = "Api-Key"
 	//AUTH_TOKEN           string = "Authorization" //token will be save in this variable
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
@@ -86,6 +87,7 @@ const (
 
 	COLLECTION_USERS                    string = "users"
 	COLLECTION_USER_VOLUMN                  string = "user_volumn"
+	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"

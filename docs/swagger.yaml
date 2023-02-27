@@ -733,6 +733,20 @@ definitions:
       signature:
         type: string
     type: object
+  request.WithDrawItemRequest:
+    properties:
+      amount:
+        type: string
+      paymentType:
+        type: string
+    type: object
+  request.WithDrawRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/request.WithDrawItemRequest'
+        type: array
+    type: object
   response.CategoryResp:
     properties:
       id:
@@ -2189,6 +2203,7 @@ paths:
           description: OK
       security:
       - Api-Key: []
+          description: ""
       summary: BTC Retry Inscribe
       tags:
       - Inscribe
@@ -2747,11 +2762,12 @@ paths:
       - application/json
       description: User profile via wallet address
       parameters:
-      - description: Wallet address
-        in: path
-        name: walletAddress
+      - description: Withdraw request
+        in: body
+        name: WithDrawRequest
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.WithDrawRequest'
       produces:
       - application/json
       responses:
@@ -2764,6 +2780,8 @@ paths:
                 data:
                   $ref: '#/definitions/response.ProfileResponse'
               type: object
+      security:
+      - Authorization: []
       summary: User profile via wallet address
       tags:
       - Profile

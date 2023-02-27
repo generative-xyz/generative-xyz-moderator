@@ -415,22 +415,20 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedDetails, error) {
 
 	tokenMd5 := helpers.GenerateMd5String(accessToken)
-	u.Logger.Info("tokenMd5", tokenMd5)
+	u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
 
 	userID, err := u.Cache.GetData(tokenMd5)
 	if err != nil {
 		err = errors.New("Access token is invaild")
-		u.Logger.Error(err)
-		// return nil, err
+		u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
+		return nil, err
 
 	}
-
-	u.Logger.Info("cached.UserID", userID)
 
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
 		return nil, err
 	}
 
@@ -438,13 +436,11 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 
 	if userID == nil {
 		err := errors.New("Cannot find userID")
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
 		return nil, err
 	}
 
-	timeT := time.Unix(claim.ExpiresAt, 0)
-	u.Logger.Info("claim.Exp", timeT)
-	u.Logger.Info("claim", claim)
+	//timeT := time.Unix(claim.ExpiresAt, 0)
 	return claim, err
 }
 

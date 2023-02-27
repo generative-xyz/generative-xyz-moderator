@@ -266,7 +266,8 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 // @Tags Profile
 // @Accept  json
 // @Produce  json
-// @Param walletAddress path string true "Wallet address"
+// @Security Authorization
+// @Param WithDrawRequest body request.WithDrawRequest true "Withdraw request"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/withdraw [POST]
 func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
@@ -280,15 +281,30 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	_ = walletAddress
-
 	
-	// resp, err := h.profileToResp(profile)
-	// if err != nil {
-	// 	h.Logger.Error("h.profileToResp", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
+	var reqBody request.WithDrawRequest
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("decoder.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	wdr := &structure.WithDrawRequest{}
+	err = copier.Copy(wdr, reqBody)
+	if err != nil {
+		h.Logger.Error("copier.Copy.structure.UpdateProfile", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	wd, err := h.Usecase.CreateWithdraw(walletAddress, *wdr)
+	if err != nil {
+		h.Logger.Error("h.profileToResp", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }

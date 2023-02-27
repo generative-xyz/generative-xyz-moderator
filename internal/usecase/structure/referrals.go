@@ -21,4 +21,8 @@ type ReferalResp struct {
 type ReferralVolumnResp struct {
 	Amount string 
 	AmountType string 
+	ProjectID string 
+	Percent int 
+	Earn string 
+	GenEarn string 
 }
