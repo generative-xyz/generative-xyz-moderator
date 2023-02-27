@@ -10,13 +10,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
-	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
-	"rederinghub.io/utils/logger"
 )
 
 // @Summary BTC Generate receive wallet address
@@ -82,8 +80,8 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	logger.AtLog.Logger.Info("btcCreateInscribeBTC btcWallet", zap.Any("raw_data", btcWallet))
-	resp, err := h.inscribeBtcCreatedRespResp(btcWallet)
+	h.Logger.Info("btcCreateInscribeBTC", btcWallet)
+	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -93,7 +91,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
 	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
