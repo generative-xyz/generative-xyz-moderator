@@ -314,7 +314,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	result := h.Usecase.JobMint_CheckTxMasterAndRefund()
+	result := h.Usecase.JobMKP_Payment()
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
