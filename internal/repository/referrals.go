@@ -26,6 +26,14 @@ func (r Repository) FilterReferrals(filter entity.FilterReferrals) bson.M {
 		f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
 	}
 	
+	if filter.ReferrerAddress != nil {
+		f["referrer.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferrerAddress, Options: "i"}
+	}
+	
+	if filter.ReferreeAddress != nil {
+		f["referree.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferreeAddress, Options: "i"}
+	}
+	
 	// if filter.PayType != nil {
 	// 	f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
 	// }
@@ -46,6 +54,20 @@ func (r Repository) GetReferrals(filter entity.FilterReferrals) (*entity.Paginat
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit
 	return resp, nil
+}
+
+func (r Repository) GetAllReferrals(filter entity.FilterReferrals) ([]entity.Referral, error) {
+	refs := []entity.Referral{}
+	f := r.FilterReferrals(filter)
+	cursor, err := r.DB.Collection(entity.Referral{}.TableName()).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &refs); err != nil {
+		return nil, err
+	}
+	return refs, err
 }
 
 func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {

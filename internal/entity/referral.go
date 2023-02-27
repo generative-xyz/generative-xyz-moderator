@@ -13,12 +13,23 @@ type Referral struct {
 	Referrer   *Users `bson:"referrer"`
 	Referree   *Users `bson:"referree"`
 	Percent    int32 	`bson:"percent"`
+	ReferreeVolumn ReferreeVolumn `bson:"referreeVolumn"`
+}
+
+type ReferreeVolumn struct {
+	Amount string  `bson:"amount"`
+	AmountType string  `bson:"amountType"`
+	ProjectID string  `bson:"projectID"`
+	Earn string  `bson:"earn"`
+	GenEarn string  `bson:"genEarn"`
 }
 
 type FilterReferrals struct {
 	BaseFilters
 	ReferrerID *string
 	ReferreeID *string
+	ReferrerAddress *string
+	ReferreeAddress *string
 }
 
 func (u Referral) TableName() string { 

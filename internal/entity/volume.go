@@ -6,7 +6,6 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-
 type  AggregateWalletAddressItem struct {
 	ID AggregateItemID `bson:"_id" json:"id"`
 	Amount float64 `bson:"amount" json:"amount"`
@@ -19,12 +18,14 @@ type  AggregateWalleRespItem struct {
 }
 
 type  AggregateAmount struct {
+	ID AggregateItemID `bson:"_id" json:"id"`
 	Amount float64 `bson:"amount" json:"amount"`
 }
 
 type  AggregateItemID struct {
 	ProjectID string `bson:"projectID" json:"projectID"`
 	Paytype string `bson:"payType" json:"payType"`
+	CreatorAddress string `bson:"creatorAddress" json:"creatorAddress"`
 }
 
 //analytis
@@ -35,10 +36,11 @@ type  AggregateItemID struct {
 // }
 
 type FilterVolume struct {
-	projectIDs []string
-	amountType *string
+	ProjectIDs []string
+	AmountType *string
 	UserID *string
 	ProjectID *string
+	CreatorAddress *string
 }
 
 type VolumeProjectInfo  struct{
@@ -56,7 +58,7 @@ type VolumnUserInfo struct {
 
 type UserVolumn struct {
 	BaseEntity              `bson:",inline" json:"-"`
-	AmountType *string  `bson:"amountType"`
+	PayType *string  `bson:"payType"`
 	CreatorAddress *string `bson:"creatorAddress"`
 	ProjectID *string  `bson:"projectID"`
 	Amount *string  `bson:"amount"`

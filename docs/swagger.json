@@ -1606,7 +1606,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2479,6 +2479,11 @@
         },
         "/profile/withdraw": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "User profile via wallet address",
                 "consumes": [
                     "application/json"
@@ -2492,11 +2497,13 @@
                 "summary": "User profile via wallet address",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Wallet address",
-                        "name": "walletAddress",
-                        "in": "path",
-                        "required": true
+                        "description": "Withdraw request",
+                        "name": "WithDrawRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WithDrawRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -4904,6 +4911,28 @@
                 },
                 "signature": {
                     "type": "string"
+                }
+            }
+        },
+        "request.WithDrawItemRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "paymentType": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.WithDrawRequest": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.WithDrawItemRequest"
+                    }
                 }
             }
         },
