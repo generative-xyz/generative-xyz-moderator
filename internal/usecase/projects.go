@@ -20,6 +20,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"go.uber.org/zap"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -171,7 +172,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			//Html
 			htmlUrl, err := u.parseAnimationURL(*pe)
 			if err == nil {
-				animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+				animationHtml := fmt.Sprintf("%s", *htmlUrl)
 				pe.AnimationHtml = &animationHtml
 			}
 
@@ -215,10 +216,11 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			u.Logger.Error("u.Repo.CreateProject", err.Error(), err)
 			//return nil, err
 		}
+	} else {
+		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 	}
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
-	u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 
 	return pe, nil
 }
@@ -252,7 +254,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields,"", project.Description, false)
+	fields = addFields(fields, "", project.Description, false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 
@@ -669,7 +671,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 				return
 			}
 
-			animationHtml  := fmt.Sprintf("%s", *htmlUrl)
+			animationHtml := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
 			_, err = u.Repo.UpdateProject(c.UUID, c)
@@ -679,7 +681,6 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 
 	}()
-
 
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
@@ -1216,6 +1217,16 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
+
+	go func() {
+		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+		if err != nil {
+			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
+			return
+		}
+		u.NotifyCreateNewProjectToDiscord(pe, owner)
+	}()
+
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
 }
