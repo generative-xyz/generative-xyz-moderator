@@ -83,13 +83,9 @@ func init() {
 // @version 1.0.0
 // @description This is a sample server Autonomous devices management server.
 
-// @securityDefinitions.apikey Authorization
+// @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
-
-// @securityDefinitions.apikey Api-Key
-// @in header
-// @name Api-Key
 
 // @BasePath /rederinghub.io/v1
 func main() {
@@ -163,7 +159,7 @@ func startServer() {
 	err = repo.CreateCollectionIndexes()
 	if err != nil {
 		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-		return
+		// return
 	}
 
 	uc, err := usecase.NewUsecase(&g, *repo)
