@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -251,9 +254,89 @@ func checkTxInBlockFromOrd(ordServer, txhash string) error {
 	return nil
 }
 
-func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*structure.BlockCypherWalletInfo, error) {
-	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
+type BTCTxInfo struct {
+	Data struct {
+		BlockHeight   int         `json:"block_height"`
+		BlockHash     string      `json:"block_hash"`
+		BlockTime     int         `json:"block_time"`
+		CreatedAt     int         `json:"created_at"`
+		Confirmations int         `json:"confirmations"`
+		Fee           int         `json:"fee"`
+		Hash          string      `json:"hash"`
+		InputsCount   int         `json:"inputs_count"`
+		InputsValue   int         `json:"inputs_value"`
+		IsCoinbase    bool        `json:"is_coinbase"`
+		IsDoubleSpend bool        `json:"is_double_spend"`
+		IsSwTx        bool        `json:"is_sw_tx"`
+		LockTime      int         `json:"lock_time"`
+		OutputsCount  int         `json:"outputs_count"`
+		OutputsValue  int64       `json:"outputs_value"`
+		Sigops        int         `json:"sigops"`
+		Size          int         `json:"size"`
+		Version       int         `json:"version"`
+		Vsize         int         `json:"vsize"`
+		Weight        int         `json:"weight"`
+		WitnessHash   string      `json:"witness_hash"`
+		Inputs        interface{} `json:"inputs"`
+		Outputs       interface{} `json:"outputs"`
+	} `json:"data"`
+	ErrCode int    `json:"err_code"`
+	ErrNo   int    `json:"err_no"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
 
+var btcRateLock sync.Mutex
+
+func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
+	btcRateLock.Lock()
+	defer func() {
+		time.Sleep(100 * time.Millisecond)
+		btcRateLock.Unlock()
+	}()
+	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=1", txhash)
+	fmt.Println("url", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getInscriptionByOutput Response status != 200")
+	}
+	var result BTCTxInfo
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Read body failed")
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Println(string(body))
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Message + " " + url)
+	}
+
+	return &result, nil
+}
+
+func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*structure.BlockCypherWalletInfo, error) {
 	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
@@ -328,30 +411,53 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			Receiver:          tx.Receiver,
 			CreatedAt:         createdAt,
 		}
-
-		if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
-			trackTx.Status = "Success"
+		if createdAt != 0 && time.Since(*tx.CreatedAt) >= 1*time.Hour {
+			if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
+				trackTx.Status = "Success"
+			} else {
+				err = getBTCTxStatusExtensive(&trackTx, &u)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, trackTx)
+			}
 		} else {
-			_, bs, err := u.buildBTCClient()
+			err = getBTCTxStatusExtensive(&trackTx, &u)
 			if err != nil {
-				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 				return nil, err
 			}
-
-			txStatus, err := bs.CheckTx(tx.Txhash)
-			if err != nil {
-				trackTx.Status = "Failed"
-			} else {
-				if txStatus.Confirmations > 0 {
-					trackTx.Status = "Success"
-				} else {
-					trackTx.Status = "Pending"
-				}
-			}
-
+			result = append(result, trackTx)
 		}
-
-		result = append(result, trackTx)
 	}
 	return result, nil
+}
+
+func getBTCTxStatusExtensive(trackTx *structure.WalletTrackTx, u *Usecase) error {
+	_, bs, err := u.buildBTCClient()
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+
+	txStatus, err := bs.CheckTx(trackTx.Txhash)
+	if err != nil {
+		txInfo, err := checkTxFromBTC(trackTx.Txhash)
+		if err != nil {
+			fmt.Printf("checkTxFromBTC err: %v", err)
+			trackTx.Status = "Failed"
+		} else {
+			if txInfo.Data.Confirmations > 0 {
+				trackTx.Status = "Success"
+			} else {
+				trackTx.Status = "Pending"
+			}
+		}
+	} else {
+		if txStatus.Confirmations > 0 {
+			trackTx.Status = "Success"
+		} else {
+			trackTx.Status = "Pending"
+		}
+	}
+	return nil
 }
