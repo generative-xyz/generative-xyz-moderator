@@ -6,4 +6,5 @@ type CreateInscribeBtcReq struct {
 	File          string `json:"file"`
 	FeeRate       int32  `json:"fee_rate"`
 	FileName      string `json:"fileName"`
+	IsAuthentic   bool   `json:"isAuthentic"`
 }
