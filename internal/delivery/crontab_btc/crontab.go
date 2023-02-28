@@ -3,7 +3,6 @@ package crontab_btc
 import (
 	"time"
 
-	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -59,14 +58,4 @@ func (h ScronBTCHandler) StartServer() {
 			time.Sleep(5 * time.Minute)
 		}
 	}()
-
-	c := cron.New()
-	// cronjob to sync inscription index
-	c.AddFunc("*/30 * * * *", func() {
-		err := h.Usecase.SyncTokenInscribeIndex()
-		if err != nil {
-			h.Logger.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
-		}
-	})
-	c.Start()
 }
