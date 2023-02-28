@@ -771,6 +771,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 		} else {
 			walletAddress = userWallet
 		}
+	} else {
+		walletAddress = delegateWallet
 	}
 
 	if walletAddress != "" {
