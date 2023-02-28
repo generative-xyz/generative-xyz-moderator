@@ -5,6 +5,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
@@ -81,4 +82,13 @@ func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {
 	}
 
 	return count, nil
+}
+
+func (r Repository) UpdateReferral(ID string, data *entity.Referral) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	result, err := r.UpdateOne(entity.Referral{}.TableName(), filter, data)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

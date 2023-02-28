@@ -13,7 +13,7 @@ type Referral struct {
 	Referrer   *Users `bson:"referrer"`
 	Referree   *Users `bson:"referree"`
 	Percent    int32 	`bson:"percent"`
-	//ReferreeVolumn ReferreeVolumn `bson:"referreeVolumn"`
+	ReferreeVolumn map[string]ReferreeVolumn `bson:"referreeVolumn"`
 }
 
 type ReferreeVolumn struct {
