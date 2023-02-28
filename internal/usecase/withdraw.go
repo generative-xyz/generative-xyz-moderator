@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -74,11 +73,12 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 
 		
 		earning := volumeAmount - widthDrawAmount
-		if earning <= 0 {
-			err = errors.New("Not enough balance")
-			u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", earning) , zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumeAmount", volumeAmount), zap.Any("fWdtd", fWdtd), zap.Error(err))
-			return nil, err
-		}
+		//TODO - validate these things
+		// if earning <= 0 {
+		// 	err = errors.New("Not enough balance")
+		// 	u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", earning) , zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumeAmount", volumeAmount), zap.Any("fWdtd", fWdtd), zap.Error(err))
+		// 	return nil, err
+		// }
 
 
 		f.WalletAddress = walletAddress
