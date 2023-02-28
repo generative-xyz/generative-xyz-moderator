@@ -99,6 +99,3 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 	u.Logger.LogAny("GetReferrals", zap.Any("req", req), zap.Any("referrals",referrals), zap.Any("referrals", referrals.Total))
 	return referrals, nil
 }
-
-
-

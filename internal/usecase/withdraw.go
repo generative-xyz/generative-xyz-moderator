@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -19,14 +20,16 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 	for _, wr := range data.Items {
 		volumeAmount := 0.0
 		widthDrawAmount := 0.0
+		refAmount := 0.0
 		//totalEarning := (refAmount + refAmount) - widthDrawAmount
 		// (refAmount + refAmount) is pushed into volumn by crontab
 		//TODO - calculate refAmount
+		
 	
 		f := &entity.Withdraw{}
 		err := copier.Copy(f, wr)
 		if err != nil {
-			u.Logger.ErrorAny("CreateWithdraw", zap.Any("input", data), zap.Error(err))
+			u.Logger.ErrorAny("CreateWithdraw.Copy", zap.Any("input", data), zap.Error(err))
 			return nil, err
 		}
 
@@ -37,16 +40,27 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 			CreatorAddress: &walletAddress,
 		}
 
-		u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv))
+		u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv))
+		volumes, _ := u.CreatorVolume(walletAddress, f.PayType)
 		
+		fr := entity.FilterReferrals{
+			ReferrerAddress: &walletAddress,
+		}
 		
-		volumes, err := u.CreatorVolume(walletAddress, f.PayType)
-		if err != nil {
-			u.Logger.ErrorAny("CreateWithdraw", zap.Any("input", data), zap.Error(err))
-			return nil, err
+		refs, _ := u.Repo.GetReferral(fr)
+		if len(refs) > 0 {
+			for _, ref := range refs {
+				tmp, err := strconv.ParseFloat(ref.ReferreeVolumn[wr.PaymentType].Amount, 10)
+				if err == nil {
+					refAmount +=   tmp
+				}
+				
+			}
 		}
 
-		u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes))
+		spew.Dump(fr)
+	
+		u.Logger.LogAny("CreateWithdraw.volumes", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes))
 		//check widthdraw history
 		stat :=  entity.StatusWithdraw_Done
 		fWdtd := &entity.FilterWithdraw{
@@ -54,12 +68,10 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 			Status: &stat,
 			PaymentType: &wr.PaymentType,
 		}
-		u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes), zap.Any("fWdtd", fWdtd))
-		wtd, err := u.Repo.AggregateWithDraw(fWdtd)
-		if err != nil {
-			u.Logger.ErrorAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumeAmount", volumeAmount), zap.Any("fWdtd", fWdtd), zap.Error(err))
-			return nil, err
-		}
+		u.Logger.LogAny("CreateWithdraw.FilterWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes), zap.Any("fWdtd", fWdtd))
+		wtd, _ := u.Repo.AggregateWithDraw(fWdtd)
+		u.Logger.LogAny("CreateWithdraw.AggregateWithDraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes))
+
 
 		//check referal amount
 		if volumes == nil {
@@ -79,8 +91,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 			widthDrawAmount = wtd[0].Amount
 		}
 
-		
-		earning := volumeAmount - widthDrawAmount
+		earning := (refAmount + volumeAmount) - widthDrawAmount
 		//TODO - validate these things
 		// if earning <= 0 {
 		// 	err = errors.New("Not enough balance")
@@ -93,10 +104,10 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 		f.PayType = wr.PaymentType
 		f.Amount = fmt.Sprintf("%d", int(earning))
 
-		u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("widthdraw",f))
+		u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("widthdraw",f))
 		err = u.Repo.CreateWithDraw(f)
 		if err != nil {
-			u.Logger.ErrorAny("CreateWithdraw", zap.Any("CreateWithDraw", f), zap.Error(err))
+			u.Logger.ErrorAny("CreateWithdraw.CreateWithDraw", zap.Any("CreateWithDraw", f), zap.Error(err))
 			return nil, err
 		}
 
