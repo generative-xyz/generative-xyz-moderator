@@ -990,10 +990,12 @@ func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
 				Price:          reqs.Price,
 				IsConfirm:      true,
 				IsSold:         false,
+				Status:         entity.StatusListing_ReceivedNft,
 				ExpiredAt:      time.Now().Add(time.Hour * 1),
 				Name:           "",
 				Description:    "",
 				InscriptionID:  v,
+				PayType:        reqs.PayType,
 			}
 			// get first:
 			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)
