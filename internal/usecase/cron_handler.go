@@ -647,11 +647,11 @@ const (
 	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC               int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 100000
+	TRENDING_SCORE_EACH_MINT			 int64 = 1000
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
 func (u Usecase) SyncProjectTrending() error {
-
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
@@ -682,7 +682,7 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
-		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN
+		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + int64(len(btcActivites))*TRENDING_SCORE_EACH_MINT
 
 		isWhitelistedProject := false
 		isBoostedProject := false
