@@ -1400,7 +1400,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Info Inscribe",
@@ -1437,7 +1437,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC List Inscribe",
@@ -1465,7 +1465,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "List NFT from Moralis",
@@ -1513,7 +1513,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC NFT Detail Inscribe",
@@ -1550,7 +1550,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Generate receive wallet address",
@@ -1589,7 +1589,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Retry Inscribe",
@@ -5651,12 +5651,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "Api-Key": {
-            "type": "apiKey",
-            "name": "Api-Key",
-            "in": "header"
-        },
-        "Authorization": {
+        "ApiKeyAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
