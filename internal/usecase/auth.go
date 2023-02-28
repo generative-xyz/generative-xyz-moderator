@@ -309,13 +309,13 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.Bio = *data.Bio
 	}
 
-	if data.WalletAddressBTC != nil && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
+	if data.WalletAddressBTC != nil && *data.WalletAddressBTC != "" && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
 		isUpdateWalletAddress = true
 		oldBtcAdress = user.WalletAddressBTC
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
 
-	if data.WalletAddressPayment != nil && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
+	if data.WalletAddressPayment != nil && *data.WalletAddressPayment != "" && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
 		isUpdateWalletAddressPayment = true
 		oldAdressPayment = user.WalletAddressPayment
 		user.WalletAddressPayment = *data.WalletAddressPayment
