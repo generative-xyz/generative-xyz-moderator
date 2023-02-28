@@ -164,8 +164,26 @@ func (r Repository) FindBtcNFTListingByOrderIDValid(uuid string) (*entity.Market
 func (r Repository) RetrieveBTCNFTPendingListings() ([]entity.MarketplaceBTCListing, error) {
 	resp := []entity.MarketplaceBTCListing{}
 	filter := bson.M{
-		"isConfirm":  false,
+		"status":     entity.StatusListing_Pending,
 		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) LisListingNftByStatus(statuses []entity.StatusListing) ([]entity.MarketplaceBTCListing, error) {
+	resp := []entity.MarketplaceBTCListing{}
+	filter := bson.M{
+		"status": bson.M{"$in": statuses},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_MARKETPLACE_BTC_LISTING).Find(context.TODO(), filter)
@@ -217,6 +235,9 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 					{"inscription_name", 1},
 					{"inscription", 1},
 					{"inscription_index", 1},
+
+					{"pay_type", 1},
+					{"status", 1},
 				},
 			},
 		},
@@ -242,6 +263,9 @@ func (r Repository) retrieveBTCNFTListingsByFilter(filter bson.D, limit, offset 
 
 					{"inscription", bson.D{{"$first", "$inscription"}}},
 					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
+
+					{"pay_type", bson.D{{"$first", "$pay_type"}}},
+					{"status", bson.D{{"$first", "$status"}}},
 				},
 			},
 		},
@@ -765,6 +789,9 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"inscription_name", 1},
 					{"inscription", 1},
 					{"inscription_index", 1},
+
+					{"pay_type", 1},
+					{"status", 1},
 				},
 			},
 		},
@@ -792,6 +819,9 @@ func (r Repository) retrieveBTCNFTListingsByFilterForSearch(filter bson.M, limit
 					{"inscription_name", bson.D{{"$first", "$inscription_name"}}},
 					{"inscription", bson.D{{"$first", "$inscription"}}},
 					{"inscription_index", bson.D{{"$first", "$inscription_index"}}},
+
+					{"pay_type", bson.D{{"$first", "$pay_type"}}},
+					{"status", bson.D{{"$first", "$status"}}},
 				},
 			},
 		},
