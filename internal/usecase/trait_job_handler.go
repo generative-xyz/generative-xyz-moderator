@@ -11,8 +11,8 @@ func (u Usecase) SyncTraitStats() error {
 	for _, token := range allTokens {
 		projectSet[token.ProjectID] = true
 	}
-	for projectID, _ := range projectSet {
-		if projectID != "1000201" {
+	for projectID := range projectSet {
+		if projectID != "1000201" && projectID != "1000361" {
 			continue
 		}
 		_, traitStats, err := u.GetUpdatedProjectStats(structure.GetProjectReq{TokenID: projectID, ContractAddr: "0x0000000000000000000000000000000000000000"})
