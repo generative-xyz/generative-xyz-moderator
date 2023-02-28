@@ -14,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
@@ -21,6 +22,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 type BitcoinTokenMintFee struct {
@@ -184,6 +186,15 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
+
+	if input.NeedVerifyAuthentic() {
+		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
+			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID", zap.Any("raw_data", nft))
+			walletAddress.IsAuthentic = true
+			walletAddress.TokenAddress = nft.TokenAddress
+			walletAddress.TokenId = nft.TokenID
+		}
+	}
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
