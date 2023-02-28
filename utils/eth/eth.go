@@ -249,7 +249,7 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, stri
 		return "", "0", errors.Wrap(err, "s.ethClient.PendingNonceAt")
 	}
 
-// 	gasLimit := uint64(21000) // limit for sending ETH
+	gasLimit := uint64(21000) // limit for sending ETH
 	value := new(big.Int).Sub(balance, new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(gasLimit)))
 
 	fmt.Println("amount ETH to send: ", value)
@@ -313,7 +313,7 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	}
 
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)                  // in wei
+	auth.Value = big.NewInt(0) // in wei
 	//auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 	auth.GasPrice = gasPrice
 
