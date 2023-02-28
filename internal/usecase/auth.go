@@ -386,11 +386,15 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+		if user.Stats.CollectionCreated > 0 {
+			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+		}
 	}
 
 	if isUpdateWalletAddressPayment {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
+		if user.Stats.CollectionCreated > 0 {
+			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
+		}
 	}
 
 	return user, nil
