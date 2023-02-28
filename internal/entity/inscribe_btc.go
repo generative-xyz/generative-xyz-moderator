@@ -39,6 +39,7 @@ type InscribeBTC struct {
 	OutputMintNFT interface{} `bson:"output_mint_nft"`
 	OutputSendNFT interface{} `bson:"output_send_nft"`
 	UserUuid      string      `bson:"user_uuid"`
+	IsAuthentic   bool        `bson:"is_authentic"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -118,4 +119,5 @@ type InscribeBTCResp struct {
 	TxSendNft     string         `bson:"tx_send_nft" json:"txSendNft"`
 	TxMintNft     string         `bson:"tx_mint_nft" json:"txMintNft"`
 	UserUuid      string         `bson:"user_uuid" json:"userUuid"`
+	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
 }
