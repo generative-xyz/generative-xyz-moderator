@@ -240,7 +240,8 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 // @Tags Inscribe
 // @Accept json
 // @Produce json
-// @Param currsor query string false "Last Id"
+// @Param walletAddress query string false "Delegate Wallet Address"
+// @Param cursor query string false "Last Id"
 // @Param limit query int false "Limit"
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list-nft-from-moralis [GET]
@@ -250,7 +251,7 @@ func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
 			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			pag := entity.GetPagination(r)
-			return h.Usecase.ListNftFromMoralis(ctx, userWallet, pag)
+			return h.Usecase.ListNftFromMoralis(ctx, userWallet, r.URL.Query().Get("walletAddress"), pag)
 		},
 	).ServeHTTP(w, r)
 }
