@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -218,11 +219,105 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	} else {
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
+		u.AirdropArtist("todo", pe.CreatorProfile, 15)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	return pe, nil
+}
+
+func (u Usecase) CheckAirdrop() error {
+	airdrops, err := u.Repo.FindAirdropByStatus(0)
+	if err != nil {
+		fmt.Printf("CheckAirdrop - with err: %v", err)
+		return err
+	}
+	for _, airdrop := range airdrops {
+		if airdrop.Tx != "" {
+			_, bs, err := u.buildBTCClient()
+
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				continue
+			}
+			// check with api:
+			txInfo, err := bs.CheckTx(airdrop.Tx)
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2)
+				continue
+			}
+			if txInfo.Confirmations > 1 {
+				fmt.Printf("CheckAirdrop success - %v", txInfo)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 1)
+			} else {
+				fmt.Printf("CheckAirdrop fail - %v", txInfo)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2)
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) AirdropArtist(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") == "mainnet" {
+		return nil, nil
+	}
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 50 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 50 && random >= 20 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := time.Now().UTC().String()
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.ID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+		Type:                      0,
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
+}
+
+func (u Usecase) AirdropCollector(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") == "mainnet" {
+		return nil, nil
+	}
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 20 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 20 && random >= 5 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := time.Now().UTC().String()
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.ID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+		Type:                      1,
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
 }
 
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
@@ -1225,6 +1320,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		u.AirdropArtist("todo", *owner, 15)
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
