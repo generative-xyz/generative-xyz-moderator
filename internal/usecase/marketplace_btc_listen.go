@@ -343,9 +343,9 @@ func (u Usecase) JobMKP_Payment() error {
 	ethClient := eth.NewClient(ethClientWrap)
 
 	// get list buy order status = sent nft:
-	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SentNFT)
+	listTosendBtc, err := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SentNFT)
 
-	fmt.Println("len(listTosendBtc)", len(listTosendBtc))
+	fmt.Println("len(listTosendBtc)", len(listTosendBtc), err)
 
 	if len(listTosendBtc) == 0 {
 		return nil
@@ -557,13 +557,13 @@ func (u Usecase) JobMKP_Payment() error {
 				if txFee.Uint64() > balance.Uint64() {
 					fmt.Println("not enough balance: ", txFee.Uint64(), balance.Uint64())
 					go u.trackHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "check fee and balance", "txFee > balance")
-					// continue
+					continue
 				}
 
 				if amountWithChargee < txFee.Uint64() {
 					fmt.Println("not enough amountWithChargee: ", txFee.Uint64(), balance.Uint64())
 					go u.trackHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "check fee and balance", "txamountWithChargeeFee < txFee")
-					// continue
+					continue
 				}
 
 				amountWithChargee = amountWithChargee - txFee.Uint64()
@@ -578,10 +578,6 @@ func (u Usecase) JobMKP_Payment() error {
 					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
 					continue
 				}
-
-				destinations = make(map[string]*big.Int)
-
-				fmt.Println("destinations: ", destinations)
 
 				txID, err := ethClient.SendMulti(
 					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
