@@ -31,6 +31,9 @@ type Withdraw struct {
 	Status int `bson:"status" json:"status"`
 	WalletAddress string `bson:"walletAddress" json:"walletAddress"`
 	WithdrawFrom string `bson:"withdrawFrom" json:"withdrawFrom"`
+	EarningReferal string `bson:"earningReferal" json:"earningReferal"`
+	EarningVolume string `bson:"earningVolume" json:"earningVolume"`
+	TotalEarnings string `bson:"totalEarnings" json:"totalEarnings"`
 }
 
 func (u Withdraw) TableName() string {

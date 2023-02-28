@@ -1,18 +1,17 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
 )
-
 
 func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawRequest) ([]entity.Withdraw, error) {
 	resp := []entity.Withdraw{}
@@ -24,23 +23,25 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 		//totalEarning := (refAmount + refAmount) - widthDrawAmount
 		// (refAmount + refAmount) is pushed into volumn by crontab
 		//TODO - calculate refAmount
-		
-	
+		status := entity.StatusWithdraw_Done
+		wdf := &entity.FilterWithdraw{
+			WalletAddress: &walletAddress,
+			PaymentType: &wr.PaymentType,
+			Status: &status,
+		}
+		wd, err := u.Repo.AggregateWithDrawByUser(wdf)
+		if len(wd) > 0 {
+			widthDrawAmount = wd[0].Amount
+		}
+
 		f := &entity.Withdraw{}
-		err := copier.Copy(f, wr)
+		err = copier.Copy(f, wr)
 		if err != nil {
 			u.Logger.ErrorAny("CreateWithdraw.Copy", zap.Any("input", data), zap.Error(err))
 			return nil, err
 		}
 
-		//check amount from User volume (projects earnings)
-		fv := entity.FilterVolume{
-			//ProjectIDs: []string{wr.ProjectID},
-			AmountType: &wr.PaymentType,
-			CreatorAddress: &walletAddress,
-		}
-
-		u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv))
+		u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress))
 		volumes, _ := u.CreatorVolume(walletAddress, f.PayType)
 		
 		fr := entity.FilterReferrals{
@@ -57,22 +58,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 				
 			}
 		}
-
-		spew.Dump(fr)
-	
-		u.Logger.LogAny("CreateWithdraw.volumes", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes))
-		//check widthdraw history
-		stat :=  entity.StatusWithdraw_Done
-		fWdtd := &entity.FilterWithdraw{
-			WalletAddress: &walletAddress,
-			Status: &stat,
-			PaymentType: &wr.PaymentType,
-		}
-		u.Logger.LogAny("CreateWithdraw.FilterWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes), zap.Any("fWdtd", fWdtd))
-		wtd, _ := u.Repo.AggregateWithDraw(fWdtd)
-		u.Logger.LogAny("CreateWithdraw.AggregateWithDraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumes", volumes))
-
-
+		u.Logger.LogAny("CreateWithdraw.volumes", zap.String("walletAddress", walletAddress), zap.Any("volumes", volumes))
 		//check referal amount
 		if volumes == nil {
 			volumeAmount = 0
@@ -85,33 +71,44 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 			}
 		}
 		
-		if len(wtd) == 0 {
-			widthDrawAmount = 0
-		}else{
-			widthDrawAmount = wtd[0].Amount
+		totalEarnings := refAmount + volumeAmount
+		earning := totalEarnings - widthDrawAmount
+		if earning <= 0 {
+			err = errors.New("Not enough balance")
+			u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", earning) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
+			return nil, err
 		}
 
-		earning := (refAmount + volumeAmount) - widthDrawAmount
-		//TODO - validate these things
-		// if earning <= 0 {
-		// 	err = errors.New("Not enough balance")
-		// 	u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", earning) , zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("volumeAmount", volumeAmount), zap.Any("fWdtd", fWdtd), zap.Error(err))
-		// 	return nil, err
-		// }
+		requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
+		if err != nil {
+			requestEarnings = 0
+		}
 
+		if requestEarnings  > earning {
+			requestEarnings = earning
+		}
 
 		f.WalletAddress = walletAddress
 		f.PayType = wr.PaymentType
-		f.Amount = fmt.Sprintf("%d", int(earning))
+		f.Amount = fmt.Sprintf("%d", int(requestEarnings))
+		f.EarningReferal = fmt.Sprintf("%d", int(refAmount))
+		f.EarningVolume = fmt.Sprintf("%d", int(volumeAmount))
+		f.TotalEarnings = fmt.Sprintf("%d", int(totalEarnings))
 
-		u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv), zap.Any("widthdraw",f))
+		u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress),  zap.Any("widthdraw",f))
 		err = u.Repo.CreateWithDraw(f)
 		if err != nil {
 			u.Logger.ErrorAny("CreateWithdraw.CreateWithDraw", zap.Any("CreateWithDraw", f), zap.Error(err))
 			return nil, err
 		}
 
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[Withdraw has been created][User %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress)), "", fmt.Sprintf("User %s making withdraw with %s %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), f.Amount, wr.PaymentType))
+		if wr.PaymentType == string(entity.BIT){
+			requestEarnings = requestEarnings / 1e8
+		}else{
+			requestEarnings = requestEarnings / 10e8
+		}
+		
+		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[Withdraw has been created][User %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress)), "", fmt.Sprintf("User %s making withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
 		resp = append(resp, *f)
 	}
 
