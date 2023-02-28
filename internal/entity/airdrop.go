@@ -12,6 +12,7 @@ type Airdrop struct {
 	File                      string `bson:"file"`
 	Receiver                  string `bson:"receiver"`
 	ReceiverBtcAddressTaproot string `bson:"receiverBtcAddressTaproot"`
+	Type                      int    `bson:"type"` // 0 artist, 1 collector
 }
 
 func (u Airdrop) TableName() string {
