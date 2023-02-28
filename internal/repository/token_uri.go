@@ -418,7 +418,7 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 		"synced_inscription_info": bson.M{"$ne": true},
 	}
 	//f[utils.KEY_DELETED_AT] = nil
-	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	opts := options.Find().SetProjection(r.SelectedTokenFields()).SetLimit(100)
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
