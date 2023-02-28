@@ -497,3 +497,15 @@ func (r Repository) FindOneTokenByListOfTokenIds(tokenIds []string) (*entity.Tok
 	}
 	return resp, nil
 }
+
+func (r Repository) CountTokenUriByProjectId(projectId string) (*int64, error) {
+	f := bson.M{
+		"project_id": projectId,
+	}
+	count, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	return &count, nil
+}
