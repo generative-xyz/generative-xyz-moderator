@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -218,11 +219,38 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	} else {
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
+		u.AirdropArtist("todo", pe.CreatorProfile, 15)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	return pe, nil
+}
+
+func (u Usecase) AirdropArtist(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 50 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 50 && random >= 20 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := ""
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.ID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
 }
 
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
