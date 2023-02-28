@@ -4673,10 +4673,13 @@ var doc = `{
                 "fileName": {
                     "type": "string"
                 },
-                "isAuthentic": {
-                    "type": "boolean"
-                },
                 "name": {
+                    "type": "string"
+                },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenId": {
                     "type": "string"
                 },
                 "walletAddress": {
