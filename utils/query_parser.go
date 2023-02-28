@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	// decoderPoolMap helps to improve BodyParser's, QueryParser's and ReqHeaderParser's performance
+	// decoderPoolMap helps QueryParser's performance
 	decoderPoolMap = map[string]*sync.Pool{}
 )
 
@@ -152,7 +152,7 @@ func parseToStruct(aliasTag string, out interface{}, data map[string][]string) e
 	// Get decoder from pool
 	schemaDecoder, ok := decoderPoolMap[aliasTag].Get().(*schema.Decoder)
 	if !ok {
-		panic(fmt.Errorf("failed to type-assert to *schema.Decoder"))
+		return fmt.Errorf("failed to type-assert to *schema.Decoder")
 	}
 	defer decoderPoolMap[aliasTag].Put(schemaDecoder)
 
