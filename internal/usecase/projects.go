@@ -781,6 +781,18 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	return c, nil
 }
 
+func (u Usecase) GetProjectVolumn(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectVolumn", zap.Any("req", req))
+	c, err := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("GetProjectVolumn", zap.Error(err))
+		return nil, err
+	}
+	
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
+
 func (u Usecase) GetRecentWorksProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
@@ -1481,38 +1493,43 @@ type Volume struct {
 	Amount    string `json:"amount"`
 }
 
-func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+func (u Usecase) CreatorVolume(creatoreAddress string, paytype string)  (*Volume, error) {
+	data, err := u.GetVolumeOfUser(creatoreAddress, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		return nil, err
+	}
 
-	// p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
-	// }
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+	}
+	
 
-	// pIDs := []string{}
-	// for _, item := range p {
-	// 	pIDs = append(pIDs, item.TokenID)
-	// }
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+	return &tmp, nil
+}
 
-	// data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
-	// }
 
-	// resp := Volumes{}
-	// for _, item := range data.Items {
-	// 	tmp := Volume{
-	// 		ProjectID: item.ID.ProjectID,
-	// 		PayType:   item.ID.Paytype,
-	// 		Amount:    fmt.Sprintf("%d", int(item.Amount)),
-	// 	}
-	// 	resp.Items = append(resp.Items, tmp)
-	// }
+func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error) {
+	data, err := u.GetVolumeOfProject(projectID, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		tmp := Volume{
+			ProjectID: projectID,
+			PayType:   paytype,
+			Amount:    "0",
+		}
 
-	// resp.TotalBTC = data.TotalBTC
-	// resp.TotalETH = data.TotalETH
+		return &tmp, nil
+	}
 
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
-	return nil, nil
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+	}
+	
+
+	return &tmp, nil
 }

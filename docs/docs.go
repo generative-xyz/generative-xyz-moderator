@@ -2449,7 +2449,7 @@ var doc = `{
                 }
             }
         },
-        "/profile/wallet/{walletAddress}/volume": {
+        "/profile/wallet/{walletAddress}/volumn": {
             "get": {
                 "description": "get volume by wallet",
                 "consumes": [
@@ -2468,6 +2468,12 @@ var doc = `{
                         "description": "Filter project via wallet address",
                         "name": "walletAddress",
                         "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -2879,6 +2885,51 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/request.UpdateBTCProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}/volumn": {
+            "get": {
+                "description": "get project's volumn",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's volumn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
