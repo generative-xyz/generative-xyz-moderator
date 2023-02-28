@@ -1,12 +1,14 @@
 package response
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
-	"rederinghub.io/internal/entity"
-
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+
+	"rederinghub.io/internal/entity"
 )
 
 type IResponse interface {
@@ -14,9 +16,8 @@ type IResponse interface {
 	GetID() string
 }
 
-
 type BaseResponse struct {
-	ID        string                  `json:"id"`
+	ID string `json:"id"`
 }
 
 func (p *BaseResponse) SetID(ID string) {
@@ -34,18 +35,17 @@ type IHttpResponse interface {
 }
 
 type JsonResponse struct {
-	Error *RespondErr      `json:"error"`
-	Status    bool        `json:"status"`
-	Data    interface{} `json:"data"`
+	Error  *RespondErr `json:"error"`
+	Status bool        `json:"status"`
+	Data   interface{} `json:"data"`
 }
 
 type RespondErr struct {
-	Message string `json:"message"`
-	ErrorCode int `json:"code"`
+	Message   string `json:"message"`
+	ErrorCode int    `json:"code"`
 }
 
 type httpResponse struct {
-	
 }
 
 func NewHttpResponse() *httpResponse {
@@ -70,8 +70,8 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 	}
 
 	jsr := JsonResponse{
-		Data:    payload,
-		Status:    true,
+		Data:   payload,
+		Status: true,
 	}
 
 	if respErr != nil {
@@ -90,7 +90,6 @@ func (h *httpResponse) respondWithJSON(w http.ResponseWriter, respErr error, htt
 		panic(err)
 	}
 }
-
 
 func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode int, payload interface{}) {
 
@@ -118,4 +117,31 @@ func CopyEntityToResNoID(toValue IResponse, from entity.IEntityNoID) error {
 		return err
 	}
 	return nil
+}
+
+// HandlerFunc --
+type HandlerFunc func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error)
+
+type restHandlerTemplate struct {
+	handlerFunc HandlerFunc
+	httpResp    *httpResponse
+}
+
+// NewRESTHandlerTemplate --
+func NewRESTHandlerTemplate(handlerFunc HandlerFunc) http.Handler {
+	return &restHandlerTemplate{
+		handlerFunc: handlerFunc,
+		httpResp:    NewHttpResponse(),
+	}
+}
+
+func (h *restHandlerTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	item, err := h.handlerFunc(ctx, r, vars)
+	if err != nil {
+		h.httpResp.RespondWithError(w, http.StatusBadRequest, Error, err)
+		return
+	}
+	h.httpResp.RespondSuccess(w, http.StatusOK, Success, item, "")
 }
