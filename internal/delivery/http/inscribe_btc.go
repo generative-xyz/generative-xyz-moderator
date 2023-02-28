@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -244,4 +245,23 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 	resp.Output = input.Output
 	resp.Offset = input.Offset
 	return resp, nil
+}
+
+// @Summary List NFT from Moralis
+// @Description List NFT from Moralis
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param ID path string true "inscribe ID"
+// @Success 200 {object} response.InscribeInfoResp{}
+// @Router /inscribe/list-nft-from-moralis [GET]
+// @Security Api-Key
+func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+			// TODO
+			return userWallet, nil
+		},
+	).ServeHTTP(w, r)
 }
