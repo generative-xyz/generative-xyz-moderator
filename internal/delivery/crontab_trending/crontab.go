@@ -1,7 +1,7 @@
 package crontab_trending
 
 import (
-	"gopkg.in/robfig/cron.v2"
+	"github.com/robfig/cron/v3"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -23,7 +23,7 @@ func (h ScronTrendingHandler) StartServer() {
 	c := cron.New()
 	// cronjob to sync projects trending
 	c.AddFunc("*/15 * * * *", func() {
-		
+
 		err := h.Usecase.SyncProjectTrending()
 		if err != nil {
 			h.Logger.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
