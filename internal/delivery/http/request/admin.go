@@ -8,7 +8,8 @@ type UpsertRedisRequest struct {
 type ListNftIdsReq struct {
 	InscriptionID []string `json:"inscriptionIDs"`
 
-	SellOrdAddress string `json:"seller_ord_address"`
-	SellerAddress  string `json:"seller_address"`
-	Price          string `json:"price"`
+	SellOrdAddress string            `json:"seller_ord_address"`
+	SellerAddress  string            `json:"seller_address"`
+	Price          string            `json:"price"`
+	PayType        map[string]string `bson:"payType"`
 }
