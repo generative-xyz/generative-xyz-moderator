@@ -38,11 +38,11 @@ type BaseFilters struct {
 }
 
 type Pagination struct {
-	Result   interface{}
-	Page     int64
-	PageSize int64
-	Total    int64
-	Currsor  string
+	Result   interface{} `json:"result,omitempty"`
+	Page     int64       `json:"page,omitempty"`
+	PageSize int64       `json:"pageSize,omitempty"`
+	Total    int64       `json:"total,omitempty"`
+	Currsor  string      `json:"currsor,omitempty"`
 }
 
 func NewDefaultPagination(opts ...int64) *Pagination {
