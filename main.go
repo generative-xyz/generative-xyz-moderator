@@ -163,7 +163,7 @@ func startServer() {
 	err = repo.CreateCollectionIndexes()
 	if err != nil {
 		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-		// return
+		return
 	}
 
 	uc, err := usecase.NewUsecase(&g, *repo)
