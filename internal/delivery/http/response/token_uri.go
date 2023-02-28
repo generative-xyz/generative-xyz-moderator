@@ -1,6 +1,10 @@
 package response
 
-import "time"
+import (
+	"time"
+
+	"rederinghub.io/internal/usecase/structure"
+)
 
 type TokenURIResp struct {
 	Name         string      `json:"name"`
@@ -43,7 +47,7 @@ type InternalTokenURIResp struct {
 	Description      string           `json:"description"`
 	Image            string           `json:"image"`
 	AnimationURL     string           `json:"animationUrl"`
-	AnimationHtml     string           `json:"animationHtml"`
+	AnimationHtml    string           `json:"animationHtml"`
 	Attributes       interface{}      `json:"attributes"`
 	MintedTime       time.Time        `json:"mintedTime"`
 	GenNFTAddr       string           `json:"genNFTAddr"`
@@ -61,6 +65,8 @@ type InternalTokenURIResp struct {
 	IsCompleted bool   `json:"isCompleted"`
 	PriceBTC    string `json:"priceBTC"`
 	OrderID     string `json:"orderID"`
+
+	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
 }
 
 type InternalTokenTraitsResp struct {

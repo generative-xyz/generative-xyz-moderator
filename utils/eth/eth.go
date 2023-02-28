@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -208,7 +209,7 @@ func (c *Client) GetMaxGasPrice(txs []string) (*big.Int, error) {
 	return maxGasPrice, nil
 }
 
-func (c *Client) ValidateAddress(address string) bool {
+func ValidateAddress(address string) bool {
 	return common.IsHexAddress(address)
 }
 
@@ -277,4 +278,66 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, stri
 	fmt.Printf("Sent %s ETH from %s to %s\n", value.String(), fromAddress.Hex(), toAddress.Hex())
 
 	return signedTx.Hash().Hex(), value.String(), nil
+}
+
+func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int) (string, error) {
+
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	chainID, err := c.NetworkID(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)                  // in wei
+	auth.GasLimit = uint64(21000 * len(toInfo)) // in units
+	auth.GasPrice = gasPrice
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := NewMultisend(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return "", errors.Wrap(err, "NewMultisend")
+	}
+
+	var listHexAddress []common.Address
+	var listAmount []*big.Int
+
+	for k, v := range toInfo {
+		listHexAddress = append(listHexAddress, common.HexToAddress(k))
+		listAmount = append(listAmount, v)
+	}
+
+	tx, err := contract.MultiTransferOST(auth, listHexAddress, listAmount)
+
+	if err != nil {
+		return "", errors.Wrap(err, "contract.MultiTransferOST")
+	}
+
+	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
+
+	return tx.Hash().Hex(), nil
 }

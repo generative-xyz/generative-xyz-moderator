@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -56,6 +57,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	json.Unmarshal(byteValue, &inscriptions)
 
 	meta.Source = source
+	meta.WalletAddress = strings.ToLower(meta.WalletAddress)
 
 	_, err = h.Usecase.Repo.FindCollectionMetaByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
