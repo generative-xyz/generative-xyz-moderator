@@ -511,7 +511,7 @@ func (u Usecase) GetTokensByContract(contractAddress string, filter nfts.Moralis
 
 	p := &entity.Pagination{}
 	p.Result = result
-	p.Currsor = resp.Cursor
+	p.Cursor = resp.Cursor
 	p.Total = int64(resp.Total)
 	p.Page = int64(resp.Page)
 	p.PageSize = int64(resp.PageSize)

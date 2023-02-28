@@ -233,7 +233,7 @@ func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}) response.PaginationResponse {
 	resp := response.PaginationResponse{}
 	resp.Result = items
-	resp.Currsor = data.Currsor
+	resp.Currsor = data.Cursor
 	resp.Total = data.Total
 	resp.Page = data.Page
 	resp.PageSize = data.PageSize
