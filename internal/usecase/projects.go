@@ -227,6 +227,39 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	return pe, nil
 }
 
+func (u Usecase) CheckAirdrop() error {
+	airdrops, err := u.Repo.FindAirdropByStatus(0)
+	if err != nil {
+		fmt.Printf("CheckAirdrop - with err: %v", err)
+		return err
+	}
+	for _, airdrop := range airdrops {
+		if airdrop.Tx != "" {
+			_, bs, err := u.buildBTCClient()
+
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				continue
+			}
+			// check with api:
+			txInfo, err := bs.CheckTx(airdrop.Tx)
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2)
+				continue
+			}
+			if txInfo.Confirmations > 1 {
+				fmt.Printf("CheckAirdrop success - %v", txInfo)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 1)
+			} else {
+				fmt.Printf("CheckAirdrop fail - %v", txInfo)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2)
+			}
+		}
+	}
+	return nil
+}
+
 func (u Usecase) AirdropArtist(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
 	// get file
 	random := rand.Intn(100)
@@ -238,7 +271,7 @@ func (u Usecase) AirdropArtist(from string, receiver entity.Users, feerate int) 
 	}
 
 	// todo call ordignal
-	tx := ""
+	tx := time.Now().UTC().String()
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
@@ -265,7 +298,7 @@ func (u Usecase) AirdropCollector(from string, receiver entity.Users, feerate in
 	}
 
 	// todo call ordignal
-	tx := ""
+	tx := time.Now().UTC().String()
 
 	airDrop := &entity.Airdrop{
 		File:                      file,

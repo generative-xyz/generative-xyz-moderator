@@ -9,6 +9,21 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+func (r Repository) FindAirdropByStatus(status int) ([]*entity.Airdrop, error) {
+	var resp []*entity.Airdrop
+	filter := bson.D{{"status", status}}
+	cursor, err := r.DB.Collection(utils.COLLECTION_AIRDROP).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) FindAirdropByTx(tx string) (*entity.Airdrop, error) {
 	resp := &entity.Airdrop{}
 	usr, err := r.FilterOne(entity.Airdrop{}.TableName(), bson.D{{"tx", tx}})
@@ -41,7 +56,7 @@ func (r Repository) UpdateAirdropByTx(tx string, data *entity.Airdrop) (*mongo.U
 	return result, nil
 }
 
-func (r Repository) UpdateAirdropStatusByTx(tx string, data *entity.Airdrop, status int) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateAirdropStatusByTx(tx string, status int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"tx", tx}}
 	update := bson.M{"$set": bson.M{"status": status}}
 	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
