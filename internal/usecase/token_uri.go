@@ -663,6 +663,7 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		u.Logger.Info("mintedURL", mintedURL)
 	}
 
+	tokenUri.OrderInscriptionIndex = int(project.MintingInfo.Index + 1)
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
 		u.Logger.Error(err)
