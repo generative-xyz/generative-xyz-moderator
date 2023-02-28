@@ -2,13 +2,14 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) AggregateVolumn() {
@@ -87,17 +88,34 @@ func (u Usecase) AggregateReferal() {
 	}
 
 	for _, referral := range referrals  {
+		vol := make(map[string]entity.ReferreeVolumn)
 		for _, paytype := range paytypes{
+			
 			volume, err := u.GetVolumeOfUser(referral.Referree.WalletAddress, &paytype)
 			if err != nil {
-				continue
+				vol[paytype] = entity.ReferreeVolumn{
+					Amount: "0",
+					AmountType: paytype,
+					Earn: "0",
+					GenEarn: "0",
+				}
+			}else{
+				refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, referral.Percent)
+				vol[paytype] = entity.ReferreeVolumn{
+					Amount: fmt.Sprintf("%d", int(volume.Amount)),
+					AmountType: paytype,
+					Earn: refEarning,
+					GenEarn: genEarning,
+				}
 			}
-
-			spew.Dump(volume)
 		}
-		
+		referral.ReferreeVolumn = vol
+		_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
+		if err != nil {
+			u.Logger.ErrorAny("AggregateReferal",zap.Error(err))
+			return 
+		}
 	}
-
 	_ = referrals
 }
 
