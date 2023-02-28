@@ -2,15 +2,11 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) AggregateVolumn() {
@@ -83,62 +79,7 @@ func (u Usecase) AggregateReferal() {
 		return
 	}
 
-	payTypes := []string{
-		string(entity.BIT),
-		string(entity.ETH),
-	}
-
-	for _, payType := range payTypes {
-		for _, item := range referrals {
-			tmp := &structure.ReferalResp{}
-			err = copier.Copy(tmp, item)
-			if err != nil {
-				u.Logger.ErrorAny("AggregateReferal", zap.Any("err", err))
-				return 
-			}
-	
-			amount := "0"
-			volume, err := u.GetVolumeOfUser(item.Referree.WalletAddress, &payType)
-			if err != nil {
-				tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: "0", AmountType: payType, Percent: int(item.Percent), ProjectID: "", Earn: "0", GenEarn: "0" }
-			}	else{
-				amount = fmt.Sprintf("%d", int64(volume.Amount))
-				refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, item.Percent)
-				tmp.ReferreeVolume = structure.ReferralVolumnResp{
-					Amount: fmt.Sprintf("%d", int(volume.Amount)), 
-					AmountType: volume.ID.Paytype,
-					Percent: int(item.Percent),
-					ProjectID: volume.ID.ProjectID, 
-					Earn: refEarning,
-					GenEarn: genEarning,
-				}
-			}
-
-			_ = amount
-			// _, err  := u.Repo.FindVolumnByWalletAddress(item.Referrer.WalletAddress, payType)
-			// if err != nil {
-			// 	if errors.Is(err, mongo.ErrNoDocuments) {
-			// 		ev = &entity.UserVolumn{
-			// 			CreatorAddress: &item.Referrer.WalletAddress ,
-			// 			PayType: &payType,
-			// 			ProjectID: nil,
-			// 			Amount: &amount,
-			// 			Project: entity.VolumeProjectInfo{},
-			// 			User: entity.VolumnUserInfo{
-			// 				WalletAddress: &item.Referrer.WalletAddress,
-			// 				WalletAddressBTC: &item.Referrer.WalletAddressBTC,
-			// 				DisplayName:  &item.Referrer.WalletAddressBTC,
-			// 				Avatar: &item.Referrer.Avatar,
-			// 			},
-			// 		}
-
-					
-			// 	}
-			// }else{
-				
-			// }
-		}
-	}
+	_ = referrals
 }
 
 func (u Usecase) GetVolumeOfUser(walletAddress string, amountType *string) (*entity.AggregateAmount, error) {

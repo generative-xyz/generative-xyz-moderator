@@ -89,7 +89,7 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume) ([]entity.Aggreg
 	pipeLine := bson.A{
 		matchStage,
 		bson.M{"$group": bson.M{"_id": 
-			bson.M{"projectID": "$projectID", "creatorAddress": "$creatorAddress", "payType": "$payType"}, 
+			bson.M{"creatorAddress": "$creatorAddress", "payType": "$payType"}, 
 			"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
 		}},
 		bson.M{"$sort": bson.M{"_id": -1}},
