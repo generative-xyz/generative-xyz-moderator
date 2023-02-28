@@ -240,7 +240,7 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 // @Tags Inscribe
 // @Accept json
 // @Produce json
-// @Param walletAddress query string false "Delegate Wallet Address"
+// @Param walletAddress query string false "Wallet Address"
 // @Param cursor query string false "Last Id"
 // @Param limit query int false "Limit"
 // @Success 200 {object} entity.Pagination{}
