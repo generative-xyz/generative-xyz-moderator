@@ -35,9 +35,9 @@ type BaseFilters struct {
 }
 
 type Pagination struct {
-	Result   interface{}
-	Page     int64
-	PageSize int64
-	Total    int64
-	Currsor  string
+	Result   interface{} `json:"result"`
+	Page     int64       `json:"page"`
+	PageSize int64       `json:"pageSize"`
+	Total    int64       `json:"total"`
+	Currsor  string      `json:"currsor"`
 }
