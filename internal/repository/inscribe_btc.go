@@ -54,11 +54,12 @@ func (r Repository) InsertInscribeBTC(data *entity.InscribeBTC) error {
 	return nil
 }
 
-func (r Repository) ListInscribeBTC(filter entity.FilterInscribeBT) (*entity.Pagination, error) {
+func (r Repository) ListInscribeBTC(filter *entity.FilterInscribeBT) (*entity.Pagination, error) {
 	confs := []entity.InscribeBTCResp{}
 	resp := &entity.Pagination{}
-	f := bson.M{
-		// "isConfirm": true,
+	f := bson.M{}
+	if filter.UserUuid != nil {
+		f["user_uuid"] = filter.UserUuid
 	}
 
 	p, err := r.Paginate(entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)

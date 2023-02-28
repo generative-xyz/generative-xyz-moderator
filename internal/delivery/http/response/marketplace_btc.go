@@ -3,6 +3,7 @@ package response
 type CreateMarketplaceBTCBuyOrder struct {
 	ReceiveAddress string `json:"receiveAddress"`
 	TimeoutAt      string `json:"timeoutAt"`
+	Price          string `json:"price"`
 }
 
 type CreateMarketplaceBTCListing struct {

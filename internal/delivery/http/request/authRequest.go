@@ -20,11 +20,12 @@ type VerifyMessageRequest struct {
 }
 
 type UpdateProfileRequest struct {
-	DisplayName      *string       `json:"displayName"`
-	Bio              *string       `json:"bio"`
-	Avatar           *string       `json:"avatar"`
-	ProfileSocial    ProfileSocial `json:"profileSocial"`
-	WalletAddressBTC string        `json:"walletAddressBtc"`
+	DisplayName          *string       `json:"displayName"`
+	Bio                  *string       `json:"bio"`
+	Avatar               *string       `json:"avatar"`
+	ProfileSocial        ProfileSocial `json:"profileSocial"`
+	WalletAddressBTC     string        `json:"walletAddressBtc"`
+	WalletAddressPayment string        `json:"walletAddressPayment"`
 }
 
 type ProfileSocial struct {
