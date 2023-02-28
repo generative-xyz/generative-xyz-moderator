@@ -768,6 +768,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 				resp[delegateWalletAddress].Total = int64(nfts.Total)
 				resp[delegateWalletAddress].SetTotalPage()
 			}
+			// walletAddress = empty
 		} else {
 			walletAddress = userWallet
 		}
