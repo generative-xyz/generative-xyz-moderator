@@ -333,6 +333,10 @@ func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
 		return nil, errors.New("getWalletInfo Response status != 200 " + result.Message + " " + url)
 	}
 
+	if result.Data.Hash != txhash {
+		return nil, errors.New("tx not found")
+	}
+
 	return &result, nil
 }
 
