@@ -326,6 +326,8 @@ definitions:
         type: string
       name:
         type: string
+      order_inscription_index:
+        type: integer
       owner:
         $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
@@ -893,6 +895,8 @@ definitions:
         type: string
       orderID:
         type: string
+      orderInscriptionIndex:
+        type: integer
       owner:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
@@ -2200,10 +2204,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - Api-Key: []
-          description: ""
       summary: BTC Retry Inscribe
       tags:
       - Inscribe

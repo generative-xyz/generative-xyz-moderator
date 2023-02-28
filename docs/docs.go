@@ -4307,6 +4307,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "order_inscription_index": {
+                    "type": "integer"
+                },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
                     "$ref": "#/definitions/entity.Users"
@@ -5167,6 +5170,9 @@ var doc = `{
                 },
                 "orderID": {
                     "type": "string"
+                },
+                "orderInscriptionIndex": {
+                    "type": "integer"
                 },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"
