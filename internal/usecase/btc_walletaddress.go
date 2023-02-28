@@ -13,6 +13,7 @@ import (
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
+
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -752,7 +753,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		AvatarUrl: "",
 		Content:   "**NEW MINT**",
 		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s# %d***", ownerName, collectionName, itemCount),
+			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, itemCount),
 			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
 			Description: description,
 			//Author: discordclient.Author{
