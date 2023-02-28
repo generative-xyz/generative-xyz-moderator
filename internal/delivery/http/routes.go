@@ -156,6 +156,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
+	inscribe.HandleFunc("/list-nft-from-moralis", h.listNftFromMoralis).Methods("GET")
 
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
@@ -232,7 +233,7 @@ func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}) response.PaginationResponse {
 	resp := response.PaginationResponse{}
 	resp.Result = items
-	resp.Currsor = data.Currsor
+	resp.Currsor = data.Cursor
 	resp.Total = data.Total
 	resp.Page = data.Page
 	resp.PageSize = data.PageSize

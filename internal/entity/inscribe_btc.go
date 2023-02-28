@@ -39,6 +39,7 @@ type InscribeBTC struct {
 	OutputMintNFT interface{} `bson:"output_mint_nft"`
 	OutputSendNFT interface{} `bson:"output_send_nft"`
 	UserUuid      string      `bson:"user_uuid"`
+	IsAuthentic   bool        `bson:"is_authentic"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -72,6 +73,10 @@ const (
 	StatusInscribe_NeedToRefund     // 12: Need to refund BTC
 )
 
+func (s StatusInscribe) Ordinal() int {
+	return int(s)
+}
+
 type InscribeBTCLogs struct {
 	BaseEntity  `bson:",inline"`
 	RecordID    string      `bson:"record_id"`
@@ -101,29 +106,18 @@ type FilterInscribeBT struct {
 }
 
 type InscribeBTCResp struct {
-	UUID string `bson:"uuid"`
-	// UserAddress string `bson:"user_address"` //user's wallet address from FE
-	// OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
-	// Amount            string `bson:"amount"`
-	// MintFee           string `bson:"mint_fee"`
-	// SentTokenFee      string `bson:"sent_token_fee"`
-	// OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
-	// SegwitAddress     string `bson:"segwit_address"`
-	// FileURI       string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
-	IsConfirm bool `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
-	IsMinted  bool `bson:"isMinted"`  //default: false. If InscriptionID exist which means token is minted, it's true
-	IsSuccess bool `bson:"isSuccess"` //default: false. If InscriptionID was sent to user, it's true
-
-	InscriptionID string `bson:"inscriptionID"` // tokenID in ETH
-	// Mnemonic          string `bson:"mnemonic"`
-	// SegwitKey         string `bson:"segwit_key"`
-	// MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
-	// Balance   string    `bson:"balance"` // balance after check
-	FeeRate   int32     `bson:"fee_rate"`
-	ExpiredAt time.Time `bson:"expired_at"`
-
-	Status    StatusInscribe `bson:"status"` // status for record
-	TxSendBTC string         `bson:"tx_send_btc"`
-	TxSendNft string         `bson:"tx_send_nft"`
-	TxMintNft string         `bson:"tx_mint_nft"`
+	UUID          string         `bson:"uuid" json:"uuid"`
+	Amount        string         `bson:"amount"  json:"amount"`
+	IsConfirm     bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
+	IsMinted      bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
+	IsSuccess     bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
+	InscriptionID string         `bson:"inscriptionID" json:"inscriptionID"` // tokenID in ETH
+	FeeRate       int32          `bson:"fee_rate" json:"feeRate"`
+	ExpiredAt     time.Time      `bson:"expired_at" json:"expiredAt"`
+	Status        StatusInscribe `bson:"status" json:"status"` // status for record
+	TxSendBTC     string         `bson:"tx_send_btc" json:"txSendBtc"`
+	TxSendNft     string         `bson:"tx_send_nft" json:"txSendNft"`
+	TxMintNft     string         `bson:"tx_mint_nft" json:"txMintNft"`
+	UserUuid      string         `bson:"user_uuid" json:"userUuid"`
+	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
 }

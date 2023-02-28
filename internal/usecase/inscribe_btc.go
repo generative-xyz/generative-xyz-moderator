@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -729,4 +731,61 @@ func (u Usecase) ApiCheckListTempAddress() error {
 	}
 
 	return nil
+}
+
+func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
+	var (
+		pageSize              = int(pag.PageSize)
+		cursor        *string = nil
+		resp                  = make(map[string]*entity.Pagination)
+		walletAddress string
+	)
+	if len(pag.Cursor) > 0 {
+		cursor = &pag.Cursor
+	}
+	reqMoralisFilter := nfts.MoralisFilter{
+		Limit:  &pageSize,
+		Cursor: cursor,
+	}
+
+	if delegateWallet == "" {
+		delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userWallet)
+		if err != nil {
+			return nil, err
+		}
+		if len(delegations) > 0 {
+			for i := range delegations {
+				delegateWalletAddress := delegations[i].Contract.String()
+				resp[delegateWalletAddress] = &entity.Pagination{
+					Page:     pag.Page,
+					PageSize: pag.PageSize,
+				}
+				nfts, err := u.MoralisNft.GetNftByWalletAddress(delegateWalletAddress, reqMoralisFilter)
+				if err != nil {
+					return nil, err
+				}
+				resp[delegateWalletAddress].Result = nfts
+				resp[delegateWalletAddress].Total = int64(nfts.Total)
+				resp[delegateWalletAddress].SetTotalPage()
+			}
+			// walletAddress = empty
+		} else {
+			walletAddress = userWallet
+		}
+	} else {
+		walletAddress = delegateWallet
+	}
+
+	if walletAddress != "" {
+		resp[walletAddress] = pag
+		nfts, err := u.MoralisNft.GetNftByWalletAddress(walletAddress, reqMoralisFilter)
+		if err != nil {
+			return nil, err
+		}
+		pag.Result = nfts
+		pag.Total = int64(nfts.Total)
+		pag.SetTotalPage()
+	}
+
+	return resp, nil
 }
