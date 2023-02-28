@@ -28,7 +28,7 @@ import (
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
 // @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
@@ -117,7 +117,7 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Produce json
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
@@ -143,7 +143,7 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 // @Param ID path string true "inscribe ID"
 // @Success 200 {object} entity.InscribeBTCResp{}
 // @Router /inscribe/nft-detail/{ID} [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -168,7 +168,7 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 // @Param ID path string true "inscribe ID"
 // @Success 200
 // @Router /inscribe/retry/{ID} [POST]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -193,7 +193,7 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 // @Param ID path string true "inscribe ID"
 // @Success 200 {object} response.InscribeInfoResp{}
 // @Router /inscribe/info/{ID} [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -245,7 +245,7 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 // @Param limit query int false "Limit"
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list-nft-from-moralis [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
