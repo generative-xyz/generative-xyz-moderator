@@ -557,19 +557,17 @@ func (u Usecase) JobMKP_Payment() error {
 				if txFee.Uint64() > balance.Uint64() {
 					fmt.Println("not enough balance: ", txFee.Uint64(), balance.Uint64())
 					go u.trackHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "check fee and balance", "txFee > balance")
-					// continue
+					continue
 				}
 
 				if amountWithChargee < txFee.Uint64() {
 					fmt.Println("not enough amountWithChargee: ", txFee.Uint64(), balance.Uint64())
 					go u.trackHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "check fee and balance", "txamountWithChargeeFee < txFee")
-					// continue
+					continue
 				}
 
 				amountWithChargee = amountWithChargee - txFee.Uint64()
 				destinations[nftListing.PayType["eth"]] = big.NewInt(int64(amountWithChargee))
-
-				fmt.Println("destinations: ", destinations)
 
 				// start send now:
 				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
