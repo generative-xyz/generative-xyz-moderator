@@ -49,6 +49,14 @@ type Pagination struct {
 	Sorts     []*Sort     `json:"-"`
 }
 
+func (m *Pagination) SetTotalPage() {
+	if m.Total%m.PageSize == 0 {
+		m.TotalPage = m.Total / m.PageSize
+		return
+	}
+	m.TotalPage = (m.Total / m.PageSize) + 1
+}
+
 type Sort struct {
 	Field string   `json:"field"`
 	Type  SortType `json:"type"`

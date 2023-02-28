@@ -733,14 +733,12 @@ func (u Usecase) ApiCheckListTempAddress() error {
 	return nil
 }
 
-func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet string, pag *entity.Pagination) (interface{}, error) {
-	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userWallet)
-	if err != nil {
-		return nil, err
-	}
+func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
 	var (
-		pageSize         = int(pag.PageSize)
-		cursor   *string = nil
+		pageSize              = int(pag.PageSize)
+		cursor        *string = nil
+		resp                  = make(map[string]*entity.Pagination)
+		walletAddress string
 	)
 	if len(pag.Cursor) > 0 {
 		cursor = &pag.Cursor
@@ -749,52 +747,42 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet string, pag 
 		Limit:  &pageSize,
 		Cursor: cursor,
 	}
-	wallletAddress := userWallet
-	if len(delegations) > 0 {
-		// TODO
-		wallletAddress = delegations[0].Contract.String()
+
+	if delegateWallet == "" {
+		delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userWallet)
+		if err != nil {
+			return nil, err
+		}
+		if len(delegations) > 0 {
+			for i := range delegations {
+				delegateWalletAddress := delegations[i].Contract.String()
+				resp[delegateWalletAddress] = &entity.Pagination{
+					Page:     pag.Page,
+					PageSize: pag.PageSize,
+				}
+				nfts, err := u.MoralisNft.GetNftByWalletAddress(delegateWalletAddress, reqMoralisFilter)
+				if err != nil {
+					return nil, err
+				}
+				resp[delegateWalletAddress].Result = nfts
+				resp[delegateWalletAddress].Total = int64(nfts.Total)
+				resp[delegateWalletAddress].SetTotalPage()
+			}
+		} else {
+			walletAddress = userWallet
+		}
 	}
-	resp, err := u.MoralisNft.GetNftByWalletAddress(wallletAddress, reqMoralisFilter)
-	if err != nil {
-		return nil, err
+
+	if walletAddress != "" {
+		resp[walletAddress] = pag
+		nfts, err := u.MoralisNft.GetNftByWalletAddress(walletAddress, reqMoralisFilter)
+		if err != nil {
+			return nil, err
+		}
+		pag.Result = nfts
+		pag.Total = int64(nfts.Total)
+		pag.SetTotalPage()
 	}
-	pag.Result = resp.Result
 
-	return pag, nil
-
-	// TODO
-
-	// if len(delegations) > 1 {
-	// 	var (
-	// 		wg                sync.WaitGroup
-	// 		moralisTokensResp = make(chan *nfts.MoralisTokensResp, len(delegations))
-	// 		errs              = make(chan error, len(delegations))
-	// 	)
-	// 	for _, value := range delegations {
-	// 		wg.Add(1)
-	// 		go func(delegation delegate.IDelegationRegistryDelegationInfo) {
-	// 			defer wg.Done()
-	// 			resp, err := u.MoralisNft.GetNftByWalletAddress(delegation.Contract.String(), nfts.MoralisFilter{})
-	// 			if err != nil {
-	// 				errs <- err
-	// 				return
-	// 			}
-	// 			moralisTokensResp <- resp
-	// 		}(value)
-	// 	}
-	// 	go func() {
-	// 		wg.Wait()
-	// 		close(moralisTokensResp)
-	// 		close(errs)
-	// 	}()
-
-	// 	for err := range errs {
-	// 		return nil, err
-	// 	}
-	// 	moralisTokens := make([]nfts.MoralisToken, 0)
-	// 	for moralisToken := range moralisTokensResp {
-	// 		moralisTokens = append(moralisTokens, moralisToken.Result...)
-	// 	}
-	// 	return moralisTokens, nil
-	// }
+	return resp, nil
 }
