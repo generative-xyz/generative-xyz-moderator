@@ -107,7 +107,6 @@ type FilterInscribeBT struct {
 type InscribeBTCResp struct {
 	UUID          string         `bson:"uuid" json:"uuid"`
 	Amount        string         `bson:"amount"  json:"amount"`
-	FileURI       string         `bson:"fileURI" json:"fileURI"`             // FileURI will be mount if OrdAddress get all amount
 	IsConfirm     bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
 	IsMinted      bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
 	IsSuccess     bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
