@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -46,11 +47,14 @@ type Config struct {
 
 	MarketBTCServiceFeeAddress string
 
-	OtherCategoryID string
+	OtherCategoryID      string
 	UnverifiedCategoryID string
 
 	TrendingConfig TrendingConfig
 	MaxReportCount int
+
+	// list crontab to run:
+	CronTabList []string
 }
 
 type TrendingConfig struct {
@@ -330,6 +334,8 @@ func NewConfig() (*Config, error) {
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
 		MaxReportCount: maxReportCount,
+
+		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
 	}
 
 	return conf, nil

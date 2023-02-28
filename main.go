@@ -17,17 +17,9 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
-	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontabManager"
-	"rederinghub.io/internal/delivery/crontab_btc"
-	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
-	"rederinghub.io/internal/delivery/crontab_marketplace"
-	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
-	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
-	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
-	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
@@ -160,11 +152,12 @@ func startServer() {
 		return
 	}
 
-	err = repo.CreateCollectionIndexes()
-	if err != nil {
-		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-		// return
-	}
+	// TODO: uncomment
+	// err = repo.CreateCollectionIndexes()
+	// if err != nil {
+	// 	logger.Error("CreateCollectionIndexes - Cannot created index ", err)
+	// 	return
+	// }
 
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
@@ -172,18 +165,8 @@ func startServer() {
 		return
 	}
 
+	// api:
 	h, _ := httpHandler.NewHandler(&g, *uc)
-	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-	cron := crontab.NewScronHandler(&g, *uc)
-	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
-
-	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
-
-	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
 	servers := make(map[string]delivery.AddedServer)
@@ -192,50 +175,68 @@ func startServer() {
 		Enabled: conf.StartHTTP,
 	}
 
-	servers["txconsumer"] = delivery.AddedServer{
-		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
-	}
-
-	servers["crontab"] = delivery.AddedServer{
-		Server:  cron,
-		Enabled: conf.Crontab.Enabled,
-	}
-
-	servers["btc_crontab"] = delivery.AddedServer{
-		Server:  btcCron,
-		Enabled: conf.Crontab.BTCEnabled,
-	}
-
-	servers["btc_crontab_v2"] = delivery.AddedServer{
-		Server:  inscribeCron,
-		Enabled: conf.Crontab.BTCV2Enabled,
-	}
-
-	servers["mint_nft_btc"] = delivery.AddedServer{
-		Server:  mintNftBtcCron,
-		Enabled: conf.Crontab.MintNftBtcEnabled,
-	}
-
-	servers["marketplace_crontab"] = delivery.AddedServer{
-		Server:  mkCron,
-		Enabled: conf.Crontab.MarketPlaceEnabled,
-	}
-
-	servers["trending_crontab"] = delivery.AddedServer{
-		Server:  trendingCron,
-		Enabled: conf.Crontab.TrendingEnabled,
-	}
-
-	servers["ordinal_collections_crontab"] = delivery.AddedServer{
-		Server:  ordinalCron,
-		Enabled: conf.Crontab.OrdinalCollectionEnabled,
-	}
-
+	//TODO: move?
 	servers["pubsub"] = delivery.AddedServer{
 		Server:  ph,
 		Enabled: conf.StartPubsub,
 	}
+
+	// job:
+	/*
+		txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+		cron := crontab.NewScronHandler(&g, *uc)
+		btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
+		mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
+		inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+
+		mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+
+		trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+		ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+
+	*/
+
+	/*
+		servers["txconsumer"] = delivery.AddedServer{
+			Server:  txConsumer,
+			Enabled: conf.TxConsumerConfig.Enabled,
+		}
+
+		servers["crontab"] = delivery.AddedServer{
+			Server:  cron,
+			Enabled: conf.Crontab.Enabled,
+		}
+
+		servers["btc_crontab"] = delivery.AddedServer{
+			Server:  btcCron,
+			Enabled: conf.Crontab.BTCEnabled,
+		}
+
+		servers["btc_crontab_v2"] = delivery.AddedServer{
+			Server:  inscribeCron,
+			Enabled: conf.Crontab.BTCV2Enabled,
+		}
+
+		servers["mint_nft_btc"] = delivery.AddedServer{
+			Server:  mintNftBtcCron,
+			Enabled: conf.Crontab.MintNftBtcEnabled,
+		}
+
+		servers["marketplace_crontab"] = delivery.AddedServer{
+			Server:  mkCron,
+			Enabled: conf.Crontab.MarketPlaceEnabled,
+		}
+
+		servers["trending_crontab"] = delivery.AddedServer{
+			Server:  trendingCron,
+			Enabled: conf.Crontab.TrendingEnabled,
+		}
+
+		servers["ordinal_collections_crontab"] = delivery.AddedServer{
+			Server:  ordinalCron,
+			Enabled: conf.Crontab.OrdinalCollectionEnabled,
+		}
+	*/
 
 	//var wait time.Duration
 	c := make(chan os.Signal, 1)
@@ -246,23 +247,27 @@ func startServer() {
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
-	// Run our server in a goroutine so that it doesn't block.
 
-	if true {
-		for name, server := range servers {
-			if server.Enabled {
-				if server.Server != nil {
-					go server.Server.StartServer()
-				}
-				h.Logger.Info(fmt.Sprintf("%s is enabled", name))
-			} else {
-				h.Logger.Info(fmt.Sprintf("%s is disabled", name))
+	// Run our server in a goroutine so that it doesn't block.
+	for name, server := range servers {
+		if server.Enabled {
+			if server.Server != nil {
+				go server.Server.StartServer()
 			}
+			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+		} else {
+			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
 	}
 
 	// start a group cron:
-	crontabManager.NewCrontabManager("MARKETPLACE_CRONTAB_START", &g, *uc).StartServer()
+	if len(conf.CronTabList) > 0 {
+		for _, cronKey := range conf.CronTabList {
+			h.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
+			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
+		}
+
+	}
 
 	// Block until we receive our signal.
 	<-c
