@@ -700,9 +700,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		}
 	}
 
-	owner, err := u.Repo.FindUserByBtcAddress(tokenUri.OwnerAddr)
-	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress for owner failed", zap.Any("err", err.Error()))
+	if tokenUri.Creator != nil {
+		u.Logger.ErrorAny("tokenUri.Creator is empty", zap.Any("tokenID", tokenUri.TokenID))
 		return
 	}
 
@@ -723,7 +722,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
 
-	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
 	collectionName := project.Name
 	itemCount := project.MaxSupply
 	mintedCount := project.MintingInfo.Index
@@ -753,7 +752,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		AvatarUrl: "",
 		Content:   "**NEW MINT**",
 		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, itemCount),
+			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
 			Url:         fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
 			Description: description,
 			//Author: discordclient.Author{
