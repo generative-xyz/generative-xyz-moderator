@@ -19,18 +19,18 @@ func (r Repository) InsertReferral(data *entity.Referral) error {
 
 func (r Repository) FilterReferrals(filter entity.FilterReferrals) bson.M {
 	f := bson.M{}
-	if filter.ReferreeID != nil {
+	if filter.ReferreeID != nil && *filter.ReferreeID != "" {
 		f["referree_id"] = primitive.Regex{Pattern:  *filter.ReferreeID, Options: "i"}
 	}
-	if filter.ReferrerID != nil {
+	if filter.ReferrerID != nil && *filter.ReferrerID != "" {
 		f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
 	}
 	
-	if filter.ReferrerAddress != nil {
+	if filter.ReferrerAddress != nil && *filter.ReferrerAddress != "" {
 		f["referrer.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferrerAddress, Options: "i"}
 	}
 	
-	if filter.ReferreeAddress != nil {
+	if filter.ReferreeAddress != nil && *filter.ReferreeAddress != "" {
 		f["referree.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferreeAddress, Options: "i"}
 	}
 	
