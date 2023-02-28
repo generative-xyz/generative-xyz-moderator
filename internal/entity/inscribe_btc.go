@@ -101,7 +101,7 @@ type FilterInscribeBT struct {
 }
 
 type InscribeBTCResp struct {
-	UUID string `bson:"uuid"`
+	UUID string `bson:"uuid" json:"uuid,omitempty"`
 	// UserAddress string `bson:"user_address"` //user's wallet address from FE
 	// OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
 	// Amount            string `bson:"amount"`
@@ -110,20 +110,21 @@ type InscribeBTCResp struct {
 	// OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
 	// SegwitAddress     string `bson:"segwit_address"`
 	// FileURI       string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
-	IsConfirm bool `bson:"isConfirm"` //default: false, if OrdAddress get all amount it will be set true
-	IsMinted  bool `bson:"isMinted"`  //default: false. If InscriptionID exist which means token is minted, it's true
-	IsSuccess bool `bson:"isSuccess"` //default: false. If InscriptionID was sent to user, it's true
+	IsConfirm bool `bson:"isConfirm" json:"isConfirm,omitempty"` //default: false, if OrdAddress get all amount it will be set true
+	IsMinted  bool `bson:"isMinted" json:"isMinted,omitempty"`   //default: false. If InscriptionID exist which means token is minted, it's true
+	IsSuccess bool `bson:"isSuccess" json:"isSuccess,omitempty"` //default: false. If InscriptionID was sent to user, it's true
 
-	InscriptionID string `bson:"inscriptionID"` // tokenID in ETH
+	InscriptionID string `bson:"inscriptionID" json:"inscriptionID,omitempty"` // tokenID in ETH
 	// Mnemonic          string `bson:"mnemonic"`
 	// SegwitKey         string `bson:"segwit_key"`
 	// MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
 	// Balance   string    `bson:"balance"` // balance after check
-	FeeRate   int32     `bson:"fee_rate"`
-	ExpiredAt time.Time `bson:"expired_at"`
+	FeeRate   int32     `bson:"fee_rate" json:"feeRate,omitempty"`
+	ExpiredAt time.Time `bson:"expired_at" json:"expiredAt,omitempty"`
 
-	Status    StatusInscribe `bson:"status"` // status for record
-	TxSendBTC string         `bson:"tx_send_btc"`
-	TxSendNft string         `bson:"tx_send_nft"`
-	TxMintNft string         `bson:"tx_mint_nft"`
+	Status    StatusInscribe `bson:"status" json:"status,omitempty"` // status for record
+	TxSendBTC string         `bson:"tx_send_btc" json:"txSendBtc,omitempty"`
+	TxSendNft string         `bson:"tx_send_nft" json:"txSendNft,omitempty"`
+	TxMintNft string         `bson:"tx_mint_nft" json:"txMintNft,omitempty"`
+	UserUuid  string         `bson:"user_uuid" json:"userUuid,omitempty"`
 }
