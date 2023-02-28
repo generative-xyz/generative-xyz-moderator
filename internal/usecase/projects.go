@@ -245,6 +245,34 @@ func (u Usecase) AirdropArtist(from string, receiver entity.Users, feerate int) 
 		Receiver:                  receiver.ID,
 		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
 		Tx:                        tx,
+		Type:                      0,
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
+}
+
+func (u Usecase) AirdropCollector(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 20 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 20 && random >= 5 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := ""
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.ID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+		Type:                      1,
 	}
 	err := u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
@@ -1253,6 +1281,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		u.AirdropArtist("todo", *owner, 15)
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
