@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -729,4 +731,70 @@ func (u Usecase) ApiCheckListTempAddress() error {
 	}
 
 	return nil
+}
+
+func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet string, pag *entity.Pagination) (interface{}, error) {
+	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userWallet)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		pageSize         = int(pag.PageSize)
+		cursor   *string = nil
+	)
+	if len(pag.Cursor) > 0 {
+		cursor = &pag.Cursor
+	}
+	reqMoralisFilter := nfts.MoralisFilter{
+		Limit:  &pageSize,
+		Cursor: cursor,
+	}
+	wallletAddress := userWallet
+	if len(delegations) > 0 {
+		// TODO
+		wallletAddress = delegations[0].Contract.String()
+	}
+	resp, err := u.MoralisNft.GetNftByWalletAddress(wallletAddress, reqMoralisFilter)
+	if err != nil {
+		return nil, err
+	}
+	pag.Result = resp.Result
+
+	return pag, nil
+
+	// TODO
+
+	// if len(delegations) > 1 {
+	// 	var (
+	// 		wg                sync.WaitGroup
+	// 		moralisTokensResp = make(chan *nfts.MoralisTokensResp, len(delegations))
+	// 		errs              = make(chan error, len(delegations))
+	// 	)
+	// 	for _, value := range delegations {
+	// 		wg.Add(1)
+	// 		go func(delegation delegate.IDelegationRegistryDelegationInfo) {
+	// 			defer wg.Done()
+	// 			resp, err := u.MoralisNft.GetNftByWalletAddress(delegation.Contract.String(), nfts.MoralisFilter{})
+	// 			if err != nil {
+	// 				errs <- err
+	// 				return
+	// 			}
+	// 			moralisTokensResp <- resp
+	// 		}(value)
+	// 	}
+	// 	go func() {
+	// 		wg.Wait()
+	// 		close(moralisTokensResp)
+	// 		close(errs)
+	// 	}()
+
+	// 	for err := range errs {
+	// 		return nil, err
+	// 	}
+	// 	moralisTokens := make([]nfts.MoralisToken, 0)
+	// 	for moralisToken := range moralisTokensResp {
+	// 		moralisTokens = append(moralisTokens, moralisToken.Result...)
+	// 	}
+	// 	return moralisTokens, nil
+	// }
 }

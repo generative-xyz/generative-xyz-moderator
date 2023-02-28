@@ -39,13 +39,14 @@ type BaseFilters struct {
 }
 
 type Pagination struct {
-	Result   interface{} `json:"result"`
-	Page     int64       `json:"page" query:"page"`
-	PageSize int64       `json:"pageSize" query:"limit"`
-	Total    int64       `json:"total"`
-	Currsor  string      `json:"currsor"`
-	Sort     []string    `json:"sort" query:"sort"`
-	Sorts    []*Sort     `json:"-"`
+	Result    interface{} `json:"result"`
+	Page      int64       `json:"page" query:"page"`
+	PageSize  int64       `json:"pageSize" query:"limit"`
+	Total     int64       `json:"total"`
+	TotalPage int64       `json:"totalPage"`
+	Cursor    string      `json:"cursor" query:"cursor"`
+	Sort      []string    `json:"sort" query:"sort"`
+	Sorts     []*Sort     `json:"-"`
 }
 
 type Sort struct {
