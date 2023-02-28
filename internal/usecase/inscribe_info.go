@@ -11,7 +11,13 @@ import (
 )
 
 
-func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) {
+func (u Usecase) crawlInscribeWebsite( id string) (inscriptionInfo *entity.InscribeInfo, err error) {
+	defer func() {
+			if r := recover(); r != nil {
+					err = fmt.Errorf("was panic, id=%s recovered value: %v", id, r)
+			}
+	}()
+
 	url := fmt.Sprintf("https://generativeexplorer.com/inscription/%s", id)
 	dts := []string{}
 	dds := []string{}
@@ -19,7 +25,6 @@ func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) 
 	var inscribeIndex string
 
 	c := colly.NewCollector()
-	var err error
 
 	c.OnHTML("dl", func(e *colly.HTMLElement) {
 		if e == nil {
@@ -95,8 +100,7 @@ func (u Usecase) crawlInscribeWebsite( id string) (*entity.InscribeInfo, error) 
 }
 
 func (u Usecase) GetInscribeInfo( id string) (*entity.InscribeInfo, error) {
-
-inscribeInfo, err := u.Repo.GetInscribeInfo(id);
+	inscribeInfo, err := u.Repo.GetInscribeInfo(id);
 	if err != nil {
 		// Failed to find inscribe info in database, try to crawl it from website
 		inscribeInfo, err = u.crawlInscribeWebsite(id)
