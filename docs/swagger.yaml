@@ -2091,7 +2091,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeInfoResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Info Inscribe
       tags:
       - Inscribe
@@ -2108,7 +2108,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC List Inscribe
       tags:
       - Inscribe
@@ -2138,7 +2138,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: List NFT from Moralis
       tags:
       - Inscribe
@@ -2161,7 +2161,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.InscribeBTCResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
@@ -2185,7 +2185,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeBtcResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Generate receive wallet address
       tags:
       - Inscribe
@@ -2206,7 +2206,7 @@ paths:
         "200":
           description: ""
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Retry Inscribe
       tags:
       - Inscribe
@@ -3606,11 +3606,7 @@ paths:
       tags:
       - User
 securityDefinitions:
-  Api-Key:
-    in: header
-    name: Api-Key
-    type: apiKey
-  Authorization:
+  ApiKeyAuth:
     in: header
     name: Authorization
     type: apiKey

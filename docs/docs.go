@@ -1407,7 +1407,7 @@ var doc = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Info Inscribe",
@@ -1444,7 +1444,7 @@ var doc = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC List Inscribe",
@@ -1472,7 +1472,7 @@ var doc = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "List NFT from Moralis",
@@ -1520,7 +1520,7 @@ var doc = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC NFT Detail Inscribe",
@@ -1557,7 +1557,7 @@ var doc = `{
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Generate receive wallet address",
@@ -1596,7 +1596,7 @@ var doc = `{
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Retry Inscribe",
@@ -5693,12 +5693,7 @@ var doc = `{
         }
     },
     "securityDefinitions": {
-        "Api-Key": {
-            "type": "apiKey",
-            "name": "Api-Key",
-            "in": "header"
-        },
-        "Authorization": {
+        "ApiKeyAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
