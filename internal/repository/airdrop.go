@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -29,9 +31,20 @@ func (r Repository) InsertAirdrop(data *entity.Airdrop) error {
 	return nil
 }
 
-func (r Repository) UpdateAirdropByTx(tx string, conf *entity.Airdrop) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateAirdropByTx(tx string, data *entity.Airdrop) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"tx", tx}}
-	result, err := r.UpdateOne(conf.TableName(), filter, conf)
+	result, err := r.UpdateOne(data.TableName(), filter, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r Repository) UpdateAirdropStatusByTx(tx string, data *entity.Airdrop, status int) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"tx", tx}}
+	update := bson.M{"$set": bson.M{"status": status}}
+	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
