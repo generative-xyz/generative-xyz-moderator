@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
 	"rederinghub.io/utils/helpers"
@@ -622,7 +623,8 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 		processed++
 		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
-			return err
+			u.Logger.Error("FailedToGetInscribeInfo", zap.String("tokenID", token.TokenID), zap.Error(err))
+			continue
 		}
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
