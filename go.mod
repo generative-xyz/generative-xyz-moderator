@@ -22,6 +22,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/schema v1.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/joho/godotenv v1.5.1
@@ -32,6 +33,7 @@ require (
 	github.com/swaggo/http-swagger v1.3.3
 	github.com/swaggo/swag v1.8.10
 	github.com/tdewolff/minify/v2 v2.12.4
+	github.com/valyala/bytebufferpool v1.0.0
 	go.mongodb.org/mongo-driver v1.11.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.6.0

@@ -1,11 +1,11 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -84,7 +84,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	}
 
 	logger.AtLog.Logger.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
-	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
+	resp, err := h.inscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -94,7 +94,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
 	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
@@ -119,31 +119,20 @@ func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Router /inscribe/list [GET]
 // @Security Api-Key
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		limit = 20
-	}
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		page = 1
-	}
-	req := &entity.FilterInscribeBT{
-		BaseFilters: entity.BaseFilters{
-			Limit: int64(limit),
-			Page:  int64(page),
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
+			page := entity.GetPagination(r)
+			req := &entity.FilterInscribeBT{
+				BaseFilters: entity.BaseFilters{
+					Limit: page.PageSize,
+					Page:  page.Page,
+				},
+				UserUuid: &userUuid,
+			}
+			return h.Usecase.ListInscribeBTC(req)
 		},
-		UserUuid: &userUuid,
-	}
-	result, err := h.Usecase.ListInscribeBTC(req)
-	if err != nil {
-		h.Logger.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	).ServeHTTP(w, r)
 }
 
 // @Summary BTC NFT Detail Inscribe
@@ -244,4 +233,25 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 	resp.Output = input.Output
 	resp.Offset = input.Offset
 	return resp, nil
+}
+
+// @Summary List NFT from Moralis
+// @Description List NFT from Moralis
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param walletAddress query string false "Wallet Address"
+// @Param cursor query string false "Last Id"
+// @Param limit query int false "Limit"
+// @Success 200 {object} entity.Pagination{}
+// @Router /inscribe/list-nft-from-moralis [GET]
+// @Security Api-Key
+func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			pag := entity.GetPagination(r)
+			return h.Usecase.ListNftFromMoralis(ctx, userWallet, r.URL.Query().Get("walletAddress"), pag)
+		},
+	).ServeHTTP(w, r)
 }
