@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/logger"
 )
@@ -27,8 +28,10 @@ import (
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
 // @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
+// @Security Api-Key
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
+	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	var reqBody request.CreateInscribeBtcReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -43,10 +46,6 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		h.Logger.Error("copier.Copy", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	if reqUsecase == nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("invalid param"))
 		return
 	}
 
@@ -74,7 +73,9 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("file is invalid"))
 		return
 	}
-
+	reqUsecase.SetFields(
+		reqUsecase.WithUserUuid(userUuid),
+	)
 	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase)
 	if err != nil {
 		h.Logger.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
@@ -82,8 +83,8 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	logger.AtLog.Logger.Info("btcCreateInscribeBTC btcWallet", zap.Any("raw_data", btcWallet))
-	resp, err := h.inscribeBtcCreatedRespResp(btcWallet)
+	logger.AtLog.Logger.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
+	resp, err := h.InscribeBtcCreatedRespResp(btcWallet)
 	if err != nil {
 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -93,7 +94,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+func (h *httpDelivery) InscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
 	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
@@ -116,8 +117,10 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Produce json
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list [GET]
+// @Security Api-Key
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
+	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {
 		limit = 20
@@ -126,8 +129,14 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		page = 1
 	}
-
-	result, err := h.Usecase.ListInscribeBTC(int64(limit), int64(page))
+	req := &entity.FilterInscribeBT{
+		BaseFilters: entity.BaseFilters{
+			Limit: int64(limit),
+			Page:  int64(page),
+		},
+		UserUuid: &userUuid,
+	}
+	result, err := h.Usecase.ListInscribeBTC(req)
 	if err != nil {
 		h.Logger.Error("h.Usecase.ListInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -137,7 +146,15 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
-// detail:
+// @Summary BTC NFT Detail Inscribe
+// @Description BTC NFT Detail Inscribe
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param ID path string true "inscribe ID"
+// @Success 200 {object} entity.InscribeBTCResp{}
+// @Router /inscribe/nft-detail/{ID} [GET]
+// @Security Api-Key
 func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -154,6 +171,15 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 
 }
 
+// @Summary BTC Retry Inscribe
+// @Description BTC Retry Inscribe
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param ID path string true "inscribe ID"
+// @Success 200
+// @Router /inscribe/retry/{ID} [POST]
+// @Security Api-Key
 func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -170,14 +196,15 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 
 }
 
-// @Summary get inscribe info
-// @Description get inscribe info
+// @Summary BTC Info Inscribe
+// @Description BTC Info Inscribe
 // @Tags Inscribe
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param ID path string true "inscribe ID"
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {object} response.InscribeInfoResp{}
 // @Router /inscribe/info/{ID} [GET]
+// @Security Api-Key
 func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

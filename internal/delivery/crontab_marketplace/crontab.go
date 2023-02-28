@@ -34,25 +34,25 @@ func (h ScronMarketplaceHandler) StartServer() {
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.BtcChecktListNft()
+			h.Usecase.JobMKP_BtcChecktListNft()
 
 		}(&wg)
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.BtcCheckReceivedBuyingNft()
+			h.Usecase.JobMKP_WaitForBalanceFromBuyer()
 
 		}(&wg)
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.BtcSendBTCForBuyOrder()
+			h.Usecase.JobMKP_Payment()
 
 		}(&wg)
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.BtcCheckSendBTCForBuyOrder()
+			h.Usecase.JpbMKP_CheckTxSendPayment()
 
 		}(&wg)
 

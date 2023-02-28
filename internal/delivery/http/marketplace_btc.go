@@ -17,6 +17,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/eth"
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
@@ -36,17 +37,9 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 
 	if len(inscriptionIDs) == 2 {
 		inscriptionID = inscriptionIDs[1]
-		// err := fmt.Errorf("invalid ordinals link")
-		// h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
-		// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		// return
 	}
-	// if reqBody.Name == "" {
-	// 	err := fmt.Errorf("invalid name")
-	// 	h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
+
+	// TODO: check exists:
 
 	// check valid inscriptionID:
 	suffix := "i0"
@@ -66,19 +59,42 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	// check btc address:
-	ok, _ := btc.ValidateAddress("btc", reqBody.ReceiveAddress)
+	ok, _ := btc.ValidateAddress("btc", reqBody.OrdWalletAddress)
 	if !ok {
-		err := fmt.Errorf("invalid ReceiveAddress")
+		err := fmt.Errorf("invalid ordWalletAddress")
 		h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	ok, _ = btc.ValidateAddress("btc", reqBody.ReceiveOrdAddress)
-	if !ok {
-		err := fmt.Errorf("invalid ReceiveOrdAddress")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
+
+	// check paytype:
+	btcPaymentAddress, okBtc := reqBody.PayType["btc"]
+	ethPaymentAddress, okEth := reqBody.PayType["eth"]
+	if !okBtc && !okEth {
+		err := fmt.Errorf("payment type is requied")
+		h.Logger.Error("httpDelivery.btcMarketplaceListing.Validate Payment type", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
+	}
+
+	if okBtc {
+		ok, _ = btc.ValidateAddress("btc", btcPaymentAddress)
+		if !ok {
+			err := fmt.Errorf("invalid btcPaymentAddress")
+			h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.btcPaymentAddress", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	}
+
+	if okEth {
+		ok = eth.ValidateAddress(ethPaymentAddress)
+		if !ok {
+			err := fmt.Errorf("invalid ethPaymentAddress")
+			h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.ethPaymentAddress", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	}
 
 	priceNumber, err := strconv.ParseInt(reqBody.Price, 10, 64)
@@ -98,13 +114,16 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	reqUsecase := structure.MarketplaceBTC_ListingInfo{
-		InscriptionID:  inscriptionID,
-		Name:           reqBody.Name,
-		Description:    reqBody.Description,
-		SellOrdAddress: reqBody.ReceiveOrdAddress,
-		SellerAddress:  reqBody.ReceiveAddress,
-		Price:          reqBody.Price,
-		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+		InscriptionID: inscriptionID,
+		Name:          reqBody.Name,
+		Description:   reqBody.Description,
+
+		SellOrdAddress: reqBody.OrdWalletAddress,
+
+		Price:      reqBody.Price,
+		ServiceFee: fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+
+		PayType: reqBody.PayType,
 	}
 
 	nft, err := h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
@@ -174,72 +193,13 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	inscriptionID := vars["ID"]
 
-	var nft *entity.MarketplaceBTCListing
-	var err error
-	isBuyable := true
-	isCompleted := false
-	// lastPrice := int64(0)
-	nft, err = h.Usecase.Repo.FindBtcNFTListingUnsoldByNFTID(inscriptionID)
-	if err != nil {
-		isBuyable = false
-		nft, err = h.Usecase.Repo.FindBtcNFTListingLastSoldByNFTID(inscriptionID)
-		if err != nil {
-			h.Logger.Error("h.Usecase.Repo.FindBtcNFTListingByNFTID", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-		// priceInt, err := strconv.ParseInt(nft.Price, 10, 64)
-		// if err != nil {
-		// 	h.Logger.Error("h.btcMarketplaceNFTDetail.strconv.ParseInt", err.Error(), err)
-		// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		// 	return
-		// }
-		// lastPrice = priceInt
-		isCompleted = true
-	}
+	nftInfo, err := h.Usecase.BTCMarketplaceListingDetail(inscriptionID)
 
-	if !nft.IsSold {
-		buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
-		if err != nil {
-			h.Logger.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
-		}
-		currentTime := time.Now()
-		for _, order := range buyOrders {
-			expireTime := order.ExpiredAt
-			// not expired yet still waiting for btc
-			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
-				isBuyable = false
-				break
-			}
-			// could be expired but received btc
-			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
-				isBuyable = false
-				break
-			}
-		}
-	}
-
-	nftInfo := structure.MarketplaceNFTDetail{
-		InscriptionID: nft.InscriptionID,
-		Name:          nft.Name,
-		Description:   nft.Description,
-		Price:         nft.Price,
-		OrderID:       nft.UUID,
-		IsConfirmed:   nft.IsConfirm,
-		Buyable:       isBuyable,
-		IsCompleted:   isCompleted,
-		// LastPrice:     lastPrice,
-	}
-	inscribeInfo, err := h.Usecase.GetInscribeInfo(nftInfo.InscriptionID)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		h.Logger.Error("h.Usecase.BTCMarketplaceListingDetail", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
-	if inscribeInfo != nil {
-		nftInfo.InscriptionNumber = inscribeInfo.Index
-		nftInfo.ContentType = inscribeInfo.ContentType
-		nftInfo.ContentLength = inscribeInfo.ContentLength
-	}
-	//h.Logger.Info("resp.Proposal", resp)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nftInfo, "")
 }
@@ -317,6 +277,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 		InscriptionID: reqBody.InscriptionID,
 		OrderID:       reqBody.OrderID,
 		BuyOrdAddress: reqBody.WalletAddress,
+		PayType:       reqBody.PayType,
 	}
 	//TODO: lam uncomment
 	listing, err := h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
@@ -343,8 +304,9 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	}
 
 	resp := response.CreateMarketplaceBTCBuyOrder{
-		ReceiveAddress: depositAddress,
-		TimeoutAt:      fmt.Sprintf("%d", time.Now().Add(time.Minute*15).Unix()),
+		ReceiveAddress: depositAddress.ReceiveAddress,
+		TimeoutAt:      fmt.Sprintf("%d", time.Now().Add(time.Minute*30).Unix()),
+		Price:          depositAddress.Price,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -352,7 +314,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	result := h.Usecase.JobMint_CheckTxMasterAndRefund()
+	result := h.Usecase.JobMKP_Payment()
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 

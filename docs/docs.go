@@ -1398,7 +1398,12 @@ const docTemplate = `{
         },
         "/inscribe/info/{ID}": {
             "get": {
-                "description": "get inscribe info",
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "BTC Info Inscribe",
                 "consumes": [
                     "application/json"
                 ],
@@ -1408,7 +1413,7 @@ const docTemplate = `{
                 "tags": [
                     "Inscribe"
                 ],
-                "summary": "get inscribe info",
+                "summary": "BTC Info Inscribe",
                 "parameters": [
                     {
                         "type": "string",
@@ -1422,15 +1427,20 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "$ref": "#/definitions/response.InscribeInfoResp"
                         }
                     }
                 }
             }
         },
-        "/inscribe/receive-address": {
-            "post": {
-                "description": "Generate receive wallet address",
+        "/inscribe/list": {
+            "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "BTC List Inscribe",
                 "consumes": [
                     "application/json"
                 ],
@@ -1438,7 +1448,72 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "BTC"
+                    "Inscribe"
+                ],
+                "summary": "BTC List Inscribe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
+        "/inscribe/nft-detail/{ID}": {
+            "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "BTC NFT Detail Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC NFT Detail Inscribe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.InscribeBTCResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/inscribe/receive-address": {
+            "post": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "BTC Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
                 ],
                 "summary": "BTC Generate receive wallet address",
                 "parameters": [
@@ -1456,8 +1531,42 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "$ref": "#/definitions/response.InscribeBtcResp"
                         }
+                    }
+                }
+            }
+        },
+        "/inscribe/retry/{ID}": {
+            "post": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "BTC Retry Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC Retry Inscribe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -2328,6 +2437,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile/withdraw": {
+            "post": {
+                "description": "User profile via wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "User profile via wallet address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/project": {
             "get": {
                 "description": "get projects",
@@ -2994,8 +3147,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "filter project referreeID",
+                        "description": "filter by referreeID",
                         "name": "referreeID",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter by amountType",
+                        "name": "amountType",
                         "in": "query"
                     },
                     {
@@ -3601,6 +3760,711 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "entity.InscribeBTCResp": {
+            "type": "object",
+            "properties": {
+                "expiredAt": {
+                    "type": "string"
+                },
+                "feeRate": {
+                    "description": "Mnemonic          string ` + "`" + `bson:\"mnemonic\"` + "`" + `\nSegwitKey         string ` + "`" + `bson:\"segwit_key\"` + "`" + `\nMintResponse MintStdoputResponse ` + "`" + `bson:\"mintResponse\"` + "`" + ` // after token has been mint\nBalance   string    ` + "`" + `bson:\"balance\"` + "`" + ` // balance after check",
+                    "type": "integer"
+                },
+                "inscriptionID": {
+                    "description": "tokenID in ETH",
+                    "type": "string"
+                },
+                "isConfirm": {
+                    "description": "UserAddress string ` + "`" + `bson:\"user_address\"` + "`" + ` //user's wallet address from FE\nOriginUserAddress string ` + "`" + `bson:\"origin_user_address\"` + "`" + ` //user's wallet address from FE\nAmount            string ` + "`" + `bson:\"amount\"` + "`" + `\nMintFee           string ` + "`" + `bson:\"mint_fee\"` + "`" + `\nSentTokenFee      string ` + "`" + `bson:\"sent_token_fee\"` + "`" + `\nOrdAddress        string ` + "`" + `bson:\"ordAddress\"` + "`" + ` // address is generated from ORD service, which receive all amount\nSegwitAddress     string ` + "`" + `bson:\"segwit_address\"` + "`" + `\nFileURI       string ` + "`" + `bson:\"fileURI\"` + "`" + `       // FileURI will be mount if OrdAddress get all amount",
+                    "type": "boolean"
+                },
+                "isMinted": {
+                    "description": "default: false. If InscriptionID exist which means token is minted, it's true",
+                    "type": "boolean"
+                },
+                "isSuccess": {
+                    "description": "default: false. If InscriptionID was sent to user, it's true",
+                    "type": "boolean"
+                },
+                "status": {
+                    "description": "status for record",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.StatusInscribe"
+                        }
+                    ]
+                },
+                "txMintNft": {
+                    "type": "string"
+                },
+                "txSendBTC": {
+                    "type": "string"
+                },
+                "txSendNft": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.MintedImages": {
+            "type": "object",
+            "properties": {
+                "commit": {
+                    "type": "string"
+                },
+                "fees": {
+                    "type": "integer"
+                },
+                "inscription": {
+                    "type": "string"
+                },
+                "isSent": {
+                    "type": "boolean"
+                },
+                "mintedAt": {
+                    "type": "string"
+                },
+                "reveal": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Pagination": {
+            "type": "object",
+            "properties": {
+                "currsor": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "result": {},
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "entity.ProfileSocial": {
+            "type": "object",
+            "properties": {
+                "discord": {
+                    "type": "string"
+                },
+                "ether_scan": {
+                    "type": "string"
+                },
+                "instagram": {
+                    "type": "string"
+                },
+                "medium": {
+                    "type": "string"
+                },
+                "twitter": {
+                    "type": "string"
+                },
+                "twitterVerified": {
+                    "type": "boolean"
+                },
+                "web": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ProjectMintingInfo": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer"
+                },
+                "indexReverse": {
+                    "type": "integer"
+                }
+            }
+        },
+        "entity.ProjectStat": {
+            "type": "object",
+            "properties": {
+                "bestMakeOfferPrice": {
+                    "type": "string"
+                },
+                "floorPrice": {
+                    "type": "string"
+                },
+                "lastTimeSynced": {
+                    "type": "string"
+                },
+                "listedPercent": {
+                    "type": "integer"
+                },
+                "mintedCount": {
+                    "type": "integer"
+                },
+                "totalTradingVolumn": {
+                    "description": "TODO add other stats here",
+                    "type": "string"
+                },
+                "trendingScore": {
+                    "type": "integer"
+                },
+                "uniqueOwnerCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "entity.Projects": {
+            "type": "object",
+            "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
+                "block_number_minted": {
+                    "type": "string"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "completeTime": {
+                    "type": "integer"
+                },
+                "contractAddress": {
+                    "type": "string"
+                },
+                "created_by_collection_meta": {
+                    "type": "boolean"
+                },
+                "creatorAddrr": {
+                    "type": "string"
+                },
+                "creatorAddrrBTC": {
+                    "type": "string"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "creatorProfile": {
+                    "$ref": "#/definitions/entity.Users"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "genNFTAddr": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "images": {
+                    "description": "if user uses links instead of animation URL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inscriptionIcon": {
+                    "type": "string"
+                },
+                "isFullChain": {
+                    "type": "boolean"
+                },
+                "isHidden": {
+                    "type": "boolean"
+                },
+                "isSynced": {
+                    "type": "boolean"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limitSupply": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintFee": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "mintPriceEth": {
+                    "type": "string"
+                },
+                "mintTokenAddress": {
+                    "type": "string"
+                },
+                "mintedImages": {
+                    "description": "if user uses links instead of animation URL",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.MintedImages"
+                    }
+                },
+                "minted_time": {
+                    "type": "string"
+                },
+                "mintingInfo": {
+                    "$ref": "#/definitions/entity.ProjectMintingInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkFee": {
+                    "type": "string"
+                },
+                "networkFeeEth": {
+                    "type": "string"
+                },
+                "nftTokenUri": {
+                    "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "processingImages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reportUsers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.ReportProject"
+                    }
+                },
+                "reservationList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "socialDiscord": {
+                    "type": "string"
+                },
+                "socialInstagram": {
+                    "type": "string"
+                },
+                "socialMedium": {
+                    "type": "string"
+                },
+                "socialTwitter": {
+                    "type": "string"
+                },
+                "socialWeb": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/entity.ProjectStat"
+                },
+                "status": {
+                    "type": "boolean"
+                },
+                "styles": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thirdPartyScripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "tokenDescription": {
+                    "type": "string"
+                },
+                "tokenID": {
+                    "type": "string"
+                },
+                "tokenIDInt": {
+                    "type": "integer"
+                },
+                "traceID": {
+                    "description": "TO find log easily",
+                    "type": "string"
+                },
+                "traitsStat": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.TraitStat"
+                    }
+                },
+                "whiteListEthContracts": {
+                    "description": "if user uses links instead of animation URL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "entity.ReportProject": {
+            "type": "object",
+            "properties": {
+                "originalLink": {
+                    "type": "string"
+                },
+                "reportUserAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.StatusInscribe": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ],
+            "x-enum-comments": {
+                "StatusInscribe_Minted": "5: mint success",
+                "StatusInscribe_Minting": "4: minting",
+                "StatusInscribe_NeedToRefund": "12: Need to refund BTC",
+                "StatusInscribe_NotEnoughBalance": "11: balance not enough",
+                "StatusInscribe_Pending": "0: pending: waiting for fund",
+                "StatusInscribe_ReceivedFund": "1: received fund from user (buyer)",
+                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr": "2: sending btc from segwit address to ord address",
+                "StatusInscribe_SendingNFTToUser": "6: sending nft to user",
+                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd": "3: send btc from segwit address to ord address success",
+                "StatusInscribe_SentNFTToUser": "7: send nft to user success: flow DONE",
+                "StatusInscribe_TxMintFailed": "10: tx mint failed",
+                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed": "8: send btc from segwit address to ord address failed",
+                "StatusInscribe_TxSendBTCToUserFailed": "9: send nft to user failed"
+            },
+            "x-enum-varnames": [
+                "StatusInscribe_Pending",
+                "StatusInscribe_ReceivedFund",
+                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr",
+                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd",
+                "StatusInscribe_Minting",
+                "StatusInscribe_Minted",
+                "StatusInscribe_SendingNFTToUser",
+                "StatusInscribe_SentNFTToUser",
+                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed",
+                "StatusInscribe_TxSendBTCToUserFailed",
+                "StatusInscribe_TxMintFailed",
+                "StatusInscribe_NotEnoughBalance",
+                "StatusInscribe_NeedToRefund"
+            ]
+        },
+        "entity.TokenPaidType": {
+            "type": "string",
+            "enum": [
+                "eth",
+                "btc"
+            ],
+            "x-enum-varnames": [
+                "ETH",
+                "BIT"
+            ]
+        },
+        "entity.TokenStats": {
+            "type": "object",
+            "properties": {
+                "price_int": {
+                    "type": "integer"
+                }
+            }
+        },
+        "entity.TokenUri": {
+            "type": "object",
+            "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
+                "animation_url": {
+                    "type": "string"
+                },
+                "attributes": {
+                    "type": "string"
+                },
+                "block_number_minted": {
+                    "type": "string"
+                },
+                "contract_address": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdByCollectionInscription": {
+                    "type": "boolean"
+                },
+                "creator": {
+                    "$ref": "#/definitions/entity.Users"
+                },
+                "creatorAddr": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "genNFTAddr": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "inscriptionIndex": {
+                    "type": "string"
+                },
+                "isOnchain": {
+                    "type": "boolean"
+                },
+                "minted_time": {
+                    "type": "string"
+                },
+                "minterAddress": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "description": "accept duplicated data to query more faster",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.Users"
+                        }
+                    ]
+                },
+                "ownerAddr": {
+                    "type": "string"
+                },
+                "paidType": {
+                    "$ref": "#/definitions/entity.TokenPaidType"
+                },
+                "parsed_attributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.TokenUriAttr"
+                    }
+                },
+                "parsed_attributes_str": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.TokenUriAttrStr"
+                    }
+                },
+                "parsed_image": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "project": {
+                    "$ref": "#/definitions/entity.Projects"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "project_id_int": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/entity.TokenStats"
+                },
+                "syncedInscriptionInfo": {
+                    "type": "boolean"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "thumbnailCapturedAt": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "token_id_int": {
+                    "type": "integer"
+                },
+                "token_id_mini": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.TokenUriAttr": {
+            "type": "object",
+            "properties": {
+                "trait_type": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "entity.TokenUriAttrStr": {
+            "type": "object",
+            "properties": {
+                "trait_type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.TraitStat": {
+            "type": "object",
+            "properties": {
+                "traitName": {
+                    "type": "string"
+                },
+                "traitValuesStat": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.TraitValueStat"
+                    }
+                }
+            }
+        },
+        "entity.TraitValueStat": {
+            "type": "object",
+            "properties": {
+                "rarity": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.UserStats": {
+            "type": "object",
+            "properties": {
+                "collection_created": {
+                    "type": "integer"
+                },
+                "nft_minted": {
+                    "type": "integer"
+                },
+                "output_minted": {
+                    "type": "integer"
+                },
+                "volume_minted": {
+                    "type": "number"
+                }
+            }
+        },
+        "entity.Users": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isAdmin": {
+                    "type": "boolean"
+                },
+                "isVerified": {
+                    "type": "boolean"
+                },
+                "is_updated_avatar": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "profile_social": {
+                    "$ref": "#/definitions/entity.ProfileSocial"
+                },
+                "stats": {
+                    "$ref": "#/definitions/entity.UserStats"
+                },
+                "verifiedAt": {
+                    "type": "string"
+                },
+                "wallet_address": {
+                    "description": "eth wallet define user in platform by connect wallet and sign",
+                    "type": "string"
+                },
+                "wallet_address_btc": {
+                    "description": "btc wallet artist receive royalty",
+                    "type": "string"
+                },
+                "wallet_address_btc_taproot": {
+                    "description": "btc wallet receive minted nft",
+                    "type": "string"
+                },
+                "wallet_address_payment": {
+                    "description": "eth wallet artist receive royalty",
+                    "type": "string"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -3962,6 +4826,9 @@ const docTemplate = `{
                 },
                 "walletAddressBtc": {
                     "type": "string"
+                },
+                "walletAddressPayment": {
+                    "type": "string"
                 }
             }
         },
@@ -4084,6 +4951,106 @@ const docTemplate = `{
                 }
             }
         },
+        "response.InscribeBtcResp": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "balance": {
+                    "description": "balance after check",
+                    "type": "string"
+                },
+                "fileURI": {
+                    "description": "FileURI will be mount if OrdAddress get all amount",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inscriptionID": {
+                    "description": "tokenID in ETH",
+                    "type": "string"
+                },
+                "isConfirm": {
+                    "description": "default: false, if OrdAddress get all amount it will be set true",
+                    "type": "boolean"
+                },
+                "mintFee": {
+                    "type": "string"
+                },
+                "ordAddress": {
+                    "description": "address is generated from ORD service, which receive all amount",
+                    "type": "string"
+                },
+                "segwitAddress": {
+                    "type": "string"
+                },
+                "sentTokenFee": {
+                    "type": "string"
+                },
+                "timeout_at": {
+                    "type": "string"
+                },
+                "userAddress": {
+                    "description": "user's wallet address from FE",
+                    "type": "string"
+                }
+            }
+        },
+        "response.InscribeInfoResp": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentLength": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "genesisFee": {
+                    "type": "string"
+                },
+                "genesisHeight": {
+                    "type": "string"
+                },
+                "genesisTransaction": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "outputValue": {
+                    "type": "string"
+                },
+                "preview": {
+                    "type": "string"
+                },
+                "sat": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "response.InternalTokenTraitsResp": {
             "type": "object",
             "properties": {
@@ -4093,6 +5060,9 @@ const docTemplate = `{
         "response.InternalTokenURIResp": {
             "type": "object",
             "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
                 "animationUrl": {
                     "type": "string"
                 },
@@ -4121,6 +5091,9 @@ const docTemplate = `{
                 },
                 "isCompleted": {
                     "type": "boolean"
+                },
+                "listingDetail": {
+                    "$ref": "#/definitions/structure.MarketplaceNFTDetail"
                 },
                 "mintedTime": {
                     "type": "string"
@@ -4260,6 +5233,9 @@ const docTemplate = `{
         "response.ProjectResp": {
             "type": "object",
             "properties": {
+                "animationHtml": {
+                    "type": "string"
+                },
                 "blockNumberMinted": {
                     "type": "string"
                 },
@@ -4553,6 +5529,76 @@ const docTemplate = `{
                 }
             }
         },
+        "structure.MarketplaceNFTDetail": {
+            "type": "object",
+            "properties": {
+                "buyable": {
+                    "type": "boolean"
+                },
+                "collection_id": {
+                    "description": "for filter",
+                    "type": "string"
+                },
+                "collection_name": {
+                    "type": "string"
+                },
+                "contentLength": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "inscription": {
+                    "$ref": "#/definitions/entity.TokenUri"
+                },
+                "inscriptionID": {
+                    "type": "string"
+                },
+                "inscriptionNumber": {
+                    "type": "string"
+                },
+                "inscription_index": {
+                    "type": "string"
+                },
+                "inscription_name": {
+                    "type": "string"
+                },
+                "isCompleted": {
+                    "type": "boolean"
+                },
+                "isConfirmed": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orderID": {
+                    "type": "string"
+                },
+                "payType": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "paymentListingInfo": {
+                    "description": "paytype:",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/structure.PaymentInfoForBuyOrder"
+                    }
+                },
+                "price": {
+                    "type": "string"
+                }
+            }
+        },
         "structure.MinifyDataResp": {
             "type": "object",
             "properties": {
@@ -4561,6 +5607,17 @@ const docTemplate = `{
                     "additionalProperties": {
                         "$ref": "#/definitions/structure.FileContentReq"
                     }
+                }
+            }
+        },
+        "structure.PaymentInfoForBuyOrder": {
+            "type": "object",
+            "properties": {
+                "paymentAddress": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "string"
                 }
             }
         }
