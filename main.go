@@ -18,6 +18,7 @@ import (
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
+	"rederinghub.io/internal/delivery/crontabManager"
 	"rederinghub.io/internal/delivery/crontab_btc"
 	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
@@ -162,7 +163,7 @@ func startServer() {
 	err = repo.CreateCollectionIndexes()
 	if err != nil {
 		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-		return
+		// return
 	}
 
 	uc, err := usecase.NewUsecase(&g, *repo)
@@ -247,16 +248,21 @@ func startServer() {
 	signal.Notify(c, os.Interrupt)
 	// Run our server in a goroutine so that it doesn't block.
 
-	for name, server := range servers {
-		if server.Enabled {
-			if server.Server != nil {
-				go server.Server.StartServer()
+	if true {
+		for name, server := range servers {
+			if server.Enabled {
+				if server.Server != nil {
+					go server.Server.StartServer()
+				}
+				h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+			} else {
+				h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 			}
-			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
-		} else {
-			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
 	}
+
+	// start a group cron:
+	crontabManager.NewCrontabManager("MARKETPLACE_CRONTAB_START", &g, *uc).StartServer()
 
 	// Block until we receive our signal.
 	<-c

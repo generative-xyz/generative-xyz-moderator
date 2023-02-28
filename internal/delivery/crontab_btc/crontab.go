@@ -3,7 +3,7 @@ package crontab_btc
 import (
 	"time"
 
-	"gopkg.in/robfig/cron.v2"
+	"github.com/robfig/cron/v3"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -11,8 +11,8 @@ import (
 )
 
 type ScronBTCHandler struct {
-	Logger  logger.Ilogger
-	
+	Logger logger.Ilogger
+
 	Cache   redis.IRedisCache
 	Usecase usecase.Usecase
 }
@@ -30,7 +30,7 @@ func (h ScronBTCHandler) StartServer() {
 		//it does not call our ORD server
 		for {
 			h.Usecase.JobBtcSendBtcToMaster() // BTC
-				time.Sleep(5 * time.Minute)
+			time.Sleep(5 * time.Minute)
 		}
 	}()
 
@@ -45,13 +45,12 @@ func (h ScronBTCHandler) StartServer() {
 			//Sleetp 5 minutes after check balancing
 			time.Sleep(5 * time.Minute)
 
-			h.Usecase.WaitingForMinting() // BTC
-					h.Usecase.WaitingForETHMinting() //ETH
-
+			h.Usecase.WaitingForMinting()    // BTC
+			h.Usecase.WaitingForETHMinting() //ETH
 
 			//Sleep 15 minutes after mint
 			time.Sleep(15 * time.Minute)
-				h.Usecase.WaitingForMinted() // BTC
+			h.Usecase.WaitingForMinted() // BTC
 
 			h.Usecase.WaitingForETHMinted() //ETH
 
