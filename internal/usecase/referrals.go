@@ -57,15 +57,11 @@ func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
 func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Pagination, error) {
 	u.Logger.LogAny("GetReferrals", zap.Any("req", req))
 	pe := &entity.FilterReferrals{}
-	uuid := `63f896971aa5ce35134f391f`
-	
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.ErrorAny("GetReferrals",zap.Any("copier.Copy", err))
 		return nil, err
 	}
-
-	pe.ReferrerID = &uuid
 	referrals, err := u.Repo.GetReferrals(*pe)
 	if err != nil {
 		u.Logger.Error("u.Repo.FilterReferrals", err.Error(), err)

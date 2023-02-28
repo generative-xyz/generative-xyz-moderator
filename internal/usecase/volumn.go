@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -77,6 +78,23 @@ func (u Usecase) AggregateReferal() {
 	if err != nil {
 		u.Logger.ErrorAny("AggregateReferal", zap.Any("err", err))
 		return
+	}
+
+	paytypes := []string{
+		string(entity.BIT),
+		string(entity.ETH),
+	}
+
+	for _, referral := range referrals  {
+		for _, paytype := range paytypes{
+			volume, err := u.GetVolumeOfUser(referral.Referree.WalletAddress, &paytype)
+			if err != nil {
+				continue
+			}
+
+			spew.Dump(volume)
+		}
+		
 	}
 
 	_ = referrals

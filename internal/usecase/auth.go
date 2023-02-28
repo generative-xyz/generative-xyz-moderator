@@ -414,16 +414,16 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 
 func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedDetails, error) {
 
-	tokenMd5 := helpers.GenerateMd5String(accessToken)
-	u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
+	//tokenMd5 := helpers.GenerateMd5String(accessToken)
+	//u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
 
-	userID, err := u.Cache.GetData(tokenMd5)
-	if err != nil {
-		err = errors.New("Access token is invaild")
-		u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
-		return nil, err
+	// userID, err := u.Cache.GetData(tokenMd5)
+	// if err != nil {
+	// 	err = errors.New("Access token is invaild")
+	// 	u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
+	// 	return nil, err
 
-	}
+	// }
 
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
@@ -432,8 +432,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 		return nil, err
 	}
 
-	userID = &claim.Uid
-
+	userID := &claim.Uid
 	if userID == nil {
 		err := errors.New("Cannot find userID")
 		u.Logger.ErrorAny("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
