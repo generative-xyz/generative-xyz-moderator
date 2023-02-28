@@ -756,16 +756,18 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string false "Filter project via wallet address"
+// @Param payType query string false "payType eth|btc"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
-// @Router /profile/wallet/{walletAddress}/volume [GET]
-func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request) {
+// @Router /profile/wallet/{walletAddress}/volumn [GET]
+func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
+	paytype := r.URL.Query().Get("payType")
+	uProjects, err := h.Usecase.CreatorVolume(walletAddress, paytype)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

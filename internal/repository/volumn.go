@@ -60,7 +60,7 @@ func (r Repository) AggregateVolumn() ([]entity.AggregateWalleRespItem, error) {
 	return confs, nil
 }
 
-func (r Repository) AggregateAmount(filter entity.FilterVolume) ([]entity.AggregateAmount, error) {
+func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.M) ([]entity.AggregateAmount, error) {
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateAmount{}
 
@@ -88,10 +88,7 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume) ([]entity.Aggreg
 
 	pipeLine := bson.A{
 		matchStage,
-		bson.M{"$group": bson.M{"_id": 
-			bson.M{"creatorAddress": "$creatorAddress", "payType": "$payType"}, 
-			"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
-		}},
+		groupStage,
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
 	

@@ -2732,7 +2732,7 @@ paths:
       summary: get  projects by wallet
       tags:
       - Profile
-  /profile/wallet/{walletAddress}/volume:
+  /profile/wallet/{walletAddress}/volumn:
     get:
       consumes:
       - application/json
@@ -2741,6 +2741,10 @@ paths:
       - description: Filter project via wallet address
         in: path
         name: walletAddress
+        type: string
+      - description: payType eth|btc
+        in: query
+        name: payType
         type: string
       - description: limit
         in: query
@@ -2994,6 +2998,36 @@ paths:
       security:
       - Authorization: []
       summary: update a btc project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}/volumn:
+    get:
+      consumes:
+      - application/json
+      description: get project's volumn
+      parameters:
+      - description: payType eth|btc
+        in: query
+        name: payType
+        type: string
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's volumn
       tags:
       - Project
   /project/{genNFTAddr}/tokens:

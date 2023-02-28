@@ -61,7 +61,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
-	profile.HandleFunc("/wallet/{walletAddress}/volume", h.getVolumeByWallet).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/volumn", h.getVolumnByWallet).Methods("GET")
 
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
@@ -80,7 +80,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")

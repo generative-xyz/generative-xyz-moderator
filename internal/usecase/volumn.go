@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -101,11 +102,35 @@ func (u Usecase) AggregateReferal() {
 }
 
 func (u Usecase) GetVolumeOfUser(walletAddress string, amountType *string) (*entity.AggregateAmount, error) {
-	
+	group := bson.M{"$group": bson.M{"_id": 
+		bson.M{"creatorAddress": "$creatorAddress", "payType": "$payType"}, 
+		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+	}}
+
 	amount, err :=  u.Repo.AggregateAmount(entity.FilterVolume{
 		CreatorAddress: &walletAddress,
 		AmountType: amountType,
-	})
+	}, group)
+	if err != nil {
+		return nil, err
+	}
+	if len(amount) == 0 {
+		return nil, errors.New("no document")
+	}
+	return &amount[0], nil
+}
+
+func (u Usecase) GetVolumeOfProject(projectID string, amountType *string) (*entity.AggregateAmount, error) {
+	group := bson.M{"$group": bson.M{"_id": 
+		bson.M{"projectID": "$projectID", "payType": "$payType"}, 
+		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+	}}
+
+	amount, err :=  u.Repo.AggregateAmount(entity.FilterVolume{
+		ProjectID: &projectID,
+		AmountType: amountType,
+	}, group)
+
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -37,7 +38,9 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 		}
 
 		u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("filterVolume", fv))
-		volumes, err := u.Repo.AggregateAmount(fv)
+		
+		
+		volumes, err := u.CreatorVolume(walletAddress, f.PayType)
 		if err != nil {
 			u.Logger.ErrorAny("CreateWithdraw", zap.Any("input", data), zap.Error(err))
 			return nil, err
@@ -59,10 +62,15 @@ func (u Usecase) CreateWithdraw(walletAddress string, data structure.WithDrawReq
 		}
 
 		//check referal amount
-		if len(volumes) == 0 {
+		if volumes == nil {
 			volumeAmount = 0
 		}else{
-			volumeAmount = volumes[0].Amount
+			f, err := strconv.ParseFloat(volumes.Amount, 10)
+			if err != nil {
+				volumeAmount = 0
+			}else{
+				volumeAmount = f
+			}
 		}
 		
 		if len(wtd) == 0 {
