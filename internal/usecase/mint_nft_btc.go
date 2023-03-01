@@ -403,7 +403,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
-		
+
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
 		// go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "ListMintNftBtcByStatus", "[]")
