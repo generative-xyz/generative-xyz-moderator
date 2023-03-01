@@ -8,16 +8,16 @@ import (
 )
 
 const (
-	MaxImageByteSize = 1000 * 1024 // 1MB
+	MaxImageByteSize = 1024 * 1024 // 1MB
 	MaxImagePx       = 1024        // px
 	JpegQuality      = 90          // %
 
 )
 
-func ResizeImage(img image.Image, format imaging.Format, opt imaging.EncodeOption) ([]byte, error) {
+func ResizeImage(img image.Image, format imaging.Format, opts ...imaging.EncodeOption) ([]byte, error) {
 	resized := scaleDown(img)
 	var buf bytes.Buffer
-	if err := imaging.Encode(&buf, resized, format, opt); err != nil {
+	if err := imaging.Encode(&buf, resized, format, opts...); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

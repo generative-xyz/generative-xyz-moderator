@@ -650,6 +650,11 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.FileResize:
+    properties:
+      file:
+        type: string
+    type: object
   request.GenerateMessageRequest:
     properties:
       address:
@@ -1995,7 +2000,18 @@ paths:
   /files/image/resize:
     post:
       description: Upload file
-      responses: {}
+      parameters:
+      - description: Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileResize'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.FileResize'
       summary: Upload file
       tags:
       - Files
