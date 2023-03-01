@@ -287,10 +287,10 @@ func (u Usecase) CheckAirdrop() error {
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
-		return nil, nil
-	}
-	feerate = 25
+	//if os.Getenv("ENV") == "mainnet" {
+	//	return nil, nil
+	//}
+	feerate = 3
 	// get file
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
@@ -356,10 +356,11 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
-		return nil, nil
-	}
+	//if os.Getenv("ENV") == "mainnet" {
+	//	return nil, nil
+	//}
 	// get file
+	feerate = 3
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
 	if random >= 20 {
