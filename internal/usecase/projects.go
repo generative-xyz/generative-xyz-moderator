@@ -300,6 +300,24 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		file = utils.AIRDROP_GOLDEN
 	}
 
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      0,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     "",
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		Tx:                        "",
+		InscriptionId:             "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
 	mintReq := ord_service.MintRequest{
 		WalletName:         from,
 		ProjectID:          projectid,
@@ -318,21 +336,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	}
 	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
 
-	airDrop := &entity.Airdrop{
-		File:                      file,
-		Receiver:                  receiver.UUID,
-		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
-		Type:                      0,
-		ProjectId:                 projectid,
-		OrdinalResponseAction:     resp,
-		Status:                    0,
-		MintedInscriptionId:       "",
-		Tx:                        "",
-		InscriptionId:             "",
-	}
-	err = u.Repo.InsertAirdrop(airDrop)
+	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -343,7 +349,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
