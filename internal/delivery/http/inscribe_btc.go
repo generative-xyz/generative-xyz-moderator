@@ -242,3 +242,21 @@ func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request
 		},
 	).ServeHTTP(w, r)
 }
+
+// @Summary NFT from Moralis
+// @Description NFT from Moralis
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param tokenAddress query string false "Token Address"
+// @Param tokenId query string false "Token Id"
+// @Success 200 {object} nfts.MoralisToken{}
+// @Router /inscribe/nft-from-moralis [GET]
+// @Security ApiKeyAuth
+func (h *httpDelivery) nftFromMoralis(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			return h.Usecase.NftFromMoralis(ctx, r.URL.Query().Get("tokenAddress"), r.URL.Query().Get("tokenId"))
+		},
+	).ServeHTTP(w, r)
+}

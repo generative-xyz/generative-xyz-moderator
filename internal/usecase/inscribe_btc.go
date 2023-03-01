@@ -149,6 +149,20 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		return nil, err
 	}
 
+	// parse json to get address:
+	// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
+
+	jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+	var receiveResp ord_service.ReceiveCmdStdoputRespose
+
+	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
+	if err != nil {
+		u.Logger.Error("CreateInscribeBTC.Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
 	// create segwit address
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
 	if err != nil {
@@ -176,7 +190,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.SentTokenFee = mintFee.SentTokenFee
 	walletAddress.UserAddress = userWallet // name
 	walletAddress.OriginUserAddress = input.WalletAddress
-	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
+	walletAddress.OrdAddress = receiveResp.Address
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
 	walletAddress.FileURI = input.File
@@ -185,8 +199,23 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
-
 	if input.NeedVerifyAuthentic() {
+		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
+			BaseFilters: entity.BaseFilters{
+				Page:  1,
+				Limit: 1,
+			},
+			TokenAddress: &input.TokenAddress,
+			TokenId:      &input.TokenId,
+			NeStatuses:   []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
+		})
+		if err != nil {
+			return nil, err
+		}
+		inscribers := pags.Result.([]entity.InscribeBTCResp)
+		if len(inscribers) > 0 {
+			return nil, errors.New("Inscribe was minted")
+		}
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
 				zap.Any("raw_data", nft))
@@ -551,6 +580,8 @@ func (u Usecase) JobInscribeMintNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
+		} else {
+			// TODO call to smart contract
 		}
 
 	}
@@ -776,7 +807,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				Page:  int64(pageListInscribe),
 				Limit: 100,
 			},
-			UserUuid: &userId,
+			NeStatuses: []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
+			UserUuid:   &userId,
 		})
 		if err != nil {
 			return nil, err
@@ -845,4 +877,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 	}
 
 	return resp, nil
+}
+
+func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
+	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
 }

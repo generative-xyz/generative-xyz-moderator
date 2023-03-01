@@ -59,9 +59,17 @@ func (r Repository) ListInscribeBTC(filter *entity.FilterInscribeBT) (*entity.Pa
 	resp := &entity.Pagination{}
 	f := bson.M{}
 	if filter.UserUuid != nil {
-		f["user_uuid"] = filter.UserUuid
+		f["user_uuid"] = *filter.UserUuid
 	}
-
+	if filter.TokenAddress != nil {
+		f["token_address"] = *filter.TokenAddress
+	}
+	if filter.TokenId != nil {
+		f["token_id"] = *filter.TokenId
+	}
+	if len(filter.NeStatuses) > 0 {
+		f["status"] = bson.M{"$nin": filter.NeStatuses}
+	}
 	p, err := r.Paginate(entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err

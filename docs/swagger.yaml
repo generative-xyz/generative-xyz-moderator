@@ -27,6 +27,10 @@ definitions:
       status:
         description: status for record
         type: integer
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
       txMintNft:
         type: string
       txSendBtc:
@@ -459,6 +463,33 @@ definitions:
         description: eth wallet artist receive royalty
         type: string
     type: object
+  nfts.MoralisToken:
+    properties:
+      amount:
+        type: string
+      block_number_minted:
+        type: string
+      contract_type:
+        type: string
+      is_minted:
+        type: boolean
+      metadata:
+        type: string
+      name:
+        type: string
+      owner_of:
+        type: string
+      symbol:
+        type: string
+      token_address:
+        type: string
+      token_hash:
+        type: string
+      token_id:
+        type: string
+      token_uri:
+        type: string
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -630,6 +661,10 @@ definitions:
         items:
           type: string
         type: array
+      payType:
+        additionalProperties:
+          type: string
+        type: object
       price:
         type: string
       seller_address:
@@ -1957,6 +1992,13 @@ paths:
       summary: Deflate a string
       tags:
       - Files
+  /files/image/resize:
+    post:
+      description: Upload file
+      responses: {}
+      summary: Upload file
+      tags:
+      - Files
   /files/minify:
     post:
       description: Upload file
@@ -2166,6 +2208,32 @@ paths:
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
+  /inscribe/nft-from-moralis:
+    get:
+      consumes:
+      - application/json
+      description: NFT from Moralis
+      parameters:
+      - description: Token Address
+        in: query
+        name: tokenAddress
+        type: string
+      - description: Token Id
+        in: query
+        name: tokenId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/nfts.MoralisToken'
+      security:
+      - ApiKeyAuth: []
+      summary: NFT from Moralis
+      tags:
+      - Inscribe
   /inscribe/receive-address:
     post:
       consumes:
@@ -2205,7 +2273,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe

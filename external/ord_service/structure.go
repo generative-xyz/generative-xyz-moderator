@@ -38,3 +38,7 @@ type MintStdoputRespose struct {
 	Fees        int    `json:"fees"`
 	IsSent      bool   `json:"isSent"`
 }
+
+type ReceiveCmdStdoputRespose struct {
+	Address string `json:"address"`
+}
