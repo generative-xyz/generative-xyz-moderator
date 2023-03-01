@@ -60,7 +60,8 @@ type ProfileChan struct {
 type WithDrawItemRequest struct {
 	Amount       string `json:"amount"`
 	PaymentType   string `json:"paymentType"`
-	ProjectID string `json:"projectID"`
+	ID string `json:"ID"`
+	WithdrawType string `json:"type"`
 }
 
 type WithDrawRequest struct {

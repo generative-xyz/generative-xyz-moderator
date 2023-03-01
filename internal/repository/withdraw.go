@@ -53,12 +53,12 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 		f = append(f, bson.M{"walletAddress": *filter.WalletAddress})
 	}
 	
-	if filter.ProjectID != nil && *filter.ProjectID != "" {
-		f = append(f, bson.M{"projectID": *filter.ProjectID})
+	if filter.WithdrawItemID != nil && *filter.WithdrawItemID != "" {
+		f = append(f, bson.M{"withdrawItemID": *filter.WithdrawItemID})
 	}
 	
-	if len(filter.ProjectIDs) > 0 {
-		f = append(f, bson.M{"$in": bson.M{"projectID": filter.ProjectIDs } })
+	if len(filter.WithdrawItemIDs) > 0 {
+		f = append(f, bson.M{"$in": bson.M{"withdrawItemID": filter.WithdrawItemIDs } })
 	}
 	
 	if filter.Status != nil {

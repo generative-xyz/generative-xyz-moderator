@@ -107,3 +107,18 @@ func (r Repository) GetReferral(filter entity.FilterReferrals) ([]entity.Referra
 
 	return ref, nil
 }
+
+func (r Repository) GetAReferral(filter entity.FilterReferrals) (*entity.Referral, error) {
+	ref := &entity.Referral{}
+	f := r.FilterReferrals(filter)
+	cursor, err := r.DB.Collection(entity.Referral{}.TableName()).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &ref); err != nil {
+		return nil, err
+	}
+
+	return ref, nil
+}

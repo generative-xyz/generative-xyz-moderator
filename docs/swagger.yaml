@@ -741,15 +741,14 @@ definitions:
     properties:
       amount:
         type: string
-      paymentType:
+      id:
+        description: 'referal  (referal: refereeID, project: tokenID)'
         type: string
-    type: object
-  request.WithDrawRequest:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/request.WithDrawItemRequest'
-        type: array
+      paymentType:
+        description: referal or project
+        type: string
+      type:
+        type: string
     type: object
   response.CategoryResp:
     properties:
@@ -2773,10 +2772,10 @@ paths:
       parameters:
       - description: Withdraw request
         in: body
-        name: WithDrawRequest
+        name: WithDrawItemRequest
         required: true
         schema:
-          $ref: '#/definitions/request.WithDrawRequest'
+          $ref: '#/definitions/request.WithDrawItemRequest'
       produces:
       - application/json
       responses:
