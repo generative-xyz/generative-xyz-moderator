@@ -60,6 +60,7 @@ func (u Usecase) AggregateVolumn(payType string)   {
 						ProjectID: &pID,
 						Amount: &amount,
 						Minted: item.Minted,
+						MintPrice: item.MintPrice,
 						Project: entity.VolumeProjectInfo{
 							Name: p.Name,
 							TokenID: p.TokenID,
@@ -91,6 +92,14 @@ func (u Usecase) AggregateVolumn(payType string)   {
 				
 				if item.Minted != ev.Minted  {
 					_, err := u.Repo.UpdateVolumnMinted(ev.UUID, item.Minted)
+					if err != nil {
+						u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+						return
+					}
+				}
+				
+				if int(item.MintPrice) != int(ev.MintPrice)  {
+					_, err := u.Repo.UpdateVolumMintPrice(ev.UUID, item.MintPrice)
 					if err != nil {
 						u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
 						return
