@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,65 +13,97 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) AggregateVolumn() {
-
- 	data, err := u.Repo.AggregateVolumn()
-	if err != nil {
-		u.Logger.ErrorAny("CreateVolume", zap.Any("err", err))
+func (u Usecase) AggregateVolumns() {
+	payTypes := []string{
+		string(entity.BIT),
+		string(entity.ETH),
 	}
 
+	for _, payType := range payTypes {
+		u.AggregateVolumn(payType)
+	}
+}
+
+func (u Usecase) AggregateVolumn(payType string)   {
+	data, err := u.Repo.AggregateVolumn(payType)
+	if err != nil {
+		u.Logger.ErrorAny("CreateVolume", zap.Any("err", err))
+		return
+	}
+
+	processed := 0
 	for _, item := range data {
-		pID := strings.ToLower(item.ProjectID)
-		p, err := u.Repo.FindProjectByTokenID(pID)
-		if err != nil {
-			u.Logger.ErrorAny("FindProjectByTokenID",zap.String("item.ProjectID", item.ProjectID), zap.Any("err", err))
-			return
-		}
-
-		creatorID := strings.ToLower(p.CreatorAddrr)
-		usr, err := u.Repo.FindUserByWalletAddress(creatorID)
-		if err != nil {
-			u.Logger.ErrorAny("FindUserByWalletAddress",zap.String("p.CreatorAddrr", creatorID), zap.Any("err", err))
-			return
-		}
-
-		ev, err := u.Repo.FindVolumn(pID, item.Paytype) 
-		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
-				//v := entity.FilterVolume
-				ev := &entity.UserVolumn{
-					CreatorAddress: &creatorID,
-					PayType: &item.Paytype,
-					ProjectID: &pID,
-					Amount: &item.Amount,
-					Project: entity.VolumeProjectInfo{
-						Name: p.Name,
-						TokenID: p.TokenID,
-						Thumnail: p.Thumbnail,
-					},
-					User: entity.VolumnUserInfo{
-						WalletAddress: &p.CreatorAddrr,
-						WalletAddressBTC: &usr.WalletAddressBTC,
-						DisplayName: &usr.DisplayName,
-						Avatar: &usr.Avatar,
-					},
-				}
-
-				err = u.Repo.CreateVolumn(ev)
-				if err != nil {
-					u.Logger.ErrorAny("CreateVolumn",zap.Any("ev", ev), zap.Any("err", err))
-					return
-				}
+		go func(item entity.AggregateProjectItemResp){
+			u.Logger.LogAny("aggregateVolumn",zap.Any("item", item))
+			pID := strings.ToLower(item.ProjectID)
+			p, err := u.Repo.FindProjectByTokenID(pID)
+			if err != nil {
+				u.Logger.ErrorAny("FindProjectByTokenID",zap.String("item.ProjectID", item.ProjectID), zap.Any("err", err))
+				return
 			}
-		}else{
-			if item.Amount != *ev.Amount {
-				_, err := u.Repo.UpdateVolumnAmount(ev.UUID, item.Amount)
-				if err != nil {
-					u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
-					return
-				}
+
+			creatorID := strings.ToLower(p.CreatorAddrr)
+			usr, err := u.Repo.FindUserByWalletAddress(creatorID)
+			if err != nil {
+				u.Logger.ErrorAny("FindUserByWalletAddress",zap.String("p.CreatorAddrr", creatorID), zap.Any("err", err))
+				return
 			}
+
+			ev, err := u.Repo.FindVolumn(pID, item.Paytype) 
+			if err != nil {
+				amount :=  fmt.Sprintf("%d", int(item.Amount))
+				if errors.Is(err, mongo.ErrNoDocuments) {
+					//v := entity.FilterVolume
+					ev := &entity.UserVolumn{
+						CreatorAddress: &creatorID,
+						PayType: &item.Paytype,
+						ProjectID: &pID,
+						Amount: &amount,
+						Minted: item.Minted,
+						Project: entity.VolumeProjectInfo{
+							Name: p.Name,
+							TokenID: p.TokenID,
+							Thumnail: p.Thumbnail,
+						},
+						User: entity.VolumnUserInfo{
+							WalletAddress: &p.CreatorAddrr,
+							WalletAddressBTC: &usr.WalletAddressBTC,
+							DisplayName: &usr.DisplayName,
+							Avatar: &usr.Avatar,
+						},
+					}
+
+					err = u.Repo.CreateVolumn(ev)
+					if err != nil {
+						u.Logger.ErrorAny("CreateVolumn",zap.Any("ev", ev), zap.Any("err", err))
+						return
+					}
+				}
+			}else{
+				amount :=  fmt.Sprintf("%d", int(item.Amount))
+				if amount != *ev.Amount  {
+					_, err := u.Repo.UpdateVolumnAmount(ev.UUID, amount)
+					if err != nil {
+						u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+						return
+					}
+				}
+				
+				if item.Minted != ev.Minted  {
+					_, err := u.Repo.UpdateVolumnMinted(ev.UUID, item.Minted)
+					if err != nil {
+						u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+						return
+					}
+				}
 		}
+		}(item)
+
+		if processed % 10 == 0 {
+			time.Sleep(2 * time.Second)
+		}
+
+		processed ++
 	}
 }
 
