@@ -753,7 +753,7 @@ func (u Usecase) ApiCheckListTempAddress() error {
 	return nil
 }
 
-func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
+func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
 	var (
 		pageSize              = int(pag.PageSize)
 		cursor        *string = nil
@@ -766,6 +766,31 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 	reqMoralisFilter := nfts.MoralisFilter{
 		Limit:  &pageSize,
 		Cursor: cursor,
+	}
+	pageListInscribe := int64(1)
+	mapNftMinted := make(map[string]bool)
+	for {
+		resp, err := u.Repo.ListInscribeBTC(&entity.FilterInscribeBT{
+			BaseFilters: entity.BaseFilters{
+				Page:  int64(pageListInscribe),
+				Limit: 100,
+			},
+			UserUuid: &userId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		inscribes := resp.Result.([]entity.InscribeBTCResp)
+		if len(inscribes) <= 0 {
+			break
+		}
+		for _, inscribe := range inscribes {
+			if inscribe.TokenAddress == "" {
+				continue
+			}
+			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
+		}
+		pageListInscribe += 1
 	}
 
 	if delegateWallet == "" {
@@ -784,6 +809,11 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 				if err != nil {
 					return nil, err
 				}
+				for i := range nfts.Result {
+					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
+						nfts.Result[i].IsMinted = val
+					}
+				}
 				resp[delegateWalletAddress].Result = nfts.Result
 				resp[delegateWalletAddress].Total = int64(nfts.Total)
 				resp[delegateWalletAddress].Cursor = nfts.Cursor
@@ -801,6 +831,11 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 		nfts, err := u.MoralisNft.GetNftByWalletAddress(walletAddress, reqMoralisFilter)
 		if err != nil {
 			return nil, err
+		}
+		for i := range nfts.Result {
+			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
+				nfts.Result[i].IsMinted = val
+			}
 		}
 		pag.Result = nfts.Result
 		pag.Cursor = nfts.Cursor
