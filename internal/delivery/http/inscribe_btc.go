@@ -236,8 +236,9 @@ func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
 			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			userId := ctx.Value(utils.SIGNED_USER_ID).(string)
 			pag := entity.GetPagination(r)
-			return h.Usecase.ListNftFromMoralis(ctx, userWallet, r.URL.Query().Get("walletAddress"), pag)
+			return h.Usecase.ListNftFromMoralis(ctx, userId, userWallet, r.URL.Query().Get("walletAddress"), pag)
 		},
 	).ServeHTTP(w, r)
 }

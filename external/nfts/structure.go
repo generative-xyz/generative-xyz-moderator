@@ -49,6 +49,7 @@ type MoralisToken struct {
 	MetadataString    *string               `json:"metadata"`
 	BlockNumberMinted string                `json:"block_number_minted"`
 	Metadata          *MoralisTokenMetadata `json:"-"`
+	IsMinted          bool                  `json:"is_minted"`
 }
 
 type MoralisTokenMetadata struct {
