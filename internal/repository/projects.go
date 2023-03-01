@@ -328,6 +328,13 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	if filter.Name != nil && len(*filter.Name) >= 3 {
 		if *filter.Name != "" {
 			f["$or"] = []bson.M{
