@@ -1197,11 +1197,35 @@ const docTemplate = `{
         "/files/image/resize": {
             "post": {
                 "description": "Upload file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Files"
                 ],
                 "summary": "Upload file",
-                "responses": {}
+                "parameters": [
+                    {
+                        "description": "Base64 File Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileResize"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request.FileResize"
+                        }
+                    }
+                }
             }
         },
         "/files/minify": {
@@ -4891,6 +4915,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileResize": {
+            "type": "object",
+            "properties": {
+                "file": {
                     "type": "string"
                 }
             }

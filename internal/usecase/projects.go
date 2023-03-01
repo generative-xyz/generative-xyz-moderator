@@ -238,8 +238,10 @@ func (u Usecase) CheckAirdrop() error {
 		fmt.Printf("CheckAirdrop - with err: %v", err)
 		return err
 	}
+	u.Logger.Info(fmt.Sprintf("Start check airdrops len %d", len(airdrops)))
 	for _, airdrop := range airdrops {
 		if airdrop.Tx != "" {
+			u.Logger.Info(fmt.Sprintf("Start check airdrop %s", airdrop.UUID), zap.Any("airdrop", airdrop))
 			_, bs, err := u.buildBTCClient()
 
 			if err != nil {
@@ -253,7 +255,7 @@ func (u Usecase) CheckAirdrop() error {
 				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, "")
 				continue
 			}
-			if txInfo.Confirmations > 1 {
+			if txInfo.Confirmations > 0 {
 				fmt.Printf("CheckAirdrop success - %v", txInfo)
 				data, err := json.Marshal(txInfo)
 				temp := ""
@@ -285,9 +287,10 @@ func (u Usecase) CheckAirdrop() error {
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
-		return nil, nil
-	}
+	//if os.Getenv("ENV") == "mainnet" {
+	//	return nil, nil
+	//}
+	feerate = 3
 	// get file
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
@@ -297,10 +300,28 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		file = utils.AIRDROP_GOLDEN
 	}
 
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      0,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		Tx:                        "",
+		InscriptionId:             "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
 	mintReq := ord_service.MintRequest{
 		WalletName:         from,
 		ProjectID:          projectid,
-		DryRun:             true,
+		DryRun:             false,
 		AutoFeeRateSelect:  false,
 		FeeRate:            feerate,
 		FileUrl:            file,
@@ -315,21 +336,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	}
 	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
 
-	airDrop := &entity.Airdrop{
-		File:                      file,
-		Receiver:                  receiver.UUID,
-		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
-		Type:                      0,
-		ProjectId:                 projectid,
-		OrdinalResponseAction:     resp,
-		Status:                    0,
-		MintedInscriptionId:       "",
-		Tx:                        "",
-		InscriptionId:             "",
-	}
-	err = u.Repo.InsertAirdrop(airDrop)
+	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -340,7 +349,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
@@ -353,10 +362,11 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
-		return nil, nil
-	}
+	//if os.Getenv("ENV") == "mainnet" {
+	//	return nil, nil
+	//}
 	// get file
+	feerate = 3
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
 	if random >= 20 {
@@ -365,10 +375,28 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		file = utils.AIRDROP_GOLDEN
 	}
 
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      1,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       mintedInscriptionId,
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
 	mintReq := ord_service.MintRequest{
 		WalletName:         from,
 		ProjectID:          projectid,
-		DryRun:             true,
+		DryRun:             false,
 		AutoFeeRateSelect:  false,
 		FeeRate:            feerate,
 		FileUrl:            file,
@@ -383,21 +411,9 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	}
 	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
 
-	airDrop := &entity.Airdrop{
-		File:                      file,
-		Receiver:                  receiver.UUID,
-		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
-		Type:                      0,
-		ProjectId:                 projectid,
-		OrdinalResponseAction:     resp,
-		Status:                    0,
-		MintedInscriptionId:       mintedInscriptionId,
-		InscriptionId:             "",
-		Tx:                        "",
-	}
-	err = u.Repo.InsertAirdrop(airDrop)
+	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
