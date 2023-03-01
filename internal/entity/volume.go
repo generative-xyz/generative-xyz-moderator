@@ -8,13 +8,37 @@ import (
 
 type  AggregateWalletAddressItem struct {
 	ID AggregateItemID `bson:"_id" json:"id"`
-	Amount float64 `bson:"amount" json:"amount"`
+	Amount float32 `bson:"amount" json:"amount"`
 }
 
 type  AggregateWalleRespItem struct {
 	ProjectID string `bson:"projectID" json:"projectID"`
 	Paytype string `bson:"payType" json:"payType"`
 	Amount string `bson:"amount" json:"amount"`
+}
+
+
+type  AggregateProjectItemID struct {
+	ProjectID string `bson:"projectID" json:"projectID"`
+	Paytype string `bson:"payType" json:"payType"`
+	Amount float32 `bson:"amount" json:"amount"`
+	BtcRate float32 `bson:"btcRate" json:"btcRate"`
+	EthRate float32 `bson:"ethRate" json:"ethRate"`
+}
+
+type  AggregateProjectItem struct {
+	ID AggregateProjectItemID `bson:"_id" json:"id"`
+	Amount float64 `bson:"amount" json:"amount"`
+	Minted int `bson:"minted" json:"minted"`
+}
+
+type  AggregateProjectItemResp struct {
+	ProjectID string `bson:"projectID" json:"projectID"`
+	Paytype string `bson:"payType" json:"payType"`
+	Amount float64 `bson:"amount" json:"amount"`
+	Minted int `bson:"minted" json:"minted"`
+	BtcRate float32 `bson:"btcRate" json:"btcRate"`
+	EthRate float32 `bson:"ethRate" json:"ethRate"`
 }
 
 type  AggregateAmount struct {
@@ -62,6 +86,7 @@ type UserVolumn struct {
 	CreatorAddress *string `bson:"creatorAddress"`
 	ProjectID *string  `bson:"projectID"`
 	Amount *string  `bson:"amount"`
+	Minted int  `bson:"minted"`
 	Project  VolumeProjectInfo `bson:"project"`
 	User  VolumnUserInfo `bson:"user"`
 }
