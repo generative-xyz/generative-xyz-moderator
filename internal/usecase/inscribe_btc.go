@@ -14,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
@@ -21,6 +22,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 type BitcoinTokenMintFee struct {
@@ -84,7 +86,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}, nil
 }
 
-func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
+func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
 	u.Logger.Info("input", input)
 
@@ -129,9 +131,8 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	if err != nil {
 		u.Logger.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
 		return nil, err
-	} else {
-		walletAddress.Mnemonic = resp.Stdout
 	}
+	walletAddress.Mnemonic = resp.Stdout
 
 	u.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", resp)
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
@@ -184,6 +185,16 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
+
+	if input.NeedVerifyAuthentic() {
+		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
+			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
+				zap.Any("raw_data", nft))
+			walletAddress.IsAuthentic = true
+			walletAddress.TokenAddress = nft.TokenAddress
+			walletAddress.TokenId = nft.TokenID
+		}
+	}
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -419,6 +430,15 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
+				}
+				if item.Status == entity.StatusInscribe_SentNFTToUser {
+					go func(u Usecase, item entity.InscribeBTC) {
+						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+						if err != nil || owner == nil {
+							return
+						}
+						u.AirdropCollector("0000000", item.InscriptionID, "todo", *owner, 15)
+					}(u, item)
 				}
 			}
 		}
@@ -733,7 +753,7 @@ func (u Usecase) ApiCheckListTempAddress() error {
 	return nil
 }
 
-func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
+func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, delegateWallet string, pag *entity.Pagination) (map[string]*entity.Pagination, error) {
 	var (
 		pageSize              = int(pag.PageSize)
 		cursor        *string = nil
@@ -746,6 +766,31 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 	reqMoralisFilter := nfts.MoralisFilter{
 		Limit:  &pageSize,
 		Cursor: cursor,
+	}
+	pageListInscribe := int64(1)
+	mapNftMinted := make(map[string]bool)
+	for {
+		resp, err := u.Repo.ListInscribeBTC(&entity.FilterInscribeBT{
+			BaseFilters: entity.BaseFilters{
+				Page:  int64(pageListInscribe),
+				Limit: 100,
+			},
+			UserUuid: &userId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		inscribes := resp.Result.([]entity.InscribeBTCResp)
+		if len(inscribes) <= 0 {
+			break
+		}
+		for _, inscribe := range inscribes {
+			if inscribe.TokenAddress == "" {
+				continue
+			}
+			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
+		}
+		pageListInscribe += 1
 	}
 
 	if delegateWallet == "" {
@@ -764,11 +809,16 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 				if err != nil {
 					return nil, err
 				}
-				resp[delegateWalletAddress].Result = nfts
+				for i := range nfts.Result {
+					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
+						nfts.Result[i].IsMinted = val
+					}
+				}
+				resp[delegateWalletAddress].Result = nfts.Result
 				resp[delegateWalletAddress].Total = int64(nfts.Total)
+				resp[delegateWalletAddress].Cursor = nfts.Cursor
 				resp[delegateWalletAddress].SetTotalPage()
 			}
-			// walletAddress = empty
 		} else {
 			walletAddress = userWallet
 		}
@@ -782,7 +832,13 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 		if err != nil {
 			return nil, err
 		}
-		pag.Result = nfts
+		for i := range nfts.Result {
+			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
+				nfts.Result[i].IsMinted = val
+			}
+		}
+		pag.Result = nfts.Result
+		pag.Cursor = nfts.Cursor
 		pag.Total = int64(nfts.Total)
 		pag.SetTotalPage()
 	}

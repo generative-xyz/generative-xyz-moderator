@@ -135,6 +135,10 @@ func (h *httpDelivery) referralToResp(input *structure.ReferalResp) (*response.R
 	resp.ReferreeVolumn = response.ReferralVolumnResp{
 		Amount: input.ReferreeVolume.Amount,
 		AmountType: input.ReferreeVolume.AmountType,
+		ProjectID: input.ReferreeVolume.ProjectID,
+		Percent: input.ReferreeVolume.Percent,
+		Earn: input.ReferreeVolume.Earn,
+		GenEarn:  input.ReferreeVolume.GenEarn,
 	}
 	return &resp, nil
 }

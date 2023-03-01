@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -697,7 +698,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request) {
 	file, err := h.Usecase.UploadProjectFiles(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.UploadFile", err.Error(), err)
+		h.Logger.ErrorAny("UploadProjectFiles", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -705,10 +706,40 @@ func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request
 	resp := &response.FileRes{}
 	err = response.CopyEntityToRes(resp, file)
 	if err != nil {
-		h.Logger.Error("response.CopyEntityToRes", err.Error(), err)
+		h.Logger.ErrorAny("UploadProjectFiles", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+
+// UserCredits godoc
+// @Summary get project's volumn
+// @Description get project's volumn
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param payType query string false "payType eth|btc"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/volumn [GET]
+func (h *httpDelivery) projectVolumn(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	paytype := r.URL.Query().Get("payType")
+
+	v, err := h.Usecase.ProjectVolume(projectID, paytype)
+	if err != nil {
+		h.Logger.ErrorAny("projectVolumn", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
