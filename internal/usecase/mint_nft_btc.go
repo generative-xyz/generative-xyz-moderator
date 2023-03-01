@@ -691,7 +691,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 						if err != nil || owner == nil {
 							return
 						}
-						u.AirdropCollector("todo", *owner, 15)
+						u.AirdropCollector(item.ProjectID, item.InscriptionID, "todo", *owner, 15)
 					}(u, item)
 				}
 			}
