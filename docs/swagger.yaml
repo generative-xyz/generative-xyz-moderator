@@ -326,6 +326,8 @@ definitions:
         type: string
       name:
         type: string
+      order_inscription_index:
+        type: integer
       owner:
         $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
@@ -735,6 +737,19 @@ definitions:
       signature:
         type: string
     type: object
+  request.WithDrawItemRequest:
+    properties:
+      amount:
+        type: string
+      id:
+        description: 'referal  (referal: refereeID, project: tokenID)'
+        type: string
+      paymentType:
+        description: referal or project
+        type: string
+      type:
+        type: string
+    type: object
   response.CategoryResp:
     properties:
       id:
@@ -881,6 +896,8 @@ definitions:
         type: string
       orderID:
         type: string
+      orderInscriptionIndex:
+        type: integer
       owner:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
@@ -2188,7 +2205,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -2714,7 +2731,7 @@ paths:
       summary: get  projects by wallet
       tags:
       - Profile
-  /profile/wallet/{walletAddress}/volume:
+  /profile/wallet/{walletAddress}/volumn:
     get:
       consumes:
       - application/json
@@ -2723,6 +2740,10 @@ paths:
       - description: Filter project via wallet address
         in: path
         name: walletAddress
+        type: string
+      - description: payType eth|btc
+        in: query
+        name: payType
         type: string
       - description: limit
         in: query
@@ -2749,11 +2770,12 @@ paths:
       - application/json
       description: User profile via wallet address
       parameters:
-      - description: Wallet address
-        in: path
-        name: walletAddress
+      - description: Withdraw request
+        in: body
+        name: WithDrawItemRequest
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.WithDrawItemRequest'
       produces:
       - application/json
       responses:
@@ -2766,6 +2788,8 @@ paths:
                 data:
                   $ref: '#/definitions/response.ProfileResponse'
               type: object
+      security:
+      - Authorization: []
       summary: User profile via wallet address
       tags:
       - Profile
@@ -2973,6 +2997,36 @@ paths:
       security:
       - Authorization: []
       summary: update a btc project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}/volumn:
+    get:
+      consumes:
+      - application/json
+      description: get project's volumn
+      parameters:
+      - description: payType eth|btc
+        in: query
+        name: payType
+        type: string
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's volumn
       tags:
       - Project
   /project/{genNFTAddr}/tokens:

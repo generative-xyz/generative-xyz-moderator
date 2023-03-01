@@ -403,7 +403,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
-		
+
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
 		// go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "ListMintNftBtcByStatus", "[]")
@@ -685,7 +685,15 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
 				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
-
+				if item.ProjectMintPrice > 0 {
+					go func(u Usecase, item entity.MintNftBtc) {
+						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+						if err != nil || owner == nil {
+							return
+						}
+						u.AirdropCollector(item.ProjectID, item.InscriptionID, "todo", *owner, 15)
+					}(u, item)
+				}
 			}
 
 		}

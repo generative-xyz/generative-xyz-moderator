@@ -431,6 +431,15 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
 				}
+				if item.Status == entity.StatusInscribe_SentNFTToUser {
+					go func(u Usecase, item entity.InscribeBTC) {
+						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+						if err != nil || owner == nil {
+							return
+						}
+						u.AirdropCollector("0000000", item.InscriptionID, "todo", *owner, 15)
+					}(u, item)
+				}
 			}
 		}
 	}
