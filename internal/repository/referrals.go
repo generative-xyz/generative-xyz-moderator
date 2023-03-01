@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 func (r Repository) InsertReferral(data *entity.Referral) error {
@@ -86,6 +87,7 @@ func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {
 
 func (r Repository) UpdateReferral(ID string, data *entity.Referral) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, ID}}
+	
 	result, err := r.UpdateOne(entity.Referral{}.TableName(), filter, data)
 	if err != nil {
 		return nil, err
@@ -108,17 +110,21 @@ func (r Repository) GetReferral(filter entity.FilterReferrals) ([]entity.Referra
 	return ref, nil
 }
 
-func (r Repository) GetAReferral(filter entity.FilterReferrals) (*entity.Referral, error) {
-	ref := &entity.Referral{}
-	f := r.FilterReferrals(filter)
-	cursor, err := r.DB.Collection(entity.Referral{}.TableName()).Find(context.TODO(), f)
+func (r Repository) GetAReferral(walletAddress string, refereeID string) (*entity.Referral, error) {
+	resp := &entity.Referral{}
+	f := bson.D{
+		{"referrer.wallet_address", walletAddress}, 
+		{"referree_id", refereeID}, 
+	}
+
+	usr, err := r.FilterOne(entity.Referral{}.TableName(), f)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = cursor.All(context.TODO(), &ref); err != nil {
+	err = helpers.Transform(usr, resp)
+	if err != nil {
 		return nil, err
 	}
-
-	return ref, nil
+	return resp, nil
 }
