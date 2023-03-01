@@ -444,8 +444,8 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.IsHidden = input.IsHidden
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
-	resp.TotalImages = len(input.Images)
-	resp.Stats = response.ProjectStatResp{
+	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
+ 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
 		FloorPrice:         input.Stats.FloorPrice,
