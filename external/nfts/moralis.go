@@ -157,12 +157,10 @@ func (m MoralisNfts) GetNftByContract(contractAddr string, f MoralisFilter) (*Mo
 func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string, filter MoralisFilter) (*MoralisTokensResp, error) {
 	url := fmt.Sprintf("%s/%s", wallletAddress, URLNft)
 	fullUrl := m.generateUrl(url, &filter)
-
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(data))
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
