@@ -240,7 +240,11 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		category = categoryEntity.Name
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
-	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	address := owner.WalletAddressBTC
+	if address == "" {
+		address = owner.WalletAddress
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, address)
 	collectionName := project.Name
 
 	fields := make([]discordclient.Field, 0)
