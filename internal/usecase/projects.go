@@ -288,6 +288,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	if os.Getenv("ENV") == "mainnet" {
 		return nil, nil
 	}
+	feerate = 25
 	// get file
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
@@ -300,7 +301,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	mintReq := ord_service.MintRequest{
 		WalletName:         from,
 		ProjectID:          projectid,
-		DryRun:             true,
+		DryRun:             false,
 		AutoFeeRateSelect:  false,
 		FeeRate:            feerate,
 		FileUrl:            file,
@@ -368,7 +369,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	mintReq := ord_service.MintRequest{
 		WalletName:         from,
 		ProjectID:          projectid,
-		DryRun:             true,
+		DryRun:             false,
 		AutoFeeRateSelect:  false,
 		FeeRate:            feerate,
 		FileUrl:            file,
