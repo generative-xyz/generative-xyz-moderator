@@ -3,8 +3,9 @@ module rederinghub.io
 go 1.18
 
 require (
+	cloud.google.com/go/storage v1.29.0
 	github.com/antchfx/htmlquery v1.3.0
-	github.com/aws/aws-sdk-go v1.44.208
+	github.com/aws/aws-sdk-go v1.44.211
 	github.com/blockcypher/gobcy/v2 v2.0.5
 	github.com/btcsuite/btcd v0.23.4
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
@@ -13,7 +14,7 @@ require (
 	github.com/chromedp/chromedp v0.8.7
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.11.2
-	github.com/go-git/go-git/v5 v5.5.2
+	github.com/go-git/go-git/v5 v5.6.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/gocolly/colly v1.2.0
@@ -28,7 +29,7 @@ require (
 	github.com/llgcode/draw2d v0.0.0-20210904075650-80aa0a2a901d
 	github.com/pkg/errors v0.9.1
 	github.com/slack-go/slack v0.12.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/http-swagger v1.3.3
 	github.com/swaggo/swag v1.8.10
 	github.com/tdewolff/minify/v2 v2.12.4
@@ -38,16 +39,18 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.6.0
 	golang.org/x/net v0.7.0
-	google.golang.org/api v0.22.0
-	gopkg.in/DataDog/dd-trace-go.v1 v1.36.2
+	google.golang.org/api v0.111.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.48.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.5
 )
 
 require (
-	cloud.google.com/go v0.40.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.0 // indirect
+	cloud.google.com/go v0.107.0 // indirect
+	cloud.google.com/go/compute v1.18.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/iam v0.11.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.0.0-20211129110424-6491aa3bf583 // indirect
 	github.com/DataDog/datadog-agent/pkg/remoteconfig/state v0.42.0-rc.1 // indirect
 	github.com/DataDog/datadog-go v4.8.2+incompatible // indirect
@@ -97,7 +100,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
-	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -114,7 +117,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
-	github.com/pjbgf/sha1cd v0.2.3 // indirect
+	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
@@ -146,7 +149,8 @@ require (
 	golang.org/x/tools v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.52.0-dev // indirect
+	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
