@@ -44,7 +44,7 @@ func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectIt
 	pipeLine := bson.A{
 		matchStage,
 		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
+			bson.M{ "projectID": "$projectID", "mintPrice": "$project_mint_price", "payType": "$payType" }, 
 			"amount": calculate,
 			"minted": bson.M{"$sum": 1},
 		}},
@@ -73,6 +73,7 @@ func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectIt
 			Paytype: res.ID.Paytype,
 			BtcRate: res.ID.BtcRate,
 			EthRate: res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
 			Amount: res.Amount,
 			Minted: res.Minted,
 		}
@@ -199,6 +200,17 @@ func (r Repository) UpdateVolumnAmount(ID string, amount string) (*mongo.UpdateR
 func (r Repository) UpdateVolumnMinted(ID string, minted int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, ID}}
 	update := bson.M{"$set": bson.M{"minted": minted}}
+	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+
+func (r Repository) UpdateVolumMintPrice(ID string, mintPrice int64) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	update := bson.M{"$set": bson.M{"mintPrice": mintPrice}}
 	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
