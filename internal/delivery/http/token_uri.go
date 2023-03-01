@@ -567,7 +567,10 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	// } else {
 	// 	resp.Image = input.Thumbnail
 	// }
-	resp.Image = input.Thumbnail
+	if strings.Index(resp.Image, "glb") == -1 {
+		resp.Image = input.Thumbnail
+	}
+	
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)
