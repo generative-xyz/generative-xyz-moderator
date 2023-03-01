@@ -27,6 +27,10 @@ definitions:
       status:
         description: status for record
         type: integer
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
       txMintNft:
         type: string
       txSendBtc:
@@ -459,6 +463,33 @@ definitions:
         description: eth wallet artist receive royalty
         type: string
     type: object
+  nfts.MoralisToken:
+    properties:
+      amount:
+        type: string
+      block_number_minted:
+        type: string
+      contract_type:
+        type: string
+      is_minted:
+        type: boolean
+      metadata:
+        type: string
+      name:
+        type: string
+      owner_of:
+        type: string
+      symbol:
+        type: string
+      token_address:
+        type: string
+      token_hash:
+        type: string
+      token_id:
+        type: string
+      token_uri:
+        type: string
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -572,6 +603,10 @@ definitions:
         type: boolean
       name:
         type: string
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
       walletAddress:
         type: string
     type: object
@@ -615,6 +650,11 @@ definitions:
       projectID:
         type: string
       walletAddress:
+        type: string
+    type: object
+  request.FileResize:
+    properties:
+      file:
         type: string
     type: object
   request.GenerateMessageRequest:
@@ -737,6 +777,19 @@ definitions:
       messagePrefix:
         type: string
       signature:
+        type: string
+    type: object
+  request.WithDrawItemRequest:
+    properties:
+      amount:
+        type: string
+      id:
+        description: 'referal  (referal: refereeID, project: tokenID)'
+        type: string
+      paymentType:
+        description: referal or project
+        type: string
+      type:
         type: string
     type: object
   response.CategoryResp:
@@ -1946,6 +1999,28 @@ paths:
       summary: Deflate a string
       tags:
       - Files
+  /files/image/resize:
+    post:
+      consumes:
+      - application/json
+      description: Upload file
+      parameters:
+      - description: Base64 File Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileResize'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.FileResize'
+      summary: Upload file
+      tags:
+      - Files
   /files/minify:
     post:
       description: Upload file
@@ -2081,7 +2156,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeInfoResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Info Inscribe
       tags:
       - Inscribe
@@ -2098,7 +2173,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC List Inscribe
       tags:
       - Inscribe
@@ -2128,7 +2203,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: List NFT from Moralis
       tags:
       - Inscribe
@@ -2151,8 +2226,34 @@ paths:
           schema:
             $ref: '#/definitions/entity.InscribeBTCResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC NFT Detail Inscribe
+      tags:
+      - Inscribe
+  /inscribe/nft-from-moralis:
+    get:
+      consumes:
+      - application/json
+      description: NFT from Moralis
+      parameters:
+      - description: Token Address
+        in: query
+        name: tokenAddress
+        type: string
+      - description: Token Id
+        in: query
+        name: tokenId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/nfts.MoralisToken'
+      security:
+      - ApiKeyAuth: []
+      summary: NFT from Moralis
       tags:
       - Inscribe
   /inscribe/receive-address:
@@ -2175,7 +2276,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeBtcResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Generate receive wallet address
       tags:
       - Inscribe
@@ -2196,7 +2297,7 @@ paths:
         "200":
           description: OK
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Retry Inscribe
       tags:
       - Inscribe
@@ -2720,7 +2821,7 @@ paths:
       summary: get  projects by wallet
       tags:
       - Profile
-  /profile/wallet/{walletAddress}/volume:
+  /profile/wallet/{walletAddress}/volumn:
     get:
       consumes:
       - application/json
@@ -2729,6 +2830,10 @@ paths:
       - description: Filter project via wallet address
         in: path
         name: walletAddress
+        type: string
+      - description: payType eth|btc
+        in: query
+        name: payType
         type: string
       - description: limit
         in: query
@@ -2755,11 +2860,12 @@ paths:
       - application/json
       description: User profile via wallet address
       parameters:
-      - description: Wallet address
-        in: path
-        name: walletAddress
+      - description: Withdraw request
+        in: body
+        name: WithDrawItemRequest
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.WithDrawItemRequest'
       produces:
       - application/json
       responses:
@@ -2772,6 +2878,8 @@ paths:
                 data:
                   $ref: '#/definitions/response.ProfileResponse'
               type: object
+      security:
+      - Authorization: []
       summary: User profile via wallet address
       tags:
       - Profile
@@ -2979,6 +3087,36 @@ paths:
       security:
       - Authorization: []
       summary: update a btc project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}/volumn:
+    get:
+      consumes:
+      - application/json
+      description: get project's volumn
+      parameters:
+      - description: payType eth|btc
+        in: query
+        name: payType
+        type: string
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's volumn
       tags:
       - Project
   /project/{genNFTAddr}/tokens:
@@ -3621,11 +3759,7 @@ paths:
       tags:
       - User
 securityDefinitions:
-  Api-Key:
-    in: header
-    name: Api-Key
-    type: apiKey
-  Authorization:
+  ApiKeyAuth:
     in: header
     name: Authorization
     type: apiKey

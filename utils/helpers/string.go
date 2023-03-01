@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/identicon"
 )
 
@@ -288,4 +289,11 @@ func StringToBTCAmount(price string) *big.Float {
 	mintPrice.Mul(mintPrice, powBig)
 
 	return mintPrice
+}
+
+func CalculateEarning(amount float64, percent int32) (string, string) {
+	artist1Earning := amount * float64(utils.PERCENT_EARNING)/1000
+	generativeEarning :=  amount * float64(1000 - utils.PERCENT_EARNING)/1000
+	referralEarning := artist1Earning * float64(percent)/1000
+	return fmt.Sprintf("%d",int(referralEarning)), fmt.Sprintf("%d",int(generativeEarning))
 }
