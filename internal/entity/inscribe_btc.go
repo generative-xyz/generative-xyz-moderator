@@ -122,4 +122,6 @@ type InscribeBTCResp struct {
 	TxMintNft     string         `bson:"tx_mint_nft" json:"txMintNft"`
 	UserUuid      string         `bson:"user_uuid" json:"userUuid"`
 	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
+	TokenAddress  string         `bson:"token_address" json:"tokenAddress"`
+	TokenId       string         `bson:"token_id" json:"tokenId"`
 }
