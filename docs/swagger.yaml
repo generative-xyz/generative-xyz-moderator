@@ -1999,14 +1999,18 @@ paths:
       - Files
   /files/image/resize:
     post:
+      consumes:
+      - application/json
       description: Upload file
       parameters:
-      - description: Body
+      - description: Base64 File Request
         in: body
         name: request
         required: true
         schema:
           $ref: '#/definitions/request.FileResize'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK

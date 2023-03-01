@@ -1197,13 +1197,19 @@ const docTemplate = `{
         "/files/image/resize": {
             "post": {
                 "description": "Upload file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Files"
                 ],
                 "summary": "Upload file",
                 "parameters": [
                     {
-                        "description": "Body",
+                        "description": "Base64 File Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
