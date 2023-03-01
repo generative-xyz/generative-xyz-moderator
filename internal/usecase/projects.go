@@ -255,7 +255,7 @@ func (u Usecase) CheckAirdrop() error {
 				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, "")
 				continue
 			}
-			if txInfo.Confirmations > 1 {
+			if txInfo.Confirmations > 0 {
 				fmt.Printf("CheckAirdrop success - %v", txInfo)
 				data, err := json.Marshal(txInfo)
 				temp := ""

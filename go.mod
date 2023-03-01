@@ -13,6 +13,7 @@ require (
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
 	github.com/chromedp/chromedp v0.8.7
 	github.com/davecgh/go-spew v1.1.1
+	github.com/disintegration/imaging v1.6.2
 	github.com/ethereum/go-ethereum v1.11.2
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -77,7 +78,6 @@ require (
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
