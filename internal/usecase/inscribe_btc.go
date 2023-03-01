@@ -149,6 +149,20 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		return nil, err
 	}
 
+	// parse json to get address:
+	// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
+
+	jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+	var receiveResp ord_service.ReceiveCmdStdoputRespose
+
+	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
+	if err != nil {
+		u.Logger.Error("CreateInscribeBTC.Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
 	// create segwit address
 	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
 	if err != nil {
@@ -176,7 +190,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.SentTokenFee = mintFee.SentTokenFee
 	walletAddress.UserAddress = userWallet // name
 	walletAddress.OriginUserAddress = input.WalletAddress
-	walletAddress.OrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
+	walletAddress.OrdAddress = receiveResp.Address
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
 	walletAddress.FileURI = input.File
@@ -446,15 +460,16 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
 				}
+				/* remove this feature
 				if item.Status == entity.StatusInscribe_SentNFTToUser {
 					go func(u Usecase, item entity.InscribeBTC) {
 						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
 						if err != nil || owner == nil {
 							return
 						}
-						u.AirdropCollector("0000000", item.InscriptionID, "todo", *owner, 15)
+						u.AirdropCollector("0000000", item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 					}(u, item)
-				}
+				}*/
 			}
 		}
 	}
