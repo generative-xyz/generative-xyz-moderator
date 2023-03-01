@@ -10,6 +10,7 @@ import (
 
 const BITCOIN_PROJECT_ID_START_WITH = 1000001
 const DEFAULT_FEE_RATE = 15
+const DEFAULT_CAPTURE_TIME int = 20
 
 type TraitValueStat struct {
 	Value  string `bson:"value" json:"value"`
@@ -98,6 +99,7 @@ type Projects struct {
 	CreatedByCollectionMeta bool               `bson:"created_by_collection_meta" json:"created_by_collection_meta"`
 	Source 									string 						 `bson:"source" json:"source"`
 	AnimationHtml       *string           `bson:"animation_html"`
+	CatureThumbnailDelayTime       *int           `bson:"cature_thumbnail_delay_time"`
 }
 
 type ReportProject struct {
