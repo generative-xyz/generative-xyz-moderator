@@ -98,14 +98,21 @@ func (u Usecase) AggregateReferal() {
 					AmountType: paytype,
 					Earn: "0",
 					GenEarn: "0",
+					RemainingEarn: "0",
 				}
 			}else{
 				refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, referral.Percent)
+				remaining := referral.ReferreeVolumn[paytype].RemainingEarn
+				if remaining == "" {
+					remaining = "0"
+				}
+
 				vol[paytype] = entity.ReferreeVolumn{
 					Amount: fmt.Sprintf("%d", int(volume.Amount)),
 					AmountType: paytype,
 					Earn: refEarning,
 					GenEarn: genEarning,
+					RemainingEarn: remaining,
 				}
 			}
 		}

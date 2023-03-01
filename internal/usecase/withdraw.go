@@ -162,24 +162,20 @@ func (u Usecase) UpdateRefObject(withdraw entity.Withdraw) {
 		break
 	case entity.WithDrawReferal:
 
-		ref, err := u.Repo.GetAReferral(entity.FilterReferrals{
-			ReferreeID: &withdraw.WithdrawItemID,
-			ReferrerAddress: &withdraw.WalletAddress,
-		})
-
+		ref, err := u.Repo.GetAReferral(withdraw.WalletAddress, withdraw.WithdrawItemID)
 		if err != nil {
 			u.Logger.ErrorAny("UpdateRefObject.GetAReferral",  zap.Any("withdraw", withdraw) ,zap.Error(err))
 			return
 		}
 
 		u.Logger.ErrorAny("UpdateRefObject.GetAReferral",  zap.Any("withdraw", withdraw) ,zap.Any("referral",ref))
-
 		earning, _ := strconv.ParseFloat(ref.ReferreeVolumn[withdraw.PayType].Earn, 10)
 		withDraw, _ := strconv.ParseFloat(withdraw.Amount, 10)
 		refEarnings :=  earning - withDraw
 
 		data := ref.ReferreeVolumn[withdraw.PayType]
 		data.RemainingEarn = fmt.Sprintf("%d", int(refEarnings))
+		
 		ref.ReferreeVolumn[withdraw.PayType]  = data
 		updated, err := u.Repo.UpdateReferral(ref.UUID, ref)
 		if err != nil {
