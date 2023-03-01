@@ -1461,6 +1461,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/inscribe/list-nft-from-moralis": {
+            "get": {
+                "security": [
+                    {
+                        "Api-Key": []
+                    }
+                ],
+                "description": "List NFT from Moralis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "List NFT from Moralis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet Address",
+                        "name": "walletAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/nft-detail/{ID}": {
             "get": {
                 "security": [
@@ -3229,6 +3277,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/search": {
+            "get": {
+                "description": "Search",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-uri": {
             "get": {
                 "description": "get tokenUris",
@@ -3763,19 +3854,24 @@ const docTemplate = `{
         "entity.InscribeBTCResp": {
             "type": "object",
             "properties": {
+                "amount": {
+                    "type": "string"
+                },
                 "expiredAt": {
                     "type": "string"
                 },
                 "feeRate": {
-                    "description": "Mnemonic          string ` + "`" + `bson:\"mnemonic\"` + "`" + `\nSegwitKey         string ` + "`" + `bson:\"segwit_key\"` + "`" + `\nMintResponse MintStdoputResponse ` + "`" + `bson:\"mintResponse\"` + "`" + ` // after token has been mint\nBalance   string    ` + "`" + `bson:\"balance\"` + "`" + ` // balance after check",
                     "type": "integer"
                 },
                 "inscriptionID": {
                     "description": "tokenID in ETH",
                     "type": "string"
                 },
+                "isAuthentic": {
+                    "type": "boolean"
+                },
                 "isConfirm": {
-                    "description": "UserAddress string ` + "`" + `bson:\"user_address\"` + "`" + ` //user's wallet address from FE\nOriginUserAddress string ` + "`" + `bson:\"origin_user_address\"` + "`" + ` //user's wallet address from FE\nAmount            string ` + "`" + `bson:\"amount\"` + "`" + `\nMintFee           string ` + "`" + `bson:\"mint_fee\"` + "`" + `\nSentTokenFee      string ` + "`" + `bson:\"sent_token_fee\"` + "`" + `\nOrdAddress        string ` + "`" + `bson:\"ordAddress\"` + "`" + ` // address is generated from ORD service, which receive all amount\nSegwitAddress     string ` + "`" + `bson:\"segwit_address\"` + "`" + `\nFileURI       string ` + "`" + `bson:\"fileURI\"` + "`" + `       // FileURI will be mount if OrdAddress get all amount",
+                    "description": "default: false, if OrdAddress get all amount it will be set true",
                     "type": "boolean"
                 },
                 "isMinted": {
@@ -3788,19 +3884,18 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "status for record",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.StatusInscribe"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "txMintNft": {
                     "type": "string"
                 },
-                "txSendBTC": {
+                "txSendBtc": {
                     "type": "string"
                 },
                 "txSendNft": {
+                    "type": "string"
+                },
+                "userUuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -3837,7 +3932,7 @@ const docTemplate = `{
         "entity.Pagination": {
             "type": "object",
             "properties": {
-                "currsor": {
+                "cursor": {
                     "type": "string"
                 },
                 "page": {
@@ -3847,7 +3942,16 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "result": {},
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "total": {
+                    "type": "integer"
+                },
+                "totalPage": {
                     "type": "integer"
                 }
             }
@@ -3943,6 +4047,9 @@ const docTemplate = `{
                 "contractAddress": {
                     "type": "string"
                 },
+                "createdAt": {
+                    "type": "string"
+                },
                 "created_by_collection_meta": {
                     "type": "boolean"
                 },
@@ -3958,6 +4065,9 @@ const docTemplate = `{
                 "creatorProfile": {
                     "$ref": "#/definitions/entity.Users"
                 },
+                "deletedAt": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3965,6 +4075,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hash": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 },
                 "images": {
@@ -4132,6 +4245,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/entity.TraitStat"
                     }
                 },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
                 "whiteListEthContracts": {
                     "description": "if user uses links instead of animation URL",
                     "type": "array",
@@ -4151,65 +4270,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "entity.StatusInscribe": {
-            "type": "integer",
-            "enum": [
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12
-            ],
-            "x-enum-comments": {
-                "StatusInscribe_Minted": "5: mint success",
-                "StatusInscribe_Minting": "4: minting",
-                "StatusInscribe_NeedToRefund": "12: Need to refund BTC",
-                "StatusInscribe_NotEnoughBalance": "11: balance not enough",
-                "StatusInscribe_Pending": "0: pending: waiting for fund",
-                "StatusInscribe_ReceivedFund": "1: received fund from user (buyer)",
-                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr": "2: sending btc from segwit address to ord address",
-                "StatusInscribe_SendingNFTToUser": "6: sending nft to user",
-                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd": "3: send btc from segwit address to ord address success",
-                "StatusInscribe_SentNFTToUser": "7: send nft to user success: flow DONE",
-                "StatusInscribe_TxMintFailed": "10: tx mint failed",
-                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed": "8: send btc from segwit address to ord address failed",
-                "StatusInscribe_TxSendBTCToUserFailed": "9: send nft to user failed"
-            },
-            "x-enum-varnames": [
-                "StatusInscribe_Pending",
-                "StatusInscribe_ReceivedFund",
-                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr",
-                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd",
-                "StatusInscribe_Minting",
-                "StatusInscribe_Minted",
-                "StatusInscribe_SendingNFTToUser",
-                "StatusInscribe_SentNFTToUser",
-                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed",
-                "StatusInscribe_TxSendBTCToUserFailed",
-                "StatusInscribe_TxMintFailed",
-                "StatusInscribe_NotEnoughBalance",
-                "StatusInscribe_NeedToRefund"
-            ]
-        },
-        "entity.TokenPaidType": {
-            "type": "string",
-            "enum": [
-                "eth",
-                "btc"
-            ],
-            "x-enum-varnames": [
-                "ETH",
-                "BIT"
-            ]
         },
         "entity.TokenStats": {
             "type": "object",
@@ -4276,19 +4336,18 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "order_inscription_index": {
+                    "type": "integer"
+                },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.Users"
-                        }
-                    ]
+                    "$ref": "#/definitions/entity.Users"
                 },
                 "ownerAddr": {
                     "type": "string"
                 },
                 "paidType": {
-                    "$ref": "#/definitions/entity.TokenPaidType"
+                    "type": "string"
                 },
                 "parsed_attributes": {
                     "type": "array",
@@ -4417,7 +4476,13 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "createdAt": {
+                    "type": "string"
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "deletedAt": {
                     "type": "string"
                 },
                 "display_name": {
@@ -4443,6 +4508,12 @@ const docTemplate = `{
                 },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 },
                 "verifiedAt": {
                     "type": "string"
@@ -4631,6 +4702,9 @@ const docTemplate = `{
                 "fileName": {
                     "type": "string"
                 },
+                "isAuthentic": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4718,6 +4792,12 @@ const docTemplate = `{
                 "inscriptionIDs": {
                     "type": "array",
                     "items": {
+                        "type": "string"
+                    }
+                },
+                "payType": {
+                    "type": "object",
+                    "additionalProperties": {
                         "type": "string"
                     }
                 },
@@ -5103,6 +5183,9 @@ const docTemplate = `{
                 },
                 "orderID": {
                     "type": "string"
+                },
+                "orderInscriptionIndex": {
+                    "type": "integer"
                 },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"
