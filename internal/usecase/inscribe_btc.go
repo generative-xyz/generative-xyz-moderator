@@ -878,3 +878,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 
 	return resp, nil
 }
+
+func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
+	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+}

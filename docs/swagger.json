@@ -1186,6 +1186,16 @@
                 }
             }
         },
+        "/files/image/resize": {
+            "post": {
+                "description": "Upload file",
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload file",
+                "responses": {}
+            }
+        },
         "/files/minify": {
             "post": {
                 "security": [
@@ -1538,6 +1548,48 @@
                 }
             }
         },
+        "/inscribe/nft-from-moralis": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "NFT from Moralis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "NFT from Moralis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token Address",
+                        "name": "tokenAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token Id",
+                        "name": "tokenId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/nfts.MoralisToken"
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/receive-address": {
             "post": {
                 "security": [
@@ -1606,7 +1658,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -3893,6 +3945,12 @@
                     "description": "status for record",
                     "type": "integer"
                 },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenId": {
+                    "type": "string"
+                },
                 "txMintNft": {
                     "type": "string"
                 },
@@ -4543,6 +4601,47 @@
                 }
             }
         },
+        "nfts.MoralisToken": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "block_number_minted": {
+                    "type": "string"
+                },
+                "contract_type": {
+                    "type": "string"
+                },
+                "is_minted": {
+                    "type": "boolean"
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_of": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "token_address": {
+                    "type": "string"
+                },
+                "token_hash": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "token_uri": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -4802,6 +4901,12 @@
                 "inscriptionIDs": {
                     "type": "array",
                     "items": {
+                        "type": "string"
+                    }
+                },
+                "payType": {
+                    "type": "object",
+                    "additionalProperties": {
                         "type": "string"
                     }
                 },
