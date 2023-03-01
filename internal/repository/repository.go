@@ -374,12 +374,12 @@ func (r Repository) CreateCollectionIndexes() error {
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateReferalIndexModel()
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = r.CreateVolumnIndexModel()
 	if err != nil {
 		return err
