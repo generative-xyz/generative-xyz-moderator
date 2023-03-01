@@ -34,6 +34,7 @@ require (
 	github.com/swaggo/swag v1.8.10
 	github.com/tdewolff/minify/v2 v2.12.4
 	github.com/valyala/bytebufferpool v1.0.0
+	github.com/xakep666/mongo-migrate v0.2.1
 	go.mongodb.org/mongo-driver v1.11.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.6.0

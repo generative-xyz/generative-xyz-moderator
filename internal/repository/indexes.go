@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"rederinghub.io/internal/entity"
 )
 
@@ -142,7 +143,7 @@ func (r Repository) CreateVolumnIndexModel() ([]string, error) {
 // 	collection := entity.Categories{}.TableName()
 // 	models := []mongo.IndexModel{
 // 		{Keys: bson.M{"priority": -1}, Options: options.Index().SetName("cat_priority_desc")},
-		
+
 // 	}
 
 // 	return r.CreateIndexes(collection, models)
@@ -157,4 +158,18 @@ func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexMod
 		return nil, err
 	}
 	return ind, nil
+}
+
+func (r Repository) CreateIndices(ctx context.Context, collectionName string, indices []string, unique bool, opts ...*options.CreateIndexesOptions) error {
+	var indexModels []mongo.IndexModel
+	for _, index := range indices {
+		indexModel := mongo.IndexModel{
+			Keys: bsonx.Doc{{Key: index,
+				Value: bsonx.Int32(1)}},
+			Options: options.Index().SetUnique(unique),
+		}
+		indexModels = append(indexModels, indexModel)
+	}
+	_, err := r.DB.Collection(collectionName).Indexes().CreateMany(ctx, indexModels, opts...)
+	return err
 }
