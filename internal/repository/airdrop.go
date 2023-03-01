@@ -66,3 +66,14 @@ func (r Repository) UpdateAirdropStatusByTx(tx string, status int, ordinalRespon
 
 	return result, nil
 }
+
+func (r Repository) UpdateAirdropInscriptionByUUid(uuid string, tx string, inscriptionId string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"uuid", uuid}}
+	update := bson.M{"$set": bson.M{"tx": tx, "inscriptionId": inscriptionId}}
+	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

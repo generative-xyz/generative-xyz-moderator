@@ -437,7 +437,7 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 						if err != nil || owner == nil {
 							return
 						}
-						u.AirdropCollector("0000000", item.InscriptionID, "todo", *owner, 15)
+						u.AirdropCollector("0000000", item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 					}(u, item)
 				}
 			}
