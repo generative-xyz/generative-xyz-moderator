@@ -20,6 +20,5 @@ func (g CreateMultipartUploadRequest) SelfValidate() error {
 }
 
 type FileResize struct {
-	File     string `json:"file"`
-	FileName string `json:"fileName"`
+	File string `json:"file"`
 }
