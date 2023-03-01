@@ -8,15 +8,16 @@ import (
 
 type Airdrop struct {
 	BaseEntity                `bson:",inline"`
-	Tx                        string `bson:"tx"`
-	File                      string `bson:"file"`
-	Receiver                  string `bson:"receiver"`
-	ReceiverBtcAddressTaproot string `bson:"receiverBtcAddressTaproot"`
-	Type                      int    `bson:"type"`   // 0 artist, 1 collector
-	Status                    int    `bson:"status"` // 0 pending, 1 success, 2 fail
-	ProjectId                 string `bson:"projectId"`
-	MintedInscriptionId       string `bson:"mintedInscriptionId"`
-	OrdinalResponseAction     string `bson:"ordinalResponseAction"`
+	Tx                        string      `bson:"tx"`
+	InscriptionId             string      `bson:"inscriptionId"`
+	File                      string      `bson:"file"`
+	Receiver                  string      `bson:"receiver"`
+	ReceiverBtcAddressTaproot string      `bson:"receiverBtcAddressTaproot"`
+	Type                      int         `bson:"type"`   // 0 artist, 1 collector
+	Status                    int         `bson:"status"` // 0 pending, 1 success, 2 fail
+	ProjectId                 string      `bson:"projectId"`
+	MintedInscriptionId       string      `bson:"mintedInscriptionId"`
+	OrdinalResponseAction     interface{} `bson:"ordinalResponseAction"`
 }
 
 func (u Airdrop) TableName() string {
