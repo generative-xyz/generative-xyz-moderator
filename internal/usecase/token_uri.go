@@ -663,6 +663,7 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		u.Logger.Info("mintedURL", mintedURL)
 	}
 
+	tokenUri.OrderInscriptionIndex = int(project.MintingInfo.Index + 1)
 	_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, &tokenUri)
 	if err != nil {
 		u.Logger.Error(err)
@@ -854,6 +855,10 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.IsOnchain = false
 	tokenUri.CreatedByCollectionInscription = true
+	count, err := u.Repo.CountTokenUriByProjectId(tokenUri.ProjectID)
+	if err == nil && count != nil {
+		tokenUri.OrderInscriptionIndex = int(*count + 1)
+	}
 
 	nftTokenUri := project.NftTokenUri
 	u.Logger.Info("nftTokenUri", nftTokenUri)

@@ -20,6 +20,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
 	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
+	"rederinghub.io/internal/delivery/crontab_inscription_info"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
 	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
@@ -178,6 +179,7 @@ func startServer() {
 
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+	inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
 
 	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
@@ -225,6 +227,11 @@ func startServer() {
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
+	}
+
+	servers["inscription_index_crontab"] = delivery.AddedServer{
+		Server: inscriptionIndexCron,
+		Enabled: conf.Crontab.InscriptionIndexEnabled,
 	}
 
 	servers["pubsub"] = delivery.AddedServer{
