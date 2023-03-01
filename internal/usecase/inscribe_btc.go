@@ -777,6 +777,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 				}
 				resp[delegateWalletAddress].Result = nfts.Result
 				resp[delegateWalletAddress].Total = int64(nfts.Total)
+				resp[delegateWalletAddress].Cursor = nfts.Cursor
 				resp[delegateWalletAddress].SetTotalPage()
 			}
 		} else {
@@ -793,6 +794,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 			return nil, err
 		}
 		pag.Result = nfts.Result
+		pag.Cursor = nfts.Cursor
 		pag.Total = int64(nfts.Total)
 		pag.SetTotalPage()
 	}
