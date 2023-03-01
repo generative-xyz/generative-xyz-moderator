@@ -261,7 +261,8 @@ func (u Usecase) CheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-			} else {
+			}
+			/*else {
 				fmt.Printf("CheckAirdrop fail - %v", txInfo)
 				data, err := json.Marshal(txInfo)
 				temp := ""
@@ -273,7 +274,7 @@ func (u Usecase) CheckAirdrop() error {
 					"Airdrop fail",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-			}
+			}*/
 		}
 	}
 	return nil
