@@ -776,7 +776,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			break
 		}
 		for _, inscribe := range inscribes {
-			if inscribe.TokenAddress == "" {
+			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
