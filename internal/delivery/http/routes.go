@@ -79,7 +79,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET") // api detail project
 
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
@@ -192,7 +192,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
-	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 

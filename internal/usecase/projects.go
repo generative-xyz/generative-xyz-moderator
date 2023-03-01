@@ -220,7 +220,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
+	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	return pe, nil
 }
@@ -238,7 +238,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			return
 		}
 		category = categoryEntity.Name
-		description = fmt.Sprintf("**%s**\n", category)
+		description = fmt.Sprintf("Category: %s\n", category)
 	}
 	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
 	collectionName := project.Name
@@ -1273,7 +1273,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = true
+	pe.IsHidden = false
 	pe.Status = false
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})

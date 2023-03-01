@@ -602,6 +602,7 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	}
 
 	resp.InscriptionIndex = input.InscriptionIndex
+	resp.OrderInscriptionIndex = input.OrderInscriptionIndex
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
 
