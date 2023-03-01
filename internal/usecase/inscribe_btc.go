@@ -199,8 +199,23 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
-
 	if input.NeedVerifyAuthentic() {
+		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
+			BaseFilters: entity.BaseFilters{
+				Page:  1,
+				Limit: 1,
+			},
+			TokenAddress: &input.TokenAddress,
+			TokenId:      &input.TokenId,
+			NeStatuses:   []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
+		})
+		if err != nil {
+			return nil, err
+		}
+		inscribers := pags.Result.([]entity.InscribeBTCResp)
+		if len(inscribers) > 0 {
+			return nil, errors.New("Inscribe was minted")
+		}
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
 				zap.Any("raw_data", nft))
@@ -565,6 +580,8 @@ func (u Usecase) JobInscribeMintNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
+		} else {
+			// TODO call to smart contract
 		}
 
 	}
@@ -790,7 +807,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				Page:  int64(pageListInscribe),
 				Limit: 100,
 			},
-			UserUuid: &userId,
+			NeStatuses: []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
+			UserUuid:   &userId,
 		})
 		if err != nil {
 			return nil, err

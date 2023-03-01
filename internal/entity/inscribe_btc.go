@@ -105,6 +105,9 @@ type FilterInscribeBT struct {
 	IsConfirm     *string
 	InscriptionID *string
 	UserUuid      *string
+	TokenAddress  *string
+	TokenId       *string
+	NeStatuses    []StatusInscribe
 }
 
 type InscribeBTCResp struct {
