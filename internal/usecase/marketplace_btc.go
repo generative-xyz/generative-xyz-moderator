@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -57,7 +58,22 @@ func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_L
 		u.Logger.Error("u.OrdService.Exec.create.receive", err.Error(), err)
 		return &listing, err
 	}
-	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
+
+	// parse json to get address:
+	// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
+
+	jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+	var receiveResp ord_service.ReceiveCmdStdoputRespose
+
+	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
+	if err != nil {
+		u.Logger.Error("BTCMarketplaceListingNFT.Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
+	holdOrdAddress = receiveResp.Address
 	listing.HoldOrdAddress = holdOrdAddress
 
 	// check if listing is created or not
