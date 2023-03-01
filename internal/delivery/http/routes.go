@@ -46,10 +46,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
 	files := api.PathPrefix("/files").Subrouter()
-	// files.Use(h.MiddleWare.AccessToken)
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	files.HandleFunc("/deflate", h.deflate).Methods("POST")
+	files.HandleFunc("/image/resize", h.resizeImage).Methods("POST")
 
 	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
 	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
