@@ -32,7 +32,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 	}
 
 	
-   resp, err := u.RunAndCap(token, 20)
+   resp, err := u.RunAndCap(token)
 	if err != nil {
 		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
 		return

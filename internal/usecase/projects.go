@@ -10,11 +10,12 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"rederinghub.io/external/ord_service"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"rederinghub.io/external/ord_service"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
@@ -197,6 +198,9 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
+	
+	catureTime :=  entity.DEFAULT_CAPTURE_TIME
+	pe.CatureThumbnailDelayTime = &catureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
