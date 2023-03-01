@@ -2519,11 +2519,11 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "Withdraw request",
-                        "name": "WithDrawRequest",
+                        "name": "WithDrawItemRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.WithDrawRequest"
+                            "$ref": "#/definitions/request.WithDrawItemRequest"
                         }
                     }
                 ],
@@ -4992,19 +4992,16 @@ var doc = `{
                 "amount": {
                     "type": "string"
                 },
-                "paymentType": {
+                "id": {
+                    "description": "referal  (referal: refereeID, project: tokenID)",
                     "type": "string"
-                }
-            }
-        },
-        "request.WithDrawRequest": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.WithDrawItemRequest"
-                    }
+                },
+                "paymentType": {
+                    "description": "referal or project",
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },

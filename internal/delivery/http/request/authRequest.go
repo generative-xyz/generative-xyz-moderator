@@ -37,16 +37,6 @@ type ProfileSocial struct {
 	EtherScan string `json:"etherScan"`
 }
 
-type WithDrawItemRequest struct {
-	Amount       string `json:"amount"`
-	PaymentType   string `json:"paymentType"`
-	//ProjectID string `json:"projectID"`
-}
-
-type WithDrawRequest struct {
-	Items []WithDrawItemRequest `json:"items"`
-}
-
 func (g GenerateMessageRequest) SelfValidate() error {
 	if g.Address == nil {
 		return errors.New("Address is required")

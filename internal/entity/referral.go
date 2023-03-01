@@ -22,6 +22,7 @@ type ReferreeVolumn struct {
 	ProjectID string  `bson:"projectID"`
 	Earn string  `bson:"earn"`
 	GenEarn string  `bson:"genEarn"`
+	RemainingEarn string  `bson:"remainingEarn"`
 }
 
 type FilterReferrals struct {

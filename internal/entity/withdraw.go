@@ -13,12 +13,19 @@ const (
 	StatusWithdraw_Reject
 )
 
+type Withdrawtype string 
+
+const (
+	WithDrawProject Withdrawtype = Withdrawtype(`project`)
+	WithDrawReferal Withdrawtype =  Withdrawtype(`referal`)
+)
+
 
 type FilterWithdraw struct {
 	BaseFilters
 	PaymentType *string
-	ProjectID *string
-	ProjectIDs []string
+	WithdrawItemID *string
+	WithdrawItemIDs []string
 	WalletAddress *string
 	Status *int
 }
@@ -27,13 +34,14 @@ type Withdraw struct {
 	BaseEntity              `bson:",inline" json:"-"`
 	Amount       string `bson:"amount" json:"amount"`
 	PayType  string `bson:"payType" json:"payType"`
-	ProjectID string `bson:"projectID"  json:"projectID"`
 	Status int `bson:"status" json:"status"`
 	WalletAddress string `bson:"walletAddress" json:"walletAddress"`
 	WithdrawFrom string `bson:"withdrawFrom" json:"withdrawFrom"`
 	EarningReferal string `bson:"earningReferal" json:"earningReferal"`
 	EarningVolume string `bson:"earningVolume" json:"earningVolume"`
 	TotalEarnings string `bson:"totalEarnings" json:"totalEarnings"`
+	WithdrawType Withdrawtype `bson:"withdrawType" json:"withdrawType"`
+	WithdrawItemID string `bson:"withdrawItemID"  json:"withdrawItemID"`
 }
 
 func (u Withdraw) TableName() string {
