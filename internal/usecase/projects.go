@@ -330,9 +330,9 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	//if os.Getenv("ENV") == "mainnet" {
-	//	return nil, nil
-	//}
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
 	feerate = 3
 	// get file
 	random := rand.Intn(100)
