@@ -9,14 +9,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"rederinghub.io/internal/delivery/http/request"
 
-	"github.com/disintegration/imaging"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/fileutil"
 )
 
 // UploadFile godoc
@@ -243,6 +244,8 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 // @Description Upload file
 // @Tags Files
 // @Content-Type: application/json
+// @Param request body request.FileResize true "Body"
+// @Success 200 {object}  request.FileResize{}
 // @Router /files/image/resize [POST]
 func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
@@ -256,11 +259,32 @@ func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, err
 		}
-		_, err = imaging.Decode(bytes.NewReader(dec))
+		byteSize := len(dec)
+		if byteSize <= fileutil.MaxImageByteSize {
+			return &request.FileResize{
+				File: reqBody.File,
+			}, nil
+		}
+		img, err := imaging.Decode(bytes.NewReader(dec))
 		if err != nil {
 			return nil, err
 		}
-		// TODO
-		return nil, nil
+		var imgByte []byte
+		switch strings.TrimSuffix(reqBody.File[5:coI], ";base64") {
+		case "image/png":
+			imgByte, err = fileutil.ResizeImage(img, imaging.PNG)
+		case "image/jpeg":
+			imgByte, err = fileutil.ResizeImage(img, imaging.JPEG, imaging.JPEGQuality(fileutil.JpegQuality))
+		case "image/gif":
+			imgByte, err = fileutil.ResizeImage(img, imaging.GIF)
+		default:
+			return nil, errors.New("image not support")
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &request.FileResize{
+			File: reqBody.File[:coI+1] + base64.StdEncoding.EncodeToString(imgByte),
+		}, nil
 	}).ServeHTTP(w, r)
 }
