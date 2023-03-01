@@ -431,15 +431,16 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				if err != nil {
 					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
 				}
+				/* remove this feature
 				if item.Status == entity.StatusInscribe_SentNFTToUser {
 					go func(u Usecase, item entity.InscribeBTC) {
 						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
 						if err != nil || owner == nil {
 							return
 						}
-						u.AirdropCollector("0000000", item.InscriptionID, "todo", *owner, 15)
+						u.AirdropCollector("0000000", item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 					}(u, item)
-				}
+				}*/
 			}
 		}
 	}
@@ -785,7 +786,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			break
 		}
 		for _, inscribe := range inscribes {
-			if inscribe.TokenAddress == "" {
+			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true

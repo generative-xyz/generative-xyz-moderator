@@ -5,14 +5,14 @@ type ExecRequest struct {
 }
 
 type MintRequest struct {
-	FileUrl           string `json:"fileUrl"`
-	WalletName        string `json:"walletName"`
-	FeeRate           int    `json:"feeRate"`
-	DryRun            bool   `json:"dryRun"`
-	AutoFeeRateSelect bool   `json:"autoFeeRateSelect"`
-
-	RequestId string `json:"requestId"`
-	ProjectID string `json:"projectID"`
+	FileUrl            string `json:"fileUrl"`
+	WalletName         string `json:"walletName"`
+	FeeRate            int    `json:"feeRate"`
+	DryRun             bool   `json:"dryRun"`
+	AutoFeeRateSelect  bool   `json:"autoFeeRateSelect"`
+	DestinationAddress string `json:"destinationAddress"`
+	RequestId          string `json:"requestId"`
+	ProjectID          string `json:"projectID"`
 }
 
 type ExecRespose struct {
