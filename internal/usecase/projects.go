@@ -292,14 +292,17 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		file = utils.AIRDROP_GOLDEN
 	}
 
-	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+	mintReq := ord_service.MintRequest{
 		WalletName:        from,
 		ProjectID:         projectid,
 		DryRun:            true,
 		AutoFeeRateSelect: false,
 		FeeRate:           feerate,
 		FileUrl:           file,
-	})
+	}
+	fmt.Printf("Mint airdrop request %v", mintReq)
+
+	resp, err := u.OrdService.Mint(mintReq)
 	if err != nil {
 		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
@@ -355,14 +358,17 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		file = utils.AIRDROP_GOLDEN
 	}
 
-	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+	mintReq := ord_service.MintRequest{
 		WalletName:        from,
 		ProjectID:         projectid,
 		DryRun:            true,
 		AutoFeeRateSelect: false,
 		FeeRate:           feerate,
 		FileUrl:           file,
-	})
+	}
+	fmt.Printf("Mint airdrop request %v", mintReq)
+
+	resp, err := u.OrdService.Mint(mintReq)
 	if err != nil {
 		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
