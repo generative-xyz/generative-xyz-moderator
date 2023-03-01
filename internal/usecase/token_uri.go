@@ -28,7 +28,12 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
+func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI, error) {
+	captureTimeout := entity.DEFAULT_CAPTURE_TIME
+	p, err := u.Repo.FindProjectByTokenID(token.ProjectID)
+	if err == nil && p != nil && p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != 0 {
+		captureTimeout = *p.CatureThumbnailDelayTime
+	}
 
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
@@ -153,24 +158,44 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	u.Logger.LogAny("GetToken", zap.Any("req", req))
-	contractAddress := strings.ToLower(req.ContractAddress)
+	//contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
 
-	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
+	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			token, err := u.getTokenInfo(req)
-			if err != nil {
-				u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
-				return nil, err
-			}
-			return token, nil
-		} else {
-			u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-			return nil, err
-		}
+		return nil, err
 	}
+	//this was used for ETH (old flow)
+	// if err != nil {
+	// 	u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+	// 	if errors.Is(err, mongo.ErrNoDocuments) {
+	// 		token, err := u.getTokenInfo(req)
+	// 		if err != nil {
+	// 			u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
+	// 			return nil, err
+	// 		}
+	// 		return token, nil
+	// 	} else {
+	// 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+	// 		return nil, err
+	// 	}
+	// }
+
+	go func ()  {
+		if tokenUri.Thumbnail == "" {
+			payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+				TokenID:         tokenUri.TokenID,
+				ContractAddress: tokenUri.ContractAddress,
+			}}
+		
+			u.Logger.LogAny("GetToken.Thumbnail", zap.Any("payload", payload))
+			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+			if err != nil {
+				u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+			}
+		}
+	}()
 
 	go func() {
 		//upload animation URL

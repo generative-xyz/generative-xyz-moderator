@@ -12,4 +12,8 @@ type ReferralResp struct {
 type ReferralVolumnResp struct {
 	Amount string `json:"amount"`
 	AmountType string `json:"amountType"`
+	ProjectID string  `json:"projectID"`
+	Percent int `json:"percent"`
+	Earn string  `json:"earn"`
+	GenEarn string `json:"GenEarn"`
 }

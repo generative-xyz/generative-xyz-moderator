@@ -403,7 +403,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
-		
+
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
 		// go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "ListMintNftBtcByStatus", "[]")
@@ -455,7 +455,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if animation != "" {
 			animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
 			now := time.Now().UTC().Unix()
-			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
+			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%s-%d.html", p.TokenID, item.UUID, now))
 			if err != nil {
 				u.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
@@ -498,13 +498,18 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		_ = baseUrl
 		// start call rpc mint nft now:
 		mintData := ord_service.MintRequest{
-			WalletName:        os.Getenv("ORD_MASTER_ADDRESS"),
-			FileUrl:           baseUrl.String(),
-			FeeRate:           entity.DEFAULT_FEE_RATE, //auto
-			DryRun:            false,
-			RequestId:         item.UUID,      // to track log
-			ProjectID:         item.ProjectID, // to track log
+			WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
+			FileUrl:     baseUrl.String(),
+			FeeRate:     entity.DEFAULT_FEE_RATE, //auto
+			DryRun:      false,
+			RequestId:   item.UUID,      // for tracking log
+			ProjectID:   item.ProjectID, // for tracking log
+			FileUrlUnit: item.FileURI,   // for tracking log
+
 			AutoFeeRateSelect: true,
+
+			// new key for ord v5.1, support mint + send in 1 tx:
+			DestinationAddress: item.OriginUserAddress,
 		}
 
 		u.Logger.Info("mintData", mintData)
@@ -517,13 +522,15 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		}
 		u.Logger.Info("mint.resp", resp)
 
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintOK", resp, false)
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
 
 		//update
 		// if not err => update status ok now:
 		//TODO: handle log err: Database already open. Cannot acquire lock
 
 		item.Status = entity.StatusMint_Minting
+		item.IsMerged = true // new key for ord v5.1, support mint + send in 1 tx.
+
 		// item.ErrCount = 0 // reset error count!
 
 		item.OutputMintNFT = resp
@@ -664,6 +671,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			// tx ok now:
 
 			if item.Status == entity.StatusMint_Minting {
+				// update for ord5
 				item.Status = entity.StatusMint_Minted
 				item.IsMinted = true
 			} else if item.Status == entity.StatusMint_SendingNFTToUser {
@@ -685,7 +693,15 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
 				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
-
+				if item.ProjectMintPrice >= 100000 {
+					go func(u Usecase, item entity.MintNftBtc) {
+						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+						if err != nil || owner == nil {
+							return
+						}
+						u.AirdropCollector(item.ProjectID, item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
+					}(u, item)
+				}
 			}
 
 		}
@@ -710,6 +726,17 @@ func (u Usecase) JobMint_SendNftToUser() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "checkEmpty(nftID)", "Nft id empty", true)
 			continue
 		}
+
+		// update for ord v5.1: is merged tx
+		if item.IsMerged {
+			// don't send, update isSent = true
+			item.Status = entity.StatusMint_SentNFTToUser
+			item.IsSentUser = true
+			u.Repo.UpdateMintNftBtc(&item)
+			continue
+
+		}
+
 		if false {
 			listNFTsRep, err := u.GetNftsOwnerOf(os.Getenv("ORD_MASTER_ADDRESS"))
 			if err != nil {

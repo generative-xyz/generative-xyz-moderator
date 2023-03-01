@@ -5,8 +5,10 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 func (r Repository) InsertReferral(data *entity.Referral) error {
@@ -19,11 +21,19 @@ func (r Repository) InsertReferral(data *entity.Referral) error {
 
 func (r Repository) FilterReferrals(filter entity.FilterReferrals) bson.M {
 	f := bson.M{}
-	if filter.ReferreeID != nil {
+	if filter.ReferreeID != nil && *filter.ReferreeID != "" {
 		f["referree_id"] = primitive.Regex{Pattern:  *filter.ReferreeID, Options: "i"}
 	}
-	if filter.ReferrerID != nil {
+	if filter.ReferrerID != nil && *filter.ReferrerID != "" {
 		f["referrer_id"] = primitive.Regex{Pattern:  *filter.ReferrerID, Options: "i"}
+	}
+	
+	if filter.ReferrerAddress != nil && *filter.ReferrerAddress != "" {
+		f["referrer.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferrerAddress, Options: "i"}
+	}
+	
+	if filter.ReferreeAddress != nil && *filter.ReferreeAddress != "" {
+		f["referree.wallet_address"] = primitive.Regex{Pattern:  *filter.ReferreeAddress, Options: "i"}
 	}
 	
 	// if filter.PayType != nil {
@@ -48,6 +58,20 @@ func (r Repository) GetReferrals(filter entity.FilterReferrals) (*entity.Paginat
 	return resp, nil
 }
 
+func (r Repository) GetAllReferrals(filter entity.FilterReferrals) ([]entity.Referral, error) {
+	refs := []entity.Referral{}
+	f := r.FilterReferrals(filter)
+	cursor, err := r.DB.Collection(entity.Referral{}.TableName()).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &refs); err != nil {
+		return nil, err
+	}
+	return refs, err
+}
+
 func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {
 	f := bson.M{
 		"referree_id": referreeID,
@@ -59,4 +83,48 @@ func (r Repository) CountReferralOfReferee(referreeID string) (int64, error) {
 	}
 
 	return count, nil
+}
+
+func (r Repository) UpdateReferral(ID string, data *entity.Referral) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	
+	result, err := r.UpdateOne(entity.Referral{}.TableName(), filter, data)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r Repository) GetReferral(filter entity.FilterReferrals) ([]entity.Referral, error) {
+	ref := []entity.Referral{}
+	f := r.FilterReferrals(filter)
+	cursor, err := r.DB.Collection(entity.Referral{}.TableName()).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &ref); err != nil {
+		return nil, err
+	}
+
+	return ref, nil
+}
+
+func (r Repository) GetAReferral(walletAddress string, refereeID string) (*entity.Referral, error) {
+	resp := &entity.Referral{}
+	f := bson.D{
+		{"referrer.wallet_address", walletAddress}, 
+		{"referree_id", refereeID}, 
+	}
+
+	usr, err := r.FilterOne(entity.Referral{}.TableName(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

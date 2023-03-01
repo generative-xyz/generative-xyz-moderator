@@ -694,14 +694,13 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
 		if err == nil {
 			minterDisplayName = minter.DisplayName
-			minterAddress = minter.WalletAddress
 		} else {
 			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
 		}
 	}
 
-	if tokenUri.Creator != nil {
-		u.Logger.ErrorAny("tokenUri.Creator is empty", zap.Any("tokenID", tokenUri.TokenID))
+	if tokenUri.Creator == nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
 		return
 	}
 

@@ -28,70 +28,56 @@ import (
 // @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
 // @Success 200 {object} response.InscribeBtcResp{}
 // @Router /inscribe/receive-address [POST]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
-	var reqBody request.CreateInscribeBtcReq
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		h.Logger.Error("httpDelivery.btcCreateInscribeBTC.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
+			var reqBody request.CreateInscribeBtcReq
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+			reqUsecase := &structure.InscribeBtcReceiveAddrRespReq{}
+			err = copier.Copy(reqUsecase, reqBody)
+			if err != nil {
+				return nil, err
+			}
 
-	reqUsecase := &structure.InscribeBtcReceiveAddrRespReq{}
-	err = copier.Copy(reqUsecase, reqBody)
-	if err != nil {
-		h.Logger.Error("copier.Copy", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+			if len(reqUsecase.FileName) == 0 {
+				return nil, errors.New("Filename is required")
+			}
 
-	if len(reqUsecase.FileName) == 0 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Filename is required"))
-		return
-	}
+			if len(reqUsecase.WalletAddress) == 0 {
+				return nil, errors.New("WalletAddress is required")
+			}
 
-	if len(reqUsecase.WalletAddress) == 0 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is required"))
-		return
-	}
+			if ok, _ := btc.ValidateAddress("btc", reqUsecase.WalletAddress); !ok {
+				return nil, errors.New("WalletAddress is invalid")
+			}
 
-	if ok, _ := btc.ValidateAddress("btc", reqUsecase.WalletAddress); !ok {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("WalletAddress is invalid"))
-		return
-	}
+			if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
+				return nil, errors.New("fee rate is invalid")
+			}
 
-	if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("fee rate is invalid"))
-		return
-	}
-
-	if len(reqUsecase.File) == 0 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("file is invalid"))
-		return
-	}
-	reqUsecase.SetFields(
-		reqUsecase.WithUserUuid(userUuid),
-	)
-	btcWallet, err := h.Usecase.CreateInscribeBTC(*reqUsecase)
-	if err != nil {
-		h.Logger.Error("h.Usecase.btcCreateInscribeBTC", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	logger.AtLog.Logger.Info("btcCreateInscribeBTC", zap.Any("raw_data", btcWallet))
-	resp, err := h.inscribeBtcCreatedRespResp(btcWallet)
-	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+			if len(reqUsecase.File) == 0 {
+				return nil, errors.New("file is invalid")
+			}
+			reqUsecase.SetFields(
+				reqUsecase.WithUserUuid(userUuid),
+			)
+			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
+			if err != nil {
+				logger.AtLog.Logger.Error("CreateInscribeBTC failed",
+					zap.Any("payload", reqBody),
+					zap.Error(err),
+				)
+				return nil, err
+			}
+			logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
+			return h.inscribeBtcCreatedRespResp(btcWallet)
+		},
+	).ServeHTTP(w, r)
 }
 
 func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
@@ -117,7 +103,7 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Produce json
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
@@ -143,7 +129,7 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 // @Param ID path string true "inscribe ID"
 // @Success 200 {object} entity.InscribeBTCResp{}
 // @Router /inscribe/nft-detail/{ID} [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -168,7 +154,7 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 // @Param ID path string true "inscribe ID"
 // @Success 200
 // @Router /inscribe/retry/{ID} [POST]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -193,7 +179,7 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 // @Param ID path string true "inscribe ID"
 // @Success 200 {object} response.InscribeInfoResp{}
 // @Router /inscribe/info/{ID} [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -245,13 +231,32 @@ func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response
 // @Param limit query int false "Limit"
 // @Success 200 {object} entity.Pagination{}
 // @Router /inscribe/list-nft-from-moralis [GET]
-// @Security Api-Key
+// @Security ApiKeyAuth
 func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
 			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			userId := ctx.Value(utils.SIGNED_USER_ID).(string)
 			pag := entity.GetPagination(r)
-			return h.Usecase.ListNftFromMoralis(ctx, userWallet, r.URL.Query().Get("walletAddress"), pag)
+			return h.Usecase.ListNftFromMoralis(ctx, userId, userWallet, r.URL.Query().Get("walletAddress"), pag)
+		},
+	).ServeHTTP(w, r)
+}
+
+// @Summary NFT from Moralis
+// @Description NFT from Moralis
+// @Tags Inscribe
+// @Accept json
+// @Produce json
+// @Param tokenAddress query string false "Token Address"
+// @Param tokenId query string false "Token Id"
+// @Success 200 {object} nfts.MoralisToken{}
+// @Router /inscribe/nft-from-moralis [GET]
+// @Security ApiKeyAuth
+func (h *httpDelivery) nftFromMoralis(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			return h.Usecase.NftFromMoralis(ctx, r.URL.Query().Get("tokenAddress"), r.URL.Query().Get("tokenId"))
 		},
 	).ServeHTTP(w, r)
 }

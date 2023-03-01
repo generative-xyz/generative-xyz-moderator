@@ -2,10 +2,8 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
@@ -14,21 +12,41 @@ import (
 )
 
 
-func (r Repository) AggregateVolumn() ([]entity.AggregateWalleRespItem, error) {
+func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
-	confs := []entity.AggregateWalleRespItem{}
+	confs := []entity.AggregateProjectItemResp{}
+
+	calculate := bson.M{"$sum": "$project_mint_price"}
+	if payType == string(entity.ETH) {
+		calculate = bson.M{"$sum": bson.M{
+			"$multiply": bson.A{
+				"$project_mint_price",
+				 bson.M{ "$divide": bson.A{
+					"$btc_rate",
+					"$eth_rate",
+				 }},
+			},
+		}}
+	}
 
 	// PayType *string
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"status": entity.StatusMint_SentFundToMaster},
+		bson.M{"payType": payType},
+		bson.M{"$and": bson.A{
+				bson.M{"eth_rate": bson.M{"$gt": 0}},
+				bson.M{"btc_rate": bson.M{"$gt": 0}},
+			},
+		},
 	}}}
 
 	pipeLine := bson.A{
 		matchStage,
 		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
-			"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+			bson.M{ "projectID": "$projectID", "mintPrice": "$project_mint_price", "payType": "$payType" }, 
+			"amount": calculate,
+			"minted": bson.M{"$sum": 1},
 		}},
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
@@ -45,15 +63,19 @@ func (r Repository) AggregateVolumn() ([]entity.AggregateWalleRespItem, error) {
 	}
 
 	for _, item := range results {
-		res := &entity.AggregateWalletAddressItem{}
+		res := &entity.AggregateProjectItem{}
 		err = helpers.Transform(item, res)
 		if err != nil {
 			return nil, err
 		}
-		tmp := entity.AggregateWalleRespItem{
+		tmp := entity.AggregateProjectItemResp{
 			ProjectID: res.ID.ProjectID,
 			Paytype: res.ID.Paytype,
-			Amount: fmt.Sprintf("%d", int64(res.Amount)),
+			BtcRate: res.ID.BtcRate,
+			EthRate: res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
+			Amount: res.Amount,
+			Minted: res.Minted,
 		}
 		confs = append(confs, tmp)
 	}
@@ -61,16 +83,26 @@ func (r Repository) AggregateVolumn() ([]entity.AggregateWalleRespItem, error) {
 	return confs, nil
 }
 
-func (r Repository) AggregateAmount(walletAddress string, paymentType *string) ([]entity.AggregateAmount, error) {
+func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.M) ([]entity.AggregateAmount, error) {
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateAmount{}
 
-	f :=  bson.A{
-		bson.M{"creatorAddress": walletAddress},
+	f :=  bson.A{}
+	
+	if filter.AmountType != nil && *filter.AmountType != "" {
+		f = append(f, bson.M{"payType": *filter.AmountType})
 	}
-
-	if paymentType != nil && *paymentType != "" {
-		f = append(f, bson.M{"amountType": paymentType})
+	
+	if filter.CreatorAddress != nil && *filter.CreatorAddress != "" {
+		f = append(f, bson.M{"creatorAddress": *filter.CreatorAddress})
+	}
+	
+	if filter.ProjectID != nil && *filter.ProjectID != "" {
+		f = append(f, bson.M{"projectID": *filter.ProjectID})
+	}
+	
+	if len(filter.ProjectIDs) > 0 {
+		f = append(f, bson.M{"$in": bson.M{"projectID": filter.ProjectIDs } })
 	}
 
 	// PayType *string
@@ -79,10 +111,7 @@ func (r Repository) AggregateAmount(walletAddress string, paymentType *string) (
 
 	pipeLine := bson.A{
 		matchStage,
-		bson.M{"$group": bson.M{"_id": 
-			bson.M{"creatorAddress": "$creatorAddress"}, 
-			"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
-		}},
+		groupStage,
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
 	
@@ -98,7 +127,7 @@ func (r Repository) AggregateAmount(walletAddress string, paymentType *string) (
 	}
 
 	for _, item := range results {
-		spew.Dump(item)
+		
 		tmp := &entity.AggregateAmount{}
 		err = helpers.Transform(item, tmp)
 		confs = append(confs, *tmp)
@@ -112,6 +141,22 @@ func (r Repository) FindVolumn(projectID string, amountType string) (*entity.Use
 	projectID = strings.ToLower(projectID)
 	resp := &entity.UserVolumn{}
 	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"projectID", projectID}, {"amountType", amountType}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) FindVolumnByWalletAddress(creatorAddress string, amountType string) (*entity.UserVolumn, error) {
+	creatorAddress = strings.ToLower(creatorAddress)
+	resp := &entity.UserVolumn{}
+	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"creatorAddress", creatorAddress}, {"amountType", amountType}})
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +190,27 @@ func (r Repository) UpdateVolumn(ID string, data *entity.UserVolumn) (*mongo.Upd
 func (r Repository) UpdateVolumnAmount(ID string, amount string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, ID}}
 	update := bson.M{"$set": bson.M{"amount": amount}}
+	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r Repository) UpdateVolumnMinted(ID string, minted int) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	update := bson.M{"$set": bson.M{"minted": minted}}
+	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+
+func (r Repository) UpdateVolumMintPrice(ID string, mintPrice int64) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	update := bson.M{"$set": bson.M{"mintPrice": mintPrice}}
 	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err

@@ -1194,6 +1194,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/files/image/resize": {
+            "post": {
+                "description": "Upload file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Files"
+                ],
+                "summary": "Upload file",
+                "parameters": [
+                    {
+                        "description": "Base64 File Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.FileResize"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/request.FileResize"
+                        }
+                    }
+                }
+            }
+        },
         "/files/minify": {
             "post": {
                 "security": [
@@ -1400,7 +1434,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Info Inscribe",
@@ -1437,7 +1471,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC List Inscribe",
@@ -1465,7 +1499,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "List NFT from Moralis",
@@ -1513,7 +1547,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC NFT Detail Inscribe",
@@ -1546,11 +1580,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/inscribe/nft-from-moralis": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "NFT from Moralis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "NFT from Moralis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token Address",
+                        "name": "tokenAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token Id",
+                        "name": "tokenId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/nfts.MoralisToken"
+                        }
+                    }
+                }
+            }
+        },
         "/inscribe/receive-address": {
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Generate receive wallet address",
@@ -1589,7 +1665,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "Api-Key": []
+                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "BTC Retry Inscribe",
@@ -2442,7 +2518,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/profile/wallet/{walletAddress}/volume": {
+        "/profile/wallet/{walletAddress}/volumn": {
             "get": {
                 "description": "get volume by wallet",
                 "consumes": [
@@ -2461,6 +2537,12 @@ const docTemplate = `{
                         "description": "Filter project via wallet address",
                         "name": "walletAddress",
                         "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -2487,6 +2569,11 @@ const docTemplate = `{
         },
         "/profile/withdraw": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "User profile via wallet address",
                 "consumes": [
                     "application/json"
@@ -2500,11 +2587,13 @@ const docTemplate = `{
                 "summary": "User profile via wallet address",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Wallet address",
-                        "name": "walletAddress",
-                        "in": "path",
-                        "required": true
+                        "description": "Withdraw request",
+                        "name": "WithDrawItemRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WithDrawItemRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2865,6 +2954,51 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/request.UpdateBTCProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}/volumn": {
+            "get": {
+                "description": "get project's volumn",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's volumn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -3886,6 +4020,12 @@ const docTemplate = `{
                     "description": "status for record",
                     "type": "integer"
                 },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenId": {
+                    "type": "string"
+                },
                 "txMintNft": {
                     "type": "string"
                 },
@@ -4536,6 +4676,47 @@ const docTemplate = `{
                 }
             }
         },
+        "nfts.MoralisToken": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "block_number_minted": {
+                    "type": "string"
+                },
+                "contract_type": {
+                    "type": "string"
+                },
+                "is_minted": {
+                    "type": "boolean"
+                },
+                "metadata": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_of": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "token_address": {
+                    "type": "string"
+                },
+                "token_hash": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "token_uri": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -4708,6 +4889,12 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenId": {
+                    "type": "string"
+                },
                 "walletAddress": {
                     "type": "string"
                 }
@@ -4774,6 +4961,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.FileResize": {
+            "type": "object",
+            "properties": {
+                "file": {
                     "type": "string"
                 }
             }
@@ -4963,6 +5158,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "signature": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.WithDrawItemRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "referal  (referal: refereeID, project: tokenID)",
+                    "type": "string"
+                },
+                "paymentType": {
+                    "description": "referal or project",
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -5706,12 +5920,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "Api-Key": {
-            "type": "apiKey",
-            "name": "Api-Key",
-            "in": "header"
-        },
-        "Authorization": {
+        "ApiKeyAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

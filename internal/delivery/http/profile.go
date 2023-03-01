@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -266,7 +267,8 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 // @Tags Profile
 // @Accept  json
 // @Produce  json
-// @Param walletAddress path string true "Wallet address"
+// @Security Authorization
+// @Param WithDrawItemRequest body request.WithDrawItemRequest true "Withdraw request"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/withdraw [POST]
 func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
@@ -276,19 +278,41 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("WalletAddress is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Logger.ErrorAny("withdraw.walletAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	_ = walletAddress
-
 	
-	// resp, err := h.profileToResp(profile)
-	// if err != nil {
-	// 	h.Logger.Error("h.profileToResp", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
+	var reqBody request.WithDrawItemRequest
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.ErrorAny("withdraw.Decode", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	err = reqBody.SelfValidate()
+	if err != nil {
+		h.Logger.ErrorAny("withdraw.SelfValidate", zap.Error(err), zap.Any("reqBody", reqBody))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	wdr := &structure.WithDrawItemRequest{}
+	err = copier.Copy(wdr, reqBody)
+	if err != nil {
+		h.Logger.ErrorAny("withdraw.Copy", zap.Error(err), zap.Any("wdr", wdr))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	wd, err := h.Usecase.CreateWithdraw(walletAddress, *wdr)
+	if err != nil {
+		h.Logger.ErrorAny("withdraw.CreateWithdraw", zap.Error(err), zap.Any("wdr", wdr))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }
