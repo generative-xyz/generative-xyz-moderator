@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/helpers"
 )
 
 const (
@@ -61,7 +62,6 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 		u.Logger.ErrorAny("GetReferrals",zap.Any("copier.Copy", err))
 		return nil, err
 	}
-
 	referrals, err := u.Repo.GetReferrals(*pe)
 	if err != nil {
 		u.Logger.Error("u.Repo.FilterReferrals", err.Error(), err)
@@ -78,17 +78,19 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 			return nil, err
 		}
 
-		paytype := ""
-		if req.PayType != nil {
-			paytype =  *req.PayType
-		}
-	
-
 		volume, err := u.GetVolumeOfUser(item.Referree.WalletAddress, req.PayType)
-		if err != nil {
-			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: "0", AmountType: paytype }
-		}	else{
-			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: fmt.Sprintf("%d", int(volume.Amount)), AmountType: paytype }
+		if err != nil   {
+			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: "0", AmountType: *req.PayType, Percent: int(item.Percent), ProjectID: "", Earn: "0", GenEarn: "0" }
+		}else{
+			refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, item.Percent)
+			tmp.ReferreeVolume = structure.ReferralVolumnResp{
+				Amount: fmt.Sprintf("%d", int(volume.Amount)), 
+				AmountType: volume.ID.Paytype,
+				Percent: int(item.Percent),
+				ProjectID: volume.ID.ProjectID, 
+				Earn: refEarning,
+				GenEarn: genEarning,
+			}
 		}
 		resp = append(resp, *tmp)
 	}
@@ -97,4 +99,3 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 	u.Logger.LogAny("GetReferrals", zap.Any("req", req), zap.Any("referrals",referrals), zap.Any("referrals", referrals.Total))
 	return referrals, nil
 }
-

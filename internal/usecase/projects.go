@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -218,11 +219,128 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	} else {
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
+		u.AirdropArtist(pe.TokenID, "todo", pe.CreatorProfile, 15)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	return pe, nil
+}
+
+func (u Usecase) CheckAirdrop() error {
+	airdrops, err := u.Repo.FindAirdropByStatus(0)
+	if err != nil {
+		fmt.Printf("CheckAirdrop - with err: %v", err)
+		return err
+	}
+	for _, airdrop := range airdrops {
+		if airdrop.Tx != "" {
+			_, bs, err := u.buildBTCClient()
+
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				continue
+			}
+			// check with api:
+			txInfo, err := bs.CheckTx(airdrop.Tx)
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, "")
+				continue
+			}
+			if txInfo.Confirmations > 1 {
+				fmt.Printf("CheckAirdrop success - %v", txInfo)
+				data, err := json.Marshal(txInfo)
+				temp := ""
+				if err == nil {
+					temp = string(data)
+				}
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 1, temp)
+				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+					"Airdrop success",
+					airdrop.ReceiverBtcAddressTaproot,
+					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
+			} else {
+				fmt.Printf("CheckAirdrop fail - %v", txInfo)
+				data, err := json.Marshal(txInfo)
+				temp := ""
+				if err == nil {
+					temp = string(data)
+				}
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, temp)
+				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+					"Airdrop fail",
+					airdrop.ReceiverBtcAddressTaproot,
+					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") == "mainnet" {
+		return nil, nil
+	}
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 50 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 50 && random >= 20 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := time.Now().UTC().String()
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+		Type:                      0,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     "{todo}",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
+}
+
+func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") == "mainnet" {
+		return nil, nil
+	}
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 20 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 20 && random >= 5 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	// todo call ordignal
+	tx := time.Now().UTC().String()
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Tx:                        tx,
+		Type:                      1,
+		ProjectId:                 projectid,
+		MintedInscriptionId:       mintedInscriptionId,
+		OrdinalResponseAction:     "{todo}",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		return nil, err
+	}
+	return airDrop, nil
 }
 
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
@@ -240,7 +358,11 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		category = categoryEntity.Name
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
-	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	address := owner.WalletAddressBTC
+	if address == "" {
+		address = owner.WalletAddress
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, address)
 	collectionName := project.Name
 
 	fields := make([]discordclient.Field, 0)
@@ -630,7 +752,7 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
-	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		// if err != nil {
@@ -681,6 +803,18 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 
 	}()
+
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
+
+func (u Usecase) GetProjectVolumn(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectVolumn", zap.Any("req", req))
+	c, err := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("GetProjectVolumn", zap.Error(err))
+		return nil, err
+	}
 
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
@@ -1225,6 +1359,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		u.AirdropArtist(pe.TokenID, "todo", *owner, 15)
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
@@ -1385,38 +1520,40 @@ type Volume struct {
 	Amount    string `json:"amount"`
 }
 
-func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
+	data, err := u.GetVolumeOfUser(creatoreAddress, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		return nil, err
+	}
 
-	// p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
-	// }
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+	}
 
-	// pIDs := []string{}
-	// for _, item := range p {
-	// 	pIDs = append(pIDs, item.TokenID)
-	// }
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+	return &tmp, nil
+}
 
-	// data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
-	// }
+func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error) {
+	data, err := u.GetVolumeOfProject(projectID, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		tmp := Volume{
+			ProjectID: projectID,
+			PayType:   paytype,
+			Amount:    "0",
+		}
 
-	// resp := Volumes{}
-	// for _, item := range data.Items {
-	// 	tmp := Volume{
-	// 		ProjectID: item.ID.ProjectID,
-	// 		PayType:   item.ID.Paytype,
-	// 		Amount:    fmt.Sprintf("%d", int(item.Amount)),
-	// 	}
-	// 	resp.Items = append(resp.Items, tmp)
-	// }
+		return &tmp, nil
+	}
 
-	// resp.TotalBTC = data.TotalBTC
-	// resp.TotalETH = data.TotalETH
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+	}
 
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
-	return nil, nil
+	return &tmp, nil
 }

@@ -423,8 +423,8 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 				if err != nil {
 					return nil, err
 				}
-				result = append(result, trackTx)
 			}
+			result = append(result, trackTx)
 		} else {
 			err = getBTCTxStatusExtensive(&trackTx, &u)
 			if err != nil {

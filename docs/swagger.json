@@ -1606,7 +1606,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2434,7 +2434,7 @@
                 }
             }
         },
-        "/profile/wallet/{walletAddress}/volume": {
+        "/profile/wallet/{walletAddress}/volumn": {
             "get": {
                 "description": "get volume by wallet",
                 "consumes": [
@@ -2453,6 +2453,12 @@
                         "description": "Filter project via wallet address",
                         "name": "walletAddress",
                         "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -2479,6 +2485,11 @@
         },
         "/profile/withdraw": {
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "User profile via wallet address",
                 "consumes": [
                     "application/json"
@@ -2492,11 +2503,13 @@
                 "summary": "User profile via wallet address",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Wallet address",
-                        "name": "walletAddress",
-                        "in": "path",
-                        "required": true
+                        "description": "Withdraw request",
+                        "name": "WithDrawItemRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WithDrawItemRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2857,6 +2870,51 @@
                         "schema": {
                             "$ref": "#/definitions/request.UpdateBTCProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}/volumn": {
+            "get": {
+                "description": "get project's volumn",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's volumn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -4285,6 +4343,9 @@
                 "name": {
                     "type": "string"
                 },
+                "order_inscription_index": {
+                    "type": "integer"
+                },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
                     "$ref": "#/definitions/entity.Users"
@@ -4910,6 +4971,25 @@
                 }
             }
         },
+        "request.WithDrawItemRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "referal  (referal: refereeID, project: tokenID)",
+                    "type": "string"
+                },
+                "paymentType": {
+                    "description": "referal or project",
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "response.CategoryResp": {
             "type": "object",
             "properties": {
@@ -5126,6 +5206,9 @@
                 },
                 "orderID": {
                     "type": "string"
+                },
+                "orderInscriptionIndex": {
+                    "type": "integer"
                 },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"

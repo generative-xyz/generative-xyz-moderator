@@ -26,7 +26,6 @@ func NewScronHandler(global *global.Global, uc usecase.Usecase) *ScronHandler {
 	}
 }
 
-
 func (h ScronHandler) StartServer() {
 	c := cron.New()
 
@@ -143,8 +142,10 @@ func (h ScronHandler) StartServer() {
 	// })
 
 	//alway 10 minutes crontab
-	c.AddFunc("*/5 * * * *", func() {
+	c.AddFunc("*/1 * * * *", func() {
 		h.Usecase.AggregateVolumn()
+
+		h.Usecase.AggregateReferal()
 	})
 
 	c.AddFunc("*/10 * * * *", func() {
