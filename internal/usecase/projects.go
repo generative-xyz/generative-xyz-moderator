@@ -238,8 +238,10 @@ func (u Usecase) CheckAirdrop() error {
 		fmt.Printf("CheckAirdrop - with err: %v", err)
 		return err
 	}
+	u.Logger.Info(fmt.Sprintf("Start check airdros len %d", len(airdrops)))
 	for _, airdrop := range airdrops {
 		if airdrop.Tx != "" {
+			u.Logger.Info(fmt.Sprintf("Start check airdros %s", airdrop.UUID), zap.Any("airdrop", airdrop))
 			_, bs, err := u.buildBTCClient()
 
 			if err != nil {
