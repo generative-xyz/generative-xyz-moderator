@@ -14,7 +14,7 @@ type Airdrop struct {
 	Receiver                  string      `bson:"receiver"`
 	ReceiverBtcAddressTaproot string      `bson:"receiverBtcAddressTaproot"`
 	Type                      int         `bson:"type"`   // 0 artist, 1 collector
-	Status                    int         `bson:"status"` // 0 pending, 1 success, 2 fail
+	Status                    int         `bson:"status"` // 0 pending, 1 success, 2 fail, -1: init
 	ProjectId                 string      `bson:"projectId"`
 	MintedInscriptionId       string      `bson:"mintedInscriptionId"`
 	OrdinalResponseAction     interface{} `bson:"ordinalResponseAction"`
