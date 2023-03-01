@@ -752,7 +752,7 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
-	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		// if err != nil {
