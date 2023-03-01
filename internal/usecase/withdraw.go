@@ -16,7 +16,7 @@ import (
 func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemRequest) ([]entity.Withdraw, error) {
 	resp := []entity.Withdraw{}
 	u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("input", wr))
-	volumeAmount := 0.0
+	volumeAmount := 0.0 //earning 
 	widthDrawAmount := 0.0
 	refAmount := 0.0
 	
@@ -43,7 +43,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	}
 
 	u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress))
-	volumes, _ := u.CreatorVolume(walletAddress, f.PayType)
+	volumes, _ := u.GetEarningOfUser(walletAddress, &f.PayType)
 	
 	fr := entity.FilterReferrals{
 		ReferrerAddress: &walletAddress,
@@ -65,12 +65,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	if volumes == nil {
 		volumeAmount = 0
 	}else{
-		f, err := strconv.ParseFloat(volumes.Amount, 10)
-		if err != nil {
-			volumeAmount = 0
-		}else{
-			volumeAmount = f
-		}
+		volumeAmount = volumes.Amount
 	}
 	
 	totalEarnings := refAmount + volumeAmount

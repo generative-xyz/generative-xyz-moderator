@@ -88,6 +88,8 @@ type UserVolumn struct {
 	CreatorAddress *string `bson:"creatorAddress"`
 	ProjectID *string  `bson:"projectID"`
 	Amount *string  `bson:"amount"`
+	Earning *string  `bson:"earning"`
+	GenEarning *string  `bson:"genEarning"`
 	Minted int  `bson:"minted"`
 	MintPrice int64 `bson:"mintPrice" json:"mintPrice"`
 	Project  VolumeProjectInfo `bson:"project"`
