@@ -700,8 +700,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		}
 	}
 
-	if tokenUri.Creator != nil {
-		u.Logger.ErrorAny("tokenUri.Creator is empty", zap.Any("tokenID", tokenUri.TokenID))
+	if tokenUri.Creator == nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
 		return
 	}
 
