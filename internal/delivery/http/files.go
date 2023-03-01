@@ -1,16 +1,20 @@
 package http
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	"rederinghub.io/internal/delivery/http/request"
 
+	"github.com/disintegration/imaging"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 )
@@ -242,6 +246,20 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 // @Router /files/image/resize [POST]
 func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+		var reqBody request.FileResize
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		if err != nil {
+			return nil, err
+		}
+		coI := strings.Index(reqBody.File, ",")
+		dec, err := base64.StdEncoding.DecodeString(reqBody.File[coI+1:])
+		if err != nil {
+			return nil, err
+		}
+		_, err = imaging.Decode(bytes.NewReader(dec))
+		if err != nil {
+			return nil, err
+		}
 		// TODO
 		return nil, nil
 	}).ServeHTTP(w, r)
