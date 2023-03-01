@@ -28,7 +28,12 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) RunAndCap(token *entity.TokenUri, captureTimeout int) (*structure.TokenAnimationURI, error) {
+func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI, error) {
+	captureTimeout := entity.DEFAULT_CAPTURE_TIME
+	p, err := u.Repo.FindProjectByTokenID(token.ProjectID)
+	if err == nil && p != nil && p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != 0 {
+		captureTimeout = *p.CatureThumbnailDelayTime
+	}
 
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
