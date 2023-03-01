@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"rederinghub.io/external/ord_service"
 	"strconv"
 	"strings"
 	"sync"
@@ -219,7 +220,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	} else {
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
-		u.AirdropArtist(pe.TokenID, "todo", pe.CreatorProfile, 15)
+		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
@@ -291,22 +292,51 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		file = utils.AIRDROP_GOLDEN
 	}
 
-	// todo call ordignal
-	tx := time.Now().UTC().String()
+	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+		WalletName:        from,
+		ProjectID:         projectid,
+		DryRun:            true,
+		AutoFeeRateSelect: false,
+		FeeRate:           feerate,
+		FileUrl:           file,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
 		Receiver:                  receiver.UUID,
 		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
-		Tx:                        tx,
 		Type:                      0,
 		ProjectId:                 projectid,
-		OrdinalResponseAction:     "{todo}",
+		OrdinalResponseAction:     resp,
+		Status:                    0,
+		MintedInscriptionId:       "",
+		Tx:                        "",
+		InscriptionId:             "",
 	}
-	err := u.Repo.InsertAirdrop(airDrop)
+	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
 		return nil, err
 	}
+
+	tmpText := resp.Stdout
+	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+	btcMintResp := &ord_service.MintStdoputRespose{}
+	bytes := []byte(jsonStr)
+	err = json.Unmarshal(bytes, btcMintResp)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
 	return airDrop, nil
 }
 
@@ -323,23 +353,51 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		file = utils.AIRDROP_GOLDEN
 	}
 
-	// todo call ordignal
-	tx := time.Now().UTC().String()
+	resp, err := u.OrdService.Mint(ord_service.MintRequest{
+		WalletName:        from,
+		ProjectID:         projectid,
+		DryRun:            true,
+		AutoFeeRateSelect: false,
+		FeeRate:           feerate,
+		FileUrl:           file,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
 		Receiver:                  receiver.UUID,
 		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
-		Tx:                        tx,
-		Type:                      1,
+		Type:                      0,
 		ProjectId:                 projectid,
+		OrdinalResponseAction:     resp,
+		Status:                    0,
 		MintedInscriptionId:       mintedInscriptionId,
-		OrdinalResponseAction:     "{todo}",
+		InscriptionId:             "",
+		Tx:                        "",
 	}
-	err := u.Repo.InsertAirdrop(airDrop)
+	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
 		return nil, err
 	}
+
+	tmpText := resp.Stdout
+	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+	btcMintResp := &ord_service.MintStdoputRespose{}
+	bytes := []byte(jsonStr)
+	err = json.Unmarshal(bytes, btcMintResp)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
 	return airDrop, nil
 }
 
@@ -1359,7 +1417,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
-		u.AirdropArtist(pe.TokenID, "todo", *owner, 15)
+		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
