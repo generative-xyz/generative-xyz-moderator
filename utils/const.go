@@ -29,6 +29,7 @@ func ParseSort(key string) QuerySort {
 
 const (
 	MAX_CHECK_BALANCE int    = 15
+	PERCENT_EARNING   int    = 900
 	API_KEY           string = "Api-Key"
 	//AUTH_TOKEN           string = "Authorization" //token will be save in this variable
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
@@ -85,7 +86,8 @@ const (
 	KEY_BTC_WALLET_INFO            string = "btc_wallet_info"
 
 	COLLECTION_USERS                    string = "users"
-	COLLECTION_USER_VOLUMN                  string = "user_volumn"
+	COLLECTION_USER_VOLUMN              string = "user_volumn"
+	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"
@@ -110,6 +112,7 @@ const (
 	COLLECTION_COLLECTION_META          string = "collection_metas"
 	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
 	WALLET_TRACK_TX                     string = "wallet_track_txs"
+	COLLECTION_AIRDROP                  string = "airdrop"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
@@ -132,6 +135,10 @@ const (
 
 	NETWORK_BTC = "btc"
 	NETWORK_ETH = "eth"
+
+	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_03.json"
+	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_02.json"
+	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_01.json"
 )
 
 type PubSubSendOtp struct {

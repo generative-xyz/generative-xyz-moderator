@@ -77,8 +77,16 @@ func NewDefaultPagination(opts ...int64) *Pagination {
 	}
 }
 
-// Ex: page=1&limit=20&sort[]=id,asc&sort[]=created_at,desc
+// Input: page=1&limit=20&sort[]=id,asc&sort[]=created_at,desc
 // Or: page=1&limit=20&sort=id,asc&sort=created_at,desc
+// Out: &Pagination{
+// 			Page:     1,
+// 			PageSize: 20,
+// 			Sorts: []*Sort{
+// 				{"id", 1},
+// 				{"created_at", -1},
+// 			},
+// 		}
 func GetPagination(r *http.Request) *Pagination {
 	pag := NewDefaultPagination()
 	if err := utils.QueryParser(r, pag); err == nil && len(pag.Sort) > 0 {

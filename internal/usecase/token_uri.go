@@ -153,10 +153,10 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	u.Logger.LogAny("GetToken", zap.Any("req", req))
-	contractAddress := strings.ToLower(req.ContractAddress)
+	//contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
 
-	tokenUri, err := u.Repo.FindTokenBy(contractAddress, tokenID)
+	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		if errors.Is(err, mongo.ErrNoDocuments) {

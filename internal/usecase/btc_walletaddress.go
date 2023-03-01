@@ -694,7 +694,6 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
 		if err == nil {
 			minterDisplayName = minter.DisplayName
-			minterAddress = minter.WalletAddress
 		} else {
 			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
 		}

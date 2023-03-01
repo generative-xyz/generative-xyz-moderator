@@ -46,10 +46,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
 	files := api.PathPrefix("/files").Subrouter()
-	// files.Use(h.MiddleWare.AccessToken)
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	files.HandleFunc("/deflate", h.deflate).Methods("POST")
+	files.HandleFunc("/image/resize", h.resizeImage).Methods("POST")
 
 	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
 	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
@@ -58,14 +58,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.Use(h.MiddleWare.UserToken)
-	profile.HandleFunc("/withdraw", h.profileByWallet).Methods("POST")
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
-	profile.HandleFunc("/wallet/{walletAddress}/volume", h.getVolumeByWallet).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/volumn", h.getVolumnByWallet).Methods("GET")
 
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
+	singedIn.HandleFunc("/withdraw", h.withdraw).Methods("POST")
 	singedIn.HandleFunc("", h.profile).Methods("GET")
 	singedIn.HandleFunc("/projects", h.getUserProjects).Methods("GET")
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
@@ -79,8 +79,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET") // api detail project
-
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")

@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"rederinghub.io/internal/entity"
 )
 
@@ -130,9 +131,9 @@ func (r Repository) CreateVolumnIndexModel() ([]string, error) {
 	collection := entity.UserVolumn{}.TableName()
 	models := []mongo.IndexModel{
 		{Keys: bson.M{"amountType": -1}, Options: options.Index().SetName("vln_amountType_desc")},
-		{Keys: bson.M{"userID": -1}, Options: options.Index().SetName("vln_userID_desc")},
+		{Keys: bson.M{"creatorAddress": -1}, Options: options.Index().SetName("vln_userID_desc")},
 		{Keys: bson.M{"projectID": -1}, Options: options.Index().SetName("vln_projectID_desc")},
-		{Keys: bson.D{{Key: "amountType", Value: -1}, {Key: "userID", Value: -1}, {Key: "projectID", Value: -1}}, Options: options.Index().SetUnique(true)},
+		{Keys: bson.D{{Key: "amountType", Value: -1}, {Key: "creatorAddress", Value: -1}, {Key: "projectID", Value: -1}}, Options: options.Index().SetUnique(true)},
 	}
 
 	return r.CreateIndexes(collection, models)
@@ -142,7 +143,7 @@ func (r Repository) CreateVolumnIndexModel() ([]string, error) {
 // 	collection := entity.Categories{}.TableName()
 // 	models := []mongo.IndexModel{
 // 		{Keys: bson.M{"priority": -1}, Options: options.Index().SetName("cat_priority_desc")},
-		
+
 // 	}
 
 // 	return r.CreateIndexes(collection, models)
@@ -157,4 +158,34 @@ func (r Repository) CreateIndexes(collectionName string, models []mongo.IndexMod
 		return nil, err
 	}
 	return ind, nil
+}
+
+func (r Repository) CreateIndices(ctx context.Context, collectionName string, indices []string, unique bool, opts ...*options.CreateIndexesOptions) error {
+	var indexModels []mongo.IndexModel
+	for _, index := range indices {
+		indexModel := mongo.IndexModel{
+			Keys: bsonx.Doc{{Key: index,
+				Value: bsonx.Int32(1)}},
+			Options: options.Index().SetUnique(unique),
+		}
+		indexModels = append(indexModels, indexModel)
+	}
+	_, err := r.DB.Collection(collectionName).Indexes().CreateMany(ctx, indexModels, opts...)
+	return err
+}
+
+func (r Repository) CreateCompoundIndex(ctx context.Context, collectionName string, compoundIndex []string, unique bool, opts ...*options.CreateIndexesOptions) error {
+	var indices bsonx.Doc
+	for _, index := range compoundIndex {
+		indices = append(indices, bsonx.Elem{
+			Key:   index,
+			Value: bsonx.Int32(1),
+		})
+	}
+	index := mongo.IndexModel{
+		Keys:    indices,
+		Options: options.Index().SetUnique(unique),
+	}
+	_, err := r.DB.Collection(collectionName).Indexes().CreateOne(ctx, index, opts...)
+	return err
 }

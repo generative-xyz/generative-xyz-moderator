@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
+	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
@@ -30,6 +31,7 @@ import (
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
+	_ "rederinghub.io/mongo/migrate"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
@@ -83,13 +85,9 @@ func init() {
 // @version 1.0.0
 // @description This is a sample server Autonomous devices management server.
 
-// @securityDefinitions.apikey Authorization
+// @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
-
-// @securityDefinitions.apikey Api-Key
-// @in header
-// @name Api-Key
 
 // @BasePath /rederinghub.io/v1
 func main() {
@@ -163,7 +161,13 @@ func startServer() {
 	err = repo.CreateCollectionIndexes()
 	if err != nil {
 		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-		return
+		// return
+	}
+
+	// migration
+	migrate.SetDatabase(repo.DB)
+	if migrateErr := migrate.Up(-1); migrateErr != nil {
+		_logger.AtLog.Errorf("migrate failed", zap.Error(err))
 	}
 
 	uc, err := usecase.NewUsecase(&g, *repo)
@@ -234,7 +238,7 @@ func startServer() {
 	}
 
 	servers["inscription_index_crontab"] = delivery.AddedServer{
-		Server: inscriptionIndexCron,
+		Server:  inscriptionIndexCron,
 		Enabled: conf.Crontab.InscriptionIndexEnabled,
 	}
 

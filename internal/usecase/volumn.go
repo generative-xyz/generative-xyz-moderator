@@ -2,11 +2,14 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) AggregateVolumn() {
@@ -37,7 +40,7 @@ func (u Usecase) AggregateVolumn() {
 				//v := entity.FilterVolume
 				ev := &entity.UserVolumn{
 					CreatorAddress: &creatorID,
-					AmountType: &item.Paytype,
+					PayType: &item.Paytype,
 					ProjectID: &pID,
 					Amount: &item.Amount,
 					Project: entity.VolumeProjectInfo{
@@ -68,12 +71,91 @@ func (u Usecase) AggregateVolumn() {
 				}
 			}
 		}
-
 	}
 }
 
+func (u Usecase) AggregateReferal() {
+
+	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
+	if err != nil {
+		u.Logger.ErrorAny("AggregateReferal", zap.Any("err", err))
+		return
+	}
+
+	paytypes := []string{
+		string(entity.BIT),
+		string(entity.ETH),
+	}
+
+	for _, referral := range referrals  {
+		vol := make(map[string]entity.ReferreeVolumn)
+		for _, paytype := range paytypes{
+			
+			volume, err := u.GetVolumeOfUser(referral.Referree.WalletAddress, &paytype)
+			if err != nil {
+				vol[paytype] = entity.ReferreeVolumn{
+					Amount: "0",
+					AmountType: paytype,
+					Earn: "0",
+					GenEarn: "0",
+					RemainingEarn: "0",
+				}
+			}else{
+				refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, referral.Percent)
+				remaining := referral.ReferreeVolumn[paytype].RemainingEarn
+				if remaining == "" {
+					remaining = "0"
+				}
+
+				vol[paytype] = entity.ReferreeVolumn{
+					Amount: fmt.Sprintf("%d", int(volume.Amount)),
+					AmountType: paytype,
+					Earn: refEarning,
+					GenEarn: genEarning,
+					RemainingEarn: remaining,
+				}
+			}
+		}
+		referral.ReferreeVolumn = vol
+		_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
+		if err != nil {
+			u.Logger.ErrorAny("AggregateReferal",zap.Error(err))
+			return 
+		}
+	}
+	_ = referrals
+}
+
 func (u Usecase) GetVolumeOfUser(walletAddress string, amountType *string) (*entity.AggregateAmount, error) {
-	amount, err :=  u.Repo.AggregateAmount(walletAddress, amountType)
+	group := bson.M{"$group": bson.M{"_id": 
+		bson.M{"creatorAddress": "$creatorAddress", "payType": "$payType"}, 
+		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+	}}
+
+	amount, err :=  u.Repo.AggregateAmount(entity.FilterVolume{
+		CreatorAddress: &walletAddress,
+		AmountType: amountType,
+	}, group)
+	if err != nil {
+		return nil, err
+	}
+	if len(amount) == 0 {
+		return nil, errors.New("no document")
+	}
+	return &amount[0], nil
+}
+
+func (u Usecase) GetVolumeOfProject(projectID string, amountType *string) (*entity.AggregateAmount, error) {
+	group := bson.M{"$group": bson.M{"_id": 
+		bson.M{"projectID": "$projectID", "payType": "$payType"}, 
+		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+	}}
+
+	amount, err :=  u.Repo.AggregateAmount(entity.FilterVolume{
+		ProjectID: &projectID,
+		AmountType: amountType,
+	}, group)
+
 	if err != nil {
 		return nil, err
 	}
