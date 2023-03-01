@@ -301,6 +301,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		FileUrl:           file,
 	})
 	if err != nil {
+		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
 	}
 
@@ -318,6 +319,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	}
 	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
+		fmt.Printf("InsertAirdrop airdrop %v %v", err, airDrop)
 		return nil, err
 	}
 
@@ -328,12 +330,12 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
-		u.Logger.Error(err)
+		fmt.Printf("InsertAirdrop Unmarshal airdrop %v %v", err, airDrop)
 		return nil, err
 	}
 	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
 	if err != nil {
-		u.Logger.Error(err)
+		fmt.Printf("UpdateAirdrop airdrop %v %v", err, airDrop)
 		return nil, err
 	}
 
@@ -362,6 +364,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		FileUrl:           file,
 	})
 	if err != nil {
+		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
 	}
 
@@ -379,6 +382,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	}
 	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
+		fmt.Printf("InsertAirdrop airdrop %v %v", err, airDrop)
 		return nil, err
 	}
 
@@ -389,11 +393,13 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
+		fmt.Printf("InsertAirdrop Unmarshal airdrop %v %v", err, airDrop)
 		u.Logger.Error(err)
 		return nil, err
 	}
 	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
 	if err != nil {
+		fmt.Printf("UpdateAirdrop airdrop %v %v", err, airDrop)
 		u.Logger.Error(err)
 		return nil, err
 	}
