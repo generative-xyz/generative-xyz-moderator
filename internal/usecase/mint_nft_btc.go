@@ -522,7 +522,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		}
 		u.Logger.Info("mint.resp", resp)
 
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintOK", resp, false)
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
 
 		//update
 		// if not err => update status ok now:
