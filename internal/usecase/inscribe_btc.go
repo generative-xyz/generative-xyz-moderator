@@ -86,7 +86,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}, nil
 }
 
-func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
+func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
 	u.Logger.Info("input", input)
 
@@ -131,9 +131,8 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 	if err != nil {
 		u.Logger.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
 		return nil, err
-	} else {
-		walletAddress.Mnemonic = resp.Stdout
 	}
+	walletAddress.Mnemonic = resp.Stdout
 
 	u.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", resp)
 	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
@@ -189,7 +188,8 @@ func (u Usecase) CreateInscribeBTC(input structure.InscribeBtcReceiveAddrRespReq
 
 	if input.NeedVerifyAuthentic() {
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
-			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID", zap.Any("raw_data", nft))
+			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
+				zap.Any("raw_data", nft))
 			walletAddress.IsAuthentic = true
 			walletAddress.TokenAddress = nft.TokenAddress
 			walletAddress.TokenId = nft.TokenID
@@ -779,7 +779,6 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userWallet, delegateWal
 				resp[delegateWalletAddress].Total = int64(nfts.Total)
 				resp[delegateWalletAddress].SetTotalPage()
 			}
-			// walletAddress = empty
 		} else {
 			walletAddress = userWallet
 		}
