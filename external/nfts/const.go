@@ -4,7 +4,7 @@ const (
 	KeyOwner          string = "owner"
 	KeyLimit          string = "limit"
 	KeyOffset         string = "offset"
-	KeyCurrsor        string = "currsor"
+	KeyCurrsor        string = "cursor"
 	KeyTokenAddresses string = "token_addresses"
 	KeyChain          string = "chain"
 	KeyFormat         string = "format"

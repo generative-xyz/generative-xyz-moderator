@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -40,7 +41,6 @@ func (h *httpDelivery) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -83,7 +83,7 @@ func (h *httpDelivery) CreateMultipartUpload(w http.ResponseWriter, r *http.Requ
 	}
 
 	h.Logger.Info("resp.uploadID", uploadID)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.FileResponse{UploadID: *uploadID}, "")
 }
 
@@ -143,7 +143,6 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, map[string]interface{}{}, "")
 }
 
@@ -173,7 +172,7 @@ func (h *httpDelivery) CompleteMultipartUpload(w http.ResponseWriter, r *http.Re
 	}
 
 	h.Logger.Info("resp.fileURL", fileURL)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.MultipartUploadResponse{FileURL: *fileURL}, "")
 
 }
@@ -205,7 +204,6 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 }
 
@@ -219,7 +217,7 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=structure.DeflateDataResp}
 // @Router /files/deflate [POST]
 func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
-reqBody := &structure.DeflateDataResp{}
+	reqBody := &structure.DeflateDataResp{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(reqBody)
 	if err != nil {
@@ -234,6 +232,17 @@ reqBody := &structure.DeflateDataResp{}
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
+}
+
+// @Summary Upload file
+// @Description Upload file
+// @Tags Files
+// @Content-Type: application/json
+// @Router /files/image/resize [POST]
+func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+		// TODO
+		return nil, nil
+	}).ServeHTTP(w, r)
 }
