@@ -308,6 +308,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, resp), zap.Any("Error", err))
 		return nil, err
 	}
+	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
@@ -375,6 +376,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, resp), zap.Any("Error", err))
 		return nil, err
 	}
+	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
