@@ -173,3 +173,19 @@ func (r Repository) CreateIndices(ctx context.Context, collectionName string, in
 	_, err := r.DB.Collection(collectionName).Indexes().CreateMany(ctx, indexModels, opts...)
 	return err
 }
+
+func (r Repository) CreateCompoundIndex(ctx context.Context, collectionName string, compoundIndex []string, unique bool, opts ...*options.CreateIndexesOptions) error {
+	var indices bsonx.Doc
+	for _, index := range compoundIndex {
+		indices = append(indices, bsonx.Elem{
+			Key:   index,
+			Value: bsonx.Int32(1),
+		})
+	}
+	index := mongo.IndexModel{
+		Keys:    indices,
+		Options: options.Index().SetUnique(unique),
+	}
+	_, err := r.DB.Collection(collectionName).Indexes().CreateOne(ctx, index, opts...)
+	return err
+}
