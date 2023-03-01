@@ -243,9 +243,10 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 // @Summary Upload file
 // @Description Upload file
 // @Tags Files
-// @Content-Type: application/json
-// @Param request body request.FileResize true "Body"
-// @Success 200 {object}  request.FileResize{}
+// @Accept json
+// @Produce json
+// @Param request body request.FileResize true "Base64 File Request"
+// @Success 200 {object} request.FileResize{}
 // @Router /files/image/resize [POST]
 func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
