@@ -198,8 +198,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
-	
-	catureTime :=  entity.DEFAULT_CAPTURE_TIME
+
+	catureTime := entity.DEFAULT_CAPTURE_TIME
 	pe.CatureThumbnailDelayTime = &catureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
@@ -265,19 +265,20 @@ func (u Usecase) CheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-			} else {
+			}
+			/*else {
 				fmt.Printf("CheckAirdrop fail - %v", txInfo)
 				data, err := json.Marshal(txInfo)
 				temp := ""
 				if err == nil {
 					temp = string(data)
 				}
-				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, temp)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 0, temp)
 				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
 					"Airdrop fail",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
-			}
+			}*/
 		}
 	}
 	return nil
