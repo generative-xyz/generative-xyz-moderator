@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
+	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
@@ -30,6 +31,7 @@ import (
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
+	_ "rederinghub.io/mongo/migrate"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
@@ -162,6 +164,12 @@ func startServer() {
 		// return
 	}
 
+	// migration
+	migrate.SetDatabase(repo.DB)
+	if migrateErr := migrate.Up(-1); migrateErr != nil {
+		_logger.AtLog.Errorf("migrate failed", zap.Error(err))
+	}
+
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
 		logger.Error("LoadUsecases - Cannot init usecase", err)
@@ -230,7 +238,7 @@ func startServer() {
 	}
 
 	servers["inscription_index_crontab"] = delivery.AddedServer{
-		Server: inscriptionIndexCron,
+		Server:  inscriptionIndexCron,
 		Enabled: conf.Crontab.InscriptionIndexEnabled,
 	}
 
