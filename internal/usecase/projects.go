@@ -301,7 +301,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		FileUrl:           file,
 	})
 	if err != nil {
-		fmt.Printf("OrdService.Mint airdrop %v", err)
+		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
 	}
 
@@ -364,6 +364,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		FileUrl:           file,
 	})
 	if err != nil {
+		fmt.Printf("OrdService.Mint airdrop %v %v", err, resp)
 		return nil, err
 	}
 
