@@ -256,6 +256,10 @@ func (u Usecase) CheckAirdrop() error {
 					temp = string(data)
 				}
 				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 1, temp)
+				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+					"Airdrop success",
+					airdrop.ReceiverBtcAddressTaproot,
+					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
 			} else {
 				fmt.Printf("CheckAirdrop fail - %v", txInfo)
 				data, err := json.Marshal(txInfo)
@@ -264,6 +268,10 @@ func (u Usecase) CheckAirdrop() error {
 					temp = string(data)
 				}
 				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, temp)
+				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+					"Airdrop fail",
+					airdrop.ReceiverBtcAddressTaproot,
+					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
 			}
 		}
 	}
@@ -288,7 +296,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
-		Receiver:                  receiver.ID,
+		Receiver:                  receiver.UUID,
 		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
 		Tx:                        tx,
 		Type:                      0,
@@ -320,7 +328,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
-		Receiver:                  receiver.ID,
+		Receiver:                  receiver.UUID,
 		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
 		Tx:                        tx,
 		Type:                      1,
