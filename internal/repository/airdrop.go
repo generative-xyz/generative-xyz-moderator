@@ -56,9 +56,9 @@ func (r Repository) UpdateAirdropByTx(tx string, data *entity.Airdrop) (*mongo.U
 	return result, nil
 }
 
-func (r Repository) UpdateAirdropStatusByTx(tx string, status int) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateAirdropStatusByTx(tx string, status int, ordinalResponseAction string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"tx", tx}}
-	update := bson.M{"$set": bson.M{"status": status}}
+	update := bson.M{"$set": bson.M{"status": status, "ordinalResponseAction": ordinalResponseAction}}
 	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err

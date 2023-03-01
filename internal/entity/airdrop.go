@@ -14,6 +14,9 @@ type Airdrop struct {
 	ReceiverBtcAddressTaproot string `bson:"receiverBtcAddressTaproot"`
 	Type                      int    `bson:"type"`   // 0 artist, 1 collector
 	Status                    int    `bson:"status"` // 0 pending, 1 success, 2 fail
+	ProjectId                 string `bson:"projectId"`
+	MintedInscriptionId       string `bson:"mintedInscriptionId"`
+	OrdinalResponseAction     string `bson:"ordinalResponseAction"`
 }
 
 func (u Airdrop) TableName() string {
