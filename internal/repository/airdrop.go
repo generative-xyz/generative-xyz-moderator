@@ -46,9 +46,10 @@ func (r Repository) InsertAirdrop(data *entity.Airdrop) error {
 	return nil
 }
 
-func (r Repository) UpdateAirdropByTx(tx string, data *entity.Airdrop) (*mongo.UpdateResult, error) {
-	filter := bson.D{{"tx", tx}}
-	result, err := r.UpdateOne(data.TableName(), filter, data)
+func (r Repository) UpdateAirdropMintInfoByUUid(uuid string, ordinalResponseAction string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"uuid", uuid}}
+	update := bson.M{"$set": bson.M{"status": 0, "ordinalResponseAction": ordinalResponseAction}}
+	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
