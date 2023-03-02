@@ -137,7 +137,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	}
 
 	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
-	aresp, err := h.Usecase.AlgoliaSearchInscription(filter)
+	aresp, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 	if err != nil {
 		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
