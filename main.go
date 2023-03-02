@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-
 	"time"
 
 	"go.uber.org/zap"
@@ -308,4 +307,5 @@ func startServer() {
 	tracer.Stop()
 	os.Exit(0)
 
+	//uc.AggregateVolumns()
 }
