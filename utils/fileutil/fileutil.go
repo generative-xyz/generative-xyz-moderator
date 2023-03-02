@@ -11,7 +11,6 @@ const (
 	MaxImageByteSize = 1024 * 1024 // 1MB
 	MaxImagePx       = 1024        // px
 	JpegQuality      = 90          // %
-
 )
 
 func ResizeImage(img image.Image, format imaging.Format, opts ...imaging.EncodeOption) ([]byte, error) {
