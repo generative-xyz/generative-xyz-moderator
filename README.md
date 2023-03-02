@@ -6,7 +6,7 @@ make run-server
 ```
 
 ```
- abigen --pkg generative_nft_contract --abi  ./artifacts/contracts/nfts/GenerativeNFT.sol/GenerativeNFT.json --out /Users/autonomous/go/src/generative-xyz/generative-xyz-moderator/utils/contracts/generative_nft_contract/GenerativeNFT.go
+ abigen --pkg generative_nft_contract --abi  ./artifacts/contracts/nfts/GenerativeNFT.sol/GenerativeNFT.json --out /Users/autonomous/go/src/rendering-hub/utils/contracts/generative_nft_contract/GenerativeNFT.go
 ```
 
 ```
