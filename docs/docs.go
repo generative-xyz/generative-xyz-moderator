@@ -3442,6 +3442,12 @@ const docTemplate = `{
                         "description": "search",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "object type",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4178,6 +4184,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "catureThumbnailDelayTime": {
+                    "type": "integer"
+                },
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
@@ -4882,9 +4891,6 @@ const docTemplate = `{
                 },
                 "fileName": {
                     "type": "string"
-                },
-                "isAuthentic": {
-                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
