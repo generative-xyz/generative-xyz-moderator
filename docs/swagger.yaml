@@ -131,6 +131,8 @@ definitions:
         items:
           type: string
         type: array
+      catureThumbnailDelayTime:
+        type: integer
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -175,6 +177,8 @@ definitions:
       license:
         type: string
       limitSupply:
+        type: integer
+      maxFileSize:
         type: integer
       maxSupply:
         type: integer
@@ -1061,6 +1065,8 @@ definitions:
       license:
         type: string
       limit:
+        type: integer
+      maxFileSize:
         type: integer
       maxSupply:
         type: integer
@@ -2175,36 +2181,6 @@ paths:
       summary: BTC List Inscribe
       tags:
       - Inscribe
-  /inscribe/list-nft-from-moralis:
-    get:
-      consumes:
-      - application/json
-      description: List NFT from Moralis
-      parameters:
-      - description: Wallet Address
-        in: query
-        name: walletAddress
-        type: string
-      - description: Last Id
-        in: query
-        name: cursor
-        type: string
-      - description: Limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entity.Pagination'
-      security:
-      - ApiKeyAuth: []
-      summary: List NFT from Moralis
-      tags:
-      - Inscribe
   /inscribe/nft-detail/{ID}:
     get:
       consumes:
@@ -2226,32 +2202,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: BTC NFT Detail Inscribe
-      tags:
-      - Inscribe
-  /inscribe/nft-from-moralis:
-    get:
-      consumes:
-      - application/json
-      description: NFT from Moralis
-      parameters:
-      - description: Token Address
-        in: query
-        name: tokenAddress
-        type: string
-      - description: Token Id
-        in: query
-        name: tokenId
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/nfts.MoralisToken'
-      security:
-      - ApiKeyAuth: []
-      summary: NFT from Moralis
       tags:
       - Inscribe
   /inscribe/receive-address:
@@ -3394,6 +3344,90 @@ paths:
       summary: Create referral
       tags:
       - Referral
+  /search:
+    get:
+      consumes:
+      - application/json
+      description: Search
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Search
+      tags:
+      - Search
+  /token-moralis/nfts:
+    get:
+      consumes:
+      - application/json
+      description: List NFT from Moralis
+      parameters:
+      - description: Wallet Address
+        in: query
+        name: walletAddress
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List NFT from Moralis
+      tags:
+      - Token Moralis
+  /token-moralis/nfts/{tokenAddress}:
+    get:
+      consumes:
+      - application/json
+      description: NFT from Moralis
+      parameters:
+      - description: Token Address
+        in: path
+        name: tokenAddress
+        type: string
+      - description: Token Id
+        in: query
+        name: tokenId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/nfts.MoralisToken'
+      security:
+      - ApiKeyAuth: []
+      summary: NFT from Moralis
+      tags:
+      - Token Moralis
   /token-uri:
     get:
       consumes:

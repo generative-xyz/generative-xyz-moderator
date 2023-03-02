@@ -156,8 +156,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
-	inscribe.HandleFunc("/list-nft-from-moralis", h.listNftFromMoralis).Methods("GET")
-	inscribe.HandleFunc("/nft-from-moralis", h.nftFromMoralis).Methods("GET")
+
+	tokenMoralis := api.PathPrefix("/token-moralis").Subrouter()
+	tokenMoralis.Use(h.MiddleWare.AccessToken)
+	tokenMoralis.HandleFunc("/nfts", h.listNftFromMoralis).Methods("GET")
+	tokenMoralis.HandleFunc("/nfts/{tokenAddress}", h.nftFromMoralis).Methods("GET")
 
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
@@ -211,6 +214,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	tokenUri := api.PathPrefix("/token-uri").Subrouter()
 	tokenUri.HandleFunc("", h.getTokenUris).Methods("GET")
+
+	search := api.PathPrefix("/search").Subrouter()
+	search.HandleFunc("", h.search).Methods("GET")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
@@ -260,6 +266,36 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 	if page != "" {
 		pageInt, err = strconv.Atoi(page)
 		if err != nil {
+			return nil, err
+		}
+	}
+
+	sortQuery := r.URL.Query().Get("sort")
+	sortObject := utils.ParseSort(sortQuery)
+
+	f.SortBy = sortObject.SortBy
+	f.Sort = sortObject.Sort
+	f.Page = int64(pageInt)
+	f.Limit = int64(limitInt)
+
+	return f, nil
+}
+
+func (h *httpDelivery) BaseAlgoliaFilters(r *http.Request) (*structure.BaseFilters, error) {
+	f := &structure.BaseFilters{}
+	limitInt := 10
+	pageInt := 0
+	var err error
+	limit := r.URL.Query().Get("limit")
+	if limit != "" {
+		if limitInt, err = strconv.Atoi(limit); err != nil {
+			return nil, err
+		}
+	}
+
+	page := r.URL.Query().Get("page")
+	if page != "" {
+		if pageInt, err = strconv.Atoi(page); err != nil {
 			return nil, err
 		}
 	}
