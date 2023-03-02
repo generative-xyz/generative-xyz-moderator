@@ -157,6 +157,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
 			maxSize := helpers.CalcOrigBinaryLength(animationURL)
+			pe.MaxFileSize = int64(maxSize)
 			pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
 			htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(animationURL, "data:text/html;base64,", ""))
 			if err == nil {
@@ -1406,6 +1407,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe.IsSynced = true
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
