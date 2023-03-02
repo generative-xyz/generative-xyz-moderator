@@ -46,4 +46,7 @@ type SearchProject struct {
 	Image       string   `json:"image"`
 	CreatorAddr string   `json:"creatorAddr"`
 	Categories  []string `json:"categories"`
+	Index       int64    `json:"index"`
+	MintPrice   string   `json:"mintPrice"`
+	MaxSupply   int64    `json:"maxSupply"`
 }
