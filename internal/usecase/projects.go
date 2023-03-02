@@ -395,9 +395,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	//if os.Getenv("ENV") == "mainnet" {
-	//	return nil, nil
-	//}
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
 	// get file
 	feerate = 3
 	random := rand.Intn(100)
