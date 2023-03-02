@@ -1495,54 +1495,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/inscribe/list-nft-from-moralis": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List NFT from Moralis",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Inscribe"
-                ],
-                "summary": "List NFT from Moralis",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet Address",
-                        "name": "walletAddress",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Last Id",
-                        "name": "cursor",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/entity.Pagination"
-                        }
-                    }
-                }
-            }
-        },
         "/inscribe/nft-detail/{ID}": {
             "get": {
                 "security": [
@@ -1575,48 +1527,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entity.InscribeBTCResp"
-                        }
-                    }
-                }
-            }
-        },
-        "/inscribe/nft-from-moralis": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "NFT from Moralis",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Inscribe"
-                ],
-                "summary": "NFT from Moralis",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Token Address",
-                        "name": "tokenAddress",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token Id",
-                        "name": "tokenId",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/nfts.MoralisToken"
                         }
                     }
                 }
@@ -3454,6 +3364,96 @@ const docTemplate = `{
                 }
             }
         },
+        "/token-moralis/nfts": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List NFT from Moralis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token Moralis"
+                ],
+                "summary": "List NFT from Moralis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet Address",
+                        "name": "walletAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
+        "/token-moralis/nfts/{tokenAddress}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "NFT from Moralis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token Moralis"
+                ],
+                "summary": "NFT from Moralis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token Address",
+                        "name": "tokenAddress",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token Id",
+                        "name": "tokenId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/nfts.MoralisToken"
+                        }
+                    }
+                }
+            }
+        },
         "/token-uri": {
             "get": {
                 "description": "get tokenUris",
@@ -4178,6 +4178,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "catureThumbnailDelayTime": {
+                    "type": "integer"
+                },
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
@@ -4243,6 +4246,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "limitSupply": {
+                    "type": "integer"
+                },
+                "maxFileSize": {
                     "type": "integer"
                 },
                 "maxSupply": {
@@ -4882,9 +4888,6 @@ const docTemplate = `{
                 },
                 "fileName": {
                     "type": "string"
-                },
-                "isAuthentic": {
-                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
@@ -5588,6 +5591,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "limit": {
+                    "type": "integer"
+                },
+                "maxFileSize": {
                     "type": "integer"
                 },
                 "maxSupply": {
