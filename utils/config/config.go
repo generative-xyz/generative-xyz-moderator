@@ -46,11 +46,13 @@ type Config struct {
 
 	MarketBTCServiceFeeAddress string
 
-	OtherCategoryID string
+	OtherCategoryID      string
 	UnverifiedCategoryID string
 
-	TrendingConfig TrendingConfig
-	MaxReportCount int
+	TrendingConfig       TrendingConfig
+	MaxReportCount       int
+	AlgoliaApiKey        string
+	AlgoliaApplicationId string
 }
 
 type TrendingConfig struct {
@@ -332,7 +334,9 @@ func NewConfig() (*Config, error) {
 			BoostedCategoryID:    boostedTrendingCategoryID,
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
-		MaxReportCount: maxReportCount,
+		MaxReportCount:       maxReportCount,
+		AlgoliaApiKey:        os.Getenv("ALGOLIA_API_KEY"),
+		AlgoliaApplicationId: os.Getenv("ALGOLIA_APPLICATION_ID"),
 	}
 
 	return conf, nil
