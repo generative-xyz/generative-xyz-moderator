@@ -129,6 +129,8 @@ const (
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
 	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
 
+	FEE_ETH_SEND_MASTER = 0.0006
+
 	INSCRIBE_TIMEOUT = 6
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
