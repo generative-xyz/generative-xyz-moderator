@@ -3362,6 +3362,10 @@ paths:
         in: query
         name: search
         type: string
+      - description: object type
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
