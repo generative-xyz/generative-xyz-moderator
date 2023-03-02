@@ -72,14 +72,16 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	defer cancel()
 
 	imageURL := token.AnimationURL
-	htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
-
-	uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
-	if err == nil {
-		fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
-		imageURL = fileURI
+	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
+		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
+		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
+		if err == nil {
+			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
+			imageURL = fileURI
+		}
+		u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	}
-	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
+	
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
@@ -137,7 +139,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded), zap.Any("resp", resp))
+	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL),  zap.Any("resp", resp))
 	return resp, nil
 }
 
@@ -684,7 +686,10 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		}
 		imageURI = data.AnimationUrl
 		tokenUri.AnimationURL = imageURI
-	} else {
+	}else if strings.Index(mintedURL, ".html") != -1 {
+		imageURI = mintedURL
+		tokenUri.AnimationURL = mintedURL
+	}else {
 		now := time.Now().UTC()
 		imageURI = mintedURL
 		tokenUri.AnimationURL = ""
