@@ -465,24 +465,24 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 
 		txHash, err := chainhash.NewHashFromStr(txHashDb)
 		if err != nil {
-			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not NewHashFromStr Bitcoin RPCClient ")
 			continue
 		}
-
+		txConfirmation := false
 		txResponse, err := btcClient.GetTransaction(txHash)
-
 		if err == nil {
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
+				txConfirmation = true
 				// send btc ok now:
 				item.Status = statusSuccess
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
-					fmt.Printf("Could not JobInscribeCheckTxSend id %s - with err: %v", item.ID, err)
+					logger.AtLog.Logger.With(fields...).Error("Could not JobInscribeCheckTxSend")
 				}
 			}
 		} else {
-			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not GetTransaction Bitcoin RPCClient")
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
@@ -494,7 +494,9 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				logger.AtLog.Logger.With(fields...).Error("Could not CheckTx")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
+
 			if txInfo.Confirmations >= 1 {
+				txConfirmation = true
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
@@ -518,7 +520,7 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 		}
 
 		// add contract
-		if item.NeedAddContractToOrdinalsContract() {
+		if txConfirmation && item.NeedAddContractToOrdinalsContract() {
 			tokenAddress := common.HexToAddress(item.TokenAddress)
 			tokenID := new(big.Int)
 			tokenID, ok := tokenID.SetString(item.TokenId, 10)
