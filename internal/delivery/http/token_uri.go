@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -129,9 +130,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
-
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
+	aresp, err := h.Usecase.AlgoliaSearchInscription(filter)
+	if err != nil {
+		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -139,6 +147,18 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	h.Logger.Info("h.Usecase.GetToken", token.TokenID)
 
 	resp, err := h.tokenToResp(token)
+	for _, i := range aresp {
+		if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
+			resp.OrdinalsData = &response.OrdinalsData{
+				Sat:         i.Inscription.Sat,
+				ContentType: i.Inscription.ContentType,
+				Timestamp:   i.Inscription.Timestamp,
+				Block:       i.Inscription.GenesisHeight,
+			}
+			break
+		}
+	}
+
 	if err != nil {
 		err := errors.New("Cannot parse products")
 		h.Logger.Error("tokenToResp", err.Error(), err)
@@ -570,7 +590,6 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	if strings.Index(resp.Image, "glb") == -1 {
 		resp.Image = input.Thumbnail
 	}
-	
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)
