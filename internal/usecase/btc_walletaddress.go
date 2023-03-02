@@ -646,9 +646,6 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					return
 				}
 
-				go u.CreateMintActivity(item.InscriptionID, item.Amount)
-				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintResponse.Fees)
-
 				//TODO: - create entity.TokenURI
 				_, err = u.CreateBTCTokenURI(item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
 				if err != nil {
@@ -661,6 +658,9 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					u.Logger.Error(err)
 					return
 				}
+				go u.CreateMintActivity(item.InscriptionID, item.Amount)
+				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintResponse.Fees)
+
 			} else {
 				u.Logger.Info("checkTx.Inscription.Existed", false)
 			}
@@ -724,7 +724,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
 	collectionName := project.Name
 	itemCount := project.MaxSupply
-	mintedCount := project.MintingInfo.Index
+	mintedCount := tokenUri.OrderInscriptionIndex
 
 	fields := make([]discordclient.Field, 0)
 	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
