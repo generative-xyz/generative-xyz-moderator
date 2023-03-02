@@ -29,6 +29,11 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if objType == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Missing object type for search"))
+		return
+	}
+
 	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
 		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
@@ -41,44 +46,45 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		SearchStr: search, ObjType: objType,
 		Page: int(bf.Page), Limit: int(bf.Limit),
 	}
+	t, tp := 0, 0
 
-	resp, err := h.Usecase.AlgoliaSearchProject(filter)
-	if err != nil {
-		h.Logger.Error("h.Usecase.AlgoliaSearchProject", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
+	switch objType {
+	case "project":
+		dataResp, t, tp, err = h.Usecase.AlgoliaSearchProject(filter)
+		if err != nil {
+			h.Logger.Error("h.Usecase.AlgoliaSearchProject", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	case "inscription":
+		dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
+		if err != nil {
+			h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	case "artist":
+		dataResp, t, tp, err = h.Usecase.AlgoliaSearchArtist(filter)
+		if err != nil {
+			h.Logger.Error("h.Usecase.AlgoliaSearchArtist", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	case "token":
+		dataResp, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
+		if err != nil {
+			h.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	}
-	dataResp = append(dataResp, resp...)
-
-	resp, err = h.Usecase.AlgoliaSearchInscription(filter)
-	if err != nil {
-		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	dataResp = append(dataResp, resp...)
-
-	resp, err = h.Usecase.AlgoliaSearchArtist(filter)
-	if err != nil {
-		h.Logger.Error("h.Usecase.AlgoliaSearchArtist", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	dataResp = append(dataResp, resp...)
-
-	resp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
-	if err != nil {
-		h.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	dataResp = append(dataResp, resp...)
 
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(filter.Page)
 	result.PageSize = int64(filter.Limit)
-	result.Total = 10000
+	result.TotalPage = int64(tp)
+	result.Total = int64(t)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, result.Result), "")
 }
