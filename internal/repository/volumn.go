@@ -140,7 +140,7 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.
 func (r Repository) FindVolumn(projectID string, amountType string) (*entity.UserVolumn, error) {
 	projectID = strings.ToLower(projectID)
 	resp := &entity.UserVolumn{}
-	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"projectID", projectID}, {"amountType", amountType}})
+	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"projectID", projectID}, {"payType", amountType}})
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (r Repository) FindVolumn(projectID string, amountType string) (*entity.Use
 func (r Repository) FindVolumnByWalletAddress(creatorAddress string, amountType string) (*entity.UserVolumn, error) {
 	creatorAddress = strings.ToLower(creatorAddress)
 	resp := &entity.UserVolumn{}
-	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"creatorAddress", creatorAddress}, {"amountType", amountType}})
+	usr, err := r.FilterOne(entity.UserVolumn{}.TableName(), bson.D{{"creatorAddress", creatorAddress}, {"payType", amountType}})
 	if err != nil {
 		return nil, err
 	}
