@@ -52,7 +52,9 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	f := bson.D{{
 		Key:   "seller_address",
 		Value: user_address,
-	}}
+	},
+		{Key: "matched", Value: false},
+		{Key: "cancelled", Value: false}}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},
@@ -74,6 +76,7 @@ func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*ent
 	f := bson.D{
 		{Key: "inscription_id", Value: id},
 		{Key: "matched", Value: false},
+		{Key: "cancelled", Value: false},
 	}
 
 	orderInfo, err := r.FilterOne(utils.COLLECTION_DEX_BTC_LISTING, f, &options.FindOneOptions{

@@ -55,7 +55,12 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
 		outcoins = append(outcoins, o)
 	}
-	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins)
+	currentListing, err := u.Repo.GetDexBTCListingOrderUserPending(address)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
+	}
+
+	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +90,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 
 	newTxrefsFiltered := []structure.TxRef{}
-	currentListing, err := u.Repo.GetDexBTCListingOrderUserPending(address)
-	if err != nil {
-		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
-	} else {
+	if len(currentListing) > 0 {
 		pendingUTXO := make(map[string]struct{})
 		for _, listing := range currentListing {
 			for _, input := range listing.Inputs {
@@ -110,7 +112,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
@@ -152,6 +154,17 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 					inscWalletInfo.ProjectID = internalInfo.ProjectID
 					inscWalletInfo.ProjecName = internalInfo.Project.Name
 					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+				}
+				for _, listing := range currentListing {
+					if listing.InscriptionID == data.InscriptionID {
+						if listing.CancelTx != "" {
+							inscWalletInfo.Buyable = true
+						} else {
+							inscWalletInfo.Cancelling = true
+						}
+						inscWalletInfo.OrderID = listing.UUID
+						inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+					}
 				}
 				result[output] = append(result[output], inscWalletInfo)
 				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
