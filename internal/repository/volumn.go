@@ -187,9 +187,9 @@ func (r Repository) UpdateVolumn(ID string, data *entity.UserVolumn) (*mongo.Upd
 }
 
 
-func (r Repository) UpdateVolumnAmount(ID string, amount string) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateVolumnAmount(ID string, amount string,  earning string, gearning string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, ID}}
-	update := bson.M{"$set": bson.M{"amount": amount}}
+	update := bson.M{"$set": bson.M{"amount": amount, "earning": earning, "genEarning":  gearning}}
 	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err

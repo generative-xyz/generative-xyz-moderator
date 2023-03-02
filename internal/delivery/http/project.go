@@ -444,8 +444,9 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.IsHidden = input.IsHidden
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
+	resp.MaxFileSize = input.MaxFileSize
 	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
- 	resp.Stats = response.ProjectStatResp{
+	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
 		FloorPrice:         input.Stats.FloorPrice,
@@ -713,7 +714,6 @@ func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 
 // UserCredits godoc
 // @Summary get project's volumn
