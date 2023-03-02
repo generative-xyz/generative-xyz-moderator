@@ -11,6 +11,7 @@ type SearchResponse struct {
 type SearhcInscription struct {
 	ObjectId      string `json:"objectId"`
 	InscriptionId string `json:"inscriptionId"`
+	ContentType   string `json:"contentType"`
 	Number        int64  `json:"number"`
 	Sat           string `json:"sat"`
 	Chain         string `json:"chain"`
