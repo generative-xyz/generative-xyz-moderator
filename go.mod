@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	cloud.google.com/go/storage v1.29.0
+	github.com/algolia/algoliasearch-client-go/v3 v3.26.4
 	github.com/antchfx/htmlquery v1.3.0
 	github.com/aws/aws-sdk-go v1.44.211
 	github.com/blockcypher/gobcy/v2 v2.0.5
