@@ -488,6 +488,7 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"whiteListEthContracts", 1},
 		{"isFullChain", 1},
 		{"reportUsers", 1},
+		{"mintpriceeth", 1},
 	}
 	return f
 }
