@@ -434,6 +434,54 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	return airDrop, nil
 }
 
+func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if receiver.UUID == "" {
+		return nil, nil
+	}
+	// TODO check
+	isTokenGated := false
+	if !isTokenGated {
+		u.Logger.LogAny(fmt.Sprintf("TODO AirdropTokenGatedNewUser"))
+		return nil, nil
+	}
+
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      2,
+		ProjectId:                 "",
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	return airDrop, nil
+}
+
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
