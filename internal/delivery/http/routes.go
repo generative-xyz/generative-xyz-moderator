@@ -208,6 +208,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 
+	inscriptionDex := api.PathPrefix("/dex").Subrouter()
+	wallet.Use(h.MiddleWare.AccessToken)
+	// inscriptionDex.HandleFunc("/forsale", h.btcMarketplaceListing).Methods("GET")
+	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
+
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
