@@ -3321,6 +3321,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/search": {
+            "get": {
+                "description": "Search",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "object type",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-moralis/nfts": {
             "get": {
                 "security": [
@@ -4203,6 +4252,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "limitSupply": {
+                    "type": "integer"
+                },
+                "maxFileSize": {
                     "type": "integer"
                 },
                 "maxSupply": {
@@ -5545,6 +5597,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "limit": {
+                    "type": "integer"
+                },
+                "maxFileSize": {
                     "type": "integer"
                 },
                 "maxSupply": {

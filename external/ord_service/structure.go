@@ -13,6 +13,7 @@ type MintRequest struct {
 	DestinationAddress string `json:"destinationAddress"`
 	RequestId          string `json:"requestId"`
 	ProjectID          string `json:"projectID"`
+	FileUrlUnit        string `json:"fileUrlUnit"`
 }
 
 type ExecRespose struct {

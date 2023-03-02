@@ -24,6 +24,21 @@ func (r Repository) FindAirdropByStatus(status int) ([]*entity.Airdrop, error) {
 	return resp, nil
 }
 
+func (r Repository) FindAirdropByTokenGatedNewUser(userUUid string) (*entity.Airdrop, error) {
+	resp := &entity.Airdrop{}
+	filter := bson.D{{"type", 2}, {"receiver", userUUid}}
+	cursor, err := r.FilterOne(entity.Airdrop{}.TableName(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(cursor, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindAirdropByTx(tx string) (*entity.Airdrop, error) {
 	resp := &entity.Airdrop{}
 	usr, err := r.FilterOne(entity.Airdrop{}.TableName(), bson.D{{"tx", tx}})
@@ -46,9 +61,10 @@ func (r Repository) InsertAirdrop(data *entity.Airdrop) error {
 	return nil
 }
 
-func (r Repository) UpdateAirdropByTx(tx string, data *entity.Airdrop) (*mongo.UpdateResult, error) {
-	filter := bson.D{{"tx", tx}}
-	result, err := r.UpdateOne(data.TableName(), filter, data)
+func (r Repository) UpdateAirdropMintInfoByUUid(uuid string, ordinalResponseAction interface{}) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"uuid", uuid}}
+	update := bson.M{"$set": bson.M{"status": 0, "ordinalResponseAction": ordinalResponseAction}}
+	result, err := r.DB.Collection(utils.COLLECTION_AIRDROP).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}

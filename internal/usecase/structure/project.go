@@ -6,6 +6,7 @@ type FilterProjects struct {
 	Name          *string
 	CategoryIds   []string
 	IsHidden      *bool
+	Ids           []string
 }
 
 type FilterProposal struct {
