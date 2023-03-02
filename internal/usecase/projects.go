@@ -947,7 +947,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
 		if calNetworkFee > 0 {
 			networkFeeInt = calNetworkFee
-			c.NetworkFee = fmt.Sprint("%d", networkFeeInt)
+			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt)
 
 		}
 	}
