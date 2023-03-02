@@ -13,7 +13,7 @@ type Airdrop struct {
 	File                      string      `bson:"file"`
 	Receiver                  string      `bson:"receiver"`
 	ReceiverBtcAddressTaproot string      `bson:"receiverBtcAddressTaproot"`
-	Type                      int         `bson:"type"`   // 0 artist, 1 collector
+	Type                      int         `bson:"type"`   // 0 artist, 1 collector, TODO: 2 new user with token-gated whitelist
 	Status                    int         `bson:"status"` // 0 pending, 1 success, 2 fail, -1: init
 	ProjectId                 string      `bson:"projectId"`
 	MintedInscriptionId       string      `bson:"mintedInscriptionId"`

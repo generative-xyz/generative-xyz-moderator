@@ -251,6 +251,7 @@ func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}
 	resp.Total = data.Total
 	resp.Page = data.Page
 	resp.PageSize = data.PageSize
+	resp.TotalPage = data.TotalPage
 	return resp
 }
 

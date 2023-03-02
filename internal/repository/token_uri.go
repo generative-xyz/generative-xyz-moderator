@@ -336,6 +336,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"stats.price_int", 1},
 		{"minter_address", 1},
 		{"inscription_index", 1},
+		{"order_inscription_index", 1},
 	}
 	return f
 }

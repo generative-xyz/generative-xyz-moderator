@@ -11,6 +11,7 @@ type SearchResponse struct {
 type SearhcInscription struct {
 	ObjectId      string `json:"objectId"`
 	InscriptionId string `json:"inscriptionId"`
+	ContentType   string `json:"contentType"`
 	Number        int64  `json:"number"`
 	Sat           string `json:"sat"`
 	Chain         string `json:"chain"`
@@ -40,10 +41,14 @@ type SearchTokenUri struct {
 }
 
 type SearchProject struct {
-	ObjectId    string   `json:"objectId"`
-	TokenId     string   `json:"tokenId"`
-	Name        string   `json:"name"`
-	Image       string   `json:"image"`
-	CreatorAddr string   `json:"creatorAddr"`
-	Categories  []string `json:"categories"`
+	ObjectId        string   `json:"objectId"`
+	TokenId         string   `json:"tokenId"`
+	Name            string   `json:"name"`
+	Image           string   `json:"image"`
+	CreatorAddrr    string   `json:"creatorAddrr"`
+	ContractAddress string   `json:"contractAddress"`
+	Categories      []string `json:"categories"`
+	Index           int64    `json:"index"`
+	MintPrice       string   `json:"mintPrice"`
+	MaxSupply       int64    `json:"maxSupply"`
 }

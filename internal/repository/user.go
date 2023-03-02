@@ -60,7 +60,6 @@ func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, erro
 
 func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
-
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT, btcAddress}})
 	if err != nil {
 		return nil, err
@@ -70,7 +69,6 @@ func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.User
 	if err != nil {
 		return nil, err
 	}
-
 	return resp, nil
 }
 
