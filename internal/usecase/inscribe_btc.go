@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -14,9 +13,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -396,13 +392,16 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 
 // job check 3 tx send: tx user send to temp wallet, tx mint, tx send nft to user
 func (u Usecase) JobInscribeCheckTxSend() error {
-
 	btcClient, bs, err := u.buildBTCClient()
-
 	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		logger.AtLog.Logger.Error("Could not initialize Bitcoin RPCClient failed", zap.Error(err))
 		return err
 	}
+	ordinalsSrv, _ := ordinals.NewService(
+		u.Config.Ordinals.OrdinalsContract,
+		u.Config.Ordinals.CallerOrdinalsPrivateKey,
+		int64(u.Config.ChainId),
+	)
 
 	// get list sending tx:
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_Minting, entity.StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr, entity.StatusInscribe_SendingNFTToUser})
@@ -411,6 +410,10 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 	}
 
 	for _, item := range listTosendBtc {
+		fields := []zapcore.Field{
+			zap.String("id", item.ID.Hex()),
+			zap.String("file_name", item.FileName),
+		}
 
 		statusSuccess := entity.StatusInscribe_Minted
 		txHashDb := item.TxMintNft
@@ -429,24 +432,24 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 
 		txHash, err := chainhash.NewHashFromStr(txHashDb)
 		if err != nil {
-			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not NewHashFromStr Bitcoin RPCClient ")
 			continue
 		}
-
+		txConfirmation := false
 		txResponse, err := btcClient.GetTransaction(txHash)
-
 		if err == nil {
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
+				txConfirmation = true
 				// send btc ok now:
 				item.Status = statusSuccess
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
-					fmt.Printf("Could not JobInscribeCheckTxSend id %s - with err: %v", item.ID, err)
+					logger.AtLog.Logger.With(fields...).Error("Could not JobInscribeCheckTxSend")
 				}
 			}
 		} else {
-			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not GetTransaction Bitcoin RPCClient")
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
@@ -454,17 +457,21 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 			// check with api:
 			txInfo, err := bs.CheckTx(txHashDb)
 			if err != nil {
-				fmt.Printf("Could not bs - with err: %v", err)
+				fields = append(fields, zap.Error(err))
+				logger.AtLog.Logger.With(fields...).Error("Could not CheckTx")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
+
 			if txInfo.Confirmations >= 1 {
+				txConfirmation = true
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
 				item.IsSuccess = statusSuccess == entity.StatusInscribe_SentNFTToUser
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
-					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
+					fields = append(fields, zap.Error(err))
+					logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe")
 				}
 				/* remove this feature
 				if item.Status == entity.StatusInscribe_SentNFTToUser {
@@ -478,6 +485,17 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				}*/
 			}
 		}
+
+		// add contract
+		if ordinalsSrv != nil && txConfirmation && item.NeedAddContractToOrdinalsContract() {
+			err = u.AddContractToOrdinalsContract(context.Background(), ordinalsSrv, item)
+			if err != nil {
+				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "JobInscribeCheckTxSend.AddContractToOrdinalsContract", err.Error())
+				fields = append(fields, zap.Error(err))
+				logger.AtLog.Logger.With(fields...).Error("AddContractToOrdinalsContract failed")
+				continue
+			}
+		}
 	}
 
 	return nil
@@ -489,40 +507,6 @@ func (u Usecase) JobInscribeMintNft() error {
 	if len(listTosendBtc) == 0 {
 		return nil
 	}
-	ordinalsContract := common.HexToAddress(u.Config.Ordinals.OrdinalsContract)
-	privateKey, err := crypto.HexToECDSA(u.Config.Ordinals.CallerOrdinalsPrivateKey)
-	if err != nil {
-		logger.AtLog.Logger.Error("JobInscribeMintNft.HexToECDSA failed", zap.Error(err))
-		return err
-	}
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		logger.AtLog.Logger.Error("JobInscribeMintNft.publicKeyECDSA failed")
-		return errors.New("Get PublicKeyECDSA failed")
-	}
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	client, err := helpers.EthDialer()
-	if err != nil {
-		logger.AtLog.Logger.Error("EthDialer failed")
-		return err
-	}
-	ords, err := ordinals.NewOrdinals(ordinalsContract, client)
-	if err != nil {
-		return err
-	}
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return err
-	}
-	// Set Caller
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(u.Config.ChainId)))
-	if err != nil {
-		return err
-	}
-	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(100000)
-	auth.GasPrice = gasPrice
 
 	for _, item := range listTosendBtc {
 		fields := []zapcore.Field{
@@ -623,49 +607,6 @@ func (u Usecase) JobInscribeMintNft() error {
 			fields = append(fields, zap.Error(err))
 			logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe")
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
-			continue
-		}
-
-		// add contract to polygonscan
-		if item.NeedAddContractToPolygon() {
-			tokenAddress := common.HexToAddress(item.TokenAddress)
-			tokenID := new(big.Int)
-			tokenID, ok := tokenID.SetString(item.TokenId, 10)
-			if !ok {
-				logger.AtLog.Logger.With(fields...).Error("TokenId is wrong")
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft", "Cannot convert TokenID")
-				continue
-			}
-			nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
-			if err != nil {
-				logger.AtLog.Logger.With(fields...).Error("PendingNonceAt failed")
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.PendingNonceAt", err.Error())
-				continue
-			}
-			auth.Nonce = big.NewInt(int64(nonce))
-			tx, err := ords.SetInscription(auth, tokenAddress, tokenID, item.InscriptionID)
-			if err != nil {
-				logger.AtLog.Logger.With(fields...).Error("SetInscription failed")
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.SetInscription", err.Error())
-				continue
-			}
-			fields = append(fields, zap.String("tx_id", tx.Hash().Hex()))
-
-			logger.AtLog.Logger.With(fields...).
-				Info("SetInscription successfully")
-
-			item.OrdinalsTx = tx.Hash().Hex()
-			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-			if err == nil {
-				item.OrdinalsTxStatus = receipt.Status
-			}
-			_, err = u.Repo.UpdateBtcInscribe(&item)
-			if err != nil {
-				fields = append(fields, zap.Error(err))
-				logger.AtLog.Logger.With(fields...).
-					Error("Could not UpdateBtcInscribe OrdinalsTx")
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribeOrdinalsTx", err.Error())
-			}
 		}
 	}
 
@@ -966,4 +907,19 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
 	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+}
+
+func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv *ordinals.Service, item entity.InscribeBTC) error {
+	txId, status, err := ordinalsSrv.AddContractToOrdinalsContract(ctx, item.TokenAddress, item.TokenId, item.InscriptionID)
+	if err != nil {
+		return err
+	}
+	logger.AtLog.Logger.Info("AddContractToOrdinalsContract successfully",
+		zap.String("id", item.ID.Hex()),
+		zap.String("tx_id", txId),
+	)
+	item.OrdinalsTx = txId
+	item.OrdinalsTxStatus = status
+	_, err = u.Repo.UpdateBtcInscribe(&item)
+	return err
 }
