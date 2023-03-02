@@ -15,7 +15,6 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/algolia"
-	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
