@@ -456,7 +456,7 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 	if os.Getenv("ENV") == "mainnet" {
 		return nil, nil
 	}
-	if receiver.UUID == "" {
+	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
 		return nil, nil
 	}
 	whitelist := os.Getenv("WHITELIST_AIRDROP_TOKENGATED")
