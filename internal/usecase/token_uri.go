@@ -166,6 +166,13 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
+
+	if tokenUri.Owner == nil {
+		user, err := u.Repo.FindUserByBtcAddressTaproot(tokenUri.OwnerAddr)
+		if err == nil {
+			tokenUri.Owner = user
+		}
+	}
 	//this was used for ETH (old flow)
 	// if err != nil {
 	// 	u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
@@ -182,13 +189,13 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	// 	}
 	// }
 
-	go func ()  {
+	go func() {
 		if tokenUri.Thumbnail == "" {
 			payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
 				TokenID:         tokenUri.TokenID,
 				ContractAddress: tokenUri.ContractAddress,
 			}}
-		
+
 			u.Logger.LogAny("GetToken.Thumbnail", zap.Any("payload", payload))
 			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 			if err != nil {
