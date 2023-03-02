@@ -170,6 +170,8 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		IsVerified:   isVeried,
 	}
 
+	go u.AirdropTokenGatedNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
+
 	return &verified, nil
 }
 
