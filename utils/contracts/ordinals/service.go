@@ -75,7 +75,7 @@ func (s *Service) AddContractToOrdinalsContract(ctx context.Context, tokenAddr, 
 	if !ok {
 		return "", 0, errors.New("tokenId is wrong")
 	}
-	nonce, err := s.ethClient.PendingNonceAt(context.Background(), s.fromAddress)
+	nonce, err := s.ethClient.PendingNonceAt(ctx, s.fromAddress)
 	if err != nil {
 		return "", 0, err
 	}
@@ -85,7 +85,7 @@ func (s *Service) AddContractToOrdinalsContract(ctx context.Context, tokenAddr, 
 		return "", 0, err
 	}
 	var status uint64
-	receipt, err := s.ethClient.TransactionReceipt(context.Background(), tx.Hash())
+	receipt, err := s.ethClient.TransactionReceipt(ctx, tx.Hash())
 	if err == nil {
 		status = receipt.Status
 	}
