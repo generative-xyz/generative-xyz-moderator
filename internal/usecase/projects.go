@@ -941,7 +941,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	}
 	c.MintPriceEth = ethPrice
 
-	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+	networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
 
 	if c.MaxFileSize > 0 {
 		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
@@ -952,7 +952,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 	}
 
-	if err == nil {
+	if networkFeeInt > 0 {
 		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
