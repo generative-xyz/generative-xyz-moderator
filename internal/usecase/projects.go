@@ -434,20 +434,22 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	return airDrop, nil
 }
 
-func (u Usecase) IsTokenGatedNewUserAirdrop(userAddr string, whiteListEthContracts []string) (bool, error) {
+func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthContracts []string) (bool, error) {
 	if len(whiteListEthContracts) == 0 {
 		return false, nil
 	}
-	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(userAddr)
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
 	if err != nil {
 		u.Logger.ErrorAny(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
-		return false, err
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
+	} else {
+		if airdrop != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
+			return false, err
+		}
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
 	}
-	if airdrop != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
-		return false, err
-	}
-	return u.IsWhitelistedAddress(context.Background(), userAddr, whiteListEthContracts)
+	return false, nil
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
@@ -462,7 +464,7 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 		return nil, nil
 	}
 	whitelistArr := strings.Split(whitelist, ",")
-	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(receiver.WalletAddress, whitelistArr)
+	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(&receiver, whitelistArr)
 	if err != nil {
 		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
 	}
