@@ -138,9 +138,9 @@ const (
 	NETWORK_BTC = "btc"
 	NETWORK_ETH = "eth"
 
-	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_03.txt"
-	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_02.txt"
-	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_01.txt"
+	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/magickey.html"
+	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/goldenkey.html"
+	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/silverkey.html"
 )
 
 type PubSubSendOtp struct {
