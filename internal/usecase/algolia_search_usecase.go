@@ -2,26 +2,37 @@ package usecase
 
 import (
 	"fmt"
+	"strconv"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/utils/algolia"
 )
 
-func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "project" {
-		return nil, nil
+		return nil, 0, 0, nil
 	}
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("projects", filter)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 
 	projects := []*response.SearchProject{}
 	resp.UnmarshalHits(&projects)
 	dataResp := []*response.SearchResponse{}
 	for _, i := range projects {
+		mintPriceInt, err := strconv.ParseInt(i.MintPrice, 10, 64)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		i.MintPrice = fmt.Sprintf("%f", float64(mintPriceInt)/1e8)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
 		obj := &response.SearchResponse{
 			ObjectType: "project",
 			Project:    i,
@@ -29,19 +40,19 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*respo
 		dataResp = append(dataResp, obj)
 	}
 
-	return dataResp, nil
+	return dataResp, resp.NbHits, resp.NbPages, nil
 }
 
-func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "inscription" {
-		return nil, nil
+		return nil, 0, 0, nil
 	}
 
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("inscriptions", filter)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 
 	inscriptions := []*response.SearhcInscription{}
@@ -70,18 +81,18 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		dataResp = append(dataResp, obj)
 	}
 
-	return dataResp, nil
+	return dataResp, resp.NbHits, resp.NbPages, nil
 }
 
-func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "artist" {
-		return nil, nil
+		return nil, 0, 0, nil
 	}
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("users", filter)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 	artists := []*response.SearchArtist{}
 	resp.UnmarshalHits(&artists)
@@ -94,19 +105,19 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 		}
 		dataResp = append(dataResp, obj)
 	}
-	return dataResp, nil
+	return dataResp, resp.NbHits, resp.NbPages, nil
 }
 
-func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "token" {
-		return nil, nil
+		return nil, 0, 0, nil
 	}
 
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("token-uris", filter)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 	inscriptions := []*response.SearchTokenUri{}
 	resp.UnmarshalHits(&inscriptions)
@@ -120,5 +131,5 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*resp
 		dataResp = append(dataResp, obj)
 	}
 
-	return dataResp, nil
+	return dataResp, resp.NbHits, resp.NbPages, nil
 }
