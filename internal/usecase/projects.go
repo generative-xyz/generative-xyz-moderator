@@ -958,6 +958,13 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
 		}
+
+		// add fee send master:
+		mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
+		feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
+		ethNetworkFeePrice = mintPriceEthBigint.String()
+
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
 
