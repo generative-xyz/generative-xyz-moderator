@@ -454,7 +454,7 @@ func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthCont
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
+	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
 	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
