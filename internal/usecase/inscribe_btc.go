@@ -397,7 +397,8 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 		logger.AtLog.Logger.Error("Could not initialize Bitcoin RPCClient failed", zap.Error(err))
 		return err
 	}
-	ordinalsSrv, _ := ordinals.NewService(u.Config.Ordinals.OrdinalsContract,
+	ordinalsSrv, _ := ordinals.NewService(
+		u.Config.Ordinals.OrdinalsContract,
 		u.Config.Ordinals.CallerOrdinalsPrivateKey,
 		int64(u.Config.ChainId),
 	)
