@@ -15,12 +15,14 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/contracts/ordinals"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -390,13 +392,16 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 
 // job check 3 tx send: tx user send to temp wallet, tx mint, tx send nft to user
 func (u Usecase) JobInscribeCheckTxSend() error {
-
 	btcClient, bs, err := u.buildBTCClient()
-
 	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		logger.AtLog.Logger.Error("Could not initialize Bitcoin RPCClient failed", zap.Error(err))
 		return err
 	}
+	ordinalsSrv, _ := ordinals.NewService(
+		u.Config.Ordinals.OrdinalsContract,
+		u.Config.Ordinals.CallerOrdinalsPrivateKey,
+		int64(u.Config.ChainId),
+	)
 
 	// get list sending tx:
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_Minting, entity.StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr, entity.StatusInscribe_SendingNFTToUser})
@@ -405,6 +410,10 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 	}
 
 	for _, item := range listTosendBtc {
+		fields := []zapcore.Field{
+			zap.String("id", item.ID.Hex()),
+			zap.String("file_name", item.FileName),
+		}
 
 		statusSuccess := entity.StatusInscribe_Minted
 		txHashDb := item.TxMintNft
@@ -423,24 +432,24 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 
 		txHash, err := chainhash.NewHashFromStr(txHashDb)
 		if err != nil {
-			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not NewHashFromStr Bitcoin RPCClient ")
 			continue
 		}
-
+		txConfirmation := false
 		txResponse, err := btcClient.GetTransaction(txHash)
-
 		if err == nil {
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
+				txConfirmation = true
 				// send btc ok now:
 				item.Status = statusSuccess
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
-					fmt.Printf("Could not JobInscribeCheckTxSend id %s - with err: %v", item.ID, err)
+					logger.AtLog.Logger.With(fields...).Error("Could not JobInscribeCheckTxSend")
 				}
 			}
 		} else {
-			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
+			logger.AtLog.Logger.With(fields...).Error("Could not GetTransaction Bitcoin RPCClient")
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
@@ -448,17 +457,21 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 			// check with api:
 			txInfo, err := bs.CheckTx(txHashDb)
 			if err != nil {
-				fmt.Printf("Could not bs - with err: %v", err)
+				fields = append(fields, zap.Error(err))
+				logger.AtLog.Logger.With(fields...).Error("Could not CheckTx")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
+
 			if txInfo.Confirmations >= 1 {
+				txConfirmation = true
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
 				item.IsSuccess = statusSuccess == entity.StatusInscribe_SentNFTToUser
 				_, err = u.Repo.UpdateBtcInscribe(&item)
 				if err != nil {
-					fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
+					fields = append(fields, zap.Error(err))
+					logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe")
 				}
 				/* remove this feature
 				if item.Status == entity.StatusInscribe_SentNFTToUser {
@@ -472,6 +485,17 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 				}*/
 			}
 		}
+
+		// add contract
+		if ordinalsSrv != nil && txConfirmation && item.NeedAddContractToOrdinalsContract() {
+			err = u.AddContractToOrdinalsContract(context.Background(), ordinalsSrv, item)
+			if err != nil {
+				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "JobInscribeCheckTxSend.AddContractToOrdinalsContract", err.Error())
+				fields = append(fields, zap.Error(err))
+				logger.AtLog.Logger.With(fields...).Error("AddContractToOrdinalsContract failed")
+				continue
+			}
+		}
 	}
 
 	return nil
@@ -479,17 +503,18 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 
 // job 4: mint nft:
 func (u Usecase) JobInscribeMintNft() error {
-
 	listTosendBtc, _ := u.Repo.ListBTCInscribeByStatus([]entity.StatusInscribe{entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd})
 	if len(listTosendBtc) == 0 {
-		// go u.trackInscribeHistory("", "ListBTCInscribeByStatus", "", "", "ListBTCInscribeByStatus", "[]")
 		return nil
 	}
 
 	for _, item := range listTosendBtc {
+		fields := []zapcore.Field{
+			zap.String("id", item.ID.Hex()),
+			zap.String("file_name", item.FileName),
+		}
 
-		// send all amount:
-		fmt.Println("mint nft now ...", item.FileName)
+		logger.AtLog.Logger.With(fields...).Info("Mint nft now...")
 
 		// - Upload the Animation URL to GCS
 		typeFile := ""
@@ -510,7 +535,8 @@ func (u Usecase) JobInscribeMintNft() error {
 		}
 
 		typeFile = typeFiles[len(typeFiles)-1]
-		fmt.Println("typeFile: ", typeFile)
+		fields = append(fields, zap.String("type_file", typeFile))
+		logger.AtLog.Logger.Info("TypeFile", fields...)
 
 		// update google clound: TODO need to move into api to avoid create file many time.
 		_, base64Str, err := decodeFileBase64(item.FileURI)
@@ -576,14 +602,12 @@ func (u Usecase) JobInscribeMintNft() error {
 
 		item.TxMintNft = btcMintResp.Reveal
 		item.InscriptionID = btcMintResp.Inscription
-		// TODO: update item
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
-			fmt.Printf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
-		} else {
-			// TODO call to smart contract
+			fields = append(fields, zap.Error(err))
+			logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe")
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
 		}
-
 	}
 
 	return nil
@@ -799,13 +823,16 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		Limit:  &pageSize,
 		Cursor: cursor,
 	}
-	pageListInscribe := int64(1)
+	var (
+		pageListInscribe  = int64(1)
+		limitListInscribe = int64(100)
+	)
 	mapNftMinted := make(map[string]bool)
 	for {
 		resp, err := u.Repo.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
-				Page:  int64(pageListInscribe),
-				Limit: 100,
+				Page:  pageListInscribe,
+				Limit: limitListInscribe,
 			},
 			NeStatuses: []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
 			UserUuid:   &userId,
@@ -822,6 +849,9 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
+		}
+		if len(inscribes) < int(limitListInscribe) {
+			break
 		}
 		pageListInscribe += 1
 	}
@@ -848,9 +878,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 					}
 				}
 				resp[delegateWalletAddress].Result = nfts.Result
-				resp[delegateWalletAddress].Total = int64(nfts.Total)
 				resp[delegateWalletAddress].Cursor = nfts.Cursor
-				resp[delegateWalletAddress].SetTotalPage()
 			}
 		} else {
 			walletAddress = userWallet
@@ -872,8 +900,6 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		}
 		pag.Result = nfts.Result
 		pag.Cursor = nfts.Cursor
-		pag.Total = int64(nfts.Total)
-		pag.SetTotalPage()
 	}
 
 	return resp, nil
@@ -881,4 +907,19 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
 	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+}
+
+func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv *ordinals.Service, item entity.InscribeBTC) error {
+	txId, status, err := ordinalsSrv.AddContractToOrdinalsContract(ctx, item.TokenAddress, item.TokenId, item.InscriptionID)
+	if err != nil {
+		return err
+	}
+	logger.AtLog.Logger.Info("AddContractToOrdinalsContract successfully",
+		zap.String("id", item.ID.Hex()),
+		zap.String("tx_id", txId),
+	)
+	item.OrdinalsTx = txId
+	item.OrdinalsTxStatus = status
+	_, err = u.Repo.UpdateBtcInscribe(&item)
+	return err
 }

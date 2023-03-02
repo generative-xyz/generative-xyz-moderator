@@ -110,10 +110,13 @@ type MintNftBtc struct {
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
 
 	// for analytics:
+
 	BtcRate           float64 `bson:"btc_rate"`
 	EthRate           float64 `bson:"eth_rate"`
-	ProjectMintPrice  int     `bson:"project_mint_price"`
-	ProjectNetworkFee int     `bson:"project_network_fee"`
+	ProjectMintPrice  int     `bson:"project_mint_price"`  // btc
+	ProjectNetworkFee int     `bson:"project_network_fee"` // btc
+
+	FeeSendMaster string `bson:"fee_send_master"` // maybe for eth only
 
 	MintFee int `bson:"mint_fee"`
 
