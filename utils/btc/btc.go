@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/blockcypher/gobcy/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -376,4 +378,116 @@ func ValidateAddress(crypto, address string) (bool, error) {
 
 	return re.MatchString(address), nil
 
+}
+
+func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService) (string, error) {
+	var status string
+	txStatus, err := bs.CheckTx(txhash)
+	if err != nil {
+		txInfo, err := checkTxFromBTC(txhash)
+		if err != nil {
+			fmt.Printf("checkTxFromBTC err: %v", err)
+			status = "Failed"
+		} else {
+			if txInfo.Data.Confirmations > 0 {
+				status = "Success"
+			} else {
+				status = "Pending"
+			}
+		}
+	} else {
+		if txStatus.Confirmations > 0 {
+			status = "Success"
+		} else {
+			status = "Pending"
+		}
+	}
+	return status, nil
+}
+
+type BTCTxInfo struct {
+	Data struct {
+		BlockHeight   int         `json:"block_height"`
+		BlockHash     string      `json:"block_hash"`
+		BlockTime     int         `json:"block_time"`
+		CreatedAt     int         `json:"created_at"`
+		Confirmations int         `json:"confirmations"`
+		Fee           int         `json:"fee"`
+		Hash          string      `json:"hash"`
+		InputsCount   int         `json:"inputs_count"`
+		InputsValue   int         `json:"inputs_value"`
+		IsCoinbase    bool        `json:"is_coinbase"`
+		IsDoubleSpend bool        `json:"is_double_spend"`
+		IsSwTx        bool        `json:"is_sw_tx"`
+		LockTime      int         `json:"lock_time"`
+		OutputsCount  int         `json:"outputs_count"`
+		OutputsValue  int64       `json:"outputs_value"`
+		Sigops        int         `json:"sigops"`
+		Size          int         `json:"size"`
+		Version       int         `json:"version"`
+		Vsize         int         `json:"vsize"`
+		Weight        int         `json:"weight"`
+		WitnessHash   string      `json:"witness_hash"`
+		Inputs        interface{} `json:"inputs"`
+		Outputs       interface{} `json:"outputs"`
+	} `json:"data"`
+	ErrCode int    `json:"err_code"`
+	ErrNo   int    `json:"err_no"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
+var btcRateLock sync.Mutex
+
+// TODO: 2077 add more apis
+func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
+	btcRateLock.Lock()
+	defer func() {
+		time.Sleep(100 * time.Millisecond)
+		btcRateLock.Unlock()
+	}()
+	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=1", txhash)
+	fmt.Println("url", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getInscriptionByOutput Response status != 200")
+	}
+	var result BTCTxInfo
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Read body failed")
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Println(string(body))
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Message + " " + url)
+	}
+
+	if result.Data.Hash != txhash {
+		return nil, errors.New("tx not found")
+	}
+
+	return &result, nil
 }
