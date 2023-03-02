@@ -504,6 +504,7 @@ func (u Usecase) JobInscribeMintNft() error {
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 	client, err := helpers.EthDialer()
 	if err != nil {
+		logger.AtLog.Logger.Error("EthDialer failed")
 		return err
 	}
 	ords, err := ordinals.NewOrdinals(ordinalsContract, client)
@@ -525,9 +526,10 @@ func (u Usecase) JobInscribeMintNft() error {
 
 	for _, item := range listTosendBtc {
 		fields := []zapcore.Field{
-			zap.String("id", item.ID.String()),
+			zap.String("id", item.ID.Hex()),
 			zap.String("file_name", item.FileName),
 		}
+
 		logger.AtLog.Logger.With(fields...).Info("Mint nft now...")
 
 		// - Upload the Animation URL to GCS
@@ -625,27 +627,33 @@ func (u Usecase) JobInscribeMintNft() error {
 		}
 
 		// add contract to polygonscan
-		if item.TokenAddress != "" && item.TokenId != "" {
+		if item.NeedAddContractToPolygon() {
 			tokenAddress := common.HexToAddress(item.TokenAddress)
 			tokenID := new(big.Int)
 			tokenID, ok := tokenID.SetString(item.TokenId, 10)
 			if !ok {
+				logger.AtLog.Logger.With(fields...).Error("TokenId is wrong")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft", "Cannot convert TokenID")
 				continue
 			}
 			nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 			if err != nil {
+				logger.AtLog.Logger.With(fields...).Error("PendingNonceAt failed")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.PendingNonceAt", err.Error())
 				continue
 			}
 			auth.Nonce = big.NewInt(int64(nonce))
 			tx, err := ords.SetInscription(auth, tokenAddress, tokenID, item.InscriptionID)
 			if err != nil {
+				logger.AtLog.Logger.With(fields...).Error("SetInscription failed")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.SetInscription", err.Error())
 				continue
 			}
 			fields = append(fields, zap.String("tx_id", tx.Hash().Hex()))
-			logger.AtLog.Logger.With(fields...).Info("SetInscription successfully")
+
+			logger.AtLog.Logger.With(fields...).
+				Info("SetInscription successfully")
+
 			item.OrdinalsTx = tx.Hash().Hex()
 			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
 			if err == nil {
@@ -654,7 +662,8 @@ func (u Usecase) JobInscribeMintNft() error {
 			_, err = u.Repo.UpdateBtcInscribe(&item)
 			if err != nil {
 				fields = append(fields, zap.Error(err))
-				logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe OrdinalsTx")
+				logger.AtLog.Logger.With(fields...).
+					Error("Could not UpdateBtcInscribe OrdinalsTx")
 				go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribeOrdinalsTx", err.Error())
 			}
 		}

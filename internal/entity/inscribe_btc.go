@@ -53,6 +53,9 @@ func (u InscribeBTC) TableName() string {
 func (u InscribeBTC) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+func (u InscribeBTC) NeedAddContractToPolygon() bool {
+	return u.TokenAddress != "" && u.TokenId != "" && u.OrdinalsTx == ""
+}
 
 type StatusInscribe int
 
