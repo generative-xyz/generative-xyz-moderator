@@ -53,8 +53,16 @@ type Config struct {
 	MaxReportCount       int
 	AlgoliaApiKey        string
 	AlgoliaApplicationId string
+	Ordinals             Ordinals
+	ChainURL             string
+	ChainId              int
 }
 
+type Ordinals struct {
+	OrdinalsContract         string
+	CallerOrdinalsAddress    string
+	CallerOrdinalsPrivateKey string
+}
 type TrendingConfig struct {
 	WhitelistedProjectID []string
 	BoostedCategoryID    string
@@ -218,7 +226,7 @@ func NewConfig() (*Config, error) {
 	if maxReportCount == 0 {
 		maxReportCount = 3
 	}
-
+	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -337,6 +345,13 @@ func NewConfig() (*Config, error) {
 		MaxReportCount:       maxReportCount,
 		AlgoliaApiKey:        os.Getenv("ALGOLIA_API_KEY"),
 		AlgoliaApplicationId: os.Getenv("ALGOLIA_APPLICATION_ID"),
+		Ordinals: Ordinals{
+			OrdinalsContract:         os.Getenv("ORDINALS_CONTRACT"),
+			CallerOrdinalsAddress:    os.Getenv("CALLER_ORDINALS_ADDRESS"),
+			CallerOrdinalsPrivateKey: os.Getenv("CALLER_ORDINALS_PRIVATE_KEY"),
+		},
+		ChainURL: os.Getenv("CHAIN_URL"),
+		ChainId:  chainId,
 	}
 
 	return conf, nil

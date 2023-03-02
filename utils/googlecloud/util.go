@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/helpers"
 )
 
 func NormalizeFileName(name string) string {
@@ -12,6 +14,6 @@ func NormalizeFileName(name string) string {
 	fileName = strings.ReplaceAll(fileName, " ", "_")
 	fileName = strings.TrimSpace(fileName)
 	fileName = fmt.Sprintf("%d-%s", now, fileName)
-
+	fileName = helpers.GenerateSlug(name)
 	return fileName
 }
