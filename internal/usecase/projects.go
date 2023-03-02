@@ -157,6 +157,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
 			maxSize := helpers.CalcOrigBinaryLength(animationURL)
+			pe.MaxFileSize = int64(maxSize)
 			pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
 			htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(animationURL, "data:text/html;base64,", ""))
 			if err == nil {
@@ -330,9 +331,9 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	//if os.Getenv("ENV") == "mainnet" {
-	//	return nil, nil
-	//}
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
 	feerate = 3
 	// get file
 	random := rand.Intn(100)
@@ -1406,6 +1407,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe.IsSynced = true
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
