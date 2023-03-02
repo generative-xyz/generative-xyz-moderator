@@ -882,13 +882,16 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		Limit:  &pageSize,
 		Cursor: cursor,
 	}
-	pageListInscribe := int64(1)
+	var (
+		pageListInscribe  = int64(1)
+		limitListInscribe = int64(100)
+	)
 	mapNftMinted := make(map[string]bool)
 	for {
 		resp, err := u.Repo.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
-				Page:  int64(pageListInscribe),
-				Limit: 100,
+				Page:  pageListInscribe,
+				Limit: limitListInscribe,
 			},
 			NeStatuses: []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
 			UserUuid:   &userId,
@@ -897,7 +900,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			return nil, err
 		}
 		inscribes := resp.Result.([]entity.InscribeBTCResp)
-		if len(inscribes) <= 0 || len(inscribes) < 100 {
+		if len(inscribes) <= 0 {
 			break
 		}
 		for _, inscribe := range inscribes {
@@ -905,6 +908,9 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
+		}
+		if len(inscribes) < int(limitListInscribe) {
+			break
 		}
 		pageListInscribe += 1
 	}
