@@ -131,6 +131,8 @@ definitions:
         items:
           type: string
         type: array
+      catureThumbnailDelayTime:
+        type: integer
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -599,8 +601,6 @@ definitions:
         type: string
       fileName:
         type: string
-      isAuthentic:
-        type: boolean
       name:
         type: string
       tokenAddress:
@@ -3413,6 +3413,10 @@ paths:
       - description: search
         in: query
         name: search
+        type: string
+      - description: object type
+        in: query
+        name: type
         type: string
       produces:
       - application/json
