@@ -36,12 +36,14 @@ type InscribeBTC struct {
 	TxSendNft string         `bson:"tx_send_nft"`
 	TxMintNft string         `bson:"tx_mint_nft"`
 
-	OutputMintNFT interface{} `bson:"output_mint_nft"`
-	OutputSendNFT interface{} `bson:"output_send_nft"`
-	UserUuid      string      `bson:"user_uuid"`
-	TokenAddress  string      `bson:"token_address"`
-	TokenId       string      `bson:"token_id"`
-	IsAuthentic   bool        `bson:"is_authentic"`
+	OutputMintNFT    interface{} `bson:"output_mint_nft"`
+	OutputSendNFT    interface{} `bson:"output_send_nft"`
+	UserUuid         string      `bson:"user_uuid"`
+	TokenAddress     string      `bson:"token_address"`
+	TokenId          string      `bson:"token_id"`
+	IsAuthentic      bool        `bson:"is_authentic"`
+	OrdinalsTx       string      `bson:"ordinals_tx"`
+	OrdinalsTxStatus uint64      `bson:"ordinals_tx_status"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -50,6 +52,9 @@ func (u InscribeBTC) TableName() string {
 
 func (u InscribeBTC) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
+}
+func (u InscribeBTC) NeedAddContractToPolygon() bool {
+	return u.TokenAddress != "" && u.TokenId != "" && u.OrdinalsTx == ""
 }
 
 type StatusInscribe int

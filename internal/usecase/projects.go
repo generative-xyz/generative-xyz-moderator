@@ -63,7 +63,8 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 	if err != nil {
 		fmt.Print(err.Error())
-		os.Exit(1)
+		// os.Exit(1) // remove for B
+		return -1
 	}
 
 	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
@@ -85,7 +86,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 		err = json.Unmarshal(responseData, &feeRateObj)
 		if err != nil {
 			u.Logger.Error(err)
-			return 0
+			return -1
 		}
 		if feeRateObj.fastestFee > 0 {
 			feeRateValue = int64(feeRateObj.fastestFee)
@@ -395,9 +396,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	//if os.Getenv("ENV") == "mainnet" {
-	//	return nil, nil
-	//}
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
 	// get file
 	feerate = 3
 	random := rand.Intn(100)
@@ -434,27 +435,29 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	return airDrop, nil
 }
 
-func (u Usecase) IsTokenGatedNewUserAirdrop(userAddr string, whiteListEthContracts []string) (bool, error) {
+func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthContracts []string) (bool, error) {
 	if len(whiteListEthContracts) == 0 {
 		return false, nil
 	}
-	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(userAddr)
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
 	if err != nil {
 		u.Logger.ErrorAny(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
-		return false, err
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
+	} else {
+		if airdrop != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
+			return false, err
+		}
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
 	}
-	if airdrop != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
-		return false, err
-	}
-	return u.IsWhitelistedAddress(context.Background(), userAddr, whiteListEthContracts)
+	return false, nil
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") == "mainnet" {
+	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
-	if receiver.UUID == "" {
+	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
 		return nil, nil
 	}
 	whitelist := os.Getenv("WHITELIST_AIRDROP_TOKENGATED")
@@ -462,7 +465,7 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 		return nil, nil
 	}
 	whitelistArr := strings.Split(whitelist, ",")
-	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(receiver.WalletAddress, whitelistArr)
+	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(&receiver, whitelistArr)
 	if err != nil {
 		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
 	}
@@ -938,7 +941,15 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	}
 	c.MintPriceEth = ethPrice
 
-	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
+	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+
+	if c.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
+		if calNetworkFee > 0 {
+			networkFeeInt = calNetworkFee
+		}
+	}
+
 	if err == nil {
 		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
@@ -960,7 +971,8 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 			animationHtml := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
-			_, err = u.Repo.UpdateProject(c.UUID, c)
+			// _, err = u.Repo.UpdateProject(c.UUID, c) // remove for safe...
+			_, err = u.Repo.UpdateProjectAnimationHtml(c.UUID, animationHtml)
 			if err != nil {
 				return
 			}

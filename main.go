@@ -60,7 +60,7 @@ func init() {
 		log.Println("Service RUN on DEBUG mode")
 	}
 
-	l := _logger.NewLogger()
+	l := _logger.NewLogger(c.Debug)
 	l.LogAny("config", zap.Any("config.NewConfig", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
