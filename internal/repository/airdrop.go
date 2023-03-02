@@ -24,6 +24,21 @@ func (r Repository) FindAirdropByStatus(status int) ([]*entity.Airdrop, error) {
 	return resp, nil
 }
 
+func (r Repository) FindAirdropByTokenGatedNewUser(userUUid string) (*entity.Airdrop, error) {
+	resp := &entity.Airdrop{}
+	filter := bson.D{{"type", 2}, {"receiver", userUUid}}
+	cursor, err := r.FilterOne(entity.Airdrop{}.TableName(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(cursor, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindAirdropByTx(tx string) (*entity.Airdrop, error) {
 	resp := &entity.Airdrop{}
 	usr, err := r.FilterOne(entity.Airdrop{}.TableName(), bson.D{{"tx", tx}})
