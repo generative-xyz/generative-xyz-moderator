@@ -130,10 +130,10 @@ func (r Repository) CreateReferalIndexModel() ([]string, error) {
 func (r Repository) CreateVolumnIndexModel() ([]string, error) {
 	collection := entity.UserVolumn{}.TableName()
 	models := []mongo.IndexModel{
-		{Keys: bson.M{"amountType": -1}, Options: options.Index().SetName("vln_amountType_desc")},
+		{Keys: bson.M{"payType": -1}, Options: options.Index().SetName("vln_payType_desc")},
 		{Keys: bson.M{"creatorAddress": -1}, Options: options.Index().SetName("vln_userID_desc")},
 		{Keys: bson.M{"projectID": -1}, Options: options.Index().SetName("vln_projectID_desc")},
-		{Keys: bson.D{{Key: "amountType", Value: -1}, {Key: "creatorAddress", Value: -1}, {Key: "projectID", Value: -1}}, Options: options.Index().SetUnique(true)},
+		{Keys: bson.D{{Key: "payType", Value: -1}, {Key: "creatorAddress", Value: -1}, {Key: "projectID", Value: -1}}, Options: options.Index().SetUnique(true)},
 	}
 
 	return r.CreateIndexes(collection, models)
