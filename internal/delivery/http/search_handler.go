@@ -41,44 +41,49 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		SearchStr: search, ObjType: objType,
 		Page: int(bf.Page), Limit: int(bf.Limit),
 	}
+	total := 0
 
-	resp, err := h.Usecase.AlgoliaSearchProject(filter)
+	resp, t, err := h.Usecase.AlgoliaSearchProject(filter)
 	if err != nil {
 		h.Logger.Error("h.Usecase.AlgoliaSearchProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	dataResp = append(dataResp, resp...)
+	total += t
 
-	resp, err = h.Usecase.AlgoliaSearchInscription(filter)
+	resp, t, err = h.Usecase.AlgoliaSearchInscription(filter)
 	if err != nil {
 		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	dataResp = append(dataResp, resp...)
+	total += t
 
-	resp, err = h.Usecase.AlgoliaSearchArtist(filter)
+	resp, t, err = h.Usecase.AlgoliaSearchArtist(filter)
 	if err != nil {
 		h.Logger.Error("h.Usecase.AlgoliaSearchArtist", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	dataResp = append(dataResp, resp...)
+	total += t
 
-	resp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
+	resp, t, err = h.Usecase.AlgoliaSearchTokenUri(filter)
 	if err != nil {
 		h.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	dataResp = append(dataResp, resp...)
+	total += t
 
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(filter.Page)
 	result.PageSize = int64(filter.Limit)
-	result.Total = 10000
+	result.Total = int64(total)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, result.Result), "")
 }
