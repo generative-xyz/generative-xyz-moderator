@@ -66,8 +66,24 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 	projectMintPrice := mintPriceInt
-	networkFee, err := strconv.Atoi(p.NetworkFee)
-	if err == nil {
+
+	// network fee:
+
+	var networkFee int = 0
+
+	if p.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
+		if calNetworkFee > 0 {
+			networkFee = int(calNetworkFee)
+		} else {
+			networkFeeFromProject, err := strconv.Atoi(p.NetworkFee)
+			if err == nil {
+				networkFee = networkFeeFromProject
+			}
+		}
+	}
+
+	if networkFee > 0 {
 		mintPriceInt += networkFee
 	}
 

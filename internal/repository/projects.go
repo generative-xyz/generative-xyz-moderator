@@ -160,6 +160,22 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	return result, nil
 }
 
+func (r Repository) UpdateProjectAnimationHtml(ID string, animationHtml string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.animation_html": animationHtml,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
 	update := bson.M{
