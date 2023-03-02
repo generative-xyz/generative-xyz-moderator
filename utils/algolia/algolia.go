@@ -9,6 +9,7 @@ type AlgoliaFilter struct {
 	Page      int
 	Limit     int
 	SearchStr string
+	ObjType   string
 }
 
 type IAlgolia interface {
