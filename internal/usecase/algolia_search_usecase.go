@@ -29,6 +29,11 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*respo
 		}
 
 		i.MintPrice = fmt.Sprintf("%f", float64(mintPriceInt)/1e8)
+		p := float64(mintPriceInt) / 1e8
+		if p == float64(0) {
+			i.MintPrice = "0"
+		}
+
 		if err != nil {
 			return nil, 0, 0, err
 		}
