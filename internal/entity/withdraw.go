@@ -9,7 +9,6 @@ import (
 const (
 	StatusWithdraw_Pending        = iota  // 0: pending: waiting for approve
 	StatusWithdraw_Approve
-	StatusWithdraw_Done
 	StatusWithdraw_Reject
 )
 
@@ -40,9 +39,20 @@ type Withdraw struct {
 	EarningReferal string `bson:"earningReferal" json:"earningReferal"`
 	EarningVolume string `bson:"earningVolume" json:"earningVolume"`
 	TotalEarnings string `bson:"totalEarnings" json:"totalEarnings"`
+	AvailableBalance string `bson:"availableBalance" json:"availableBalance"`
 	WithdrawType Withdrawtype `bson:"withdrawType" json:"withdrawType"`
 	WithdrawItemID string `bson:"withdrawItemID"  json:"withdrawItemID"`
+	User  WithdrawUserInfo `bson:"user"`
 }
+
+type WithdrawUserInfo struct {
+	WalletAddress *string `bson:"walletAddress"`
+	WalletAddressPayment *string `bson:"walletAddressPayment"`
+	WalletAddressBTC *string `bson:"walletAddressBTC"`
+	DisplayName *string  `bson:"displayName"`
+	Avatar   *string  `bson:"avatar"`
+}
+
 
 func (u Withdraw) TableName() string {
 	return utils.COLLECTION_WITHDRAW

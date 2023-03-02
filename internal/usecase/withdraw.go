@@ -17,13 +17,13 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	resp := []entity.Withdraw{}
 	u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("input", wr))
 	volumeAmount := 0.0 //earning 
-	widthDrawAmount := 0.0
+	widthDrawAmount := 0.0 
 	refAmount := 0.0
 	
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
 	//TODO - calculate refAmount
-	status := entity.StatusWithdraw_Done
+	status := entity.StatusWithdraw_Approve
 	wdf := &entity.FilterWithdraw{
 		WalletAddress: &walletAddress,
 		PaymentType: &wr.PaymentType,
@@ -56,7 +56,6 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 			if err == nil {
 				refAmount +=   tmp
 			}
-			
 		}
 	}
 
@@ -69,10 +68,10 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	}
 	
 	totalEarnings := refAmount + volumeAmount
-	earning := totalEarnings - widthDrawAmount
-	if earning <= 0 {
+	availableBalance := totalEarnings - widthDrawAmount
+	if availableBalance <= 0 {
 		err = errors.New("Not enough balance")
-		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", earning) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
+		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		//return nil, err
 	}
 
@@ -81,8 +80,10 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 		requestEarnings = 0
 	}
 
-	if requestEarnings  > earning {
-		requestEarnings = earning
+	if requestEarnings  > availableBalance {
+		err = errors.New("RequestEarnings must be greater than availableBalance")
+		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
+		return nil, err
 	}
 
 	f.WalletAddress = walletAddress
@@ -91,8 +92,18 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	f.EarningReferal = fmt.Sprintf("%d", int(refAmount))
 	f.EarningVolume = fmt.Sprintf("%d", int(volumeAmount))
 	f.TotalEarnings = fmt.Sprintf("%d", int(totalEarnings))
+	f.AvailableBalance = fmt.Sprintf("%d", int(availableBalance))
 	f.WithdrawType = entity.Withdrawtype(wr.WithdrawType)
 	f.WithdrawItemID = wr.ID
+	
+	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
+	f.User = entity.WithdrawUserInfo{
+		WalletAddress: &user.WalletAddress,
+		WalletAddressPayment: &user.WalletAddressPayment,
+		WalletAddressBTC: &user.WalletAddressBTC,
+		DisplayName: &user.DisplayName,
+		Avatar: &user.Avatar,
+	}
 
 	u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress),  zap.Any("widthdraw",f))
 	err = u.Repo.CreateWithDraw(f)
