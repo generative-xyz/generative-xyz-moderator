@@ -43,6 +43,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	if err != nil {
 		return nil, err
 	}
+
 	inscriptions := []*response.SearhcInscription{}
 	for _, h := range resp.Hits {
 		i := &response.SearhcInscription{
@@ -54,6 +55,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			GenesisFee:    int64(h["genesis_fee"].(float64)),
 			GenesisHeight: int64(h["genesis_height"].(float64)),
 			Timestamp:     h["timestamp"].(string),
+			ContentType:   h["content_type"].(string),
 		}
 		inscriptions = append(inscriptions, i)
 	}
