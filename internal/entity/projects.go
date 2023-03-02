@@ -130,6 +130,7 @@ type FilterProjects struct {
 	IsHidden      *bool
 	CategoryIds   []string
 	TokenIds      []string
+	Ids           []string
 }
 
 func (u Projects) TableName() string {
