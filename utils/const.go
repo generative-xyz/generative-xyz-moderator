@@ -113,6 +113,7 @@ const (
 	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
 	WALLET_TRACK_TX                     string = "wallet_track_txs"
 	COLLECTION_AIRDROP                  string = "airdrop"
+	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

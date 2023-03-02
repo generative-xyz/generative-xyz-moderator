@@ -21,7 +21,6 @@ import (
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
-
 	var reqBody request.CreateMarketplaceBTCListing
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
