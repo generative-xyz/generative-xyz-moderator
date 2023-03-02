@@ -24,8 +24,11 @@ import (
 func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	objType := r.URL.Query().Get("type")
+	result := &entity.Pagination{}
+	dataResp := []*response.SearchResponse{}
 	if search != "" && len(search) < 3 {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Term search minimum is 3 characters"))
+		result.Result = dataResp
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, result.Result), "")
 		return
 	}
 
@@ -41,7 +44,6 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataResp := []*response.SearchResponse{}
 	filter := &algolia.AlgoliaFilter{
 		SearchStr: search, ObjType: objType,
 		Page: int(bf.Page), Limit: int(bf.Limit),
@@ -79,7 +81,6 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(filter.Page)
 	result.PageSize = int64(filter.Limit)
