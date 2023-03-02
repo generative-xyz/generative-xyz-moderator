@@ -123,10 +123,10 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		fmt.Println("mintPriceStr1: ", mintPriceStr)
 		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr1", mintPriceStr, false)
 		// + fee send master:
-		// 0.0006
+		// 0.0006 FEE_ETH_SEND_MASTER
 		mintPriceEthBigint, _ := big.NewInt(0).SetString(mintPriceStr, 10)
 
-		feeSendMaster = big.NewInt(0.0006 * 1e18)
+		feeSendMaster = big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
 
 		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
 
