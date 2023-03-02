@@ -282,6 +282,29 @@ func (u Usecase) CheckAirdropInit() error {
 	}
 	u.Logger.Info(fmt.Sprintf("Start check CheckAirdropInit len %d", len(airdrops)))
 	for _, airdrop := range airdrops {
+		if airdrop.Type == 0 {
+			// for airdrop artist
+			// check something like
+			projectId := airdrop.ProjectId
+			project, err := u.Repo.FindProject(projectId)
+			if err != nil {
+				u.Logger.ErrorAny("CheckAirdropInit project not found", zap.Any("projectID", projectId))
+				continue
+			}
+			if project.MintingInfo.Index == 0 {
+				u.Logger.ErrorAny("CheckAirdropInit project still not mint", zap.Any("project", project))
+				continue
+			}
+			mintPrice, e := strconv.Atoi(project.MintPrice)
+			if e != nil {
+				u.Logger.ErrorAny("CheckAirdropInit project get mint price", zap.Any("project", project))
+				continue
+			}
+			if project.MintingInfo.Index*int64(mintPrice) < 430000 {
+				u.Logger.ErrorAny("CheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
+				continue
+			}
+		}
 		u.AirdropUpdateMintInfo(airdrop, os.Getenv("AIRDROP_WALLET"), 3)
 	}
 	return nil
@@ -362,10 +385,11 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 		return nil, err
 	}
 
+	/* not airdrop immediately anymore
 	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	return airDrop, nil
 }
