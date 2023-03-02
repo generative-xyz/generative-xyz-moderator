@@ -361,9 +361,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	// get file
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
-	if random >= 50 {
+	if random >= 30 {
 		file = utils.AIRDROP_SILVER
-	} else if random < 50 && random >= 20 {
+	} else if random < 30 && random >= 5 {
 		file = utils.AIRDROP_GOLDEN
 	}
 
@@ -402,9 +402,9 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	feerate = 3
 	random := rand.Intn(100)
 	file := utils.AIRDROP_MAGIC
-	if random >= 20 {
+	if random >= 13 {
 		file = utils.AIRDROP_SILVER
-	} else if random < 20 && random >= 5 {
+	} else if random < 13 && random >= 3 {
 		file = utils.AIRDROP_GOLDEN
 	}
 
