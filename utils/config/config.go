@@ -46,13 +46,21 @@ type Config struct {
 
 	MarketBTCServiceFeeAddress string
 
-	OtherCategoryID string
+	OtherCategoryID      string
 	UnverifiedCategoryID string
 
 	TrendingConfig TrendingConfig
 	MaxReportCount int
+	Ordinals       Ordinals
+	ChainURL       string
+	ChainId        int
 }
 
+type Ordinals struct {
+	OrdinalsContract         string
+	CallerOrdinalsAddress    string
+	CallerOrdinalsPrivateKey string
+}
 type TrendingConfig struct {
 	WhitelistedProjectID []string
 	BoostedCategoryID    string
@@ -216,7 +224,7 @@ func NewConfig() (*Config, error) {
 	if maxReportCount == 0 {
 		maxReportCount = 3
 	}
-
+	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -333,6 +341,13 @@ func NewConfig() (*Config, error) {
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
 		MaxReportCount: maxReportCount,
+		Ordinals: Ordinals{
+			OrdinalsContract:         os.Getenv("ORDINALS_CONTRACT"),
+			CallerOrdinalsAddress:    os.Getenv("CALLER_ORDINALS_ADDRESS"),
+			CallerOrdinalsPrivateKey: os.Getenv("CALLER_ORDINALS_PRIVATE_KEY"),
+		},
+		ChainURL: os.Getenv("CHAIN_URL"),
+		ChainId:  chainId,
 	}
 
 	return conf, nil
