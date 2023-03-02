@@ -3352,6 +3352,12 @@ const docTemplate = `{
                         "description": "search",
                         "name": "search",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "object type",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {

@@ -8,6 +8,9 @@ import (
 )
 
 func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, nil
+	}
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("projects", filter)
@@ -30,6 +33,10 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*respo
 }
 
 func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+	if filter.ObjType != "" && filter.ObjType != "inscription" {
+		return nil, nil
+	}
+
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("inscriptions", filter)
@@ -65,6 +72,9 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 }
 
 func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+	if filter.ObjType != "" && filter.ObjType != "artist" {
+		return nil, nil
+	}
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("users", filter)
@@ -86,6 +96,10 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 }
 
 func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, error) {
+	if filter.ObjType != "" && filter.ObjType != "token" {
+		return nil, nil
+	}
+
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("token-uris", filter)

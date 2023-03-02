@@ -434,6 +434,79 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	return airDrop, nil
 }
 
+func (u Usecase) IsTokenGatedNewUserAirdrop(userAddr string, whiteListEthContracts []string) (bool, error) {
+	if len(whiteListEthContracts) == 0 {
+		return false, nil
+	}
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(userAddr)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
+		return false, err
+	}
+	if airdrop != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
+		return false, err
+	}
+	return u.IsWhitelistedAddress(context.Background(), userAddr, whiteListEthContracts)
+}
+
+func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") == "mainnet" {
+		return nil, nil
+	}
+	if receiver.UUID == "" {
+		return nil, nil
+	}
+	whitelist := os.Getenv("WHITELIST_AIRDROP_TOKENGATED")
+	if len(strings.TrimSpace(whitelist)) == 0 {
+		return nil, nil
+	}
+	whitelistArr := strings.Split(whitelist, ",")
+	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(receiver.WalletAddress, whitelistArr)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
+	}
+	if !isTokenGated {
+		return nil, nil
+	}
+
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      2,
+		ProjectId:                 "",
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err = u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	return airDrop, nil
+}
+
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
