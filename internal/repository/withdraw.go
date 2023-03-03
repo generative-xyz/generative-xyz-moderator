@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -64,6 +63,10 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 	if filter.Status != nil {
 		f = append(f, bson.M{"status": *filter.Status})
 	}
+	
+	if  len(filter.Statuses) > 0 {
+		f = append(f, bson.M{"status": bson.M{"$in": filter.Statuses}})
+	}
 
 	// PayType *string
 	// ReferreeIDs []string
@@ -78,7 +81,6 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
 	
-	spew.Dump(f)
 	cursor, err := r.DB.Collection(entity.Withdraw{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err
