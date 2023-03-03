@@ -839,8 +839,8 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
-	pe.CustomQueries = make(map[string]primitive.M)
-	pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
+	// pe.CustomQueries = make(map[string]primitive.M)
+	// pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
