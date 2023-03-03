@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -116,6 +118,42 @@ func (r Repository) UpdateWithDrawStatus(UUID string, status int) error {
 		return err
 	}
 	return err
+}
+
+func (r Repository) GetLastWithdraw(filter entity.FilterWithdraw) (*entity.Withdraw, error) {
+	wd := []entity.Withdraw{}
+	f := bson.M{}
+	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
+		f = bson.M{"walletAddress": *filter.WalletAddress}
+	}
+	
+	if filter.WithdrawItemID != nil && *filter.WithdrawItemID != "" {
+		f =  bson.M{"withdrawItemID": *filter.WithdrawItemID}
+	}
+	
+	if filter.PaymentType != nil && *filter.PaymentType != "" {
+		f =  bson.M{"payType": *filter.PaymentType}
+	}
+	
+	if len(filter.Statuses) > 0 {
+		f =  bson.M{"status": bson.M{"$in": filter.Statuses}}
+	}
+
+	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
+	cursor, err := r.DB.Collection(entity.Withdraw{}.TableName()).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &wd); err != nil {
+		return nil, err
+	}
+
+	if len(wd) <= 0 {
+		return  nil, errors.New("document not found")
+	}
+
+	return &wd[0], nil
 }
 
 
