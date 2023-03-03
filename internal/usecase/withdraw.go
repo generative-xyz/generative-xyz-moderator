@@ -13,8 +13,8 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemRequest) ([]entity.Withdraw, error) {
-	resp := []entity.Withdraw{}
+func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemRequest) (*entity.Withdraw, error) {
+	
 	u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("input", wr))
 	volumeAmount := 0.0 //earning 
 	widthDrawAmount := 0.0 
@@ -44,7 +44,8 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 		u.Logger.ErrorAny("CreateWithdraw.Copy", zap.Any("input", wr), zap.Error(err))
 		return nil, err
 	}
-
+	
+	f.PayType = wr.PaymentType
 	u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress))
 	volumes, _ := u.GetEarningOfUser(walletAddress, &f.PayType)
 	
@@ -84,7 +85,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	}
 
 	if requestEarnings  > availableBalance {
-		err = errors.New("RequestEarnings must be greater than availableBalance")
+		err = errors.New("RequestEarnings must be less than availableBalance")
 		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		return nil, err
 	}
@@ -124,8 +125,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	u.UpdateRefObject(*f)
 	
 	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
-	resp = append(resp, *f)	
-	return resp, nil
+	return f, nil
 }
 
 func (u Usecase) FilterWidthdraw(data structure.FilterWithdraw) (*entity.Pagination, error) {
