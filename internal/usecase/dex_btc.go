@@ -49,6 +49,12 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return err
 	}
 
+	totalOuputValue := uint64(0)
+	for _, output := range psbtData.UnsignedTx.TxOut {
+		totalOuputValue += uint64(output.Value)
+	}
+	newListing.Amount = totalOuputValue
+
 	txInputs := []string{}
 	for _, input := range psbtData.UnsignedTx.TxIn {
 		i := fmt.Sprintf("%v:%v", input.PreviousOutPoint.Hash.String(), input.PreviousOutPoint.Index)
