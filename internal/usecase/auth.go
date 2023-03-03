@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -452,6 +453,23 @@ func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
+	}
+
+	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(walletAddress), user)
+	return user, nil
+}
+
+func (u Usecase) UserProfileByWalletWithCache(walletAddress string) (*entity.Users, error) {
+	userCache, err := u.Cache.GetData(helpers.GenerateUserWalletAddressKey(walletAddress))
+	if err != nil && userCache == nil {
+		return u.UserProfileByWallet(walletAddress)
+	}
+	user := &entity.Users{}
+
+	bytes := []byte(*userCache)
+	err = json.Unmarshal(bytes, user)
+	if err != nil{
+		return u.UserProfileByWallet(walletAddress)
 	}
 
 	return user, nil

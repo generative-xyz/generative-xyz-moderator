@@ -942,6 +942,8 @@ definitions:
         type: string
       orderInscriptionIndex:
         type: integer
+      ordinalsData:
+        $ref: '#/definitions/response.OrdinalsData'
       owner:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
@@ -983,6 +985,19 @@ definitions:
         type: integer
       indexReserve:
         type: integer
+    type: object
+  response.OrdinalsData:
+    properties:
+      block:
+        type: integer
+      contentLength:
+        type: string
+      contentType:
+        type: string
+      sat:
+        type: string
+      timestamp:
+        type: string
     type: object
   response.ProfileResponse:
     properties:
@@ -2243,7 +2258,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -3276,6 +3291,51 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get the recent work projects
+      tags:
+      - Project
+  /project/upcomming:
+    get:
+      consumes:
+      - application/json
+      description: upcomming get projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: filter project via name
+        in: query
+        name: name
+        type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
+        type: integer
+      - description: newest, oldest, priority-asc, priority-desc, trending-score
+        in: query
+        name: sort
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get upcomming projects
       tags:
       - Project
   /referrals:
