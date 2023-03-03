@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -96,6 +97,45 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	userInfo, err := h.Usecase.UserProfile(userID)
+	if err != nil {
+		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	address := userInfo.WalletAddressBTCTaproot
+	listingList, err := h.Usecase.Repo.GetDexBTCListingOrderUser(address, int64(limit), int64(offset))
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+		return
+	}
+
+	_ = listingList
+	// result := response.DexBTCListingOrderInfo{
+	// 	RawPSBT: orderInfo.RawPSBT,
+	// }
+
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
 }
 
 func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) {
