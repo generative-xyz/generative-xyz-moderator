@@ -87,6 +87,7 @@ type CronTabConfig struct {
 	MintNftBtcEnabled        bool
 	OrdinalCollectionEnabled bool
 	InscriptionIndexEnabled  bool
+	DexBTCEnabled            bool
 }
 
 type MoralisConfig struct {
@@ -218,6 +219,7 @@ func NewConfig() (*Config, error) {
 	crontabTrendingStart, _ := strconv.ParseBool(os.Getenv("TRENDING_CRONTAB_START"))
 	crontabOrdinalCollectionStart, _ := strconv.ParseBool(os.Getenv("ORDINAL_COLLECTION_CRONTAB_START"))
 	crontabInscriptionIndex, _ := strconv.ParseBool(os.Getenv("INSCRIPTION_INFO_CRONTAB_START"))
+	crontabDexBTC, _ := strconv.ParseBool(os.Getenv("DEX_BTC_CRONTAB_START"))
 
 	crontabMintNftBtcStart, _ := strconv.ParseBool(os.Getenv("MINT_NFT_BTC_START"))
 
@@ -321,6 +323,7 @@ func NewConfig() (*Config, error) {
 			MintNftBtcEnabled:        crontabMintNftBtcStart,
 			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
 			InscriptionIndexEnabled:  crontabInscriptionIndex,
+			DexBTCEnabled:            crontabDexBTC,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),

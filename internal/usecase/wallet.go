@@ -157,7 +157,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				}
 				for _, listing := range currentListing {
 					if listing.InscriptionID == data.InscriptionID {
-						if listing.CancelTx != "" {
+						if listing.CancelTx == "" {
 							inscWalletInfo.Buyable = true
 						} else {
 							inscWalletInfo.Cancelling = true

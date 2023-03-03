@@ -7,7 +7,7 @@ type DexBTCListingOrderInfo struct {
 type DexBTCHistoryListing struct {
 	OrderID       string `json:"order_id"`
 	Type          string `json:"type"`
-	Timestamp     uint64 `json:"timestamp"`
+	Timestamp     int64  `json:"timestamp"`
 	InscriptionID string `json:"inscription_id"`
 	Txhash        string `json:"txhash"`
 	Amount        string `json:"amount"`

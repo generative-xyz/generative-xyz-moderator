@@ -16,4 +16,5 @@ type ListingFee struct {
 	RoyaltyFee     string `json:"royaltyFee"`
 	RoyaltyAddress string `json:"royaltyAddress"`
 	ServiceAddress string `json:"serviceAddress"`
+	ProjectID      string `json:"projectID"`
 }

@@ -52,11 +52,22 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 
 	switch objType {
 	case "project":
-		dataResp, t, tp, err = h.Usecase.AlgoliaSearchProject(filter)
+		var uProjects []entity.Projects
+		uProjects, t, tp, err = h.Usecase.AlgoliaSearchProject(filter)
 		if err != nil {
 			h.Logger.Error("h.Usecase.AlgoliaSearchProject", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
+		}
+		for _, p := range uProjects {
+			r, err := h.projectToResp(&p)
+			if err != nil {
+				h.Logger.Error("copier.Copy", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+				return
+			}
+
+			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "project", Project: r})
 		}
 	case "inscription":
 		dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
@@ -66,18 +77,33 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "artist":
-		dataResp, t, tp, err = h.Usecase.AlgoliaSearchArtist(filter)
+		var users []*response.ArtistResponse
+		users, t, tp, err = h.Usecase.AlgoliaSearchArtist(filter)
 		if err != nil {
 			h.Logger.Error("h.Usecase.AlgoliaSearchArtist", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
+		for _, user := range users {
+			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "artist", Artist: user})
+		}
 	case "token":
-		dataResp, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
+		var uTokens []entity.TokenUri
+		uTokens, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
 		if err != nil {
 			h.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
+		}
+		for _, token := range uTokens {
+			r, err := h.tokenToResp(&token)
+			if err != nil {
+				h.Logger.Error("copier.Copy", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+				return
+			}
+
+			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
 		}
 	}
 

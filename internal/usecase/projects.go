@@ -204,10 +204,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.GenNFTAddr = pe.TokenID
 
 	captureTime := entity.DEFAULT_CAPTURE_TIME
-	if req.CaptureImageTime != nil && *req.CaptureImageTime  != 0 {
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
 		captureTime = *req.CaptureImageTime
 	}
-	
+
 	pe.CatureThumbnailDelayTime = &captureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
@@ -296,7 +296,7 @@ func (u Usecase) CheckAirdropInit() error {
 			// for airdrop artist
 			// check something like
 			projectId := airdrop.ProjectId
-			project, err := u.Repo.FindProject(projectId)
+			project, err := u.Repo.FindProjectByTokenID(projectId)
 			if err != nil {
 				u.Logger.ErrorAny("CheckAirdropInit project not found", zap.Any("projectID", projectId))
 				continue
@@ -684,7 +684,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		p.MintPrice = reqMfFStr.String()
 	}
 
-	if req.CaptureImageTime != nil && *req.CaptureImageTime  != 0 {
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
 		if p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != *req.CaptureImageTime {
 			p.CatureThumbnailDelayTime = req.CaptureImageTime
 		}
@@ -1751,9 +1751,9 @@ type Volume struct {
 	ProjectID string `json:"projectID"`
 	PayType   string `json:"payType"`
 	Amount    string `json:"amount"`
-	Earning    string `json:"earning"`
-	Withdraw    string `json:"withdraw"`
-	Available    string `json:"available"`
+	Earning   string `json:"earning"`
+	Withdraw  string `json:"withdraw"`
+	Available string `json:"available"`
 }
 
 func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
@@ -1780,9 +1780,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 			ProjectID: projectID,
 			PayType:   paytype,
 			Amount:    "0",
-			Earning:    "0",
-			Withdraw:    "0",
-			Available:    "0",
+			Earning:   "0",
+			Withdraw:  "0",
+			Available: "0",
 		}
 
 		return &tmp, nil
@@ -1791,7 +1791,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	wdraw := 0.0
 	w, err := u.Repo.AggregateWithDrawByUser(&entity.FilterWithdraw{
 		WithdrawItemID: &projectID,
-		PaymentType: &paytype,
+		PaymentType:    &paytype,
 		Statuses: []int{
 			entity.StatusWithdraw_Pending,
 			entity.StatusWithdraw_Approve,
@@ -1799,7 +1799,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	})
 
 	if err == nil && len(w) > 0 {
-		wdraw =  w[0].Amount
+		wdraw = w[0].Amount
 	}
 
 	available := data.Earning - wdraw
@@ -1807,9 +1807,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		ProjectID: data.ID.ProjectID,
 		PayType:   data.ID.Paytype,
 		Amount:    fmt.Sprintf("%d", int(data.Amount)),
-		Earning:    fmt.Sprintf("%d", int(data.Earning)),
+		Earning:   fmt.Sprintf("%d", int(data.Earning)),
 		Withdraw:  fmt.Sprintf("%d", int(wdraw)),
-		Available:  fmt.Sprintf("%d", int(available)),
+		Available: fmt.Sprintf("%d", int(available)),
 	}
 
 	return &tmp, nil
