@@ -132,6 +132,7 @@ type FilterProjects struct {
 	CategoryIds   []string
 	TokenIds      []string
 	Ids           []string
+	CustomQueries	  map[string]bson.M
 }
 
 func (u Projects) TableName() string {

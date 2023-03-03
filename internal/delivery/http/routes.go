@@ -77,6 +77,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
+	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
