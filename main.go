@@ -20,7 +20,9 @@ import (
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
+	developer_inscribe_btc "rederinghub.io/internal/delivery/crontab_developer_inscribe_btc"
 	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
+
 	"rederinghub.io/internal/delivery/crontab_inscription_info"
 	"rederinghub.io/internal/delivery/crontab_marketplace"
 	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
@@ -189,6 +191,8 @@ func startServer() {
 
 	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
 
+	developerInscribeCron := developer_inscribe_btc.NewScronDeveloperInscribeHandler(&g, *uc)
+
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 	inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
@@ -224,6 +228,11 @@ func startServer() {
 	servers["mint_nft_btc"] = delivery.AddedServer{
 		Server:  mintNftBtcCron,
 		Enabled: conf.Crontab.MintNftBtcEnabled,
+	}
+
+	servers["developer_inscribe"] = delivery.AddedServer{
+		Server:  developerInscribeCron,
+		Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
 	}
 
 	servers["marketplace_crontab"] = delivery.AddedServer{
