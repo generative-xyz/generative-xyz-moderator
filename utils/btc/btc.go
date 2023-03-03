@@ -407,29 +407,42 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService) (string, err
 
 type BTCTxInfo struct {
 	Data struct {
-		BlockHeight   int         `json:"block_height"`
-		BlockHash     string      `json:"block_hash"`
-		BlockTime     int         `json:"block_time"`
-		CreatedAt     int         `json:"created_at"`
-		Confirmations int         `json:"confirmations"`
-		Fee           int         `json:"fee"`
-		Hash          string      `json:"hash"`
-		InputsCount   int         `json:"inputs_count"`
-		InputsValue   int         `json:"inputs_value"`
-		IsCoinbase    bool        `json:"is_coinbase"`
-		IsDoubleSpend bool        `json:"is_double_spend"`
-		IsSwTx        bool        `json:"is_sw_tx"`
-		LockTime      int         `json:"lock_time"`
-		OutputsCount  int         `json:"outputs_count"`
-		OutputsValue  int64       `json:"outputs_value"`
-		Sigops        int         `json:"sigops"`
-		Size          int         `json:"size"`
-		Version       int         `json:"version"`
-		Vsize         int         `json:"vsize"`
-		Weight        int         `json:"weight"`
-		WitnessHash   string      `json:"witness_hash"`
-		Inputs        interface{} `json:"inputs"`
-		Outputs       interface{} `json:"outputs"`
+		BlockHeight   int    `json:"block_height"`
+		BlockHash     string `json:"block_hash"`
+		BlockTime     int    `json:"block_time"`
+		CreatedAt     int    `json:"created_at"`
+		Confirmations int    `json:"confirmations"`
+		Fee           int    `json:"fee"`
+		Hash          string `json:"hash"`
+		InputsCount   int    `json:"inputs_count"`
+		InputsValue   int    `json:"inputs_value"`
+		IsCoinbase    bool   `json:"is_coinbase"`
+		IsDoubleSpend bool   `json:"is_double_spend"`
+		IsSwTx        bool   `json:"is_sw_tx"`
+		LockTime      int    `json:"lock_time"`
+		OutputsCount  int    `json:"outputs_count"`
+		OutputsValue  int64  `json:"outputs_value"`
+		Sigops        int    `json:"sigops"`
+		Size          int    `json:"size"`
+		Version       int    `json:"version"`
+		Vsize         int    `json:"vsize"`
+		Weight        int    `json:"weight"`
+		WitnessHash   string `json:"witness_hash"`
+		Inputs        *[]struct {
+			PrevAddresses []string `json:"prev_addresses"`
+			PrevPosition  int      `json:"prev_position"`
+			PrevTxHash    string   `json:"prev_tx_hash"`
+			PrevType      string   `json:"prev_type"`
+			PrevValue     int      `json:"prev_value"`
+			Sequence      int64    `json:"sequence"`
+		} `json:"inputs"`
+		Outputs *[]struct {
+			Addresses         []string `json:"addresses"`
+			Value             int      `json:"value"`
+			Type              string   `json:"type"`
+			SpentByTx         string   `json:"spent_by_tx"`
+			SpentByTxPosition int      `json:"spent_by_tx_position"`
+		} `json:"outputs"`
 	} `json:"data"`
 	ErrCode int    `json:"err_code"`
 	ErrNo   int    `json:"err_no"`
@@ -440,13 +453,17 @@ type BTCTxInfo struct {
 var btcRateLock sync.Mutex
 
 // TODO: 2077 add more apis
+func checkTxfromQuicknode(txhash string) error {
+	return nil
+}
+
 func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
 	btcRateLock.Lock()
 	defer func() {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 		btcRateLock.Unlock()
 	}()
-	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=1", txhash)
+	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=2", txhash)
 	fmt.Println("url", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
