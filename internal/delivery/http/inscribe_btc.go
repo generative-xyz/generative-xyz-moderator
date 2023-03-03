@@ -115,6 +115,7 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 					Page:  page.Page,
 				},
 				UserUuid: &userUuid,
+				Expired:  true,
 			}
 			return h.Usecase.ListInscribeBTC(req)
 		},

@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/external/ord_service"
 
 	"github.com/davecgh/go-spew/spew"
@@ -201,8 +203,12 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 
-	catureTime := entity.DEFAULT_CAPTURE_TIME
-	pe.CatureThumbnailDelayTime = &catureTime
+	captureTime := entity.DEFAULT_CAPTURE_TIME
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
+		captureTime = *req.CaptureImageTime
+	}
+
+	pe.CatureThumbnailDelayTime = &captureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
@@ -210,6 +216,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
+
+	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
 	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
@@ -269,6 +277,7 @@ func (u Usecase) CheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
+				go u.NotifyNewAirdrop(airdrop)
 			}
 		}
 	}
@@ -287,7 +296,7 @@ func (u Usecase) CheckAirdropInit() error {
 			// for airdrop artist
 			// check something like
 			projectId := airdrop.ProjectId
-			project, err := u.Repo.FindProject(projectId)
+			project, err := u.Repo.FindProjectByTokenID(projectId)
 			if err != nil {
 				u.Logger.ErrorAny("CheckAirdropInit project not found", zap.Any("projectID", projectId))
 				continue
@@ -675,6 +684,16 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		p.MintPrice = reqMfFStr.String()
 	}
 
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
+		if p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != *req.CaptureImageTime {
+			p.CatureThumbnailDelayTime = req.CaptureImageTime
+		}
+
+		if p.CatureThumbnailDelayTime == nil {
+			p.CatureThumbnailDelayTime = req.CaptureImageTime
+		}
+	}
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.Error("updated", err.Error(), err)
@@ -821,6 +840,32 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
+	// pe.CustomQueries = make(map[string]primitive.M)
+	// pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
+func (u Usecase) GetUpcommingProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+
+	pe := &entity.FilterProjects{}
+
+	now := time.Now().UTC().Unix()
+	pe.CustomQueries = make(map[string]primitive.M)
+	pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$gt": now}
+
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
@@ -941,13 +986,15 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	}
 	c.MintPriceEth = ethPrice
 
-	networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+	// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+
+	networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
 
 	if c.MaxFileSize > 0 {
 		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
 		if calNetworkFee > 0 {
 			networkFeeInt = calNetworkFee
-			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt)
+			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
 
 		}
 	}
@@ -1704,6 +1751,10 @@ type Volume struct {
 	ProjectID string `json:"projectID"`
 	PayType   string `json:"payType"`
 	Amount    string `json:"amount"`
+	Earning    string `json:"earning"`
+	Withdraw    string `json:"withdraw"`
+	Available    string `json:"available"`
+	Status    int `json:"status"`
 }
 
 func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
@@ -1730,15 +1781,48 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 			ProjectID: projectID,
 			PayType:   paytype,
 			Amount:    "0",
+			Earning:    "0",
+			Withdraw:    "0",
+			Available:    "0",
+			Status: entity.StatusWithdraw_Available,
 		}
 
 		return &tmp, nil
 	}
 
+	latestWd, err := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
+		WithdrawItemID: &projectID,
+		PaymentType: &paytype,
+	})
+
+	wdraw := 0.0
+	w, err := u.Repo.AggregateWithDrawByUser(&entity.FilterWithdraw{
+		WithdrawItemID: &projectID,
+		PaymentType:    &paytype,
+		Statuses: []int{
+			entity.StatusWithdraw_Pending,
+			entity.StatusWithdraw_Approve,
+		},
+	})
+
+	status := entity.StatusWithdraw_Available
+	if err == nil && len(w) > 0 {
+		wdraw = w[0].Amount
+	}
+
+	if latestWd != nil {
+		status = latestWd.Status
+	}
+
+	available := data.Earning - wdraw
 	tmp := Volume{
 		ProjectID: data.ID.ProjectID,
 		PayType:   data.ID.Paytype,
 		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+		Earning:   fmt.Sprintf("%d", int(data.Earning)),
+		Withdraw:  fmt.Sprintf("%d", int(wdraw)),
+		Available:  fmt.Sprintf("%d", int(available)),
+		Status: status,
 	}
 
 	return &tmp, nil

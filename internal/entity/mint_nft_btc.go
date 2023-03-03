@@ -32,6 +32,9 @@ const (
 	StatusMint_Refunded  // 12: refunding
 
 	StatusMint_TxRefundFailed // 13: tx refund fund failed
+
+	StatusMint_NotEnoughBalanceToSendMaster // 14: tx refund fund failed
+	StatusMint_AlreadySentMaster            // 15: sent but can't save the tx, need to get it later.
 )
 
 var StatusMintToText = map[StatusMint]string{
@@ -64,6 +67,8 @@ var StatusMintToText = map[StatusMint]string{
 type MintNftBtc struct {
 	BaseEntity  `bson:",inline"`
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
+
+	UserID string `bson:"user_id"`
 
 	OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
 	RefundUserAdress  string `bson:"refund_user_address"`

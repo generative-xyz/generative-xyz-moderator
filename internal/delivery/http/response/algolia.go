@@ -1,11 +1,11 @@
 package response
 
 type SearchResponse struct {
-	ObjectType  string             `json:"objectType"`
-	Inscription *SearhcInscription `json:"inscription"`
-	Project     *SearchProject     `json:"project"`
-	Artist      *SearchArtist      `json:"artist"`
-	TokenUri    *SearchTokenUri    `json:"tokenUri"`
+	ObjectType  string                `json:"objectType"`
+	Inscription *SearhcInscription    `json:"inscription"`
+	Project     *ProjectResp          `json:"project"`
+	Artist      *ArtistResponse       `json:"artist"`
+	TokenUri    *InternalTokenURIResp `json:"tokenUri"`
 }
 
 type SearhcInscription struct {

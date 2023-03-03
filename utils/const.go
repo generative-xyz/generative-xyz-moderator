@@ -69,7 +69,8 @@ const (
 	NFT_CACHE_EXPIRED_TIME           int    = 86400
 	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30       //a month (second)
 	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360      //a year (second)
-	DB_CACHE_EXPIRED_TIME            int    = 86400            //a week
+	DB_CACHE_EXPIRED_TIME            int    = 86400            //a day
+	REDIS_CACHE_EXPIRED_TIME            int    = 86400            //a day
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
@@ -130,7 +131,8 @@ const (
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
 	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
 
-	FEE_ETH_SEND_MASTER = 0.0006
+	FEE_ETH_SEND_MASTER = 0.0007
+	FEE_BTC_SEND_NFT    = 10000
 
 	INSCRIBE_TIMEOUT = 6
 
@@ -139,9 +141,9 @@ const (
 	NETWORK_BTC = "btc"
 	NETWORK_ETH = "eth"
 
-	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_03.txt"
-	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_02.txt"
-	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/Prize_01.txt"
+	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/magickey.html"
+	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/goldenkey.html"
+	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/silverkey.html"
 )
 
 type PubSubSendOtp struct {

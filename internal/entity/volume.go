@@ -46,6 +46,7 @@ type  AggregateProjectItemResp struct {
 type  AggregateAmount struct {
 	ID AggregateItemID `bson:"_id" json:"id"`
 	Amount float64 `bson:"amount" json:"amount"`
+	Earning float64 `bson:"earning" json:"earning"`
 }
 
 type  AggregateItemID struct {

@@ -1592,7 +1592,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2773,6 +2773,73 @@
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/upcomming": {
+            "get": {
+                "description": "upcomming get projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get upcomming projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via category ids",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, oldest, priority-asc, priority-desc, trending-score",
+                        "name": "sort",
                         "in": "query"
                     },
                     {
@@ -5402,6 +5469,9 @@
                 "orderInscriptionIndex": {
                     "type": "integer"
                 },
+                "ordinalsData": {
+                    "$ref": "#/definitions/response.OrdinalsData"
+                },
                 "owner": {
                     "$ref": "#/definitions/response.ProfileResponse"
                 },
@@ -5464,6 +5534,26 @@
                 },
                 "indexReserve": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.OrdinalsData": {
+            "type": "object",
+            "properties": {
+                "block": {
+                    "type": "integer"
+                },
+                "contentLength": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "sat": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },

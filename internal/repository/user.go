@@ -178,6 +178,13 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	filter1 := bson.M{}
 	filter1[utils.KEY_DELETED_AT] = nil
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			filter1["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	if filter.Email != nil && *filter.Email != "" {
 		filter1["email"] = *filter.Email
 	}
@@ -206,7 +213,8 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	for _, user := range users {
 		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
 		if err != nil {
-			return nil, err
+			continue
+			// return nil, err
 		}
 
 		projects := []*response.ProjectBasicInfo{}
