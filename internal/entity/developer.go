@@ -9,13 +9,13 @@ import (
 
 type DeveloperKey struct {
 	BaseEntity     `bson:",inline"`
-	UserUuid       string      `bson:"user_uuid"`
-	ApiKey         string      `bson:"api_key"`
-	ApiName        string      `bson:"api_name"`
-	ApiEmail       string      `bson:"api_email"`
-	ApiCompany     string      `bson:"api_company"`
-	ApiDescription string      `bson:"api_description"`
-	Status         interface{} `bson:"status"`
+	UserUuid       string `bson:"user_uuid"`
+	ApiKey         string `bson:"api_key"`
+	ApiName        string `bson:"api_name"`
+	ApiEmail       string `bson:"api_email"`
+	ApiCompany     string `bson:"api_company"`
+	ApiDescription string `bson:"api_description"`
+	Status         int    `bson:"status"`
 }
 
 func (u DeveloperKey) TableName() string {

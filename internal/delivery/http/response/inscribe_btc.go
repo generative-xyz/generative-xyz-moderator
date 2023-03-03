@@ -13,6 +13,8 @@ type InscribeBtcResp struct {
 	InscriptionID string `json:"inscriptionID"` // tokenID in ETH
 	Balance       string `json:"balance"`       // balance after check
 	TimeoutAt     string `json:"timeout_at"`
+
+	ID string `json:"id"`
 }
 
 type InscribeInfoResp struct {
@@ -33,4 +35,3 @@ type InscribeInfoResp struct {
 	Output             string `json:"output"`
 	Offset             string `json:"offset"`
 }
-

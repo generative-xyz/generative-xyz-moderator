@@ -27,22 +27,23 @@ type gData struct {
 }
 
 type Usecase struct {
-	Repo            repository.Repository
-	Logger          logger.Ilogger
-	Config          *config.Config
-	PubSub          redis.IPubSubClient
-	Cache           redis.IRedisCache
-	Auth2           oauth2service.Auth2
-	GCS             googlecloud.IGcstorage
-	S3Adapter  googlecloud.S3Adapter
-	MoralisNft      nfts.MoralisNfts
-	CovalentNft     nfts.CovalentNfts
-	Blockchain      blockchain.Blockchain
-	Slack           slack.Slack
-	DiscordClient *discordclient.Client
-	OrdService      *ord_service.BtcOrd
-	gData           gData
-	DelegateService *delegate.Service
+	Repo                repository.Repository
+	Logger              logger.Ilogger
+	Config              *config.Config
+	PubSub              redis.IPubSubClient
+	Cache               redis.IRedisCache
+	Auth2               oauth2service.Auth2
+	GCS                 googlecloud.IGcstorage
+	S3Adapter           googlecloud.S3Adapter
+	MoralisNft          nfts.MoralisNfts
+	CovalentNft         nfts.CovalentNfts
+	Blockchain          blockchain.Blockchain
+	Slack               slack.Slack
+	DiscordClient       *discordclient.Client
+	OrdService          *ord_service.BtcOrd
+	OrdServiceDeveloper *ord_service.BtcOrd
+	gData               gData
+	DelegateService     *delegate.Service
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -61,6 +62,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.Slack = global.Slack
 	u.DiscordClient = global.DiscordClient
 	u.OrdService = global.OrdService
+	u.OrdServiceDeveloper = global.OrdServiceDeveloper
 	u.DelegateService = global.DelegateService
 	return u, nil
 }
