@@ -384,7 +384,7 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService) (string, err
 	var status string
 	txStatus, err := bs.CheckTx(txhash)
 	if err != nil {
-		txInfo, err := checkTxFromBTC(txhash)
+		txInfo, err := CheckTxFromBTC(txhash)
 		if err != nil {
 			fmt.Printf("checkTxFromBTC err: %v", err)
 			status = "Failed"
@@ -457,7 +457,7 @@ func checkTxfromQuicknode(txhash string) error {
 	return nil
 }
 
-func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
+func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
 	btcRateLock.Lock()
 	defer func() {
 		time.Sleep(300 * time.Millisecond)

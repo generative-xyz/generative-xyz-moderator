@@ -3,6 +3,10 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
@@ -19,11 +23,13 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 		return errors.New("invalid cancelling request")
 	}
 	if !orderInfo.Cancelled && orderInfo.CancelTx == "" {
+		currentTime := time.Now()
 		orderInfo.CancelTx = txhash
+		orderInfo.CancelAt = &currentTime
 	} else {
 		return errors.New("order already cancelling/cancelled")
 	}
-	_, err = u.Repo.UpdateDexBTCListingOrder(orderInfo)
+	_, err = u.Repo.UpdateDexBTCListingOrderCancelTx(orderInfo)
 	if err != nil {
 		return err
 	}
@@ -152,6 +158,79 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 }
 
 func (u Usecase) JobWatchPendingDexBTCListing() error {
+	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
+	if err != nil {
+		return err
+	}
+	_, bs, err := u.buildBTCClient()
+	if err != nil {
+		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+		return err
+	}
+	for _, order := range pendingOrders {
+		if order.CancelTx != "" {
+			inscriptionTx := strings.Split(order.Inputs[0], ":")
+			idx, err := strconv.Atoi(inscriptionTx[1])
+			if err != nil {
+				log.Printf("JobWatchPendingDexBTCListing strconv.Atoi(inscriptionTx[1]) %v\n", order.Inputs)
+				continue
+			}
+			spentTx := ""
+			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
+			if err == nil {
+				if txDetail.Data.Outputs != nil {
+					outputs := *txDetail.Data.Outputs
+					if outputs[idx].SpentByTx != "" {
+						spentTx = outputs[idx].SpentByTx
+					}
+				}
+			} else {
+				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
+				txStatus, err := bs.CheckTx(inscriptionTx[0])
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
+					continue
+				} else {
+					if txStatus.Outputs[idx].SpentBy != "" {
+						spentTx = txStatus.Outputs[idx].SpentBy
+					}
+				}
+			}
 
+			if spentTx != "" {
+				currentTime := time.Now()
+				order.MatchedTx = spentTx
+				order.MatchAt = &currentTime
+				order.Matched = true
+				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+					continue
+				}
+			}
+		} else {
+			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs)
+			if err != nil {
+				log.Printf("JobWatchPendingDexBTCListing btc.GetBTCTxStatusExtensive err %v\n", err)
+				continue
+			}
+			if status == "Pending" {
+				continue
+			}
+			if status == "Success" {
+				order.Cancelled = true
+			}
+			if status == "Failed" {
+				order.CancelAt = nil
+				order.CancelTx = ""
+				order.Cancelled = false
+			}
+			_, err = u.Repo.UpdateDexBTCListingOrderCancelTx(&order)
+			if err != nil {
+				log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
+				continue
+			}
+		}
+	}
 	return nil
 }
