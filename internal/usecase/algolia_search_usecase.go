@@ -9,22 +9,6 @@ import (
 	"rederinghub.io/utils/algolia"
 )
 
-func (uc *Usecase) AlgoliaSearchProjectV1(filter *algolia.AlgoliaFilter) (*entity.Pagination, error) {
-	if filter.ObjType != "" && filter.ObjType != "project" {
-		return nil, nil
-	}
-	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
-	resp, err := algoliaClient.FetchObjIdsBySearch("projects", filter)
-	if err != nil {
-		return nil, err
-	}
-
-	pe := &entity.FilterProjects{Ids: resp}
-	pe.Page = int64(filter.Page)
-	pe.Limit = int64(filter.Limit)
-	return uc.Repo.GetProjects(*pe)
-}
-
 func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity.Projects, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "project" {
 		return nil, 0, 0, nil
@@ -48,6 +32,8 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 	}
 
 	pe := &entity.FilterProjects{Ids: ids}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
 	uProjects, err := uc.Repo.GetProjects(*pe)
 	if err != nil {
 		return nil, 0, 0, err
@@ -120,6 +106,8 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 	}
 
 	req := structure.FilterUsers{Ids: ids}
+	req.Limit = int64(filter.Limit)
+	req.Page = 1
 	uUsers, err := uc.Repo.ListUsers(req)
 	iUsers := uUsers.Result
 	rUsers := iUsers.([]*response.ArtistResponse)
@@ -148,6 +136,8 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 		ids = append(ids, i.ObjectId)
 	}
 	pe := &entity.FilterTokenUris{Ids: ids}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
 	tokens, err := uc.Repo.FilterTokenUri(*pe)
 	if err != nil {
 		return nil, 0, 0, err
