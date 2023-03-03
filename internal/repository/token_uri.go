@@ -104,6 +104,13 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 		filter.SortBy = "minted_time"
 	}
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields(), r.SortToken(filter), &tokens)
 	if err != nil {
 		return nil, err

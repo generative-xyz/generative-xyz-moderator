@@ -30,7 +30,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	airdropTx := airdrop.Tx
 	file := strings.Replace(airdrop.File, "html", "png", 1)
 	t := airdrop.Type
-	
+
 	user, err := u.Repo.FindUserByID(userId)
 	var userStr string
 	if err == nil && user != nil {
@@ -62,6 +62,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 		Embeds: []discordclient.Embed{{
 			Title: "AIRDROP KEY",
 			Url: fmt.Sprintf("https://generativeexplorer.com/inscription/%s", airdrop.InscriptionId),
+
 			//Author: discordclient.Author{
 			//	Name:    u.resolveShortName(minter.DisplayName, minter.WalletAddress),
 			//	Url:     fmt.Sprintf("%s/profile/%s", domain, minter.WalletAddress),
