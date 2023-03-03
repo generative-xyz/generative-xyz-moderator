@@ -99,6 +99,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	f.AvailableBalance = fmt.Sprintf("%d", int(availableBalance))
 	f.WithdrawType = entity.Withdrawtype(wr.WithdrawType)
 	f.WithdrawItemID = wr.ID
+	f.Status = entity.StatusWithdraw_Pending
 	
 	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
 	f.User = entity.WithdrawUserInfo{
