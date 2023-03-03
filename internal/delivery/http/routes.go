@@ -211,6 +211,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.Use(h.MiddleWare.AccessToken)
 	// inscriptionDex.HandleFunc("/forsale", h.btcMarketplaceListing).Methods("GET")
 	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 
