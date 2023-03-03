@@ -34,6 +34,7 @@ const (
 	StatusMint_TxRefundFailed // 13: tx refund fund failed
 
 	StatusMint_NotEnoughBalanceToSendMaster // 14: tx refund fund failed
+	StatusMint_AlreadySentMaster            // 15: sent but can't save the tx, need to get it later.
 )
 
 var StatusMintToText = map[StatusMint]string{
