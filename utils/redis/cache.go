@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/config"
 
 	"github.com/go-redis/redis"
@@ -71,7 +72,7 @@ func (r *redisCache) SetData(key string, value interface{}) error {
 		return err
 	}
 
-	err = r.client.Set(key, valueByte, 0).Err()
+	err = r.client.Set(key, valueByte, time.Duration(utils.REDIS_CACHE_EXPIRED_TIME)).Err()
 	if err != nil {
 		return err
 	}
