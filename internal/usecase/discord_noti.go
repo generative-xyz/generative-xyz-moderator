@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	discordclient "rederinghub.io/utils/discord"
 )
 
@@ -27,9 +28,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	}
 
 	userId := airdrop.Receiver
-	airdropTx := airdrop.Tx
 	file := strings.Replace(airdrop.File, "html", "png", 1)
-	t := airdrop.Type
 
 	user, err := u.Repo.FindUserByID(userId)
 	var userStr string
@@ -47,20 +46,33 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 		userStr = userId
 	}
 
-	key := "Collector"
-	if t == 0 {
-		key = "Artist"
-	}
+	key := "Key holder"
 	fields = addFields(fields, key, userStr, false)
-	fields = addFields(fields, "AirdropTx", airdropTx, false)
 	// fields = addFields(fields, "File", file, false)
+
+	var title string
+	if airdrop.File == utils.AIRDROP_MAGIC {
+		title = "MAGIC KEY"
+	} else if airdrop.File == utils.AIRDROP_GOLDEN {
+		title = "GOLDEN KEY"
+	} else {
+		title = "SILVER KEY"
+	}
+
+	inscriptionNumTitle := ""
+
+	inscriptionInfo, err := u.GetInscribeInfo(airdrop.InscriptionId)
+
+	if err == nil {
+		inscriptionNumTitle = fmt.Sprintf(" #%v", inscriptionInfo.Index)
+	}
 
 	discordMsg := discordclient.Message{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
-		Content:   "**AIRDROP SUCCESSED**",
+		Content:   "**NEW KEY**",
 		Embeds: []discordclient.Embed{{
-			Title: "AIRDROP KEY",
+			Title: fmt.Sprintf("%s%s", title, inscriptionNumTitle),
 			Url: fmt.Sprintf("https://generativeexplorer.com/inscription/%s", airdrop.InscriptionId),
 
 			//Author: discordclient.Author{
