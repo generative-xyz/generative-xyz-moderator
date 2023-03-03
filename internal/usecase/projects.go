@@ -277,6 +277,7 @@ func (u Usecase) CheckAirdrop() error {
 					"Airdrop success",
 					airdrop.ReceiverBtcAddressTaproot,
 					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
+				go u.NotifyNewAirdrop(airdrop)
 			}
 		}
 	}
