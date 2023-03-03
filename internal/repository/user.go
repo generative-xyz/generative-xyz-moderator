@@ -178,6 +178,13 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	filter1 := bson.M{}
 	filter1[utils.KEY_DELETED_AT] = nil
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			filter1["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	if filter.Email != nil && *filter.Email != "" {
 		filter1["email"] = *filter.Email
 	}
