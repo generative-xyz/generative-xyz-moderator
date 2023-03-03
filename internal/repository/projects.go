@@ -369,6 +369,12 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		f["isHidden"] = *filter.IsHidden
 	}
 
+	if len(filter.CustomQueries) > 0 {
+		for key, query := range filter.CustomQueries {
+			f[key] = query
+		}
+	}
+
 	return f
 }
 

@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/external/ord_service"
 
 	"github.com/davecgh/go-spew/spew"
@@ -201,8 +203,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 
-	catureTime := entity.DEFAULT_CAPTURE_TIME
-	pe.CatureThumbnailDelayTime = &catureTime
+	captureTime := entity.DEFAULT_CAPTURE_TIME
+	pe.CatureThumbnailDelayTime = &captureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
@@ -210,6 +212,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
+
+	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
 	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
@@ -821,6 +825,32 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
+	pe.CustomQueries = make(map[string]primitive.M)
+	pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
+func (u Usecase) GetUpcommingProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+
+	pe := &entity.FilterProjects{}
+
+	now := time.Now().UTC().Unix()
+	pe.CustomQueries = make(map[string]primitive.M)
+	pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$gt": now}
+
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
