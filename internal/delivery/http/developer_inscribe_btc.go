@@ -35,8 +35,6 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 
 			apiKey := r.URL.Query().Get("api-key")
 
-			fmt.Println("apiKey from url: ", apiKey)
-
 			developerApiKey, _ := h.Usecase.Repo.FindIDeveloperKeyByApiKey(apiKey)
 			if developerApiKey == nil {
 				err := errors.New("api-key not found")
