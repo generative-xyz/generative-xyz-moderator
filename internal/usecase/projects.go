@@ -1784,7 +1784,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 			Earning:    "0",
 			Withdraw:    "0",
 			Available:    "0",
-			Status: -1,
+			Status: entity.StatusWithdraw_Available,
 		}
 
 		return &tmp, nil
@@ -1794,8 +1794,6 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		WithdrawItemID: &projectID,
 		PaymentType: &paytype,
 	})
-
-	
 
 	wdraw := 0.0
 	w, err := u.Repo.AggregateWithDrawByUser(&entity.FilterWithdraw{
@@ -1807,7 +1805,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		},
 	})
 
-	status := -1
+	status := entity.StatusWithdraw_Available
 	if err == nil && len(w) > 0 {
 		wdraw = w[0].Amount
 	}
