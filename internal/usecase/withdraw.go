@@ -23,11 +23,14 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
 	//TODO - calculate refAmount
-	status := entity.StatusWithdraw_Pending
+	
 	wdf := &entity.FilterWithdraw{
 		WalletAddress: &walletAddress,
 		PaymentType: &wr.PaymentType,
-		Status: &status,
+		Statuses: []int{
+			entity.StatusWithdraw_Pending,
+			entity.StatusWithdraw_Approve,
+		},
 	}
 
 	wd, err := u.Repo.AggregateWithDrawByUser(wdf)
