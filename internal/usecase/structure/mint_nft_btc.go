@@ -7,6 +7,8 @@ type MintNftBtcData struct {
 	RefundUserAddress string `json:"refundUserAddress"`
 	ProjectID         string `json:"projectID"`
 	PayType           string `json:"payType"`
+
+	UserID string `json:"userID"`
 }
 
 type MintingInscription struct {

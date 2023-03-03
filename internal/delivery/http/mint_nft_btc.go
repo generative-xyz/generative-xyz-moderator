@@ -58,12 +58,12 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if !strings.EqualFold(profile.WalletAddressBTCTaproot, reqBody.WalletAddress) {
-		err = errors.New("permission dined")
-		h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// if !strings.EqualFold(profile.WalletAddressBTCTaproot, reqBody.WalletAddress) {
+	// 	err = errors.New("permission dined")
+	// 	h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
 	reqUsecase := &structure.MintNftBtcData{}
 	err = copier.Copy(reqUsecase, reqBody)
@@ -72,6 +72,8 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	reqUsecase.UserID = profile.UUID
 
 	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(*reqUsecase)
 	if err != nil {
