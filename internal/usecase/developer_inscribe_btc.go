@@ -149,8 +149,8 @@ func (u Usecase) ListDeveloperInscribeBTC(req *entity.FilterDeveloperInscribeBT)
 	return u.Repo.ListDeveloperInscribeBTC(req)
 }
 
-func (u Usecase) DetailDeveloperInscribeBTC(inscriptionID string) (*entity.DeveloperInscribeBTCResp, error) {
-	return u.Repo.FindDeveloperInscribeBTCByNftID(inscriptionID)
+func (u Usecase) DetailDeveloperInscribeBTC(uuid string) (*entity.DeveloperInscribeBTCResp, error) {
+	return u.Repo.FindDeveloperInscribeBTCByNftID(uuid)
 }
 
 func (u Usecase) RetryDeveloperInscribeBTC(id string) error {
