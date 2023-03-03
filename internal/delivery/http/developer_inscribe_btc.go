@@ -44,6 +44,12 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 				h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 				return nil, err
 			}
+			if developerApiKey.Status <= 0 {
+				err := errors.New("The api-key is invalid. Please contact the generative for the support.")
+				h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
+				return nil, err
+			}
 			// TODO: check request:
 			now := time.Now()
 			developerKeyRequests, _ := h.Usecase.Repo.FindDeveloperKeyRequests(apiKey)
