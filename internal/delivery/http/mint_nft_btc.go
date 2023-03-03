@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -165,7 +164,13 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	if !strings.EqualFold(item.OriginUserAddress, profile.WalletAddressBTCTaproot) {
+	// if !strings.EqualFold(item.OriginUserAddress, profile.WalletAddressBTCTaproot) {
+	// 	err := errors.New("permission dined")
+	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+	if item.UserID != profile.UUID {
 		err := errors.New("permission dined")
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

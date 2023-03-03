@@ -35,4 +35,6 @@ type MintingInscription struct {
 	IsCancel bool `json:"isCancel"`
 
 	ProgressStatus interface{} `json:"progressStatus"`
+
+	UserID string `json:"userID"`
 }
