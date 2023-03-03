@@ -130,7 +130,8 @@ const (
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
 	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
 
-	FEE_ETH_SEND_MASTER = 0.0006
+	FEE_ETH_SEND_MASTER = 0.0007
+	FEE_BTC_SEND_NFT    = 10000
 
 	INSCRIBE_TIMEOUT = 6
 

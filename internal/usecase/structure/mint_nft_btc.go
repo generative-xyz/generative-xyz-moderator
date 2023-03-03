@@ -28,6 +28,8 @@ type MintingInscription struct {
 	Amount  string `json:"amount"`
 	PayType string `json:"payType"`
 
+	OriginUserAddress string `json:"userWallet"`
+
 	IsCancel bool `json:"isCancel"`
 
 	ProgressStatus interface{} `json:"progressStatus"`

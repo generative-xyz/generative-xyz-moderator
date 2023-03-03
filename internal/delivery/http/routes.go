@@ -172,12 +172,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
 	// request-mint (new flow)
-	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
-	mintNftBtc.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
-
 	mintNftBtcAuth := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtcAuth.Use(h.MiddleWare.AccessToken)
+	mintNftBtcAuth.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
+	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()

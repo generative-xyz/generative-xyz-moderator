@@ -971,13 +971,15 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	}
 	c.MintPriceEth = ethPrice
 
-	networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+	// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+
+	networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
 
 	if c.MaxFileSize > 0 {
 		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
 		if calNetworkFee > 0 {
 			networkFeeInt = calNetworkFee
-			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt)
+			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
 
 		}
 	}
