@@ -24,5 +24,5 @@ type SendNFT struct {
 }
 
 type ListingFee struct {
-	InscriptionID string `json:"InscriptionID"`
+	InscriptionID string `json:"inscriptionID"`
 }

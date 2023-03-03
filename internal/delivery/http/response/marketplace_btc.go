@@ -12,6 +12,8 @@ type CreateMarketplaceBTCListing struct {
 }
 
 type ListingFee struct {
-	ServiceFee string `json:"serviceFee"`
-	RoyaltyFee string `json:"royaltyFee"`
+	ServiceFee     string `json:"serviceFee"`
+	RoyaltyFee     string `json:"royaltyFee"`
+	RoyaltyAddress string `json:"royaltyAddress"`
+	ServiceAddress string `json:"serviceAddress"`
 }
