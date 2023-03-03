@@ -369,8 +369,15 @@ type airdropArtist struct {
 	ArtistReceiveAddr string
 }
 
+type airdropCollector struct {
+	ProjectID string
+	TokenURI string
+	ArtistUUID string
+	ArtistReceiveAddr string
+}
+
 func (u Usecase) MigrateAirdropArtists() {
-	f, err := os.Open("airdrop_artist.csv")
+	f, err := os.Open("airdrop-collector.csv")
     if err != nil {
         return
     }
@@ -387,17 +394,18 @@ func (u Usecase) MigrateAirdropArtists() {
 
 	aaList := []*entity.Airdrop{}
 	for _, line := range data {
-        rec :=  airdropArtist {
+        rec :=  airdropCollector {
 			ProjectID: line[1],
-			ArtistUUID: line[2],
-			ArtistReceiveAddr: line[3],
+			TokenURI: line[2],
+			ArtistUUID: line[3],
+			ArtistReceiveAddr: line[4],
 		}
 
 		usr := entity.Users{
 			WalletAddressBTCTaproot: rec.ArtistReceiveAddr ,
 		}
 		usr.UUID = rec.ArtistUUID
-		a, err := u.AirdropArtist(rec.ProjectID, "", usr,  3)
+		a, err := u.AirdropCollector(rec.ProjectID, rec.TokenURI, "",  usr, 3)
 		if err != nil {
 			return
 		}
@@ -449,18 +457,18 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") != "mainnet" {
-		return nil, nil
-	}
+	// if os.Getenv("ENV") != "mainnet" {
+	// 	return nil, nil
+	// }
 	// get file
 	feerate = 3
-	random := rand.Intn(100)
-	file := utils.AIRDROP_MAGIC
-	if random >= 13 {
-		file = utils.AIRDROP_SILVER
-	} else if random < 13 && random >= 3 {
-		file = utils.AIRDROP_GOLDEN
-	}
+	//random := rand.Intn(100)
+	file := utils.AIRDROP_SILVER
+	// if random >= 13 {
+	// 	file = utils.AIRDROP_SILVER
+	// } else if random < 13 && random >= 3 {
+	// 	file = utils.AIRDROP_GOLDEN
+	// }
 
 	airDrop := &entity.Airdrop{
 		File:                      file,
@@ -480,10 +488,10 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 		return nil, err
 	}
 
-	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
-	if err != nil {
-		return nil, err
-	}
+	// airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return airDrop, nil
 }
