@@ -58,6 +58,7 @@ func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq
 		ApiEmail:       req.Email,
 		ApiCompany:     req.Company,
 		UserUuid:       profile.UUID,
+		Status:         1,
 	}
 
 	err = u.Repo.InsertDeveloperKey(apiKeyObj)

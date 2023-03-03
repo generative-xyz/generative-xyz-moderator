@@ -120,7 +120,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	if wr.PaymentType == string(entity.BIT){
 		requestEarnings = requestEarnings / 1e8
 	}else{
-		requestEarnings = requestEarnings / 1e18
+		requestEarnings = requestEarnings / 1e8
 	}
 
 	u.UpdateRefObject(*f)
