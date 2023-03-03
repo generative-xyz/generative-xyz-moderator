@@ -70,6 +70,29 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	return listings, nil
 }
 
+func (r Repository) GetDexBTCListingOrderUser(user_address string, limit, offset int64) ([]entity.DexBTCListing, error) {
+	listings := []entity.DexBTCListing{}
+	f := bson.D{{
+		Key:   "seller_address",
+		Value: user_address,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort:  bson.D{{Key: "created_at", Value: -1}},
+		Limit: &limit,
+		Skip:  &offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
 func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*entity.DexBTCListing, error) {
 	resp := &entity.DexBTCListing{}
 
