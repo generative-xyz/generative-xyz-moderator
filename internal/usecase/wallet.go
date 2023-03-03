@@ -107,8 +107,8 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 				newTxrefsFiltered = append(newTxrefs, output)
 			}
 		}
+		result.Txrefs = newTxrefsFiltered
 	}
-	result.Txrefs = newTxrefsFiltered
 	return &result, nil
 }
 
