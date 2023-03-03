@@ -1,14 +1,12 @@
 package usecase
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
 )
 
@@ -40,12 +38,6 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		Cancelled:     false,
 		CancelTx:      "",
 	}
-	var psbtTx structure.PSBTData
-
-	err := json.Unmarshal([]byte(raw_psbt), &psbtTx)
-	if err != nil {
-		return err
-	}
 
 	psbtData, err := btc.ParsePSBTFromBase64(raw_psbt)
 	if err != nil {
@@ -56,6 +48,12 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	if err != nil {
 		return err
 	}
+
+	totalOuputValue := uint64(0)
+	for _, output := range psbtData.UnsignedTx.TxOut {
+		totalOuputValue += uint64(output.Value)
+	}
+	newListing.Amount = totalOuputValue
 
 	txInputs := []string{}
 	for _, input := range psbtData.UnsignedTx.TxIn {
@@ -114,11 +112,11 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return err
 	}
 
-	//TODO: check previous tx
+	// TODO: check previous tx
 	for tx, _ := range previousTxs {
 		status, err := btc.GetBTCTxStatusExtensive(tx, bs)
 		if err != nil {
-			return err
+			fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
 		}
 		switch status {
 		case "Failed":
@@ -151,4 +149,9 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 		result[address] = append(result[address], output)
 	}
 	return result, nil
+}
+
+func (u Usecase) JobWatchPendingDexBTCListing() error {
+
+	return nil
 }

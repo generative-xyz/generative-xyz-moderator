@@ -124,6 +124,7 @@ type FilterTokens struct {
 	HasPrice        *bool
 	FromPrice       *int64
 	ToPrice         *int64
+	Ids             []string
 }
 
 func (f *FilterTokens) CreateFilter(r *http.Request) error {
