@@ -208,7 +208,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	creator, err := h.Usecase.UserProfile(projectDetail.CreatorProfile.ID)
+	creator, err := h.Usecase.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 	if err != nil {
 		resp := response.ListingFee{
 			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
