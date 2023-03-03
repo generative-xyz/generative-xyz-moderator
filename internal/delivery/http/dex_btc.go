@@ -202,6 +202,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
 			RoyaltyFee:     fmt.Sprintf("%v", 0),
 			ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+			ProjectID:      tokenUri.ProjectID,
 		}
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 		return
@@ -212,6 +213,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		resp := response.ListingFee{
 			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
 			RoyaltyFee:     fmt.Sprintf("%v", 0),
+			ProjectID:      tokenUri.ProjectID,
 			ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
 		}
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -222,6 +224,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		RoyaltyFee:     fmt.Sprintf("%v", float64(projectDetail.Royalty)/10000*100),
 		RoyaltyAddress: creator.WalletAddressBTCTaproot,
 		ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+		ProjectID:      tokenUri.ProjectID,
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
