@@ -26,7 +26,9 @@ type FilterWithdraw struct {
 	WithdrawItemID *string
 	WithdrawItemIDs []string
 	WalletAddress *string
+	WithdrawType *string
 	Status *int
+	Statuses []int
 }
 
 type Withdraw struct {
