@@ -87,6 +87,8 @@ type CronTabConfig struct {
 	MintNftBtcEnabled        bool
 	OrdinalCollectionEnabled bool
 	InscriptionIndexEnabled  bool
+
+	CrontabDeveloperInscribeEnabled bool
 }
 
 type MoralisConfig struct {
@@ -221,6 +223,8 @@ func NewConfig() (*Config, error) {
 
 	crontabMintNftBtcStart, _ := strconv.ParseBool(os.Getenv("MINT_NFT_BTC_START"))
 
+	crontabDeveloperInscribeStart, _ := strconv.ParseBool(os.Getenv("DEVELOPER_INSCRIBE_CRONTAB_START"))
+
 	whitelistedTrendingProjectID := strings.Split(os.Getenv("TRENDING_WHITELISTED_PROJECT_IDS"), ",")
 	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
 	trendingBoostedWeight, _ := strconv.Atoi(os.Getenv("TRENDING_BOOSTED_WEIGHT"))
@@ -313,14 +317,15 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:                  crontabStart,
-			BTCEnabled:               crontabBtcStart,
-			BTCV2Enabled:             crontabBtcV2Start,
-			MarketPlaceEnabled:       crontabMKStart,
-			TrendingEnabled:          crontabTrendingStart,
-			MintNftBtcEnabled:        crontabMintNftBtcStart,
-			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
-			InscriptionIndexEnabled:  crontabInscriptionIndex,
+			Enabled:                         crontabStart,
+			BTCEnabled:                      crontabBtcStart,
+			BTCV2Enabled:                    crontabBtcV2Start,
+			MarketPlaceEnabled:              crontabMKStart,
+			TrendingEnabled:                 crontabTrendingStart,
+			MintNftBtcEnabled:               crontabMintNftBtcStart,
+			CrontabDeveloperInscribeEnabled: crontabDeveloperInscribeStart,
+			OrdinalCollectionEnabled:        crontabOrdinalCollectionStart,
+			InscriptionIndexEnabled:         crontabInscriptionIndex,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
