@@ -70,6 +70,9 @@ func (r Repository) ListInscribeBTC(filter *entity.FilterInscribeBT) (*entity.Pa
 	if len(filter.NeStatuses) > 0 {
 		f["status"] = bson.M{"$nin": filter.NeStatuses}
 	}
+	if filter.Expired {
+		f["expired_at"] = bson.M{"$gt": time.Now()}
+	}
 	p, err := r.Paginate(entity.InscribeBTC{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
