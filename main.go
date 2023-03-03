@@ -20,6 +20,7 @@ import (
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontab"
 	"rederinghub.io/internal/delivery/crontab_btc"
+	developer_inscribe_btc "rederinghub.io/internal/delivery/crontab_developer_inscribe_btc"
 	dex_btc_cron "rederinghub.io/internal/delivery/crontab_dex_btc"
 	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
 	"rederinghub.io/internal/delivery/crontab_inscription_info"
@@ -123,7 +124,10 @@ func startServer() {
 	}, redisClient)
 
 	moralis := nfts.NewMoralisNfts(conf, cache)
-	ord := ord_service.NewBtcOrd(conf, cache)
+	ord := ord_service.NewBtcOrd(conf, cache, "")
+
+	ordForDeveloper := ord_service.NewBtcOrd(conf, cache, os.Getenv("ORD_SERVER_FOR_DEVELOPER"))
+
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis)
@@ -135,22 +139,23 @@ func startServer() {
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Logger:          logger,
-		MuxRouter:       r,
-		Conf:            conf,
-		DBConnection:    mongoConnection,
-		Cache:           cache,
-		Auth2:           *auth2Service,
-		GCS:             gcs,
-		S3Adapter:       s3Adapter,
-		MoralisNFT:      *moralis,
-		CovalentNFT:     *covalent,
-		Blockchain:      *ethClient,
-		Slack:           *slack,
-		DiscordClient:   discordclient.NewCLient(),
-		Pubsub:          rPubsub,
-		OrdService:      ord,
-		DelegateService: delegateService,
+		Logger:              logger,
+		MuxRouter:           r,
+		Conf:                conf,
+		DBConnection:        mongoConnection,
+		Cache:               cache,
+		Auth2:               *auth2Service,
+		GCS:                 gcs,
+		S3Adapter:           s3Adapter,
+		MoralisNFT:          *moralis,
+		CovalentNFT:         *covalent,
+		Blockchain:          *ethClient,
+		Slack:               *slack,
+		DiscordClient:       discordclient.NewCLient(),
+		Pubsub:              rPubsub,
+		OrdService:          ord,
+		OrdServiceDeveloper: ordForDeveloper,
+		DelegateService:     delegateService,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -185,6 +190,8 @@ func startServer() {
 	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
 
 	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+
+	developerInscribeCron := developer_inscribe_btc.NewScronDeveloperInscribeHandler(&g, *uc)
 
 	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
@@ -222,6 +229,11 @@ func startServer() {
 	servers["mint_nft_btc"] = delivery.AddedServer{
 		Server:  mintNftBtcCron,
 		Enabled: conf.Crontab.MintNftBtcEnabled,
+	}
+
+	servers["developer_inscribe"] = delivery.AddedServer{
+		Server:  developerInscribeCron,
+		Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
 	}
 
 	servers["marketplace_crontab"] = delivery.AddedServer{

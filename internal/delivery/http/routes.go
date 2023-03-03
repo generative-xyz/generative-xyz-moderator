@@ -232,10 +232,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GenApiKey).Methods("POST")
 	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GetApiKey).Methods("GET")
 
-	// developer := api.PathPrefix("/developer").Subrouter()
-	// developer.HandleFunc("/inscribe", h.apiDeveloper_GenApiKey).Methods("POST")
-	// developer.HandleFunc("/inscribe", h.apiDeveloper_GenApiKey).Methods("GET")
-	// developer.HandleFunc("/inscribe/{address}", h.apiDeveloper_GenApiKey).Methods("GET")
+	// public but required api key:
+	developer := api.PathPrefix("/developer").Subrouter()
+	developer.HandleFunc("/inscribe", h.developerCreateInscribe).Methods("POST")
+	developer.HandleFunc("/inscribe", h.developerInscribeList).Methods("GET")
+	developer.HandleFunc("/inscribe/{ID}", h.developerDetailInscribe).Methods("GET")
+	// inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
+	// inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
 
 }
 
