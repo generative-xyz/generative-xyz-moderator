@@ -118,7 +118,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	for tx, _ := range previousTxs {
 		status, err := btc.GetBTCTxStatusExtensive(tx, bs)
 		if err != nil {
-			return err
+			fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
 		}
 		switch status {
 		case "Failed":
