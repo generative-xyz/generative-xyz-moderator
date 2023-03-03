@@ -103,32 +103,32 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		}
 	}
 
-	previousTxs, err := retrievePreviousTxFromPSBT(psbtData)
-	if err != nil {
-		return err
-	}
+	// previousTxs, err := retrievePreviousTxFromPSBT(psbtData)
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, bs, err := u.buildBTCClient()
-	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		return err
-	}
+	// _, bs, err := u.buildBTCClient()
+	// if err != nil {
+	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+	// 	return err
+	// }
 
 	//TODO: check previous tx
-	for tx, _ := range previousTxs {
-		status, err := btc.GetBTCTxStatusExtensive(tx, bs)
-		if err != nil {
-			fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
-		}
-		switch status {
-		case "Failed":
+	// for tx, _ := range previousTxs {
+	// 	status, err := btc.GetBTCTxStatusExtensive(tx, bs)
+	// 	if err != nil {
+	// 		fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
+	// 	}
+	// 	switch status {
+	// 	case "Failed":
 
-		case "Success":
-			newListing.Verified = true
-		case "Pending":
+	// 	case "Success":
+	// 		newListing.Verified = true
+	// 	case "Pending":
 
-		}
-	}
+	// 	}
+	// }
 
 	return u.Repo.CreateDexBTCListing(&newListing)
 }
@@ -151,4 +151,9 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 		result[address] = append(result[address], output)
 	}
 	return result, nil
+}
+
+func (u Usecase) JobWatchPendingDexBTCListing() error {
+
+	return nil
 }
