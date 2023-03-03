@@ -218,6 +218,7 @@ func (u Usecase) GetVolumeOfProject(projectID string, amountType *string) (*enti
 	group := bson.M{"$group": bson.M{"_id": 
 		bson.M{"projectID": "$projectID", "payType": "$payType"}, 
 		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+		"earning": bson.M{"$sum": bson.M{"$toDouble": "$earning"}},
 	}}
 
 	amount, err :=  u.Repo.AggregateAmount(entity.FilterVolume{
