@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -360,6 +361,50 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 		return nil, err
 	}
 	return airDrop, nil
+}
+
+type airdropArtist struct {
+	ProjectID string
+	ArtistUUID string
+	ArtistReceiveAddr string
+}
+
+func (u Usecase) MigrateAirdropArtists() {
+	f, err := os.Open("airdrop_artist.csv")
+    if err != nil {
+        return
+    }
+
+    // remember to close the file at the end of the program
+    defer f.Close()
+
+    // read csv values using csv.Reader
+    csvReader := csv.NewReader(f)
+    data, err := csvReader.ReadAll()
+    if err != nil {
+		return
+    }
+
+	aaList := []*entity.Airdrop{}
+	for _, line := range data {
+        rec :=  airdropArtist {
+			ProjectID: line[1],
+			ArtistUUID: line[2],
+			ArtistReceiveAddr: line[3],
+		}
+
+		usr := entity.Users{
+			WalletAddressBTCTaproot: rec.ArtistReceiveAddr ,
+		}
+		usr.UUID = rec.ArtistUUID
+		a, err := u.AirdropArtist(rec.ProjectID, "", usr,  3)
+		if err != nil {
+			return
+		}
+		
+		aaList = append(aaList, a )
+    }
+   spew.Dump(aaList)
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
