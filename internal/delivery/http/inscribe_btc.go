@@ -135,9 +135,9 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	uuid := vars["ID"]
 
-	result, err := h.Usecase.DetailInscribeBTC(uuid)
+	result, err := h.Usecase.DetailDeveloperInscribeBTC(uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.DetailDeveloperInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
