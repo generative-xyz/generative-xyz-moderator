@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	StatusWithdraw_Pending        = iota  // 0: pending: waiting for approve
+	StatusWithdraw_Available        = iota  // 0: pending: waiting for approve
+	StatusWithdraw_Pending       
 	StatusWithdraw_Approve
 	StatusWithdraw_Reject
 )
@@ -26,7 +27,9 @@ type FilterWithdraw struct {
 	WithdrawItemID *string
 	WithdrawItemIDs []string
 	WalletAddress *string
+	WithdrawType *string
 	Status *int
+	Statuses []int
 }
 
 type Withdraw struct {

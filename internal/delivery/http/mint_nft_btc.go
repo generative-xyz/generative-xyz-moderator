@@ -26,14 +26,43 @@ import (
 // @Router /mint-nft-btc/receive-address [POST]
 func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.Request) {
 
+	// verify user:
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	var reqBody request.CreateMintReceiveAddressReq
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.Error("httpDelivery.MintNftBtc.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	// if !strings.EqualFold(profile.WalletAddressBTCTaproot, reqBody.WalletAddress) {
+	// 	err = errors.New("permission dined")
+	// 	h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
 	reqUsecase := &structure.MintNftBtcData{}
 	err = copier.Copy(reqUsecase, reqBody)
@@ -42,6 +71,9 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	reqUsecase.UserID = profile.UUID
+	reqUsecase.UserAddress = profile.WalletAddressBTCTaproot
 
 	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(*reqUsecase)
 	if err != nil {
@@ -102,19 +134,27 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Request) {
 
-	// ctx := r.Context()
-	// iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	// verify user:
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 
-	// fmt.Println("iWalletAddress", iWalletAddress)
+	fmt.Println("iWalletAddress", iWalletAddress)
 
-	// userWalletAddr, ok := iWalletAddress.(string)
-	// if !ok {
-	// 	err := errors.New("wallet address is incorect")
-	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
-	// fmt.Println("userWalletAddr", userWalletAddr)
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -122,6 +162,18 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 	item, err := h.Usecase.GetDetalMintNftBtc(uuid)
 	if err != nil {
 		h.Logger.Error("h.Usecase.CancelMintNftBt", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	// if !strings.EqualFold(item.OriginUserAddress, profile.WalletAddressBTCTaproot) {
+	// 	err := errors.New("permission dined")
+	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+	if item.UserID != profile.UUID {
+		err := errors.New("permission dined")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

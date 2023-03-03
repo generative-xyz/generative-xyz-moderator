@@ -77,6 +77,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
+	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
@@ -171,12 +172,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
 	// request-mint (new flow)
-	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
-	mintNftBtc.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
-
 	mintNftBtcAuth := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtcAuth.Use(h.MiddleWare.AccessToken)
+	mintNftBtcAuth.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
+	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
@@ -209,11 +208,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
-	wallet.Use(h.MiddleWare.AccessToken)
+	inscriptionDex.Use(h.MiddleWare.AccessToken)
 	// inscriptionDex.HandleFunc("/forsale", h.btcMarketplaceListing).Methods("GET")
 	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
+	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")

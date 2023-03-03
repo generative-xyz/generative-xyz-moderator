@@ -38,13 +38,42 @@ func (r Repository) GetDexBTCListingOrderByID(id string) (*entity.DexBTCListing,
 	return resp, nil
 }
 
-func (r Repository) UpdateDexBTCListingOrder(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateDexBTCListingOrderCancelTx(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
-	result, err := r.UpdateOne(model.TableName(), filter, model)
+
+	update := bson.M{
+		"$set": bson.M{
+			"cancel_tx": model.CancelTx,
+			"cancel_at": model.CancelAt,
+			"cancelled": model.Cancelled,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+
+	return result, err
+}
+
+func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"matched":    model.Matched,
+			"matched_tx": model.MatchedTx,
+			"matched_at": model.MatchAt,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }
 
 func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]entity.DexBTCListing, error) {
@@ -52,10 +81,35 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	f := bson.D{{
 		Key:   "seller_address",
 		Value: user_address,
-	}}
+	},
+		{Key: "matched", Value: false},
+		{Key: "cancelled", Value: false}}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetDexBTCListingOrderUser(user_address string, limit, offset int64) ([]entity.DexBTCListing, error) {
+	listings := []entity.DexBTCListing{}
+	f := bson.D{{
+		Key:   "seller_address",
+		Value: user_address,
+	}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort:  bson.D{{Key: "created_at", Value: -1}},
+		Limit: &limit,
+		Skip:  &offset,
 	})
 	if err != nil {
 		return nil, err
@@ -74,6 +128,7 @@ func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*ent
 	f := bson.D{
 		{Key: "inscription_id", Value: id},
 		{Key: "matched", Value: false},
+		{Key: "cancelled", Value: false},
 	}
 
 	orderInfo, err := r.FilterOne(utils.COLLECTION_DEX_BTC_LISTING, f, &options.FindOneOptions{
@@ -88,4 +143,24 @@ func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*ent
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, error) {
+	listings := []entity.DexBTCListing{}
+	f := bson.D{
+		{Key: "matched", Value: false},
+		{Key: "cancelled", Value: false}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
 }

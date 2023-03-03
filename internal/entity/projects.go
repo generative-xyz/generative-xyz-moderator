@@ -11,6 +11,7 @@ import (
 const BITCOIN_PROJECT_ID_START_WITH = 1000001
 const DEFAULT_FEE_RATE = 15
 const DEFAULT_CAPTURE_TIME int = 20
+const DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR = 3 // hours
 
 type TraitValueStat struct {
 	Value  string `bson:"value" json:"value"`
@@ -131,6 +132,7 @@ type FilterProjects struct {
 	CategoryIds   []string
 	TokenIds      []string
 	Ids           []string
+	CustomQueries	  map[string]bson.M
 }
 
 func (u Projects) TableName() string {

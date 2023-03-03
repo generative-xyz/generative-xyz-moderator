@@ -291,9 +291,16 @@ func StringToBTCAmount(price string) *big.Float {
 	return mintPrice
 }
 
-func CalculateEarning(amount float64, percent int32) (string, string) {
-	artist1Earning := amount * float64(utils.PERCENT_EARNING)/1000
+func CalculateRefEarning(amount float64, percent int32) (string, string) {
+	artist1Earning := amount * float64(percent)/1000
 	generativeEarning :=  amount * float64(1000 - utils.PERCENT_EARNING)/1000
 	referralEarning := artist1Earning * float64(percent)/1000
 	return fmt.Sprintf("%d",int(referralEarning)), fmt.Sprintf("%d",int(generativeEarning))
+}
+
+func CalculateVolumEarning(amount float64, percent int32) (string, string) {
+	rate := float64(percent) / 1000
+	artist1Earning := amount * rate
+	generativeEarning :=  amount - artist1Earning
+	return fmt.Sprintf("%d",int(artist1Earning)), fmt.Sprintf("%d",int(generativeEarning))
 }

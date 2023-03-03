@@ -116,6 +116,7 @@ type FilterInscribeBT struct {
 	TokenAddress  *string
 	TokenId       *string
 	NeStatuses    []StatusInscribe
+	Expired       bool
 }
 
 type InscribeBTCResp struct {
