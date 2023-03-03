@@ -73,6 +73,7 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	}
 
 	reqUsecase.UserID = profile.UUID
+	reqUsecase.UserAddress = profile.WalletAddressBTCTaproot
 
 	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(*reqUsecase)
 	if err != nil {

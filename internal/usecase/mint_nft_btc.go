@@ -159,6 +159,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	walletAddress.UserID = input.UserID
+	walletAddress.UserAddress = input.UserAddress
 
 	walletAddress.PrivateKey = privateKeyEnCrypt
 	walletAddress.ReceiveAddress = receiveAddress

@@ -3,6 +3,7 @@ package structure
 import "time"
 
 type MintNftBtcData struct {
+	UserAddress       string `json:"userAddress"`
 	WalletAddress     string `json:"walletAddress"`
 	RefundUserAddress string `json:"refundUserAddress"`
 	ProjectID         string `json:"projectID"`
