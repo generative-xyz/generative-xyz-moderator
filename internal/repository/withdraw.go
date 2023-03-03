@@ -126,19 +126,19 @@ func (r Repository) GetLastWithdraw(filter entity.FilterWithdraw) (*entity.Withd
 	wd := []entity.Withdraw{}
 	f := bson.M{}
 	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
-		f = bson.M{"walletAddress": *filter.WalletAddress}
+		f["walletAddress"] = *filter.WalletAddress
 	}
 	
 	if filter.WithdrawItemID != nil && *filter.WithdrawItemID != "" {
-		f =  bson.M{"withdrawItemID": *filter.WithdrawItemID}
+		f["withdrawItemID"] = *filter.WithdrawItemID
 	}
 	
 	if filter.PaymentType != nil && *filter.PaymentType != "" {
-		f =  bson.M{"payType": *filter.PaymentType}
+		f["payType"] =  *filter.PaymentType
 	}
 	
 	if len(filter.Statuses) > 0 {
-		f =  bson.M{"status": bson.M{"$in": filter.Statuses}}
+		f["status"] =  bson.M{"$in": filter.Statuses}
 	}
 
 	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
