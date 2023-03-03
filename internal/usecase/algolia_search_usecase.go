@@ -38,6 +38,10 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 
 	projects := []*response.SearchProject{}
 	resp.UnmarshalHits(&projects)
+	if len(projects) == 0 {
+		return nil, resp.NbHits, resp.NbPages, nil
+	}
+
 	ids := []string{}
 	for _, i := range projects {
 		ids = append(ids, i.ObjectId)
@@ -106,6 +110,9 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 	}
 	artists := []*response.SearchArtist{}
 	resp.UnmarshalHits(&artists)
+	if len(artists) == 0 {
+		return nil, resp.NbHits, resp.NbPages, nil
+	}
 
 	ids := []string{}
 	for _, i := range artists {
@@ -116,7 +123,6 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 	uUsers, err := uc.Repo.ListUsers(req)
 	iUsers := uUsers.Result
 	rUsers := iUsers.([]*response.ArtistResponse)
-
 	return rUsers, resp.NbHits, resp.NbPages, nil
 }
 
@@ -133,6 +139,9 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 	}
 	data := []*response.SearchTokenUri{}
 	resp.UnmarshalHits(&data)
+	if len(data) == 0 {
+		return nil, resp.NbHits, resp.NbPages, nil
+	}
 
 	ids := []string{}
 	for _, i := range data {
