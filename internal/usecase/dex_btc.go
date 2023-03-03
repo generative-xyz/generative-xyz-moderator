@@ -59,7 +59,12 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	for _, output := range psbtData.UnsignedTx.TxOut {
 		totalOuputValue += uint64(output.Value)
 	}
-	newListing.Amount = totalOuputValue
+
+	if len(psbtData.Inputs) == 1 {
+		newListing.Amount = totalOuputValue
+	} else {
+		newListing.Amount = totalOuputValue - uint64(psbtData.Inputs[1].WitnessUtxo.Value)
+	}
 
 	txInputs := []string{}
 	for _, input := range psbtData.UnsignedTx.TxIn {
