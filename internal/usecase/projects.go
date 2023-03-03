@@ -201,8 +201,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
 
-	catureTime := entity.DEFAULT_CAPTURE_TIME
-	pe.CatureThumbnailDelayTime = &catureTime
+	captureTime := entity.DEFAULT_CAPTURE_TIME
+	pe.CatureThumbnailDelayTime = &captureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
@@ -210,6 +210,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
+
+	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
 	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
