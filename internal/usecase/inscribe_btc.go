@@ -559,17 +559,18 @@ func (u Usecase) JobInscribeMintNft() error {
 		item.FileURI = fileURI
 
 		//TODO - enable this
-		resp, err := u.OrdService.Mint(ord_service.MintRequest{
+		mintData := ord_service.MintRequest{
 			WalletName:        item.UserAddress,
 			FileUrl:           fileURI,
 			FeeRate:           int(item.FeeRate),
 			DryRun:            false,
 			AutoFeeRateSelect: false,
-		})
+		}
+		resp, err := u.OrdService.Mint(mintData)
 
 		if err != nil {
 			u.Logger.Error("OrdService.Mint", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "OrdService.Mint", err.Error())
+			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, mintData, err.Error())
 			continue
 		}
 		// if not err => update status ok now:

@@ -122,7 +122,10 @@ func startServer() {
 	}, redisClient)
 
 	moralis := nfts.NewMoralisNfts(conf, cache)
-	ord := ord_service.NewBtcOrd(conf, cache)
+	ord := ord_service.NewBtcOrd(conf, cache, "")
+
+	ordForDeveloper := ord_service.NewBtcOrd(conf, cache, os.Getenv("ORD_SERVER_FOR_DEVELOPER"))
+
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis)
@@ -134,22 +137,23 @@ func startServer() {
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Logger:          logger,
-		MuxRouter:       r,
-		Conf:            conf,
-		DBConnection:    mongoConnection,
-		Cache:           cache,
-		Auth2:           *auth2Service,
-		GCS:             gcs,
-		S3Adapter:       s3Adapter,
-		MoralisNFT:      *moralis,
-		CovalentNFT:     *covalent,
-		Blockchain:      *ethClient,
-		Slack:           *slack,
-		DiscordClient:   discordclient.NewCLient(),
-		Pubsub:          rPubsub,
-		OrdService:      ord,
-		DelegateService: delegateService,
+		Logger:              logger,
+		MuxRouter:           r,
+		Conf:                conf,
+		DBConnection:        mongoConnection,
+		Cache:               cache,
+		Auth2:               *auth2Service,
+		GCS:                 gcs,
+		S3Adapter:           s3Adapter,
+		MoralisNFT:          *moralis,
+		CovalentNFT:         *covalent,
+		Blockchain:          *ethClient,
+		Slack:               *slack,
+		DiscordClient:       discordclient.NewCLient(),
+		Pubsub:              rPubsub,
+		OrdService:          ord,
+		OrdServiceDeveloper: ordForDeveloper,
+		DelegateService:     delegateService,
 	}
 
 	repo, err := repository.NewRepository(&g)

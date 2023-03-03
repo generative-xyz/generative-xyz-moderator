@@ -18,21 +18,22 @@ import (
 )
 
 type Global struct {
-	Conf             *config.Config
-	Logger           _logger.Ilogger
-	MuxRouter        *mux.Router
-	DBConnection     _pConnection.IConnection
-	Cache            redis.IRedisCache
-	CacheAuthService redis.IRedisCache
-	Pubsub           redis.IPubSubClient
-	Auth2            oauth2service.Auth2
-	GCS              googlecloud.IGcstorage
-	S3Adapter        googlecloud.S3Adapter
-	MoralisNFT       nfts.MoralisNfts
-	CovalentNFT      nfts.CovalentNfts
-	OrdService       *ord_service.BtcOrd
-	Blockchain       blockchain.Blockchain
-	Slack            slack.Slack
-	DiscordClient    *discordclient.Client
-	DelegateService  *delegate.Service
+	Conf                *config.Config
+	Logger              _logger.Ilogger
+	MuxRouter           *mux.Router
+	DBConnection        _pConnection.IConnection
+	Cache               redis.IRedisCache
+	CacheAuthService    redis.IRedisCache
+	Pubsub              redis.IPubSubClient
+	Auth2               oauth2service.Auth2
+	GCS                 googlecloud.IGcstorage
+	S3Adapter           googlecloud.S3Adapter
+	MoralisNFT          nfts.MoralisNfts
+	CovalentNFT         nfts.CovalentNfts
+	OrdService          *ord_service.BtcOrd
+	OrdServiceDeveloper *ord_service.BtcOrd
+	Blockchain          blockchain.Blockchain
+	Slack               slack.Slack
+	DiscordClient       *discordclient.Client
+	DelegateService     *delegate.Service
 }
