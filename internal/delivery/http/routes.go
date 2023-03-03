@@ -77,6 +77,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
+	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
@@ -224,6 +225,18 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	search := api.PathPrefix("/search").Subrouter()
 	search.HandleFunc("", h.search).Methods("GET")
+
+	// for dev:
+	developerAuth := api.PathPrefix("/developer").Subrouter()
+	developerAuth.Use(h.MiddleWare.AccessToken)
+	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GenApiKey).Methods("POST")
+	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GetApiKey).Methods("GET")
+
+	// developer := api.PathPrefix("/developer").Subrouter()
+	// developer.HandleFunc("/inscribe", h.apiDeveloper_GenApiKey).Methods("POST")
+	// developer.HandleFunc("/inscribe", h.apiDeveloper_GenApiKey).Methods("GET")
+	// developer.HandleFunc("/inscribe/{address}", h.apiDeveloper_GenApiKey).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
