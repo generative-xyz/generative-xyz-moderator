@@ -440,6 +440,10 @@ type BTCTxInfo struct {
 var btcRateLock sync.Mutex
 
 // TODO: 2077 add more apis
+func checkTxfromQuicknode(txhash string) error {
+	return nil
+}
+
 func checkTxFromBTC(txhash string) (*BTCTxInfo, error) {
 	btcRateLock.Lock()
 	defer func() {
