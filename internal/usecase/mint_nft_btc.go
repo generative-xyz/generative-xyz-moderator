@@ -1017,12 +1017,19 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 
 			// send master now:
-			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceLow)
+			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceMedium)
 			if err != nil {
 
 				// check if not enough balance:
 				if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
 					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+
+				}
+
+				if strings.Contains(err.Error(), "already exists") {
+					item.Status = entity.StatusMint_AlreadySentMaster
+					item.TxSendMaster = err.Error()
 					u.Repo.UpdateMintNftBtc(&item)
 
 				}
