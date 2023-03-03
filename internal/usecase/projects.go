@@ -1751,9 +1751,10 @@ type Volume struct {
 	ProjectID string `json:"projectID"`
 	PayType   string `json:"payType"`
 	Amount    string `json:"amount"`
-	Earning   string `json:"earning"`
-	Withdraw  string `json:"withdraw"`
-	Available string `json:"available"`
+	Earning    string `json:"earning"`
+	Withdraw    string `json:"withdraw"`
+	Available    string `json:"available"`
+	Status    int `json:"status"`
 }
 
 func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
@@ -1780,13 +1781,19 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 			ProjectID: projectID,
 			PayType:   paytype,
 			Amount:    "0",
-			Earning:   "0",
-			Withdraw:  "0",
-			Available: "0",
+			Earning:    "0",
+			Withdraw:    "0",
+			Available:    "0",
+			Status: entity.StatusWithdraw_Available,
 		}
 
 		return &tmp, nil
 	}
+
+	latestWd, err := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
+		WithdrawItemID: &projectID,
+		PaymentType: &paytype,
+	})
 
 	wdraw := 0.0
 	w, err := u.Repo.AggregateWithDrawByUser(&entity.FilterWithdraw{
@@ -1798,8 +1805,13 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		},
 	})
 
+	status := entity.StatusWithdraw_Available
 	if err == nil && len(w) > 0 {
 		wdraw = w[0].Amount
+	}
+
+	if latestWd != nil {
+		status = latestWd.Status
 	}
 
 	available := data.Earning - wdraw
@@ -1809,7 +1821,8 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Amount:    fmt.Sprintf("%d", int(data.Amount)),
 		Earning:   fmt.Sprintf("%d", int(data.Earning)),
 		Withdraw:  fmt.Sprintf("%d", int(wdraw)),
-		Available: fmt.Sprintf("%d", int(available)),
+		Available:  fmt.Sprintf("%d", int(available)),
+		Status: status,
 	}
 
 	return &tmp, nil
