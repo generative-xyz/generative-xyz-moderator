@@ -37,6 +37,7 @@ func (u Usecase) AggregateVolumn(payType string)   {
 	processed := 0
 	for _, item := range data {
 		go func(item entity.AggregateProjectItemResp){
+			
 			u.Logger.LogAny("aggregateVolumn",zap.Any("item", item))
 			pID := strings.ToLower(item.ProjectID)
 			p, err := u.Repo.FindProjectByTokenID(pID)
@@ -55,7 +56,7 @@ func (u Usecase) AggregateVolumn(payType string)   {
 			ev, err := u.Repo.FindVolumn(pID, item.Paytype) 
 			if err != nil {
 				amount :=  fmt.Sprintf("%d", int(item.Amount))
-				earning, gearning := helpers.CalculateEarning(item.Amount, int32(utils.PERCENT_EARNING))
+				earning, gearning := helpers.CalculateVolumEarning(item.Amount, int32(utils.PERCENT_EARNING))
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					//v := entity.FilterVolume
 					ev := &entity.UserVolumn{
@@ -89,7 +90,7 @@ func (u Usecase) AggregateVolumn(payType string)   {
 			}else{
 				amount :=  fmt.Sprintf("%d", int(item.Amount))
 				if amount != *ev.Amount  {
-					earning, gearning := helpers.CalculateEarning(item.Amount, int32(utils.PERCENT_EARNING))
+					earning, gearning := helpers.CalculateVolumEarning(item.Amount, int32(utils.PERCENT_EARNING))
 					_, err := u.Repo.UpdateVolumnAmount(ev.UUID, amount, earning, gearning)
 					if err != nil {
 						u.Logger.ErrorAny("UpdateVolumnAmount",zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
@@ -150,7 +151,7 @@ func (u Usecase) AggregateReferal() {
 					RemainingEarn: "0",
 				}
 			}else{
-				refEarning, genEarning :=  helpers.CalculateEarning(volume.Amount, referral.Percent)
+				refEarning, genEarning :=  helpers.CalculateRefEarning(volume.Amount, referral.Percent)
 				remaining := referral.ReferreeVolumn[paytype].RemainingEarn
 				if remaining == "" {
 					remaining = "0"

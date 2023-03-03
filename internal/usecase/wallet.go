@@ -377,7 +377,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 			return nil, err
 		}
-		if createdAt != 0 && time.Since(*tx.CreatedAt) >= 1*time.Hour {
+		if createdAt != 0 && time.Since(*tx.CreatedAt) >= 24*time.Hour {
 			if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
 				trackTx.Status = "Success"
 			} else {

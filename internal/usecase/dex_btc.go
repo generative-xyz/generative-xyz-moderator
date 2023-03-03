@@ -168,7 +168,7 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 		return err
 	}
 	for _, order := range pendingOrders {
-		if order.CancelTx != "" {
+		if order.CancelTx == "" {
 			inscriptionTx := strings.Split(order.Inputs[0], ":")
 			idx, err := strconv.Atoi(inscriptionTx[1])
 			if err != nil {

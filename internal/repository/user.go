@@ -213,7 +213,8 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	for _, user := range users {
 		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
 		if err != nil {
-			return nil, err
+			continue
+			// return nil, err
 		}
 
 		projects := []*response.ProjectBasicInfo{}

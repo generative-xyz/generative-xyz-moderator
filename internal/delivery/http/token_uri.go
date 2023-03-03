@@ -182,9 +182,11 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		if err != nil {
 			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
 		} else {
-			resp.Buyable = true
-			resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-			resp.OrderID = listingInfo.UUID
+			if listingInfo.CancelTx == "" {
+				resp.Buyable = true
+				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+				resp.OrderID = listingInfo.UUID
+			}
 		}
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -495,9 +497,11 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 		if err != nil {
 			h.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
 		} else {
-			resp.Buyable = true
-			resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-			resp.OrderID = listingInfo.UUID
+			if listingInfo.CancelTx == "" {
+				resp.Buyable = true
+				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+				resp.OrderID = listingInfo.UUID
+			}
 		}
 		// for _, v := range nftListing {
 		// 	if resp != nil {
