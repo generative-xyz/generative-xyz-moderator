@@ -3,10 +3,12 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
 
@@ -94,4 +96,61 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) {
+
+	var reqBody request.ListingFee
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListingFee.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	inscriptionID := reqBody.InscriptionID
+
+	tokenUri, err := h.Usecase.GetTokenByTokenID(inscriptionID, 0)
+	if err != nil {
+		resp := response.ListingFee{
+			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee:     fmt.Sprintf("%v", 0),
+			ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+		return
+	}
+
+	projectDetail, err := h.Usecase.GetProjectDetail(structure.GetProjectDetailMessageReq{
+		ContractAddress: tokenUri.ContractAddress,
+		ProjectID:       tokenUri.ProjectID,
+	})
+	if err != nil {
+		resp := response.ListingFee{
+			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee:     fmt.Sprintf("%v", 0),
+			ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+		return
+	}
+
+	creator, err := h.Usecase.UserProfile(projectDetail.CreatorProfile.ID)
+	if err != nil {
+		resp := response.ListingFee{
+			ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+			RoyaltyFee:     fmt.Sprintf("%v", 0),
+			ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+		return
+	}
+	resp := response.ListingFee{
+		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
+		RoyaltyFee:     fmt.Sprintf("%v", float64(projectDetail.Royalty)/10000*100),
+		RoyaltyAddress: creator.WalletAddressBTCTaproot,
+		ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
