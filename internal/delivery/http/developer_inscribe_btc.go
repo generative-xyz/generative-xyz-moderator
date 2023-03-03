@@ -25,15 +25,51 @@ import (
 // @Tags Inscribe
 // @Accept json
 // @Produce json
-// @Param request body request.CreateInscribeBtcReq true "Create a btc wallet address request"
+// @Param request body request.DeveloperCreateInscribeBtcReq true "Create mint request for dev"
 // @Success 200 {object} response.InscribeBtcResp{}
-// @Router /inscribe/receive-address [POST]
-// @Security ApiKeyAuth
-func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
+// @Router /developer/inscribe [POST]
+// @Security api-key
+func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
-			var reqBody request.CreateInscribeBtcReq
+
+			apiKey := r.URL.Query().Get("api-key")
+
+			fmt.Println("apiKey from url: ", apiKey)
+
+			developerApiKey, _ := h.Usecase.Repo.FindIDeveloperKeyByApiKey(apiKey)
+			if developerApiKey == nil {
+				err := errors.New("api-key not found")
+				h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
+				return nil, err
+			}
+			if developerApiKey.Status <= 0 {
+				err := errors.New("The api-key is invalid. Please contact the generative for the support.")
+				h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
+				return nil, err
+			}
+			// TODO: check request:
+			now := time.Now()
+			developerKeyRequests, _ := h.Usecase.Repo.FindDeveloperKeyRequests(apiKey)
+			if developerKeyRequests == nil {
+				h.Usecase.Repo.InsertDeveloperKeyRequests(&entity.DeveloperKeyRequests{
+
+					RecordId: developerApiKey.UUID,
+					ApiKey:   apiKey,
+
+					EndpointName:   "inscribe-create", // todo move const/db
+					EndpointUrl:    "",
+					Status:         1,
+					DayReqLastTime: &now,
+					DayReqCounter:  1,
+				})
+			} else {
+				h.Usecase.Repo.IncreaseDeveloperReqCounter(apiKey)
+			}
+
+			var reqBody request.DeveloperCreateInscribeBtcReq
 			err := json.NewDecoder(r.Body).Decode(&reqBody)
 			if err != nil {
 				return nil, err
@@ -63,24 +99,22 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 			if len(reqUsecase.File) == 0 {
 				return nil, errors.New("file is invalid")
 			}
-			reqUsecase.SetFields(
-				reqUsecase.WithUserUuid(userUuid),
-			)
-			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
+
+			btcWallet, err := h.Usecase.DeveloperCreateInscribe(ctx, *reqUsecase)
 			if err != nil {
-				logger.AtLog.Logger.Error("CreateInscribeBTC failed",
+				logger.AtLog.Logger.Error("DeveloperCreateInscribe failed",
 					zap.Any("payload", reqBody),
 					zap.Error(err),
 				)
 				return nil, err
 			}
-			logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
-			return h.inscribeBtcCreatedRespResp(btcWallet)
+			logger.AtLog.Logger.Info("DeveloperCreateInscribe successfully", zap.Any("response", btcWallet))
+			return h.developerInscribeCreatedRespResp(btcWallet)
 		},
 	).ServeHTTP(w, r)
 }
 
-func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*response.InscribeBtcResp, error) {
+func (h *httpDelivery) developerInscribeBtcCreatedRespResp(input *entity.DeveloperInscribe) (*response.InscribeBtcResp, error) {
 	resp := &response.InscribeBtcResp{}
 	resp.UserAddress = input.UserAddress
 	resp.Amount = input.Amount
@@ -102,22 +136,21 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 // @Accept json
 // @Produce json
 // @Success 200 {object} entity.Pagination{}
-// @Router /inscribe/list [GET]
+// @Router /developer/inscribe [GET]
 // @Security ApiKeyAuth
-func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) developerInscribeList(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
 			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 			page := entity.GetPagination(r)
-			req := &entity.FilterInscribeBT{
+			req := &entity.FilterDeveloperInscribeBT{
 				BaseFilters: entity.BaseFilters{
 					Limit: page.PageSize,
 					Page:  page.Page,
 				},
 				UserUuid: &userUuid,
-				Expired:  true,
 			}
-			return h.Usecase.ListInscribeBTC(req)
+			return h.Usecase.ListDeveloperInscribeBTC(req)
 		},
 	).ServeHTTP(w, r)
 }
@@ -129,16 +162,16 @@ func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request
 // @Produce json
 // @Param ID path string true "inscribe ID"
 // @Success 200 {object} entity.InscribeBTCResp{}
-// @Router /inscribe/nft-detail/{ID} [GET]
+// @Router /developer/inscribe/{ID} [GET]
 // @Security ApiKeyAuth
-func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) developerDetailInscribe(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["ID"]
 
 	result, err := h.Usecase.DetailDeveloperInscribeBTC(uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.DetailDeveloperInscribeBTC", err.Error(), err)
+		h.Logger.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -154,70 +187,39 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 // @Produce json
 // @Param ID path string true "inscribe ID"
 // @Success 200
-// @Router /inscribe/retry/{ID} [POST]
+// @Router developer/inscribe/retry/{ID} [POST]
 // @Security ApiKeyAuth
-func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) developerRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 
-	vars := mux.Vars(r)
-	id := vars["ID"]
+	// vars := mux.Vars(r)
+	// id := vars["ID"]
 
-	err := h.Usecase.RetryInscribeBTC(id)
-	if err != nil {
-		h.Logger.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// err := h.Usecase.DeveloperRetryInscribeBTC(id)
+	// if err != nil {
+	// 	h.Logger.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
 
-// @Summary BTC Info Inscribe
-// @Description BTC Info Inscribe
-// @Tags Inscribe
-// @Accept json
-// @Produce json
-// @Param ID path string true "inscribe ID"
-// @Success 200 {object} response.InscribeInfoResp{}
-// @Router /inscribe/info/{ID} [GET]
-// @Security ApiKeyAuth
-func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) developerInscribeCreatedRespResp(input *entity.DeveloperInscribe) (*response.InscribeBtcResp, error) {
+	resp := &response.InscribeBtcResp{}
 
-	vars := mux.Vars(r)
-	id := vars["ID"]
-	inscribeInfo, err := h.Usecase.GetInscribeInfo(id)
-	if err != nil {
-		h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	resp.ID = input.UUID
 
-	resp, err := h.inscribeInfoToResp(inscribeInfo)
-	if err != nil {
-		h.Logger.Error("h.inscribeInfoToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
-}
-
-func (h *httpDelivery) inscribeInfoToResp(input *entity.InscribeInfo) (*response.InscribeInfoResp, error) {
-	resp := &response.InscribeInfoResp{}
-	resp.ID = input.ID
-	resp.Index = input.Index
-	resp.Address = input.Address
-	resp.OutputValue = input.OutputValue
-	resp.Sat = input.Sat
-	resp.Preview = input.Preview
-	resp.Content = input.Content
-	resp.ContentLength = input.ContentLength
-	resp.ContentType = input.ContentType
-	resp.Timestamp = input.Timestamp
-	resp.GenesisHeight = input.GenesisHeight
-	resp.GenesisTransaction = input.GenesisTransaction
-	resp.Location = input.Location
-	resp.Output = input.Output
-	resp.Offset = input.Offset
+	resp.UserAddress = input.UserAddress
+	resp.Amount = input.Amount
+	resp.MintFee = input.MintFee
+	resp.SentTokenFee = input.SentTokenFee
+	resp.OrdAddress = input.OrdAddress
+	resp.FileURI = input.FileURI
+	resp.IsConfirm = input.IsConfirm
+	resp.InscriptionID = input.InscriptionID
+	resp.Balance = input.Balance
+	resp.TimeoutAt = fmt.Sprintf("%d", time.Now().Add(time.Hour*1).Unix()) // return FE in 1h. //TODO: need update
+	resp.SegwitAddress = input.SegwitAddress
 	return resp, nil
 }
