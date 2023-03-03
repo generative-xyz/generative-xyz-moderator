@@ -72,23 +72,22 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	// network fee:
 
-	var networkFee int = 0
+	networkFee := utils.FEE_BTC_SEND_NFT // fee send nft in ord service.
 
 	if p.MaxFileSize > 0 {
 		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
 		if calNetworkFee > 0 {
-			networkFee = int(calNetworkFee)
+			networkFee += int(calNetworkFee)
 		} else {
 			networkFeeFromProject, err := strconv.Atoi(p.NetworkFee)
 			if err == nil {
-				networkFee = networkFeeFromProject
+				networkFee += networkFeeFromProject
 			}
 		}
 	}
 
-	if networkFee > 0 {
-		mintPriceInt += networkFee
-	}
+	// sum total amount:
+	mintPriceInt += networkFee
 
 	var btcRate, ethRate float64
 
@@ -106,6 +105,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("convertBTCToETH", err.Error(), err)
 			return nil, err
 		}
+		networkFee += utils.FEE_BTC_SEND_AGV
+		mintPriceInt += utils.FEE_BTC_SEND_AGV
 
 	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
@@ -123,7 +124,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		fmt.Println("mintPriceStr1: ", mintPriceStr)
 		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr1", mintPriceStr, false)
 		// + fee send master:
-		// 0.0006 FEE_ETH_SEND_MASTER
+		// FEE_ETH_SEND_MASTER
 		mintPriceEthBigint, _ := big.NewInt(0).SetString(mintPriceStr, 10)
 
 		feeSendMaster = big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
@@ -156,6 +157,9 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		u.Logger.Error("u.CreateMintReceiveAddress.Encrypt", err.Error(), err)
 		return nil, err
 	}
+
+	walletAddress.UserID = input.UserID
+	walletAddress.UserAddress = input.UserAddress
 
 	walletAddress.PrivateKey = privateKeyEnCrypt
 	walletAddress.ReceiveAddress = receiveAddress
@@ -304,15 +308,18 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		ProjectName:   projectInfo.Name,
 		InscriptionID: mintItem.InscriptionID,
 
-		ReceiveAddress: mintItem.ReceiveAddress,
-		IsCancel:       isCancel,
-		TxMint:         mintItem.TxMintNft,
-		TxSendNft:      mintItem.TxSendNft,
+		ReceiveAddress:    mintItem.ReceiveAddress,
+		OriginUserAddress: mintItem.OriginUserAddress,
+		IsCancel:          isCancel,
+		TxMint:            mintItem.TxMintNft,
+		TxSendNft:         mintItem.TxSendNft,
 
 		Amount:  mintItem.Amount,
 		PayType: mintItem.PayType,
 
 		ProgressStatus: statusMap,
+
+		UserID: mintItem.UserID,
 	}
 	return minting, nil
 }
@@ -1010,12 +1017,19 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 
 			// send master now:
-			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceLow)
+			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceMedium)
 			if err != nil {
 
 				// check if not enough balance:
 				if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
 					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+
+				}
+
+				if strings.Contains(err.Error(), "already exists") {
+					item.Status = entity.StatusMint_AlreadySentMaster
+					item.TxSendMaster = err.Error()
 					u.Repo.UpdateMintNftBtc(&item)
 
 				}
