@@ -128,13 +128,44 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
 		return
 	}
+	result := []response.DexBTCHistoryListing{}
+	for _, listing := range listingList {
+		newHistory := response.DexBTCHistoryListing{
+			OrderID:       listing.UUID,
+			InscriptionID: listing.InscriptionID,
+			Timestamp:     listing.CreatedAt.Unix(),
+			Amount:        fmt.Sprintf("%v", listing.Amount),
+			Type:          "listing",
+		}
+		result = append(result, newHistory)
+		if listing.CancelTx != "" && !listing.Matched {
+			newHistory := response.DexBTCHistoryListing{
+				OrderID:       listing.UUID,
+				InscriptionID: listing.InscriptionID,
+				Timestamp:     listing.CancelAt.Unix(),
+				Amount:        fmt.Sprintf("%v", listing.Amount),
+				Type:          "cancelling",
+				Txhash:        listing.CancelTx,
+			}
+			if listing.Cancelled {
+				newHistory.Type = "cancelled"
+			}
+			result = append(result, newHistory)
+		}
+		if listing.Matched {
+			newHistory := response.DexBTCHistoryListing{
+				OrderID:       listing.UUID,
+				InscriptionID: listing.InscriptionID,
+				Timestamp:     listing.MatchAt.Unix(),
+				Amount:        fmt.Sprintf("%v", listing.Amount),
+				Type:          "matched",
+				Txhash:        listing.MatchedTx,
+			}
+			result = append(result, newHistory)
+		}
+	}
 
-	_ = listingList
-	// result := response.DexBTCListingOrderInfo{
-	// 	RawPSBT: orderInfo.RawPSBT,
-	// }
-
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
 }
 
