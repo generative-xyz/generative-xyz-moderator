@@ -67,6 +67,8 @@ type MintNftBtc struct {
 	BaseEntity  `bson:",inline"`
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
 
+	UserID string `bson:"user_id"`
+
 	OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
 	RefundUserAdress  string `bson:"refund_user_address"`
 
