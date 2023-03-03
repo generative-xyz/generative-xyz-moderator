@@ -1010,8 +1010,15 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 
 			// send master now:
-			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceMedium)
+			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceLow)
 			if err != nil {
+
+				// check if not enough balance:
+				if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
+					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+
+				}
 				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
 				time.Sleep(1 * time.Second)
@@ -1034,9 +1041,16 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 			tx, amount, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
 			if err != nil {
-				time.Sleep(1 * time.Second)
+
+				// check if not enough balance:
+				if strings.Contains(err.Error(), "rlp: cannot encode negative big.Int") {
+					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+				}
+
 				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.ethClient.TransferMax.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.ethClient.TransferMax", err.Error(), true)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			// save tx:
