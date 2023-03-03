@@ -81,7 +81,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		}
 		u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	}
-	
+
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
@@ -139,7 +139,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL),  zap.Any("resp", resp))
+	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("resp", resp))
 	return resp, nil
 }
 
@@ -169,7 +169,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		return nil, err
 	}
 
-	if tokenUri.Owner == nil {
+	if tokenUri.Owner == nil && tokenUri.OwnerAddr != "" {
 		user, err := u.Repo.FindUserByBtcAddressTaproot(tokenUri.OwnerAddr)
 		if err == nil {
 			tokenUri.Owner = user
@@ -686,10 +686,10 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		}
 		imageURI = data.AnimationUrl
 		tokenUri.AnimationURL = imageURI
-	}else if strings.Index(mintedURL, ".html") != -1 {
+	} else if strings.Index(mintedURL, ".html") != -1 {
 		imageURI = mintedURL
 		tokenUri.AnimationURL = mintedURL
-	}else {
+	} else {
 		now := time.Now().UTC()
 		imageURI = mintedURL
 		tokenUri.AnimationURL = ""
