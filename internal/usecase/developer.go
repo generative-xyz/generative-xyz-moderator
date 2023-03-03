@@ -86,5 +86,5 @@ func (u Usecase) ApiDevelop_GetApiKey(userAddr string) (*entity.DeveloperKey, er
 		return apiKeyObj, nil
 	}
 
-	return nil, errors.New("api not found")
+	return nil, errors.New("api key not found")
 }
