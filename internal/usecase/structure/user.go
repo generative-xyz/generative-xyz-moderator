@@ -10,4 +10,5 @@ type FilterUsers struct {
 	WalletAddressBTC *string
 	UserType         *entity.UserType
 	IsUpdatedAvatar  *bool
+	Ids              []string
 }

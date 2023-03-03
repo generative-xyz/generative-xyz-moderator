@@ -2,13 +2,30 @@ package usecase
 
 import (
 	"fmt"
-	"strconv"
 
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/algolia"
 )
 
-func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
+func (uc *Usecase) AlgoliaSearchProjectV1(filter *algolia.AlgoliaFilter) (*entity.Pagination, error) {
+	if filter.ObjType != "" && filter.ObjType != "project" {
+		return nil, nil
+	}
+	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
+	resp, err := algoliaClient.FetchObjIdsBySearch("projects", filter)
+	if err != nil {
+		return nil, err
+	}
+
+	pe := &entity.FilterProjects{Ids: resp}
+	pe.Page = int64(filter.Page)
+	pe.Limit = int64(filter.Limit)
+	return uc.Repo.GetProjects(*pe)
+}
+
+func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity.Projects, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "project" {
 		return nil, 0, 0, nil
 	}
@@ -21,25 +38,19 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]*respo
 
 	projects := []*response.SearchProject{}
 	resp.UnmarshalHits(&projects)
-	dataResp := []*response.SearchResponse{}
+	ids := []string{}
 	for _, i := range projects {
-		mintPriceInt, err := strconv.ParseInt(i.MintPrice, 10, 64)
-		if err == nil {
-			i.MintPrice = fmt.Sprintf("%f", float64(mintPriceInt)/1e8)
-			p := float64(mintPriceInt) / 1e8
-			if p == float64(0) {
-				i.MintPrice = "0"
-			}
-		}
-
-		obj := &response.SearchResponse{
-			ObjectType: "project",
-			Project:    i,
-		}
-		dataResp = append(dataResp, obj)
+		ids = append(ids, i.ObjectId)
 	}
 
-	return dataResp, resp.NbHits, resp.NbPages, nil
+	pe := &entity.FilterProjects{Ids: ids}
+	uProjects, err := uc.Repo.GetProjects(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	iProjects := uProjects.Result
+	eProjects := iProjects.([]entity.Projects)
+	return eProjects, resp.NbHits, resp.NbPages, nil
 }
 
 func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
@@ -83,7 +94,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	return dataResp, resp.NbHits, resp.NbPages, nil
 }
 
-func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
+func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*response.ArtistResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "artist" {
 		return nil, 0, 0, nil
 	}
@@ -96,18 +107,20 @@ func (uc *Usecase) AlgoliaSearchArtist(filter *algolia.AlgoliaFilter) ([]*respon
 	artists := []*response.SearchArtist{}
 	resp.UnmarshalHits(&artists)
 
-	dataResp := []*response.SearchResponse{}
+	ids := []string{}
 	for _, i := range artists {
-		obj := &response.SearchResponse{
-			ObjectType: "artist",
-			Artist:     i,
-		}
-		dataResp = append(dataResp, obj)
+		ids = append(ids, i.ObjectId)
 	}
-	return dataResp, resp.NbHits, resp.NbPages, nil
+
+	req := structure.FilterUsers{Ids: ids}
+	uUsers, err := uc.Repo.ListUsers(req)
+	iUsers := uUsers.Result
+	rUsers := iUsers.([]*response.ArtistResponse)
+
+	return rUsers, resp.NbHits, resp.NbPages, nil
 }
 
-func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
+func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entity.TokenUri, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "token" {
 		return nil, 0, 0, nil
 	}
@@ -118,17 +131,20 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]*resp
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	inscriptions := []*response.SearchTokenUri{}
-	resp.UnmarshalHits(&inscriptions)
+	data := []*response.SearchTokenUri{}
+	resp.UnmarshalHits(&data)
 
-	dataResp := []*response.SearchResponse{}
-	for _, i := range inscriptions {
-		obj := &response.SearchResponse{
-			ObjectType: "token",
-			TokenUri:   i,
-		}
-		dataResp = append(dataResp, obj)
+	ids := []string{}
+	for _, i := range data {
+		ids = append(ids, i.ObjectId)
 	}
+	pe := &entity.FilterTokenUris{Ids: ids}
+	tokens, err := uc.Repo.FilterTokenUri(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	iTokens := tokens.Result
+	rTokens := iTokens.([]entity.TokenUri)
 
-	return dataResp, resp.NbHits, resp.NbPages, nil
+	return rTokens, resp.NbHits, resp.NbPages, nil
 }
