@@ -652,6 +652,7 @@ const (
 )
 
 func (u Usecase) SyncProjectTrending() error {
+	u.Logger.Info("StartSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
@@ -669,6 +670,8 @@ func (u Usecase) SyncProjectTrending() error {
 		return err
 	}
 
+	u.Logger.Info("DoneGetProjectsAtSyncProjectTrending", zap.Any("num_projects", len(projects)))
+
 	var processed int32
 	for _, project := range projects {
 		processed++
@@ -682,11 +685,12 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+		numActivity := int64(len(btcActivites))
 		if project.MintingInfo.Index == project.MaxSupply {
-			volumnInSatoshi = 0
+			numActivity = 0
 			volumnInBtc = 0
 		}
-		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + int64(len(btcActivites))*TRENDING_SCORE_EACH_MINT
+		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
 
 		isWhitelistedProject := false
 		isBoostedProject := false
@@ -712,6 +716,7 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 
 		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
+		u.Logger.Info("CronProjectTrendingUpdate", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
 
 		if processed%10 == 0 {
 			time.Sleep(1 * time.Second)
