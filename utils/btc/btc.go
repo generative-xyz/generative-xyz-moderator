@@ -411,11 +411,16 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 
 	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
 
-	req, _ := http.NewRequest("POST", qn, payload)
-
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Add("Content-Type", "application/json")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
@@ -450,11 +455,16 @@ func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 
 	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t1\n\t]\n}", txhash))
 
-	req, _ := http.NewRequest("POST", qn, payload)
-
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Add("Content-Type", "application/json")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
