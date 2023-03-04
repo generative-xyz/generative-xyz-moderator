@@ -47,9 +47,10 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 
 	walletBasicInfo, err := btc.GetBalanceFromQuickNode(address, quickNode)
 	if err != nil {
-		walletBasicInfo, err = getWalletInfo(address, apiToken, u.Logger)
+		var err2 error
+		walletBasicInfo, err2 = getWalletInfo(address, apiToken, u.Logger)
 		if err != nil {
-			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err)
+			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err2, err)
 			return nil, err
 		}
 	}
