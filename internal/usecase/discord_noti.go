@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	discordclient "rederinghub.io/utils/discord"
@@ -63,8 +64,10 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 
 	inscriptionInfo, err := u.GetInscribeInfo(airdrop.InscriptionId)
 
-	if err == nil {
+	if err == nil && inscriptionInfo != nil {
 		inscriptionNumTitle = fmt.Sprintf(" #%v", inscriptionInfo.Index)
+	} else {
+		u.Logger.Error("ErrorWhenGetInscribeInfo", zap.Any("inscriptionId", airdrop.InscriptionId))
 	}
 
 	discordMsg := discordclient.Message{
