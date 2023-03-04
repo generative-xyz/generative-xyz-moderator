@@ -179,6 +179,9 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
 	}
+	if input.PayType == utils.NETWORK_ETH {
+		expiredTime = 1 // just 1h for checking eth balance
+	}
 
 	walletAddress.Amount = mintPriceStr
 	walletAddress.OriginUserAddress = input.WalletAddress

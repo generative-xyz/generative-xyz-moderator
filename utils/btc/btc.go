@@ -18,6 +18,7 @@ import (
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/pkg/errors"
+	"rederinghub.io/internal/usecase/structure"
 )
 
 func NewBlockcypherService(chainEndpoint string, explorerEndPoint string, bcyToken string, env *chaincfg.Params) *BlockcypherService {
@@ -137,7 +138,6 @@ func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(sec
 	if err != nil {
 		return "", err
 	}
-
 	pkHex := hex.EncodeToString(wif.PrivKey.Serialize())
 	tx := gobcy.TempNewTX(from, destination, *big.NewInt(int64(amount)))
 
@@ -405,57 +405,70 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService) (string, err
 	return status, nil
 }
 
-type BTCTxInfo struct {
-	Data struct {
-		BlockHeight   int    `json:"block_height"`
-		BlockHash     string `json:"block_hash"`
-		BlockTime     int    `json:"block_time"`
-		CreatedAt     int    `json:"created_at"`
-		Confirmations int    `json:"confirmations"`
-		Fee           int    `json:"fee"`
-		Hash          string `json:"hash"`
-		InputsCount   int    `json:"inputs_count"`
-		InputsValue   int    `json:"inputs_value"`
-		IsCoinbase    bool   `json:"is_coinbase"`
-		IsDoubleSpend bool   `json:"is_double_spend"`
-		IsSwTx        bool   `json:"is_sw_tx"`
-		LockTime      int    `json:"lock_time"`
-		OutputsCount  int    `json:"outputs_count"`
-		OutputsValue  int64  `json:"outputs_value"`
-		Sigops        int    `json:"sigops"`
-		Size          int    `json:"size"`
-		Version       int    `json:"version"`
-		Vsize         int    `json:"vsize"`
-		Weight        int    `json:"weight"`
-		WitnessHash   string `json:"witness_hash"`
-		Inputs        *[]struct {
-			PrevAddresses []string `json:"prev_addresses"`
-			PrevPosition  int      `json:"prev_position"`
-			PrevTxHash    string   `json:"prev_tx_hash"`
-			PrevType      string   `json:"prev_type"`
-			PrevValue     int      `json:"prev_value"`
-			Sequence      int64    `json:"sequence"`
-		} `json:"inputs"`
-		Outputs *[]struct {
-			Addresses         []string `json:"addresses"`
-			Value             int      `json:"value"`
-			Type              string   `json:"type"`
-			SpentByTx         string   `json:"spent_by_tx"`
-			SpentByTxPosition int      `json:"spent_by_tx_position"`
-		} `json:"outputs"`
-	} `json:"data"`
-	ErrCode int    `json:"err_code"`
-	ErrNo   int    `json:"err_no"`
-	Message string `json:"message"`
-	Status  string `json:"status"`
+func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherWalletInfo, error) {
+	var utxoList []QuickNodeUTXO
+	var result structure.BlockCypherWalletInfo
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
+
+	req, _ := http.NewRequest("POST", qn, payload)
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &utxoList)
+	if err != nil {
+		return nil, err
+	}
+	totalBalance := 0
+	convertedUTXOList := []structure.TxRef{}
+	for _, utxo := range utxoList {
+		totalBalance += utxo.Value
+		newTxReft := structure.TxRef{
+			TxHash:      utxo.Hash,
+			TxOutputN:   utxo.Index,
+			Value:       utxo.Value,
+			BlockHeight: utxo.Height,
+		}
+		convertedUTXOList = append(convertedUTXOList, newTxReft)
+	}
+	result.Address = address
+	result.Balance = totalBalance
+	result.FinalBalance = totalBalance
+	result.Txrefs = convertedUTXOList
+	return &result, nil
+}
+
+func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
+	var result QuickNodeTx
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t1\n\t]\n}", txhash))
+
+	req, _ := http.NewRequest("POST", qn, payload)
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 var btcRateLock sync.Mutex
-
-// TODO: 2077 add more apis
-func checkTxfromQuicknode(txhash string) error {
-	return nil
-}
 
 func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
 	btcRateLock.Lock()
