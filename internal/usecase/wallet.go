@@ -105,14 +105,9 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		result.Txrefs = newTxrefsFiltered
 	}
 
-	resultBytes, err := json.Marshal(result)
+	err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
 	if err != nil {
-		u.Logger.Error("GetBTCWalletInfo json.Marshal", address, err)
-	} else {
-		err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, string(resultBytes), 10)
-		if err != nil {
-			u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
-		}
+		u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
 	}
 
 	return &result, nil
