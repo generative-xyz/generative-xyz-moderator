@@ -652,7 +652,7 @@ const (
 )
 
 func (u Usecase) SyncProjectTrending() error {
-	u.Logger.Info("StartSyncProjectTrending")
+	u.Logger.Info("SyncProjectTrending.StartSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
@@ -665,61 +665,77 @@ func (u Usecase) SyncProjectTrending() error {
 		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
 	}
 
-	projects, err := u.Repo.GetAllProjectsWithSelectedFields()
-	if err != nil {
-		return err
-	}
+	var processed int64
 
-	u.Logger.Info("DoneGetProjectsAtSyncProjectTrending", zap.Any("num_projects", len(projects)))
-
-	var processed int32
-	for _, project := range projects {
-		processed++
-		_countView, err := u.Repo.CountViewActivity(project.TokenID)
+	for page := int64(1);; page++ {
+		baseFilter := entity.BaseFilters{
+			Limit: 100,
+			Page: page,
+		}
+		f := entity.FilterProjects{}
+		f.BaseFilters = baseFilter
+		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			return err
+			u.Logger.Error("SyncProjectTrending.ErrorWhenGetPagingProjects", err.Error(), err)
+			break
 		}
-		var countView int64 = 0
-		if _countView != nil {
-			countView = *_countView
+		uProjects := resp.Result
+		projects := uProjects.([]entity.Projects)
+		u.Logger.Info("SyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
+		if len(projects) == 0 {
+			break
 		}
-		volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
-		volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
-		numActivity := int64(len(btcActivites))
-		if project.MintingInfo.Index == project.MaxSupply {
-			numActivity = 0
-			volumnInBtc = 0
-		}
-		trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
-
-		isWhitelistedProject := false
-		isBoostedProject := false
-		// check if this project is whitelisted in top of trending
-		for _, str := range u.Config.TrendingConfig.WhitelistedProjectID {
-			if project.TokenID == str {
-				isWhitelistedProject = true
+		for _, project := range projects {
+			processed++
+			_countView, err := u.Repo.CountViewActivity(project.TokenID)
+			if err != nil {
+				return err
 			}
-		}
-
-		if project.Categories != nil {
-			for _, str := range project.Categories {
-				if str == u.Config.TrendingConfig.BoostedCategoryID {
-					isBoostedProject = true
+			var countView int64 = 0
+			if _countView != nil {
+				countView = *_countView
+			}
+			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
+			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+			numActivity := int64(len(btcActivites))
+			
+			if project.MintingInfo.Index == project.MaxSupply {
+				numActivity = 0
+				volumnInBtc = 0
+			}
+			trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
+			if project.MintingInfo.Index == project.MaxSupply {
+				trendingScore /= 2
+			}
+			isWhitelistedProject := false
+			isBoostedProject := false
+			// check if this project is whitelisted in top of trending
+			for _, str := range u.Config.TrendingConfig.WhitelistedProjectID {
+				if project.TokenID == str {
+					isWhitelistedProject = true
 				}
 			}
-		}
-
-		if isWhitelistedProject {
-			trendingScore = INF_TRENDING_SCORE
-		} else if isBoostedProject {
-			trendingScore *= u.Config.TrendingConfig.BoostedWeight
-		}
-
-		u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
-		u.Logger.Info("CronProjectTrendingUpdate", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
-
-		if processed%10 == 0 {
-			time.Sleep(1 * time.Second)
+	
+			if project.Categories != nil {
+				for _, str := range project.Categories {
+					if str == u.Config.TrendingConfig.BoostedCategoryID {
+						isBoostedProject = true
+					}
+				}
+			}
+	
+			if isWhitelistedProject {
+				trendingScore = INF_TRENDING_SCORE
+			} else if isBoostedProject {
+				trendingScore *= u.Config.TrendingConfig.BoostedWeight
+			}
+	
+			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
+			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
+	
+			if processed%10 == 0 {
+				time.Sleep(1 * time.Second)
+			}
 		}
 	}
 
