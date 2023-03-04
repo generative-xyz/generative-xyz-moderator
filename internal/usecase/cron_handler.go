@@ -705,7 +705,7 @@ func (u Usecase) SyncProjectTrending() error {
 			}
 			trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
 			if project.MintingInfo.Index == project.MaxSupply {
-				trendingScore /= 2
+				trendingScore /= 10
 			}
 			isWhitelistedProject := false
 			isBoostedProject := false
