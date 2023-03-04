@@ -41,6 +41,7 @@ type Config struct {
 
 	BlockcypherAPI   string
 	BlockcypherToken string
+	QuicknodeAPI     string
 
 	MASTER_ADDRESS_CLAIM_BTC, MASTER_ADDRESS_CLAIM_ETH string
 
@@ -79,16 +80,16 @@ type MQTTConfig struct {
 }
 
 type CronTabConfig struct {
-	Enabled                  bool
-	BTCEnabled               bool
-	MarketPlaceEnabled       bool
-	BTCV2Enabled             bool
-	TrendingEnabled          bool
-	MintNftBtcEnabled        bool
-	OrdinalCollectionEnabled bool
-	InscriptionIndexEnabled  bool
+	Enabled                         bool
+	BTCEnabled                      bool
+	MarketPlaceEnabled              bool
+	BTCV2Enabled                    bool
+	TrendingEnabled                 bool
+	MintNftBtcEnabled               bool
+	OrdinalCollectionEnabled        bool
+	InscriptionIndexEnabled         bool
 	CrontabDeveloperInscribeEnabled bool
-	DexBTCEnabled            bool
+	DexBTCEnabled                   bool
 }
 
 type MoralisConfig struct {
@@ -319,17 +320,16 @@ func NewConfig() (*Config, error) {
 		},
 		Crontab: CronTabConfig{
 
-			Enabled:                  crontabStart,
-			BTCEnabled:               crontabBtcStart,
-			BTCV2Enabled:             crontabBtcV2Start,
-			MarketPlaceEnabled:       crontabMKStart,
-			TrendingEnabled:          crontabTrendingStart,
-			MintNftBtcEnabled:        crontabMintNftBtcStart,
-			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
-			InscriptionIndexEnabled:  crontabInscriptionIndex,
-			DexBTCEnabled:            crontabDexBTC,
-      CrontabDeveloperInscribeEnabled: crontabDeveloperInscribeStart,
-      
+			Enabled:                         crontabStart,
+			BTCEnabled:                      crontabBtcStart,
+			BTCV2Enabled:                    crontabBtcV2Start,
+			MarketPlaceEnabled:              crontabMKStart,
+			TrendingEnabled:                 crontabTrendingStart,
+			MintNftBtcEnabled:               crontabMintNftBtcStart,
+			OrdinalCollectionEnabled:        crontabOrdinalCollectionStart,
+			InscriptionIndexEnabled:         crontabInscriptionIndex,
+			DexBTCEnabled:                   crontabDexBTC,
+			CrontabDeveloperInscribeEnabled: crontabDeveloperInscribeStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
@@ -341,6 +341,7 @@ func NewConfig() (*Config, error) {
 
 		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
+		QuicknodeAPI:     os.Getenv("QUICKNODE_API"),
 
 		MASTER_ADDRESS_CLAIM_BTC: os.Getenv("MASTER_ADDRESS_CLAIM_BTC"),
 		MASTER_ADDRESS_CLAIM_ETH: os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
