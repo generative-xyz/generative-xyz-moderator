@@ -66,7 +66,7 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		project, err := u.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 		if err != nil {
 			u.Logger.Error("u.FindProjectByInscriptionIcon", err.Error(), err)
-			return err
+			continue
 		}
 
 		if project == nil {
@@ -75,8 +75,13 @@ func (u Usecase) CreateProjectsFromMetas() error {
 				u.Logger.Error("u.CreateProjectFromCollectionMeta", err.Error(), err)
 				return err
 			}
-			u.Repo.SetProjectCreatedMeta(meta)
 			u.Logger.Info(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+		}
+
+		err = u.Repo.SetProjectCreatedMeta(meta)
+		if err != nil {
+			u.Logger.Error("u.Repo.SetProjectCreatedMeta", err.Error(), err)
+			continue
 		}
 		
 		if processed % 20 == 0 {
