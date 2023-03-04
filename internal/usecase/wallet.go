@@ -51,7 +51,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		walletBasicInfo, err2 = getWalletInfo(address, apiToken, u.Logger)
 		if err != nil {
 			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err2, err)
-			return nil, err
+			return nil, err2
 		}
 	}
 
@@ -335,7 +335,7 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error + " " + url)
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
 	}
 
 	return &result, nil
