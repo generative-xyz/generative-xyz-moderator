@@ -652,6 +652,7 @@ const (
 )
 
 func (u Usecase) SyncProjectTrending() error {
+	u.Logger.Info("StartSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
@@ -668,6 +669,8 @@ func (u Usecase) SyncProjectTrending() error {
 	if err != nil {
 		return err
 	}
+
+	u.Logger.Info("DoneGetProjectsAtSyncProjectTrending", zap.Any("num_projects", len(projects)))
 
 	var processed int32
 	for _, project := range projects {
