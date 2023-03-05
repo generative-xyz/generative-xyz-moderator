@@ -656,8 +656,11 @@ func (u Usecase) SyncProjectTrending() error {
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
+		u.Logger.Error("SyncProjectTrending.ErrorWhenGetBtcActivities", err.Error(), err)
 		return err
 	}
+
+	u.Logger.Info("SyncProjectTrending.DoneGetBtcActivities", zap.Any("act_len", len(btcActivites)))
 
 	// Mapping from projectID to latest 24h's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
@@ -669,11 +672,12 @@ func (u Usecase) SyncProjectTrending() error {
 
 	for page := int64(1);; page++ {
 		baseFilter := entity.BaseFilters{
-			Limit: 100,
+			Limit: 10,
 			Page: page,
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
+		u.Logger.Info("SyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
 			u.Logger.Error("SyncProjectTrending.ErrorWhenGetPagingProjects", err.Error(), err)
