@@ -70,7 +70,7 @@ const (
 	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30       //a month (second)
 	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360      //a year (second)
 	DB_CACHE_EXPIRED_TIME            int    = 86400            //a day
-	REDIS_CACHE_EXPIRED_TIME            int    = 86400            //a day
+	REDIS_CACHE_EXPIRED_TIME         int    = 86400            //a day
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
@@ -133,6 +133,8 @@ const (
 
 	FEE_ETH_SEND_MASTER = 0.0007
 	FEE_BTC_SEND_NFT    = 10000
+
+	DEVELOPER_INSCRIBE_MAX_REQUEST = 200
 
 	INSCRIBE_TIMEOUT = 6
 
