@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
 )
@@ -69,6 +70,17 @@ func (r Repository) InsertDeveloperKeyRequests(data *entity.DeveloperKeyRequests
 		return err
 	}
 	return nil
+}
+
+func (r Repository) UpdateDeveloperKeyRequests(model *entity.DeveloperKeyRequests) (*mongo.UpdateResult, error) {
+
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+	result, err := r.UpdateOne(model.TableName(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (r Repository) IncreaseDeveloperReqCounter(apiKeyID string) error {
