@@ -57,14 +57,33 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 					RecordId: developerApiKey.UUID,
 					ApiKey:   apiKey,
 
-					EndpointName:   "inscribe-create", // todo move const/db
-					EndpointUrl:    "",
-					Status:         1,
-					DayReqLastTime: &now,
-					DayReqCounter:  1,
+					EndpointName:    "inscribe-create", // todo move const/db
+					EndpointUrl:     "",
+					Status:          1,
+					DayReqResetTime: &now,
+					DayReqLastTime:  &now,
+					DayReqCounter:   1,
 				})
 			} else {
-				h.Usecase.Repo.IncreaseDeveloperReqCounter(apiKey)
+
+				// check valid by day:
+				now := time.Now()
+				if developerKeyRequests.DayReqResetTime.Year() == now.Year() && developerKeyRequests.DayReqResetTime.YearDay() == now.YearDay() {
+					if developerKeyRequests.DayReqCounter >= utils.DEVELOPER_INSCRIBE_MAX_REQUEST {
+						err := errors.New("Limits reached.")
+						h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+						h.Response.RespondWithError(w, http.StatusTooManyRequests, response.Error, err)
+						return nil, err
+					} else {
+						h.Usecase.Repo.IncreaseDeveloperReqCounter(apiKey)
+					}
+				} else {
+					// reset:
+					developerKeyRequests.DayReqCounter = 0
+					developerKeyRequests.DayReqResetTime = &now
+					developerKeyRequests.DayReqLastTime = &now
+					h.Usecase.Repo.UpdateDeveloperKeyRequests(developerKeyRequests)
+				}
 			}
 
 			var reqBody request.DeveloperCreateInscribeBtcReq
