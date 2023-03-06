@@ -130,7 +130,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 
 	u.UpdateRefObject(*f)
 	
-	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
+	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s][ProjectID %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), helpers.CreateProjectLink(f.WithdrawItemID, f.WithdrawItemID)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
 	return f, nil
 }
 
