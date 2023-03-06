@@ -33,7 +33,75 @@ func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectIt
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"status": entity.StatusMint_SentFundToMaster},
+		bson.M{"payType": payType},		
+	}}}
+
+	pipeLine := bson.A{
+		matchStage,
+		bson.M{"$group": bson.M{"_id": 
+			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
+			"amount": calculate,
+			"minted": bson.M{"$sum": 1},
+		}},
+		bson.M{"$sort": bson.M{"_id": -1}},
+	}
+	
+	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {
+		res := &entity.AggregateProjectItem{}
+		err = helpers.Transform(item, res)
+		if err != nil {
+			return nil, err
+		}
+		tmp := entity.AggregateProjectItemResp{
+			ProjectID: res.ID.ProjectID,
+			Paytype: res.ID.Paytype,
+			BtcRate: res.ID.BtcRate,
+			EthRate: res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
+			Amount: res.Amount,
+			Minted: res.Minted,
+		}
+		confs = append(confs, tmp)
+	}
+	
+	return confs, nil
+}
+
+
+func (r Repository) AggregateProjectMintPrice(projectID string, payType string) ([]entity.AggregateProjectItemResp, error) {
+	//resp := &entity.AggregateWalletAddres{}
+	confs := []entity.AggregateProjectItemResp{}
+
+	calculate := bson.M{"$sum": "$project_mint_price"}
+	if payType == string(entity.ETH) {
+		calculate = bson.M{"$sum": bson.M{
+			"$multiply": bson.A{
+				"$project_mint_price",
+				 bson.M{ "$divide": bson.A{
+					"$btc_rate",
+					"$eth_rate",
+				 }},
+			},
+		}}
+	}
+
+	// PayType *string
+	// ReferreeIDs []string
+	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
+		bson.M{"status": entity.StatusMint_SentFundToMaster},
 		bson.M{"payType": payType},
+		bson.M{"projectID": projectID},
 		
 	}}}
 
