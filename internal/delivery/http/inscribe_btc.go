@@ -33,6 +33,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
 			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
+			userWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			var reqBody request.CreateInscribeBtcReq
 			err := json.NewDecoder(r.Body).Decode(&reqBody)
 			if err != nil {
@@ -65,6 +66,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 			}
 			reqUsecase.SetFields(
 				reqUsecase.WithUserUuid(userUuid),
+				reqUsecase.WithUserWallerAddress(userWalletAddress),
 			)
 			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
 			if err != nil {
