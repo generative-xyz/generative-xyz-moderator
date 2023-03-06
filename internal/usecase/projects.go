@@ -1907,6 +1907,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 
 	if latestWd != nil {
 		status = latestWd.Status
+		if status == entity.StatusWithdraw_Approve {
+			status = entity.StatusWithdraw_Available
+		}
 	}
 
 	available := data.Earning - wdraw
