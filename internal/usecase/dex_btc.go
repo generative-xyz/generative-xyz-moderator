@@ -164,7 +164,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 			}
 		}
 		if !found {
-			return errors.New("can't list this inscription at the moment")
+			return nil, errors.New("can't list this inscription at the moment")
 		}
 	}
 	newListing.Verified = true
