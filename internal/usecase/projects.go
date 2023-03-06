@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"rederinghub.io/external/artblock"
 	"strconv"
 	"strings"
 	"sync"
@@ -460,6 +461,66 @@ func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthCont
 		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
 	}
 	return false, nil
+}
+
+func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
+		return nil, nil
+	}
+
+	artblockService := artblock.NewArtBlockService(nil, "https://artblocks-mainnet.hasura.app")
+	data, err := artblockService.GetArtist(strings.ToLower(receiver.WalletAddress))
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("error", err))
+		return nil, err
+	}
+	if len(data.Data.Artists) != 1 {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("data.Data.Artists", data.Data.Artists))
+		return nil, nil
+	}
+	if strings.ToLower(data.Data.Artists[0].PublicAddress) != strings.ToLower(receiver.WalletAddress) {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("data.Data.Artists", data.Data.Artists))
+		return nil, nil
+	}
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      3,
+		ProjectId:                 "",
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err = u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	return airDrop, nil
+
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
@@ -1751,10 +1812,10 @@ type Volume struct {
 	ProjectID string `json:"projectID"`
 	PayType   string `json:"payType"`
 	Amount    string `json:"amount"`
-	Earning    string `json:"earning"`
-	Withdraw    string `json:"withdraw"`
-	Available    string `json:"available"`
-	Status    int `json:"status"`
+	Earning   string `json:"earning"`
+	Withdraw  string `json:"withdraw"`
+	Available string `json:"available"`
+	Status    int    `json:"status"`
 }
 
 func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
@@ -1781,10 +1842,10 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 			ProjectID: projectID,
 			PayType:   paytype,
 			Amount:    "0",
-			Earning:    "0",
-			Withdraw:    "0",
-			Available:    "0",
-			Status: entity.StatusWithdraw_Available,
+			Earning:   "0",
+			Withdraw:  "0",
+			Available: "0",
+			Status:    entity.StatusWithdraw_Available,
 		}
 
 		return &tmp, nil
@@ -1792,7 +1853,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 
 	latestWd, err := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
 		WithdrawItemID: &projectID,
-		PaymentType: &paytype,
+		PaymentType:    &paytype,
 	})
 
 	wdraw := 0.0
@@ -1821,8 +1882,8 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Amount:    fmt.Sprintf("%d", int(data.Amount)),
 		Earning:   fmt.Sprintf("%d", int(data.Earning)),
 		Withdraw:  fmt.Sprintf("%d", int(wdraw)),
-		Available:  fmt.Sprintf("%d", int(available)),
-		Status: status,
+		Available: fmt.Sprintf("%d", int(available)),
+		Status:    status,
 	}
 
 	return &tmp, nil
