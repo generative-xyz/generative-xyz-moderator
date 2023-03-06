@@ -180,6 +180,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 	tokenUri.Owner = nil
 	if resp.Address != "" {
+		tokenUri.OwnerAddr = resp.Address
 		user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
 		if err == nil {
 			tokenUri.Owner = user
