@@ -21,7 +21,7 @@ import (
 func (u Usecase) GetInscriptionByIDFromOrd(id string) (*structure.InscriptionOrdInfoByID, error) {
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://dev.generativeexplorer.com"
+		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
 	return getInscriptionByID(ordServer, id)
 }
@@ -119,7 +119,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://dev.generativeexplorer.com"
+		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
 	outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
@@ -359,7 +359,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 	}
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://dev.generativeexplorer.com"
+		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
 	for _, tx := range txList {
 		createdAt := uint64(0)
@@ -384,7 +384,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
 				trackTx.Status = "Success"
 			} else {
-				status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs)
+				status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
 				if err != nil {
 					return nil, err
 				}
@@ -392,7 +392,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			}
 			result = append(result, trackTx)
 		} else {
-			status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs)
+			status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
 			if err != nil {
 				return nil, err
 			}
