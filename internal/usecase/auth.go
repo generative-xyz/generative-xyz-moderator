@@ -172,6 +172,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	}
 
 	go u.AirdropTokenGatedNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
+	go u.AirdropArtistABNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
 
 	return &verified, nil
 }
@@ -468,7 +469,7 @@ func (u Usecase) UserProfileByWalletWithCache(walletAddress string) (*entity.Use
 
 	bytes := []byte(*userCache)
 	err = json.Unmarshal(bytes, user)
-	if err != nil{
+	if err != nil {
 		return u.UserProfileByWallet(walletAddress)
 	}
 

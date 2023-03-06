@@ -67,6 +67,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			GenesisHeight: int64(h["genesis_height"].(float64)),
 			Timestamp:     h["timestamp"].(string),
 			ContentType:   h["content_type"].(string),
+			Address:       h["address"].(string),
 		}
 		inscriptions = append(inscriptions, i)
 	}
