@@ -15,11 +15,13 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -169,12 +171,22 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		return nil, err
 	}
 
-	if tokenUri.Owner == nil && tokenUri.OwnerAddr != "" {
-		user, err := u.Repo.FindUserByBtcAddressTaproot(tokenUri.OwnerAddr)
+	client := resty.New()
+	resp := &response.SearhcInscription{}
+	client.R().
+		EnableTrace().
+		SetResult(&resp).
+		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
+
+	tokenUri.Owner = nil
+	if resp.Address != "" {
+		tokenUri.OwnerAddr = resp.Address
+		user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
 		if err == nil {
 			tokenUri.Owner = user
 		}
 	}
+
 	//this was used for ETH (old flow)
 	// if err != nil {
 	// 	u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
