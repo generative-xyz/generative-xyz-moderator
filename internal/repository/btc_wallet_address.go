@@ -256,7 +256,6 @@ func (r Repository) AggregationBTCWalletAddress(projectID string) ([]entity.Aggr
 					{"_id",
 						bson.D{
 							{"projectID", "$projectID"},
-							{"mintPrice", bson.M{"$toDouble": "$amount"}},
 						},
 					},
 					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
@@ -317,7 +316,6 @@ func (r Repository) AggregationETHWalletAddress(projectID string) ([]entity.Aggr
 					{"_id",
 						bson.D{
 							{"projectID", "$projectID"},
-							{"mintPrice", bson.M{"$toDouble": "$amount"}},
 						},
 					},
 					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
