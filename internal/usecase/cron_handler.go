@@ -656,7 +656,7 @@ func (u Usecase) SyncProjectTrending() error {
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
-		u.Logger.Error("SyncProjectTrending.ErrorWhenGetBtcActivities", err.Error(), err)
+		u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
 		return err
 	}
 
@@ -680,7 +680,7 @@ func (u Usecase) SyncProjectTrending() error {
 		u.Logger.Info("SyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			u.Logger.Error("SyncProjectTrending.ErrorWhenGetPagingProjects", err.Error(), err)
+			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
 		uProjects := resp.Result
@@ -736,9 +736,8 @@ func (u Usecase) SyncProjectTrending() error {
 	
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
-	
-			if processed%10 == 0 {
-				time.Sleep(1 * time.Second)
+			if processed%30 == 0 {
+				time.Sleep(time.Second / 2)
 			}
 		}
 	}
