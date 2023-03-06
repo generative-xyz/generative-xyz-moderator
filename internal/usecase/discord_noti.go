@@ -208,9 +208,6 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 }
 
 
-// Nguoi ban
-// Token inscriptionId
-// Price
 func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	u.Logger.Info("NotifyNewListing.Start")
 	domain := os.Getenv("DOMAIN")
