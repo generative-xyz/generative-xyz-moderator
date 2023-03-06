@@ -65,6 +65,7 @@ func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing)
 			"matched":    model.Matched,
 			"matched_tx": model.MatchedTx,
 			"matched_at": model.MatchAt,
+			"buyer":      model.Buyer,
 		},
 	}
 

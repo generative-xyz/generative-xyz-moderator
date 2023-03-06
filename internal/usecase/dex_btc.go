@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -123,9 +124,24 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return err
 	}
 
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+
+	inscriptionInfo, err := getInscriptionByID(ordServer, inscription_id)
+	if err != nil {
+		fmt.Printf("Could not get inscription info - with err: %v", err)
+		return err
+	}
+
+	if inscriptionInfo.Address != seller_address {
+		return errors.New("inscription isn't owned by seller")
+	}
+
 	// TODO: check previous tx
 	for tx, _ := range previousTxs {
-		status, err := btc.GetBTCTxStatusExtensive(tx, bs)
+		status, err := btc.GetBTCTxStatusExtensive(tx, bs, u.Config.QuicknodeAPI)
 		if err != nil {
 			fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
 		}
@@ -173,13 +189,28 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 		return err
 	}
 	for _, order := range pendingOrders {
-		if order.CancelTx == "" {
-			inscriptionTx := strings.Split(order.Inputs[0], ":")
-			idx, err := strconv.Atoi(inscriptionTx[1])
+		inscriptionTx := strings.Split(order.Inputs[0], ":")
+		idx, err := strconv.Atoi(inscriptionTx[1])
+		if err != nil {
+			log.Printf("JobWatchPendingDexBTCListing strconv.Atoi(inscriptionTx[1]) %v\n", order.Inputs)
+			continue
+		}
+		if !order.Verified {
+			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
 			if err != nil {
-				log.Printf("JobWatchPendingDexBTCListing strconv.Atoi(inscriptionTx[1]) %v\n", order.Inputs)
+				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
 				continue
 			}
+			if txDetail.Result.Confirmations > 0 {
+				order.Verified = true
+				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+					continue
+				}
+			}
+		}
+		if order.CancelTx == "" {
 			spentTx := ""
 			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
 			if err == nil {
@@ -207,6 +238,15 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 				order.MatchedTx = spentTx
 				order.MatchAt = &currentTime
 				order.Matched = true
+
+				txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v\n", order.Inputs)
+					continue
+				}
+				output := *&txDetail.Result.Vout[0]
+				order.Buyer = output.ScriptPubKey.Address
+
 				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
@@ -214,7 +254,7 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 				}
 			}
 		} else {
-			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs)
+			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing btc.GetBTCTxStatusExtensive err %v\n", err)
 				continue

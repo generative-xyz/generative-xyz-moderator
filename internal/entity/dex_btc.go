@@ -14,15 +14,17 @@ type DexBTCListing struct {
 	InscriptionID string `bson:"inscription_id"`
 	Amount        uint64 `bson:"amount"`
 	// InscriptionOutputValue uint64     `bson:"inscription_output_value"`
-	SellerAddress string     `bson:"seller_address"`
-	Verified      bool       `bson:"verified"`
-	CancelAt      *time.Time `bson:"cancel_at"`
-	Cancelled     bool       `bson:"cancelled"`
-	CancelTx      string     `bson:"cancel_tx"`
-	Inputs        []string   `bson:"inputs"`
-	Matched       bool       `bson:"matched"`
-	MatchedTx     string     `bson:"matched_tx"`
-	MatchAt       *time.Time `bson:"matched_at"`
+	SellerAddress string `bson:"seller_address"`
+	Verified      bool   `bson:"verified"`
+	// IsValid       bool       `bson:"is_valid"`
+	CancelAt  *time.Time `bson:"cancel_at"`
+	Cancelled bool       `bson:"cancelled"`
+	CancelTx  string     `bson:"cancel_tx"`
+	Inputs    []string   `bson:"inputs"`
+	Matched   bool       `bson:"matched"`
+	MatchedTx string     `bson:"matched_tx"`
+	MatchAt   *time.Time `bson:"matched_at"`
+	Buyer     string     `bson:"buyer"`
 }
 
 func (u DexBTCListing) TableName() string {
