@@ -37,11 +37,15 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	address := userInfo.WalletAddressBTCTaproot
-	err = h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID)
+	listing, err := h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID)
 	if err != nil {
 		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
+	}
+	// Discord Notify NEW LISTING
+	if listing != nil {
+		go h.Usecase.NotifyNewListing(*listing)
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
 }
