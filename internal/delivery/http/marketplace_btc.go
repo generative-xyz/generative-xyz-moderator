@@ -313,16 +313,16 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	result := h.Usecase.JobMint_CheckBalance()
+	// result := h.Usecase.JobMint_CheckBalance()
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
-	// err := h.Usecase.BtcCheckSendNFTForBuyOrder()
+	h.Usecase.JobDeveloperInscribe_SendBTCToOrdWallet()
 
 	// fmt.Println("len result", len(result))
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
