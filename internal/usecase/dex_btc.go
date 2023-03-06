@@ -132,11 +132,11 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	inscriptionInfo, err := getInscriptionByID(ordServer, inscription_id)
 	if err != nil {
 		fmt.Printf("Could not get inscription info - with err: %v", err)
-		return err
+		return nil, err
 	}
 
 	if inscriptionInfo.Address != seller_address {
-		return errors.New("inscription isn't owned by seller")
+		return nil, errors.New("inscription isn't owned by seller")
 	}
 
 	// TODO: check previous tx
