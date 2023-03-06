@@ -1,6 +1,7 @@
 package artblock
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -54,12 +55,20 @@ func (m ArtBlockService) GetArtist(publicAddress string) (*GetArtists, error) {
 		}
 	}`
 	f := fmt.Sprintf(format, publicAddress)
+	fBytes := []byte(f)
+	temp := make(map[string]interface{})
+	err2 := json.Unmarshal(fBytes, &temp)
+	if err2 != nil {
+		return nil, err2
+	}
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(temp)
+	if err != nil {
+		return nil, err
+	}
 	url := m.generateUrl("/v1/graphql")
-
-	var buff io.Reader
-	buff.Read([]byte(f))
-
-	data, err := m.request(url, "POST", nil, buff)
+	data, err := m.request(url, "POST", nil, &buf)
 	if err != nil {
 		return nil, err
 	}
