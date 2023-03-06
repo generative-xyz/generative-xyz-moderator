@@ -37,8 +37,9 @@ type DeveloperKeyRequests struct {
 
 	Status interface{} `bson:"status"`
 
-	DayReqLastTime *time.Time `bson:"day_req_last_time"`
-	DayReqCounter  int        `bson:"day_req_counter"`
+	DayReqResetTime *time.Time `bson:"day_req_reset_time"` // the begin time to check limit.
+	DayReqLastTime  *time.Time `bson:"day_req_last_time"`  // the time of last request.
+	DayReqCounter   int        `bson:"day_req_counter"`
 }
 
 func (u DeveloperKeyRequests) TableName() string {

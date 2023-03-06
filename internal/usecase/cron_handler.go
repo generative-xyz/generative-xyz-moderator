@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
@@ -656,7 +657,7 @@ func (u Usecase) SyncProjectTrending() error {
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
-		u.Logger.Error("SyncProjectTrending.ErrorWhenGetBtcActivities", err.Error(), err)
+		u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
 		return err
 	}
 
@@ -670,17 +671,17 @@ func (u Usecase) SyncProjectTrending() error {
 
 	var processed int64
 
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		baseFilter := entity.BaseFilters{
 			Limit: 10,
-			Page: page,
+			Page:  page,
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
 		u.Logger.Info("SyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			u.Logger.Error("SyncProjectTrending.ErrorWhenGetPagingProjects", err.Error(), err)
+			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
 		uProjects := resp.Result
@@ -702,7 +703,7 @@ func (u Usecase) SyncProjectTrending() error {
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
 			numActivity := int64(len(btcActivites))
-			
+
 			if project.MintingInfo.Index == project.MaxSupply {
 				numActivity = 0
 				volumnInBtc = 0
@@ -719,7 +720,7 @@ func (u Usecase) SyncProjectTrending() error {
 					isWhitelistedProject = true
 				}
 			}
-	
+
 			if project.Categories != nil {
 				for _, str := range project.Categories {
 					if str == u.Config.TrendingConfig.BoostedCategoryID {
@@ -727,21 +728,29 @@ func (u Usecase) SyncProjectTrending() error {
 					}
 				}
 			}
-	
+
 			if isWhitelistedProject {
 				trendingScore = INF_TRENDING_SCORE
 			} else if isBoostedProject {
 				trendingScore *= u.Config.TrendingConfig.BoostedWeight
 			}
-	
+
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
-	
-			if processed%10 == 0 {
-				time.Sleep(1 * time.Second)
+			if processed%30 == 0 {
+				time.Sleep(time.Second / 2)
 			}
 		}
 	}
 
+	return nil
+}
+
+func (u Usecase) DeleteOldActivities() error {
+	u.Logger.Info("DeleteOldActivities.Start")
+	err := u.Repo.DeleteOldActivities()
+	if err != nil {
+		return errors.Wrap(err, "u.Repo.DeleteOldActivities")
+	}
 	return nil
 }
