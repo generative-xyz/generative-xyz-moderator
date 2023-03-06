@@ -463,6 +463,39 @@ func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthCont
 	return false, nil
 }
 
+func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
+	flag := false
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("ERROR IsArtistABNewUserAirdrop"), zap.Any("error", err))
+		flag = true
+	} else {
+		if airdrop != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist IsArtistABNewUserAirdrop"), zap.Any("airdrop", airdrop))
+			return false, err
+		}
+		flag = true
+	}
+	if flag {
+		artblockService := artblock.NewArtBlockService(nil, "https://artblocks-mainnet.hasura.app")
+		data, err := artblockService.GetArtist(strings.ToLower(user.WalletAddress))
+		if err != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("error", err))
+			return false, err
+		}
+		if len(data.Data.Artists) != 1 {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			return false, nil
+		}
+		if strings.ToLower(data.Data.Artists[0].PublicAddress) != strings.ToLower(user.WalletAddress) {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			return false, nil
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
 func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
 	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
@@ -471,18 +504,11 @@ func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feer
 		return nil, nil
 	}
 
-	artblockService := artblock.NewArtBlockService(nil, "https://artblocks-mainnet.hasura.app")
-	data, err := artblockService.GetArtist(strings.ToLower(receiver.WalletAddress))
+	isArtistABNewUserAirdrop, err := u.IsArtistABNewUserAirdrop(&receiver)
 	if err != nil {
 		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("error", err))
-		return nil, err
 	}
-	if len(data.Data.Artists) != 1 {
-		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("data.Data.Artists", data.Data.Artists))
-		return nil, nil
-	}
-	if strings.ToLower(data.Data.Artists[0].PublicAddress) != strings.ToLower(receiver.WalletAddress) {
-		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("data.Data.Artists", data.Data.Artists))
+	if !isArtistABNewUserAirdrop {
 		return nil, nil
 	}
 	// get file
