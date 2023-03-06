@@ -58,7 +58,8 @@ type CreateBtcProjectReq struct {
 	AnimationURL           *string  `json:"animationURL"`
 	Royalty                int      `json:"royalty"`
 	IsFullChain            bool     `json:"isFullChain"`
-	CaptureImageTime            *int     `json:"captureImageTime"`
+	CaptureImageTime       *int     `json:"captureImageTime"`
+	FromAuthentic          bool     `json:"fromAuthentic"`
 }
 
 type UpdateBTCProjectReq struct {
@@ -72,7 +73,7 @@ type UpdateBTCProjectReq struct {
 	MaxSupply        *int64   `json:"maxSupply"`
 	CreatetorAddress *string  `json:"createtorAddress"`
 	Categories       []string `json:"categories"`
-	CaptureImageTime            *int     `json:"captureImageTime"`
+	CaptureImageTime *int     `json:"captureImageTime"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {

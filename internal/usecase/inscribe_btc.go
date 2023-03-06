@@ -14,6 +14,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -922,5 +923,38 @@ func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv 
 	item.OrdinalsTx = txId
 	item.OrdinalsTxStatus = status
 	_, err = u.Repo.UpdateBtcInscribe(&item)
-	return err
+	if err != nil {
+		return err
+	}
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(item.TokenAddress, item.TokenId)
+	if err != nil {
+		return err
+	}
+	reqBtcProject := structure.CreateBtcProjectReq{
+		MaxSupply:       1,
+		MintPrice:       item.MintFee,
+		CreatorName:     "",
+		CreatorAddrr:    item.UserAddress,
+		CreatorAddrrBTC: item.OriginUserAddress,
+		FromAuthentic:   true,
+	}
+	if nft.Metadata != nil {
+		reqBtcProject.Name = nft.Metadata.Name
+		reqBtcProject.Description = nft.Metadata.Description
+		reqBtcProject.Thumbnail = nft.Metadata.Image
+		reqBtcProject.AnimationURL = &nft.Metadata.AnimationUrl
+	}
+	category := &entity.Categories{}
+	if u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err == nil {
+		reqBtcProject.Categories = []string{category.ID.Hex()}
+	}
+	project, err := u.CreateBTCProject(reqBtcProject)
+	if err != nil {
+		return err
+	}
+	_, err = u.CreateBTCTokenURI(project.ID.Hex(), item.InscriptionID, item.FileURI, entity.BIT)
+	if err != nil {
+		return err
+	}
+	return nil
 }
