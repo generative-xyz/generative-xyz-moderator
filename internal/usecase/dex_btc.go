@@ -118,11 +118,11 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return err
 	}
 
-	_, bs, err := u.buildBTCClient()
-	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		return err
-	}
+	// _, bs, err := u.buildBTCClient()
+	// if err != nil {
+	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+	// 	return err
+	// }
 
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
@@ -135,33 +135,47 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return err
 	}
 
-	if inscriptionInfo.Address != seller_address {
-		return errors.New("inscription isn't owned by seller")
-	}
+	inscriptionTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
 
-	// TODO: check previous tx
-	for tx, _ := range previousTxs {
-		status, err := btc.GetBTCTxStatusExtensive(tx, bs, u.Config.QuicknodeAPI)
+	if inscriptionTx != previousTxs[0] {
+		found := false
+		txInfo, err := btc.CheckTxFromBTC(previousTxs[0])
 		if err != nil {
-			fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
+			fmt.Printf("btc.CheckTxFromBTC err: %v", err)
+			txInfo2, err := btc.CheckTxfromQuickNode(previousTxs[0], u.Config.QuicknodeAPI)
+			if err != nil {
+				fmt.Printf("btc.CheckTxfromQuickNode err: %v", err)
+				fmt.Println("btc.CheckTxfromQuickNode", errors.New("can't list this inscription at the moment").Error())
+			} else {
+				for _, input := range txInfo2.Result.Vin {
+					if input.Txid == inscriptionTx {
+						found = true
+						break
+					}
+				}
+			}
+		} else {
+			inputs := *txInfo.Data.Inputs
+			for _, input := range inputs {
+				if input.PrevTxHash == inscriptionTx {
+					found = true
+					break
+				}
+			}
 		}
-		switch status {
-		case "Failed":
-
-		case "Success":
-			newListing.Verified = true
-		case "Pending":
-
+		if !found {
+			return errors.New("can't list this inscription at the moment")
 		}
 	}
+	newListing.Verified = true
 
 	return u.Repo.CreateDexBTCListing(&newListing)
 }
 
-func retrievePreviousTxFromPSBT(psbtData *psbt.Packet) (map[string]struct{}, error) {
-	result := make(map[string]struct{})
+func retrievePreviousTxFromPSBT(psbtData *psbt.Packet) ([]string, error) {
+	result := []string{}
 	for _, input := range psbtData.UnsignedTx.TxIn {
-		result[input.PreviousOutPoint.Hash.String()] = struct{}{}
+		result = append(result, input.PreviousOutPoint.Hash.String())
 	}
 	return result, nil
 }
