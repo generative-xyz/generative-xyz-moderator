@@ -10,14 +10,17 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"rederinghub.io/external/artblock"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"rederinghub.io/external/artblock"
+	"rederinghub.io/external/nfts"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
 	"github.com/davecgh/go-spew/spew"
@@ -1913,4 +1916,64 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	}
 
 	return &tmp, nil
+}
+
+func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Context, item entity.InscribeBTC) error {
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(item.TokenAddress, item.TokenId)
+	if err != nil {
+		return err
+	}
+	project := &entity.Projects{}
+	if err := u.Repo.FindOneBy(ctx, entity.Projects{}.TableName(), bson.M{
+		"fromAuthentic": true,
+		"tokenAddress":  item.TokenAddress,
+		"tokenId":       item.TokenId,
+	}, project); err != nil {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return err
+		}
+		reqBtcProject := structure.CreateBtcProjectReq{
+			MaxSupply:       2,
+			MintPrice:       item.MintFee,
+			CreatorName:     "",
+			CreatorAddrr:    item.UserWalletAddress,
+			CreatorAddrrBTC: item.OriginUserAddress,
+			FromAuthentic:   true,
+			TokenAddress:    item.TokenAddress,
+			TokenId:         item.TokenId,
+		}
+		if nft.MetadataString != nil && *nft.MetadataString != "" {
+			metadata := &nfts.MoralisTokenMetadata{}
+			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
+				reqBtcProject.Name = metadata.Name
+				reqBtcProject.Description = metadata.Description
+				reqBtcProject.Thumbnail = metadata.Image
+				reqBtcProject.AnimationURL = &metadata.AnimationUrl
+			}
+		}
+		category := &entity.Categories{}
+		if err := u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err == nil {
+			reqBtcProject.Categories = []string{category.ID.Hex()}
+		}
+		project, err = u.CreateBTCProject(reqBtcProject)
+		if err != nil {
+			return err
+		}
+	} else {
+		project.MaxSupply += 1
+		project.MintingInfo.Index += 1
+		projectId := project.ID.Hex()
+		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
+			ProjectID: &projectId,
+			MaxSupply: &project.MaxSupply,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT)
+	if err != nil {
+		return err
+	}
+	return nil
 }
