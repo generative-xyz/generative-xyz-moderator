@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
@@ -169,12 +170,32 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		return nil, err
 	}
 
-	if tokenUri.Owner == nil && tokenUri.OwnerAddr != "" {
-		user, err := u.Repo.FindUserByBtcAddressTaproot(tokenUri.OwnerAddr)
+	filter := &algolia.AlgoliaFilter{
+		SearchStr: tokenUri.TokenID, ObjType: "inscription",
+	}
+
+	dataResp, _, _, err := u.AlgoliaSearchInscription(filter)
+	if err != nil {
+		u.Logger.Error("usecase.GetToken.AlgoliaSearchInscription", err.Error(), err)
+		return nil, err
+	}
+
+	address := ""
+	for _, r := range dataResp {
+		if r.Inscription != nil && r.Inscription.Address != "" {
+			address = r.Inscription.Address
+			break
+		}
+	}
+
+	tokenUri.Owner = nil
+	if address != "" {
+		user, err := u.Repo.FindUserByBtcAddressTaproot(address)
 		if err == nil {
 			tokenUri.Owner = user
 		}
 	}
+
 	//this was used for ETH (old flow)
 	// if err != nil {
 	// 	u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
