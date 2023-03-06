@@ -58,6 +58,8 @@ type ProjectResp struct {
 	ReportUsers            []*ReportProject `json:"reportUsers"`
 	AnimationHtml          *string          `json:"animationHtml"`
 	MaxFileSize            int64            `json:"maxFileSize"`
+	ReserveMintPrice       string           `json:"reserveMintPrice"`
+	ReserveMintLimit       string           `json:"reserveMintLimit"`
 }
 
 type ReportProject struct {
