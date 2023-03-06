@@ -42,6 +42,7 @@ type InscribeBTC struct {
 	UserWalletAddress string      `bson:"user_wallet_address"`
 	TokenAddress      string      `bson:"token_address"`
 	TokenId           string      `bson:"token_id"`
+	OwnerOf           string      `bson:"owner_of"`
 	IsAuthentic       bool        `bson:"is_authentic"`
 	OrdinalsTx        string      `bson:"ordinals_tx"`
 	OrdinalsTxStatus  uint64      `bson:"ordinals_tx_status"`
