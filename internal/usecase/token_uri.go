@@ -15,15 +15,16 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
-	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
@@ -170,27 +171,16 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		return nil, err
 	}
 
-	filter := &algolia.AlgoliaFilter{
-		SearchStr: tokenUri.TokenID, ObjType: "inscription",
-	}
-
-	dataResp, _, _, err := u.AlgoliaSearchInscription(filter)
-	if err != nil {
-		u.Logger.Error("usecase.GetToken.AlgoliaSearchInscription", err.Error(), err)
-		return nil, err
-	}
-
-	address := ""
-	for _, r := range dataResp {
-		if r.Inscription != nil && r.Inscription.Address != "" {
-			address = r.Inscription.Address
-			break
-		}
-	}
+	client := resty.New()
+	resp := &response.SearhcInscription{}
+	client.R().
+		EnableTrace().
+		SetResult(&resp).
+		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
 
 	tokenUri.Owner = nil
-	if address != "" {
-		user, err := u.Repo.FindUserByBtcAddressTaproot(address)
+	if resp.Address != "" {
+		user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
 		if err == nil {
 			tokenUri.Owner = user
 		}
