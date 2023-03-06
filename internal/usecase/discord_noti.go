@@ -160,7 +160,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	fields := make([]discordclient.Field, 0)
 
-	fields = addDiscordField(fields, "", project.Description, false)
+	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
 
 	fields = addDiscordField(fields, "Sale Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
 
@@ -209,7 +209,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 
 func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
-	u.Logger.Info("NotifyNewListing.Start")
+	u.Logger.Info("NotifyNewListing.Start", zap.Any("order", order))
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_LISTING_WEBHOOK")
 
@@ -244,7 +244,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 
 	fields := make([]discordclient.Field, 0)
 
-	fields = addDiscordField(fields, "", project.Description, false)
+	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
 
 	fields = addDiscordField(fields, "List Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
 
