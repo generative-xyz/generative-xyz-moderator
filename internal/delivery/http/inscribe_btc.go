@@ -111,15 +111,19 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 			page := entity.GetPagination(r)
 			req := &entity.FilterInscribeBT{
 				BaseFilters: entity.BaseFilters{
 					Limit: page.PageSize,
 					Page:  page.Page,
 				},
-				UserUuid: &userUuid,
-				Expired:  true,
+				Expired: true,
+			}
+			userUuid, ok := ctx.Value(utils.SIGNED_USER_ID).(string)
+			if ok {
+				req.UserUuid = &userUuid
+			} else {
+				return nil, errors.New("access-token is required")
 			}
 			return h.Usecase.ListInscribeBTC(req)
 		},
