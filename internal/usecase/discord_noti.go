@@ -126,7 +126,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 }
 
 func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) error {
-	u.Logger.Info("NotifyNewSale.Start")
+	u.Logger.Info("NotifyNewSale.Start", zap.Any("order", order), zap.Any("buyerAddress", buyerAddress))
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_NEW_SALE_WEBHOOK")
 
