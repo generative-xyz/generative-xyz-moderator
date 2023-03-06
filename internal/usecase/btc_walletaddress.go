@@ -723,7 +723,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
 	collectionName := project.Name
-	itemCount := project.MaxSupply
+	// itemCount := project.MaxSupply
 	mintedCount := tokenUri.OrderInscriptionIndex
 
 	fields := make([]discordclient.Field, 0)
@@ -738,12 +738,13 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		})
 	}
 	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
 		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
 	), true)
 
-	fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
+	// fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
 	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
 
 	discordMsg := discordclient.Message{
