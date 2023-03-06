@@ -58,15 +58,12 @@ func (u Usecase) AggregateVolumn(payType string) {
 	}
 
 	u.Logger.LogAny("AggregateVolumn", zap.Any("payType", payType), zap.Any("data", data))
-	processed := 0
+	
 	for _, item := range data {
-		go u.CreateVolumn(item)
-
-		if processed % 10 == 0 {
-			time.Sleep(2 * time.Second)
+		if item.ProjectID == "1000003" {
+			spew.Dump(1000003)
 		}
-
-		processed++
+		u.CreateVolumn(item)
 	}
 }
 
@@ -367,6 +364,7 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 		mintPrice = p.MintPrice
 		oldData, err := u.AggregateOldBtcAddress(item.ProjectID)
 		if err == nil {
+			spew.Dump(item, oldData)
 			item.Amount += oldData.Amount
 			item.Minted += oldData.Minted
 		}
@@ -374,16 +372,14 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 		mintPrice = p.MintPriceEth
 		oldData, err := u.AggregateOldETHAddress(item.ProjectID)
 		if err == nil {
+			spew.Dump(item, oldData)
 			item.Amount += oldData.Amount
 			item.Minted += oldData.Minted
 		}
 
 	}
 
-	if item.ProjectID == "1000003 " {
-		spew.Dump(item)
-	}
-
+	
 	mintPriceInt, _ := strconv.Atoi(mintPrice)
 	ev, err := u.Repo.FindVolumn(pID, item.Paytype)
 	if err != nil {
@@ -447,13 +443,13 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 }
 
 func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
-	u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Any("projectID", projectID))
+	u.Logger.LogAny("AggregationBTCWalletAddress", zap.Any("projectID", projectID))
 	data, err := u.Repo.AggregationBTCWalletAddress(projectID)
 	if err != nil {
 		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
-	u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Any("data", data))
+	u.Logger.LogAny("AggregationBTCWalletAddress", zap.Any("data", data))
 	if len(data) > 0 {
 		item  := data[0]
 		item.Paytype = string(entity.BIT)
@@ -466,13 +462,13 @@ func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProj
 }
 
 func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
-	u.Logger.ErrorAny("AggregateOldETHAddress", zap.Any("projectID", projectID))
+	u.Logger.LogAny("AggregateOldETHAddress", zap.Any("projectID", projectID))
 	dataETH, err := u.Repo.AggregationETHWalletAddress(projectID)
 	if err != nil {
 		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
-	u.Logger.ErrorAny("AggregateOldETHAddress", zap.Any("dataETH", dataETH))
+	u.Logger.LogAny("AggregateOldETHAddress", zap.Any("dataETH", dataETH))
 	if len(dataETH) > 0 {
 		item  := dataETH[0]
 		item.MintPrice = item.MintPrice / 1e10
