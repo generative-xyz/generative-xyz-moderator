@@ -22,7 +22,7 @@ func NewScronTrendingHandler(global *global.Global, uc usecase.Usecase) *ScronTr
 }
 
 func (h ScronTrendingHandler) StartServer() {
-	go func () {
+	go func() {
 		h.Logger.Info("StartCrontabSyncTrending")
 		for {
 			err := h.Usecase.SyncProjectTrending()
@@ -33,14 +33,14 @@ func (h ScronTrendingHandler) StartServer() {
 		}
 	}()
 
-	go func () {
+	go func() {
 		h.Logger.Info("StartCrontabDeleteActivities")
 		for {
 			err := h.Usecase.DeleteOldActivities()
 			if err != nil {
 				h.Logger.ErrorAny("h.Usecase.DeleteOldActivities", zap.Any("err", err.Error()))
 			}
-			time.Sleep(24 * time.Hour)	
+			time.Sleep(24 * time.Hour)
 		}
 	}()
 }

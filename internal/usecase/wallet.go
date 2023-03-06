@@ -29,17 +29,17 @@ func (u Usecase) GetInscriptionByIDFromOrd(id string) (*structure.InscriptionOrd
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
 	cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
 	var result structure.WalletInfo
-	exist, err := u.Repo.Cache.Exists(cacheKey)
-	if err == nil && *exist {
-		data, err := u.Repo.Cache.GetData(cacheKey)
-		if err == nil && data != nil {
-			err := json.Unmarshal([]byte(*data), &result)
-			if err != nil {
-				u.Logger.Error("GetBTCWalletInfo json.Unmarshal", address, err)
-			}
-			return &result, nil
-		}
-	}
+	// exist, err := u.Repo.Cache.Exists(cacheKey)
+	// if err == nil && *exist {
+	// 	data, err := u.Repo.Cache.GetData(cacheKey)
+	// 	if err == nil && data != nil {
+	// 		err := json.Unmarshal([]byte(*data), &result)
+	// 		if err != nil {
+	// 			u.Logger.Error("GetBTCWalletInfo json.Unmarshal", address, err)
+	// 		}
+	// 		return &result, nil
+	// 	}
+	// }
 
 	apiToken := u.Config.BlockcypherToken
 	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
@@ -51,7 +51,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		walletBasicInfo, err2 = getWalletInfo(address, apiToken, u.Logger)
 		if err != nil {
 			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err2, err)
-			return nil, err
+			return nil, err2
 		}
 	}
 
@@ -110,6 +110,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	if err != nil {
 		u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
 	}
+	// }
 
 	return &result, nil
 }
@@ -330,7 +331,7 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error + " " + url)
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
 	}
 
 	return &result, nil

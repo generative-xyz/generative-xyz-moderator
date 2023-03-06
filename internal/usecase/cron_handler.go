@@ -671,10 +671,10 @@ func (u Usecase) SyncProjectTrending() error {
 
 	var processed int64
 
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		baseFilter := entity.BaseFilters{
 			Limit: 10,
-			Page: page,
+			Page:  page,
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
@@ -703,7 +703,7 @@ func (u Usecase) SyncProjectTrending() error {
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
 			numActivity := int64(len(btcActivites))
-			
+
 			if project.MintingInfo.Index == project.MaxSupply {
 				numActivity = 0
 				volumnInBtc = 0
@@ -720,7 +720,7 @@ func (u Usecase) SyncProjectTrending() error {
 					isWhitelistedProject = true
 				}
 			}
-	
+
 			if project.Categories != nil {
 				for _, str := range project.Categories {
 					if str == u.Config.TrendingConfig.BoostedCategoryID {
@@ -728,13 +728,13 @@ func (u Usecase) SyncProjectTrending() error {
 					}
 				}
 			}
-	
+
 			if isWhitelistedProject {
 				trendingScore = INF_TRENDING_SCORE
 			} else if isBoostedProject {
 				trendingScore *= u.Config.TrendingConfig.BoostedWeight
 			}
-	
+
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
 			if processed%30 == 0 {
