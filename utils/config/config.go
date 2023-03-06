@@ -58,7 +58,8 @@ type Config struct {
 	ChainURL             string
 	ChainId              int
 
-	CaptcharSecret string
+	CaptcharSecret        string
+	GenerativeExplorerApi string
 }
 
 type Ordinals struct {
@@ -365,7 +366,8 @@ func NewConfig() (*Config, error) {
 		ChainURL: os.Getenv("CHAIN_URL"),
 		ChainId:  chainId,
 
-		CaptcharSecret: os.Getenv("RECAPTCHA_KEY"),
+		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
+		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
 	}
 
 	return conf, nil
