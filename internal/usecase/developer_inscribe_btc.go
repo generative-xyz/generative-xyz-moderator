@@ -314,10 +314,6 @@ func (u Usecase) JobDeveloperInscribe_CheckTxSend() error {
 	}
 
 	for _, item := range listTosendBtc {
-		fields := []zapcore.Field{
-			zap.String("id", item.ID.Hex()),
-			zap.String("file_name", item.FileName),
-		}
 
 		statusSuccess := entity.StatusDeveloperInscribe_Minted
 		txHashDb := item.TxMintNft
@@ -330,16 +326,11 @@ func (u Usecase) JobDeveloperInscribe_CheckTxSend() error {
 			item.IsMinted = true
 		}
 
-		logger.AtLog.Logger.With(fields...).Error("Could not GetTransaction Bitcoin RPCClient")
-		go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_CheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
-
 		go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_CheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
 
 		// check with api:
 		txInfo, err := bs.CheckTx(txHashDb)
 		if err != nil {
-			fields = append(fields, zap.Error(err))
-			logger.AtLog.Logger.With(fields...).Error("Could not CheckTx")
 			go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_CheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 		}
 
@@ -348,11 +339,7 @@ func (u Usecase) JobDeveloperInscribe_CheckTxSend() error {
 			// send nft ok now:
 			item.Status = statusSuccess
 			item.IsSuccess = statusSuccess == entity.StatusDeveloperInscribe_Minted
-			_, err = u.Repo.UpdateDeveloperInscribe(&item)
-			if err != nil {
-				fields = append(fields, zap.Error(err))
-				logger.AtLog.Logger.With(fields...).Error("Could not UpdateDeveloperInscribe")
-			}
+			u.Repo.UpdateDeveloperInscribe(&item)
 		}
 	}
 
