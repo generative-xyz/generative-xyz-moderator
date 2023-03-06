@@ -15,6 +15,7 @@ type SearhcInscription struct {
 	Number        int64  `json:"number"`
 	Sat           string `json:"sat"`
 	Chain         string `json:"chain"`
+	Address       string `json:"address"`
 	GenesisFee    int64  `json:"genesisFee"`
 	GenesisHeight int64  `json:"genesisHeight"`
 	Timestamp     string `json:"timestamp"`
