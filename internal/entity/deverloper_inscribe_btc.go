@@ -91,7 +91,7 @@ type DeveloperInscribeBTCLogs struct {
 }
 
 func (u DeveloperInscribeBTCLogs) TableName() string {
-	return "inscribe_btc_logs"
+	return "developer_inscribe_btc_logs"
 }
 
 func (u DeveloperInscribeBTCLogs) ToBson() (*bson.D, error) {

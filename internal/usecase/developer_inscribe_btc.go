@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,7 +21,7 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
-func (u Usecase) DeveloperCreateInscribe(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.DeveloperInscribe, error) {
+func (u Usecase) DeveloperCreateInscribe(input structure.InscribeBtcReceiveAddrRespReq) (*entity.DeveloperInscribe, error) {
 
 	u.Logger.Info("input", input)
 
@@ -103,6 +102,7 @@ func (u Usecase) DeveloperCreateInscribe(ctx context.Context, input structure.In
 		expiredTime = 1
 	}
 
+	walletAddress.DeveloperKeyUuid = input.DeveloperKeyUuid
 	walletAddress.Amount = mintFee.Amount
 	walletAddress.MintFee = mintFee.MintFee
 	walletAddress.SentTokenFee = mintFee.SentTokenFee
