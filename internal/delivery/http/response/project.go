@@ -58,7 +58,7 @@ type ProjectResp struct {
 	ReportUsers               []*ReportProject `json:"reportUsers"`
 	AnimationHtml             *string          `json:"animationHtml"`
 	MaxFileSize               int64            `json:"maxFileSize"`
-	CaptureThumbnailDelayTime int              `bson:"captureThumbnailDelayTime"`
+	CaptureThumbnailDelayTime int              `json:"captureThumbnailDelayTime"`
 }
 
 type ReportProject struct {
