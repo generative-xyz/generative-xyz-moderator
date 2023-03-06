@@ -19,6 +19,16 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	volumeAmount := 0.0 //earning 
 	widthDrawAmount := 0.0 
 	refAmount := 0.0
+
+	requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
+	if err != nil {
+		requestEarnings = 0
+	}
+
+	if requestEarnings < 0 {
+		err = errors.New("Withdraw must be greater than Zero")
+		return nil, err
+	}
 	
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
@@ -76,12 +86,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	if availableBalance <= 0 {
 		err = errors.New("Not enough balance")
 		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
-		//return nil, err
-	}
-
-	requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
-	if err != nil {
-		requestEarnings = 0
+		return nil, err
 	}
 
 	if requestEarnings  > availableBalance {
@@ -125,7 +130,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 
 	u.UpdateRefObject(*f)
 	
-	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
+	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s][ProjectID %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), helpers.CreateProjectLink(f.WithdrawItemID, f.WithdrawItemID)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
 	return f, nil
 }
 
