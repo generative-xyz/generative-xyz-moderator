@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
@@ -742,5 +743,14 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 	}
 
+	return nil
+}
+
+func (u Usecase) DeleteOldActivities() error {
+	u.Logger.Info("DeleteOldActivities.Start")
+	err := u.Repo.DeleteOldActivities()
+	if err != nil {
+		return errors.Wrap(err, "u.Repo.DeleteOldActivities")
+	}
 	return nil
 }
