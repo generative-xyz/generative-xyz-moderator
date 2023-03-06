@@ -34,6 +34,7 @@ func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectIt
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"status": entity.StatusMint_SentFundToMaster},
 		bson.M{"payType": payType},
+		bson.M{"projectID": "1000003"},
 	}}}
 
 	pipeLine := bson.A{
