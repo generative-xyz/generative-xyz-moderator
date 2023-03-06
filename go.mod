@@ -19,6 +19,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.2
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/gocolly/colly v1.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
