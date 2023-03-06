@@ -485,6 +485,9 @@ func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	if err != nil {
 		return nil, err
 	}
+	if result.Result.Hash != txhash {
+		return nil, errors.New("tx not found")
+	}
 	return &result, nil
 }
 
