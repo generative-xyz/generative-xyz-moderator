@@ -82,7 +82,7 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 		if err != nil   {
 			tmp.ReferreeVolume = structure.ReferralVolumnResp{Amount: "0", AmountType: *req.PayType, Percent: int(item.Percent), ProjectID: "", Earn: "0", GenEarn: "0" }
 		}else{
-			refEarning, genEarning :=  helpers.CalculateRefEarning(volume.Amount, item.Percent)
+			refEarning, genEarning :=  helpers.CalculateVolumEarning(volume.Amount, item.Percent)
 			tmp.ReferreeVolume = structure.ReferralVolumnResp{
 				Amount: fmt.Sprintf("%d", int(volume.Amount)), 
 				AmountType: volume.ID.Paytype,
