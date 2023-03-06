@@ -224,6 +224,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			walletAddress.IsAuthentic = true
 			walletAddress.TokenAddress = nft.TokenAddress
 			walletAddress.TokenId = nft.TokenID
+			walletAddress.OwnerOf = nft.Owner
 		}
 	}
 
