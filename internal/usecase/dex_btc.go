@@ -37,7 +37,7 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 	return nil
 }
 
-func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscription_id string) error {
+func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscription_id string) (*entity.DexBTCListing, error) {
 	newListing := entity.DexBTCListing{
 		RawPSBT:       raw_psbt,
 		InscriptionID: inscription_id,
@@ -48,12 +48,12 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 
 	psbtData, err := btc.ParsePSBTFromBase64(raw_psbt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	outputList, err := extractAllOutputFromPSBT(psbtData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	totalOuputValue := uint64(0)
@@ -94,7 +94,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 			//force receiver == artistAddress when only one output
 			for receiver, _ := range outputList {
 				if receiver != artistAddress {
-					return fmt.Errorf("expected to paid royalty fee to %v", artistAddress)
+					return nil, fmt.Errorf("expected to paid royalty fee to %v", artistAddress)
 				}
 			}
 		} else {
@@ -106,7 +106,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 						totalValue += output.Value
 					}
 					if totalValue >= royaltyFeeExpected {
-						return fmt.Errorf("expected royalty fee of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
+						return nil, fmt.Errorf("expected royalty fee of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
 					}
 				}
 			}
@@ -115,7 +115,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 
 	previousTxs, err := retrievePreviousTxFromPSBT(psbtData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// _, bs, err := u.buildBTCClient()
@@ -132,7 +132,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	inscriptionInfo, err := getInscriptionByID(ordServer, inscription_id)
 	if err != nil {
 		fmt.Printf("Could not get inscription info - with err: %v", err)
-		return err
+		return nil, err
 	}
 
 	inscriptionTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
@@ -169,7 +169,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	}
 	newListing.Verified = true
 
-	return u.Repo.CreateDexBTCListing(&newListing)
+	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
 }
 
 func retrievePreviousTxFromPSBT(psbtData *psbt.Packet) ([]string, error) {
@@ -266,6 +266,9 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
 					continue
 				}
+				// Discord Notify NEW SALE
+				buyerAddress := ""
+				go u.NotifyNewSale(order, buyerAddress)
 			}
 		} else {
 			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
