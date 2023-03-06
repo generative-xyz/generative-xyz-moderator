@@ -60,6 +60,8 @@ type CreateBtcProjectReq struct {
 	IsFullChain            bool     `json:"isFullChain"`
 	CaptureImageTime       *int     `json:"captureImageTime"`
 	FromAuthentic          bool     `json:"fromAuthentic"`
+	TokenAddress           string   `json:"tokenAddress"`
+	TokenId                string   `json:"tokenId"`
 }
 
 type UpdateBTCProjectReq struct {
