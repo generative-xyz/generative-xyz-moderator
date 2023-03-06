@@ -14,8 +14,6 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/jinzhu/copier"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -928,61 +926,6 @@ func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv 
 		return err
 	}
 	if err := u.CreateProjectsAndTokenUriFromInscribeAuthentic(ctx, item); err != nil {
-		return err
-	}
-	return nil
-}
-func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Context, item entity.InscribeBTC) error {
-	nft, err := u.MoralisNft.GetNftByContractAndTokenID(item.TokenAddress, item.TokenId)
-	if err != nil {
-		return err
-	}
-	project := &entity.Projects{}
-	if err := u.Repo.FindOneBy(ctx, entity.Projects{}.TableName(), bson.M{
-		"fromAuthentic": true,
-		"tokenAddress":  item.TokenAddress,
-		"tokenId":       item.TokenId,
-	}, project); err != nil {
-		if !errors.Is(err, mongo.ErrNoDocuments) {
-			return err
-		}
-		reqBtcProject := structure.CreateBtcProjectReq{
-			MaxSupply:       2,
-			MintPrice:       item.MintFee,
-			CreatorName:     "",
-			CreatorAddrr:    item.UserAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
-			FromAuthentic:   true,
-			TokenAddress:    item.TokenAddress,
-			TokenId:         item.TokenId,
-		}
-		if nft.Metadata != nil {
-			reqBtcProject.Name = nft.Metadata.Name
-			reqBtcProject.Description = nft.Metadata.Description
-			reqBtcProject.Thumbnail = nft.Metadata.Image
-			reqBtcProject.AnimationURL = &nft.Metadata.AnimationUrl
-		}
-		category := &entity.Categories{}
-		if u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err == nil {
-			reqBtcProject.Categories = []string{category.ID.Hex()}
-		}
-		project, err = u.CreateBTCProject(reqBtcProject)
-		if err != nil {
-			return err
-		}
-	} else {
-		project.MaxSupply += 1
-		projectId := project.ID.Hex()
-		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
-			ProjectID: &projectId,
-			MaxSupply: &project.MaxSupply,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT)
-	if err != nil {
 		return err
 	}
 	return nil
