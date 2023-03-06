@@ -317,7 +317,7 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 
-	h.Usecase.JobDeveloperInscribe_SendBTCToOrdWallet()
+	h.Usecase.JobDeveloperInscribe_MintNft()
 
 	// fmt.Println("len result", len(result))
 
