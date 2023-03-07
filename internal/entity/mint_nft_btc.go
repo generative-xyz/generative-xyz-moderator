@@ -198,11 +198,13 @@ type MintFeeInfo struct {
 	TotalAmount string `json:"totalAmount"`
 
 	// big number
-	MintPriceBigInt   *big.Int `json:"mintPriceBigInt"`
-	NetworkFeeBigInt  *big.Int `json:"networkFeeBigInt"`
+	MintPriceBigInt  *big.Int `json:"mintPriceBigInt"`
+	NetworkFeeBigInt *big.Int `json:"networkFeeBigInt"`
+
 	MintFeeBigInt     *big.Int `json:"mintFeeBigInt"`
 	SendNftFeeBigInt  *big.Int `json:"sendNftFeeBigInt"`
 	SendFundFeeBigInt *big.Int `json:"sendFundFeeBigInt"`
+
 	TotalAmountBigInt *big.Int `json:"totalAmountBigInt"`
 
 	EthPrice float64 `json:"ethPrice"`
