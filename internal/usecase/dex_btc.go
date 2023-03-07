@@ -37,18 +37,26 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 	return nil
 }
 
-func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscription_id string) (*entity.DexBTCListing, error) {
+func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscription_id string, split_tx string) (*entity.DexBTCListing, error) {
 	newListing := entity.DexBTCListing{
 		RawPSBT:       raw_psbt,
 		InscriptionID: inscription_id,
 		SellerAddress: seller_address,
 		Cancelled:     false,
 		CancelTx:      "",
+		SplitTx:       split_tx,
 	}
 
 	psbtData, err := btc.ParsePSBTFromBase64(raw_psbt)
 	if err != nil {
 		return nil, err
+	}
+	var splitTxData *wire.MsgTx
+	if split_tx != "" {
+		splitTxData, err = btc.ParseTx(split_tx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	outputList, err := extractAllOutputFromPSBT(psbtData)
@@ -81,10 +89,13 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		projectDetail, _ := u.Repo.FindProjectByTokenID(internalInfo.ProjectID)
 		creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 		if err == nil {
-			if creator.WalletAddressBTCTaproot != "" {
+			if creator.WalletAddressBTC != "" && creator.WalletAddressBTCTaproot != "" {
 				royaltyFeePercent = float64(projectDetail.Royalty) / 10000
-				// royaltyFee = int(float64(totalAmount.Int64()) * royaltyFeePercent)
-				artistAddress = creator.WalletAddressBTC
+				if creator.WalletAddressBTCTaproot != "" {
+					artistAddress = creator.WalletAddressBTCTaproot
+				} else {
+					artistAddress = creator.WalletAddressBTC
+				}
 			}
 		}
 	}
@@ -118,12 +129,6 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return nil, err
 	}
 
-	// _, bs, err := u.buildBTCClient()
-	// if err != nil {
-	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-	// 	return err
-	// }
-
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://dev-v5.generativeexplorer.com"
@@ -139,35 +144,23 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 
 	if inscriptionTx != previousTxs[0] {
 		found := false
-		txInfo, err := btc.CheckTxFromBTC(previousTxs[0])
-		if err != nil {
-			fmt.Printf("btc.CheckTxFromBTC err: %v", err)
-			txInfo2, err := btc.CheckTxfromQuickNode(previousTxs[0], u.Config.QuicknodeAPI)
-			if err != nil {
-				fmt.Printf("btc.CheckTxfromQuickNode err: %v", err)
-				fmt.Println("btc.CheckTxfromQuickNode", errors.New("can't list this inscription at the moment").Error())
-			} else {
-				for _, input := range txInfo2.Result.Vin {
-					if input.Txid == inscriptionTx {
-						found = true
-						break
-					}
-				}
-			}
-		} else {
-			inputs := *txInfo.Data.Inputs
-			for _, input := range inputs {
-				if input.PrevTxHash == inscriptionTx {
+		if splitTxData != nil {
+			for _, input := range splitTxData.TxIn {
+				if inscriptionTx == input.PreviousOutPoint.Hash.String() {
 					found = true
 					break
 				}
 			}
 		}
 		if !found {
-			return nil, errors.New("can't list this inscription at the moment")
+			return nil, errors.New("can't found inscription in split tx")
 		}
 	}
-	newListing.Verified = true
+	_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+	if err != nil {
+		fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+		return nil, err
+	}
 
 	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
 }
