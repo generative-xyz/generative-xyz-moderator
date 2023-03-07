@@ -197,6 +197,9 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			return nil, err
 		}
 
+		privKey = strings.ToLower(privKey)
+		addressSegwit = strings.ToLower(addressSegwit)
+
 		mfMintFeeF, err := strconv.ParseFloat(mfMintFee, 10)
 		if err != nil {
 			u.Logger.ErrorAny("CreateInscribeBTC.ParseFloat.mfMintFeeF", zap.Error(err))
