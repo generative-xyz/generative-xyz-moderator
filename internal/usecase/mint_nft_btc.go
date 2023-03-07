@@ -1371,7 +1371,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 1. set mint price by eth
-	mintPrice, ok = mintPrice.SetString(mintPriceByEth, 10)
+	mintPriceEth, ok := mintPrice.SetString(mintPriceByEth, 10)
 	if !ok {
 		err = errors.New("can not set mintPriceByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(mintPriceByEth)", err.Error(), err)
@@ -1385,7 +1385,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 2. set mint fee by eth
-	feeMintNft, ok = feeMintNft.SetString(feeMintNftByEth, 10)
+	feeMintNftEth, ok := feeMintNft.SetString(feeMintNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
@@ -1399,7 +1399,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 3. set mint fee by eth
-	feeSendNft, ok = feeSendNft.SetString(feeSendNftByEth, 10)
+	feeSendNftEth, ok := feeSendNft.SetString(feeSendNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
@@ -1407,28 +1407,28 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 	}
 
 	// 4. fee send master by eth:
-	feeSendFund = big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+	feeSendFundEth := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
 
 	// total amount by ETH:
-	netWorkFee = netWorkFee.Add(feeMintNft, feeSendNft)  // + feeMintNft	+ feeSendNft
-	netWorkFee = netWorkFee.Add(netWorkFee, feeSendFund) // + feeSendFund
+	netWorkFeeEth := big.NewInt(0).Add(feeMintNftEth, feeSendNftEth) // + feeMintNft	+ feeSendNft
+	netWorkFeeEth = netWorkFee.Add(netWorkFeeEth, feeSendFundEth)    // + feeSendFund
 
-	totalAmountToMint = totalAmountToMint.Add(mintPrice, netWorkFee) // mintPrice, netWorkFee
+	totalAmountToMintEth := big.NewInt(0).Add(mintPriceEth, netWorkFeeEth) // mintPrice, netWorkFee
 
 	listMintFeeInfo["eth"] = entity.MintFeeInfo{
-		MintPrice:   mintPrice.String(),
-		MintFee:     feeMintNft.String(),
-		NetworkFee:  netWorkFee.String(),
-		TotalAmount: totalAmountToMint.String(),
-		SendNftFee:  feeSendNft.String(),
-		SendFundFee: feeSendFund.String(),
+		MintPrice:   mintPriceEth.String(),
+		MintFee:     feeMintNftEth.String(),
+		NetworkFee:  netWorkFeeEth.String(),
+		TotalAmount: totalAmountToMintEth.String(),
+		SendNftFee:  feeSendNftEth.String(),
+		SendFundFee: feeSendFundEth.String(),
 
-		MintPriceBigInt:   mintPrice,
-		MintFeeBigInt:     feeMintNft,
-		SendNftFeeBigInt:  feeSendNft,
-		SendFundFeeBigInt: feeSendFund,
-		NetworkFeeBigInt:  netWorkFee,
-		TotalAmountBigInt: totalAmountToMint,
+		MintPriceBigInt:   mintPriceEth,
+		MintFeeBigInt:     feeMintNftEth,
+		SendNftFeeBigInt:  feeSendNftEth,
+		SendFundFeeBigInt: feeSendFundEth,
+		NetworkFeeBigInt:  netWorkFeeEth,
+		TotalAmountBigInt: totalAmountToMintEth,
 
 		EthPrice: ethRate,
 		BtcPrice: btcRate,
