@@ -63,7 +63,8 @@ type CreateBtcProjectReq struct {
 	TokenAddress           string   `json:"tokenAddress"`
 	TokenId                string   `json:"tokenId"`
 	OwnerOf                string   `json:"ownerOf"`
-	OrdinalsTx             string   `bson:"ordinalsTx"`
+	OrdinalsTx             string   `json:"ordinalsTx"`
+	InscribedBy            string   `json:"inscribedBy"`
 }
 
 type UpdateBTCProjectReq struct {
