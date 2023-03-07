@@ -116,7 +116,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 					for _, output := range outputs {
 						totalValue += output.Value
 					}
-					if totalValue >= royaltyFeeExpected {
+					if totalValue < royaltyFeeExpected {
 						return nil, fmt.Errorf("expected royalty fees of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
 					}
 				}
