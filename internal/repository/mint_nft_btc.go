@@ -59,7 +59,7 @@ func (r Repository) ListMintNftBtcPending() ([]entity.MintNftBtc, error) {
 	filter := bson.M{
 		"status":     bson.M{"$in": []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms}},
 		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
-		"isSubItem":  false, // only get parent items
+		// "isSubItem":  false, // only get parent items
 	}
 
 	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
