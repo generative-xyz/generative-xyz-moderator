@@ -1,11 +1,13 @@
 package btc
 
 import (
+	"encoding/hex"
 	"strings"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 )
 
 func ParsePSBTFromBase64(data string) (*psbt.Packet, error) {
@@ -15,18 +17,20 @@ func ParsePSBTFromBase64(data string) (*psbt.Packet, error) {
 	if err != nil {
 		return nil, err
 	}
-	// pk1, err := txscript.ParsePkScript(testPsbt.UnsignedTx.TxOut[0].PkScript)
-	// if err != nil {
-	// 	return err
-	// }
-	// address, err := pk1.Address(&chaincfg.MainNetParams)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// testPsbtBytes, _ := json.Marshal(testPsbt)
-	// fmt.Println(address.EncodeAddress())
 	return psbtTx, nil
+}
+
+func ParseTx(data string) (*wire.MsgTx, error) {
+	dataBytes, err := hex.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	var tx wire.MsgTx
+	err = tx.Deserialize(strings.NewReader(string(dataBytes)))
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
 }
 
 func GetAddressFromPKScript(script []byte) (string, error) {
