@@ -236,11 +236,10 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 
 				txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) u.Config.QuicknodeAPI %v %v %v\n", u.Config.QuicknodeAPI, order.Inputs, err)
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
 				}
-				_ = txDetail
-				// output := txDetail.Result.Vout[0]
-				// order.Buyer = output.ScriptPubKey.Address
+				output := txDetail.Result.Vout[0]
+				order.Buyer = output.ScriptPubKey.Address
 
 				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
 				if err != nil {
