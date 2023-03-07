@@ -1943,8 +1943,9 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 		reqBtcProject := structure.CreateBtcProjectReq{
-			MaxSupply:       2,
-			MintPrice:       item.MintFee,
+			Name:            item.TokenAddress,
+			MaxSupply:       1,
+			MintPrice:       "0",
 			CreatorName:     "",
 			CreatorAddrr:    item.UserWalletAddress,
 			CreatorAddrrBTC: item.OriginUserAddress,
@@ -1955,16 +1956,16 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
 			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
-				reqBtcProject.Name = metadata.Name
 				reqBtcProject.Description = metadata.Description
 				reqBtcProject.Thumbnail = metadata.Image
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}
 		category := &entity.Categories{}
-		if err := u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err == nil {
-			reqBtcProject.Categories = []string{category.ID.Hex()}
+		if err := u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err != nil {
+			return err
 		}
+		reqBtcProject.Categories = []string{category.ID.Hex()}
 		project, err = u.CreateBTCProject(reqBtcProject)
 		if err != nil {
 			return err
