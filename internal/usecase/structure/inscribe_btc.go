@@ -1,14 +1,15 @@
 package structure
 
 type InscribeBtcReceiveAddrRespReq struct {
-	WalletAddress string `json:"walletAddress"`
-	Name          string `json:"name"`
-	FileName      string `json:"fileName"`
-	File          string `json:"file"`
-	FeeRate       int32  `json:"fee_rate"`
-	UserUuid      string `json:"-"`
-	TokenAddress  string `json:"tokenAddress"`
-	TokenId       string `json:"tokenId"`
+	WalletAddress    string `json:"walletAddress"`
+	Name             string `json:"name"`
+	FileName         string `json:"fileName"`
+	File             string `json:"file"`
+	FeeRate          int32  `json:"fee_rate"`
+	UserUuid         string `json:"-"`
+	TokenAddress     string `json:"tokenAddress"`
+	TokenId          string `json:"tokenId"`
+	DeveloperKeyUuid string
 }
 
 func (s InscribeBtcReceiveAddrRespReq) NeedVerifyAuthentic() bool {
