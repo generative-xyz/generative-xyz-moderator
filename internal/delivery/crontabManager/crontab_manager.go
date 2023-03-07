@@ -142,6 +142,7 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 		defer func() {
 			if err := recover(); err != nil {
 				h.Logger.Error(fmt.Sprintf("\nError calling %s->%s: %v", eventName, cronJobManager.FunctionName, err))
+				go h.trackCronJobManagerLogs(fmt.Sprintf("[%v-%v]", eventItem.Group, eventItem.JobName), "Cron job manager -> AddTask", eventItem.TableName(), cronJobManager.FunctionName, "call the function - with err", err)
 				return
 			}
 		}()
