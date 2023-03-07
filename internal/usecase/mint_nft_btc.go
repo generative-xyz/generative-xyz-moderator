@@ -447,6 +447,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 					NetworkFeeByPayType: item.NetworkFeeByPayType,
 					MintPriceByPayType:  item.MintPriceByPayType,
 					Amount:              item.EstFeeInfo[item.PayType].TotalAmount,
+					Quantity:            1,
 					UserID:              item.UserID,
 					IsMerged:            item.IsMerged,
 					EthRate:             item.EthRate,
