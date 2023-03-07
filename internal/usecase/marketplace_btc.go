@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -57,7 +58,22 @@ func (u Usecase) BTCMarketplaceListingNFT(listingInfo structure.MarketplaceBTC_L
 		u.Logger.Error("u.OrdService.Exec.create.receive", err.Error(), err)
 		return &listing, err
 	}
-	holdOrdAddress = strings.ReplaceAll(resp.Stdout, "\n", "")
+
+	// parse json to get address:
+	// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
+
+	jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+	var receiveResp ord_service.ReceiveCmdStdoputRespose
+
+	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
+	if err != nil {
+		u.Logger.Error("BTCMarketplaceListingNFT.Unmarshal", err.Error(), err)
+		return nil, err
+	}
+
+	holdOrdAddress = receiveResp.Address
 	listing.HoldOrdAddress = holdOrdAddress
 
 	// check if listing is created or not
@@ -150,15 +166,15 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 
 					PaymentListingInfo: paymentListingInfo,
 				}
-				// inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
-				// if err != nil {
-				// 	u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-				// }
-				// if inscribeInfo != nil {
-				// 	nftInfo.InscriptionNumber = inscribeInfo.Index
-				// 	nftInfo.ContentType = inscribeInfo.ContentType
-				// 	nftInfo.ContentLength = inscribeInfo.ContentLength
-				// }
+				inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
+				if err != nil {
+					u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+				}
+				if inscribeInfo != nil {
+					nftInfo.InscriptionNumber = inscribeInfo.Index
+					nftInfo.ContentType = inscribeInfo.ContentType
+					nftInfo.ContentLength = inscribeInfo.ContentLength
+				}
 				result = append(result, nftInfo)
 				continue
 			}
@@ -198,15 +214,15 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 
 			PaymentListingInfo: paymentListingInfo,
 		}
-		// inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
-		// if err != nil {
-		// 	u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-		// }
-		// if inscribeInfo != nil {
-		// 	nftInfo.InscriptionNumber = inscribeInfo.Index
-		// 	nftInfo.ContentType = inscribeInfo.ContentType
-		// 	nftInfo.ContentLength = inscribeInfo.ContentLength
-		// }
+		inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
+		if err != nil {
+			u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		}
+		if inscribeInfo != nil {
+			nftInfo.InscriptionNumber = inscribeInfo.Index
+			nftInfo.ContentType = inscribeInfo.ContentType
+			nftInfo.ContentLength = inscribeInfo.ContentLength
+		}
 		if buyableOnly && isAvailable {
 			result = append(result, nftInfo)
 		}
@@ -393,29 +409,29 @@ func (u Usecase) BTCMarketplaceListingDetail(inscriptionID string) (*structure.M
 		isCompleted = true
 	}
 
-	// if !nft.IsSold {
-	// 	buyOrders, err := h.Usecase.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
-	// 	if err != nil {
-	// 		h.Logger.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
-	// 	}
-	// 	currentTime := time.Now()
-	// 	for _, order := range buyOrders {
-	// 		expireTime := order.ExpiredAt
-	// 		// not expired yet still waiting for btc
-	// 		if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
-	// 			isBuyable = false
-	// 			break
-	// 		}
-	// 		// could be expired but received btc
-	// 		if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
-	// 			isBuyable = false
-	// 			break
-	// 		}
-	// 	}
-	// }
-
 	if nft == nil {
 		return nil, errors.New("nft not found")
+	}
+
+	if !nft.IsSold {
+		buyOrders, err := u.Repo.GetBTCListingHaveOngoingOrder(nft.UUID)
+		if err != nil {
+			u.Logger.Error("h.Usecase.Repo.GetBTCListingHaveOngoingOrder", err.Error(), err)
+		}
+		currentTime := time.Now()
+		for _, order := range buyOrders {
+			expireTime := order.ExpiredAt
+			// not expired yet still waiting for btc
+			if currentTime.Before(expireTime) && (order.Status == entity.StatusBuy_Pending || order.Status == entity.StatusBuy_NotEnoughBalance) {
+				isBuyable = false
+				break
+			}
+			// could be expired but received btc
+			if order.Status != entity.StatusBuy_Pending && order.Status != entity.StatusBuy_NotEnoughBalance {
+				isBuyable = false
+				break
+			}
+		}
 	}
 
 	// get pyament listing info:
@@ -436,16 +452,16 @@ func (u Usecase) BTCMarketplaceListingDetail(inscriptionID string) (*structure.M
 		PaymentListingInfo: paymentListingInfo,
 		// LastPrice:     lastPrice,
 	}
-	// inscribeInfo, err := h.Usecase.GetInscribeInfo(nftInfo.InscriptionID)
-	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
-	// }
-	// if inscribeInfo != nil {
-	// 	nftInfo.InscriptionNumber = inscribeInfo.Index
-	// 	nftInfo.ContentType = inscribeInfo.ContentType
-	// 	nftInfo.ContentLength = inscribeInfo.ContentLength
-	// }
-	//h.Logger.Info("resp.Proposal", resp)
+	inscribeInfo, err := u.GetInscribeInfo(nftInfo.InscriptionID)
+	if err != nil {
+		u.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+	}
+	if inscribeInfo != nil {
+		nftInfo.InscriptionNumber = inscribeInfo.Index
+		nftInfo.ContentType = inscribeInfo.ContentType
+		nftInfo.ContentLength = inscribeInfo.ContentLength
+	}
+	// h.Logger.Info("resp.Proposal", resp)
 
 	return nftInfo, nil
 }

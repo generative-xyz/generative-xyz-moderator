@@ -29,7 +29,7 @@ func (h *httpDelivery) getCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f.BaseFilters =*baseF
-
+	f.Limit  = 1000
 	data, err := h.Usecase.GetCategories(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetCategorys", err.Error(), err)

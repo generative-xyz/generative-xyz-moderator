@@ -32,6 +32,9 @@ const (
 	StatusMint_Refunded  // 12: refunding
 
 	StatusMint_TxRefundFailed // 13: tx refund fund failed
+
+	StatusMint_NotEnoughBalanceToSendMaster // 14: tx refund fund failed
+	StatusMint_AlreadySentMaster            // 15: sent but can't save the tx, need to get it later.
 )
 
 var StatusMintToText = map[StatusMint]string{
@@ -40,16 +43,16 @@ var StatusMintToText = map[StatusMint]string{
 
 	StatusMint_WaitingForConfirms: "Waiting for payment confirmation",
 
-	StatusMint_ReceivedFund: "Minting",
+	StatusMint_ReceivedFund: "Transferring", // //"Minting",
 
-	StatusMint_Minting: "Minting",
-	StatusMint_Minted:  "Minted",
+	StatusMint_Minting: "Transferring", // "Minting",
+	StatusMint_Minted:  "Transferred",  // "Minted",
 
 	StatusMint_SendingNFTToUser: "Transferring",
 	StatusMint_SentNFTToUser:    "Transferred",
 
-	StatusMint_SendingFundToMaster: "Sending funds to master",
-	StatusMint_SentFundToMaster:    "Sent funds to master",
+	StatusMint_SendingFundToMaster: "Transferred", //"Sending funds to master",
+	StatusMint_SentFundToMaster:    "Transferred", //"Sent funds to master",
 
 	StatusMint_TxMintFailed: "Mint failed",
 
@@ -64,6 +67,8 @@ var StatusMintToText = map[StatusMint]string{
 type MintNftBtc struct {
 	BaseEntity  `bson:",inline"`
 	UserAddress string `bson:"user_address"` //user's wallet address from FE
+
+	UserID string `bson:"user_id"`
 
 	OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
 	RefundUserAdress  string `bson:"refund_user_address"`
@@ -110,12 +115,17 @@ type MintNftBtc struct {
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
 
 	// for analytics:
+
 	BtcRate           float64 `bson:"btc_rate"`
 	EthRate           float64 `bson:"eth_rate"`
-	ProjectMintPrice  int     `bson:"project_mint_price"`
-	ProjectNetworkFee int     `bson:"project_network_fee"`
+	ProjectMintPrice  int     `bson:"project_mint_price"`  // btc
+	ProjectNetworkFee int     `bson:"project_network_fee"` // btc
+
+	FeeSendMaster string `bson:"fee_send_master"` // maybe for eth only
 
 	MintFee int `bson:"mint_fee"`
+
+	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
 }
 
 func (u MintNftBtc) TableName() string {

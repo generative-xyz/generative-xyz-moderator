@@ -46,10 +46,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
 	files := api.PathPrefix("/files").Subrouter()
-	// files.Use(h.MiddleWare.AccessToken)
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
 	files.HandleFunc("/deflate", h.deflate).Methods("POST")
+	files.HandleFunc("/image/resize", h.resizeImage).Methods("POST")
 
 	files.HandleFunc("/multipart", h.CreateMultipartUpload).Methods("POST")
 	files.HandleFunc("/multipart/{uploadID}", h.UploadPart).Methods("PUT")
@@ -58,14 +58,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
 	profile.Use(h.MiddleWare.UserToken)
-	profile.HandleFunc("/withdraw", h.profileByWallet).Methods("POST")
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
-	profile.HandleFunc("/wallet/{walletAddress}/volume", h.getVolumeByWallet).Methods("GET")
+	profile.HandleFunc("/wallet/{walletAddress}/volumn", h.getVolumnByWallet).Methods("GET")
 
 	singedIn := api.PathPrefix("/profile").Subrouter()
 	singedIn.Use(h.MiddleWare.AccessToken)
+	singedIn.HandleFunc("/withdraw", h.withdraw).Methods("POST")
 	singedIn.HandleFunc("", h.profile).Methods("GET")
 	singedIn.HandleFunc("/projects", h.getUserProjects).Methods("GET")
 	singedIn.HandleFunc("", h.updateProfile).Methods("PUT")
@@ -77,10 +77,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
+	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
-
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
@@ -150,13 +151,17 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// btcV2.HandleFunc("/receive-address", h.btcGetReceiveWalletAddressV2).Methods("POST")
 
 	inscribe := api.PathPrefix("/inscribe").Subrouter()
-	inscribe.Use(h.MiddleWare.AccessToken)
+	// inscribe.Use(h.MiddleWare.AccessToken)
 	inscribe.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/list", h.btcListInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
-	inscribe.HandleFunc("/list-nft-from-moralis", h.listNftFromMoralis).Methods("GET")
+
+	tokenMoralis := api.PathPrefix("/token-moralis").Subrouter()
+	tokenMoralis.Use(h.MiddleWare.AccessToken)
+	tokenMoralis.HandleFunc("/nfts", h.listNftFromMoralis).Methods("GET")
+	tokenMoralis.HandleFunc("/nfts/{tokenAddress}", h.nftFromMoralis).Methods("GET")
 
 	//btc
 	eth := api.PathPrefix("/eth").Subrouter()
@@ -167,12 +172,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	btc.HandleFunc("/balance", h.checkBalance).Methods("POST")
 
 	// request-mint (new flow)
-	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	mintNftBtc.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
-	mintNftBtc.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
-
 	mintNftBtcAuth := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtcAuth.Use(h.MiddleWare.AccessToken)
+	mintNftBtcAuth.HandleFunc("/receive-address", h.createMintReceiveAddress).Methods("POST")
+	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
@@ -192,7 +195,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
-	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+	//marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
@@ -204,12 +207,39 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 
+	inscriptionDex := api.PathPrefix("/dex").Subrouter()
+	inscriptionDex.Use(h.MiddleWare.AccessToken)
+	// inscriptionDex.HandleFunc("/forsale", h.btcMarketplaceListing).Methods("GET")
+	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
+	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
+	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
+	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
+
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
 
 	tokenUri := api.PathPrefix("/token-uri").Subrouter()
 	tokenUri.HandleFunc("", h.getTokenUris).Methods("GET")
+
+	search := api.PathPrefix("/search").Subrouter()
+	search.HandleFunc("", h.search).Methods("GET")
+
+	// for dev:
+	developerAuth := api.PathPrefix("/developer").Subrouter()
+	developerAuth.Use(h.MiddleWare.AccessToken)
+	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GenApiKey).Methods("POST")
+	developerAuth.HandleFunc("/api-key", h.apiDeveloper_GetApiKey).Methods("GET")
+
+	// public but required api key:
+	developer := api.PathPrefix("/developer").Subrouter()
+	developer.HandleFunc("/inscribe", h.developerCreateInscribe).Methods("POST")
+	developer.HandleFunc("/inscribe", h.developerInscribeList).Methods("GET")
+	developer.HandleFunc("/inscribe/{ID}", h.developerDetailInscribe).Methods("GET")
+	// inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
+	// inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
@@ -233,10 +263,11 @@ func (h *httpDelivery) healthCheck(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) PaginationResp(data *entity.Pagination, items interface{}) response.PaginationResponse {
 	resp := response.PaginationResponse{}
 	resp.Result = items
-	resp.Currsor = data.Currsor
+	resp.Currsor = data.Cursor
 	resp.Total = data.Total
 	resp.Page = data.Page
 	resp.PageSize = data.PageSize
+	resp.TotalPage = data.TotalPage
 	return resp
 }
 
@@ -259,6 +290,36 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 	if page != "" {
 		pageInt, err = strconv.Atoi(page)
 		if err != nil {
+			return nil, err
+		}
+	}
+
+	sortQuery := r.URL.Query().Get("sort")
+	sortObject := utils.ParseSort(sortQuery)
+
+	f.SortBy = sortObject.SortBy
+	f.Sort = sortObject.Sort
+	f.Page = int64(pageInt)
+	f.Limit = int64(limitInt)
+
+	return f, nil
+}
+
+func (h *httpDelivery) BaseAlgoliaFilters(r *http.Request) (*structure.BaseFilters, error) {
+	f := &structure.BaseFilters{}
+	limitInt := 10
+	pageInt := 0
+	var err error
+	limit := r.URL.Query().Get("limit")
+	if limit != "" {
+		if limitInt, err = strconv.Atoi(limit); err != nil {
+			return nil, err
+		}
+	}
+
+	page := r.URL.Query().Get("page")
+	if page != "" {
+		if pageInt, err = strconv.Atoi(page); err != nil {
 			return nil, err
 		}
 	}

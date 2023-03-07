@@ -86,3 +86,99 @@ type Txo struct {
 	Address string `json:"address"`
 	Txs     []Txs  `json:"txrefs"`
 }
+
+type BTCTxInfo struct {
+	Data struct {
+		BlockHeight   int    `json:"block_height"`
+		BlockHash     string `json:"block_hash"`
+		BlockTime     int    `json:"block_time"`
+		CreatedAt     int    `json:"created_at"`
+		Confirmations int    `json:"confirmations"`
+		Fee           int    `json:"fee"`
+		Hash          string `json:"hash"`
+		InputsCount   int    `json:"inputs_count"`
+		InputsValue   int    `json:"inputs_value"`
+		IsCoinbase    bool   `json:"is_coinbase"`
+		IsDoubleSpend bool   `json:"is_double_spend"`
+		IsSwTx        bool   `json:"is_sw_tx"`
+		LockTime      int    `json:"lock_time"`
+		OutputsCount  int    `json:"outputs_count"`
+		OutputsValue  int64  `json:"outputs_value"`
+		Sigops        int    `json:"sigops"`
+		Size          int    `json:"size"`
+		Version       int    `json:"version"`
+		Vsize         int    `json:"vsize"`
+		Weight        int    `json:"weight"`
+		WitnessHash   string `json:"witness_hash"`
+		Inputs        *[]struct {
+			PrevAddresses []string `json:"prev_addresses"`
+			PrevPosition  int      `json:"prev_position"`
+			PrevTxHash    string   `json:"prev_tx_hash"`
+			PrevType      string   `json:"prev_type"`
+			PrevValue     int      `json:"prev_value"`
+			Sequence      int64    `json:"sequence"`
+		} `json:"inputs"`
+		Outputs *[]struct {
+			Addresses         []string `json:"addresses"`
+			Value             int      `json:"value"`
+			Type              string   `json:"type"`
+			SpentByTx         string   `json:"spent_by_tx"`
+			SpentByTxPosition int      `json:"spent_by_tx_position"`
+		} `json:"outputs"`
+	} `json:"data"`
+	ErrCode int    `json:"err_code"`
+	ErrNo   int    `json:"err_no"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
+type QuickNodeUTXO struct {
+	Version  int    `json:"version"`
+	Height   int    `json:"height"`
+	Value    int    `json:"value"`
+	Script   string `json:"script"`
+	Address  string `json:"address"`
+	Coinbase bool   `json:"coinbase"`
+	Hash     string `json:"hash"`
+	Index    int    `json:"index"`
+}
+
+type QuickNodeTx struct {
+	Result struct {
+		Txid     string `json:"txid"`
+		Hash     string `json:"hash"`
+		Version  int    `json:"version"`
+		Size     int    `json:"size"`
+		Vsize    int    `json:"vsize"`
+		Weight   int    `json:"weight"`
+		Locktime int    `json:"locktime"`
+		Vin      []struct {
+			Txid      string `json:"txid"`
+			Vout      int    `json:"vout"`
+			ScriptSig struct {
+				Asm string `json:"asm"`
+				Hex string `json:"hex"`
+			} `json:"scriptSig"`
+			Txinwitness []string `json:"txinwitness"`
+			Sequence    int64    `json:"sequence"`
+		} `json:"vin"`
+		Vout []struct {
+			Value        float64 `json:"value"`
+			N            int     `json:"n"`
+			ScriptPubKey struct {
+				Asm     string `json:"asm"`
+				Desc    string `json:"desc"`
+				Hex     string `json:"hex"`
+				Address string `json:"address"`
+				Type    string `json:"type"`
+			} `json:"scriptPubKey"`
+		} `json:"vout"`
+		Hex           string `json:"hex"`
+		Blockhash     string `json:"blockhash"`
+		Confirmations int    `json:"confirmations"`
+		Time          int    `json:"time"`
+		Blocktime     int    `json:"blocktime"`
+	} `json:"result"`
+	Error interface{} `json:"error"`
+	ID    interface{} `json:"id"`
+}

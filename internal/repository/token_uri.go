@@ -104,6 +104,13 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 		filter.SortBy = "minted_time"
 	}
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, r.SelectedTokenFields(), r.SortToken(filter), &tokens)
 	if err != nil {
 		return nil, err
@@ -336,6 +343,7 @@ func (r Repository) SelectedTokenFields() bson.D {
 		{"stats.price_int", 1},
 		{"minter_address", 1},
 		{"inscription_index", 1},
+		{"order_inscription_index", 1},
 	}
 	return f
 }
@@ -418,7 +426,7 @@ func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, err
 		"synced_inscription_info": bson.M{"$ne": true},
 	}
 	//f[utils.KEY_DELETED_AT] = nil
-	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	opts := options.Find().SetProjection(r.SelectedTokenFields()).SetLimit(100)
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
@@ -496,4 +504,16 @@ func (r Repository) FindOneTokenByListOfTokenIds(tokenIds []string) (*entity.Tok
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) CountTokenUriByProjectId(projectId string) (*int64, error) {
+	f := bson.M{
+		"project_id": projectId,
+	}
+	count, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	return &count, nil
 }

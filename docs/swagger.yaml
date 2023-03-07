@@ -2,28 +2,20 @@ basePath: /rederinghub.io/v1
 definitions:
   entity.InscribeBTCResp:
     properties:
+      amount:
+        type: string
       expiredAt:
         type: string
       feeRate:
-        description: |-
-          Mnemonic          string `bson:"mnemonic"`
-          SegwitKey         string `bson:"segwit_key"`
-          MintResponse MintStdoputResponse `bson:"mintResponse"` // after token has been mint
-          Balance   string    `bson:"balance"` // balance after check
         type: integer
       inscriptionID:
         description: tokenID in ETH
         type: string
+      isAuthentic:
+        type: boolean
       isConfirm:
-        description: |-
-          UserAddress string `bson:"user_address"` //user's wallet address from FE
-          OriginUserAddress string `bson:"origin_user_address"` //user's wallet address from FE
-          Amount            string `bson:"amount"`
-          MintFee           string `bson:"mint_fee"`
-          SentTokenFee      string `bson:"sent_token_fee"`
-          OrdAddress        string `bson:"ordAddress"` // address is generated from ORD service, which receive all amount
-          SegwitAddress     string `bson:"segwit_address"`
-          FileURI       string `bson:"fileURI"`       // FileURI will be mount if OrdAddress get all amount
+        description: 'default: false, if OrdAddress get all amount it will be set
+          true'
         type: boolean
       isMinted:
         description: 'default: false. If InscriptionID exist which means token is
@@ -33,14 +25,19 @@ definitions:
         description: 'default: false. If InscriptionID was sent to user, it''s true'
         type: boolean
       status:
-        allOf:
-        - $ref: '#/definitions/entity.StatusInscribe'
         description: status for record
+        type: integer
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
       txMintNft:
         type: string
-      txSendBTC:
+      txSendBtc:
         type: string
       txSendNft:
+        type: string
+      userUuid:
         type: string
       uuid:
         type: string
@@ -64,14 +61,20 @@ definitions:
     type: object
   entity.Pagination:
     properties:
-      currsor:
+      cursor:
         type: string
       page:
         type: integer
       pageSize:
         type: integer
       result: {}
+      sort:
+        items:
+          type: string
+        type: array
       total:
+        type: integer
+      totalPage:
         type: integer
     type: object
   entity.ProfileSocial:
@@ -128,6 +131,8 @@ definitions:
         items:
           type: string
         type: array
+      catureThumbnailDelayTime:
+        type: integer
       closeMintUnixTimestamp:
         type: integer
       completeTime:
@@ -136,6 +141,8 @@ definitions:
         type: string
       created_by_collection_meta:
         type: boolean
+      createdAt:
+        type: string
       creatorAddrr:
         type: string
       creatorAddrrBTC:
@@ -144,11 +151,15 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/entity.Users'
+      deletedAt:
+        type: string
       description:
         type: string
       genNFTAddr:
         type: string
       hash:
+        type: string
+      id:
         type: string
       images:
         description: if user uses links instead of animation URL
@@ -166,6 +177,8 @@ definitions:
       license:
         type: string
       limitSupply:
+        type: integer
+      maxFileSize:
         type: integer
       maxSupply:
         type: integer
@@ -261,6 +274,10 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
+      updatedAt:
+        type: string
+      uuid:
+        type: string
       whiteListEthContracts:
         description: if user uses links instead of animation URL
         items:
@@ -274,61 +291,6 @@ definitions:
       reportUserAddress:
         type: string
     type: object
-  entity.StatusInscribe:
-    enum:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
-    - 8
-    - 9
-    - 10
-    - 11
-    - 12
-    type: integer
-    x-enum-comments:
-      StatusInscribe_Minted: '5: mint success'
-      StatusInscribe_Minting: '4: minting'
-      StatusInscribe_NeedToRefund: '12: Need to refund BTC'
-      StatusInscribe_NotEnoughBalance: '11: balance not enough'
-      StatusInscribe_Pending: '0: pending: waiting for fund'
-      StatusInscribe_ReceivedFund: '1: received fund from user (buyer)'
-      StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr: '2: sending btc from segwit
-        address to ord address'
-      StatusInscribe_SendingNFTToUser: '6: sending nft to user'
-      StatusInscribe_SentBTCFromSegwitAddrToOrdAdd: '3: send btc from segwit address
-        to ord address success'
-      StatusInscribe_SentNFTToUser: '7: send nft to user success: flow DONE'
-      StatusInscribe_TxMintFailed: '10: tx mint failed'
-      StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed: '8: send btc from segwit
-        address to ord address failed'
-      StatusInscribe_TxSendBTCToUserFailed: '9: send nft to user failed'
-    x-enum-varnames:
-    - StatusInscribe_Pending
-    - StatusInscribe_ReceivedFund
-    - StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr
-    - StatusInscribe_SentBTCFromSegwitAddrToOrdAdd
-    - StatusInscribe_Minting
-    - StatusInscribe_Minted
-    - StatusInscribe_SendingNFTToUser
-    - StatusInscribe_SentNFTToUser
-    - StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed
-    - StatusInscribe_TxSendBTCToUserFailed
-    - StatusInscribe_TxMintFailed
-    - StatusInscribe_NotEnoughBalance
-    - StatusInscribe_NeedToRefund
-  entity.TokenPaidType:
-    enum:
-    - eth
-    - btc
-    type: string
-    x-enum-varnames:
-    - ETH
-    - BIT
   entity.TokenStats:
     properties:
       price_int:
@@ -372,14 +334,15 @@ definitions:
         type: string
       name:
         type: string
+      order_inscription_index:
+        type: integer
       owner:
-        allOf:
-        - $ref: '#/definitions/entity.Users'
+        $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
       ownerAddr:
         type: string
       paidType:
-        $ref: '#/definitions/entity.TokenPaidType'
+        type: string
       parsed_attributes:
         items:
           $ref: '#/definitions/entity.TokenUriAttr'
@@ -465,6 +428,10 @@ definitions:
         type: string
       created_at:
         type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
       display_name:
         type: string
       id:
@@ -481,6 +448,10 @@ definitions:
         $ref: '#/definitions/entity.ProfileSocial'
       stats:
         $ref: '#/definitions/entity.UserStats'
+      updatedAt:
+        type: string
+      uuid:
+        type: string
       verifiedAt:
         type: string
       wallet_address:
@@ -494,6 +465,33 @@ definitions:
         type: string
       wallet_address_payment:
         description: eth wallet artist receive royalty
+        type: string
+    type: object
+  nfts.MoralisToken:
+    properties:
+      amount:
+        type: string
+      block_number_minted:
+        type: string
+      contract_type:
+        type: string
+      is_minted:
+        type: boolean
+      metadata:
+        type: string
+      name:
+        type: string
+      owner_of:
+        type: string
+      symbol:
+        type: string
+      token_address:
+        type: string
+      token_hash:
+        type: string
+      token_id:
+        type: string
+      token_uri:
         type: string
     type: object
   request.CheckBalanceAddressReq:
@@ -607,6 +605,10 @@ definitions:
         type: string
       name:
         type: string
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
       walletAddress:
         type: string
     type: object
@@ -652,6 +654,11 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.FileResize:
+    properties:
+      file:
+        type: string
+    type: object
   request.GenerateMessageRequest:
     properties:
       address:
@@ -663,6 +670,10 @@ definitions:
         items:
           type: string
         type: array
+      payType:
+        additionalProperties:
+          type: string
+        type: object
       price:
         type: string
       seller_address:
@@ -768,6 +779,19 @@ definitions:
       messagePrefix:
         type: string
       signature:
+        type: string
+    type: object
+  request.WithDrawItemRequest:
+    properties:
+      amount:
+        type: string
+      id:
+        description: 'referal  (referal: refereeID, project: tokenID)'
+        type: string
+      paymentType:
+        description: referal or project
+        type: string
+      type:
         type: string
     type: object
   response.CategoryResp:
@@ -916,6 +940,10 @@ definitions:
         type: string
       orderID:
         type: string
+      orderInscriptionIndex:
+        type: integer
+      ordinalsData:
+        $ref: '#/definitions/response.OrdinalsData'
       owner:
         $ref: '#/definitions/response.ProfileResponse'
       ownerAddr:
@@ -957,6 +985,19 @@ definitions:
         type: integer
       indexReserve:
         type: integer
+    type: object
+  response.OrdinalsData:
+    properties:
+      block:
+        type: integer
+      contentLength:
+        type: string
+      contentType:
+        type: string
+      sat:
+        type: string
+      timestamp:
+        type: string
     type: object
   response.ProfileResponse:
     properties:
@@ -1039,6 +1080,8 @@ definitions:
       license:
         type: string
       limit:
+        type: integer
+      maxFileSize:
         type: integer
       maxSupply:
         type: integer
@@ -1975,6 +2018,28 @@ paths:
       summary: Deflate a string
       tags:
       - Files
+  /files/image/resize:
+    post:
+      consumes:
+      - application/json
+      description: Upload file
+      parameters:
+      - description: Base64 File Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.FileResize'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.FileResize'
+      summary: Upload file
+      tags:
+      - Files
   /files/minify:
     post:
       description: Upload file
@@ -2110,7 +2175,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeInfoResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Info Inscribe
       tags:
       - Inscribe
@@ -2127,7 +2192,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.Pagination'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC List Inscribe
       tags:
       - Inscribe
@@ -2150,7 +2215,7 @@ paths:
           schema:
             $ref: '#/definitions/entity.InscribeBTCResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
@@ -2174,7 +2239,7 @@ paths:
           schema:
             $ref: '#/definitions/response.InscribeBtcResp'
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Generate receive wallet address
       tags:
       - Inscribe
@@ -2193,9 +2258,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
-      - Api-Key: []
+      - ApiKeyAuth: []
       summary: BTC Retry Inscribe
       tags:
       - Inscribe
@@ -2719,7 +2784,7 @@ paths:
       summary: get  projects by wallet
       tags:
       - Profile
-  /profile/wallet/{walletAddress}/volume:
+  /profile/wallet/{walletAddress}/volumn:
     get:
       consumes:
       - application/json
@@ -2728,6 +2793,10 @@ paths:
       - description: Filter project via wallet address
         in: path
         name: walletAddress
+        type: string
+      - description: payType eth|btc
+        in: query
+        name: payType
         type: string
       - description: limit
         in: query
@@ -2754,11 +2823,12 @@ paths:
       - application/json
       description: User profile via wallet address
       parameters:
-      - description: Wallet address
-        in: path
-        name: walletAddress
+      - description: Withdraw request
+        in: body
+        name: WithDrawItemRequest
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.WithDrawItemRequest'
       produces:
       - application/json
       responses:
@@ -2771,6 +2841,8 @@ paths:
                 data:
                   $ref: '#/definitions/response.ProfileResponse'
               type: object
+      security:
+      - Authorization: []
       summary: User profile via wallet address
       tags:
       - Profile
@@ -2978,6 +3050,36 @@ paths:
       security:
       - Authorization: []
       summary: update a btc project
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}/volumn:
+    get:
+      consumes:
+      - application/json
+      description: get project's volumn
+      parameters:
+      - description: payType eth|btc
+        in: query
+        name: payType
+        type: string
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's volumn
       tags:
       - Project
   /project/{genNFTAddr}/tokens:
@@ -3191,6 +3293,51 @@ paths:
       summary: get the recent work projects
       tags:
       - Project
+  /project/upcomming:
+    get:
+      consumes:
+      - application/json
+      description: upcomming get projects
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: filter project via name
+        in: query
+        name: name
+        type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: limit
+        in: query
+        name: page
+        type: integer
+      - description: newest, oldest, priority-asc, priority-desc, trending-score
+        in: query
+        name: sort
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get upcomming projects
+      tags:
+      - Project
   /referrals:
     get:
       consumes:
@@ -3257,6 +3404,94 @@ paths:
       summary: Create referral
       tags:
       - Referral
+  /search:
+    get:
+      consumes:
+      - application/json
+      description: Search
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: object type
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Search
+      tags:
+      - Search
+  /token-moralis/nfts:
+    get:
+      consumes:
+      - application/json
+      description: List NFT from Moralis
+      parameters:
+      - description: Wallet Address
+        in: query
+        name: walletAddress
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List NFT from Moralis
+      tags:
+      - Token Moralis
+  /token-moralis/nfts/{tokenAddress}:
+    get:
+      consumes:
+      - application/json
+      description: NFT from Moralis
+      parameters:
+      - description: Token Address
+        in: path
+        name: tokenAddress
+        type: string
+      - description: Token Id
+        in: query
+        name: tokenId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/nfts.MoralisToken'
+      security:
+      - ApiKeyAuth: []
+      summary: NFT from Moralis
+      tags:
+      - Token Moralis
   /token-uri:
     get:
       consumes:
@@ -3592,11 +3827,7 @@ paths:
       tags:
       - User
 securityDefinitions:
-  Api-Key:
-    in: header
-    name: Api-Key
-    type: apiKey
-  Authorization:
+  ApiKeyAuth:
     in: header
     name: Authorization
     type: apiKey

@@ -170,17 +170,15 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
 
+	now :=  time.Now().UTC().UnixNano()
 	fname := NormalizeFileName(file.FileHeader.Filename)
-	path := fmt.Sprintf("upload/%s", fname)
+	fname = fmt.Sprintf("%d-%s",now,fname)
+	path := fmt.Sprintf("upload/%s",fname)
 	if file.Path != nil {
 		if *file.Path != "" {
 			path = fmt.Sprintf("%s/%s", *file.Path, fname)
 		}
 	}
-
-	fmt.Printf("Uploaded File: %+v\n", file.FileHeader.Filename)
-	fmt.Printf("File Size: %+v\n", file.FileHeader.Size)
-	fmt.Printf("MIME Header: %+v\n", file.FileHeader.Header)
 
 	header := file.FileHeader.Header
 	_ = header

@@ -42,23 +42,25 @@ type ExternalTokenURIResp struct {
 
 type InternalTokenURIResp struct {
 	BaseResponse
-	TokenID          string           `json:"tokenID"`
-	Name             string           `json:"name"`
-	Description      string           `json:"description"`
-	Image            string           `json:"image"`
-	AnimationURL     string           `json:"animationUrl"`
-	AnimationHtml    string           `json:"animationHtml"`
-	Attributes       interface{}      `json:"attributes"`
-	MintedTime       time.Time        `json:"mintedTime"`
-	GenNFTAddr       string           `json:"genNFTAddr"`
-	OwnerAddr        string           `json:"ownerAddr"`
-	Owner            *ProfileResponse `json:"owner"`
-	Project          *ProjectResp     `json:"project"`
-	Creator          *ProfileResponse `json:"creator"`
-	Thumbnail        string           `json:"thumbnail"`
-	Priority         int              `json:"priority"`
-	Stats            TokenStat        `json:"stats"`
-	InscriptionIndex string           `json:"inscriptionIndex"`
+	TokenID               string           `json:"tokenID"`
+	Name                  string           `json:"name"`
+	Description           string           `json:"description"`
+	Image                 string           `json:"image"`
+	AnimationURL          string           `json:"animationUrl"`
+	AnimationHtml         string           `json:"animationHtml"`
+	Attributes            interface{}      `json:"attributes"`
+	MintedTime            time.Time        `json:"mintedTime"`
+	GenNFTAddr            string           `json:"genNFTAddr"`
+	OwnerAddr             string           `json:"ownerAddr"`
+	Owner                 *ProfileResponse `json:"owner"`
+	Project               *ProjectResp     `json:"project"`
+	Creator               *ProfileResponse `json:"creator"`
+	Thumbnail             string           `json:"thumbnail"`
+	Priority              int              `json:"priority"`
+	Stats                 TokenStat        `json:"stats"`
+	InscriptionIndex      string           `json:"inscriptionIndex"`
+	OrderInscriptionIndex int              `json:"orderInscriptionIndex"`
+	OrdinalsData          *OrdinalsData    `json:"ordinalsData"`
 
 	// for buyable:
 	Buyable     bool   `json:"buyable"`
@@ -67,6 +69,14 @@ type InternalTokenURIResp struct {
 	OrderID     string `json:"orderID"`
 
 	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
+}
+
+type OrdinalsData struct {
+	Sat           string `json:"sat"`
+	ContentType   string `json:"contentType"`
+	ContentLength string `json:"contentLength"`
+	Timestamp     string `json:"timestamp"`
+	Block         int64  `json:"block"`
 }
 
 type InternalTokenTraitsResp struct {

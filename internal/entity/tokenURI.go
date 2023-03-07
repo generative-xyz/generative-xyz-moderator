@@ -34,6 +34,7 @@ type FilterTokenUris struct {
 	HasPrice        *bool
 	FromPrice       *int64
 	ToPrice         *int64
+	Ids             []string
 }
 
 type TokenStats struct {
@@ -76,9 +77,10 @@ type TokenUri struct {
 	PaidType                       TokenPaidType `bson:"paidType"`
 	IsOnchain                      bool          `bson:"isOnchain"`
 	InscriptionIndex               string        `bson:"inscription_index"`
+	OrderInscriptionIndex          int           `bson:"order_inscription_index" json:"order_inscription_index"`
 	SyncedInscriptionInfo          bool          `bson:"synced_inscription_info"`
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
-	Source 												 string 			 `bson:"source" json:"source"`
+	Source                         string        `bson:"source" json:"source"`
 }
 
 type TokenUriAttr struct {

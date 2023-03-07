@@ -9,12 +9,22 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/logger"
 )
+
+func (u Usecase) GetInscriptionByIDFromOrd(id string) (*structure.InscriptionOrdInfoByID, error) {
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+	return getInscriptionByID(ordServer, id)
+}
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
 	cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
@@ -33,10 +43,16 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 
 	apiToken := u.Config.BlockcypherToken
 	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
-	walletBasicInfo, err := getWalletInfo(address, apiToken, u.Logger)
+	quickNode := u.Config.QuicknodeAPI
+
+	walletBasicInfo, err := btc.GetBalanceFromQuickNode(address, quickNode)
 	if err != nil {
-		u.Logger.Info("GetBTCWalletInfo apiToken debug err", err)
-		return nil, err
+		var err2 error
+		walletBasicInfo, err2 = getWalletInfo(address, apiToken, u.Logger)
+		if err != nil {
+			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err2, err)
+			return nil, err2
+		}
 	}
 
 	result.BlockCypherWalletInfo = *walletBasicInfo
@@ -45,7 +61,12 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
 		outcoins = append(outcoins, o)
 	}
-	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins)
+	currentListing, err := u.Repo.GetDexBTCListingOrderUserPending(address)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
+	}
+
+	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
 		return nil, err
 	}
@@ -64,24 +85,41 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 	result.Txrefs = newTxrefs
 
-	resultBytes, err := json.Marshal(result)
-	if err != nil {
-		u.Logger.Error("GetBTCWalletInfo json.Marshal", address, err)
-	} else {
-		err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, string(resultBytes), 60)
-		if err != nil {
-			u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
+	newTxrefsFiltered := []structure.TxRef{}
+	if len(currentListing) > 0 {
+		pendingUTXO := make(map[string]struct{})
+		for _, listing := range currentListing {
+			for _, input := range listing.Inputs {
+				// only filter out non-inscription utxo
+				if _, ok := result.InscriptionsByOutputs[input]; !ok {
+					pendingUTXO[input] = struct{}{}
+				}
+			}
 		}
+
+		for _, output := range result.Txrefs {
+			voutStr := fmt.Sprintf("%v:%v", output.TxHash, output.TxOutputN)
+			if _, ok := pendingUTXO[voutStr]; !ok {
+				newTxrefsFiltered = append(newTxrefs, output)
+			}
+		}
+		result.Txrefs = newTxrefsFiltered
 	}
+
+	err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
+	if err != nil {
+		u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
+	}
+	// }
 
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://dev.generativeexplorer.com"
+		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
 	outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
@@ -119,6 +157,17 @@ func (u Usecase) InscriptionsByOutputs(outputs []string) (map[string][]structure
 					inscWalletInfo.ProjectID = internalInfo.ProjectID
 					inscWalletInfo.ProjecName = internalInfo.Project.Name
 					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+				}
+				for _, listing := range currentListing {
+					if listing.InscriptionID == data.InscriptionID {
+						if listing.CancelTx == "" {
+							inscWalletInfo.Buyable = true
+						} else {
+							inscWalletInfo.Cancelling = true
+						}
+						inscWalletInfo.OrderID = listing.UUID
+						inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+					}
 				}
 				result[output] = append(result[output], inscWalletInfo)
 				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
@@ -252,8 +301,6 @@ func checkTxInBlockFromOrd(ordServer, txhash string) error {
 }
 
 func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*structure.BlockCypherWalletInfo, error) {
-	// url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
-
 	url := fmt.Sprintf("https://api.blockcypher.com/v1/btc/main/addrs/%s?unspentOnly=true&includeScript=false&token=%s", address, apiToken)
 	var result structure.BlockCypherWalletInfo
 	req, err := http.NewRequest("GET", url, nil)
@@ -284,7 +331,7 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 		return nil, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error + " " + url)
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Error)
 	}
 
 	return &result, nil
@@ -312,7 +359,7 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 	}
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
-		ordServer = "https://dev.generativeexplorer.com"
+		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
 	for _, tx := range txList {
 		createdAt := uint64(0)
@@ -328,30 +375,30 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 			Receiver:          tx.Receiver,
 			CreatedAt:         createdAt,
 		}
-
-		if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
-			trackTx.Status = "Success"
+		_, bs, err := u.buildBTCClient()
+		if err != nil {
+			fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+			return nil, err
+		}
+		if createdAt != 0 && time.Since(*tx.CreatedAt) >= 24*time.Hour {
+			if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
+				trackTx.Status = "Success"
+			} else {
+				status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
+				if err != nil {
+					return nil, err
+				}
+				trackTx.Status = status
+			}
+			result = append(result, trackTx)
 		} else {
-			_, bs, err := u.buildBTCClient()
+			status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
 			if err != nil {
-				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 				return nil, err
 			}
-
-			txStatus, err := bs.CheckTx(tx.Txhash)
-			if err != nil {
-				trackTx.Status = "Failed"
-			} else {
-				if txStatus.Confirmations > 0 {
-					trackTx.Status = "Success"
-				} else {
-					trackTx.Status = "Pending"
-				}
-			}
-
+			trackTx.Status = status
+			result = append(result, trackTx)
 		}
-
-		result = append(result, trackTx)
 	}
 	return result, nil
 }

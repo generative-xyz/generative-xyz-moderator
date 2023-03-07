@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 )
 
@@ -66,7 +67,7 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		project, err := u.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 		if err != nil {
 			u.Logger.Error("u.FindProjectByInscriptionIcon", err.Error(), err)
-			return err
+			continue
 		}
 
 		if project == nil {
@@ -75,8 +76,13 @@ func (u Usecase) CreateProjectsFromMetas() error {
 				u.Logger.Error("u.CreateProjectFromCollectionMeta", err.Error(), err)
 				return err
 			}
-			u.Repo.SetProjectCreatedMeta(meta)
 			u.Logger.Info(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+		}
+
+		err = u.Repo.SetProjectCreatedMeta(meta)
+		if err != nil {
+			u.Logger.Error("u.Repo.SetProjectCreatedMeta", err.Error(), err)
+			continue
 		}
 		
 		if processed % 20 == 0 {
@@ -102,18 +108,18 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		_, err = u.Repo.FindTokenByTokenID(inscription.ID)
 		if err != nil {
 			if !errors.Is(err, mongo.ErrNoDocuments) {
-				u.Logger.Error("u.Repo.FindTokenByTokenID " + inscription.ID, err.Error(), err)
-				return err
+				u.Logger.ErrorAny("u.Repo.FindTokenByTokenID " + inscription.ID, zap.Error(err))
+				continue
 			} else {
 				meta, err := u.Repo.FindCollectionMetaByInscriptionIcon(inscription.CollectionInscriptionIcon)
 				if err != nil {
-					u.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", err.Error(), err)
-					return err
+					u.Logger.ErrorAny("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
+					continue
 				}
 				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 				if err != nil {
-					u.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", err.Error(), err)
-					return err
+					u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+					continue
 				}
 				u.Logger.Info(fmt.Sprintf("Done create token %s", inscription.ID))
 			}
@@ -123,8 +129,8 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		u.Logger.Info(fmt.Sprintf("Done set token created %s", inscription.ID))
 
 		if err != nil {
-			u.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", err.Error(), err)
-			return err
+			u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+			continue
 		}
 		
 		if processed % 20 == 0 {

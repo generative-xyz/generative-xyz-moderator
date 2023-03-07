@@ -56,3 +56,21 @@ type ProfileChan struct {
 	Data *entity.Users
 	Err  error
 }
+
+type WithDrawItemRequest struct {
+	Amount       string `json:"amount"`
+	PaymentType   string `json:"paymentType"`
+	ID string `json:"ID"`
+	WithdrawType string `json:"type"`
+}
+
+type WithDrawRequest struct {
+	Items []WithDrawItemRequest `json:"items"`
+}
+
+type FilterWithdraw struct {
+	BaseFilters
+	PaymentType *string
+	//ProjectID *string
+	Status *int
+}

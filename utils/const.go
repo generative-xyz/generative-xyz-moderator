@@ -29,6 +29,7 @@ func ParseSort(key string) QuerySort {
 
 const (
 	MAX_CHECK_BALANCE int    = 15
+	PERCENT_EARNING   int    = 900
 	API_KEY           string = "Api-Key"
 	//AUTH_TOKEN           string = "Authorization" //token will be save in this variable
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
@@ -68,7 +69,8 @@ const (
 	NFT_CACHE_EXPIRED_TIME           int    = 86400
 	TOKEN_CACHE_EXPIRED_TIME         int    = 86400 * 30       //a month (second)
 	REFRESH_TOKEN_CACHE_EXPIRED_TIME int    = 86400 * 360      //a year (second)
-	DB_CACHE_EXPIRED_TIME            int    = 86400            //a week
+	DB_CACHE_EXPIRED_TIME            int    = 86400            //a day
+	REDIS_CACHE_EXPIRED_TIME         int    = 86400            //a day
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
 	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
 
@@ -85,7 +87,8 @@ const (
 	KEY_BTC_WALLET_INFO            string = "btc_wallet_info"
 
 	COLLECTION_USERS                    string = "users"
-	COLLECTION_USER_VOLUMN                  string = "user_volumn"
+	COLLECTION_USER_VOLUMN              string = "user_volumn"
+	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
 	COLLECTION_FILES                    string = "files"
@@ -110,6 +113,8 @@ const (
 	COLLECTION_COLLECTION_META          string = "collection_metas"
 	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
 	WALLET_TRACK_TX                     string = "wallet_track_txs"
+	COLLECTION_AIRDROP                  string = "airdrop"
+	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
@@ -126,12 +131,21 @@ const (
 	FEE_BTC_SEND_AGV = 8000 // fee send btc
 	MIN_FILE_SIZE    = 4096 // min file size (for linux system)
 
+	FEE_ETH_SEND_MASTER = 0.0007
+	FEE_BTC_SEND_NFT    = 10000
+
+	DEVELOPER_INSCRIBE_MAX_REQUEST = 200
+
 	INSCRIBE_TIMEOUT = 6
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 
 	NETWORK_BTC = "btc"
 	NETWORK_ETH = "eth"
+
+	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/magickey.html"
+	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/goldenkey.html"
+	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/silverkey.html"
 )
 
 type PubSubSendOtp struct {

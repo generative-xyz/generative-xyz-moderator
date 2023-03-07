@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -443,7 +444,13 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.IsHidden = input.IsHidden
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
-	resp.TotalImages = len(input.Images)
+	resp.MaxFileSize = input.MaxFileSize
+	if input.CatureThumbnailDelayTime == nil || *input.CatureThumbnailDelayTime == 0 {
+		resp.CaptureThumbnailDelayTime = entity.DEFAULT_CAPTURE_TIME
+	} else {
+		resp.CaptureThumbnailDelayTime = *input.CatureThumbnailDelayTime
+	}
+	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
@@ -470,7 +477,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		resp.TraitStat = traitStat
 	}
 
-	profile, err := h.Usecase.UserProfileByWallet(input.CreatorAddrr)
+	profile, err := h.Usecase.UserProfileByWalletWithCache(input.CreatorAddrr)
 	if err == nil && profile != nil && profile.ProfileSocial.TwitterVerified {
 		profileResp, err := h.profileToResp(profile)
 		if err == nil {
@@ -697,7 +704,7 @@ func (h *httpDelivery) updateBTCProjectcategories(w http.ResponseWriter, r *http
 func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request) {
 	file, err := h.Usecase.UploadProjectFiles(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.UploadFile", err.Error(), err)
+		h.Logger.ErrorAny("UploadProjectFiles", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -705,10 +712,103 @@ func (h *httpDelivery) UploadProjectFiles(w http.ResponseWriter, r *http.Request
 	resp := &response.FileRes{}
 	err = response.CopyEntityToRes(resp, file)
 	if err != nil {
-		h.Logger.Error("response.CopyEntityToRes", err.Error(), err)
+		h.Logger.ErrorAny("UploadProjectFiles", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary get project's volumn
+// @Description get project's volumn
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param payType query string false "payType eth|btc"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/volumn [GET]
+func (h *httpDelivery) projectVolumn(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	paytype := r.URL.Query().Get("payType")
+
+	v, err := h.Usecase.ProjectVolume(projectID, paytype)
+	if err != nil {
+		h.Logger.ErrorAny("projectVolumn", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
+}
+
+// UserCredits godoc
+// @Summary get upcomming projects
+// @Description upcomming get projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param contractAddress query string false "Filter project via contract address"
+// @Param name query string false "filter project via name"
+// @Param category query string false "filter project via category ids"
+// @Param limit query int false "limit"
+// @Param page query int false "limit"
+// @Param sort query string false "newest, oldest, priority-asc, priority-desc, trending-score"
+// @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/upcomming [GET]
+func (h *httpDelivery) getUpcommingProjects(w http.ResponseWriter, r *http.Request) {
+
+	name := r.URL.Query().Get("name")
+	categoriesRaw := r.URL.Query().Get("category")
+
+	categoryIds := strings.Split(categoriesRaw, ",")
+	if categoriesRaw == "" {
+		categoryIds = []string{}
+	}
+
+	baseF, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f := structure.FilterProjects{}
+	f.BaseFilters = *baseF
+	f.Name = &name
+	f.CategoryIds = categoryIds
+
+	hidden := false
+	f.IsHidden = &hidden
+	uProjects, err := h.Usecase.GetUpcommingProjects(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	pResp := []response.ProjectResp{}
+	iProjects := uProjects.Result
+	projects := iProjects.([]entity.Projects)
+	for _, project := range projects {
+
+		p, err := h.projectToResp(&project)
+		if err != nil {
+			h.Logger.Error("copier.Copy", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+
+		pResp = append(pResp, *p)
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }

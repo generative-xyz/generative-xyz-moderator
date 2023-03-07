@@ -1,7 +1,9 @@
 package crontab_trending
 
 import (
-	"github.com/robfig/cron/v3"
+	"time"
+
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -20,14 +22,25 @@ func NewScronTrendingHandler(global *global.Global, uc usecase.Usecase) *ScronTr
 }
 
 func (h ScronTrendingHandler) StartServer() {
-	c := cron.New()
-	// cronjob to sync projects trending
-	c.AddFunc("*/15 * * * *", func() {
-
-		err := h.Usecase.SyncProjectTrending()
-		if err != nil {
-			h.Logger.Error("DispatchCron.OneMinute.GetTheCurrentBlockNumber", err.Error(), err)
+	go func() {
+		h.Logger.Info("StartCrontabSyncTrending")
+		for {
+			err := h.Usecase.SyncProjectTrending()
+			if err != nil {
+				h.Logger.ErrorAny("SyncProjectTrendingError", zap.Any("err", err.Error()))
+			}
+			time.Sleep(10 * time.Minute)
 		}
-	})
-	c.Start()
+	}()
+
+	go func() {
+		h.Logger.Info("StartCrontabDeleteActivities")
+		for {
+			err := h.Usecase.DeleteOldActivities()
+			if err != nil {
+				h.Logger.ErrorAny("h.Usecase.DeleteOldActivities", zap.Any("err", err.Error()))
+			}
+			time.Sleep(24 * time.Hour)
+		}
+	}()
 }

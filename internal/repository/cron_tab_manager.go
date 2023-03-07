@@ -117,3 +117,11 @@ func (r Repository) UpdateCronJobManagerLastSatus(uuid, lastStatus string) (*mon
 
 	return result, err
 }
+
+func (r Repository) InsertCronJobManagerLogs(data *entity.CronJobManagerLogs) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}

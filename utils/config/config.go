@@ -42,6 +42,7 @@ type Config struct {
 
 	BlockcypherAPI   string
 	BlockcypherToken string
+	QuicknodeAPI     string
 
 	MASTER_ADDRESS_CLAIM_BTC, MASTER_ADDRESS_CLAIM_ETH string
 
@@ -53,10 +54,24 @@ type Config struct {
 	TrendingConfig TrendingConfig
 	MaxReportCount int
 
+	AlgoliaApiKey        string
+	AlgoliaApplicationId string
+	Ordinals             Ordinals
+	ChainURL             string
+	ChainId              int
+
+	CaptcharSecret        string
+	GenerativeExplorerApi string
+
 	// list crontab to run:
 	CronTabList []string
 }
 
+type Ordinals struct {
+	OrdinalsContract         string
+	CallerOrdinalsAddress    string
+	CallerOrdinalsPrivateKey string
+}
 type TrendingConfig struct {
 	WhitelistedProjectID []string
 	BoostedCategoryID    string
@@ -71,13 +86,16 @@ type MQTTConfig struct {
 }
 
 type CronTabConfig struct {
-	Enabled                  bool
-	BTCEnabled               bool
-	MarketPlaceEnabled       bool
-	BTCV2Enabled             bool
-	TrendingEnabled          bool
-	MintNftBtcEnabled        bool
-	OrdinalCollectionEnabled bool
+	Enabled                         bool
+	BTCEnabled                      bool
+	MarketPlaceEnabled              bool
+	BTCV2Enabled                    bool
+	TrendingEnabled                 bool
+	MintNftBtcEnabled               bool
+	OrdinalCollectionEnabled        bool
+	InscriptionIndexEnabled         bool
+	CrontabDeveloperInscribeEnabled bool
+	DexBTCEnabled                   bool
 }
 
 type MoralisConfig struct {
@@ -208,8 +226,12 @@ func NewConfig() (*Config, error) {
 	crontabMKStart, _ := strconv.ParseBool(os.Getenv("MAKETPLACE_CRONTAB_START"))
 	crontabTrendingStart, _ := strconv.ParseBool(os.Getenv("TRENDING_CRONTAB_START"))
 	crontabOrdinalCollectionStart, _ := strconv.ParseBool(os.Getenv("ORDINAL_COLLECTION_CRONTAB_START"))
+	crontabInscriptionIndex, _ := strconv.ParseBool(os.Getenv("INSCRIPTION_INFO_CRONTAB_START"))
+	crontabDexBTC, _ := strconv.ParseBool(os.Getenv("DEX_BTC_CRONTAB_START"))
 
 	crontabMintNftBtcStart, _ := strconv.ParseBool(os.Getenv("MINT_NFT_BTC_START"))
+
+	crontabDeveloperInscribeStart, _ := strconv.ParseBool(os.Getenv("DEVELOPER_INSCRIBE_CRONTAB_START"))
 
 	whitelistedTrendingProjectID := strings.Split(os.Getenv("TRENDING_WHITELISTED_PROJECT_IDS"), ",")
 	boostedTrendingCategoryID := os.Getenv("TRENDING_BOOSTED_CATEGORY_ID")
@@ -218,7 +240,7 @@ func NewConfig() (*Config, error) {
 	if maxReportCount == 0 {
 		maxReportCount = 3
 	}
-
+	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -303,13 +325,17 @@ func NewConfig() (*Config, error) {
 			Env:       os.Getenv("ENV"),
 		},
 		Crontab: CronTabConfig{
-			Enabled:                  crontabStart,
-			BTCEnabled:               crontabBtcStart,
-			BTCV2Enabled:             crontabBtcV2Start,
-			MarketPlaceEnabled:       crontabMKStart,
-			TrendingEnabled:          crontabTrendingStart,
-			MintNftBtcEnabled:        crontabMintNftBtcStart,
-			OrdinalCollectionEnabled: crontabOrdinalCollectionStart,
+
+			Enabled:                         crontabStart,
+			BTCEnabled:                      crontabBtcStart,
+			BTCV2Enabled:                    crontabBtcV2Start,
+			MarketPlaceEnabled:              crontabMKStart,
+			TrendingEnabled:                 crontabTrendingStart,
+			MintNftBtcEnabled:               crontabMintNftBtcStart,
+			OrdinalCollectionEnabled:        crontabOrdinalCollectionStart,
+			InscriptionIndexEnabled:         crontabInscriptionIndex,
+			DexBTCEnabled:                   crontabDexBTC,
+			CrontabDeveloperInscribeEnabled: crontabDeveloperInscribeStart,
 		},
 		GENToken: GENToken{
 			Contract: os.Getenv("GENERATIVE_TOKEN_ADDRESS"),
@@ -321,6 +347,7 @@ func NewConfig() (*Config, error) {
 
 		BlockcypherAPI:   os.Getenv("BlockcypherAPI"),
 		BlockcypherToken: os.Getenv("BlockcypherToken"),
+		QuicknodeAPI:     os.Getenv("QUICKNODE_API"),
 
 		MASTER_ADDRESS_CLAIM_BTC: os.Getenv("MASTER_ADDRESS_CLAIM_BTC"),
 		MASTER_ADDRESS_CLAIM_ETH: os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
@@ -333,7 +360,20 @@ func NewConfig() (*Config, error) {
 			BoostedCategoryID:    boostedTrendingCategoryID,
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
-		MaxReportCount: maxReportCount,
+
+		MaxReportCount:       maxReportCount,
+		AlgoliaApiKey:        os.Getenv("ALGOLIA_API_KEY"),
+		AlgoliaApplicationId: os.Getenv("ALGOLIA_APPLICATION_ID"),
+		Ordinals: Ordinals{
+			OrdinalsContract:         os.Getenv("ORDINALS_CONTRACT"),
+			CallerOrdinalsAddress:    os.Getenv("CALLER_ORDINALS_ADDRESS"),
+			CallerOrdinalsPrivateKey: os.Getenv("CALLER_ORDINALS_PRIVATE_KEY"),
+		},
+		ChainURL: os.Getenv("CHAIN_URL"),
+		ChainId:  chainId,
+
+		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
+		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
 
 		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
 	}

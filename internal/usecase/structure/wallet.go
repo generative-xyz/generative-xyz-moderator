@@ -23,6 +23,7 @@ type InscriptionOrdInfoByID struct {
 	InscriptionID string `json:"inscription_id"`
 	Next          string `json:"next"`
 	Number        int    `json:"number"`
+	Address       string `json:"address"`
 	Output        struct {
 		Value        int    `json:"value"`
 		ScriptPubkey string `json:"script_pubkey"`
@@ -74,6 +75,11 @@ type WalletInscriptionInfo struct {
 	ProjectID     string `json:"project_id"`
 	ProjecName    string `json:"project_name"`
 	Thumbnail     string `json:"thumbnail"`
+
+	Buyable    bool   `json:"buyable"`
+	PriceBTC   string `json:"price_btc"`
+	OrderID    string `json:"order_id"`
+	Cancelling bool   `json:"cancelling"`
 }
 
 type WalletInscriptionByOutput struct {
