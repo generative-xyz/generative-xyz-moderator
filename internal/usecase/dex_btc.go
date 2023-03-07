@@ -94,7 +94,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 			//force receiver == artistAddress when only one output
 			for receiver, _ := range outputList {
 				if receiver != artistAddress {
-					return nil, fmt.Errorf("expected to paid royalty fee to %v", artistAddress)
+					return nil, fmt.Errorf("expected to pay royalty fees to %v", artistAddress)
 				}
 			}
 		} else {
@@ -106,7 +106,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 						totalValue += output.Value
 					}
 					if totalValue >= royaltyFeeExpected {
-						return nil, fmt.Errorf("expected royalty fee of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
+						return nil, fmt.Errorf("expected royalty fees of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
 					}
 				}
 			}
