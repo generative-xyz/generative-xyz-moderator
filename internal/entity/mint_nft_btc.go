@@ -44,16 +44,16 @@ var StatusMintToText = map[StatusMint]string{
 
 	StatusMint_WaitingForConfirms: "Waiting for payment confirmation",
 
-	StatusMint_ReceivedFund: "Transferring", // //"Minting",
+	StatusMint_ReceivedFund: "Minting", // //"Minting",
 
-	StatusMint_Minting: "Transferring", // "Minting",
-	StatusMint_Minted:  "Transferred",  // "Minted",
+	StatusMint_Minting: "Minting", // "Minting",
+	StatusMint_Minted:  "Minted",  // "Minted",
 
 	StatusMint_SendingNFTToUser: "Transferring",
 	StatusMint_SentNFTToUser:    "Transferred",
 
-	StatusMint_SendingFundToMaster: "Transferred", //"Sending funds to master",
-	StatusMint_SentFundToMaster:    "Transferred", //"Sent funds to master",
+	StatusMint_SendingFundToMaster: "Minted", //"Sending funds to master",
+	StatusMint_SentFundToMaster:    "Minted", //"Sent funds to master",
 
 	StatusMint_TxMintFailed: "Mint failed",
 
@@ -137,8 +137,9 @@ type MintNftBtc struct {
 	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
 
 	// for mint batch:
-	Quantity      int `bson:"quantity"`
-	BatchParentId int `bson:"patch_parent_id"`
+	Quantity      int    `bson:"quantity"`
+	IsSubItem     bool   `bson:"isSubItem"`
+	BatchParentId string `bson:"patch_parent_id"`
 }
 
 func (u MintNftBtc) TableName() string {
