@@ -2,6 +2,7 @@ package request
 
 type CreateDexBTCListing struct {
 	RawPSBT       string `json:"raw_psbt"`
+	SplitTx       string `json:"split_tx"`
 	InscriptionID string `json:"inscription_id"`
 }
 

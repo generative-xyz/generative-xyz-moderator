@@ -37,7 +37,7 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	address := userInfo.WalletAddressBTCTaproot
-	listing, err := h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID)
+	listing, err := h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID, reqBody.SplitTx)
 	if err != nil {
 		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
