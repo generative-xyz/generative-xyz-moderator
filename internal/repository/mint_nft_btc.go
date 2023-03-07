@@ -194,3 +194,21 @@ func (r Repository) UpdateCancelMintNftBtc(uuid string) error {
 	}
 	return err
 }
+
+func (r Repository) CountBatchRecordOfItems(parentRecord string) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"patch_parent_id": parentRecord, // only get child items
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
