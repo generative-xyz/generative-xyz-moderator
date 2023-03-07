@@ -1949,7 +1949,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 		reqBtcProject := structure.CreateBtcProjectReq{
-			Name:            item.TokenAddress,
+			Name:            nft.Name,
 			MaxSupply:       1,
 			CreatorName:     user.DisplayName,
 			CreatorAddrr:    user.WalletAddress,
@@ -1957,16 +1957,15 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
+			OwnerOf:         item.OwnerOf,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
 			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
-				reqBtcProject.Description = metadata.Description
 				reqBtcProject.Thumbnail = metadata.Image
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}
-
 		category := &entity.Categories{}
 		if err := u.Repo.FindOneBy(ctx,
 			entity.Categories{}.TableName(),
