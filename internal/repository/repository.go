@@ -330,65 +330,76 @@ func (r Repository) DeleteCache(dbName string, objID string) error {
 }
 
 func (r Repository) CreateCollectionIndexes() error {
-	_, err := r.CreateTokenURIIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err := r.CreateTokenURIIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateProjectIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateProjectIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateMarketplaceListingsIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateMarketplaceListingsIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateMarketplaceOffersIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateMarketplaceOffersIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateProposalIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateProposalIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateProposalVotesIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateProposalVotesIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateBTCWalletIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateBTCWalletIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateMintBTCCIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateMintBTCCIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
-	_, err = r.CreateWalletTrackTxIndexModel()
-	if err != nil {
-		return err
-	}
-	
-	_, err = r.CreateReferalIndexModel()
-	if err != nil {
-		return err
-	}
-	
-	_, err = r.CreateVolumnIndexModel()
-	if err != nil {
-		return err
-	}
+	// _, err = r.CreateWalletTrackTxIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// _, err = r.CreateReferalIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// _, err = r.CreateVolumnIndexModel()
+	// if err != nil {
+	// 	return err
+	// }
 
 	// _, err = r.CreateCategoryIndexModel()
 	// if err != nil {
 	// 	return err
 	// }
 
+	return nil
+}
+
+func (r Repository) FindOneBy(ctx context.Context, collectionName string, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error {
+	res := r.DB.Collection(collectionName).FindOne(ctx, filters, opts...)
+	if res.Err() != nil {
+		return res.Err()
+	}
+	if err := res.Decode(value); err != nil {
+		return err
+	}
 	return nil
 }

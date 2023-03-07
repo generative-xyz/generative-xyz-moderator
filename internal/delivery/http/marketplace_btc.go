@@ -21,7 +21,6 @@ import (
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
-
 	var reqBody request.CreateMarketplaceBTCListing
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -341,7 +340,7 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("len result", len(result))
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {

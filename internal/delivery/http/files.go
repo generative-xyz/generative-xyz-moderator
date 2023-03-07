@@ -1,10 +1,15 @@
 package http
 
 import (
+	"bytes"
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
@@ -12,6 +17,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/fileutil"
 )
 
 // UploadFile godoc
@@ -40,7 +46,6 @@ func (h *httpDelivery) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
@@ -83,7 +88,7 @@ func (h *httpDelivery) CreateMultipartUpload(w http.ResponseWriter, r *http.Requ
 	}
 
 	h.Logger.Info("resp.uploadID", uploadID)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.FileResponse{UploadID: *uploadID}, "")
 }
 
@@ -143,7 +148,6 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, map[string]interface{}{}, "")
 }
 
@@ -173,7 +177,7 @@ func (h *httpDelivery) CompleteMultipartUpload(w http.ResponseWriter, r *http.Re
 	}
 
 	h.Logger.Info("resp.fileURL", fileURL)
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.MultipartUploadResponse{FileURL: *fileURL}, "")
 
 }
@@ -205,7 +209,6 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 }
 
@@ -219,7 +222,7 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=structure.DeflateDataResp}
 // @Router /files/deflate [POST]
 func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
-reqBody := &structure.DeflateDataResp{}
+	reqBody := &structure.DeflateDataResp{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(reqBody)
 	if err != nil {
@@ -234,6 +237,55 @@ reqBody := &structure.DeflateDataResp{}
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, reqBody, "")
+}
+
+// @Summary Upload file
+// @Description Upload file
+// @Tags Files
+// @Accept json
+// @Produce json
+// @Param request body request.FileResize true "Base64 File Request"
+// @Success 200 {object} request.FileResize{}
+// @Router /files/image/resize [POST]
+func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+		var reqBody request.FileResize
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		if err != nil {
+			return nil, err
+		}
+		coI := strings.Index(reqBody.File, ",")
+		dec, err := base64.StdEncoding.DecodeString(reqBody.File[coI+1:])
+		if err != nil {
+			return nil, err
+		}
+		byteSize := len(dec)
+		if byteSize <= fileutil.MaxImageByteSize {
+			return &request.FileResize{
+				File: reqBody.File,
+			}, nil
+		}
+		img, err := imaging.Decode(bytes.NewReader(dec))
+		if err != nil {
+			return nil, err
+		}
+		var imgByte []byte
+		switch strings.TrimSuffix(reqBody.File[5:coI], ";base64") {
+		case "image/png":
+			imgByte, err = fileutil.ResizeImage(img, imaging.PNG)
+		case "image/jpeg":
+			imgByte, err = fileutil.ResizeImage(img, imaging.JPEG, imaging.JPEGQuality(fileutil.JpegQuality))
+		case "image/gif":
+			imgByte, err = fileutil.ResizeImage(img, imaging.GIF)
+		default:
+			return nil, errors.New("image not support")
+		}
+		if err != nil {
+			return nil, err
+		}
+		return &request.FileResize{
+			File: reqBody.File[:coI+1] + base64.StdEncoding.EncodeToString(imgByte),
+		}, nil
+	}).ServeHTTP(w, r)
 }

@@ -23,12 +23,12 @@ type MoralisNfts struct {
 	cache redis.IRedisCache
 }
 
-func NewMoralisNfts(conf *config.Config,  cache redis.IRedisCache) *MoralisNfts {
+func NewMoralisNfts(conf *config.Config, cache redis.IRedisCache) *MoralisNfts {
 
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
 	return &MoralisNfts{
-		conf:      conf,	
+		conf:      conf,
 		serverURL: serverURL,
 		apiKey:    apiKey,
 		cache:     cache,
@@ -157,12 +157,10 @@ func (m MoralisNfts) GetNftByContract(contractAddr string, f MoralisFilter) (*Mo
 func (m MoralisNfts) GetNftByWalletAddress(wallletAddress string, filter MoralisFilter) (*MoralisTokensResp, error) {
 	url := fmt.Sprintf("%s/%s", wallletAddress, URLNft)
 	fullUrl := m.generateUrl(url, &filter)
-
 	data, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	resp := &MoralisTokensResp{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {

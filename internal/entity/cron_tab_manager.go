@@ -34,3 +34,21 @@ func (u CronJobManager) TableName() string {
 func (u CronJobManager) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+type CronJobManagerLogs struct {
+	BaseEntity  `bson:",inline"`
+	RecordID    string      `bson:"record_id"`
+	Table       string      `bson:"table"`
+	Name        string      `bson:"name"`
+	Status      interface{} `bson:"status"`
+	RequestMsg  interface{} `bson:"request_msg"`
+	ResponseMsg interface{} `bson:"response_msg"`
+}
+
+func (u CronJobManagerLogs) TableName() string {
+	return "cron_job_manager_logs"
+}
+
+func (u CronJobManagerLogs) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}

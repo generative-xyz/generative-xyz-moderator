@@ -7,12 +7,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"rederinghub.io/external/artblock"
+	"rederinghub.io/external/nfts"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/external/ord_service"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
@@ -60,7 +69,8 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 	if err != nil {
 		fmt.Print(err.Error())
-		os.Exit(1)
+		// os.Exit(1) // remove for B
+		return -1
 	}
 
 	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
@@ -82,7 +92,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 		err = json.Unmarshal(responseData, &feeRateObj)
 		if err != nil {
 			u.Logger.Error(err)
-			return 0
+			return -1
 		}
 		if feeRateObj.fastestFee > 0 {
 			feeRateValue = int64(feeRateObj.fastestFee)
@@ -154,6 +164,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
 			maxSize := helpers.CalcOrigBinaryLength(animationURL)
+			pe.MaxFileSize = int64(maxSize)
 			pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
 			htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(animationURL, "data:text/html;base64,", ""))
 			if err == nil {
@@ -195,6 +206,13 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.CreatorAddrrBTC = req.CreatorAddrrBTC
 	pe.LimitSupply = 0
 	pe.GenNFTAddr = pe.TokenID
+
+	captureTime := entity.DEFAULT_CAPTURE_TIME
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
+		captureTime = *req.CaptureImageTime
+	}
+
+	pe.CatureThumbnailDelayTime = &captureTime
 	if len(req.Categories) != 0 {
 		pe.Categories = []string{req.Categories[0]}
 	}
@@ -202,6 +220,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.OtherCategoryID}
 	}
+
+	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
 	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
@@ -218,11 +238,375 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		}
 	} else {
 		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
+		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}
 
-	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.ContractAddress, pe.CreatorName)))
+	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	return pe, nil
+}
+
+func (u Usecase) CheckAirdrop() error {
+	airdrops, err := u.Repo.FindAirdropByStatus(0)
+	if err != nil {
+		fmt.Printf("CheckAirdrop - with err: %v", err)
+		return err
+	}
+	u.Logger.Info(fmt.Sprintf("Start check airdrops len %d", len(airdrops)))
+	for _, airdrop := range airdrops {
+		if airdrop.Tx != "" {
+			u.Logger.Info(fmt.Sprintf("Start check airdrop %s", airdrop.UUID), zap.Any("airdrop", airdrop))
+			_, bs, err := u.buildBTCClient()
+
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				continue
+			}
+			// check with api:
+			txInfo, err := bs.CheckTx(airdrop.Tx)
+			if err != nil {
+				fmt.Printf("CheckAirdrop - with err: %v", err)
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, "")
+				continue
+			}
+			if txInfo.Confirmations > 0 {
+				fmt.Printf("CheckAirdrop success - %v", txInfo)
+				data, err := json.Marshal(txInfo)
+				temp := ""
+				if err == nil {
+					temp = string(data)
+				}
+				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 1, temp)
+				go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"),
+					"Airdrop success",
+					airdrop.ReceiverBtcAddressTaproot,
+					fmt.Sprintf("Type: %d - file %s airdrop tx %s for userUUid %s", airdrop.Type, airdrop.File, airdrop.Tx, airdrop.Receiver))
+				go u.NotifyNewAirdrop(airdrop)
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) CheckAirdropInit() error {
+	airdrops, err := u.Repo.FindAirdropByStatus(-1)
+	if err != nil {
+		fmt.Printf("CheckAirdropInit - with err: %v", err)
+		return err
+	}
+	u.Logger.Info(fmt.Sprintf("Start check CheckAirdropInit len %d", len(airdrops)))
+	for _, airdrop := range airdrops {
+		if airdrop.Type == 0 {
+			// for airdrop artist
+			// check something like
+			projectId := airdrop.ProjectId
+			project, err := u.Repo.FindProjectByTokenID(projectId)
+			if err != nil {
+				u.Logger.ErrorAny("CheckAirdropInit project not found", zap.Any("projectID", projectId))
+				continue
+			}
+			if project.MintingInfo.Index == 0 {
+				u.Logger.ErrorAny("CheckAirdropInit project still not mint", zap.Any("project", project))
+				continue
+			}
+			mintPrice, e := strconv.Atoi(project.MintPrice)
+			if e != nil {
+				u.Logger.ErrorAny("CheckAirdropInit project get mint price", zap.Any("project", project))
+				continue
+			}
+			if project.MintingInfo.Index*int64(mintPrice) < 430000 {
+				u.Logger.ErrorAny("CheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
+				continue
+			}
+		}
+		u.AirdropUpdateMintInfo(airdrop, os.Getenv("AIRDROP_WALLET"), 3)
+	}
+	return nil
+}
+
+func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, feerate int) (*entity.Airdrop, error) {
+	mintReq := ord_service.MintRequest{
+		WalletName:         from,
+		ProjectID:          airDrop.ProjectId,
+		DryRun:             false,
+		AutoFeeRateSelect:  false,
+		FeeRate:            feerate,
+		FileUrl:            airDrop.File,
+		DestinationAddress: airDrop.ReceiverBtcAddressTaproot,
+	}
+	u.Logger.LogAny(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
+
+	resp, err := u.OrdService.Mint(mintReq)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, resp), zap.Any("Error", err))
+		return nil, err
+	}
+	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
+
+	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	tmpText := resp.Stdout
+	jsonStr := strings.ReplaceAll(tmpText, `\n`, "")
+	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+	btcMintResp := &ord_service.MintStdoputRespose{}
+	bytes := []byte(jsonStr)
+	err = json.Unmarshal(bytes, btcMintResp)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdrop Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+	return airDrop, nil
+}
+
+func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+	feerate = 3
+	// get file
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 30 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 30 && random >= 5 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      0,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		Tx:                        "",
+		InscriptionId:             "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	/* not airdrop immediately anymore
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		return nil, err
+	}*/
+
+	return airDrop, nil
+}
+
+func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      1,
+		ProjectId:                 projectid,
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       mintedInscriptionId,
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err := u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		return nil, err
+	}
+
+	return airDrop, nil
+}
+
+func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthContracts []string) (bool, error) {
+	if len(whiteListEthContracts) == 0 {
+		return false, nil
+	}
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
+	} else {
+		if airdrop != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
+			return false, err
+		}
+		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
+	}
+	return false, nil
+}
+
+func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
+	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
+	flag := false
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("ERROR IsArtistABNewUserAirdrop"), zap.Any("error", err))
+		flag = true
+	} else {
+		if airdrop != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist IsArtistABNewUserAirdrop"), zap.Any("airdrop", airdrop))
+			return false, err
+		}
+		flag = true
+	}
+	if flag {
+		artblockService := artblock.NewArtBlockService(nil, "https://artblocks-mainnet.hasura.app")
+		data, err := artblockService.GetArtist(strings.ToLower(user.WalletAddress))
+		if err != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("error", err))
+			return false, err
+		}
+		if len(data.Data.Artists) != 1 {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			return false, nil
+		}
+		if strings.ToLower(data.Data.Artists[0].PublicAddress) != strings.ToLower(user.WalletAddress) {
+			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			return false, nil
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
+		return nil, nil
+	}
+
+	isArtistABNewUserAirdrop, err := u.IsArtistABNewUserAirdrop(&receiver)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("error", err))
+	}
+	if !isArtistABNewUserAirdrop {
+		return nil, nil
+	}
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      3,
+		ProjectId:                 "",
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err = u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	return airDrop, nil
+
+}
+
+func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if os.Getenv("ENV") != "mainnet" {
+		return nil, nil
+	}
+	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
+		return nil, nil
+	}
+	whitelist := os.Getenv("WHITELIST_AIRDROP_TOKENGATED")
+	if len(strings.TrimSpace(whitelist)) == 0 {
+		return nil, nil
+	}
+	whitelistArr := strings.Split(whitelist, ",")
+	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(&receiver, whitelistArr)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
+	}
+	if !isTokenGated {
+		return nil, nil
+	}
+
+	// get file
+	feerate = 3
+	random := rand.Intn(100)
+	file := utils.AIRDROP_MAGIC
+	if random >= 13 {
+		file = utils.AIRDROP_SILVER
+	} else if random < 13 && random >= 3 {
+		file = utils.AIRDROP_GOLDEN
+	}
+
+	airDrop := &entity.Airdrop{
+		File:                      file,
+		Receiver:                  receiver.UUID,
+		ReceiverBtcAddressTaproot: receiver.WalletAddressBTCTaproot,
+		Type:                      2,
+		ProjectId:                 "",
+		OrdinalResponseAction:     nil,
+		Status:                    -1,
+		MintedInscriptionId:       "",
+		InscriptionId:             "",
+		Tx:                        "",
+	}
+	err = u.Repo.InsertAirdrop(airDrop)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		return nil, err
+	}
+
+	return airDrop, nil
 }
 
 func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
@@ -238,9 +622,13 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			return
 		}
 		category = categoryEntity.Name
-		description = fmt.Sprintf("**%s**\n", category)
+		description = fmt.Sprintf("Category: %s\n", category)
 	}
-	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	address := owner.WalletAddressBTC
+	if address == "" {
+		address = owner.WalletAddress
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, address)
 	collectionName := project.Name
 
 	fields := make([]discordclient.Field, 0)
@@ -301,6 +689,13 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	}
 
 	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
+}
+
+func (u Usecase) resolveShortDescription(description string) string {
+	if len(description) > 300 {
+		return description[:250] + "..."
+	}
+	return description
 }
 
 func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
@@ -384,6 +779,16 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		// 	return nil, err
 		// }
 		p.MintPrice = reqMfFStr.String()
+	}
+
+	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
+		if p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != *req.CaptureImageTime {
+			p.CatureThumbnailDelayTime = req.CaptureImageTime
+		}
+
+		if p.CatureThumbnailDelayTime == nil {
+			p.CatureThumbnailDelayTime = req.CaptureImageTime
+		}
 	}
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
@@ -532,6 +937,32 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 
 	pe := &entity.FilterProjects{}
+	// pe.CustomQueries = make(map[string]primitive.M)
+	// pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
+func (u Usecase) GetUpcommingProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+
+	pe := &entity.FilterProjects{}
+
+	now := time.Now().UTC().Unix()
+	pe.CustomQueries = make(map[string]primitive.M)
+	pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$gt": now}
+
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
@@ -630,7 +1061,7 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
-	c, _ := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
 		// if err != nil {
@@ -652,13 +1083,32 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	}
 	c.MintPriceEth = ethPrice
 
-	networkFeeInt, err := strconv.ParseInt(c.NetworkFee, 10, 64)
-	if err == nil {
+	// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+
+	networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
+
+	if c.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
+		if calNetworkFee > 0 {
+			networkFeeInt = calNetworkFee
+			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
+
+		}
+	}
+
+	if networkFeeInt > 0 {
 		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
 		}
+
+		// add fee send master:
+		mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
+		feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
+		ethNetworkFeePrice = mintPriceEthBigint.String()
+
 		c.NetworkFeeEth = ethNetworkFeePrice
 	}
 
@@ -674,13 +1124,26 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 			animationHtml := fmt.Sprintf("%s", *htmlUrl)
 			c.AnimationHtml = &animationHtml
 
-			_, err = u.Repo.UpdateProject(c.UUID, c)
+			// _, err = u.Repo.UpdateProject(c.UUID, c) // remove for safe...
+			_, err = u.Repo.UpdateProjectAnimationHtml(c.UUID, animationHtml)
 			if err != nil {
 				return
 			}
 		}
 
 	}()
+
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
+
+func (u Usecase) GetProjectVolumn(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectVolumn", zap.Any("req", req))
+	c, err := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("GetProjectVolumn", zap.Error(err))
+		return nil, err
+	}
 
 	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
@@ -1206,6 +1669,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe.IsSynced = true
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
@@ -1225,6 +1689,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
@@ -1273,7 +1738,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = true
+	pe.IsHidden = false
 	pe.Status = false
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
@@ -1383,40 +1848,141 @@ type Volume struct {
 	ProjectID string `json:"projectID"`
 	PayType   string `json:"payType"`
 	Amount    string `json:"amount"`
+	Earning   string `json:"earning"`
+	Withdraw  string `json:"withdraw"`
+	Available string `json:"available"`
+	Status    int    `json:"status"`
 }
 
-func (u Usecase) CreatorVolume(creatorAddr string) (interface{}, error) {
-	u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr))
+func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
+	data, err := u.GetVolumeOfUser(creatoreAddress, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		return nil, err
+	}
 
-	// p, err := u.Repo.GetAllProjects(entity.FilterProjects{WalletAddress: &creatorAddr})
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("err", err))
-	// }
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+	}
 
-	// pIDs := []string{}
-	// for _, item := range p {
-	// 	pIDs = append(pIDs, item.TokenID)
-	// }
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("pIDs", pIDs))
+	return &tmp, nil
+}
 
-	// data, err := u.Repo.VolumeByProjectIDs(pIDs, entity.BTCWalletAddress{}.TableName())
-	// if err != nil {
-	// 	u.Logger.ErrorAny("CollectorVolume", zap.String("volumeByProjectIDs", creatorAddr), zap.Any("err", err))
-	// }
+func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error) {
+	data, err := u.GetVolumeOfProject(projectID, &paytype)
+	if err != nil {
+		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		tmp := Volume{
+			ProjectID: projectID,
+			PayType:   paytype,
+			Amount:    "0",
+			Earning:   "0",
+			Withdraw:  "0",
+			Available: "0",
+			Status:    entity.StatusWithdraw_Available,
+		}
 
-	// resp := Volumes{}
-	// for _, item := range data.Items {
-	// 	tmp := Volume{
-	// 		ProjectID: item.ID.ProjectID,
-	// 		PayType:   item.ID.Paytype,
-	// 		Amount:    fmt.Sprintf("%d", int(item.Amount)),
-	// 	}
-	// 	resp.Items = append(resp.Items, tmp)
-	// }
+		return &tmp, nil
+	}
 
-	// resp.TotalBTC = data.TotalBTC
-	// resp.TotalETH = data.TotalETH
+	latestWd, err := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
+		WithdrawItemID: &projectID,
+		PaymentType:    &paytype,
+	})
 
-	// u.Logger.LogAny("CollectorVolume", zap.String("creatorAddr", creatorAddr), zap.Any("resp", resp))
-	return nil, nil
+	wdraw := 0.0
+	w, err := u.Repo.AggregateWithDrawByUser(&entity.FilterWithdraw{
+		WithdrawItemID: &projectID,
+		PaymentType:    &paytype,
+		Statuses: []int{
+			entity.StatusWithdraw_Pending,
+			entity.StatusWithdraw_Approve,
+		},
+	})
+
+	status := entity.StatusWithdraw_Available
+	if err == nil && len(w) > 0 {
+		wdraw = w[0].Amount
+	}
+
+	if latestWd != nil {
+		status = latestWd.Status
+		if status == entity.StatusWithdraw_Approve {
+			status = entity.StatusWithdraw_Available
+		}
+	}
+
+	available := data.Earning - wdraw
+	tmp := Volume{
+		ProjectID: data.ID.ProjectID,
+		PayType:   data.ID.Paytype,
+		Amount:    fmt.Sprintf("%d", int(data.Amount)),
+		Earning:   fmt.Sprintf("%d", int(data.Earning)),
+		Withdraw:  fmt.Sprintf("%d", int(wdraw)),
+		Available: fmt.Sprintf("%d", int(available)),
+		Status:    status,
+	}
+
+	return &tmp, nil
+}
+
+func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Context, item entity.InscribeBTC) error {
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(item.TokenAddress, item.TokenId)
+	if err != nil {
+		return err
+	}
+	project := &entity.Projects{}
+	if err := u.Repo.FindOneBy(ctx, entity.Projects{}.TableName(), bson.M{
+		"fromAuthentic": true,
+		"tokenAddress":  item.TokenAddress,
+		"tokenId":       item.TokenId,
+	}, project); err != nil {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return err
+		}
+		reqBtcProject := structure.CreateBtcProjectReq{
+			Name:            item.TokenAddress,
+			MaxSupply:       1,
+			CreatorAddrr:    item.UserWalletAddress,
+			CreatorAddrrBTC: item.OriginUserAddress,
+			FromAuthentic:   true,
+			TokenAddress:    item.TokenAddress,
+			TokenId:         item.TokenId,
+		}
+		if nft.MetadataString != nil && *nft.MetadataString != "" {
+			metadata := &nfts.MoralisTokenMetadata{}
+			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
+				reqBtcProject.Description = metadata.Description
+				reqBtcProject.Thumbnail = metadata.Image
+				reqBtcProject.AnimationURL = &metadata.AnimationUrl
+			}
+		}
+		category := &entity.Categories{}
+		if err := u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err != nil {
+			return err
+		}
+		reqBtcProject.Categories = []string{category.ID.Hex()}
+		project, err = u.CreateBTCProject(reqBtcProject)
+		if err != nil {
+			return err
+		}
+	} else {
+		project.MaxSupply += 1
+		project.MintingInfo.Index += 1
+		projectId := project.ID.Hex()
+		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
+			ProjectID: &projectId,
+			MaxSupply: &project.MaxSupply,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -10,12 +10,15 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/blockcypher/gobcy/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/pkg/errors"
+	"rederinghub.io/internal/usecase/structure"
 )
 
 func NewBlockcypherService(chainEndpoint string, explorerEndPoint string, bcyToken string, env *chaincfg.Params) *BlockcypherService {
@@ -135,7 +138,6 @@ func (bs *BlockcypherService) SendTransactionWithPreferenceFromSegwitAddress(sec
 	if err != nil {
 		return "", err
 	}
-
 	pkHex := hex.EncodeToString(wif.PrivKey.Serialize())
 	tx := gobcy.TempNewTX(from, destination, *big.NewInt(int64(amount)))
 
@@ -376,4 +378,169 @@ func ValidateAddress(crypto, address string) (bool, error) {
 
 	return re.MatchString(address), nil
 
+}
+
+func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (string, error) {
+	var status string
+	txStatus, err := bs.CheckTx(txhash)
+	if err != nil {
+		txInfo, err := CheckTxFromBTC(txhash)
+		if err != nil {
+			fmt.Printf("checkTxFromBTC err: %v", err)
+			txInfo2, err := CheckTxfromQuickNode(txhash, qn)
+			if err != nil {
+				fmt.Printf("checkTxFromBTC err: %v", err)
+				status = "Failed"
+			} else {
+				if txInfo2.Result.Confirmations > 0 {
+					status = "Success"
+				} else {
+					status = "Pending"
+				}
+			}
+		} else {
+			if txInfo.Data.Confirmations > 0 {
+				status = "Success"
+			} else {
+				status = "Pending"
+			}
+		}
+	} else {
+		if txStatus.Confirmations > 0 {
+			status = "Success"
+		} else {
+			status = "Pending"
+		}
+	}
+	return status, nil
+}
+
+func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherWalletInfo, error) {
+	var utxoList []QuickNodeUTXO
+	var result structure.BlockCypherWalletInfo
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"qn_addressBalance\",\n\t\"params\": [\n\t\t\"%v\"\n\t]\n}", address))
+
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &utxoList)
+	if err != nil {
+		return nil, err
+	}
+	totalBalance := 0
+	convertedUTXOList := []structure.TxRef{}
+	for _, utxo := range utxoList {
+		totalBalance += utxo.Value
+		newTxReft := structure.TxRef{
+			TxHash:      utxo.Hash,
+			TxOutputN:   utxo.Index,
+			Value:       utxo.Value,
+			BlockHeight: utxo.Height,
+		}
+		convertedUTXOList = append(convertedUTXOList, newTxReft)
+	}
+	result.Address = address
+	result.Balance = totalBalance
+	result.FinalBalance = totalBalance
+	result.Txrefs = convertedUTXOList
+	return &result, nil
+}
+
+func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
+	var result QuickNodeTx
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t1\n\t]\n}", txhash))
+
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	if result.Result.Hash != txhash {
+		return nil, errors.New("tx not found")
+	}
+	return &result, nil
+}
+
+var btcRateLock sync.Mutex
+
+func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
+	btcRateLock.Lock()
+	defer func() {
+		time.Sleep(300 * time.Millisecond)
+		btcRateLock.Unlock()
+	}()
+	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=2", txhash)
+	fmt.Println("url", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getInscriptionByOutput Response status != 200")
+	}
+	var result BTCTxInfo
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.New("Read body failed")
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Println(string(body))
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("getWalletInfo Response status != 200 " + result.Message + " " + url)
+	}
+
+	if result.Data.Hash != txhash {
+		return nil, errors.New("tx not found")
+	}
+
+	return &result, nil
 }

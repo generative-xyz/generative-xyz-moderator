@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-
 	"time"
 
 	"go.uber.org/zap"
@@ -14,14 +13,16 @@ import (
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
+	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
 	"rederinghub.io/internal/delivery/crontabManager"
+	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	httpHandler "rederinghub.io/internal/delivery/http"
-	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
+	_ "rederinghub.io/mongo/migrate"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/connections"
@@ -50,7 +51,7 @@ func init() {
 		log.Println("Service RUN on DEBUG mode")
 	}
 
-	l := _logger.NewLogger()
+	l := _logger.NewLogger(c.Debug)
 	l.LogAny("config", zap.Any("config.NewConfig", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
@@ -75,13 +76,9 @@ func init() {
 // @version 1.0.0
 // @description This is a sample server Autonomous devices management server.
 
-// @securityDefinitions.apikey Authorization
+// @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
-
-// @securityDefinitions.apikey Api-Key
-// @in header
-// @name Api-Key
 
 // @BasePath /rederinghub.io/v1
 func main() {
@@ -116,7 +113,10 @@ func startServer() {
 	}, redisClient)
 
 	moralis := nfts.NewMoralisNfts(conf, cache)
-	ord := ord_service.NewBtcOrd(conf, cache)
+	ord := ord_service.NewBtcOrd(conf, cache, "")
+
+	ordForDeveloper := ord_service.NewBtcOrd(conf, cache, os.Getenv("ORD_SERVER_FOR_DEVELOPER"))
+
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis)
@@ -128,22 +128,23 @@ func startServer() {
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
-		Logger:          logger,
-		MuxRouter:       r,
-		Conf:            conf,
-		DBConnection:    mongoConnection,
-		Cache:           cache,
-		Auth2:           *auth2Service,
-		GCS:             gcs,
-		S3Adapter:       s3Adapter,
-		MoralisNFT:      *moralis,
-		CovalentNFT:     *covalent,
-		Blockchain:      *ethClient,
-		Slack:           *slack,
-		DiscordClient:   discordclient.NewCLient(),
-		Pubsub:          rPubsub,
-		OrdService:      ord,
-		DelegateService: delegateService,
+		Logger:              logger,
+		MuxRouter:           r,
+		Conf:                conf,
+		DBConnection:        mongoConnection,
+		Cache:               cache,
+		Auth2:               *auth2Service,
+		GCS:                 gcs,
+		S3Adapter:           s3Adapter,
+		MoralisNFT:          *moralis,
+		CovalentNFT:         *covalent,
+		Blockchain:          *ethClient,
+		Slack:               *slack,
+		DiscordClient:       discordclient.NewCLient(),
+		Pubsub:              rPubsub,
+		OrdService:          ord,
+		OrdServiceDeveloper: ordForDeveloper,
+		DelegateService:     delegateService,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -152,12 +153,17 @@ func startServer() {
 		return
 	}
 
-	// TODO: uncomment
-	// err = repo.CreateCollectionIndexes()
-	// if err != nil {
-	// 	logger.Error("CreateCollectionIndexes - Cannot created index ", err)
-	// 	return
-	// }
+	err = repo.CreateCollectionIndexes()
+	if err != nil {
+		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
+		// return
+	}
+
+	// migration
+	migrate.SetDatabase(repo.DB)
+	if migrateErr := migrate.Up(-1); migrateErr != nil {
+		_logger.AtLog.Errorf("migrate failed", zap.Error(err))
+	}
 
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
@@ -165,76 +171,93 @@ func startServer() {
 		return
 	}
 
-	// api:
-	h, _ := httpHandler.NewHandler(&g, *uc)
-	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-
 	servers := make(map[string]delivery.AddedServer)
+
+	// api fixed run:
+	h, _ := httpHandler.NewHandler(&g, *uc)
 	servers["http"] = delivery.AddedServer{
 		Server:  h,
 		Enabled: conf.StartHTTP,
 	}
 
-	//TODO: move?
-	servers["pubsub"] = delivery.AddedServer{
-		Server:  ph,
-		Enabled: conf.StartPubsub,
+	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
+	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+	servers["ordinal_collections_crontab"] = delivery.AddedServer{
+		Server:  ordinalCron,
+		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
-	// job:
+	// job init:
 	/*
-		txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-		cron := crontab.NewScronHandler(&g, *uc)
-		btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-		mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-		inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+			txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+			cron := crontab.NewScronHandler(&g, *uc)
+			btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
+			mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
+			inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+			mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+			trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+			ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+			inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
+			dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
 
-		mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
-		trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-		ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+			servers["developer_inscribe"] = delivery.AddedServer{
+				Server:  developerInscribeCron,
+				Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
+			}
 
-	*/
+			servers["txconsumer"] = delivery.AddedServer{
+				Server:  txConsumer,
+				Enabled: conf.TxConsumerConfig.Enabled,
+			}
 
-	/*
-		servers["txconsumer"] = delivery.AddedServer{
-			Server:  txConsumer,
-			Enabled: conf.TxConsumerConfig.Enabled,
-		}
+			servers["crontab"] = delivery.AddedServer{
+				Server:  cron,
+				Enabled: conf.Crontab.Enabled,
+			}
 
-		servers["crontab"] = delivery.AddedServer{
-			Server:  cron,
-			Enabled: conf.Crontab.Enabled,
-		}
+			servers["btc_crontab"] = delivery.AddedServer{
+				Server:  btcCron,
+				Enabled: conf.Crontab.BTCEnabled,
+			}
 
-		servers["btc_crontab"] = delivery.AddedServer{
-			Server:  btcCron,
-			Enabled: conf.Crontab.BTCEnabled,
-		}
+			servers["btc_crontab_v2"] = delivery.AddedServer{
+				Server:  inscribeCron,
+				Enabled: conf.Crontab.BTCV2Enabled,
+			}
 
-		servers["btc_crontab_v2"] = delivery.AddedServer{
-			Server:  inscribeCron,
-			Enabled: conf.Crontab.BTCV2Enabled,
-		}
+			servers["mint_nft_btc"] = delivery.AddedServer{
+				Server:  mintNftBtcCron,
+				Enabled: conf.Crontab.MintNftBtcEnabled,
+			}
 
-		servers["mint_nft_btc"] = delivery.AddedServer{
-			Server:  mintNftBtcCron,
-			Enabled: conf.Crontab.MintNftBtcEnabled,
-		}
+			servers["marketplace_crontab"] = delivery.AddedServer{
+				Server:  mkCron,
+				Enabled: conf.Crontab.MarketPlaceEnabled,
+			}
 
-		servers["marketplace_crontab"] = delivery.AddedServer{
-			Server:  mkCron,
-			Enabled: conf.Crontab.MarketPlaceEnabled,
-		}
+			servers["trending_crontab"] = delivery.AddedServer{
+				Server:  trendingCron,
+				Enabled: conf.Crontab.TrendingEnabled,
+			}
 
-		servers["trending_crontab"] = delivery.AddedServer{
-			Server:  trendingCron,
-			Enabled: conf.Crontab.TrendingEnabled,
-		}
+			servers["ordinal_collections_crontab"] = delivery.AddedServer{
+				Server:  ordinalCron,
+				Enabled: conf.Crontab.OrdinalCollectionEnabled,
+			}
+			servers["inscription_index_crontab"] = delivery.AddedServer{
+				Server:  inscriptionIndexCron,
+				Enabled: conf.Crontab.InscriptionIndexEnabled,
+			}
 
-		servers["ordinal_collections_crontab"] = delivery.AddedServer{
-			Server:  ordinalCron,
-			Enabled: conf.Crontab.OrdinalCollectionEnabled,
+			servers["dex_btc_cron"] = delivery.AddedServer{
+				Server:  dexBTCCron,
+				Enabled: conf.Crontab.DexBTCEnabled,
+			}
+			servers["pubsub"] = delivery.AddedServer{
+			Server:  ph,
+			Enabled: conf.StartPubsub,
 		}
 	*/
 
@@ -289,4 +312,5 @@ func startServer() {
 	tracer.Stop()
 	os.Exit(0)
 
+	//uc.AggregateVolumns()
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"net/url"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.uber.org/zap"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -36,6 +38,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	receiveAddress := ""
 	privateKey := ""
+	feeSendMaster := big.NewInt(0)
 	var err error
 
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
@@ -66,10 +69,25 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 	projectMintPrice := mintPriceInt
-	networkFee, err := strconv.Atoi(p.NetworkFee)
-	if err == nil {
-		mintPriceInt += networkFee
+
+	// network fee:
+
+	networkFee := utils.FEE_BTC_SEND_NFT // fee send nft in ord service.
+
+	if p.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
+		if calNetworkFee > 0 {
+			networkFee += int(calNetworkFee)
+		} else {
+			networkFeeFromProject, err := strconv.Atoi(p.NetworkFee)
+			if err == nil {
+				networkFee += networkFeeFromProject
+			}
+		}
 	}
+
+	// sum total amount:
+	mintPriceInt += networkFee
 
 	var btcRate, ethRate float64
 
@@ -87,6 +105,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("convertBTCToETH", err.Error(), err)
 			return nil, err
 		}
+		networkFee += utils.FEE_BTC_SEND_AGV
+		mintPriceInt += utils.FEE_BTC_SEND_AGV
 
 	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
@@ -101,7 +121,20 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("convertBTCToETH", err.Error(), err)
 			return nil, err
 		}
-		fmt.Println("mintPriceStr: ", mintPriceStr)
+		fmt.Println("mintPriceStr1: ", mintPriceStr)
+		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr1", mintPriceStr, false)
+		// + fee send master:
+		// FEE_ETH_SEND_MASTER
+		mintPriceEthBigint, _ := big.NewInt(0).SetString(mintPriceStr, 10)
+
+		feeSendMaster = big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+
+		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
+
+		mintPriceStr = mintPriceEthBigint.String()
+
+		fmt.Println("mintPriceStr2: ", mintPriceStr)
+		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr2", mintPriceStr, false)
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {
@@ -125,21 +158,29 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	walletAddress.UserID = input.UserID
+	walletAddress.UserAddress = input.UserAddress
+
 	walletAddress.PrivateKey = privateKeyEnCrypt
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
-	// for analytics:
+	// for analytics
+
 	walletAddress.ProjectNetworkFee = networkFee
 	walletAddress.ProjectMintPrice = projectMintPrice
 	walletAddress.BtcRate = btcRate
 	walletAddress.EthRate = ethRate
+	walletAddress.FeeSendMaster = feeSendMaster.String()
 
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
 
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
+	}
+	if input.PayType == utils.NETWORK_ETH {
+		expiredTime = 1 // just 1h for checking eth balance
 	}
 
 	walletAddress.Amount = mintPriceStr
@@ -270,15 +311,18 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		ProjectName:   projectInfo.Name,
 		InscriptionID: mintItem.InscriptionID,
 
-		ReceiveAddress: mintItem.ReceiveAddress,
-		IsCancel:       isCancel,
-		TxMint:         mintItem.TxMintNft,
-		TxSendNft:      mintItem.TxSendNft,
+		ReceiveAddress:    mintItem.ReceiveAddress,
+		OriginUserAddress: mintItem.OriginUserAddress,
+		IsCancel:          isCancel,
+		TxMint:            mintItem.TxMintNft,
+		TxSendNft:         mintItem.TxSendNft,
 
 		Amount:  mintItem.Amount,
 		PayType: mintItem.PayType,
 
 		ProgressStatus: statusMap,
+
+		UserID: mintItem.UserID,
 	}
 	return minting, nil
 }
@@ -455,7 +499,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if animation != "" {
 			animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
 			now := time.Now().UTC().Unix()
-			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
+			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%s-%d.html", p.TokenID, item.UUID, now))
 			if err != nil {
 				u.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
@@ -498,13 +542,18 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		_ = baseUrl
 		// start call rpc mint nft now:
 		mintData := ord_service.MintRequest{
-			WalletName:        os.Getenv("ORD_MASTER_ADDRESS"),
-			FileUrl:           baseUrl.String(),
-			FeeRate:           entity.DEFAULT_FEE_RATE, //auto
-			DryRun:            false,
-			RequestId:         item.UUID,      // to track log
-			ProjectID:         item.ProjectID, // to track log
+			WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
+			FileUrl:     baseUrl.String(),
+			FeeRate:     entity.DEFAULT_FEE_RATE, //auto
+			DryRun:      false,
+			RequestId:   item.UUID,      // for tracking log
+			ProjectID:   item.ProjectID, // for tracking log
+			FileUrlUnit: item.FileURI,   // for tracking log
+
 			AutoFeeRateSelect: true,
+
+			// new key for ord v5.1, support mint + send in 1 tx:
+			DestinationAddress: item.OriginUserAddress,
 		}
 
 		u.Logger.Info("mintData", mintData)
@@ -517,13 +566,15 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		}
 		u.Logger.Info("mint.resp", resp)
 
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintOK", resp, false)
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
 
 		//update
 		// if not err => update status ok now:
 		//TODO: handle log err: Database already open. Cannot acquire lock
 
 		item.Status = entity.StatusMint_Minting
+		item.IsMerged = true // new key for ord v5.1, support mint + send in 1 tx.
+
 		// item.ErrCount = 0 // reset error count!
 
 		item.OutputMintNFT = resp
@@ -664,6 +715,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			// tx ok now:
 
 			if item.Status == entity.StatusMint_Minting {
+				// update for ord5
 				item.Status = entity.StatusMint_Minted
 				item.IsMinted = true
 			} else if item.Status == entity.StatusMint_SendingNFTToUser {
@@ -684,8 +736,17 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 				}
 				// update inscription_index for token uri
 				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+				go u.CreateMintActivity(item.InscriptionID, item.Amount)
 				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
-
+				if item.ProjectMintPrice >= 100000 {
+					go func(u Usecase, item entity.MintNftBtc) {
+						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+						if err != nil || owner == nil {
+							return
+						}
+						u.AirdropCollector(item.ProjectID, item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
+					}(u, item)
+				}
 			}
 
 		}
@@ -710,6 +771,17 @@ func (u Usecase) JobMint_SendNftToUser() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "checkEmpty(nftID)", "Nft id empty", true)
 			continue
 		}
+
+		// update for ord v5.1: is merged tx
+		if item.IsMerged {
+			// don't send, update isSent = true
+			item.Status = entity.StatusMint_SentNFTToUser
+			item.IsSentUser = true
+			u.Repo.UpdateMintNftBtc(&item)
+			continue
+
+		}
+
 		if false {
 			listNFTsRep, err := u.GetNftsOwnerOf(os.Getenv("ORD_MASTER_ADDRESS"))
 			if err != nil {
@@ -951,8 +1023,23 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			// send master now:
 			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, u.Config.MASTER_ADDRESS_CLAIM_BTC, -1, btc.PreferenceMedium)
 			if err != nil {
+
+				// check if not enough balance:
+				if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
+					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+
+				}
+
+				if strings.Contains(err.Error(), "already exists") {
+					item.Status = entity.StatusMint_AlreadySentMaster
+					item.TxSendMaster = err.Error()
+					u.Repo.UpdateMintNftBtc(&item)
+
+				}
 				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			// save tx:
@@ -972,8 +1059,16 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 			tx, amount, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
 			if err != nil {
+
+				// check if not enough balance:
+				if strings.Contains(err.Error(), "rlp: cannot encode negative big.Int") {
+					item.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(&item)
+				}
+
 				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.ethClient.TransferMax.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.ethClient.TransferMax", err.Error(), true)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			// save tx:
@@ -987,7 +1082,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	return nil
@@ -1127,4 +1222,84 @@ func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) err
 	u.Repo.UpdateTokenInscriptionIndexForMint(inscriptionID, inscribeInfo.Index)
 
 	return nil
+}
+
+//Mint flow
+func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
+
+	//amount = "0.1"
+	powIntput := math.Pow10(8)
+	powIntputBig := new(big.Float)
+	powIntputBig.SetFloat64(powIntput)
+	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
+	amountMintBTC.Mul(amountMintBTC, powIntputBig)
+	// if err != nil {
+	// 	u.Logger.Error("strconv.ParseFloat", err.Error(), err)
+	// 	return "", err
+	// }
+
+	_ = amountMintBTC
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return "", 0, 0, err
+	}
+
+	u.Logger.Info("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return "", 0, 0, err
+	}
+
+	btcToETH := btcPrice / ethPrice
+	// btcToETH := 14.27 // remove hardcode, why tri hardcode this??
+
+	rate := new(big.Float)
+	rate.SetFloat64(btcToETH)
+	amountMintBTC.Mul(amountMintBTC, rate)
+
+	pow := math.Pow10(10)
+	powBig := new(big.Float)
+	powBig.SetFloat64(pow)
+
+	amountMintBTC.Mul(amountMintBTC, powBig)
+	result := new(big.Int)
+	amountMintBTC.Int(result)
+
+	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
+	return result.String(), btcPrice, ethPrice, nil
+}
+
+func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPrice float64) (string, float64, float64, error) {
+
+	//amount = "0.1"
+	powIntput := math.Pow10(8)
+	powIntputBig := new(big.Float)
+	powIntputBig.SetFloat64(powIntput)
+	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
+	amountMintBTC.Mul(amountMintBTC, powIntputBig)
+	// if err != nil {
+	// 	u.Logger.Error("strconv.ParseFloat", err.Error(), err)
+	// 	return "", err
+	// }
+
+	_ = amountMintBTC
+	btcToETH := btcPrice / ethPrice
+	// btcToETH := 14.27 // remove hardcode, why tri hardcode this??
+
+	rate := new(big.Float)
+	rate.SetFloat64(btcToETH)
+	amountMintBTC.Mul(amountMintBTC, rate)
+
+	pow := math.Pow10(10)
+	powBig := new(big.Float)
+	powBig.SetFloat64(pow)
+
+	amountMintBTC.Mul(amountMintBTC, powBig)
+	result := new(big.Int)
+	amountMintBTC.Int(result)
+
+	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
+	return result.String(), btcPrice, ethPrice, nil
 }

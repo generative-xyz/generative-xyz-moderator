@@ -60,7 +60,6 @@ func (r Repository) FindUserByBtcAddress(btcAddress string) (*entity.Users, erro
 
 func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.Users, error) {
 	resp := &entity.Users{}
-
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT, btcAddress}})
 	if err != nil {
 		return nil, err
@@ -70,7 +69,32 @@ func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.User
 	if err != nil {
 		return nil, err
 	}
+	return resp, nil
+}
 
+
+// This function find user by eth wallet_address. wallet_address_btc or wallet_address_taproot
+func (r Repository) FindUserByAddress(address string) (*entity.Users, error) {
+	resp := &entity.Users{}
+	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{
+		{
+			Key: "$or", 
+			Value: []bson.M{
+				{utils.KEY_WALLET_ADDRESS: address},
+				{utils.KEY_WALLET_ADDRESS_BTC: address},
+				{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: address},		
+			},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
 	return resp, nil
 }
 
@@ -139,7 +163,7 @@ func (r Repository) UpdateUserByID(userID string, updateddUser *entity.Users) (*
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return result, nil
 }
 
@@ -180,6 +204,13 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	filter1 := bson.M{}
 	filter1[utils.KEY_DELETED_AT] = nil
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			filter1["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	if filter.Email != nil && *filter.Email != "" {
 		filter1["email"] = *filter.Email
 	}
@@ -208,7 +239,8 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 	for _, user := range users {
 		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
 		if err != nil {
-			return nil, err
+			continue
+			// return nil, err
 		}
 
 		projects := []*response.ProjectBasicInfo{}

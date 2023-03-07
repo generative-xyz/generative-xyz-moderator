@@ -646,9 +646,6 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					return
 				}
 
-				go u.CreateMintActivity(item.InscriptionID, item.Amount)
-				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintResponse.Fees)
-
 				//TODO: - create entity.TokenURI
 				_, err = u.CreateBTCTokenURI(item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.BIT)
 				if err != nil {
@@ -661,6 +658,9 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 					u.Logger.Error(err)
 					return
 				}
+				go u.CreateMintActivity(item.InscriptionID, item.Amount)
+				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintResponse.Fees)
+
 			} else {
 				u.Logger.Info("checkTx.Inscription.Existed", false)
 			}
@@ -694,15 +694,13 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
 		if err == nil {
 			minterDisplayName = minter.DisplayName
-			minterAddress = minter.WalletAddress
 		} else {
 			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
 		}
 	}
 
-	owner, err := u.Repo.FindUserByWalletAddress(tokenUri.OwnerAddr)
-	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindUserByWalletAddress for owner failed", zap.Any("err", err.Error()))
+	if tokenUri.Creator == nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
 		return
 	}
 
@@ -720,13 +718,13 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 			return
 		}
 		category = categoryEntity.Name
-		description = fmt.Sprintf("**%s**\n", category)
+		description = fmt.Sprintf("Category: %s\n", category)
 	}
 
-	ownerName := u.resolveShortName(owner.DisplayName, owner.WalletAddress)
+	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
 	collectionName := project.Name
-	itemCount := project.MaxSupply
-	mintedCount := project.MintingInfo.Index
+	// itemCount := project.MaxSupply
+	mintedCount := tokenUri.OrderInscriptionIndex
 
 	fields := make([]discordclient.Field, 0)
 	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
@@ -740,12 +738,13 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		})
 	}
 	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
 		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
 	), true)
 
-	fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
+	// fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
 	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
 
 	discordMsg := discordclient.Message{
@@ -753,8 +752,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		AvatarUrl: "",
 		Content:   "**NEW MINT**",
 		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, itemCount),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
+			Url:         fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
 			Description: description,
 			//Author: discordclient.Author{
 			//	Name:    u.resolveShortName(minter.DisplayName, minter.WalletAddress),

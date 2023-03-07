@@ -569,8 +569,6 @@ func (u Usecase) JobMKP_Payment() error {
 				amountWithChargee = amountWithChargee - txFee.Uint64()
 				destinations[nftListing.PayType["eth"]] = big.NewInt(int64(amountWithChargee))
 
-				fmt.Println("destinations: ", destinations)
-
 				// start send now:
 				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
@@ -988,10 +986,12 @@ func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
 				Price:          reqs.Price,
 				IsConfirm:      true,
 				IsSold:         false,
+				Status:         entity.StatusListing_ReceivedNft,
 				ExpiredAt:      time.Now().Add(time.Hour * 1),
 				Name:           "",
 				Description:    "",
 				InscriptionID:  v,
+				PayType:        reqs.PayType,
 			}
 			// get first:
 			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)

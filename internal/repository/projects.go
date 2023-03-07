@@ -160,6 +160,22 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	return result, nil
 }
 
+func (r Repository) UpdateProjectAnimationHtml(ID string, animationHtml string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
+	update := bson.M{
+		"$set": bson.M{
+			"stats.animation_html": animationHtml,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
 	update := bson.M{
@@ -328,6 +344,13 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		}
 	}
 
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
 	if filter.Name != nil && len(*filter.Name) >= 3 {
 		if *filter.Name != "" {
 			f["$or"] = []bson.M{
@@ -344,6 +367,12 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 
 	if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
+	}
+
+	if len(filter.CustomQueries) > 0 {
+		for key, query := range filter.CustomQueries {
+			f[key] = query
+		}
 	}
 
 	return f
@@ -465,6 +494,7 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"whiteListEthContracts", 1},
 		{"isFullChain", 1},
 		{"reportUsers", 1},
+		{"mintpriceeth", 1},
 	}
 	return f
 }

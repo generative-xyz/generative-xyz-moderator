@@ -30,7 +30,7 @@ func (h CronMintNftBtcHandler) StartServer() {
 	var wg sync.WaitGroup
 
 	for {
-		wg.Add(7)
+		wg.Add(9)
 
 		// job check balance:
 		go func(wg *sync.WaitGroup) {
@@ -79,6 +79,16 @@ func (h CronMintNftBtcHandler) StartServer() {
 			defer wg.Done()
 			h.Usecase.JobMint_CheckTxMasterAndRefund()
 
+		}(&wg)
+
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.CheckAirdrop()
+		}(&wg)
+
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			h.Usecase.CheckAirdropInit()
 		}(&wg)
 
 		h.Logger.Info("wait", "wait")

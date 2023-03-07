@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -170,6 +171,9 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		IsVerified:   isVeried,
 	}
 
+	go u.AirdropTokenGatedNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
+	go u.AirdropArtistABNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
+
 	return &verified, nil
 }
 
@@ -309,13 +313,13 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.Bio = *data.Bio
 	}
 
-	if data.WalletAddressBTC != nil && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
+	if data.WalletAddressBTC != nil && *data.WalletAddressBTC != "" && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
 		isUpdateWalletAddress = true
 		oldBtcAdress = user.WalletAddressBTC
 		user.WalletAddressBTC = *data.WalletAddressBTC
 	}
 
-	if data.WalletAddressPayment != nil && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
+	if data.WalletAddressPayment != nil && *data.WalletAddressPayment != "" && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
 		isUpdateWalletAddressPayment = true
 		oldAdressPayment = user.WalletAddressPayment
 		user.WalletAddressPayment = *data.WalletAddressPayment
@@ -386,13 +390,18 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+		if user.Stats.CollectionCreated > 0 {
+			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
+		}
 	}
 
 	if isUpdateWalletAddressPayment {
-		u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
+		if user.Stats.CollectionCreated > 0 {
+			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
+		}
 	}
 
+	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(user.WalletAddress), user)
 	return user, nil
 }
 
@@ -410,37 +419,32 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 
 func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedDetails, error) {
 
-	tokenMd5 := helpers.GenerateMd5String(accessToken)
-	u.Logger.Info("tokenMd5", tokenMd5)
+	//tokenMd5 := helpers.GenerateMd5String(accessToken)
+	//u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
 
-	userID, err := u.Cache.GetData(tokenMd5)
-	if err != nil {
-		err = errors.New("Access token is invaild")
-		u.Logger.Error(err)
-		// return nil, err
+	// userID, err := u.Cache.GetData(tokenMd5)
+	// if err != nil {
+	// 	err = errors.New("Access token is invaild")
+	// 	u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
+	// 	return nil, err
 
-	}
-
-	u.Logger.Info("cached.UserID", userID)
+	// }
 
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
 	if err != nil {
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
 		return nil, err
 	}
 
-	userID = &claim.Uid
-
+	userID := &claim.Uid
 	if userID == nil {
 		err := errors.New("Cannot find userID")
-		u.Logger.Error(err)
+		u.Logger.ErrorAny("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
 		return nil, err
 	}
 
-	timeT := time.Unix(claim.ExpiresAt, 0)
-	u.Logger.Info("claim.Exp", timeT)
-	u.Logger.Info("claim", claim)
+	//timeT := time.Unix(claim.ExpiresAt, 0)
 	return claim, err
 }
 
@@ -451,6 +455,23 @@ func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
+	}
+
+	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(walletAddress), user)
+	return user, nil
+}
+
+func (u Usecase) UserProfileByWalletWithCache(walletAddress string) (*entity.Users, error) {
+	userCache, err := u.Cache.GetData(helpers.GenerateUserWalletAddressKey(walletAddress))
+	if err != nil && userCache == nil {
+		return u.UserProfileByWallet(walletAddress)
+	}
+	user := &entity.Users{}
+
+	bytes := []byte(*userCache)
+	err = json.Unmarshal(bytes, user)
+	if err != nil {
+		return u.UserProfileByWallet(walletAddress)
 	}
 
 	return user, nil

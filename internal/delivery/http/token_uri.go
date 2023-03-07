@@ -9,13 +9,12 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
-	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/algolia"
 )
 
 // UserCredits godoc
@@ -129,9 +128,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
-
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
+	aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
+	if err != nil {
+		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -139,6 +145,18 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	h.Logger.Info("h.Usecase.GetToken", token.TokenID)
 
 	resp, err := h.tokenToResp(token)
+	for _, i := range aresp {
+		if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
+			resp.OrdinalsData = &response.OrdinalsData{
+				Sat:         i.Inscription.Sat,
+				ContentType: i.Inscription.ContentType,
+				Timestamp:   i.Inscription.Timestamp,
+				Block:       i.Inscription.GenesisHeight,
+			}
+			break
+		}
+	}
+
 	if err != nil {
 		err := errors.New("Cannot parse products")
 		h.Logger.Error("tokenToResp", err.Error(), err)
@@ -150,15 +168,25 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):
-		nft, _ := h.Usecase.GetListingDetail(tokenID)
-		if nft != nil {
-			resp.Buyable = nft.Buyable
-			resp.PriceBTC = nft.Price
-			resp.OrderID = nft.OrderID
-			resp.IsCompleted = nft.IsCompleted
+		// nft, _ := h.Usecase.GetListingDetail(tokenID)
+		// if nft != nil {
+		// 	resp.Buyable = nft.Buyable
+		// 	resp.PriceBTC = nft.Price
+		// 	resp.OrderID = nft.OrderID
+		// 	resp.IsCompleted = nft.IsCompleted
 
-			resp.ListingDetail = nft
+		// 	resp.ListingDetail = nft
 
+		// }
+		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
+		if err != nil {
+			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
+		} else {
+			if listingInfo.CancelTx == "" {
+				resp.Buyable = true
+				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+				resp.OrderID = listingInfo.UUID
+			}
 		}
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
@@ -440,22 +468,22 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	}
 
 	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
-	nftListing, _ := h.Usecase.GetAllListListingWithRule()
+	// nftListing, _ := h.Usecase.GetAllListListingWithRule()
 
 	// get btc, btc rate:
-	btcPrice, err := helpers.GetExternalPrice("BTC")
-	if err != nil {
-		h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
-		return nil, err
-	}
+	// btcPrice, err := helpers.GetExternalPrice("BTC")
+	// if err != nil {
+	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	return nil, err
+	// }
 
-	h.Logger.Info("btcPrice", btcPrice)
-	ethPrice, err := helpers.GetExternalPrice("ETH")
-	if err != nil {
-		h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
-		return nil, err
-	}
-	h.Logger.Info("btcPrice", btcPrice)
+	// h.Logger.Info("btcPrice", btcPrice)
+	// ethPrice, err := helpers.GetExternalPrice("ETH")
+	// if err != nil {
+	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	return nil, err
+	// }
+	// h.Logger.Info("btcPrice", btcPrice)
 
 	for _, token := range tokens {
 		resp, err := h.tokenToResp(&token)
@@ -465,27 +493,37 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 			return nil, err
 		}
 
-		for _, v := range nftListing {
-			if resp != nil {
-				if strings.EqualFold(v.InscriptionID, resp.TokenID) {
-					resp.Buyable = v.Buyable
-					resp.PriceBTC = v.Price
-					resp.OrderID = v.OrderID
-					resp.IsCompleted = v.IsCompleted
-
-					listPaymentInfo, err := h.Usecase.GetListingPaymentInfoWithEthBtcPrice(v.PayType, v.Price, btcPrice, ethPrice)
-
-					if err != nil {
-						continue
-					}
-					v.PaymentListingInfo = listPaymentInfo
-
-					resp.ListingDetail = &v
-
-					break
-				}
+		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
+		if err != nil {
+			h.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
+		} else {
+			if listingInfo.CancelTx == "" {
+				resp.Buyable = true
+				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+				resp.OrderID = listingInfo.UUID
 			}
 		}
+		// for _, v := range nftListing {
+		// 	if resp != nil {
+		// 		if strings.EqualFold(v.InscriptionID, resp.TokenID) {
+		// 			resp.Buyable = v.Buyable
+		// 			resp.PriceBTC = v.Price
+		// 			resp.OrderID = v.OrderID
+		// resp.IsCompleted = v.IsCompleted
+
+		// listPaymentInfo, err := h.Usecase.GetListingPaymentInfoWithEthBtcPrice(v.PayType, v.Price, btcPrice, ethPrice)
+
+		// if err != nil {
+		// 	continue
+		// }
+		// v.PaymentListingInfo = listPaymentInfo
+
+		// resp.ListingDetail = &v
+
+		// 			break
+		// 		}
+		// 	}
+		// }
 
 		respItems = append(respItems, *resp)
 	}
@@ -567,7 +605,9 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	// } else {
 	// 	resp.Image = input.Thumbnail
 	// }
-	resp.Image = input.Thumbnail
+	if strings.Index(resp.Image, "glb") == -1 {
+		resp.Image = input.Thumbnail
+	}
 
 	if input.Owner != nil {
 		ownerResp, err := h.profileToResp(input.Owner)
@@ -602,6 +642,7 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	}
 
 	resp.InscriptionIndex = input.InscriptionIndex
+	resp.OrderInscriptionIndex = input.OrderInscriptionIndex
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
 
@@ -755,16 +796,18 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string false "Filter project via wallet address"
+// @Param payType query string false "payType eth|btc"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
-// @Router /profile/wallet/{walletAddress}/volume [GET]
-func (h *httpDelivery) getVolumeByWallet(w http.ResponseWriter, r *http.Request) {
+// @Router /profile/wallet/{walletAddress}/volumn [GET]
+func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	uProjects, err := h.Usecase.CreatorVolume(walletAddress)
+	paytype := r.URL.Query().Get("payType")
+	uProjects, err := h.Usecase.CreatorVolume(walletAddress, paytype)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

@@ -99,7 +99,7 @@ type MarketplaceBTCListingFilterPipeline struct {
 
 type MarketplaceBTCListingFloorPrice struct {
 	ID    string `bson:"_id"`
-	Price uint64 `bson:"price"`
+	Price uint64 `bson:"amount"`
 }
 
 func (u MarketplaceBTCListing) TableName() string {
