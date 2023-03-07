@@ -65,6 +65,7 @@ func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing)
 			"matched":    model.Matched,
 			"matched_tx": model.MatchedTx,
 			"matched_at": model.MatchAt,
+			"buyer":      model.Buyer,
 		},
 	}
 
@@ -149,7 +150,8 @@ func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, erro
 	listings := []entity.DexBTCListing{}
 	f := bson.D{
 		{Key: "matched", Value: false},
-		{Key: "cancelled", Value: false}}
+		{Key: "cancelled", Value: false},
+	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},

@@ -691,6 +691,13 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
 }
 
+func (u Usecase) resolveShortDescription(description string) string {
+	if len(description) > 300 {
+		return description[:250] + "..."
+	}
+	return description
+}
+
 func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {
@@ -1902,6 +1909,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 
 	if latestWd != nil {
 		status = latestWd.Status
+		if status == entity.StatusWithdraw_Approve {
+			status = entity.StatusWithdraw_Available
+		}
 	}
 
 	available := data.Earning - wdraw
