@@ -176,13 +176,12 @@ type csvLine struct {
 	ProjectID  string
 	Artist     string
 	Collection string
-	Status     string
 	BTC        string
 	ETH        string
 }
 
 func (u Usecase) MigrateFromCSV() {
-	f, err := os.Open("artist_balance_1.csv")
+	f, err := os.Open("paid_mar_5_1.csv")
 	if err != nil {
 		return
 	}
@@ -197,35 +196,23 @@ func (u Usecase) MigrateFromCSV() {
 		return
 	}
 
-	csvData := []csvLine{}
+	processCsvData := []csvLine{}
 	// convert records to array of structs
 	for i, line := range data {
+		//spew.Dump(line)
 		if i > 1 { // omit header line
 			tmp := csvLine{
 				ProjectID:  line[0],
 				Artist:     line[1],
 				Collection: line[2],
-				Status:     line[3],
-				BTC:        line[4],
-				ETH:        line[5],
+				BTC:        line[5],
+				ETH:        line[6],
 			}
 
-			csvData = append(csvData, tmp)
+			processCsvData = append(processCsvData, tmp)
 		}
 	}
-	spew.Dump(len(csvData))
-	processCsvData := []csvLine{}
-	for _, csv := range csvData {
-		// if strings.ToLower(csv.Status) == "scam" {
-		// 	continue
-		// }
-		// if csv.BTC == "0.00000" && csv.ETH == "0.00000" {
-		// 	continue
-		// }
-		processCsvData = append(processCsvData, csv)
-	}
-
-	spew.Dump(len(processCsvData))
+	//spew.Dump(processCsvData)
 	wdsETH := []*entity.Withdraw{}
 	for _, csv := range processCsvData {
 		wd, _, err := u.CreateWD(csv, string(entity.ETH))
@@ -264,6 +251,7 @@ func (u Usecase) MigrateFromCSV() {
 
 func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bool, error) {
 	p, err := u.Repo.FindProjectByTokenID(csv.ProjectID)
+	u.Logger.LogAny("CreateWD", zap.Any("csv", csv), zap.String("paymentType", paymentType))
 	dateString := "2023-02-28T04:05:26.385+00:00"
 	date, _ := time.Parse("2023-02-28T00:00:00.000+00:00", dateString)
 	if err != nil {
@@ -286,6 +274,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	}
 
 	amount := ""
+	availableAmount := "0"
 	if paymentType == string(entity.ETH) {
 		eth := csv.ETH
 		ethFloat, err := strconv.ParseFloat(eth, 10)
@@ -293,13 +282,13 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("eth", eth))
 			return nil, false, err
 		}
-		if ethFloat > 0 {
+		if ethFloat < 0 {
 			return nil, false, errors.New("User was not paid")
 		}
 		if ethFloat == 0 {
 			return nil, false, errors.New("Witdraw with zero")
 		}
-		ethFloat = ethFloat * -1 * 1e10
+		ethFloat = ethFloat  * 1e8
 		amount = fmt.Sprintf("%d", int(ethFloat))
 
 	} else {
@@ -309,14 +298,19 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("btc", btc))
 			return nil, false, err
 		}
-		if btcFloat > 0 {
+		if btcFloat < 0 {
 			return nil, false, errors.New("User was not paid")
 		}
 		if btcFloat == 0 {
 			return nil, false, errors.New("Witdraw with zero")
 		}
-		btcFloat = btcFloat * -1 * 1e8
+		btcFloat = btcFloat  * 1e8
 		amount = fmt.Sprintf("%d", int(btcFloat))
+	}
+
+	volumes, _ := u.GetVolumeOfProject(csv.ProjectID, &paymentType)
+	if volumes != nil {
+		availableAmount = fmt.Sprintf("%d", int(volumes.Earning))
 	}
 
 	usr := entity.WithdrawUserInfo{}
@@ -332,6 +326,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	wd.EarningVolume = amount
 	wd.TotalEarnings = amount
 	wd.CreatedAt = &date
+	wd.AvailableBalance = availableAmount
 	wd.Note = "Add the paid artist on Feb 2023"
 	u.Logger.LogAny("CreateWD.wd", zap.String("paymentType", paymentType), zap.Any("wd", wd))
 	wd.User = usr

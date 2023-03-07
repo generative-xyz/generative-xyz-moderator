@@ -1,35 +1,17 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"time"
 
 	"go.uber.org/zap"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
 
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
-	"rederinghub.io/internal/delivery"
-	"rederinghub.io/internal/delivery/crontab"
-	"rederinghub.io/internal/delivery/crontab_btc"
-	developer_inscribe_btc "rederinghub.io/internal/delivery/crontab_developer_inscribe_btc"
-	dex_btc_cron "rederinghub.io/internal/delivery/crontab_dex_btc"
-	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
-	"rederinghub.io/internal/delivery/crontab_inscription_info"
-	"rederinghub.io/internal/delivery/crontab_marketplace"
-	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
-	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
-	"rederinghub.io/internal/delivery/crontab_trending"
-	httpHandler "rederinghub.io/internal/delivery/http"
-	"rederinghub.io/internal/delivery/pubsub"
-	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -181,131 +163,131 @@ func startServer() {
 		return
 	}
 
-	h, _ := httpHandler.NewHandler(&g, *uc)
-	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-	cron := crontab.NewScronHandler(&g, *uc)
-	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+	// h, _ := httpHandler.NewHandler(&g, *uc)
+	// txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+	// cron := crontab.NewScronHandler(&g, *uc)
+	// btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
+	// mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
+	// inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
 
-	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+	// mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
 
-	developerInscribeCron := developer_inscribe_btc.NewScronDeveloperInscribeHandler(&g, *uc)
+	// developerInscribeCron := developer_inscribe_btc.NewScronDeveloperInscribeHandler(&g, *uc)
 
-	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-	inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
-	dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
+	// trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+	// ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+	// inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
+	// dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
 
-	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+	// ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
-	servers := make(map[string]delivery.AddedServer)
-	servers["http"] = delivery.AddedServer{
-		Server:  h,
-		Enabled: conf.StartHTTP,
-	}
-
-	servers["txconsumer"] = delivery.AddedServer{
-		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
-	}
-
-	servers["crontab"] = delivery.AddedServer{
-		Server:  cron,
-		Enabled: conf.Crontab.Enabled,
-	}
-
-	servers["btc_crontab"] = delivery.AddedServer{
-		Server:  btcCron,
-		Enabled: conf.Crontab.BTCEnabled,
-	}
-
-	servers["btc_crontab_v2"] = delivery.AddedServer{
-		Server:  inscribeCron,
-		Enabled: conf.Crontab.BTCV2Enabled,
-	}
-
-	servers["mint_nft_btc"] = delivery.AddedServer{
-		Server:  mintNftBtcCron,
-		Enabled: conf.Crontab.MintNftBtcEnabled,
-	}
-
-	servers["developer_inscribe"] = delivery.AddedServer{
-		Server:  developerInscribeCron,
-		Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
-	}
-
-	servers["marketplace_crontab"] = delivery.AddedServer{
-		Server:  mkCron,
-		Enabled: conf.Crontab.MarketPlaceEnabled,
-	}
-
-	servers["trending_crontab"] = delivery.AddedServer{
-		Server:  trendingCron,
-		Enabled: conf.Crontab.TrendingEnabled,
-	}
-
-	servers["ordinal_collections_crontab"] = delivery.AddedServer{
-		Server:  ordinalCron,
-		Enabled: conf.Crontab.OrdinalCollectionEnabled,
-	}
-
-	servers["inscription_index_crontab"] = delivery.AddedServer{
-		Server:  inscriptionIndexCron,
-		Enabled: conf.Crontab.InscriptionIndexEnabled,
-	}
-
-	servers["dex_btc_cron"] = delivery.AddedServer{
-		Server:  dexBTCCron,
-		Enabled: conf.Crontab.DexBTCEnabled,
-	}
-
-	servers["pubsub"] = delivery.AddedServer{
-		Server:  ph,
-		Enabled: conf.StartPubsub,
-	}
-
-	//var wait time.Duration
-	c := make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-	// Run our server in a goroutine so that it doesn't block.
-
-	for name, server := range servers {
-		if server.Enabled {
-			if server.Server != nil {
-				go server.Server.StartServer()
-			}
-			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
-		} else {
-			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
-		}
-	}
-
-	// Block until we receive our signal.
-	<-c
-	wait := time.Second
-	// // Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	// // Doesn't block if no connections, but will otherwise wait
-	// // until the timeout deadline.
-	// err := srv.Shutdown(ctx)
-	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
-	// 	return
+	// servers := make(map[string]delivery.AddedServer)
+	// servers["http"] = delivery.AddedServer{
+	// 	Server:  h,
+	// 	Enabled: conf.StartHTTP,
 	// }
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	<-ctx.Done() //if your application should wait for other services
-	// to finalize based on context cancellation.
-	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
-	tracer.Stop()
-	os.Exit(0)
 
-	//uc.AggregateVolumns()
+	// servers["txconsumer"] = delivery.AddedServer{
+	// 	Server:  txConsumer,
+	// 	Enabled: conf.TxConsumerConfig.Enabled,
+	// }
+
+	// servers["crontab"] = delivery.AddedServer{
+	// 	Server:  cron,
+	// 	Enabled: conf.Crontab.Enabled,
+	// }
+
+	// servers["btc_crontab"] = delivery.AddedServer{
+	// 	Server:  btcCron,
+	// 	Enabled: conf.Crontab.BTCEnabled,
+	// }
+
+	// servers["btc_crontab_v2"] = delivery.AddedServer{
+	// 	Server:  inscribeCron,
+	// 	Enabled: conf.Crontab.BTCV2Enabled,
+	// }
+
+	// servers["mint_nft_btc"] = delivery.AddedServer{
+	// 	Server:  mintNftBtcCron,
+	// 	Enabled: conf.Crontab.MintNftBtcEnabled,
+	// }
+
+	// servers["developer_inscribe"] = delivery.AddedServer{
+	// 	Server:  developerInscribeCron,
+	// 	Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
+	// }
+
+	// servers["marketplace_crontab"] = delivery.AddedServer{
+	// 	Server:  mkCron,
+	// 	Enabled: conf.Crontab.MarketPlaceEnabled,
+	// }
+
+	// servers["trending_crontab"] = delivery.AddedServer{
+	// 	Server:  trendingCron,
+	// 	Enabled: conf.Crontab.TrendingEnabled,
+	// }
+
+	// servers["ordinal_collections_crontab"] = delivery.AddedServer{
+	// 	Server:  ordinalCron,
+	// 	Enabled: conf.Crontab.OrdinalCollectionEnabled,
+	// }
+
+	// servers["inscription_index_crontab"] = delivery.AddedServer{
+	// 	Server:  inscriptionIndexCron,
+	// 	Enabled: conf.Crontab.InscriptionIndexEnabled,
+	// }
+
+	// servers["dex_btc_cron"] = delivery.AddedServer{
+	// 	Server:  dexBTCCron,
+	// 	Enabled: conf.Crontab.DexBTCEnabled,
+	// }
+
+	// servers["pubsub"] = delivery.AddedServer{
+	// 	Server:  ph,
+	// 	Enabled: conf.StartPubsub,
+	// }
+
+	// //var wait time.Duration
+	// c := make(chan os.Signal, 1)
+	// // We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// // SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	// signal.Notify(c, os.Interrupt)
+
+	// // We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// // SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	// signal.Notify(c, os.Interrupt)
+	// // Run our server in a goroutine so that it doesn't block.
+
+	// for name, server := range servers {
+	// 	if server.Enabled {
+	// 		if server.Server != nil {
+	// 			go server.Server.StartServer()
+	// 		}
+	// 		h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+	// 	} else {
+	// 		h.Logger.Info(fmt.Sprintf("%s is disabled", name))
+	// 	}
+	// }
+
+	// // Block until we receive our signal.
+	// <-c
+	// wait := time.Second
+	// // // Create a deadline to wait for.
+	// ctx, cancel := context.WithTimeout(context.Background(), wait)
+	// defer cancel()
+	// // // Doesn't block if no connections, but will otherwise wait
+	// // // until the timeout deadline.
+	// // err := srv.Shutdown(ctx)
+	// // if err != nil {
+	// // 	h.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
+	// // 	return
+	// // }
+	// // Optionally, you could run srv.Shutdown in a goroutine and block on
+	// <-ctx.Done() //if your application should wait for other services
+	// // to finalize based on context cancellation.
+	// h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	// tracer.Stop()
+	// os.Exit(0)
+
+	uc.MigrateFromCSV()
 }
