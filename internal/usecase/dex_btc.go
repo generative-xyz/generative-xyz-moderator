@@ -156,10 +156,13 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 			return nil, errors.New("can't found inscription in split tx")
 		}
 	}
-	_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
-	if err != nil {
-		fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
-		return nil, err
+	if split_tx != "" {
+		_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		if err != nil {
+			fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+			return nil, err
+		}
+
 	}
 
 	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
