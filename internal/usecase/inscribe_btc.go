@@ -201,6 +201,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
+	walletAddress.UserWalletAddress = input.UserWallerAddress
 	if input.NeedVerifyAuthentic() {
 		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
