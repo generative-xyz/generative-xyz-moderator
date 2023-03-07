@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
@@ -12,8 +13,10 @@ import (
 
 func (r Repository) FindIDeveloperKeyByApiKey(apiKey string) (*entity.DeveloperKey, error) {
 
+	filter := bson.D{{Key: "api_key", Value: apiKey}, {Key: "status", Value: 1}}
+
 	resp := &entity.DeveloperKey{}
-	usr, err := r.FilterOne(entity.DeveloperKey{}.TableName(), bson.D{{"api_key", apiKey}})
+	usr, err := r.FilterOne(entity.DeveloperKey{}.TableName(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +54,10 @@ func (r Repository) InsertDeveloperKey(data *entity.DeveloperKey) error {
 //////
 func (r Repository) FindDeveloperKeyRequests(apiKey string) (*entity.DeveloperKeyRequests, error) {
 
+	filter := bson.D{{Key: "api_key", Value: apiKey}}
+
 	resp := &entity.DeveloperKeyRequests{}
-	usr, err := r.FilterOne(entity.DeveloperKeyRequests{}.TableName(), bson.D{{"api_key", apiKey}})
+	usr, err := r.FilterOne(entity.DeveloperKeyRequests{}.TableName(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +90,14 @@ func (r Repository) UpdateDeveloperKeyRequests(model *entity.DeveloperKeyRequest
 
 func (r Repository) IncreaseDeveloperReqCounter(apiKeyID string) error {
 	filter := bson.D{{Key: "api_key", Value: apiKeyID}}
-	update := bson.M{"$inc": bson.M{"day_req_counter": 1}, "day_req_last_time": time.Now().UTC()}
+
+	update := bson.M{
+		"$set": bson.M{
+			"day_req_last_time": primitive.NewDateTimeFromTime(time.Now().UTC()),
+		},
+		"$inc": bson.M{"day_req_counter": 1},
+	}
+
 	_, err := r.DB.Collection(entity.DeveloperKeyRequests{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	return err
 }
