@@ -77,8 +77,8 @@ func (r Repository) ListMintNftBtcPending() ([]entity.MintNftBtc, error) {
 func (r Repository) ListMintNftBtcToSendFundToMaster() ([]entity.MintNftBtc, error) {
 	resp := []entity.MintNftBtc{}
 	filter := bson.M{
-		"status":    bson.M{"$in": []entity.StatusMint{entity.StatusMint_SentNFTToUser}},
-		"isSubItem": false, // only get parent items
+		"status": bson.M{"$in": []entity.StatusMint{entity.StatusMint_SentNFTToUser}},
+		// "isSubItem": false, // only get parent items
 	}
 
 	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
