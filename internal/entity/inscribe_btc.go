@@ -46,6 +46,11 @@ type InscribeBTC struct {
 	IsAuthentic       bool        `bson:"is_authentic"`
 	OrdinalsTx        string      `bson:"ordinals_tx"`
 	OrdinalsTxStatus  uint64      `bson:"ordinals_tx_status"`
+	PayType           string      `bson:"pay_type"`
+	BTCRate           float64     `bson:"btc_rate"`
+	ETHRate           float64     `bson:"eth_rate"`
+
+	IsMergeMint bool `bson:"isMergeMint"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -69,7 +74,7 @@ const (
 	StatusInscribe_ReceivedFund                       // 1: received fund from user (buyer)
 
 	StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr // 2: sending btc from segwit address to ord address
-	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success
+	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success, or ready to mint.
 
 	StatusInscribe_Minting // 4: minting
 	StatusInscribe_Minted  // 5: mint success
