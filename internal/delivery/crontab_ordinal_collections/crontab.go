@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/uuid"
+	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
-	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
@@ -139,7 +139,7 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 		}
 	})
 	c.Start()
-	
+
 	go func() {
 		for {
 			err := h.Usecase.CreateProjectsFromMetas()

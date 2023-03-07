@@ -8,7 +8,7 @@ require (
 	github.com/antchfx/htmlquery v1.3.0
 	github.com/aws/aws-sdk-go v1.44.211
 	github.com/blockcypher/gobcy/v2 v2.0.5
-	github.com/btcsuite/btcd v0.23.4
+	github.com/btcsuite/btcd v0.23.0
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.7
@@ -32,6 +32,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/llgcode/draw2d v0.0.0-20210904075650-80aa0a2a901d
 	github.com/pkg/errors v0.9.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/http-swagger v1.3.3
