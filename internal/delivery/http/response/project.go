@@ -64,6 +64,7 @@ type ProjectResp struct {
 	TokenId                   string           `json:"nftTokenId"`
 	OwnerOf                   string           `json:"ownerOf"`
 	OrdinalsTx                string           `json:"ordinalsTx"`
+	InscribedBy               string           `json:"inscribedBy"`
 }
 
 type ReportProject struct {
