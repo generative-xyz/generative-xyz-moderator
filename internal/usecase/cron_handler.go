@@ -648,6 +648,7 @@ const (
 	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC               int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 100000
+	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 5000
 	TRENDING_SCORE_EACH_MINT       int64 = 1000
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
@@ -667,6 +668,34 @@ func (u Usecase) SyncProjectTrending() error {
 	fromProjectIDToRecentVolumn := map[string]int64{}
 	for _, btcActivity := range btcActivites {
 		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
+	}
+
+	fromProjectIDToCountListing := map[string]int64{}
+
+	for page := int64(1);; page++ {
+		u.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
+		listings, err := u.Repo.GetDexBtcsAlongWithProjectInfo(entity.GetDexBtcListingWithProjectInfoReq{
+			Page: page,
+			Limit: 100,
+		})
+		if err != nil {
+			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetListings", zap.Any("page", page), zap.Error(err))
+			break
+		}
+		u.Logger.Info("SyncProjectTrending.DoneGetpagingListings", zap.Any("page", page), zap.Any("listing_count", len(listings)))
+		if len(listings) == 0 {
+			break
+		}
+		for _, listing := range listings {
+			if len(listing.ProjectInfo) == 0 {
+				continue
+			}
+			if listing.Cancelled == true {
+				continue
+			}
+			projectId := listing.ProjectInfo[0].ProjectID
+			fromProjectIDToCountListing[projectId]++
+		}
 	}
 
 	var processed int64
@@ -704,13 +733,20 @@ func (u Usecase) SyncProjectTrending() error {
 			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
 			numActivity := int64(len(btcActivites))
 
-			if project.MintingInfo.Index == project.MaxSupply {
+			numListings := fromProjectIDToCountListing[project.TokenID]
+			
+			if project.MintingInfo.Index == project.MaxSupply && numListings == 0 {
 				numActivity = 0
 				volumnInBtc = 0
 			}
 			trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
+			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
 			if project.MintingInfo.Index == project.MaxSupply {
-				trendingScore /= 10
+				if numListings == 0 {
+					trendingScore /= 5
+				} else {
+					trendingScore *= 2
+				}
 			}
 			isWhitelistedProject := false
 			isBoostedProject := false
@@ -737,8 +773,8 @@ func (u Usecase) SyncProjectTrending() error {
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
-			if processed%30 == 0 {
-				time.Sleep(time.Second / 2)
+			if numListings != 0 {
+				u.Logger.Info("SyncProjectTrending.ProjectHasListing", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("numListings", numListings))
 			}
 		}
 	}
