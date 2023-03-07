@@ -223,10 +223,17 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 		return
 	}
+	artistAddress := ""
+	if creator.WalletAddressBTCTaproot != "" {
+		artistAddress = creator.WalletAddressBTCTaproot
+	} else {
+		artistAddress = creator.WalletAddressBTC
+	}
+
 	resp := response.ListingFee{
 		ServiceFee:     fmt.Sprintf("%v", utils.BUY_NFT_CHARGE),
 		RoyaltyFee:     fmt.Sprintf("%v", float64(projectDetail.Royalty)/10000*100),
-		RoyaltyAddress: creator.WalletAddressBTCTaproot,
+		RoyaltyAddress: artistAddress,
 		ServiceAddress: h.Config.MarketBTCServiceFeeAddress,
 		ProjectID:      tokenUri.ProjectID,
 	}
