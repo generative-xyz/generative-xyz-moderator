@@ -475,7 +475,7 @@ type CollectionFilter struct {
 	To    int64  `json:"to"`
 }
 
-func (u Usecase) BTCMarketplaceUpdateNftInfo() error {
+func (u Usecase) JobMKP_CrawlToUpdateNftInfo() error {
 	// create data for listing data:
 	// get nft list + update collection:
 	listingOrder, _ := u.Repo.RetrieveBTCNFTListingsUnsold(99999, 0)

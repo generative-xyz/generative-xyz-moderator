@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -50,8 +51,9 @@ type Config struct {
 	OtherCategoryID      string
 	UnverifiedCategoryID string
 
-	TrendingConfig       TrendingConfig
-	MaxReportCount       int
+	TrendingConfig TrendingConfig
+	MaxReportCount int
+
 	AlgoliaApiKey        string
 	AlgoliaApplicationId string
 	Ordinals             Ordinals
@@ -60,6 +62,9 @@ type Config struct {
 
 	CaptcharSecret        string
 	GenerativeExplorerApi string
+
+	// list crontab to run:
+	CronTabList []string
 }
 
 type Ordinals struct {
@@ -355,6 +360,7 @@ func NewConfig() (*Config, error) {
 			BoostedCategoryID:    boostedTrendingCategoryID,
 			BoostedWeight:        int64(trendingBoostedWeight),
 		},
+
 		MaxReportCount:       maxReportCount,
 		AlgoliaApiKey:        os.Getenv("ALGOLIA_API_KEY"),
 		AlgoliaApplicationId: os.Getenv("ALGOLIA_APPLICATION_ID"),
@@ -368,6 +374,8 @@ func NewConfig() (*Config, error) {
 
 		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
 		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
+
+		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
 	}
 
 	return conf, nil
