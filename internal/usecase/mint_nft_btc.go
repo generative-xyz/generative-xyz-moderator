@@ -157,6 +157,9 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.Balance = "0"
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 
+	fmt.Println("feeInfos[eth].MintPriceBigIn", feeInfos["eth"].MintPriceBigInt)
+	fmt.Println("feeInfos[btc].MintPriceBigIn", feeInfos["btc"].MintPriceBigInt)
+
 	// for batch mint, update here:
 	walletAddress.Quantity = input.Quantity
 	walletAddress.MintPriceByPayTypeTotal = big.NewInt(0).Mul(feeInfos[input.PayType].MintPriceBigInt, big.NewInt(int64(input.Quantity))).String()   // total
@@ -1364,6 +1367,8 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		Decimal: 8,
 	}
 
+	fmt.Println("feeInfos[btc].MintPriceBigIn1", listMintFeeInfo["btc"].MintPriceBigInt)
+
 	// 1. convert mint price btc to eth  ==========
 	mintPriceByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(mintPrice.Uint64())/1e8), btcRate, ethRate)
 	if err != nil {
@@ -1371,7 +1376,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 1. set mint price by eth
-	mintPriceEth, ok := mintPrice.SetString(mintPriceByEth, 10)
+	mintPriceEth, ok := big.NewInt(0).SetString(mintPriceByEth, 10)
 	if !ok {
 		err = errors.New("can not set mintPriceByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(mintPriceByEth)", err.Error(), err)
@@ -1385,7 +1390,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 2. set mint fee by eth
-	feeMintNftEth, ok := feeMintNft.SetString(feeMintNftByEth, 10)
+	feeMintNftEth, ok := big.NewInt(0).SetString(feeMintNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
@@ -1399,7 +1404,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 	// 3. set mint fee by eth
-	feeSendNftEth, ok := feeSendNft.SetString(feeSendNftByEth, 10)
+	feeSendNftEth, ok := big.NewInt(0).SetString(feeSendNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
 		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
@@ -1411,7 +1416,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 
 	// total amount by ETH:
 	netWorkFeeEth := big.NewInt(0).Add(feeMintNftEth, feeSendNftEth) // + feeMintNft	+ feeSendNft
-	netWorkFeeEth = netWorkFee.Add(netWorkFeeEth, feeSendFundEth)    // + feeSendFund
+	netWorkFeeEth = netWorkFeeEth.Add(netWorkFeeEth, feeSendFundEth) // + feeSendFund
 
 	totalAmountToMintEth := big.NewInt(0).Add(mintPriceEth, netWorkFeeEth) // mintPrice, netWorkFee
 
@@ -1427,6 +1432,7 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		MintFeeBigInt:     feeMintNftEth,
 		SendNftFeeBigInt:  feeSendNftEth,
 		SendFundFeeBigInt: feeSendFundEth,
+
 		NetworkFeeBigInt:  netWorkFeeEth,
 		TotalAmountBigInt: totalAmountToMintEth,
 
@@ -1435,6 +1441,9 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 
 		Decimal: 18,
 	}
+
+	fmt.Println("feeInfos[eth].MintPriceBigIn2", listMintFeeInfo["eth"].MintPriceBigInt)
+	fmt.Println("feeInfos[btc].MintPriceBigIn2", listMintFeeInfo["btc"].MintPriceBigInt)
 
 	return listMintFeeInfo, err
 }
