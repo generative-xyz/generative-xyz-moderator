@@ -41,12 +41,12 @@ func (r Repository) InsertCategory(data *entity.Categories) error {
 	return nil
 }
 
-func (r Repository) ListCategories(filter entity.FilterCategories) (*entity.Pagination, error)  {
+func (r Repository) ListCategories(filter entity.FilterCategories) (*entity.Pagination, error) {
 	confs := []entity.Categories{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(entity.Categories{}.TableName(), filter.Page, filter.Limit, f, bson.D{},[]Sort{{SortBy: filter.SortBy, Sort: filter.Sort}} , &confs)
+	p, err := r.Paginate(entity.Categories{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, []Sort{{SortBy: filter.SortBy, Sort: filter.Sort}}, &confs)
 	if err != nil {
 		return nil, err
 	}
