@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/contracts/ordinals"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -90,7 +91,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 
 func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
-	u.Logger.Info("input", input)
+	u.Logger.LogAny("CreateInscribeBTC", zap.Any("input", input))
 
 	// todo remove:
 	// _, base64Str, err := decodeFileBase64(input.File)
@@ -113,7 +114,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
-		u.Logger.Error("u.CreateInscribeBTC.Copy", err.Error(), err)
+		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy",zap.Error(err))
 		return nil, err
 	}
 
@@ -131,7 +132,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	})
 
 	if err != nil {
-		u.Logger.Error("u.OrdService.Exec.create.Wallet", err.Error(), err)
+		u.Logger.ErrorAny("u.OrdService.Exec.create.Wallet",  zap.Error(err))
 		return nil, err
 	}
 	walletAddress.Mnemonic = resp.Stdout
@@ -147,7 +148,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	})
 
 	if err != nil {
-		u.Logger.Error("u.OrdService.Exec.create.receive", err.Error(), err)
+		u.Logger.ErrorAny("u.OrdService.Exec.create.receive",  zap.Error(err))
 		return nil, err
 	}
 
@@ -161,35 +162,100 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
 	if err != nil {
-		u.Logger.Error("CreateInscribeBTC.Unmarshal", err.Error(), err)
+		u.Logger.ErrorAny("CreateInscribeBTC.Unmarshal", zap.Error(err))
 		return nil, err
 	}
 
-	// create segwit address
-	privKey, _, addressSegwit, err := btc.GenerateAddressSegwit()
+	mintFee, err := calculateMintPrice(input)
 	if err != nil {
-		u.Logger.Error("u.CreateSegwitBTCWalletAddress.GenerateAddressSegwit", err.Error(), err)
+		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice",  zap.Error(err))
 		return nil, err
 	}
+	mfTotal := mintFee.Amount
+	mfMintFee :=  mintFee.MintFee
+	mfSentTokenFee :=   mintFee.SentTokenFee
+	
+	privKey := ""
+	addressSegwit := ""
+	payType := input.PayType
+	btcRate := 14.7
+	ethRate := 1.0
+
+	_, btcRate, ethRate, err = u.convertBTCToETH("1")
+	if err != nil {
+		u.Logger.Error("convertBTCToETH", err.Error(), err)
+		return nil, err
+	}
+
+	if strings.ToLower(payType) == strings.ToLower(utils.NETWORK_ETH) {
+		ethClient := eth.NewClient(nil)
+
+		// create segwit address
+		privKey, _, addressSegwit, err = ethClient.GenerateAddress()
+		if err != nil {
+			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			return nil, err
+		}
+
+		mfMintFeeF, err := strconv.ParseFloat(mfMintFee, 10)
+		if err != nil {
+			u.Logger.ErrorAny("CreateInscribeBTC.ParseFloat.mfMintFeeF", zap.Error(err))
+			return nil, err
+		}
+
+		mfSentTokenFeeF, err := strconv.ParseFloat(mfSentTokenFee, 10)
+		if err != nil {
+			u.Logger.ErrorAny("CreateInscribeBTC.ParseFloat.mfSentTokenFeeF", zap.Error(err))
+			return nil, err
+		}
+
+		mfTotalF := mfMintFeeF + mfSentTokenFeeF
+		mfMintFeeF = mfMintFeeF * (btcRate/ethRate)
+		mfSentTokenFeeF = mfSentTokenFeeF * (btcRate/ethRate)
+		mfTotalF = mfTotalF * (btcRate/ethRate)
+		
+		mfMintFee = fmt.Sprintf("%d",int(mfMintFeeF))
+		mfTotal = fmt.Sprintf("%d",int(mfTotalF))
+		mfSentTokenFee = fmt.Sprintf("%d",int(mfSentTokenFeeF))
+		
+	}else{
+		payType = utils.NETWORK_BTC
+		// create segwit address
+		privKey, _, addressSegwit, err = btc.GenerateAddressSegwit()
+		if err != nil {
+			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			return nil, err
+		}
+
+	}
+
+	if privKey == "" {
+		err := errors.New("Cannot create privKey")
+		u.Logger.ErrorAny("CreateInscribeBTC.privKey", zap.Error(err))
+		return nil, err
+	}
+	
+	if addressSegwit == "" {
+		err := errors.New("Cannot create addressSegwit")
+		u.Logger.ErrorAny("CreateInscribeBTC.addressSegwit", zap.Error(err))
+		return nil, err
+	}
+
 	walletAddress.SegwitKey = privKey
 	walletAddress.SegwitAddress = addressSegwit
+	walletAddress.PayType = payType
 
 	u.Logger.Info("CreateInscribeBTC.calculateMintPrice", resp)
-	mintFee, err := calculateMintPrice(input)
-
-	if err != nil {
-		u.Logger.Error("u.CreateSegwitBTCWalletAddress.calculateMintPrice", err.Error(), err)
-		return nil, err
-	}
+	
 
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
 	}
 
-	walletAddress.Amount = mintFee.Amount
-	walletAddress.MintFee = mintFee.MintFee
-	walletAddress.SentTokenFee = mintFee.SentTokenFee
+	walletAddress.Amount = mfTotal
+	walletAddress.MintFee = mfMintFee
+	walletAddress.SentTokenFee = mfSentTokenFee
 	walletAddress.UserAddress = userWallet // name
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.OrdAddress = receiveResp.Address
@@ -202,6 +268,8 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
 	walletAddress.UserWalletAddress = input.UserWallerAddress
+	walletAddress.BTCRate = btcRate
+	walletAddress.ETHRate = ethRate
 	if input.NeedVerifyAuthentic() {
 		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
@@ -231,7 +299,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
-		u.Logger.Error("u.CreateInscribeBTC.InsertInscribeBTC", err.Error(), err)
+		u.Logger.ErrorAny("u.CreateInscribeBTC.InsertInscribeBTC", zap.Error(err))
 		return nil, err
 	}
 
