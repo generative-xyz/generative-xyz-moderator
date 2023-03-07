@@ -1953,7 +1953,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			MaxSupply:       1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
+			CreatorAddrrBTC: creator.WalletAddressBTC,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
