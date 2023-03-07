@@ -392,3 +392,14 @@ func (r Repository) CreateCollectionIndexes() error {
 
 	return nil
 }
+
+func (r Repository) FindOneBy(ctx context.Context, collectionName string, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error {
+	res := r.DB.Collection(collectionName).FindOne(ctx, filters, opts...)
+	if res.Err() != nil {
+		return res.Err()
+	}
+	if err := res.Decode(value); err != nil {
+		return err
+	}
+	return nil
+}
