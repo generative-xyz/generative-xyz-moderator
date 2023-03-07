@@ -326,8 +326,6 @@ func (u Usecase) JobDeveloperInscribe_CheckTxSend() error {
 			item.IsMinted = true
 		}
 
-		go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_CheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
-
 		// check with api:
 		txInfo, err := bs.CheckTx(txHashDb)
 		if err != nil {

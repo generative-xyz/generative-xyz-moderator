@@ -69,11 +69,10 @@ const (
 	StatusDeveloperInscribe_Minted  // 5: mint success
 
 	StatusDeveloperInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed // 6: send btc from segwit address to ord address failed
-	StatusDeveloperInscribe_TxSendBTCToUserFailed                  // 7: send nft to user failed
-	StatusDeveloperInscribe_TxMintFailed                           // 8: tx mint failed
+	StatusDeveloperInscribe_TxMintFailed                           // 7: tx mint failed
 
-	StatusDeveloperInscribe_NotEnoughBalance // 9: balance not enough
-	StatusDeveloperInscribe_NeedToRefund     // 10: Need to refund BTC
+	StatusDeveloperInscribe_NotEnoughBalance // 8: balance not enough
+	StatusDeveloperInscribe_NeedToRefund     // 9: Need to refund BTC
 )
 
 func (s StatusDeveloperInscribe) Ordinal() int {
