@@ -401,6 +401,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		}
 	}
 
+	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(user.WalletAddress), user)
 	return user, nil
 }
 
