@@ -59,6 +59,10 @@ type ProjectResp struct {
 	AnimationHtml             *string          `json:"animationHtml"`
 	MaxFileSize               int64            `json:"maxFileSize"`
 	CaptureThumbnailDelayTime int              `json:"captureThumbnailDelayTime"`
+	FromAuthentic             bool             `bson:"fromAuthentic"`
+	TokenAddress              string           `bson:"tokenAddress"`
+	TokenId                   string           `bson:"tokenId"`
+	OwnerOf                   string           `bson:"ownerOf"`
 }
 
 type ReportProject struct {

@@ -102,6 +102,10 @@ type Projects struct {
 	Source                   string             `bson:"source" json:"source"`
 	AnimationHtml            *string            `bson:"animation_html"`
 	CatureThumbnailDelayTime *int               `bson:"cature_thumbnail_delay_time"`
+	FromAuthentic            bool               `bson:"fromAuthentic"`
+	TokenAddress             string             `bson:"tokenAddress"`
+	TokenId                  string             `bson:"tokenId"`
+	OwnerOf                  string             `bson:"ownerOf"`
 }
 
 type ReportProject struct {
@@ -132,7 +136,7 @@ type FilterProjects struct {
 	CategoryIds   []string
 	TokenIds      []string
 	Ids           []string
-	CustomQueries	  map[string]bson.M
+	CustomQueries map[string]bson.M
 }
 
 func (u Projects) TableName() string {
