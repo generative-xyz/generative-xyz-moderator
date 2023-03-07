@@ -236,11 +236,11 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 
 				txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v\n", order.Inputs)
-					continue
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) u.Config.QuicknodeAPI %v %v %v\n", u.Config.QuicknodeAPI, order.Inputs, err)
 				}
-				output := *&txDetail.Result.Vout[0]
-				order.Buyer = output.ScriptPubKey.Address
+				_ = txDetail
+				// output := txDetail.Result.Vout[0]
+				// order.Buyer = output.ScriptPubKey.Address
 
 				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
 				if err != nil {
@@ -248,7 +248,7 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 					continue
 				}
 				// Discord Notify NEW SALE
-				buyerAddress := ""
+				buyerAddress := order.Buyer
 				go u.NotifyNewSale(order, buyerAddress)
 			}
 		} else {
