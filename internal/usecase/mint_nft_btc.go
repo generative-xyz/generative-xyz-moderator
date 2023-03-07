@@ -1034,6 +1034,10 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
+		if item.IsSubItem {
+			continue
+		}
+
 		if item.PayType == utils.NETWORK_BTC {
 
 			if len(os.Getenv("SECRET_KEY")) == 0 {
