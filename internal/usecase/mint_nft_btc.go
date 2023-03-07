@@ -423,14 +423,14 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 		// create batch record:
-		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 0 {
+		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 1 {
 			// create
 			// verify item
 			listPath, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
 
 			totaltem := item.Quantity - len(listPath)
 
-			for i := 0; i < totaltem; i++ {
+			for i := 0; i < totaltem-1; i++ { // n - item
 				batchItem := entity.MintNftBtc{
 					BatchParentId:     item.UUID,
 					ProjectID:         item.ProjectID,
