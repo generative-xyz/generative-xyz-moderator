@@ -1,6 +1,6 @@
 # rendering-hub
 
-#go
+#golang
 
 ## How to run
 ```
