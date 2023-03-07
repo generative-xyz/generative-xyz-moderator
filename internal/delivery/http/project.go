@@ -445,6 +445,11 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
 	resp.MaxFileSize = input.MaxFileSize
+	if input.CatureThumbnailDelayTime == nil || *input.CatureThumbnailDelayTime == 0 {
+		resp.CaptureThumbnailDelayTime = entity.DEFAULT_CAPTURE_TIME
+	} else {
+		resp.CaptureThumbnailDelayTime = *input.CatureThumbnailDelayTime
+	}
 	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
