@@ -1040,6 +1040,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			ProjectName:   projectInfo.Name,
 			InscriptionID: item.InscriptionID,
 			IsCancel:      int(item.Status) == 0,
+			Quantity:      item.Quantity,
 		}
 		result = append(result, minting)
 	}
