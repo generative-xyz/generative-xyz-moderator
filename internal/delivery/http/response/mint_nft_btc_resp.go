@@ -13,7 +13,11 @@ type MintNftBtcResp struct {
 }
 
 type MintNftBtcReceiveWalletResp struct {
-	Address string `json:"address"`
-	Price   string `json:"price"`
-	PayType string `json:"payType"`
+	Address             string `json:"address"`
+	Price               string `json:"price"`
+	PayType             string `json:"payType"`
+	Quantity            int    `json:"quantity"`
+	MintPriceByPayType  string `bson:"mintPriceByPayType"`  // by pay type, for n item
+	NetworkFeeByPayType string `bson:"networkFeeByPayType"` // by pay type, for n item
+
 }
