@@ -210,13 +210,14 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 			if err != nil {
 				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
 				continue
-			}
-			if txDetail.Result.Confirmations > 0 {
-				order.Verified = true
-				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
-				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
-					continue
+			} else {
+				if txDetail.Result.Confirmations > 0 {
+					order.Verified = true
+					_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+						continue
+					}
 				}
 			}
 		}
