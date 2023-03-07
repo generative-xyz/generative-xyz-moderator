@@ -460,6 +460,34 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	return &result, nil
 }
 
+func SendRawTxfromQuickNode(raw_tx string, qn string) (string, error) {
+	payload := strings.NewReader(fmt.Sprintf("{\"method\": \"sendrawtransaction\", \"params\": [\"%v\"]}", raw_tx))
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return "", err
+		}
+		return "", fmt.Errorf("sendrawtransaction error: %v %v", res.Status, string(body))
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
 func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	var result QuickNodeTx
 

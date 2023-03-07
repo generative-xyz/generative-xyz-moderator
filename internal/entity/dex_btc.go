@@ -11,6 +11,7 @@ import (
 type DexBTCListing struct {
 	BaseEntity    `bson:",inline"`
 	RawPSBT       string `bson:"raw_psbt"`
+	SplitTx       string `bson:"split_tx"`
 	InscriptionID string `bson:"inscription_id"`
 	Amount        uint64 `bson:"amount"`
 	// InscriptionOutputValue uint64     `bson:"inscription_output_value"`
