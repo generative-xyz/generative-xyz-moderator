@@ -40,4 +40,6 @@ type MintingInscription struct {
 	ProgressStatus interface{} `json:"progressStatus"`
 
 	UserID string `json:"userID"`
+
+	Quantity int `json:"quantity"`
 }

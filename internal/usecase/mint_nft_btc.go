@@ -422,6 +422,48 @@ func (u Usecase) JobMint_CheckBalance() error {
 			fmt.Printf("Could not UpdateMintNftBtc uuid %s - with err: %v", item.UUID, err)
 			continue
 		}
+		// create batch record:
+		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 0 {
+			// create
+			// verify item
+			listPath, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+
+			totaltem := item.Quantity - len(listPath)
+
+			for i := 0; i < totaltem; i++ {
+				batchItem := entity.MintNftBtc{
+					BatchParentId:     item.UUID,
+					ProjectID:         item.ProjectID,
+					Status:            entity.StatusMint_ReceivedFund, // wait for mint.
+					PayType:           item.PayType,
+					IsConfirm:         true,
+					UserAddress:       item.UserAddress,
+					OriginUserAddress: item.OriginUserAddress,
+					RefundUserAdress:  item.RefundUserAdress,
+					IsSubItem:         true,
+					ProjectMintPrice:  item.ProjectMintPrice,
+					ProjectNetworkFee: item.ProjectNetworkFee,
+
+					NetworkFeeByPayType: item.NetworkFeeByPayType,
+					MintPriceByPayType:  item.MintPriceByPayType,
+					Amount:              item.EstFeeInfo[item.PayType].TotalAmount,
+					UserID:              item.UserID,
+					IsMerged:            item.IsMerged,
+					EthRate:             item.EthRate,
+					BtcRate:             item.BtcRate,
+
+					EstFeeInfo: item.EstFeeInfo,
+				}
+				// insert now:
+				err = u.Repo.InsertMintNftBtc(&batchItem)
+				if err != nil {
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Can not InsertMintNftBtc sub item", i, true)
+					u.Logger.Error("u.CheckReceiveFund.InsertMintNftBtc", err.Error(), err)
+					continue
+				}
+
+			}
+		}
 
 	}
 
@@ -890,6 +932,10 @@ func (u Usecase) JobMint_RefundBtc() error {
 	for _, item := range listToRefund {
 
 		if len(item.RefundUserAdress) == 0 {
+			continue
+		}
+		if item.IsSubItem {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
 			continue
 		}
 
