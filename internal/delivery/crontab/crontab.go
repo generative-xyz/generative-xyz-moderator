@@ -144,11 +144,11 @@ func (h ScronHandler) StartServer() {
 	c.AddFunc("*/5 * * * *", func() {
 		h.Usecase.AggregateVolumns()
 
-		h.Usecase.AggregateReferal()
+		h.Usecase.JobAggregateReferral()
 	})
 
 	c.AddFunc("*/10 * * * *", func() {
-		err := h.Usecase.SyncTraitStats()
+		err := h.Usecase.JobSyncTraitStats()
 		if err != nil {
 			h.Logger.Error("error when sync trait stats", err)
 		}

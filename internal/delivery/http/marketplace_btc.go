@@ -384,7 +384,7 @@ func (h *httpDelivery) btcMarketplaceFilterInfo(w http.ResponseWriter, r *http.R
 
 func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *http.Request) {
 
-	err := h.Usecase.JobMKP_CrawlToUpdateNftInfo()
+	err := h.Usecase.JobCrawlToUpdateNftInfo()
 
 	if err != nil {
 		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)

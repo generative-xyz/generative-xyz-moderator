@@ -24,7 +24,7 @@ func NewScronInscriptionInfoHandler(global *global.Global, uc usecase.Usecase) *
 func (h ScronInscriptionInfoHandler) StartServer() {
 	c := cron.New()
 	// cronjob to sync inscription index
-	
+
 	// mutex to make sure 2 cronjob do not overlap
 	var mu sync.Mutex
 	c.AddFunc("*/10 * * * *", func() {
@@ -32,9 +32,9 @@ func (h ScronInscriptionInfoHandler) StartServer() {
 		defer func() {
 			mu.Unlock()
 		}()
-		err := h.Usecase.SyncTokenInscribeIndex()
+		err := h.Usecase.JobSyncTokenInscribeIndex()
 		if err != nil {
-			h.Logger.Error("DispatchCron.OneMinute.SyncTokenInscribeIndex", err.Error(), err)
+			h.Logger.Error("DispatchCron.OneMinute.JobSyncTokenInscribeIndex", err.Error(), err)
 		}
 	})
 	c.Start()
