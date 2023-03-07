@@ -189,6 +189,7 @@ func (h *httpDelivery) MintNftBtcToResp(input *entity.MintNftBtc) *response.Mint
 		NetworkFeeByPayType: input.NetworkFeeByPayTypeTotal,
 		MintPriceByPayType:  input.MintPriceByPayTypeTotal,
 		Quantity:            input.Quantity,
+		MintFeeInfos:        input.EstFeeInfo,
 	}
 
 }
