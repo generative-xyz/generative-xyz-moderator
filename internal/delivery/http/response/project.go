@@ -61,7 +61,7 @@ type ProjectResp struct {
 	CaptureThumbnailDelayTime int              `json:"captureThumbnailDelayTime"`
 	FromAuthentic             bool             `json:"fromAuthentic"`
 	TokenAddress              string           `json:"tokenAddress"`
-	TokenId                   string           `json:"tokenId"`
+	TokenId                   string           `json:"nftTokenId"`
 	OwnerOf                   string           `json:"ownerOf"`
 	OrdinalsTx                string           `json:"ordinalsTx"`
 }
