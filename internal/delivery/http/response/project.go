@@ -63,6 +63,7 @@ type ProjectResp struct {
 	TokenAddress              string           `json:"tokenAddress"`
 	TokenId                   string           `json:"tokenId"`
 	OwnerOf                   string           `json:"ownerOf"`
+	OrdinalsTx                string           `json:"ordinalsTx"`
 }
 
 type ReportProject struct {
