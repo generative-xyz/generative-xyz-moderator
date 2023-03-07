@@ -50,6 +50,7 @@ type Config struct {
 
 	OtherCategoryID      string
 	UnverifiedCategoryID string
+	EthereumCategoryID   string
 
 	TrendingConfig TrendingConfig
 	MaxReportCount int
@@ -355,6 +356,7 @@ func NewConfig() (*Config, error) {
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
 		OtherCategoryID:            os.Getenv("OTHER_CATEGORY_ID"),
 		UnverifiedCategoryID:       os.Getenv("UNVERIFIED_CATEGORY_ID"),
+		EthereumCategoryID:         os.Getenv("ETHEREUM_CATEGORY_ID"),
 		TrendingConfig: TrendingConfig{
 			WhitelistedProjectID: whitelistedTrendingProjectID,
 			BoostedCategoryID:    boostedTrendingCategoryID,
