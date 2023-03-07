@@ -129,12 +129,6 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return nil, err
 	}
 
-	// _, bs, err := u.buildBTCClient()
-	// if err != nil {
-	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-	// 	return err
-	// }
-
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://dev-v5.generativeexplorer.com"
@@ -150,10 +144,12 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 
 	if inscriptionTx != previousTxs[0] {
 		found := false
-		for _, input := range splitTxData.TxIn {
-			if inscriptionTx == input.PreviousOutPoint.Hash.String() {
-				found = true
-				break
+		if splitTxData != nil {
+			for _, input := range splitTxData.TxIn {
+				if inscriptionTx == input.PreviousOutPoint.Hash.String() {
+					found = true
+					break
+				}
 			}
 		}
 		if !found {
