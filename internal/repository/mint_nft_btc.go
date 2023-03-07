@@ -59,6 +59,7 @@ func (r Repository) ListMintNftBtcPending() ([]entity.MintNftBtc, error) {
 	filter := bson.M{
 		"status":     bson.M{"$in": []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms}},
 		"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())},
+		"isSubItem":  false, // only get parent items
 	}
 
 	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
@@ -72,6 +73,26 @@ func (r Repository) ListMintNftBtcPending() ([]entity.MintNftBtc, error) {
 
 	return resp, nil
 }
+
+func (r Repository) ListMintNftBtcToSendFundToMaster() ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"status":    bson.M{"$in": []entity.StatusMint{entity.StatusMint_SentNFTToUser}},
+		"isSubItem": false, // only get parent items
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) ListMintNftBtcByStatus(statuses []entity.StatusMint) ([]entity.MintNftBtc, error) {
 	resp := []entity.MintNftBtc{}
 	filter := bson.M{
@@ -172,4 +193,22 @@ func (r Repository) UpdateCancelMintNftBtc(uuid string) error {
 		return err
 	}
 	return err
+}
+
+func (r Repository) CountBatchRecordOfItems(parentRecord string) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"patch_parent_id": parentRecord, // only get child items
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

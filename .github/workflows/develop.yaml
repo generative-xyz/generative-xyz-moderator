@@ -2,7 +2,7 @@ name: Docker develop build
 
 on:
   push:
-    branches: [ "develop"]
+    branches: [ "develop", "develop_api"]
 
 jobs:
   build-and-push-to-gcr:
