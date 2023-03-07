@@ -417,7 +417,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	response.CopyEntityToRes(resp, input)
 	resp.MintPriceAddr = input.MintTokenAddress
 	resp.Limit = input.LimitSupply
-	resp.CreatorAddr = input.CreatorAddrr
+	resp.CreatorAddrr = input.CreatorAddrr
 	resp.Desc = input.Description
 	resp.ItemDesc = input.Description
 	resp.License = input.License
