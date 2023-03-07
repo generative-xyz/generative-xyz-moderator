@@ -1966,14 +1966,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}
-		category := &entity.Categories{}
-		if err := u.Repo.FindOneBy(ctx,
-			entity.Categories{}.TableName(),
-			bson.M{"name": "Ethereum"},
-			category); err != nil {
-			return err
-		}
-		reqBtcProject.Categories = []string{category.ID.Hex()}
+		reqBtcProject.Categories = []string{u.Config.EthereumCategoryID}
 		project, err = u.CreateBTCProject(reqBtcProject)
 		if err != nil {
 			return err
