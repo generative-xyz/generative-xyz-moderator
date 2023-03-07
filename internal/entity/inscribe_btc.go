@@ -46,6 +46,9 @@ type InscribeBTC struct {
 	IsAuthentic       bool        `bson:"is_authentic"`
 	OrdinalsTx        string      `bson:"ordinals_tx"`
 	OrdinalsTxStatus  uint64      `bson:"ordinals_tx_status"`
+	PayType string `bson:"pay_type"`
+	BTCRate float64 `bson:"btc_rate"`
+	ETHRate float64 `bson:"eth_rate"`
 }
 
 func (u InscribeBTC) TableName() string {
