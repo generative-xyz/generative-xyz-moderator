@@ -72,17 +72,16 @@ func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.User
 	return resp, nil
 }
 
-
 // This function find user by eth wallet_address. wallet_address_btc or wallet_address_taproot
 func (r Repository) FindUserByAddress(address string) (*entity.Users, error) {
 	resp := &entity.Users{}
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{
 		{
-			Key: "$or", 
+			Key: "$or",
 			Value: []bson.M{
 				{utils.KEY_WALLET_ADDRESS: address},
 				{utils.KEY_WALLET_ADDRESS_BTC: address},
-				{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: address},		
+				{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: address},
 			},
 		},
 	})
@@ -219,6 +218,8 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 		filter1["$or"] = []bson.M{
 			{"display_name": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 			{"wallet_address": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc_taproot": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 		}
 	}
 
