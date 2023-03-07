@@ -1942,28 +1942,32 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
+		user := &entity.Users{}
+		if err := u.Repo.FindOneBy(ctx, entity.Users{}.TableName(),
+			bson.M{"wallet_address": item.UserWalletAddress},
+			user); err != nil {
+			return err
+		}
 		reqBtcProject := structure.CreateBtcProjectReq{
-			Name:            item.TokenAddress,
+			Name:            nft.Name,
 			MaxSupply:       1,
-			CreatorAddrr:    item.UserWalletAddress,
+			CreatorName:     user.DisplayName,
+			CreatorAddrr:    user.WalletAddress,
 			CreatorAddrrBTC: item.OriginUserAddress,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
+			OwnerOf:         item.OwnerOf,
+			OrdinalsTx:      item.OrdinalsTx,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
 			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
-				reqBtcProject.Description = metadata.Description
 				reqBtcProject.Thumbnail = metadata.Image
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}
-		category := &entity.Categories{}
-		if err := u.Repo.FindOneBy(ctx, entity.Categories{}.TableName(), bson.M{"name": "Ethereum"}, category); err != nil {
-			return err
-		}
-		reqBtcProject.Categories = []string{category.ID.Hex()}
+		reqBtcProject.Categories = []string{u.Config.EthereumCategoryID}
 		project, err = u.CreateBTCProject(reqBtcProject)
 		if err != nil {
 			return err
