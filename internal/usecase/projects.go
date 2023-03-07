@@ -1942,28 +1942,28 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
-		user := &entity.Users{}
+		creator := &entity.Users{}
 		if err := u.Repo.FindOneBy(ctx, entity.Users{}.TableName(),
-			bson.M{"wallet_address": item.UserWalletAddress},
-			user); err != nil {
+			bson.M{"wallet_address": "0x1111111111111111111111111111111111111111"},
+			creator); err != nil {
 			return err
 		}
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
-			CreatorName:     user.DisplayName,
-			CreatorAddrr:    user.WalletAddress,
+			CreatorName:     creator.DisplayName,
+			CreatorAddrr:    creator.WalletAddress,
 			CreatorAddrrBTC: item.OriginUserAddress,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
+			Thumbnail:       item.FileURI,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
 			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
-				reqBtcProject.Thumbnail = metadata.Image
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}

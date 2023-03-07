@@ -116,7 +116,7 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 					for _, output := range outputs {
 						totalValue += output.Value
 					}
-					if totalValue >= royaltyFeeExpected {
+					if totalValue < royaltyFeeExpected {
 						return nil, fmt.Errorf("expected royalty fees of artist %v to be %v, got %v", artistAddress, royaltyFeeExpected, totalValue)
 					}
 				}
@@ -128,12 +128,6 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	if err != nil {
 		return nil, err
 	}
-
-	// _, bs, err := u.buildBTCClient()
-	// if err != nil {
-	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-	// 	return err
-	// }
 
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
@@ -150,20 +144,25 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 
 	if inscriptionTx != previousTxs[0] {
 		found := false
-		for _, input := range splitTxData.TxIn {
-			if inscriptionTx == input.PreviousOutPoint.Hash.String() {
-				found = true
-				break
+		if splitTxData != nil {
+			for _, input := range splitTxData.TxIn {
+				if inscriptionTx == input.PreviousOutPoint.Hash.String() {
+					found = true
+					break
+				}
 			}
 		}
 		if !found {
 			return nil, errors.New("can't found inscription in split tx")
 		}
 	}
-	_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
-	if err != nil {
-		fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
-		return nil, err
+	if split_tx != "" {
+		_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		if err != nil {
+			fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+			return nil, err
+		}
+
 	}
 
 	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
@@ -206,21 +205,6 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 			log.Printf("JobWatchPendingDexBTCListing strconv.Atoi(inscriptionTx[1]) %v\n", order.Inputs)
 			continue
 		}
-		if !order.Verified {
-			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
-			if err != nil {
-				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
-				continue
-			}
-			if txDetail.Result.Confirmations > 0 {
-				order.Verified = true
-				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
-				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
-					continue
-				}
-			}
-		}
 		if order.CancelTx == "" {
 			spentTx := ""
 			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
@@ -252,10 +236,9 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 
 				txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v\n", order.Inputs)
-					continue
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
 				}
-				output := *&txDetail.Result.Vout[0]
+				output := txDetail.Result.Vout[0]
 				order.Buyer = output.ScriptPubKey.Address
 
 				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
@@ -264,7 +247,7 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 					continue
 				}
 				// Discord Notify NEW SALE
-				buyerAddress := ""
+				buyerAddress := order.Buyer
 				go u.NotifyNewSale(order, buyerAddress)
 			}
 		} else {
@@ -288,6 +271,21 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
 				continue
+			}
+		}
+		if !order.Verified {
+			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
+			if err != nil {
+				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
+			} else {
+				if txDetail.Result.Confirmations > 0 {
+					order.Verified = true
+					_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+						continue
+					}
+				}
 			}
 		}
 	}
