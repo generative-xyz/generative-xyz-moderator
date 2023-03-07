@@ -24,7 +24,7 @@ type ProjectResp struct {
 	NetworkFeeEth             string           `json:"networkFeeEth"`
 	MintPriceAddr             string           `json:"mintPriceAddr"`
 	Name                      string           `json:"name"`
-	CreatorAddr               string           `json:"creatorAddr"`
+	CreatorAddrr              string           `json:"creatorAddr"`
 	CreatorAddrrBTC           string           `json:"creatorAddrrBTC"`
 	Categories                []string         `json:"categories"`
 	License                   string           `json:"license"`
@@ -61,7 +61,7 @@ type ProjectResp struct {
 	CaptureThumbnailDelayTime int              `json:"captureThumbnailDelayTime"`
 	FromAuthentic             bool             `json:"fromAuthentic"`
 	TokenAddress              string           `json:"tokenAddress"`
-	TokenId                   string           `json:"nftTokenId"`
+	TokenId                   string           `json:"tokenId"`
 	OwnerOf                   string           `json:"ownerOf"`
 }
 
