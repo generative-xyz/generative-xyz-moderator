@@ -106,6 +106,7 @@ type Projects struct {
 	TokenAddress             string             `bson:"tokenAddress"`
 	TokenId                  string             `bson:"tokenId"`
 	OwnerOf                  string             `bson:"ownerOf"`
+	OrdinalsTx               string             `bson:"ordinalsTx"`
 }
 
 type ReportProject struct {
