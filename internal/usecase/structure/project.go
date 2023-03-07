@@ -62,6 +62,8 @@ type CreateBtcProjectReq struct {
 	FromAuthentic          bool     `json:"fromAuthentic"`
 	TokenAddress           string   `json:"tokenAddress"`
 	TokenId                string   `json:"tokenId"`
+	OwnerOf                string   `json:"ownerOf"`
+	OrdinalsTx             string   `bson:"ordinalsTx"`
 }
 
 type UpdateBTCProjectReq struct {
