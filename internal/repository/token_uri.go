@@ -102,6 +102,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
+		filter.Sort = entity.SORT_DESC
 	}
 
 	if len(filter.Ids) != 0 {
