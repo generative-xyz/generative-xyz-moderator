@@ -1,5 +1,7 @@
 # rendering-hub
 
+#go
+
 ## How to run
 ```
 make run-server
