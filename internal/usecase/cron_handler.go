@@ -614,7 +614,7 @@ func (u Usecase) SyncProjectsStats() error {
 	return nil
 }
 
-func (u Usecase) SyncTokenInscribeIndex() error {
+func (u Usecase) JobSyncTokenInscribeIndex() error {
 	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
 	if err != nil {
 		return err
@@ -652,16 +652,16 @@ const (
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
-func (u Usecase) SyncProjectTrending() error {
-	u.Logger.Info("SyncProjectTrending.StartSyncProjectTrending")
+func (u Usecase) JobSyncProjectTrending() error {
+	u.Logger.Info("JobSyncProjectTrending.StartJobSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
-		u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
+		u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
 		return err
 	}
 
-	u.Logger.Info("SyncProjectTrending.DoneGetBtcActivities", zap.Any("act_len", len(btcActivites)))
+	u.Logger.Info("JobSyncProjectTrending.DoneGetBtcActivities", zap.Any("act_len", len(btcActivites)))
 
 	// Mapping from projectID to latest 24h's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
@@ -678,15 +678,15 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
-		u.Logger.Info("SyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
+		u.Logger.Info("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
+			u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
 		uProjects := resp.Result
 		projects := uProjects.([]entity.Projects)
-		u.Logger.Info("SyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
+		u.Logger.Info("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
 		if len(projects) == 0 {
 			break
 		}
@@ -736,7 +736,7 @@ func (u Usecase) SyncProjectTrending() error {
 			}
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
-			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
+			u.Logger.Info("JobSyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
 			if processed%30 == 0 {
 				time.Sleep(time.Second / 2)
 			}
@@ -746,11 +746,11 @@ func (u Usecase) SyncProjectTrending() error {
 	return nil
 }
 
-func (u Usecase) DeleteOldActivities() error {
-	u.Logger.Info("DeleteOldActivities.Start")
-	err := u.Repo.DeleteOldActivities()
+func (u Usecase) JobDeleteOldActivities() error {
+	u.Logger.Info("JobDeleteOldActivities.Start")
+	err := u.Repo.JobDeleteOldActivities()
 	if err != nil {
-		return errors.Wrap(err, "u.Repo.DeleteOldActivities")
+		return errors.Wrap(err, "u.Repo.JobDeleteOldActivities")
 	}
 	return nil
 }

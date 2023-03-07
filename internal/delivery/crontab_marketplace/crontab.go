@@ -70,7 +70,7 @@ func (h ScronMarketplaceHandler) StartServer() {
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.JobMKP_CrawlToUpdateNftInfo()
+			h.Usecase.JobCrawlToUpdateNftInfo()
 		}(&wg)
 
 		h.Logger.Info("MaketPlace.wait", "wait")

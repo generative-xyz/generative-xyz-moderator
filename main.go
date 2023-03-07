@@ -312,5 +312,4 @@ func startServer() {
 	tracer.Stop()
 	os.Exit(0)
 
-	//uc.AggregateVolumns()
 }
