@@ -1958,6 +1958,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
 			OwnerOf:         item.OwnerOf,
+			OrdinalsTx:      item.OrdinalsTx,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
