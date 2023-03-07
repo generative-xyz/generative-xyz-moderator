@@ -1945,8 +1945,6 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            item.TokenAddress,
 			MaxSupply:       1,
-			MintPrice:       "0",
-			CreatorName:     "",
 			CreatorAddrr:    item.UserWalletAddress,
 			CreatorAddrrBTC: item.OriginUserAddress,
 			FromAuthentic:   true,
