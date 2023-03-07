@@ -125,6 +125,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	fmt.Println("feeInfos: ", feeInfos)
+
 	walletAddress.ProjectNetworkFee = int(feeInfos["btc"].NetworkFeeBigInt.Int64()) // btc value
 	walletAddress.ProjectMintPrice = int(feeInfos["btc"].NetworkFeeBigInt.Int64())  // btc value
 
@@ -1341,14 +1343,20 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 	totalAmountToMint = totalAmountToMint.Add(mintPrice, netWorkFee) // mintPrice, netWorkFee
 
 	listMintFeeInfo["btc"] = entity.MintFeeInfo{
-		MintPrice:  mintPrice.String(),
-		NetworkFee: netWorkFee.String(),
 
-		TotalAmount: totalAmountToMint.String(),
-
+		MintPrice:   mintPrice.String(),
 		MintFee:     feeMintNft.String(),
+		NetworkFee:  netWorkFee.String(),
+		TotalAmount: totalAmountToMint.String(),
 		SendNftFee:  feeSendNft.String(),
 		SendFundFee: feeSendFund.String(),
+
+		MintPriceBigInt:   mintPrice,
+		MintFeeBigInt:     feeMintNft,
+		SendNftFeeBigInt:  feeSendNft,
+		SendFundFeeBigInt: feeSendFund,
+		NetworkFeeBigInt:  netWorkFee,
+		TotalAmountBigInt: totalAmountToMint,
 
 		EthPrice: ethRate,
 		BtcPrice: btcRate,
@@ -1408,14 +1416,19 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 	totalAmountToMint = totalAmountToMint.Add(mintPrice, netWorkFee) // mintPrice, netWorkFee
 
 	listMintFeeInfo["eth"] = entity.MintFeeInfo{
-		MintPrice:  mintPrice.String(),
-		NetworkFee: netWorkFee.String(),
-
-		TotalAmount: totalAmountToMint.String(),
-
+		MintPrice:   mintPrice.String(),
 		MintFee:     feeMintNft.String(),
+		NetworkFee:  netWorkFee.String(),
+		TotalAmount: totalAmountToMint.String(),
 		SendNftFee:  feeSendNft.String(),
 		SendFundFee: feeSendFund.String(),
+
+		MintPriceBigInt:   mintPrice,
+		MintFeeBigInt:     feeMintNft,
+		SendNftFeeBigInt:  feeSendNft,
+		SendFundFeeBigInt: feeSendFund,
+		NetworkFeeBigInt:  netWorkFee,
+		TotalAmountBigInt: totalAmountToMint,
 
 		EthPrice: ethRate,
 		BtcPrice: btcRate,
