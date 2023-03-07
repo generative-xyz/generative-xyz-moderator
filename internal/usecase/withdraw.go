@@ -36,6 +36,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	
 	wdf := &entity.FilterWithdraw{
 		WalletAddress: &walletAddress,
+		WithdrawItemID: &wr.ID,
 		PaymentType: &wr.PaymentType,
 		Statuses: []int{
 			entity.StatusWithdraw_Pending,
@@ -57,31 +58,32 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	
 	f.PayType = wr.PaymentType
 	u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress))
-	volumes, _ := u.GetEarningOfUser(walletAddress, &f.PayType)
+	volumes, _ := u.GetVolumeOfProject(wr.ID, &f.PayType)
 	
-	fr := entity.FilterReferrals{
-		ReferrerAddress: &walletAddress,
-	}
+	// fr := entity.FilterReferrals{
+	// 	ReferrerAddress: &walletAddress,
+	// }
 	
-	refs, _ := u.Repo.GetReferral(fr)
-	if len(refs) > 0 {
-		for _, ref := range refs {
-			tmp, err := strconv.ParseFloat(ref.ReferreeVolumn[wr.PaymentType].Amount, 10)
-			if err == nil {
-				refAmount +=   tmp
-			}
-		}
-	}
+	// refs, _ := u.Repo.GetReferral(fr)
+	// if len(refs) > 0 {
+	// 	for _, ref := range refs {
+	// 		tmp, err := strconv.ParseFloat(ref.ReferreeVolumn[wr.PaymentType].Amount, 10)
+	// 		if err == nil {
+	// 			refAmount +=   tmp
+	// 		}
+	// 	}
+	// }
 
 	u.Logger.LogAny("CreateWithdraw.volumes", zap.String("walletAddress", walletAddress), zap.Any("volumes", volumes))
 	//check referal amount
 	if volumes == nil {
 		volumeAmount = 0
 	}else{
-		volumeAmount = volumes.Amount
+		volumeAmount = volumes.Earning
 	}
 	
-	totalEarnings := refAmount + volumeAmount
+	//totalEarnings := refAmount + volumeAmount
+	totalEarnings := volumeAmount
 	availableBalance := totalEarnings - widthDrawAmount
 	if availableBalance <= 0 {
 		err = errors.New("Not enough balance")
