@@ -100,7 +100,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		for _, output := range result.Txrefs {
 			voutStr := fmt.Sprintf("%v:%v", output.TxHash, output.TxOutputN)
 			if _, ok := pendingUTXO[voutStr]; !ok {
-				newTxrefsFiltered = append(newTxrefs, output)
+				newTxrefsFiltered = append(newTxrefsFiltered, output)
 			}
 		}
 		result.Txrefs = newTxrefsFiltered
