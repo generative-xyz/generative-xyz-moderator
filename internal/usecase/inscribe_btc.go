@@ -201,6 +201,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
+	walletAddress.UserWalletAddress = input.UserWallerAddress
 	if input.NeedVerifyAuthentic() {
 		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
@@ -224,6 +225,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			walletAddress.IsAuthentic = true
 			walletAddress.TokenAddress = nft.TokenAddress
 			walletAddress.TokenId = nft.TokenID
+			walletAddress.OwnerOf = nft.Owner
 		}
 	}
 
@@ -922,5 +924,11 @@ func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv 
 	item.OrdinalsTx = txId
 	item.OrdinalsTxStatus = status
 	_, err = u.Repo.UpdateBtcInscribe(&item)
-	return err
+	if err != nil {
+		return err
+	}
+	if err := u.CreateProjectsAndTokenUriFromInscribeAuthentic(ctx, item); err != nil {
+		return err
+	}
+	return nil
 }
