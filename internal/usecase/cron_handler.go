@@ -667,7 +667,13 @@ func (u Usecase) SyncProjectTrending() error {
 	// Mapping from projectID to latest 24h's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
 	for _, btcActivity := range btcActivites {
-		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
+		var value int64
+		if btcActivity.Value > 1000000000 { // this is ETH value
+			value = int64(float64(btcActivity.Value) * 0.07 / 1e10) // convert from wei to satoshi
+		} else {
+			value = btcActivity.Value
+		}
+		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += value
 	}
 
 	fromProjectIDToCountListing := map[string]int64{}
@@ -730,7 +736,7 @@ func (u Usecase) SyncProjectTrending() error {
 				countView = *_countView
 			}
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
-			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+			volumnInBtc := float64(volumnInSatoshi) / float64(SATOSHI_EACH_BTC)
 			numActivity := int64(len(btcActivites))
 
 			numListings := fromProjectIDToCountListing[project.TokenID]
@@ -739,7 +745,9 @@ func (u Usecase) SyncProjectTrending() error {
 				numActivity = 0
 				volumnInBtc = 0
 			}
-			trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
+			trendingScore := countView * TRENDING_SCORE_EACH_VIEW 
+			trendingScore += int64(volumnInBtc * float64(TRENDING_SCORE_EACH_BTC_VOLUMN))
+			trendingScore += numActivity * TRENDING_SCORE_EACH_MINT
 			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
 			if project.MintingInfo.Index == project.MaxSupply {
 				if numListings == 0 {
