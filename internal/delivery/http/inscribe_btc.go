@@ -32,8 +32,6 @@ import (
 func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
-			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
-			userWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			var reqBody request.CreateInscribeBtcReq
 			err := json.NewDecoder(r.Body).Decode(&reqBody)
 			if err != nil {
@@ -64,10 +62,19 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 			if len(reqUsecase.File) == 0 {
 				return nil, errors.New("file is invalid")
 			}
-			reqUsecase.SetFields(
-				reqUsecase.WithUserUuid(userUuid),
-				reqUsecase.WithUserWallerAddress(userWalletAddress),
-			)
+
+			userUuid, ok := ctx.Value(utils.SIGNED_USER_ID).(string)
+			if ok {
+				reqUsecase.SetFields(
+					reqUsecase.WithUserUuid(userUuid),
+				)
+			}
+			userWalletAddress, ok := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			if ok {
+				reqUsecase.SetFields(
+					reqUsecase.WithUserWallerAddress(userWalletAddress),
+				)
+			}
 			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
 			if err != nil {
 				logger.AtLog.Logger.Error("CreateInscribeBTC failed",
@@ -109,15 +116,19 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 func (h *httpDelivery) btcListInscribeBTC(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			userUuid := ctx.Value(utils.SIGNED_USER_ID).(string)
 			page := entity.GetPagination(r)
 			req := &entity.FilterInscribeBT{
 				BaseFilters: entity.BaseFilters{
 					Limit: page.PageSize,
 					Page:  page.Page,
 				},
-				UserUuid: &userUuid,
-				Expired:  true,
+				Expired: true,
+			}
+			userUuid, ok := ctx.Value(utils.SIGNED_USER_ID).(string)
+			if ok {
+				req.UserUuid = &userUuid
+			} else {
+				return nil, errors.New("access-token is required")
 			}
 			return h.Usecase.ListInscribeBTC(req)
 		},
