@@ -153,13 +153,13 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				<-waitChan
 			}()
 			lock.Lock()
-			if _, ok := result[output]; ok {
+			if _, ok := result[op]; ok {
 				lock.Unlock()
 				return
 			}
 			lock.Unlock()
 
-			inscriptions, err := getInscriptionByOutput(ordServer, output)
+			inscriptions, err := getInscriptionByOutput(ordServer, op)
 			if err != nil {
 				return
 			}
@@ -202,8 +202,8 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						}
 					}
 					lock.Lock()
-					result[output] = append(result[output], inscWalletInfo)
-					outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+					result[op] = append(result[op], inscWalletInfo)
+					outputInscMap[op] = append(outputInscMap[op], inscWalletByOutput)
 					lock.Unlock()
 				}
 			}
