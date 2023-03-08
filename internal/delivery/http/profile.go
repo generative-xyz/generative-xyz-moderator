@@ -168,6 +168,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /profile/projects [GET]
 func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
+
 	var err error
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
@@ -177,6 +178,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
+	// TODO: 0x2525
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
@@ -271,7 +273,6 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/withdraw [POST]
 func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
-
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)

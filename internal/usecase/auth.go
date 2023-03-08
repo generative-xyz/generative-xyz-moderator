@@ -96,7 +96,6 @@ func (u Usecase) VerifyMessageUpdate(data structure.VerifyMessage) (*structure.V
 	signature := data.Signature
 	u.Logger.Info("wallet_address", btcSegwitAddr)
 
-	// TODO: find user by btc segwit
 	user, err := u.Repo.FindUserByBtcAddress(btcSegwitAddr)
 	if err != nil {
 		u.Logger.Error(err)
@@ -233,7 +232,6 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	signature := data.Signature
 	u.Logger.Info("wallet_address", addrr)
 
-	// TODO: find user by btc segwit
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
 	if err != nil {
 		u.Logger.Error(err)
