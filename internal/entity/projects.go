@@ -108,6 +108,7 @@ type Projects struct {
 	OwnerOf                  string             `bson:"ownerOf"`
 	OrdinalsTx               string             `bson:"ordinalsTx"`
 	InscribedBy              string             `bson:"inscribedBy"`
+	HtmlFile                 string             `bson:"htmlFile"`
 }
 
 type ReportProject struct {
