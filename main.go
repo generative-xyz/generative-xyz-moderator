@@ -17,19 +17,9 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery"
-	"rederinghub.io/internal/delivery/crontab"
-	"rederinghub.io/internal/delivery/crontab_btc"
-	developer_inscribe_btc "rederinghub.io/internal/delivery/crontab_developer_inscribe_btc"
-	dex_btc_cron "rederinghub.io/internal/delivery/crontab_dex_btc"
-	incribe_btc "rederinghub.io/internal/delivery/crontab_incribe_btc"
-	"rederinghub.io/internal/delivery/crontab_inscription_info"
-	"rederinghub.io/internal/delivery/crontab_marketplace"
-	mint_nft_btc "rederinghub.io/internal/delivery/crontab_mint_nft_btc"
+	"rederinghub.io/internal/delivery/crontabManager"
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
-	"rederinghub.io/internal/delivery/crontab_trending"
 	httpHandler "rederinghub.io/internal/delivery/http"
-	"rederinghub.io/internal/delivery/pubsub"
-	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -181,89 +171,95 @@ func startServer() {
 		return
 	}
 
-	h, _ := httpHandler.NewHandler(&g, *uc)
-	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-	cron := crontab.NewScronHandler(&g, *uc)
-	btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-	mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-	inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
-
-	mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
-
-	developerInscribeCron := developer_inscribe_btc.NewScronDeveloperInscribeHandler(&g, *uc)
-
-	trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-	inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
-	dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
-
-	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-
 	servers := make(map[string]delivery.AddedServer)
+
+	// api fixed run:
+	h, _ := httpHandler.NewHandler(&g, *uc)
 	servers["http"] = delivery.AddedServer{
 		Server:  h,
 		Enabled: conf.StartHTTP,
 	}
 
-	servers["txconsumer"] = delivery.AddedServer{
-		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
-	}
-
-	servers["crontab"] = delivery.AddedServer{
-		Server:  cron,
-		Enabled: conf.Crontab.Enabled,
-	}
-
-	servers["btc_crontab"] = delivery.AddedServer{
-		Server:  btcCron,
-		Enabled: conf.Crontab.BTCEnabled,
-	}
-
-	servers["btc_crontab_v2"] = delivery.AddedServer{
-		Server:  inscribeCron,
-		Enabled: conf.Crontab.BTCV2Enabled,
-	}
-
-	servers["mint_nft_btc"] = delivery.AddedServer{
-		Server:  mintNftBtcCron,
-		Enabled: conf.Crontab.MintNftBtcEnabled,
-	}
-
-	servers["developer_inscribe"] = delivery.AddedServer{
-		Server:  developerInscribeCron,
-		Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
-	}
-
-	servers["marketplace_crontab"] = delivery.AddedServer{
-		Server:  mkCron,
-		Enabled: conf.Crontab.MarketPlaceEnabled,
-	}
-
-	servers["trending_crontab"] = delivery.AddedServer{
-		Server:  trendingCron,
-		Enabled: conf.Crontab.TrendingEnabled,
-	}
-
+	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
+	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
-	servers["inscription_index_crontab"] = delivery.AddedServer{
-		Server:  inscriptionIndexCron,
-		Enabled: conf.Crontab.InscriptionIndexEnabled,
-	}
+	// job init:
+	/*
+			txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+			cron := crontab.NewScronHandler(&g, *uc)
+			btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
+			mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
+			inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
+			mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
+			trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
+			ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
+			inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
+			dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
 
-	servers["dex_btc_cron"] = delivery.AddedServer{
-		Server:  dexBTCCron,
-		Enabled: conf.Crontab.DexBTCEnabled,
-	}
+		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
 
-	servers["pubsub"] = delivery.AddedServer{
-		Server:  ph,
-		Enabled: conf.StartPubsub,
-	}
+			servers["developer_inscribe"] = delivery.AddedServer{
+				Server:  developerInscribeCron,
+				Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
+			}
+
+			servers["txconsumer"] = delivery.AddedServer{
+				Server:  txConsumer,
+				Enabled: conf.TxConsumerConfig.Enabled,
+			}
+
+			servers["crontab"] = delivery.AddedServer{
+				Server:  cron,
+				Enabled: conf.Crontab.Enabled,
+			}
+
+			servers["btc_crontab"] = delivery.AddedServer{
+				Server:  btcCron,
+				Enabled: conf.Crontab.BTCEnabled,
+			}
+
+			servers["btc_crontab_v2"] = delivery.AddedServer{
+				Server:  inscribeCron,
+				Enabled: conf.Crontab.BTCV2Enabled,
+			}
+
+			servers["mint_nft_btc"] = delivery.AddedServer{
+				Server:  mintNftBtcCron,
+				Enabled: conf.Crontab.MintNftBtcEnabled,
+			}
+
+			servers["marketplace_crontab"] = delivery.AddedServer{
+				Server:  mkCron,
+				Enabled: conf.Crontab.MarketPlaceEnabled,
+			}
+
+			servers["trending_crontab"] = delivery.AddedServer{
+				Server:  trendingCron,
+				Enabled: conf.Crontab.TrendingEnabled,
+			}
+
+			servers["ordinal_collections_crontab"] = delivery.AddedServer{
+				Server:  ordinalCron,
+				Enabled: conf.Crontab.OrdinalCollectionEnabled,
+			}
+			servers["inscription_index_crontab"] = delivery.AddedServer{
+				Server:  inscriptionIndexCron,
+				Enabled: conf.Crontab.InscriptionIndexEnabled,
+			}
+
+			servers["dex_btc_cron"] = delivery.AddedServer{
+				Server:  dexBTCCron,
+				Enabled: conf.Crontab.DexBTCEnabled,
+			}
+			servers["pubsub"] = delivery.AddedServer{
+			Server:  ph,
+			Enabled: conf.StartPubsub,
+		}
+	*/
 
 	//var wait time.Duration
 	c := make(chan os.Signal, 1)
@@ -274,8 +270,8 @@ func startServer() {
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
-	// Run our server in a goroutine so that it doesn't block.
 
+	// Run our server in a goroutine so that it doesn't block.
 	for name, server := range servers {
 		if server.Enabled {
 			if server.Server != nil {
@@ -285,6 +281,15 @@ func startServer() {
 		} else {
 			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
+	}
+
+	// start a group cron:
+	if len(conf.CronTabList) > 0 {
+		for _, cronKey := range conf.CronTabList {
+			h.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
+			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
+		}
+
 	}
 
 	// Block until we receive our signal.
@@ -307,5 +312,4 @@ func startServer() {
 	tracer.Stop()
 	os.Exit(0)
 
-	//uc.AggregateVolumns()
 }

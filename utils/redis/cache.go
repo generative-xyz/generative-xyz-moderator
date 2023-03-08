@@ -72,7 +72,7 @@ func (r *redisCache) SetData(key string, value interface{}) error {
 		return err
 	}
 
-	err = r.client.Set(key, valueByte, time.Duration(utils.REDIS_CACHE_EXPIRED_TIME)).Err()
+	err = r.client.Set(key, valueByte, time.Second * time.Duration(utils.REDIS_CACHE_EXPIRED_TIME)).Err()
 	if err != nil {
 		return err
 	}

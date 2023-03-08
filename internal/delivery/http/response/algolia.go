@@ -19,6 +19,8 @@ type SearhcInscription struct {
 	GenesisFee    int64  `json:"genesisFee"`
 	GenesisHeight int64  `json:"genesisHeight"`
 	Timestamp     string `json:"timestamp"`
+
+	Owner *ArtistResponse `json:"owner"`
 }
 
 type SearchArtist struct {

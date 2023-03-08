@@ -62,7 +62,6 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 			if len(reqUsecase.File) == 0 {
 				return nil, errors.New("file is invalid")
 			}
-
 			userUuid, ok := ctx.Value(utils.SIGNED_USER_ID).(string)
 			if ok {
 				reqUsecase.SetFields(
@@ -79,7 +78,9 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 					reqUsecase.WithUserWallerAddress(userWalletAddress),
 				)
 			}
-
+			if reqUsecase.InvalidAuthentic() {
+				return nil, errors.New("Access token is required")
+			}
 			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
 			if err != nil {
 				logger.AtLog.Logger.Error("CreateInscribeBTC failed",
