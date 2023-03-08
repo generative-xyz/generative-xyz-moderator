@@ -647,8 +647,9 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 const (
 	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC               int64 = 100000000
-	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 100000
-	TRENDING_SCORE_EACH_MINT       int64 = 1000
+	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000000
+	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 5000
+	TRENDING_SCORE_EACH_MINT       int64 = 10
 	TRENDING_SCORE_EACH_VIEW       int64 = 1
 )
 
@@ -666,7 +667,41 @@ func (u Usecase) SyncProjectTrending() error {
 	// Mapping from projectID to latest 24h's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
 	for _, btcActivity := range btcActivites {
-		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += btcActivity.Value
+		var value int64
+		if btcActivity.Value > 1000000000 { // this is ETH value
+			value = int64(float64(btcActivity.Value) * 0.07 / 1e10) // convert from wei to satoshi
+		} else {
+			value = btcActivity.Value
+		}
+		fromProjectIDToRecentVolumn[btcActivity.ProjectID] += value
+	}
+
+	fromProjectIDToCountListing := map[string]int64{}
+
+	for page := int64(1);; page++ {
+		u.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
+		listings, err := u.Repo.GetDexBtcsAlongWithProjectInfo(entity.GetDexBtcListingWithProjectInfoReq{
+			Page: page,
+			Limit: 100,
+		})
+		if err != nil {
+			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetListings", zap.Any("page", page), zap.Error(err))
+			break
+		}
+		u.Logger.Info("SyncProjectTrending.DoneGetpagingListings", zap.Any("page", page), zap.Any("listing_count", len(listings)))
+		if len(listings) == 0 {
+			break
+		}
+		for _, listing := range listings {
+			if len(listing.ProjectInfo) == 0 {
+				continue
+			}
+			if listing.Cancelled == true {
+				continue
+			}
+			projectId := listing.ProjectInfo[0].ProjectID
+			fromProjectIDToCountListing[projectId]++
+		}
 	}
 
 	var processed int64
@@ -701,16 +736,25 @@ func (u Usecase) SyncProjectTrending() error {
 				countView = *_countView
 			}
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
-			volumnInBtc := volumnInSatoshi / SATOSHI_EACH_BTC
+			volumnInBtc := float64(volumnInSatoshi) / float64(SATOSHI_EACH_BTC)
 			numActivity := int64(len(btcActivites))
 
-			if project.MintingInfo.Index == project.MaxSupply {
+			numListings := fromProjectIDToCountListing[project.TokenID]
+			
+			if project.MintingInfo.Index == project.MaxSupply && numListings == 0 {
 				numActivity = 0
 				volumnInBtc = 0
 			}
-			trendingScore := countView*TRENDING_SCORE_EACH_VIEW + volumnInBtc*TRENDING_SCORE_EACH_BTC_VOLUMN + numActivity*TRENDING_SCORE_EACH_MINT
+			trendingScore := countView * TRENDING_SCORE_EACH_VIEW 
+			trendingScore += int64(volumnInBtc * float64(TRENDING_SCORE_EACH_BTC_VOLUMN))
+			trendingScore += numActivity * TRENDING_SCORE_EACH_MINT
+			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
 			if project.MintingInfo.Index == project.MaxSupply {
-				trendingScore /= 10
+				if numListings == 0 {
+					trendingScore /= 5
+				} else {
+					trendingScore *= 2
+				}
 			}
 			isWhitelistedProject := false
 			isBoostedProject := false
@@ -737,8 +781,8 @@ func (u Usecase) SyncProjectTrending() error {
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
 			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
-			if processed%30 == 0 {
-				time.Sleep(time.Second / 2)
+			if numListings != 0 {
+				u.Logger.Info("SyncProjectTrending.ProjectHasListing", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("numListings", numListings))
 			}
 		}
 	}
