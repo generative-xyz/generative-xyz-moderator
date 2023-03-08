@@ -83,6 +83,17 @@ type TokenUri struct {
 	Source                         string        `bson:"source" json:"source"`
 }
 
+type AggregateTokenUriTraits struct {
+	AggregateTokenUriTraitsID `bson:"_id"`
+	ParsedAttributes    []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
+	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
+}
+
+type AggregateTokenUriTraitsID struct {
+	ProjectID string `bson:"project_id"`
+	TokenID string `bson:"token_id"`
+}
+
 type TokenUriAttr struct {
 	TraitType string      `bson:"trait_type" json:"trait_type"`
 	Value     interface{} `bson:"value" json:"value"`

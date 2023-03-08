@@ -304,3 +304,17 @@ func CalculateVolumEarning(amount float64, percent int32) (string, string) {
 	generativeEarning :=  amount - artist1Earning
 	return fmt.Sprintf("%d",int(artist1Earning)), fmt.Sprintf("%d",int(generativeEarning))
 }
+
+func FileExtension(fileName string) string {
+	str := strings.Split(fileName, "/")
+	last := ""
+	if len(str) > 0 {
+		last = str[len(str) - 1]
+	}
+
+	lastArr := strings.Split(last, ".")
+	if len(lastArr) > 0 {
+		last = lastArr[len(lastArr) - 1]
+	}
+	return last
+}

@@ -11,8 +11,12 @@ type InscribeBtcReceiveAddrRespReq struct {
 	TokenAddress      string `json:"tokenAddress"`
 	TokenId           string `json:"tokenId"`
 	DeveloperKeyUuid  string
+	PayType           string
 }
 
+func (s InscribeBtcReceiveAddrRespReq) InvalidAuthentic() bool {
+	return s.TokenAddress != "" && s.TokenId != "" && s.UserWallerAddress == ""
+}
 func (s InscribeBtcReceiveAddrRespReq) NeedVerifyAuthentic() bool {
 	return s.TokenAddress != "" && s.TokenId != ""
 }

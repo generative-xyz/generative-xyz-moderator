@@ -91,6 +91,7 @@ const (
 	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
+	COLLECTION_TOKEN_URI_METADATA      string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
