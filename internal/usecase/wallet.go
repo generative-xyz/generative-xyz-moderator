@@ -256,6 +256,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 		// }
 		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
+	wg.Wait()
 	// if len(outputSatRanges) != len(outputs) {
 	// 	return nil, nil, nil, errors.New("")
 	// }
