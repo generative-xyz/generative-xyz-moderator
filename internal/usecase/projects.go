@@ -1999,7 +1999,8 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 	}
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT)
+
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId)
 	if err != nil {
 		return err
 	}
