@@ -65,6 +65,7 @@ type ProjectResp struct {
 	OwnerOf                   string           `json:"ownerOf"`
 	OrdinalsTx                string           `json:"ordinalsTx"`
 	InscribedBy               string           `json:"inscribedBy"`
+	HtmlFile                  string           `json:"htmlFile"`
 }
 
 type ReportProject struct {
