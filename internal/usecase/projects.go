@@ -790,6 +790,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 			p.CatureThumbnailDelayTime = req.CaptureImageTime
 		}
 	}
+	
+	if req.LimitMintPerProcess != nil  {
+		if p.LimitMintPerProcess != *req.LimitMintPerProcess {
+			p.LimitMintPerProcess = *req.LimitMintPerProcess
+		}
+	}
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {

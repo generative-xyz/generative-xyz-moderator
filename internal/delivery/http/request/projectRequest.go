@@ -39,20 +39,22 @@ type CreateBTCProjectReq struct {
 	AnimationURL           *string  `json:"animationURL"`
 	Royalty                int      `json:"royalty"`
 	IsFullChain            bool     `json:"isFullChain"`
-	CaptureImageTime            *int     `json:"captureImageTime"`
+	CaptureImageTime       *int     `json:"captureImageTime"`
+	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectReq struct {
-	ProjectID   *string  `json:"projectID"`
-	Name        *string  `json:"name"`
-	Description *string  `json:"description"`
-	Thumbnail   *string  `json:"thumbnail"`
-	IsHidden    *bool    `json:"isHidden"`
-	Royalty     *int64   `json:"royalty"`
-	MintPrice   *string  `json:"mintPrice"`
-	MaxSupply   *int64   `json:"maxSupply"`
-	Categories  []string `json:"categories"`
-	CaptureImageTime            *int     `json:"captureImageTime"`
+	ProjectID           *string  `json:"projectID"`
+	Name                *string  `json:"name"`
+	Description         *string  `json:"description"`
+	Thumbnail           *string  `json:"thumbnail"`
+	IsHidden            *bool    `json:"isHidden"`
+	Royalty             *int64   `json:"royalty"`
+	MintPrice           *string  `json:"mintPrice"`
+	MaxSupply           *int64   `json:"maxSupply"`
+	Categories          []string `json:"categories"`
+	CaptureImageTime    *int     `json:"captureImageTime"`
+	LimitMintPerProcess int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {
