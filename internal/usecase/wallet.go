@@ -66,7 +66,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
 	}
 
-	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins, currentListing)
+	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +74,16 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	for _, item := range inscriptions {
 		result.Inscriptions = append(result.Inscriptions, item...)
 	}
-	newTxrefs := []structure.TxRef{}
-	for _, outcoin := range result.Txrefs {
-		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
-		satRanges, ok := outputSatRanges[o]
-		if ok {
-			outcoin.SatRanges = satRanges
-			newTxrefs = append(newTxrefs, outcoin)
-		}
-	}
-	result.Txrefs = newTxrefs
+	// newTxrefs := []structure.TxRef{}
+	// for _, outcoin := range result.Txrefs {
+	// 	o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
+	// 	satRanges, ok := outputSatRanges[o]
+	// 	if ok {
+	// 		outcoin.SatRanges = satRanges
+	// 		newTxrefs = append(newTxrefs, outcoin)
+	// 	}
+	// }
+	// result.Txrefs = newTxrefs
 
 	newTxrefsFiltered := []structure.TxRef{}
 	if len(currentListing) > 0 {
@@ -115,13 +115,13 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
-	outputSatRanges := make(map[string][][]uint64)
+	// outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
 	for _, output := range outputs {
 		if _, ok := result[output]; ok {
@@ -129,17 +129,17 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 		}
 		inscriptions, err := getInscriptionByOutput(ordServer, output)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 		if len(inscriptions.Inscriptions) > 0 {
 			for _, insc := range inscriptions.Inscriptions {
 				data, err := getInscriptionByID(ordServer, insc)
 				if err != nil {
-					return nil, nil, nil, err
+					return nil, nil, err
 				}
 				offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 				if err != nil {
-					return nil, nil, nil, err
+					return nil, nil, err
 				}
 				inscWalletInfo := structure.WalletInscriptionInfo{
 					InscriptionID: data.InscriptionID,
@@ -152,7 +152,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					Offset:        offset,
 					Sat:           data.Sat,
 				}
-				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
+				internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
 				if internalInfo != nil {
 					inscWalletInfo.ProjectID = internalInfo.ProjectID
 					inscWalletInfo.ProjecName = internalInfo.Project.Name
@@ -173,12 +173,12 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
 			}
 		}
-		outputSatRanges[output] = inscriptions.List.Unspent
+		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
 	// if len(outputSatRanges) != len(outputs) {
 	// 	return nil, nil, nil, errors.New("")
 	// }
-	return result, outputInscMap, outputSatRanges, nil
+	return result, outputInscMap, nil
 }
 
 func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfoByOutput, error) {

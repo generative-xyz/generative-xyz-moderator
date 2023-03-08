@@ -313,11 +313,29 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	// result := h.Usecase.JobMint_CheckBalance()
+	//result := h.Usecase.JobMKP_Payment()
 
-	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+	// meth := reflect.ValueOf(h.Usecase).MethodByName("JobMKP_CheckTxSendNftToBuyer")
+	// meth.Call(nil)
 
-	h.Usecase.JobDeveloperInscribe_CheckTxSend()
+	h.Usecase.Repo.InsertCronJobManager(&entity.CronJobManager{
+		JobKey:       "MARKETPLACE_CRONTAB_START",
+		Group:        "marketplace",
+		JobName:      "jobMKPWaitingBalanceFromListingUser",
+		Schedule:     "@every 10s",
+		FunctionName: "JobMKP_CheckReceivedNftFromSeller",
+	})
+	h.Usecase.Repo.InsertCronJobManager(&entity.CronJobManager{
+		JobKey:       "MARKETPLACE_CRONTAB_START",
+		Group:        "marketplace",
+		JobName:      "jobMKPWaitingBalanceFromBuyr",
+		Schedule:     "@every 10s",
+		FunctionName: "JobMKP_WaitForBalanceFromBuyer",
+	})
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+
+	// err := h.Usecase.JobMKP_CheckTxSendNftToBuyer()
 
 	// fmt.Println("len result", len(result))
 
@@ -366,7 +384,7 @@ func (h *httpDelivery) btcMarketplaceFilterInfo(w http.ResponseWriter, r *http.R
 
 func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *http.Request) {
 
-	err := h.Usecase.BTCMarketplaceUpdateNftInfo()
+	err := h.Usecase.JobCrawlToUpdateNftInfo()
 
 	if err != nil {
 		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)

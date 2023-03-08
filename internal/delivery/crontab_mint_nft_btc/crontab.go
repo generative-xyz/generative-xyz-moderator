@@ -83,12 +83,12 @@ func (h CronMintNftBtcHandler) StartServer() {
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.CheckAirdrop()
+			h.Usecase.JobCheckAirdrop()
 		}(&wg)
 
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			h.Usecase.CheckAirdropInit()
+			h.Usecase.JobCheckAirdropInit()
 		}(&wg)
 
 		h.Logger.Info("wait", "wait")

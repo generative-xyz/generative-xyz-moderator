@@ -23,8 +23,8 @@ func (r Repository) GetRecentBTCActivity() ([]entity.Activity, error) {
 	activities := []entity.Activity{}
 
 	f := bson.M{
-		"type": bson.M{"$in": []entity.ActivityType{entity.Mint, entity.Buy}},
-		"created_at": bson.M{"$gte":  time.Now().Add(-24*time.Hour).UTC()},
+		"type":       bson.M{"$in": []entity.ActivityType{entity.Mint, entity.Buy}},
+		"created_at": bson.M{"$gte": time.Now().Add(-24 * time.Hour).UTC()},
 	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_ACTIVITIES).Find(context.TODO(), f)
@@ -41,8 +41,8 @@ func (r Repository) GetRecentBTCActivity() ([]entity.Activity, error) {
 
 func (r Repository) CountViewActivity(projectID string) (*int64, error) {
 	f := bson.M{
-		"type": entity.View,
-		"created_at": bson.M{"$gte":  time.Now().Add(-24*time.Hour).UTC()},
+		"type":       entity.View,
+		"created_at": bson.M{"$gte": time.Now().Add(-24 * time.Hour).UTC()},
 		"project_id": projectID,
 	}
 
@@ -54,12 +54,12 @@ func (r Repository) CountViewActivity(projectID string) (*int64, error) {
 	return &count, nil
 }
 
-func (r Repository) DeleteOldActivities() error {
+func (r Repository) JobDeleteOldActivities() error {
 	f := bson.M{
 		"created_at": bson.M{"$lte": time.Now().Add(-7 * 24 * time.Hour)},
 	}
 
-	_, err := r.DB.Collection(entity.Activity{}.TableName()).DeleteMany(context.TODO() , f)
+	_, err := r.DB.Collection(entity.Activity{}.TableName()).DeleteMany(context.TODO(), f)
 	if err != nil {
 		return errors.Wrap(err, "collection.DeleteMany")
 	}
