@@ -447,17 +447,17 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
 	resp.MaxFileSize = input.MaxFileSize
-	
-	fileExt := "" 
+
+	fileExt := ""
 	if len(input.Images) > 0 {
 		fileExt = input.Images[0]
-	}else{
+	} else if len(input.ProcessingImages) > 0 {
 		fileExt = input.ProcessingImages[0]
 	}
 	spew.Dump(fileExt)
 	//fileExt := strings.Split(".")
 
-	resp.FileExtension = helpers.FileExtension(fileExt) 
+	resp.FileExtension = helpers.FileExtension(fileExt)
 	if input.CatureThumbnailDelayTime == nil || *input.CatureThumbnailDelayTime == 0 {
 		resp.CaptureThumbnailDelayTime = entity.DEFAULT_CAPTURE_TIME
 	} else {
