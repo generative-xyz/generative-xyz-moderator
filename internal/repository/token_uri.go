@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -76,6 +77,42 @@ func (r Repository) FindTokenByTokenID(tokenID string) (*entity.TokenUri, error)
 	return r.FindTokenUriWithoutCache(f)
 }
 
+func (r Repository) FindTokenByTokenIDCustomField(tokenID string, fields []string) (*entity.TokenUri, error) {
+	projectField := bson.D{
+		{"_id", 1},
+	}
+	for _, field := range fields {
+		projectField = append(projectField, bson.E{Key: field, Value: 1})
+	}
+
+	aggregates := bson.A{
+		bson.D{
+			{Key: "$project",
+				Value: projectField,
+			},
+		},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "token_id", Value: tokenID}}}},
+	}
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	tokenList := []entity.TokenUri{}
+
+	if err = cursor.All((context.TODO()), &tokenList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(tokenList) > 0 {
+		return &tokenList[0], nil
+	}
+	return nil, errors.New("token_id not found")
+}
+
+// func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWithProjectInfoReq) ([]entity.DexBtcListingWithProjectInfo, error) {
+
+// }
+
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
 	key := helpers.TokenURIKey(contractAddress, tokenID)
 	f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
@@ -102,6 +139,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
+		filter.Sort = entity.SORT_DESC
 	}
 
 	if len(filter.Ids) != 0 {

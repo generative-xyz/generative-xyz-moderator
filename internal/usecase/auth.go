@@ -462,6 +462,8 @@ func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error
 }
 
 func (u Usecase) UserProfileByWalletWithCache(walletAddress string) (*entity.Users, error) {
+	go u.UserProfileByWallet(walletAddress)
+
 	userCache, err := u.Cache.GetData(helpers.GenerateUserWalletAddressKey(walletAddress))
 	if err != nil && userCache == nil {
 		return u.UserProfileByWallet(walletAddress)
