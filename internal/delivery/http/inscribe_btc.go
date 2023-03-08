@@ -69,13 +69,17 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 					reqUsecase.WithUserUuid(userUuid),
 				)
 			}
-			// TODO: 0x2525
-			userWalletAddress, ok := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			segwitBTCAddress, ok := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			if ok {
+				userWalletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+				if err != nil {
+					return nil, err
+				}
 				reqUsecase.SetFields(
 					reqUsecase.WithUserWallerAddress(userWalletAddress),
 				)
 			}
+
 			btcWallet, err := h.Usecase.CreateInscribeBTC(ctx, *reqUsecase)
 			if err != nil {
 				logger.AtLog.Logger.Error("CreateInscribeBTC failed",

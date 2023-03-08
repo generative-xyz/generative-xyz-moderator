@@ -135,7 +135,6 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whit
 func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
-	// TODO: 0x2525
 	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
 	if err == nil {
 		if weth != nil {

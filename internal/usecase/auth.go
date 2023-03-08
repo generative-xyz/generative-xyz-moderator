@@ -44,7 +44,6 @@ func (u Usecase) GenerateMessageUpdate(data structure.GenerateMessage) (*string,
 	u.Logger.Info("message", message)
 
 	now := time.Now().UTC()
-	// TODO: need to review
 	// find user by  BTC Segwit
 	user, err := u.Repo.FindUserByBtcAddress(addrr)
 	if err != nil {
@@ -143,7 +142,7 @@ func (u Usecase) VerifyMessageUpdate(data structure.VerifyMessage) (*structure.V
 			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
 		}
 	}
-	// TODO: 0x2525
+
 	if data.Address != "" {
 		if user.WalletAddress == "" {
 			user.WalletAddress = data.Address
@@ -503,8 +502,6 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		return nil, err
 	}
 
-	// TODO: 0x2525 review
-
 	//update project's creator profile
 	go func(user entity.Users) {
 
@@ -644,7 +641,6 @@ func (u Usecase) UploadUserAvatar(user entity.Users) (*string, error) {
 	return &user.Avatar, nil
 }
 
-// TODO: 0x2525 review
 func (u Usecase) UpdateUserAvatars() error {
 	users, err := u.Repo.GetAllUsers(entity.FilterUsers{IsUpdatedAvatar: nil})
 	if err != nil {
