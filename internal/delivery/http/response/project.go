@@ -66,6 +66,7 @@ type ProjectResp struct {
 	OrdinalsTx                string           `json:"ordinalsTx"`
 	InscribedBy               string           `json:"inscribedBy"`
 	HtmlFile                  string           `json:"htmlFile"`
+	LimitMintPerProcess       int              `json:"limitMintPerProcess"`
 }
 
 type ReportProject struct {
