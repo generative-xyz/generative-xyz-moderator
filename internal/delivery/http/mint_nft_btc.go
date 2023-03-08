@@ -183,9 +183,13 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 
 func (h *httpDelivery) MintNftBtcToResp(input *entity.MintNftBtc) *response.MintNftBtcReceiveWalletResp {
 	return &response.MintNftBtcReceiveWalletResp{
-		Address: input.ReceiveAddress,
-		Price:   input.Amount,
-		PayType: input.PayType,
+		Address:             input.ReceiveAddress,
+		Price:               input.Amount,
+		PayType:             input.PayType,
+		NetworkFeeByPayType: input.NetworkFeeByPayType,
+		MintPriceByPayType:  input.MintPriceByPayType,
+		Quantity:            input.Quantity,
+		MintFeeInfos:        input.EstFeeInfo,
 	}
 
 }
