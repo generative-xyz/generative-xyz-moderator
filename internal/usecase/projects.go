@@ -1952,7 +1952,6 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 	if err := u.Repo.FindOneBy(ctx, entity.Projects{}.TableName(), bson.M{
 		"fromAuthentic": true,
 		"tokenAddress":  item.TokenAddress,
-		"tokenId":       item.TokenId,
 	}, project); err != nil {
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
