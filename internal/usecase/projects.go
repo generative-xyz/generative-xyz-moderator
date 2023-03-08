@@ -2004,3 +2004,35 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 	}
 	return nil
 }
+
+func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
+	max := 10
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+
+	if totalImages == 0 &&  totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any images")
+	}
+
+	returnImages := []string{}
+	for _, item := range p.Images {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+	
+	for _, item := range p.ProcessingImages {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+
+	return returnImages, nil
+	
+}

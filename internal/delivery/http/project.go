@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -14,6 +15,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -445,23 +447,42 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
 	resp.MaxFileSize = input.MaxFileSize
+	
+	fileExt := "" 
+	if len(input.Images) > 0 {
+		fileExt = input.Images[0]
+	}else{
+		fileExt = input.ProcessingImages[0]
+	}
+	spew.Dump(fileExt)
+	//fileExt := strings.Split(".")
+
+	resp.FileExtension = helpers.FileExtension(fileExt) 
 	if input.CatureThumbnailDelayTime == nil || *input.CatureThumbnailDelayTime == 0 {
 		resp.CaptureThumbnailDelayTime = entity.DEFAULT_CAPTURE_TIME
 	} else {
 		resp.CaptureThumbnailDelayTime = *input.CatureThumbnailDelayTime
 	}
 	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
-	if resp.TotalImages > 0 {
-		if len(input.Images) > 0 {
-			if strings.HasSuffix(input.Images[0], ".html") {
-				resp.HtmlFile = input.Images[0]
-			}
-		} else if len(input.ProcessingImages) > 0 {
-			if strings.HasSuffix(input.ProcessingImages[0], ".html") {
-				resp.HtmlFile = input.ProcessingImages[0]
+	resp.HtmlFile = input.HtmlFile
+	if resp.HtmlFile == "" {
+		if resp.TotalImages > 0 {
+			if len(input.Images) > 0 {
+				if strings.HasSuffix(input.Images[0], ".html") {
+					resp.HtmlFile = input.Images[0]
+				}
+			} else if len(input.ProcessingImages) > 0 {
+				if strings.HasSuffix(input.ProcessingImages[0], ".html") {
+					resp.HtmlFile = input.ProcessingImages[0]
+				}
 			}
 		}
 	}
+	resp.LimitMintPerProcess = input.LimitMintPerProcess
+	if resp.LimitMintPerProcess == 0 {
+		resp.LimitMintPerProcess = 3
+	}
+
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
@@ -751,6 +772,33 @@ func (h *httpDelivery) projectVolumn(w http.ResponseWriter, r *http.Request) {
 	paytype := r.URL.Query().Get("payType")
 
 	v, err := h.Usecase.ProjectVolume(projectID, paytype)
+	if err != nil {
+		h.Logger.ErrorAny("projectVolumn", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
+}
+
+// UserCredits godoc
+// @Summary get project's random-images
+// @Description get project's random-images
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param payType query string false "payType eth|btc"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/random-images [GET]
+func (h *httpDelivery) projectRandomImages(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	v, err := h.Usecase.ProjectRandomImages(projectID)
 	if err != nil {
 		h.Logger.ErrorAny("projectVolumn", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
