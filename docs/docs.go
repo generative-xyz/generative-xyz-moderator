@@ -3196,6 +3196,92 @@ var doc = `{
                 }
             }
         },
+        "/project/{contractAddress}/tokens/{projectID}/token-traits": {
+            "get": {
+                "description": "get project's token-traits",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's token-traits",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "only tokens which don't have any trait are exported",
+                        "name": "empty-trait",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "upload project's token-traits",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "upload project's token-traits",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{contractAddress}/tokens/{projectID}/volumn": {
             "get": {
                 "description": "get project's volumn",
@@ -5289,6 +5375,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "payType": {
+                    "type": "string"
+                },
                 "tokenAddress": {
                     "type": "string"
                 },
@@ -6010,6 +6099,9 @@ var doc = `{
                 },
                 "blockNumberMinted": {
                     "type": "string"
+                },
+                "btcFloorPrice": {
+                    "type": "integer"
                 },
                 "captureThumbnailDelayTime": {
                     "type": "integer"

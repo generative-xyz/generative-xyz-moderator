@@ -871,3 +871,53 @@ func (h *httpDelivery) getUpcommingProjects(w http.ResponseWriter, r *http.Reque
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
 }
+
+// UserCredits godoc
+// @Summary get project's token-traits
+// @Description get project's token-traits
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param empty-trait query bool false "only tokens which don't have any trait are exported"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/token-traits [GET]
+func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	v, err := h.Usecase.ProjectTokenTraits(projectID)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+}
+
+
+// UserCredits godoc
+// @Summary upload project's token-traits
+// @Description upload project's token-traits
+// @Tags Project
+// @Content-Type: multipart/form-data
+// @Param file formData file true "file"
+// @Produce  multipart/form-data
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/token-traits [POST]
+func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	v, err := h.Usecase.UploadTokenTraits(projectID, r)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+}
