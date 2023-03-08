@@ -72,9 +72,19 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	if err != nil {
 		return nil, err
 	}
+
+	dupInscMap := make(map[string]struct{})
 	result.InscriptionsByOutputs = outputInscMap
-	for _, item := range inscriptions {
-		result.Inscriptions = append(result.Inscriptions, item...)
+
+	for _, items := range inscriptions {
+		for _, item := range items {
+			if _, ok := dupInscMap[item.InscriptionID]; ok {
+				continue
+			}
+			dupInscMap[item.InscriptionID] = struct{}{}
+			result.Inscriptions = append(result.Inscriptions, item)
+		}
+
 	}
 	trackT3 := time.Since(t)
 	// newTxrefs := []structure.TxRef{}
@@ -143,13 +153,13 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				<-waitChan
 			}()
 			lock.Lock()
-			if _, ok := result[output]; ok {
+			if _, ok := result[op]; ok {
 				lock.Unlock()
 				return
 			}
 			lock.Unlock()
 
-			inscriptions, err := getInscriptionByOutput(ordServer, output)
+			inscriptions, err := getInscriptionByOutput(ordServer, op)
 			if err != nil {
 				return
 			}
@@ -192,19 +202,19 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						}
 					}
 					lock.Lock()
-					result[output] = append(result[output], inscWalletInfo)
-					outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+					result[op] = append(result[op], inscWalletInfo)
+					outputInscMap[op] = append(outputInscMap[op], inscWalletByOutput)
 					lock.Unlock()
 				}
 			}
 		}(output)
 
-		lock.Lock()
-		if _, ok := result[output]; ok {
-			lock.Unlock()
-			continue
-		}
-		lock.Unlock()
+		// lock.Lock()
+		// if _, ok := result[output]; ok {
+		// 	lock.Unlock()
+		// 	continue
+		// }
+		// lock.Unlock()
 
 		// inscriptions, err := getInscriptionByOutput(ordServer, output)
 		// if err != nil {
