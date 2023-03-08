@@ -63,6 +63,18 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+func (h *httpDelivery) getETHWalletFromSegwitBTCAddress(segwitAddress string) (string, error) {
+	user, err := h.Usecase.GetUserProfileByBtcAddress(segwitAddress)
+	if err != nil {
+		return "", errors.New("Can not find user with btc address")
+	}
+	if user.WalletAddress == "" {
+		return "", errors.New("Wallet address of the user is empty")
+	}
+
+	return user.WalletAddress, nil
+}
+
 // UserCredits godoc
 // @Summary Create btc project
 // @Description Create btc project
@@ -74,11 +86,9 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/btc [POST]
 func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
-
-	// TODO: 0x2525
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
@@ -86,9 +96,16 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	var reqBody request.CreateBTCProjectReq
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -132,15 +149,20 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [PUT]
 func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) {
-	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -148,7 +170,7 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 
 	var reqBody request.UpdateBTCProjectReq
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -194,15 +216,20 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/{projectID} [DELETE]
 func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) {
-	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -631,22 +658,27 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 // @Router /project/{projectID}/report [POST]
 // @Security Authorization
 func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
-	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 	ctx := r.Context()
-	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+	segwitBTCAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	var reqBody request.ReportProjectReq
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.Error("decoder.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	message, err := h.Usecase.ReportProject(projectID, iWalletAddress, reqBody.OriginalLink)
+	message, err := h.Usecase.ReportProject(projectID, walletAddress, reqBody.OriginalLink)
 	if err != nil {
 		h.Logger.Error("h.Usecase.reportProject", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

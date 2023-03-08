@@ -23,11 +23,14 @@ import (
 func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			segwitBTCAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
+			walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+			if err != nil {
+				return nil, err
+			}
 			userId := ctx.Value(utils.SIGNED_USER_ID).(string)
 			pag := entity.GetPagination(r)
-			// TODO: 0x2525
-			return h.Usecase.ListNftFromMoralis(ctx, userId, userWallet, r.URL.Query().Get("walletAddress"), pag)
+			return h.Usecase.ListNftFromMoralis(ctx, userId, walletAddress, r.URL.Query().Get("walletAddress"), pag)
 		},
 	).ServeHTTP(w, r)
 }

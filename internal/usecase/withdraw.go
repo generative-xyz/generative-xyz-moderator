@@ -108,8 +108,7 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	f.WithdrawItemID = wr.ID
 	f.Status = entity.StatusWithdraw_Pending
 
-	// todo: 0x2525
-	user, err := u.Repo.FindUserByBtcAddress(walletAddress)
+	user, err := u.Repo.FindUserByAddress(walletAddress)
 	f.User = entity.WithdrawUserInfo{
 		WalletAddress:        &user.WalletAddress,
 		WalletAddressPayment: &user.WalletAddressPayment,
