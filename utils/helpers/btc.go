@@ -56,3 +56,18 @@ func MagicHash(msg, messagePrefix string) (chainhash.Hash, error) {
 	bytes := append([]byte(messagePrefix), []byte(msg)...)
 	return chainhash.DoubleHashH(bytes), nil
 }
+
+// func VerifyETHSignature(sig, msg, address string) (bool, error) {
+
+// 	decodedSig, err := base64.StdEncoding.DecodeString(sig)
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	decodedSig, err :=
+// 	if err != nil {
+// 		return false, err
+// 	}
+
+// 	crypto.Ecrecover()
+
+// }
