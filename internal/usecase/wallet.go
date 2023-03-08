@@ -135,8 +135,8 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	waitChan := make(chan struct{}, 10)
 
 	for _, output := range outputs {
-		waitChan <- struct{}{}
 		wg.Add(1)
+		waitChan <- struct{}{}
 		go func(op string) {
 			defer func() {
 				wg.Done()
