@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"rederinghub.io/internal/entity"
@@ -129,56 +130,130 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	}
 	// outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	waitChan := make(chan struct{}, 10)
+
 	for _, output := range outputs {
+		waitChan <- struct{}{}
+		wg.Add(1)
+		go func(op string) {
+			defer func() {
+				wg.Done()
+				<-waitChan
+			}()
+			lock.Lock()
+			if _, ok := result[output]; ok {
+				lock.Unlock()
+				return
+			}
+			lock.Unlock()
+
+			inscriptions, err := getInscriptionByOutput(ordServer, output)
+			if err != nil {
+				return
+			}
+			if len(inscriptions.Inscriptions) > 0 {
+				for _, insc := range inscriptions.Inscriptions {
+					data, err := getInscriptionByID(ordServer, insc)
+					if err != nil {
+						return
+					}
+					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
+					if err != nil {
+						return
+					}
+					inscWalletInfo := structure.WalletInscriptionInfo{
+						InscriptionID: data.InscriptionID,
+						Number:        data.Number,
+						ContentType:   data.ContentType,
+						Offset:        offset,
+					}
+					inscWalletByOutput := structure.WalletInscriptionByOutput{
+						InscriptionID: data.InscriptionID,
+						Offset:        offset,
+						Sat:           data.Sat,
+					}
+					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
+					if internalInfo != nil {
+						inscWalletInfo.ProjectID = internalInfo.ProjectID
+						inscWalletInfo.ProjecName = internalInfo.Project.Name
+						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+					}
+					for _, listing := range currentListing {
+						if listing.InscriptionID == data.InscriptionID {
+							if listing.CancelTx == "" {
+								inscWalletInfo.Buyable = true
+							} else {
+								inscWalletInfo.Cancelling = true
+							}
+							inscWalletInfo.OrderID = listing.UUID
+							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+						}
+					}
+					lock.Lock()
+					result[output] = append(result[output], inscWalletInfo)
+					outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+					lock.Unlock()
+				}
+			}
+		}(output)
+
+		lock.Lock()
 		if _, ok := result[output]; ok {
+			lock.Unlock()
 			continue
 		}
-		inscriptions, err := getInscriptionByOutput(ordServer, output)
-		if err != nil {
-			return nil, nil, err
-		}
-		if len(inscriptions.Inscriptions) > 0 {
-			for _, insc := range inscriptions.Inscriptions {
-				data, err := getInscriptionByID(ordServer, insc)
-				if err != nil {
-					return nil, nil, err
-				}
-				offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
-				if err != nil {
-					return nil, nil, err
-				}
-				inscWalletInfo := structure.WalletInscriptionInfo{
-					InscriptionID: data.InscriptionID,
-					Number:        data.Number,
-					ContentType:   data.ContentType,
-					Offset:        offset,
-				}
-				inscWalletByOutput := structure.WalletInscriptionByOutput{
-					InscriptionID: data.InscriptionID,
-					Offset:        offset,
-					Sat:           data.Sat,
-				}
-				internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
-				if internalInfo != nil {
-					inscWalletInfo.ProjectID = internalInfo.ProjectID
-					inscWalletInfo.ProjecName = internalInfo.Project.Name
-					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-				}
-				for _, listing := range currentListing {
-					if listing.InscriptionID == data.InscriptionID {
-						if listing.CancelTx == "" {
-							inscWalletInfo.Buyable = true
-						} else {
-							inscWalletInfo.Cancelling = true
-						}
-						inscWalletInfo.OrderID = listing.UUID
-						inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
-					}
-				}
-				result[output] = append(result[output], inscWalletInfo)
-				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
-			}
-		}
+		lock.Unlock()
+
+		// inscriptions, err := getInscriptionByOutput(ordServer, output)
+		// if err != nil {
+		// 	return nil, nil, err
+		// }
+		// if len(inscriptions.Inscriptions) > 0 {
+		// 	for _, insc := range inscriptions.Inscriptions {
+		// 		data, err := getInscriptionByID(ordServer, insc)
+		// 		if err != nil {
+		// 			return nil, nil, err
+		// 		}
+		// 		offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
+		// 		if err != nil {
+		// 			return nil, nil, err
+		// 		}
+		// 		inscWalletInfo := structure.WalletInscriptionInfo{
+		// 			InscriptionID: data.InscriptionID,
+		// 			Number:        data.Number,
+		// 			ContentType:   data.ContentType,
+		// 			Offset:        offset,
+		// 		}
+		// 		inscWalletByOutput := structure.WalletInscriptionByOutput{
+		// 			InscriptionID: data.InscriptionID,
+		// 			Offset:        offset,
+		// 			Sat:           data.Sat,
+		// 		}
+		// 		internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
+		// 		if internalInfo != nil {
+		// 			inscWalletInfo.ProjectID = internalInfo.ProjectID
+		// 			inscWalletInfo.ProjecName = internalInfo.Project.Name
+		// 			inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+		// 		}
+		// 		for _, listing := range currentListing {
+		// 			if listing.InscriptionID == data.InscriptionID {
+		// 				if listing.CancelTx == "" {
+		// 					inscWalletInfo.Buyable = true
+		// 				} else {
+		// 					inscWalletInfo.Cancelling = true
+		// 				}
+		// 				inscWalletInfo.OrderID = listing.UUID
+		// 				inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+		// 			}
+		// 		}
+		// 		lock.Lock()
+		// 		result[output] = append(result[output], inscWalletInfo)
+		// 		outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+		// 		lock.Unlock()
+		// 	}
+		// }
 		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
 	// if len(outputSatRanges) != len(outputs) {
