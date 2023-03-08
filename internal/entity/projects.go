@@ -109,6 +109,7 @@ type Projects struct {
 	OrdinalsTx               string             `bson:"ordinalsTx"`
 	InscribedBy              string             `bson:"inscribedBy"`
 	HtmlFile                 string             `bson:"htmlFile"`
+	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
 }
 
 type ReportProject struct {
