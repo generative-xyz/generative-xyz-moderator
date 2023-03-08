@@ -65,6 +65,7 @@ type WalletInfo struct {
 	BlockCypherWalletInfo
 	Inscriptions          []WalletInscriptionInfo                `json:"inscriptions"`
 	InscriptionsByOutputs map[string][]WalletInscriptionByOutput `json:"inscriptions_by_outputs"`
+	Loadtime              map[string]string                      `json:"loadtime"`
 }
 
 type WalletInscriptionInfo struct {
