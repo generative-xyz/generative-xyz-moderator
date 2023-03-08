@@ -58,17 +58,17 @@ func (u Usecase) AggregateVolumn(payType string) {
 	}
 
 	u.Logger.LogAny("AggregateVolumn", zap.Any("payType", payType), zap.Any("data", data))
-	
+
 	for _, item := range data {
 		u.CreateVolumn(item)
 	}
 }
 
-func (u Usecase) AggregateReferal() {
+func (u Usecase) JobAggregateReferral() {
 
 	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
 	if err != nil {
-		u.Logger.ErrorAny("AggregateReferal", zap.Any("err", err))
+		u.Logger.ErrorAny("JobAggregateReferral", zap.Any("err", err))
 		return
 	}
 
@@ -109,7 +109,7 @@ func (u Usecase) AggregateReferal() {
 		referral.ReferreeVolumn = vol
 		_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
 		if err != nil {
-			u.Logger.ErrorAny("AggregateReferal", zap.Error(err))
+			u.Logger.ErrorAny("JobAggregateReferral", zap.Error(err))
 			return
 		}
 	}
@@ -154,7 +154,7 @@ func (u Usecase) GetEarningOfUser(walletAddress string, amountType *string) (*en
 
 func (u Usecase) GetVolumeOfProject(projectID string, amountType *string) (*entity.AggregateAmount, error) {
 	group := bson.M{"$group": bson.M{"_id": bson.M{"projectID": "$projectID", "payType": "$payType"},
-		"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+		"amount":  bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
 		"earning": bson.M{"$sum": bson.M{"$toDouble": "$earning"}},
 	}}
 
@@ -339,7 +339,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	return wd, isDuplicated, nil
 }
 
-func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
+func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp) {
 
 	u.Logger.LogAny("aggregateVolumn", zap.Any("item", item))
 	pID := strings.ToLower(item.ProjectID)
@@ -357,11 +357,11 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 	}
 
 	mintPrice := 0.0
-	if item.Paytype  == string(entity.BIT) {
+	if item.Paytype == string(entity.BIT) {
 		ar, err := u.Repo.AggregateProjectMintPrice(item.ProjectID, item.Paytype)
 		if err == nil && len(ar) > 0 {
 			mintPrice = ar[0].Amount
-		}else{
+		} else {
 			pFl, _ := strconv.ParseFloat(p.MintPrice, 10)
 			mintPrice = pFl
 		}
@@ -372,11 +372,11 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 			item.Amount += oldData.Amount
 			item.Minted += oldData.Minted
 		}
-	}else{
+	} else {
 		ar, err := u.Repo.AggregateProjectMintPrice(item.ProjectID, item.Paytype)
-		if err == nil && len(ar) > 0 { 
+		if err == nil && len(ar) > 0 {
 			mintPrice = ar[0].Amount
-		}else{
+		} else {
 			pFl, _ := strconv.ParseFloat(p.MintPrice, 10)
 			mintPrice = pFl
 		}
@@ -459,14 +459,14 @@ func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProj
 
 	u.Logger.LogAny("AggregationBTCWalletAddress", zap.Any("data", data))
 	if len(data) > 0 {
-		item  := data[0]
+		item := data[0]
 		item.Paytype = string(entity.BIT)
 		item.BtcRate = 14.7
 		item.EthRate = 1
 		return &item, nil
 	}
 	return nil, errors.New("no olf data")
-	
+
 }
 
 func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
@@ -478,7 +478,7 @@ func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProj
 
 	u.Logger.LogAny("AggregateOldETHAddress", zap.Any("dataETH", dataETH))
 	if len(dataETH) > 0 {
-		item  := dataETH[0]
+		item := dataETH[0]
 		item.MintPrice = item.MintPrice / 1e10
 		item.Amount = item.Amount / 1e10
 		item.Paytype = string(entity.ETH)

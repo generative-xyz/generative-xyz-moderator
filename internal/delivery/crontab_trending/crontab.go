@@ -25,9 +25,9 @@ func (h ScronTrendingHandler) StartServer() {
 	go func() {
 		h.Logger.Info("StartCrontabSyncTrending")
 		for {
-			err := h.Usecase.SyncProjectTrending()
+			err := h.Usecase.JobSyncProjectTrending()
 			if err != nil {
-				h.Logger.ErrorAny("SyncProjectTrendingError", zap.Any("err", err.Error()))
+				h.Logger.ErrorAny("JobSyncProjectTrendingError", zap.Any("err", err.Error()))
 			}
 			time.Sleep(10 * time.Minute)
 		}
@@ -36,9 +36,9 @@ func (h ScronTrendingHandler) StartServer() {
 	go func() {
 		h.Logger.Info("StartCrontabDeleteActivities")
 		for {
-			err := h.Usecase.DeleteOldActivities()
+			err := h.Usecase.JobDeleteOldActivities()
 			if err != nil {
-				h.Logger.ErrorAny("h.Usecase.DeleteOldActivities", zap.Any("err", err.Error()))
+				h.Logger.ErrorAny("h.Usecase.JobDeleteOldActivities", zap.Any("err", err.Error()))
 			}
 			time.Sleep(24 * time.Hour)
 		}

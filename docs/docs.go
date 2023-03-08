@@ -5375,6 +5375,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "payType": {
+                    "type": "string"
+                },
                 "tokenAddress": {
                     "type": "string"
                 },

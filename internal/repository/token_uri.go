@@ -93,7 +93,7 @@ func (r Repository) FindTokenByTokenIDCustomField(tokenID string, fields []strin
 		},
 		bson.D{{Key: "$match", Value: bson.D{{Key: "token_id", Value: tokenID}}}},
 	}
-	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), aggregates)
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -139,6 +139,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
+		filter.Sort = entity.SORT_DESC
 	}
 
 	if len(filter.Ids) != 0 {

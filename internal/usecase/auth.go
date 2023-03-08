@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcd/btcutil"
 	"go.uber.org/zap"
 
 	// "github.com/btcsuite/btcd/btcec/v2"
 	// "github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -97,7 +97,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 
 	var isVeried = false
 	if data.AddressBTCSegwit != nil && *data.AddressBTCSegwit != "" {
-		isVeried, err = u.verifyBTCSegwit(signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
+		isVeried, err = u.verifyBTCSegwit(user.Message, data)
 		if err != nil {
 			u.Logger.Error(err)
 			return nil, err
@@ -177,10 +177,18 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	return &verified, nil
 }
 
-func (u Usecase) verifyBTCSegwit(signatureHex string, signer string, hBSV string, msgStr string) (bool, error) {
+func buildMsgETH(taprootAddress, segwitAddress, nonceMessage string) string {
+	msg := "Welcome to Generative.xyz!\n\n"
+	msg += "Taproot address:\n" + taprootAddress
+	msg += "\n\nSegwit address:\n" + segwitAddress
+	msg += "\n\nNonce:\n" + nonceMessage
+	return msg
+}
 
+func (u Usecase) verifyBTCSegwit(msgStr string, data structure.VerifyMessage) (bool, error) {
+	// verify BTC segwit signature
 	// Reconstruct the pubkey
-	publicKey, wasCompressed, err := helpers.PubKeyFromSignature(signatureHex, msgStr, hBSV)
+	publicKey, wasCompressed, err := helpers.PubKeyFromSignature(data.Signature, msgStr, *data.MessagePrefix)
 	if err != nil {
 		return false, err
 	}
@@ -193,15 +201,18 @@ func (u Usecase) verifyBTCSegwit(signatureHex string, signer string, hBSV string
 
 	// Return nil if addresses match.
 	temp := addressWitnessPubKeyHash.String()
-	if temp == signer {
-		return true, nil
+	if temp != *data.AddressBTCSegwit {
+		return false, fmt.Errorf(
+			"address (%s) not found - compressed: %t\n%s was found instead",
+			*data.AddressBTCSegwit,
+			wasCompressed,
+			addressWitnessPubKeyHash.String(),
+		)
 	}
-	return false, fmt.Errorf(
-		"address (%s) not found - compressed: %t\n%s was found instead",
-		signer,
-		wasCompressed,
-		addressWitnessPubKeyHash.String(),
-	)
+
+	// verify ETH signature
+	msg2 := buildMsgETH(*data.AddressBTC, *data.AddressBTCSegwit, msgStr)
+	return u.verify(data.ETHSignature, data.Address, msg2)
 }
 
 func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool, error) {
@@ -462,6 +473,8 @@ func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error
 }
 
 func (u Usecase) UserProfileByWalletWithCache(walletAddress string) (*entity.Users, error) {
+	go u.UserProfileByWallet(walletAddress)
+
 	userCache, err := u.Cache.GetData(helpers.GenerateUserWalletAddressKey(walletAddress))
 	if err != nil && userCache == nil {
 		return u.UserProfileByWallet(walletAddress)
