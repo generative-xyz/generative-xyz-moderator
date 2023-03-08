@@ -13,7 +13,6 @@ import (
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/logger"
 )
@@ -27,7 +26,7 @@ func (u Usecase) GetInscriptionByIDFromOrd(id string) (*structure.InscriptionOrd
 }
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
-	cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
+	// cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
 	var result structure.WalletInfo
 	// exist, err := u.Repo.Cache.Exists(cacheKey)
 	// if err == nil && *exist {
@@ -40,7 +39,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	// 		return &result, nil
 	// 	}
 	// }
-
+	t := time.Now()
 	apiToken := u.Config.BlockcypherToken
 	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
 	quickNode := u.Config.QuicknodeAPI
@@ -54,6 +53,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 			return nil, err2
 		}
 	}
+	trackT1 := time.Since(t)
 
 	result.BlockCypherWalletInfo = *walletBasicInfo
 	outcoins := []string{}
@@ -65,6 +65,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	if err != nil {
 		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
 	}
+	trackT2 := time.Since(t)
 
 	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
@@ -74,6 +75,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	for _, item := range inscriptions {
 		result.Inscriptions = append(result.Inscriptions, item...)
 	}
+	trackT3 := time.Since(t)
 	// newTxrefs := []structure.TxRef{}
 	// for _, outcoin := range result.Txrefs {
 	// 	o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
@@ -106,10 +108,14 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		result.Txrefs = newTxrefsFiltered
 	}
 
-	err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
-	if err != nil {
-		u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
-	}
+	result.Loadtime["trackT1"] = trackT1.String()
+	result.Loadtime["trackT2"] = trackT2.String()
+	result.Loadtime["trackT3"] = trackT3.String()
+
+	// err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
+	// if err != nil {
+	// 	u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
+	// }
 	// }
 
 	return &result, nil
@@ -224,7 +230,7 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 
 func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID, error) {
 	url := fmt.Sprintf("%s/api/inscription/%s", ordServer, id)
-	fmt.Println("url", url)
+	// fmt.Println("url", url)
 	var result structure.InscriptionOrdInfoByID
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -245,7 +251,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 		}
 	}(res)
 
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+	// fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New("getInscriptionByOutput Response status != 200")
