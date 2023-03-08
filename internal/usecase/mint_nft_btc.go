@@ -28,7 +28,7 @@ import (
 
 // for api create a new mint:
 func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*entity.MintNftBtc, error) {
-
+	// TODO: @2525
 	if len(input.ProjectID) == 0 || len(input.WalletAddress) == 0 || len(input.RefundUserAddress) == 0 {
 		return nil, errors.New("data invalid")
 	}
@@ -1258,7 +1258,7 @@ func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) err
 	return nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
 
 	//amount = "0.1"

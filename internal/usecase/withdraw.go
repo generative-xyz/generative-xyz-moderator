@@ -14,10 +14,10 @@ import (
 )
 
 func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemRequest) (*entity.Withdraw, error) {
-	
+
 	u.Logger.LogAny("CreateWithdraw", zap.String("walletAddress", walletAddress), zap.Any("input", wr))
-	volumeAmount := 0.0 //earning 
-	widthDrawAmount := 0.0 
+	volumeAmount := 0.0 //earning
+	widthDrawAmount := 0.0
 	refAmount := 0.0
 
 	requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
@@ -29,15 +29,15 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 		err = errors.New("Withdraw must be greater than Zero")
 		return nil, err
 	}
-	
+
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
 	//TODO - calculate refAmount
-	
+
 	wdf := &entity.FilterWithdraw{
-		WalletAddress: &walletAddress,
+		WalletAddress:  &walletAddress,
 		WithdrawItemID: &wr.ID,
-		PaymentType: &wr.PaymentType,
+		PaymentType:    &wr.PaymentType,
 		Statuses: []int{
 			entity.StatusWithdraw_Pending,
 			entity.StatusWithdraw_Approve,
@@ -55,15 +55,15 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 		u.Logger.ErrorAny("CreateWithdraw.Copy", zap.Any("input", wr), zap.Error(err))
 		return nil, err
 	}
-	
+
 	f.PayType = wr.PaymentType
 	u.Logger.LogAny("CreateWithdraw.FilterVolume", zap.String("walletAddress", walletAddress))
 	volumes, _ := u.GetVolumeOfProject(wr.ID, &f.PayType)
-	
+
 	// fr := entity.FilterReferrals{
 	// 	ReferrerAddress: &walletAddress,
 	// }
-	
+
 	// refs, _ := u.Repo.GetReferral(fr)
 	// if len(refs) > 0 {
 	// 	for _, ref := range refs {
@@ -78,22 +78,22 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	//check referal amount
 	if volumes == nil {
 		volumeAmount = 0
-	}else{
+	} else {
 		volumeAmount = volumes.Earning
 	}
-	
+
 	//totalEarnings := refAmount + volumeAmount
 	totalEarnings := volumeAmount
 	availableBalance := totalEarnings - widthDrawAmount
 	if availableBalance <= 0 {
 		err = errors.New("Not enough balance")
-		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
+		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance), zap.String("walletAddress", walletAddress), zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		return nil, err
 	}
 
-	if requestEarnings  > availableBalance {
+	if requestEarnings > availableBalance {
 		err = errors.New("RequestEarnings must be less than availableBalance")
-		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
+		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance), zap.String("walletAddress", walletAddress), zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		return nil, err
 	}
 
@@ -107,31 +107,32 @@ func (u Usecase) CreateWithdraw(walletAddress string, wr structure.WithDrawItemR
 	f.WithdrawType = entity.Withdrawtype(wr.WithdrawType)
 	f.WithdrawItemID = wr.ID
 	f.Status = entity.StatusWithdraw_Pending
-	
-	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
+
+	// todo: 0x2525
+	user, err := u.Repo.FindUserByBtcAddress(walletAddress)
 	f.User = entity.WithdrawUserInfo{
-		WalletAddress: &user.WalletAddress,
+		WalletAddress:        &user.WalletAddress,
 		WalletAddressPayment: &user.WalletAddressPayment,
-		WalletAddressBTC: &user.WalletAddressBTC,
-		DisplayName: &user.DisplayName,
-		Avatar: &user.Avatar,
+		WalletAddressBTC:     &user.WalletAddressBTC,
+		DisplayName:          &user.DisplayName,
+		Avatar:               &user.Avatar,
 	}
 
-	u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress),  zap.Any("widthdraw",f))
+	u.Logger.LogAny("CreateWithdraw.CreateWithDraw", zap.String("walletAddress", walletAddress), zap.Any("widthdraw", f))
 	err = u.Repo.CreateWithDraw(f)
 	if err != nil {
 		u.Logger.ErrorAny("CreateWithdraw.CreateWithDraw", zap.Any("CreateWithDraw", f), zap.Error(err))
 		return nil, err
 	}
 
-	if wr.PaymentType == string(entity.BIT){
+	if wr.PaymentType == string(entity.BIT) {
 		requestEarnings = requestEarnings / 1e8
-	}else{
+	} else {
 		requestEarnings = requestEarnings / 1e8
 	}
 
 	u.UpdateRefObject(*f)
-	
+
 	u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), fmt.Sprintf("[Pending withdraw has been created][User %s][ProjectID %s]", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), helpers.CreateProjectLink(f.WithdrawItemID, f.WithdrawItemID)), "", fmt.Sprintf("User %s made withdraw with %f %s ", helpers.CreateProfileLink(f.WalletAddress, f.WalletAddress), requestEarnings, wr.PaymentType))
 	return f, nil
 }
@@ -155,11 +156,11 @@ func (u Usecase) FilterWidthdraw(data structure.FilterWithdraw) (*entity.Paginat
 }
 
 func (u Usecase) UpdateWithdraw(UUID string, status int) error {
-	u.Logger.LogAny("UpdateWithdraw", zap.String("UUID",UUID), zap.Int("status",status) )
+	u.Logger.LogAny("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status))
 	err := u.Repo.UpdateWithDrawStatus(UUID, status)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateWithdraw", zap.String("UUID",UUID), zap.Int("status",status) , zap.Error(err))
-		return  err
+		u.Logger.ErrorAny("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status), zap.Error(err))
+		return err
 	}
 
 	return nil
@@ -171,32 +172,32 @@ func (u Usecase) UpdateRefObject(withdraw entity.Withdraw) {
 	case entity.WithDrawProject:
 		p, err := u.Repo.FindProjectByTokenID(withdraw.WithdrawItemID)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateRefObject.FindProjectByTokenID",  zap.Any("withdraw", withdraw) ,zap.Error(err))
+			u.Logger.ErrorAny("UpdateRefObject.FindProjectByTokenID", zap.Any("withdraw", withdraw), zap.Error(err))
 			return
 		}
 
-		u.Logger.ErrorAny("UpdateRefObject.FindProjectByTokenID",  zap.Any("withdraw", withdraw) ,zap.Any("project",p))
+		u.Logger.ErrorAny("UpdateRefObject.FindProjectByTokenID", zap.Any("withdraw", withdraw), zap.Any("project", p))
 		break
 	case entity.WithDrawReferal:
 
 		ref, err := u.Repo.GetAReferral(withdraw.WalletAddress, withdraw.WithdrawItemID)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateRefObject.GetAReferral",  zap.Any("withdraw", withdraw) ,zap.Error(err))
+			u.Logger.ErrorAny("UpdateRefObject.GetAReferral", zap.Any("withdraw", withdraw), zap.Error(err))
 			return
 		}
 
-		u.Logger.ErrorAny("UpdateRefObject.GetAReferral",  zap.Any("withdraw", withdraw) ,zap.Any("referral",ref))
+		u.Logger.ErrorAny("UpdateRefObject.GetAReferral", zap.Any("withdraw", withdraw), zap.Any("referral", ref))
 		earning, _ := strconv.ParseFloat(ref.ReferreeVolumn[withdraw.PayType].Earn, 10)
 		withDraw, _ := strconv.ParseFloat(withdraw.Amount, 10)
-		refEarnings :=  earning - withDraw
+		refEarnings := earning - withDraw
 
 		data := ref.ReferreeVolumn[withdraw.PayType]
 		data.RemainingEarn = fmt.Sprintf("%d", int(refEarnings))
-		
-		ref.ReferreeVolumn[withdraw.PayType]  = data
+
+		ref.ReferreeVolumn[withdraw.PayType] = data
 		updated, err := u.Repo.UpdateReferral(ref.UUID, ref)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateRefObject.UpdateReferral",  zap.Any("withdraw", withdraw) ,zap.Error(err))
+			u.Logger.ErrorAny("UpdateRefObject.UpdateReferral", zap.Any("withdraw", withdraw), zap.Error(err))
 			return
 		}
 		u.Logger.LogAny("UpdateRefObject.UpdateReferral", zap.Any("updated", updated))

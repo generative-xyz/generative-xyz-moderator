@@ -26,6 +26,151 @@ import (
 	"rederinghub.io/utils/oauth2service"
 )
 
+// Address must be BTC Segwit
+func (u Usecase) GenerateMessageUpdate(data structure.GenerateMessage) (*string, error) {
+	addrr := data.Address
+	addrr = strings.ToLower(addrr)
+
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	message := fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+
+	message = fmt.Sprintf(utils.NONCE_MESSAGE_FORMAT, message)
+	u.Logger.Info("message", message)
+
+	now := time.Now().UTC()
+	// TODO: need to review
+	// find user by  BTC Segwit
+	user, err := u.Repo.FindUserByBtcAddress(addrr)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			//insert
+			user := &entity.Users{}
+			user.Message = message
+			user.CreatedAt = &now
+			user.WalletAddressBTC = addrr // segwit
+			// user.WalletAddress = addrr
+
+			u.Logger.Info("inserted.User", user)
+			err = u.Repo.CreateUser(user)
+			if err != nil {
+				u.Logger.Error(err)
+				return nil, err
+			}
+
+			return &message, nil
+
+		} else {
+			u.Logger.Error(err)
+			return nil, err
+		}
+	}
+
+	u.Logger.Info("user", user)
+	user.Message = message
+	user.UpdatedAt = &now
+	user.IsVerified = false
+	updated, err := u.Repo.UpdateUserByBTCWalletAddressSegwit(addrr, user)
+	if err != nil {
+		return nil, err
+	}
+
+	u.Logger.Info("updated", updated)
+	u.Logger.Info("updated.User", message)
+	return &message, nil
+}
+
+func (u Usecase) VerifyMessageUpdate(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
+	u.Logger.Info("input", data)
+	if data.AddressBTCSegwit == nil || *data.AddressBTCSegwit == "" {
+		err := errors.New("Segwit BTC address must not be empty")
+		u.Logger.Error(err)
+		return nil, err
+	}
+	btcSegwitAddr := strings.ToLower(*data.AddressBTCSegwit)
+	signature := data.Signature
+	u.Logger.Info("wallet_address", btcSegwitAddr)
+
+	// TODO: find user by btc segwit
+	user, err := u.Repo.FindUserByBtcAddress(btcSegwitAddr)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	u.Logger.Info("user", user)
+
+	isVeried, err := u.verifyBTCSegwit(signature, *data.AddressBTCSegwit, *data.MessagePrefix, user.Message)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+	u.Logger.Info("isVeried", isVeried)
+
+	if !isVeried {
+		err := errors.New("Cannot verify wallet address")
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	now := time.Now()
+	user.IsVerified = isVeried
+	user.VerifiedAt = &now
+	user.UpdatedAt = &now
+
+	userID := user.UUID
+	token, refreshToken, err := u.Auth2.GenerateAllTokensUpdate(user.WalletAddressBTC, "", "", "", userID)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	u.Logger.Info("token", token)
+	tokenMd5 := helpers.GenerateMd5String(token)
+	u.Logger.Info("tokenMd5", tokenMd5)
+	err = u.Cache.SetDataWithExpireTime(tokenMd5, userID, int(utils.TOKEN_CACHE_EXPIRED_TIME))
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	if data.AddressBTC != nil && *data.AddressBTC != "" {
+		if user.WalletAddressBTCTaproot == "" {
+			user.WalletAddressBTCTaproot = *data.AddressBTC
+			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
+		}
+	}
+	// TODO: 0x2525
+	if data.Address != "" {
+		if user.WalletAddress == "" {
+			user.WalletAddress = data.Address
+			u.Logger.Info("user.WalletAddress.Updated", true)
+		}
+	}
+
+	updated, err := u.Repo.UpdateUserByBTCWalletAddressSegwit(user.WalletAddressBTC, user)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	u.Logger.Info("updated.Info", updated)
+	u.Logger.Info("generated.Token", token)
+	u.Logger.Info("generated.refreshToken", refreshToken)
+
+	verified := structure.VerifyResponse{
+		Token:        token,
+		RefreshToken: refreshToken,
+		IsVerified:   isVeried,
+	}
+
+	return &verified, nil
+}
+
 func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error) {
 	addrr := data.Address
 	addrr = strings.ToLower(addrr)
@@ -88,6 +233,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	signature := data.Signature
 	u.Logger.Info("wallet_address", addrr)
 
+	// TODO: find user by btc segwit
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
 	if err != nil {
 		u.Logger.Error(err)
@@ -259,7 +405,6 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 }
 
 func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Users, error) {
-
 	u.Logger.Info("input.userAddr", userAddr)
 	user, err := u.Repo.FindUserByBtcAddressTaproot(userAddr)
 	if err != nil {
@@ -313,11 +458,12 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.Bio = *data.Bio
 	}
 
-	if data.WalletAddressBTC != nil && *data.WalletAddressBTC != "" && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
-		isUpdateWalletAddress = true
-		oldBtcAdress = user.WalletAddressBTC
-		user.WalletAddressBTC = *data.WalletAddressBTC
-	}
+	// @@NOTE: DO NOT UPDATE BTC SEGWIT ADDRESS
+	// if data.WalletAddressBTC != nil && *data.WalletAddressBTC != "" && strings.ToLower(user.WalletAddressBTC) != strings.ToLower(*data.WalletAddressBTC) {
+	// 	isUpdateWalletAddress = true
+	// 	oldBtcAdress = user.WalletAddressBTC
+	// 	user.WalletAddressBTC = *data.WalletAddressBTC
+	// }
 
 	if data.WalletAddressPayment != nil && *data.WalletAddressPayment != "" && strings.ToLower(user.WalletAddressPayment) != strings.ToLower(*data.WalletAddressPayment) {
 		isUpdateWalletAddressPayment = true
@@ -358,6 +504,8 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		u.Logger.Error(err)
 		return nil, err
 	}
+
+	// TODO: 0x2525 review
 
 	//update project's creator profile
 	go func(user entity.Users) {
@@ -498,6 +646,7 @@ func (u Usecase) UploadUserAvatar(user entity.Users) (*string, error) {
 	return &user.Avatar, nil
 }
 
+// TODO: 0x2525 review
 func (u Usecase) UpdateUserAvatars() error {
 	users, err := u.Repo.GetAllUsers(entity.FilterUsers{IsUpdatedAvatar: nil})
 	if err != nil {

@@ -363,6 +363,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	// TODO: 0x2525
 	currentUserWalletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		f.IsHidden = &hidden

@@ -75,6 +75,7 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Router /project/btc [POST]
 func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
 
+	// TODO: 0x2525
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)
@@ -194,6 +195,7 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Router /project/{contractAddress}/{projectID} [DELETE]
 func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) {
 
+	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
@@ -630,6 +632,7 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 // @Router /project/{projectID}/report [POST]
 // @Security Authorization
 func (h *httpDelivery) reportProject(w http.ResponseWriter, r *http.Request) {
+	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 	ctx := r.Context()

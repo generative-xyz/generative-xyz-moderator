@@ -41,9 +41,9 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	}
 	fmt.Println("userWalletAddr", userWalletAddr)
 
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	profile, err := h.Usecase.GetUserProfileByBtcAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetUserProfileByBtcAddress(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -112,9 +112,9 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("userWalletAddr", userWalletAddr)
 
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	profile, err := h.Usecase.GetUserProfileByBtcAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetUserProfileByBtcAddress(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -122,6 +122,7 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
+	// TODO: 0x2525
 	err = h.Usecase.CancelMintNftBtc(profile.WalletAddressBTCTaproot, uuid)
 	if err != nil {
 		h.Logger.Error("h.Usecase.CancelMintNftBt", err.Error(), err)
@@ -149,7 +150,7 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 	}
 	fmt.Println("userWalletAddr", userWalletAddr)
 
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	profile, err := h.Usecase.GetUserProfileByBtcAddress(userWalletAddr)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

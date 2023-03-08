@@ -157,6 +157,16 @@ func (r Repository) UpdateUserByWalletAddress(walletAdress string, updateddUser 
 	return result, nil
 }
 
+func (r Repository) UpdateUserByBTCWalletAddressSegwit(btcSegwitAdress string, updateddUser *entity.Users) (*mongo.UpdateResult, error) {
+	filter := bson.D{{utils.KEY_WALLET_ADDRESS_BTC, btcSegwitAdress}}
+	result, err := r.UpdateOne(updateddUser.TableName(), filter, updateddUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) UpdateUserByID(userID string, updateddUser *entity.Users) (*mongo.UpdateResult, error) {
 	filter := bson.D{{utils.KEY_UUID, userID}}
 	result, err := r.UpdateOne(updateddUser.TableName(), filter, updateddUser)

@@ -42,8 +42,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//auth
 	auth := api.PathPrefix("/auth").Subrouter()
-	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
-	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
+	// auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
+	// auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
+	auth.HandleFunc("/nonce", h.generateMessageUpdate).Methods("POST")
+	auth.HandleFunc("/nonce/verify", h.verifyMessageUpdate).Methods("POST")
 
 	files := api.PathPrefix("/files").Subrouter()
 	files.HandleFunc("", h.UploadFile).Methods("POST")

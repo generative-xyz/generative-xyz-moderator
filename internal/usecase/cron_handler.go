@@ -54,6 +54,7 @@ func roundTo8DecimalPlaces(x float64) float64 {
 	return math.Ceil(x*100000000) / 100000000
 }
 
+// TODO: 0x2525
 func (u Usecase) SyncUserStats() error {
 
 	addressToCollectionCreated := make(map[string]int32)

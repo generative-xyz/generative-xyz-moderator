@@ -698,6 +698,7 @@ func (u Usecase) resolveShortDescription(description string) string {
 	return description
 }
 
+// TODO: 0x2525
 func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Projects, error) {
 
 	if req.ProjectID == nil {

@@ -135,7 +135,7 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whit
 func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
 	u.Logger.Info("input", input)
-
+	// TODO: @thaibao
 	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
 	if err == nil {
 		if weth != nil {
@@ -434,7 +434,7 @@ func (u Usecase) MintLogicETH(ethEntity *entity.ETHWalletAddress) (*entity.ETHWa
 	return ethEntity, nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
