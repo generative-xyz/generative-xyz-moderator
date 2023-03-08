@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -156,6 +157,106 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	resp.Result = tokens
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
+	resp.PageSize = filter.Limit
+	//resp.PageSize = filter.Limit
+	return resp, nil
+}
+
+func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
+	tokens := []entity.TokenUriListingFilter{}
+	resp := &entity.Pagination{}
+
+	f := r.filterToken(filter)
+	if filter.SortBy == "" {
+		filter.SortBy = "minted_time"
+	}
+
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+	f2 := bson.A{
+		bson.D{{"$match", bson.D{{"project_id", "1000264"}}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_listing"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let",
+						bson.D{
+							{"cancelled", "$cancelled"},
+							{"matched", "$matched"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"matched", true},
+										{"cancelled", false},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 1},
+					{"token_id", 1},
+					{"gen_nft_addrress", 1},
+					{"contract_address", 1},
+					{"project_id", 1},
+					{"image", 1},
+					{"priority", 1},
+					{"inscription_index", 1},
+					{"order_inscription_index", 1},
+					{"thumbnail", 1},
+					{"listing.matched", 1},
+					{"listing.cancelled", 1},
+					{"listing.inscription_id", 1},
+					{"listing.amount", 1},
+					{"listing._id", 1},
+				},
+			},
+		},
+		bson.D{{"$sort", bson.D{{"listing", -1}}}},
+	}
+
+	// t, err := r.Aggregate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f2, r.SelectedTokenFieldsNew(), r.SortToken(filter), &tokens)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), f2)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	log.Println("len(tokens)", len(tokens))
+
+	resp.Result = tokens
+	// resp.Page = t.Pagination.Page
+	// resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
 	//resp.PageSize = filter.Limit
 	return resp, nil
@@ -352,6 +453,40 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 }
 
 func (r Repository) SelectedTokenFields() bson.D {
+	f := bson.D{
+		{"token_id", 1},
+		{"gen_nft_addrress", 1},
+		{"contract_address", 1},
+		{"thumbnail", 1},
+		{"description", 1},
+		{"name", 1},
+		{"price", 1},
+		{"owner_addrress", 1},
+		{"creator_address", 1},
+		{"project_id", 1},
+		{"minted_time", 1},
+		{"priority", 1},
+		{"image", 1},
+		{"project.tokenid", 1},
+		{"project.tokenIDInt", 1},
+		{"project.contractAddress", 1},
+		{"project.name", 1},
+		//{"project", 1},
+		{"owner.wallet_address", 1},
+		{"owner.display_name", 1},
+		{"owner.avatar", 1},
+		{"creator.wallet_address", 1},
+		{"creator.display_name", 1},
+		{"creator.avatar", 1},
+		{"stats.price_int", 1},
+		{"minter_address", 1},
+		{"inscription_index", 1},
+		{"order_inscription_index", 1},
+	}
+	return f
+}
+
+func (r Repository) SelectedTokenFieldsNew() bson.D {
 	f := bson.D{
 		{"token_id", 1},
 		{"gen_nft_addrress", 1},

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 )
@@ -82,6 +83,28 @@ type TokenUri struct {
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
 	Source                         string        `bson:"source" json:"source"`
 	NftTokenId                     string        `bson:"nftTokenId"`
+}
+
+type TokenUriListingFilter struct {
+	ID primitive.ObjectID `bson:"_id"`
+	TokenUri
+	Listing *ListingInfo `bson:"listing"`
+}
+
+//	"listing": {
+//	    "_id": {
+//	      "$oid": "6401c28716d9ec27ef8519e1"
+//	    },
+//	    "inscription_id": "b4e20295fa3c738490cf1d8a542a9a1354affa649f601866b12c092a956de1c3i0",
+//	    "amount": 1000,
+//	    "cancelled": false,
+//	    "matched": true
+//	  }
+type ListingInfo struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	Amount    uint64             `bson:"amount"`
+	Cancelled bool               `bson:"cancelled"`
+	Matched   bool               `bson:"matched"`
 }
 
 type TokenUriAttr struct {
