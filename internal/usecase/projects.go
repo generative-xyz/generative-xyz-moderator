@@ -1114,16 +1114,18 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 			c.NetworkFeeEth = ethNetworkFeePrice
 		} */
 	// cal fee info:
-	feeInfos, err := u.calMintFeeInfo(c)
-	if err != nil {
-		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
-		return nil, err
-	}
-	// set price, fee:
-	c.NetworkFee = feeInfos["btc"].NetworkFee
-	c.NetworkFeeEth = feeInfos["eth"].NetworkFee
+	if c.MintingInfo.Index < c.MaxSupply {
+		feeInfos, err := u.calMintFeeInfo(c)
+		if err != nil {
+			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+			return nil, err
+		}
+		// set price, fee:
+		c.NetworkFee = feeInfos["btc"].NetworkFee
+		c.NetworkFeeEth = feeInfos["eth"].NetworkFee
 
-	c.MintPriceEth = feeInfos["eth"].MintPrice
+		c.MintPriceEth = feeInfos["eth"].MintPrice
+	}
 
 	go func() {
 		//upload animation URL

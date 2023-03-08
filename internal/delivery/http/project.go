@@ -467,7 +467,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	}
 	resp.LimitMintPerProcess = input.LimitMintPerProcess
 	if resp.LimitMintPerProcess == 0 {
-		resp.LimitMintPerProcess = 3
+		resp.LimitMintPerProcess = 100
 	}
 
 	resp.Stats = response.ProjectStatResp{
