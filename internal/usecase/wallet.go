@@ -107,7 +107,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		}
 		result.Txrefs = newTxrefsFiltered
 	}
-
+	result.Loadtime = make(map[string]string)
 	result.Loadtime["trackT1"] = trackT1.String()
 	result.Loadtime["trackT2"] = trackT2.String()
 	result.Loadtime["trackT3"] = trackT3.String()
