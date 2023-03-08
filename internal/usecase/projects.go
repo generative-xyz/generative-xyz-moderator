@@ -1966,13 +1966,14 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			MaxSupply:       1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
+			CreatorAddrrBTC: creator.WalletAddressBTC,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
+			InscribedBy:     item.UserWalletAddress,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
