@@ -460,10 +460,38 @@ func GetBalanceFromQuickNode(address string, qn string) (*structure.BlockCypherW
 	return &result, nil
 }
 
+func SendRawTxfromQuickNode(raw_tx string, qn string) (string, error) {
+	payload := strings.NewReader(fmt.Sprintf("{\"method\": \"sendrawtransaction\", \"params\": [\"%v\"]}", raw_tx))
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return "", err
+		}
+		return "", fmt.Errorf("sendrawtransaction error: %v %v", res.Status, string(body))
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
 func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	var result QuickNodeTx
 
-	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t1\n\t]\n}", txhash))
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t2\n\t]\n}", txhash))
 
 	req, err := http.NewRequest("POST", qn, payload)
 	if err != nil {
@@ -485,7 +513,7 @@ func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	if err != nil {
 		return nil, err
 	}
-	if result.Result.Hash != txhash {
+	if result.Result.Txid != txhash {
 		return nil, errors.New("tx not found")
 	}
 	return &result, nil
