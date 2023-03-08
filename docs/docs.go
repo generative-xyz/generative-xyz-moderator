@@ -4590,6 +4590,9 @@ var doc = `{
                 "hash": {
                     "type": "string"
                 },
+                "htmlFile": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4617,6 +4620,9 @@ var doc = `{
                 },
                 "license": {
                     "type": "string"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "limitSupply": {
                     "type": "integer"
@@ -5152,6 +5158,9 @@ var doc = `{
                 "license": {
                     "type": "string"
                 },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
                 "limitSupply": {
                     "type": "integer"
                 },
@@ -5503,6 +5512,9 @@ var doc = `{
                 },
                 "isHidden": {
                     "type": "boolean"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
@@ -6066,6 +6078,9 @@ var doc = `{
                     "type": "string"
                 },
                 "limit": {
+                    "type": "integer"
+                },
+                "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxFileSize": {

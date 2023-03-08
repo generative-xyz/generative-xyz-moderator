@@ -4575,6 +4575,9 @@
                 "hash": {
                     "type": "string"
                 },
+                "htmlFile": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4602,6 +4605,9 @@
                 },
                 "license": {
                     "type": "string"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "limitSupply": {
                     "type": "integer"
@@ -5137,6 +5143,9 @@
                 "license": {
                     "type": "string"
                 },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
                 "limitSupply": {
                     "type": "integer"
                 },
@@ -5488,6 +5497,9 @@
                 },
                 "isHidden": {
                     "type": "boolean"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
@@ -6051,6 +6063,9 @@
                     "type": "string"
                 },
                 "limit": {
+                    "type": "integer"
+                },
+                "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxFileSize": {

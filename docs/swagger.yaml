@@ -188,6 +188,8 @@ definitions:
         type: string
       hash:
         type: string
+      htmlFile:
+        type: string
       id:
         type: string
       images:
@@ -207,6 +209,8 @@ definitions:
         type: boolean
       license:
         type: string
+      limitMintPerProcess:
+        type: integer
       limitSupply:
         type: integer
       maxFileSize:
@@ -562,6 +566,8 @@ definitions:
         type: boolean
       license:
         type: string
+      limitMintPerProcess:
+        type: integer
       limitSupply:
         type: integer
       maxSupply:
@@ -791,6 +797,8 @@ definitions:
         type: string
       isHidden:
         type: boolean
+      limitMintPerProcess:
+        type: integer
       maxSupply:
         type: integer
       mintPrice:
@@ -1163,6 +1171,8 @@ definitions:
       license:
         type: string
       limit:
+        type: integer
+      limitMintPerProcess:
         type: integer
       maxFileSize:
         type: integer
