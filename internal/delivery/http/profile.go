@@ -178,11 +178,16 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	// TODO: 0x2525
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -275,17 +280,23 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	walletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("WalletAddress is incorect")
 		h.Logger.ErrorAny("withdraw.walletAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	walletAddress, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	var reqBody request.WithDrawItemRequest
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.ErrorAny("withdraw.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -307,7 +318,6 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: 0x2525
 	wd, err := h.Usecase.CreateWithdraw(walletAddress, *wdr)
 	if err != nil {
 		h.Logger.ErrorAny("withdraw.CreateWithdraw", zap.Error(err), zap.Any("wdr", wdr))

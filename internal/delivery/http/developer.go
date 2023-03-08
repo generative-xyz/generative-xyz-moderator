@@ -41,7 +41,6 @@ func (h *httpDelivery) apiDeveloper_GenApiKey(w http.ResponseWriter, r *http.Req
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	// TODO: 0x2525
 	resp, err := h.Usecase.ApiDevelop_GenApiKey(userWalletAddr, &req)
 	if err != nil {
 		h.Logger.Error("h.Usecase.ApiDevelop_GenApiKey", err.Error(), err)

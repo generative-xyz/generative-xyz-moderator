@@ -123,7 +123,6 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 
-	// TODO: 0x2525
 	err = h.Usecase.CancelMintNftBtc(profile.WalletAddressBTCTaproot, uuid)
 	if err != nil {
 		h.Logger.Error("h.Usecase.CancelMintNftBt", err.Error(), err)
@@ -135,7 +134,6 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Request) {
-
 	// verify user:
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)

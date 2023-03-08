@@ -24,7 +24,6 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/receive-address [POST]
 func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
-	
 
 	var reqBody request.CreateEthWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
@@ -75,19 +74,23 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	userWalletAddr, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	
+	userWalletAddr, err := h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+	if err != nil {
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	var reqBody request.CreateWhitelistedEthWalletAddressReq
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
+	err = decoder.Decode(&reqBody)
 	if err != nil {
 		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -129,9 +132,9 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/mint [POST]
 // func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
-// 	
-// 	
-// 	
+//
+//
+//
 
 // 	var reqBody request.CreateMintReq
 // 	decoder := json.NewDecoder(r.Body)

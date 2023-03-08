@@ -72,7 +72,6 @@ func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq
 }
 
 func (u Usecase) ApiDevelop_GetApiKey(userAddr string) (*entity.DeveloperKey, error) {
-	// TODO: 0x2525
 	// check admin user:
 	profile, err := u.GetUserProfileByBtcAddress(userAddr)
 	if err != nil {

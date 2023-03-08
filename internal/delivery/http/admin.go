@@ -175,7 +175,6 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: 0x2525
 	res := h.Usecase.AutoListing(&reqBody)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
 }

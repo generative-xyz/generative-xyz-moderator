@@ -363,10 +363,17 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	// TODO: 0x2525
-	currentUserWalletAddress, ok := iWalletAddress.(string)
+	segwitBTCAddress, ok := iWalletAddress.(string)
+	currentUserWalletAddress := ""
 	if !ok {
 		f.IsHidden = &hidden
+	} else {
+		currentUserWalletAddress, err = h.getETHWalletFromSegwitBTCAddress(segwitBTCAddress)
+		if err != nil {
+			h.Logger.Error("BaseFilters", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 	}
 
 	if ok && currentUserWalletAddress != walletAddress {
