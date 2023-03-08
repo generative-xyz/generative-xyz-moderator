@@ -465,6 +465,11 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 			}
 		}
 	}
+	resp.LimitMintPerProcess = input.LimitMintPerProcess
+	if resp.LimitMintPerProcess == 0 {
+		resp.LimitMintPerProcess = 100
+	}
+
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
