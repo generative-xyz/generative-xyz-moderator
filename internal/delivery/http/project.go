@@ -451,17 +451,25 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		resp.CaptureThumbnailDelayTime = *input.CatureThumbnailDelayTime
 	}
 	resp.TotalImages = len(input.Images) + len(input.ProcessingImages)
-	if resp.TotalImages > 0 {
-		if len(input.Images) > 0 {
-			if strings.HasSuffix(input.Images[0], ".html") {
-				resp.HtmlFile = input.Images[0]
-			}
-		} else if len(input.ProcessingImages) > 0 {
-			if strings.HasSuffix(input.ProcessingImages[0], ".html") {
-				resp.HtmlFile = input.ProcessingImages[0]
+	resp.HtmlFile = input.HtmlFile
+	if resp.HtmlFile == "" {
+		if resp.TotalImages > 0 {
+			if len(input.Images) > 0 {
+				if strings.HasSuffix(input.Images[0], ".html") {
+					resp.HtmlFile = input.Images[0]
+				}
+			} else if len(input.ProcessingImages) > 0 {
+				if strings.HasSuffix(input.ProcessingImages[0], ".html") {
+					resp.HtmlFile = input.ProcessingImages[0]
+				}
 			}
 		}
 	}
+	resp.LimitMintPerProcess = input.LimitMintPerProcess
+	if resp.LimitMintPerProcess == 0 {
+		resp.LimitMintPerProcess = 3
+	}
+
 	resp.Stats = response.ProjectStatResp{
 		UniqueOwnerCount:   input.Stats.UniqueOwnerCount,
 		TotalTradingVolumn: input.Stats.TotalTradingVolumn,
