@@ -506,6 +506,12 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"isFullChain", 1},
 		{"reportUsers", 1},
 		{"mintpriceeth", 1},
+		{"fromAuthentic", 1},
+		{"tokenAddress", 1},
+		{"tokenId", 1},
+		{"ownerOf", 1},
+		{"ordinalsTx", 1},
+		{"inscribedBy", 1},
 	}
 	return f
 }
