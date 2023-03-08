@@ -72,17 +72,16 @@ func (r Repository) FindUserByBtcAddressTaproot(btcAddress string) (*entity.User
 	return resp, nil
 }
 
-
 // This function find user by eth wallet_address. wallet_address_btc or wallet_address_taproot
 func (r Repository) FindUserByAddress(address string) (*entity.Users, error) {
 	resp := &entity.Users{}
 	usr, err := r.FilterOne(utils.COLLECTION_USERS, bson.D{
 		{
-			Key: "$or", 
+			Key: "$or",
 			Value: []bson.M{
 				{utils.KEY_WALLET_ADDRESS: address},
 				{utils.KEY_WALLET_ADDRESS_BTC: address},
-				{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: address},		
+				{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: address},
 			},
 		},
 	})
@@ -163,7 +162,7 @@ func (r Repository) UpdateUserByID(userID string, updateddUser *entity.Users) (*
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return result, nil
 }
 
@@ -197,6 +196,37 @@ func (r Repository) FindUserByAutoUserID(autoUserID int32) (*entity.Users, error
 	return resp, nil
 }
 
+func (r Repository) ListUserBywalletAddressBtcTaproot(address []string) ([]*response.ArtistResponse, error) {
+	users := []entity.Users{}
+	filter1 := bson.M{}
+	filter1[utils.KEY_DELETED_AT] = nil
+	filter1["wallet_address_btc_taproot"] = bson.M{"$in": address}
+
+	_, err := r.Paginate(utils.COLLECTION_USERS, 0, int64(len(address)), filter1, bson.D{}, []Sort{}, &users)
+	if err != nil {
+		return nil, err
+	}
+
+	data := []*response.ArtistResponse{}
+	for _, user := range users {
+		uProjects, err := r.GetProjectsByWalletAddress(user.WalletAddress)
+		if err != nil {
+			continue
+		}
+
+		projects := []*response.ProjectBasicInfo{}
+		for _, p := range uProjects {
+			projects = append(projects, &response.ProjectBasicInfo{Id: p.ID.Hex(), Name: p.Name, WalletAddress: p.CreatorProfile.WalletAddress})
+		}
+
+		d := &response.ArtistResponse{Projects: projects}
+		response.CopyEntityToRes(d, &user)
+		data = append(data, d)
+	}
+
+	return data, nil
+}
+
 func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination, error) {
 	users := []entity.Users{}
 	resp := &entity.Pagination{}
@@ -219,6 +249,8 @@ func (r Repository) ListUsers(filter structure.FilterUsers) (*entity.Pagination,
 		filter1["$or"] = []bson.M{
 			{"display_name": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 			{"wallet_address": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc_taproot": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			{"wallet_address_btc": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
 		}
 	}
 
