@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -76,7 +77,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 
 	fmt.Println("mintFee===>", mintFee)
 
-	sentTokenFee := utils.FEE_BTC_SEND_AGV * 2
+	sentTokenFee := utils.FEE_BTC_SEND_AGV + utils.FEE_BTC_SEND_NFT
 	totalFee := int(mintFee) + sentTokenFee
 
 	fmt.Println("total fee ===>", totalFee)
@@ -114,80 +115,35 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy",zap.Error(err))
-		return nil, err
-	}
-
-	// create wallet name
-	userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
-
-	// create master wallet:
-	resp, err := u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			userWallet,
-			"wallet",
-			"create",
-		},
-	})
-
-	if err != nil {
-		u.Logger.ErrorAny("u.OrdService.Exec.create.Wallet",  zap.Error(err))
-		return nil, err
-	}
-	walletAddress.Mnemonic = resp.Stdout
-
-	u.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", resp)
-	resp, err = u.OrdService.Exec(ord_service.ExecRequest{
-		Args: []string{
-			"--wallet",
-			userWallet,
-			"wallet",
-			"receive",
-		},
-	})
-
-	if err != nil {
-		u.Logger.ErrorAny("u.OrdService.Exec.create.receive",  zap.Error(err))
-		return nil, err
-	}
-
-	// parse json to get address:
-	// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
-
-	jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
-	jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
-
-	var receiveResp ord_service.ReceiveCmdStdoputRespose
-
-	err = json.Unmarshal([]byte(jsonStr), &receiveResp)
-	if err != nil {
-		u.Logger.ErrorAny("CreateInscribeBTC.Unmarshal", zap.Error(err))
+		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
 		return nil, err
 	}
 
 	mintFee, err := calculateMintPrice(input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice",  zap.Error(err))
+		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
 		return nil, err
 	}
 	mfTotal := mintFee.Amount
-	mfMintFee :=  mintFee.MintFee
-	mfSentTokenFee :=   mintFee.SentTokenFee
-	
+	mfMintFee := mintFee.MintFee
+	mfSentTokenFee := mintFee.SentTokenFee
+
 	privKey := ""
 	addressSegwit := ""
 	payType := input.PayType
-	btcRate := 14.7
-	ethRate := 1.0
 
-	_, btcRate, ethRate, err = u.convertBTCToETH("1")
+	if len(payType) == 0 {
+		payType = utils.NETWORK_BTC
+	}
+
+	_, btcRate, ethRate, err := u.convertBTCToETH("1")
 	if err != nil {
 		u.Logger.Error("convertBTCToETH", err.Error(), err)
 		return nil, err
 	}
 
 	if strings.ToLower(payType) == strings.ToLower(utils.NETWORK_ETH) {
+
 		ethClient := eth.NewClient(nil)
 
 		// create segwit address
@@ -213,16 +169,68 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		}
 
 		mfTotalF := mfMintFeeF + mfSentTokenFeeF
-		mfMintFeeF = mfMintFeeF * (btcRate/ethRate)
-		mfSentTokenFeeF = mfSentTokenFeeF * (btcRate/ethRate)
-		mfTotalF = mfTotalF * (btcRate/ethRate)
-		
-		mfMintFee = fmt.Sprintf("%d",int(mfMintFeeF))
-		mfTotal = fmt.Sprintf("%d",int(mfTotalF))
-		mfSentTokenFee = fmt.Sprintf("%d",int(mfSentTokenFeeF))
-		
-	}else{
-		payType = utils.NETWORK_BTC
+		mfMintFeeF = mfMintFeeF * (btcRate / ethRate)
+		mfSentTokenFeeF = mfSentTokenFeeF * (btcRate / ethRate)
+		mfTotalF = mfTotalF * (btcRate / ethRate)
+
+		mfMintFee = fmt.Sprintf("%d", int(mfMintFeeF))
+		mfTotal = fmt.Sprintf("%d", int(mfTotalF))
+		mfSentTokenFee = fmt.Sprintf("%d", int(mfSentTokenFeeF))
+
+	} else {
+		// just create ord wallet for btc payment:
+		// create wallet name
+		userWallet := helpers.CreateBTCOrdWallet(input.WalletAddress)
+
+		// create master wallet:
+		resp, err := u.OrdService.Exec(ord_service.ExecRequest{
+			Args: []string{
+				"--wallet",
+				userWallet,
+				"wallet",
+				"create",
+			},
+		})
+
+		if err != nil {
+			u.Logger.ErrorAny("u.OrdService.Exec.create.Wallet", zap.Error(err))
+			return nil, err
+		}
+		walletAddress.Mnemonic = resp.Stdout
+
+		u.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", resp)
+		resp, err = u.OrdService.Exec(ord_service.ExecRequest{
+			Args: []string{
+				"--wallet",
+				userWallet,
+				"wallet",
+				"receive",
+			},
+		})
+
+		if err != nil {
+			u.Logger.ErrorAny("u.OrdService.Exec.create.receive", zap.Error(err))
+			return nil, err
+		}
+		u.Logger.Info("CreateInscribeBTC.calculateMintPrice", resp)
+
+		// parse json to get address:
+		// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
+
+		jsonStr := strings.ReplaceAll(resp.Stdout, "\n", "")
+		jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+		var receiveResp ord_service.ReceiveCmdStdoputRespose
+
+		err = json.Unmarshal([]byte(jsonStr), &receiveResp)
+		if err != nil {
+			u.Logger.ErrorAny("CreateInscribeBTC.Unmarshal", zap.Error(err))
+			return nil, err
+		}
+
+		walletAddress.UserAddress = userWallet // name
+		walletAddress.OrdAddress = receiveResp.Address
+
 		// create segwit address
 		privKey, _, addressSegwit, err = btc.GenerateAddressSegwit()
 		if err != nil {
@@ -237,7 +245,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		u.Logger.ErrorAny("CreateInscribeBTC.privKey", zap.Error(err))
 		return nil, err
 	}
-	
+
 	if addressSegwit == "" {
 		err := errors.New("Cannot create addressSegwit")
 		u.Logger.ErrorAny("CreateInscribeBTC.addressSegwit", zap.Error(err))
@@ -248,9 +256,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.SegwitAddress = addressSegwit
 	walletAddress.PayType = payType
 
-	u.Logger.Info("CreateInscribeBTC.calculateMintPrice", resp)
-	
-
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
 		expiredTime = 1
@@ -259,9 +264,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.Amount = mfTotal
 	walletAddress.MintFee = mfMintFee
 	walletAddress.SentTokenFee = mfSentTokenFee
-	walletAddress.UserAddress = userWallet // name
 	walletAddress.OriginUserAddress = input.WalletAddress
-	walletAddress.OrdAddress = receiveResp.Address
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
 	walletAddress.FileURI = input.File
@@ -347,13 +350,36 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 		// go u.trackInscribeHistory("", "JobInscribeWaitingBalance", "", "", "ListBTCInscribePending", "[]")
 		return nil
 	}
+	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMint_CheckBalance", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		return err
+	}
+	ethClient := eth.NewClient(ethClientWrap)
 
 	for _, item := range listPending {
 
 		// check balance:
-		balance, confirm, err := bs.GetBalance(item.SegwitAddress)
+		balance := big.NewInt(0)
+		confirm := -1
 
-		fmt.Println("GetBalance response: ", balance, confirm, err)
+		if item.PayType == utils.NETWORK_BTC {
+
+			// check balance:
+			balance, confirm, err = bs.GetBalance(item.SegwitAddress)
+			fmt.Println("GetBalance response: ", balance, confirm, err)
+
+		} else if item.PayType == utils.NETWORK_ETH {
+			// check eth balance:
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			balance, err = ethClient.GetBalance(ctx, item.SegwitAddress)
+			fmt.Println("GetBalance eth response: ", balance, err)
+
+			confirm = 1
+		}
 
 		if err != nil {
 			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
@@ -396,6 +422,11 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 
 		// received fund:
 		item.Status = entity.StatusInscribe_ReceivedFund
+		if item.PayType == utils.NETWORK_ETH {
+			item.Status = entity.StatusInscribe_SentBTCFromSegwitAddrToOrdAdd // next step to mint (ready to mint)
+			item.IsMergeMint = true                                           // jus for eth now
+		}
+
 		item.IsConfirm = true
 
 		_, err = u.Repo.UpdateBtcInscribe(&item)
@@ -431,6 +462,10 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 
 	for _, item := range listTosendBtc {
 		if item.Status == entity.StatusInscribe_ReceivedFund {
+
+			if item.PayType == utils.NETWORK_ETH {
+				continue
+			}
 
 			// send all amount:
 			fmt.Println("send all btc from", item.SegwitAddress, "to: ", item.OrdAddress)
@@ -631,13 +666,24 @@ func (u Usecase) JobInscribeMintNft() error {
 		fileURI := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 		item.FileURI = fileURI
 
+		ordWalletNameToMint := item.UserAddress
+
+		if item.PayType == utils.NETWORK_ETH {
+			ordWalletNameToMint = "ord_master_eth" // TODO: move to env
+		}
+
 		//TODO - enable this
 		mintData := ord_service.MintRequest{
-			WalletName:        item.UserAddress,
+			WalletName:        ordWalletNameToMint,
 			FileUrl:           fileURI,
 			FeeRate:           int(item.FeeRate),
 			DryRun:            false,
 			AutoFeeRateSelect: false,
+
+			RequestId: item.UUID, // for tracking log
+
+			// new key for ord v5.1, support mint + send in 1 tx:
+			DestinationAddress: item.OriginUserAddress, // the address mint to.
 		}
 		resp, err := u.OrdService.Mint(mintData)
 
@@ -650,6 +696,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		//TODO: handle log err: Database already open. Cannot acquire lock
 
 		item.Status = entity.StatusInscribe_Minting
+		item.IsMergeMint = true // used ord 5.1, mint+send in 1 tx
 		// item.ErrCount = 0 // reset error count!
 
 		item.OutputMintNFT = resp
@@ -698,6 +745,16 @@ func (u Usecase) JobInscribeSendNft() error {
 	}
 
 	for _, item := range listTosendNft {
+
+		// update for ord v5.1: is merged tx
+		if item.IsMergeMint {
+			// don't send, update isSent = true
+			item.Status = entity.StatusInscribe_SentNFTToUser
+			item.IsSuccess = true
+			u.Repo.UpdateBtcInscribe(&item)
+			continue
+
+		}
 
 		// check nft in master wallet or not:
 		listNFTsRep, err := u.GetNftsOwnerOf(item.UserAddress)
