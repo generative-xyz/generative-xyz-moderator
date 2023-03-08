@@ -82,7 +82,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 				continue
 			}
 			dupInscMap[item.InscriptionID] = struct{}{}
-			result.Inscriptions = append(result.Inscriptions, items...)
+			result.Inscriptions = append(result.Inscriptions, item)
 		}
 
 	}
