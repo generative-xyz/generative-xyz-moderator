@@ -23,7 +23,7 @@ func NewAuth2() *Auth2 {
 }
 
 type SignedDetails struct {
-	WalletAddress string
+	WalletAddress string // Replace eth address => btc segwit address
 	Email         string
 	First_name    string
 	Last_name     string

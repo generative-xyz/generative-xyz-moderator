@@ -132,7 +132,7 @@ func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [PUT]
 func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) {
-
+	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
@@ -194,7 +194,6 @@ func (h *httpDelivery) updateBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/{projectID} [DELETE]
 func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) {
-
 	// TODO: 0x2525
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]

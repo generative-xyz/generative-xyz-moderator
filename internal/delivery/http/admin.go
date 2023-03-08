@@ -155,7 +155,7 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	// check admin user:
 	profile, err := h.Usecase.GetUserProfileByBtcAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Logger.Error("h.Usecase.GetUserProfileByBtcAddress(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -175,6 +175,7 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: 0x2525
 	res := h.Usecase.AutoListing(&reqBody)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
 }
