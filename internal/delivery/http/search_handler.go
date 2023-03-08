@@ -60,7 +60,9 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, p := range uProjects {
+			result, err := h.Usecase.GetCollectionMarketplaceStats(p.TokenID)
 			r, err := h.projectToResp(&p)
+			r.BtcFloorPrice = result.FloorPrice
 			if err != nil {
 				h.Logger.Error("copier.Copy", err.Error(), err)
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
