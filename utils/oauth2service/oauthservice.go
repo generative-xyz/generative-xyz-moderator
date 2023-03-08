@@ -67,7 +67,6 @@ func (a Auth2) GenerateAllTokens(WalletAddress string, email string, firstName s
 
 func (a Auth2) GenerateAllTokensUpdate(segwitBTCAddress string, email string, firstName string, lastName string, uid string) (signedToken string, signedRefreshToken string, err error) {
 	claims := &SignedDetails{
-		// TODO: 0x2525 review this field
 		WalletAddress: segwitBTCAddress,
 		Email:         email,
 		First_name:    firstName,

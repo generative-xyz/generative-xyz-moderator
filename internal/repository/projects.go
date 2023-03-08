@@ -192,7 +192,6 @@ func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mon
 	return result, nil
 }
 
-// TODO: 0x2525: get by segwit
 func (r Repository) GetProjectsByWalletAddress(add string) ([]entity.Projects, error) {
 	confs := []entity.Projects{}
 	filter := entity.FilterProjects{}
@@ -335,7 +334,6 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 
 	//f["isHidden"] = false
 
-	// TODO: 0x2525
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{

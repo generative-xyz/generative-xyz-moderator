@@ -54,7 +54,6 @@ func roundTo8DecimalPlaces(x float64) float64 {
 	return math.Ceil(x*100000000) / 100000000
 }
 
-// TODO: 0x2525
 func (u Usecase) SyncUserStats() error {
 
 	addressToCollectionCreated := make(map[string]int32)
@@ -646,12 +645,12 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 }
 
 const (
-	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
-	SATOSHI_EACH_BTC               int64 = 100000000
-	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000000
+	INF_TRENDING_SCORE                  int64 = 9223372036854775807 // max int64 value
+	SATOSHI_EACH_BTC                    int64 = 100000000
+	TRENDING_SCORE_EACH_BTC_VOLUMN      int64 = 1000000
 	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 5000
-	TRENDING_SCORE_EACH_MINT       int64 = 10
-	TRENDING_SCORE_EACH_VIEW       int64 = 1
+	TRENDING_SCORE_EACH_MINT            int64 = 10
+	TRENDING_SCORE_EACH_VIEW            int64 = 1
 )
 
 func (u Usecase) SyncProjectTrending() error {
@@ -679,10 +678,10 @@ func (u Usecase) SyncProjectTrending() error {
 
 	fromProjectIDToCountListing := map[string]int64{}
 
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		u.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
 		listings, err := u.Repo.GetDexBtcsAlongWithProjectInfo(entity.GetDexBtcListingWithProjectInfoReq{
-			Page: page,
+			Page:  page,
 			Limit: 100,
 		})
 		if err != nil {
@@ -741,12 +740,12 @@ func (u Usecase) SyncProjectTrending() error {
 			numActivity := int64(len(btcActivites))
 
 			numListings := fromProjectIDToCountListing[project.TokenID]
-			
+
 			if project.MintingInfo.Index == project.MaxSupply && numListings == 0 {
 				numActivity = 0
 				volumnInBtc = 0
 			}
-			trendingScore := countView * TRENDING_SCORE_EACH_VIEW 
+			trendingScore := countView * TRENDING_SCORE_EACH_VIEW
 			trendingScore += int64(volumnInBtc * float64(TRENDING_SCORE_EACH_BTC_VOLUMN))
 			trendingScore += numActivity * TRENDING_SCORE_EACH_MINT
 			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
