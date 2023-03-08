@@ -134,7 +134,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.NetworkFeeByPayType = feeInfos[input.PayType].NetworkFee // 1 item
 
 	walletAddress.BtcRate = feeInfos[input.PayType].BtcPrice
-	walletAddress.EthRate = feeInfos[input.PayType].BtcPrice
+	walletAddress.EthRate = feeInfos[input.PayType].EthPrice
 
 	walletAddress.EstFeeInfo = feeInfos
 
