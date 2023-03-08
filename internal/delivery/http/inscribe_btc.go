@@ -69,6 +69,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 					reqUsecase.WithUserUuid(userUuid),
 				)
 			}
+			// TODO: 0x2525
 			userWalletAddress, ok := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			if ok {
 				reqUsecase.SetFields(

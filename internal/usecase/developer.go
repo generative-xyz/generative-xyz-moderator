@@ -15,9 +15,9 @@ import (
 func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq) (*entity.DeveloperKey, error) {
 
 	// check admin user:
-	profile, err := u.GetUserProfileByWalletAddress(userAddr)
+	profile, err := u.GetUserProfileByBtcAddress(userAddr)
 	if err != nil {
-		u.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		u.Logger.Error("h.Usecase.GetUserProfileByBtcAddress(", err.Error(), err)
 		return nil, err
 	}
 
@@ -74,9 +74,9 @@ func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq
 func (u Usecase) ApiDevelop_GetApiKey(userAddr string) (*entity.DeveloperKey, error) {
 
 	// check admin user:
-	profile, err := u.GetUserProfileByWalletAddress(userAddr)
+	profile, err := u.GetUserProfileByBtcAddress(userAddr)
 	if err != nil {
-		u.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		u.Logger.Error("h.Usecase.GetUserProfileByBtcAddress(", err.Error(), err)
 		return nil, err
 	}
 

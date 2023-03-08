@@ -260,7 +260,6 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-
 // UserCredits godoc
 // @Summary User profile via wallet address
 // @Description User profile via wallet address
@@ -282,7 +281,7 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	var reqBody request.WithDrawItemRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -307,12 +306,13 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: 0x2525
 	wd, err := h.Usecase.CreateWithdraw(walletAddress, *wdr)
 	if err != nil {
 		h.Logger.ErrorAny("withdraw.CreateWithdraw", zap.Error(err), zap.Any("wdr", wdr))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }

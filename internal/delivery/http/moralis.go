@@ -26,6 +26,7 @@ func (h *httpDelivery) listNftFromMoralis(w http.ResponseWriter, r *http.Request
 			userWallet := ctx.Value(utils.SIGNED_WALLET_ADDRESS).(string)
 			userId := ctx.Value(utils.SIGNED_USER_ID).(string)
 			pag := entity.GetPagination(r)
+			// TODO: 0x2525
 			return h.Usecase.ListNftFromMoralis(ctx, userId, userWallet, r.URL.Query().Get("walletAddress"), pag)
 		},
 	).ServeHTTP(w, r)

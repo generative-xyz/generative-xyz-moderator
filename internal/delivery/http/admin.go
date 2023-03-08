@@ -153,7 +153,7 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("userWalletAddr", userWalletAddr)
 
 	// check admin user:
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	profile, err := h.Usecase.GetUserProfileByBtcAddress(userWalletAddr)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
