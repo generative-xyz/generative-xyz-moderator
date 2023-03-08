@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"math/big"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,16 +44,16 @@ var StatusMintToText = map[StatusMint]string{
 
 	StatusMint_WaitingForConfirms: "Waiting for payment confirmation",
 
-	StatusMint_ReceivedFund: "Transferring", // //"Minting",
+	StatusMint_ReceivedFund: "Minting", // //"Minting",
 
-	StatusMint_Minting: "Transferring", // "Minting",
-	StatusMint_Minted:  "Transferred",  // "Minted",
+	StatusMint_Minting: "Minting", // "Minting",
+	StatusMint_Minted:  "Minted",  // "Minted",
 
 	StatusMint_SendingNFTToUser: "Transferring",
 	StatusMint_SentNFTToUser:    "Transferred",
 
-	StatusMint_SendingFundToMaster: "Transferred", //"Sending funds to master",
-	StatusMint_SentFundToMaster:    "Transferred", //"Sent funds to master",
+	StatusMint_SendingFundToMaster: "Minted", //"Sending funds to master",
+	StatusMint_SentFundToMaster:    "Minted", //"Sent funds to master",
 
 	StatusMint_TxMintFailed: "Mint failed",
 
@@ -118,14 +119,27 @@ type MintNftBtc struct {
 
 	BtcRate           float64 `bson:"btc_rate"`
 	EthRate           float64 `bson:"eth_rate"`
-	ProjectMintPrice  int     `bson:"project_mint_price"`  // btc
-	ProjectNetworkFee int     `bson:"project_network_fee"` // btc
+	ProjectMintPrice  int     `bson:"project_mint_price"`  // btc for 1 item
+	ProjectNetworkFee int     `bson:"project_network_fee"` // btc for 1 item
+
+	MintPriceByPayType  string `bson:"mint_price_by_pay_type"`  // by pay type, for 1 item
+	NetworkFeeByPayType string `bson:"network_fee_by_pay_type"` // by pay type, for 1 item
+
+	MintPriceByPayTypeTotal  string `bson:"mint_price_by_pay_type_total"`  // by pay type, for n item
+	NetworkFeeByPayTypeTotal string `bson:"network_fee_by_pay_type_total"` // by pay type, for n item
+
+	EstFeeInfo map[string]MintFeeInfo `bson:"mintFeeInfo"` // 1 item
 
 	FeeSendMaster string `bson:"fee_send_master"` // maybe for eth only
 
-	MintFee int `bson:"mint_fee"`
+	MintFee int `bson:"mint_fee"` // real mint fee
 
 	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
+
+	// for mint batch:
+	Quantity      int    `bson:"quantity"`
+	IsSubItem     bool   `bson:"isSubItem"`
+	BatchParentId string `bson:"patch_parent_id"`
 }
 
 func (u MintNftBtc) TableName() string {
@@ -172,4 +186,29 @@ type MintNftBtcResp struct {
 	TxMintNft string `bson:"tx_mint_nft"`
 
 	OriginUserAddress string `bson:"origin_user_address"`
+}
+
+type MintFeeInfo struct {
+
+	//string
+	MintPrice   string `json:"mintPrice"`
+	NetworkFee  string `json:"networkFee"`
+	MintFee     string `json:"mintFee"`
+	SendNftFee  string `json:"sendNftFee"`
+	SendFundFee string `json:"sendFundFee"`
+	TotalAmount string `json:"totalAmount"`
+
+	// big number
+	MintPriceBigInt  *big.Int `json:"mintPriceBigInt"`
+	NetworkFeeBigInt *big.Int `json:"networkFeeBigInt"`
+
+	MintFeeBigInt     *big.Int `json:"mintFeeBigInt"`
+	SendNftFeeBigInt  *big.Int `json:"sendNftFeeBigInt"`
+	SendFundFeeBigInt *big.Int `json:"sendFundFeeBigInt"`
+
+	TotalAmountBigInt *big.Int `json:"totalAmountBigInt"`
+
+	EthPrice float64 `json:"ethPrice"`
+	BtcPrice float64 `json:"btcPrice"`
+	Decimal  int     `json:"decimal"`
 }

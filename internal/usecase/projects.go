@@ -77,7 +77,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		u.Logger.Error(err)
-		return 0
+		return -1
 	} else {
 		type feeRate struct {
 			fastestFee  int
@@ -1071,46 +1071,59 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		// return p, nil
 		return nil, errors.New("project is not found")
 	}
-	mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
-	if err != nil {
-		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
-		return nil, err
-	}
-	ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-	if err != nil {
-		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-		return nil, err
-	}
-	c.MintPriceEth = ethPrice
 
-	// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
-
-	networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
-
-	if c.MaxFileSize > 0 {
-		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
-		if calNetworkFee > 0 {
-			networkFeeInt = calNetworkFee
-			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
-
+	/*
+		mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
+		if err != nil {
+			u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
+			return nil, err
 		}
-	}
-
-	if networkFeeInt > 0 {
-		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
 		}
+		c.MintPriceEth = ethPrice
 
-		// add fee send master:
-		mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
-		feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-		ethNetworkFeePrice = mintPriceEthBigint.String()
+		// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
 
-		c.NetworkFeeEth = ethNetworkFeePrice
+		networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
+
+		if c.MaxFileSize > 0 {
+			calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
+			if calNetworkFee > 0 {
+				networkFeeInt = calNetworkFee
+				c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
+
+			}
+		}
+
+		if networkFeeInt > 0 {
+			ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+			if err != nil {
+				u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
+				return nil, err
+			}
+
+			// add fee send master:
+			mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
+			feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+			mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
+			ethNetworkFeePrice = mintPriceEthBigint.String()
+
+			c.NetworkFeeEth = ethNetworkFeePrice
+		} */
+	// cal fee info:
+	feeInfos, err := u.calMintFeeInfo(c)
+	if err != nil {
+		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+		return nil, err
 	}
+	// set price, fee:
+	c.NetworkFee = feeInfos["btc"].NetworkFee
+	c.NetworkFeeEth = feeInfos["eth"].NetworkFee
+
+	c.MintPriceEth = feeInfos["eth"].MintPrice
 
 	go func() {
 		//upload animation URL
@@ -1953,7 +1966,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			MaxSupply:       1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
+			CreatorAddrrBTC: creator.WalletAddressBTC,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
