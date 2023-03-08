@@ -351,6 +351,62 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	return tokens, nil
 }
 
+func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.AggregateTokenUriTraits, error) {
+	tokens := []entity.AggregateTokenUriTraits{}
+	matchStage := bson.D{{
+		Key:   utils.KEY_PROJECT_ID,
+		Value: projectID,
+	}}
+
+	pipeLine :=  bson.A{
+		bson.D{
+			{"$unwind", "$parsed_attributes_str"},
+		},
+		bson.D{
+			{"$match", matchStage},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"project_id", "$projectID"},
+							{"token_id", "$token_id"},
+						},
+					},
+					{"parsed_attributes_str", bson.D{{"$push", "$parsed_attributes_str" }}},
+					{"size", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort", bson.M{"size": -1}},
+		},
+	}
+
+	
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), pipeLine )
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, results := range results {
+		i := &entity.AggregateTokenUriTraits{}
+		err := helpers.Transform(results, i)
+		if err != nil {
+			continue
+		}
+		tokens = append(tokens, *i)
+
+	}
+	return tokens, nil
+}
+
 func (r Repository) SelectedTokenFields() bson.D {
 	f := bson.D{
 		{"token_id", 1},
