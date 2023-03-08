@@ -596,6 +596,11 @@ func (h *httpDelivery) tokenExternalToResp(input *entity.TokenUri) (*response.Ex
 func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTokenURIResp, error) {
 	resp := &response.InternalTokenURIResp{}
 	err := response.CopyEntityToResNoID(resp, input)
+	// TODO hotfix -> check with tri
+	if strings.HasSuffix(resp.AnimationURL, ".html") {
+		resp.AnimationHtml = resp.AnimationURL
+		resp.AnimationURL = ""
+	}
 	if err != nil {
 		return nil, err
 	}
