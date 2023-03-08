@@ -12,6 +12,7 @@ type GenerateMessageRequest struct {
 }
 
 type VerifyMessageRequest struct {
+	ETHSinature      *string `json:"ethSignature"`
 	Sinature         *string `json:"signature"`
 	Address          *string `json:"address"`
 	AddressBTC       *string `json:"addressBtc"`
