@@ -67,6 +67,7 @@ type ProjectResp struct {
 	InscribedBy               string           `json:"inscribedBy"`
 	HtmlFile                  string           `json:"htmlFile"`
 	LimitMintPerProcess       int              `json:"limitMintPerProcess"`
+	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
 }
 
 type ReportProject struct {
