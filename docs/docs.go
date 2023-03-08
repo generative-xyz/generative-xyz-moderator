@@ -1083,7 +1083,7 @@ var doc = `{
                 "summary": "Generate an api key for developer",
                 "parameters": [
                     {
-                        "description": "request.GetApiKeyReq",
+                        "description": "Request API key",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -3139,6 +3139,51 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/request.UpdateBTCProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}/random-images": {
+            "get": {
+                "description": "get project's random-images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's random-images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -6087,6 +6132,9 @@ var doc = `{
                 },
                 "editableIsHidden": {
                     "type": "boolean"
+                },
+                "fileExtension": {
+                    "type": "string"
                 },
                 "fromAuthentic": {
                     "type": "boolean"
