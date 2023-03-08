@@ -652,6 +652,8 @@ definitions:
         type: string
       name:
         type: string
+      payType:
+        type: string
       tokenAddress:
         type: string
       tokenId:
@@ -1126,6 +1128,8 @@ definitions:
         type: string
       blockNumberMinted:
         type: string
+      btcFloorPrice:
+        type: integer
       captureThumbnailDelayTime:
         type: integer
       categories:
@@ -3305,6 +3309,64 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's random-images
+      tags:
+      - Project
+  /project/{contractAddress}/tokens/{projectID}/token-traits:
+    get:
+      consumes:
+      - application/json
+      description: get project's token-traits
+      parameters:
+      - description: only tokens which don't have any trait are exported
+        in: query
+        name: empty-trait
+        type: boolean
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's token-traits
+      tags:
+      - Project
+    post:
+      description: upload project's token-traits
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: contractAddress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: upload project's token-traits
       tags:
       - Project
   /project/{contractAddress}/tokens/{projectID}/volumn:
