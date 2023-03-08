@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -162,6 +163,41 @@ func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, erro
 
 	if err = cursor.All((context.TODO()), &listings); err != nil {
 		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWithProjectInfoReq) ([]entity.DexBtcListingWithProjectInfo, error) {
+	aggregates := bson.A{
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
+		bson.D{{"$skip", (req.Page - 1) * req.Limit}},
+		bson.D{{"$limit", req.Limit}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"pipeline",
+						bson.A{
+							bson.D{{"$project", bson.D{{"project_id", 1}}}},
+						},
+					},
+					{"as", "project_info"},
+				},
+			},
+		},
+	}
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	listings := []entity.DexBtcListingWithProjectInfo{}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return listings, nil

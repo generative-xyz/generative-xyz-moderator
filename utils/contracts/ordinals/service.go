@@ -58,7 +58,7 @@ func NewService(ordinalsContractStr, privateKeyStr string, chainId int64) (*Serv
 		return nil, err
 	}
 	auth.Value = big.NewInt(0)
-	auth.GasLimit = uint64(100000)
+	auth.GasLimit = uint64(150000)
 	auth.GasPrice = gasPrice
 	return &Service{
 		fromAddress:     fromAddress,
