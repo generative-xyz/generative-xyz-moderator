@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"rederinghub.io/utils/helpers"
 	"strconv"
 	"strings"
 
@@ -600,6 +602,23 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 	if strings.HasSuffix(resp.AnimationURL, ".html") {
 		resp.AnimationHtml = resp.AnimationURL
 		resp.AnimationURL = ""
+		client := http.Client{
+			CheckRedirect: func(r *http.Request, via []*http.Request) error {
+				r.URL.Opaque = r.URL.Path
+				return nil
+			},
+		}
+		r, err := client.Get(resp.AnimationHtml)
+		if err != nil {
+			h.Usecase.Logger.LogAny("fail")
+		}
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			h.Usecase.Logger.LogAny("fail")
+		}
+		base64 := helpers.Base64Encode(b)
+		resp.AnimationURL = "data:text/html;base64," + base64
 	}
 	if err != nil {
 		return nil, err
