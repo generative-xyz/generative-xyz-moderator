@@ -128,7 +128,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	fmt.Println("feeInfos: ", feeInfos)
 
 	walletAddress.ProjectNetworkFee = int(feeInfos["btc"].NetworkFeeBigInt.Int64()) // btc value
-	walletAddress.ProjectMintPrice = int(feeInfos["btc"].NetworkFeeBigInt.Int64())  // btc value
+	walletAddress.ProjectMintPrice = int(feeInfos["btc"].MintPriceBigInt.Int64())   // btc value
 
 	walletAddress.MintPriceByPayType = feeInfos[input.PayType].MintPrice   // 1 item
 	walletAddress.NetworkFeeByPayType = feeInfos[input.PayType].NetworkFee // 1 item
