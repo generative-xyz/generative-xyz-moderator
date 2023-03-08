@@ -5184,6 +5184,9 @@
                 "license": {
                     "type": "string"
                 },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
                 "limitSupply": {
                     "type": "integer"
                 },
@@ -5535,6 +5538,9 @@
                 },
                 "isHidden": {
                     "type": "boolean"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"

@@ -566,6 +566,8 @@ definitions:
         type: boolean
       license:
         type: string
+      limitMintPerProcess:
+        type: integer
       limitSupply:
         type: integer
       maxSupply:
@@ -795,6 +797,8 @@ definitions:
         type: string
       isHidden:
         type: boolean
+      limitMintPerProcess:
+        type: integer
       maxSupply:
         type: integer
       mintPrice:

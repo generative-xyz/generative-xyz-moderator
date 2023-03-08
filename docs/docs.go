@@ -5199,6 +5199,9 @@ var doc = `{
                 "license": {
                     "type": "string"
                 },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
                 "limitSupply": {
                     "type": "integer"
                 },
@@ -5550,6 +5553,9 @@ var doc = `{
                 },
                 "isHidden": {
                     "type": "boolean"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
