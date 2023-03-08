@@ -9,11 +9,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/logger"
 )
@@ -27,7 +27,7 @@ func (u Usecase) GetInscriptionByIDFromOrd(id string) (*structure.InscriptionOrd
 }
 
 func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error) {
-	cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
+	// cacheKey := utils.KEY_BTC_WALLET_INFO + "_" + address
 	var result structure.WalletInfo
 	// exist, err := u.Repo.Cache.Exists(cacheKey)
 	// if err == nil && *exist {
@@ -40,7 +40,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	// 		return &result, nil
 	// 	}
 	// }
-
+	t := time.Now()
 	apiToken := u.Config.BlockcypherToken
 	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
 	quickNode := u.Config.QuicknodeAPI
@@ -54,6 +54,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 			return nil, err2
 		}
 	}
+	trackT1 := time.Since(t)
 
 	result.BlockCypherWalletInfo = *walletBasicInfo
 	outcoins := []string{}
@@ -65,8 +66,9 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	if err != nil {
 		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
 	}
+	trackT2 := time.Since(t)
 
-	inscriptions, outputInscMap, outputSatRanges, err := u.InscriptionsByOutputs(outcoins, currentListing)
+	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins, currentListing)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +76,17 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	for _, item := range inscriptions {
 		result.Inscriptions = append(result.Inscriptions, item...)
 	}
-	newTxrefs := []structure.TxRef{}
-	for _, outcoin := range result.Txrefs {
-		o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
-		satRanges, ok := outputSatRanges[o]
-		if ok {
-			outcoin.SatRanges = satRanges
-			newTxrefs = append(newTxrefs, outcoin)
-		}
-	}
-	result.Txrefs = newTxrefs
+	trackT3 := time.Since(t)
+	// newTxrefs := []structure.TxRef{}
+	// for _, outcoin := range result.Txrefs {
+	// 	o := fmt.Sprintf("%s:%v", outcoin.TxHash, outcoin.TxOutputN)
+	// 	satRanges, ok := outputSatRanges[o]
+	// 	if ok {
+	// 		outcoin.SatRanges = satRanges
+	// 		newTxrefs = append(newTxrefs, outcoin)
+	// 	}
+	// }
+	// result.Txrefs = newTxrefs
 
 	newTxrefsFiltered := []structure.TxRef{}
 	if len(currentListing) > 0 {
@@ -105,80 +108,159 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		}
 		result.Txrefs = newTxrefsFiltered
 	}
+	result.Loadtime = make(map[string]string)
+	result.Loadtime["trackT1"] = trackT1.String()
+	result.Loadtime["trackT2"] = trackT2.String()
+	result.Loadtime["trackT3"] = trackT3.String()
 
-	err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
-	if err != nil {
-		u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
-	}
+	// err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
+	// if err != nil {
+	// 	u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
+	// }
 	// }
 
 	return &result, nil
 }
 
-func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, map[string][][]uint64, error) {
+func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity.DexBTCListing) (map[string][]structure.WalletInscriptionInfo, map[string][]structure.WalletInscriptionByOutput, error) {
 	result := make(map[string][]structure.WalletInscriptionInfo)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
-	outputSatRanges := make(map[string][][]uint64)
+	// outputSatRanges := make(map[string][][]uint64)
 	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	waitChan := make(chan struct{}, 10)
+
 	for _, output := range outputs {
+		wg.Add(1)
+		waitChan <- struct{}{}
+		go func(op string) {
+			defer func() {
+				wg.Done()
+				<-waitChan
+			}()
+			lock.Lock()
+			if _, ok := result[output]; ok {
+				lock.Unlock()
+				return
+			}
+			lock.Unlock()
+
+			inscriptions, err := getInscriptionByOutput(ordServer, output)
+			if err != nil {
+				return
+			}
+			if len(inscriptions.Inscriptions) > 0 {
+				for _, insc := range inscriptions.Inscriptions {
+					data, err := getInscriptionByID(ordServer, insc)
+					if err != nil {
+						return
+					}
+					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
+					if err != nil {
+						return
+					}
+					inscWalletInfo := structure.WalletInscriptionInfo{
+						InscriptionID: data.InscriptionID,
+						Number:        data.Number,
+						ContentType:   data.ContentType,
+						Offset:        offset,
+					}
+					inscWalletByOutput := structure.WalletInscriptionByOutput{
+						InscriptionID: data.InscriptionID,
+						Offset:        offset,
+						Sat:           data.Sat,
+					}
+					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
+					if internalInfo != nil {
+						inscWalletInfo.ProjectID = internalInfo.ProjectID
+						inscWalletInfo.ProjecName = internalInfo.Project.Name
+						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+					}
+					for _, listing := range currentListing {
+						if listing.InscriptionID == data.InscriptionID {
+							if listing.CancelTx == "" {
+								inscWalletInfo.Buyable = true
+							} else {
+								inscWalletInfo.Cancelling = true
+							}
+							inscWalletInfo.OrderID = listing.UUID
+							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+						}
+					}
+					lock.Lock()
+					result[output] = append(result[output], inscWalletInfo)
+					outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+					lock.Unlock()
+				}
+			}
+		}(output)
+
+		lock.Lock()
 		if _, ok := result[output]; ok {
+			lock.Unlock()
 			continue
 		}
-		inscriptions, err := getInscriptionByOutput(ordServer, output)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if len(inscriptions.Inscriptions) > 0 {
-			for _, insc := range inscriptions.Inscriptions {
-				data, err := getInscriptionByID(ordServer, insc)
-				if err != nil {
-					return nil, nil, nil, err
-				}
-				offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
-				if err != nil {
-					return nil, nil, nil, err
-				}
-				inscWalletInfo := structure.WalletInscriptionInfo{
-					InscriptionID: data.InscriptionID,
-					Number:        data.Number,
-					ContentType:   data.ContentType,
-					Offset:        offset,
-				}
-				inscWalletByOutput := structure.WalletInscriptionByOutput{
-					InscriptionID: data.InscriptionID,
-					Offset:        offset,
-					Sat:           data.Sat,
-				}
-				internalInfo, _ := u.Repo.FindTokenByTokenID(insc)
-				if internalInfo != nil {
-					inscWalletInfo.ProjectID = internalInfo.ProjectID
-					inscWalletInfo.ProjecName = internalInfo.Project.Name
-					inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-				}
-				for _, listing := range currentListing {
-					if listing.InscriptionID == data.InscriptionID {
-						if listing.CancelTx == "" {
-							inscWalletInfo.Buyable = true
-						} else {
-							inscWalletInfo.Cancelling = true
-						}
-						inscWalletInfo.OrderID = listing.UUID
-						inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
-					}
-				}
-				result[output] = append(result[output], inscWalletInfo)
-				outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
-			}
-		}
-		outputSatRanges[output] = inscriptions.List.Unspent
+		lock.Unlock()
+
+		// inscriptions, err := getInscriptionByOutput(ordServer, output)
+		// if err != nil {
+		// 	return nil, nil, err
+		// }
+		// if len(inscriptions.Inscriptions) > 0 {
+		// 	for _, insc := range inscriptions.Inscriptions {
+		// 		data, err := getInscriptionByID(ordServer, insc)
+		// 		if err != nil {
+		// 			return nil, nil, err
+		// 		}
+		// 		offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
+		// 		if err != nil {
+		// 			return nil, nil, err
+		// 		}
+		// 		inscWalletInfo := structure.WalletInscriptionInfo{
+		// 			InscriptionID: data.InscriptionID,
+		// 			Number:        data.Number,
+		// 			ContentType:   data.ContentType,
+		// 			Offset:        offset,
+		// 		}
+		// 		inscWalletByOutput := structure.WalletInscriptionByOutput{
+		// 			InscriptionID: data.InscriptionID,
+		// 			Offset:        offset,
+		// 			Sat:           data.Sat,
+		// 		}
+		// 		internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
+		// 		if internalInfo != nil {
+		// 			inscWalletInfo.ProjectID = internalInfo.ProjectID
+		// 			inscWalletInfo.ProjecName = internalInfo.Project.Name
+		// 			inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+		// 		}
+		// 		for _, listing := range currentListing {
+		// 			if listing.InscriptionID == data.InscriptionID {
+		// 				if listing.CancelTx == "" {
+		// 					inscWalletInfo.Buyable = true
+		// 				} else {
+		// 					inscWalletInfo.Cancelling = true
+		// 				}
+		// 				inscWalletInfo.OrderID = listing.UUID
+		// 				inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+		// 			}
+		// 		}
+		// 		lock.Lock()
+		// 		result[output] = append(result[output], inscWalletInfo)
+		// 		outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
+		// 		lock.Unlock()
+		// 	}
+		// }
+		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
+	wg.Wait()
 	// if len(outputSatRanges) != len(outputs) {
 	// 	return nil, nil, nil, errors.New("")
 	// }
-	return result, outputInscMap, outputSatRanges, nil
+	return result, outputInscMap, nil
 }
 
 func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrdInfoByOutput, error) {
@@ -224,7 +306,7 @@ func getInscriptionByOutput(ordServer, output string) (*structure.InscriptionOrd
 
 func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID, error) {
 	url := fmt.Sprintf("%s/api/inscription/%s", ordServer, id)
-	fmt.Println("url", url)
+	// fmt.Println("url", url)
 	var result structure.InscriptionOrdInfoByID
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -245,7 +327,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 		}
 	}(res)
 
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+	// fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New("getInscriptionByOutput Response status != 200")

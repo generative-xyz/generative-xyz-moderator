@@ -1114,16 +1114,18 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 			c.NetworkFeeEth = ethNetworkFeePrice
 		} */
 	// cal fee info:
-	feeInfos, err := u.calMintFeeInfo(c)
-	if err != nil {
-		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
-		return nil, err
-	}
-	// set price, fee:
-	c.NetworkFee = feeInfos["btc"].NetworkFee
-	c.NetworkFeeEth = feeInfos["eth"].NetworkFee
+	if c.MintingInfo.Index < c.MaxSupply {
+		feeInfos, err := u.calMintFeeInfo(c)
+		if err != nil {
+			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+			return nil, err
+		}
+		// set price, fee:
+		c.NetworkFee = feeInfos["btc"].NetworkFee
+		c.NetworkFeeEth = feeInfos["eth"].NetworkFee
 
-	c.MintPriceEth = feeInfos["eth"].MintPrice
+		c.MintPriceEth = feeInfos["eth"].MintPrice
+	}
 
 	go func() {
 		//upload animation URL
@@ -1966,13 +1968,14 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			MaxSupply:       1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
+			CreatorAddrrBTC: creator.WalletAddressBTC,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
+			InscribedBy:     item.UserWalletAddress,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}

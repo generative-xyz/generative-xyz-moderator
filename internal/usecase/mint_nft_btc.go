@@ -134,7 +134,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.NetworkFeeByPayType = feeInfos[input.PayType].NetworkFee // 1 item
 
 	walletAddress.BtcRate = feeInfos[input.PayType].BtcPrice
-	walletAddress.EthRate = feeInfos[input.PayType].BtcPrice
+	walletAddress.EthRate = feeInfos[input.PayType].EthPrice
 
 	walletAddress.EstFeeInfo = feeInfos
 
@@ -1034,6 +1034,10 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
+		if item.IsSubItem {
+			continue
+		}
+
 		if item.PayType == utils.NETWORK_BTC {
 
 			if len(os.Getenv("SECRET_KEY")) == 0 {
@@ -1357,21 +1361,22 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 		return nil, err
 	}
 
-	if p.MaxFileSize == 0 {
-		err = errors.New("can not get size of project image")
-		u.Logger.Error("u.calMintFeeInfo.Check(MaxFileSize)", err.Error(), err)
-		return nil, err
-	}
+	if p.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
+		if calNetworkFee == -1 {
+			err = errors.New("can not cal networkFeeBySize")
+			u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
+			return nil, err
+		}
+		// fee mint:
+		feeMintNft = big.NewInt(calNetworkFee)
 
-	calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
-	if calNetworkFee == -1 {
-		err = errors.New("can not cal networkFeeBySize")
-		u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
-		return nil, err
+	} else {
+		feeMintNft, _ = feeMintNft.SetString(p.MintPrice, 10)
+		if !ok {
+			feeMintNft = big.NewInt(0)
+		}
 	}
-
-	// fee mint:
-	feeMintNft = big.NewInt(calNetworkFee)
 
 	var btcRate, ethRate float64
 
