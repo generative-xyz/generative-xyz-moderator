@@ -57,6 +57,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 
 	inscriptions := []*response.SearhcInscription{}
 	userAddresses := []string{}
+	inscriptionIds := []string{}
 	client := resty.New()
 	for _, h := range resp.Hits {
 		i := &response.SearhcInscription{
@@ -70,7 +71,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			Timestamp:     h["timestamp"].(string),
 			ContentType:   h["content_type"].(string),
 		}
-
+		inscriptionIds = append(inscriptionIds, i.InscriptionId)
 		if v, ok := h["address"]; ok && v.(string) != "" {
 			i.Address = v.(string)
 			resp := &response.SearhcInscription{}
@@ -82,7 +83,6 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			}
 			userAddresses = append(userAddresses, resp.Address)
 		}
-
 		inscriptions = append(inscriptions, i)
 	}
 
@@ -92,9 +92,44 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		mapOwner[o.WalletAddressBTCTaproot] = o
 	}
 
+	pe := &entity.FilterTokenUris{TokenIDs: inscriptionIds}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+	tokens, err := uc.Repo.FilterTokenUri(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	iTokens := tokens.Result
+	rTokens := iTokens.([]entity.TokenUri)
+
+	mapData := make(map[string]string)
+	projectIds := []string{}
+	for _, t := range rTokens {
+		projectIds = append(projectIds, t.ProjectID)
+		mapData[t.TokenID] = t.ProjectID
+	}
+
+	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	mapProject := make(map[string]*entity.Projects)
+	for _, p := range projects {
+		mapProject[p.TokenID] = p
+	}
+
 	dataResp := []*response.SearchResponse{}
 	for _, i := range inscriptions {
 		i.Owner = mapOwner[i.Address]
+		pId := mapData[i.InscriptionId]
+		if pId != "" {
+			if p, ok := mapProject[pId]; ok {
+				i.ProjectName = p.Name
+				i.ProjectTokenId = p.TokenID
+			}
+		}
+
 		obj := &response.SearchResponse{
 			ObjectType:  "inscription",
 			Inscription: i,

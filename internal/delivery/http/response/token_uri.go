@@ -61,6 +61,7 @@ type InternalTokenURIResp struct {
 	InscriptionIndex      string           `json:"inscriptionIndex"`
 	OrderInscriptionIndex int              `json:"orderInscriptionIndex"`
 	OrdinalsData          *OrdinalsData    `json:"ordinalsData"`
+	NftTokenId            string           `json:"nftTokenId"`
 
 	// for buyable:
 	Buyable     bool   `json:"buyable"`
