@@ -82,6 +82,7 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 
 	h.Logger.Info("request.decoder", decoder)
 	verifyMessage := structure.VerifyMessage{
+		ETHSignature:     *reqBody.ETHSinature,
 		Signature:        *reqBody.Sinature,
 		Address:          *reqBody.Address,         //eth
 		AddressBTC:       reqBody.AddressBTC,       //btc taproot addree -> use for transfer nft
@@ -103,6 +104,5 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: verified.RefreshToken,
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
