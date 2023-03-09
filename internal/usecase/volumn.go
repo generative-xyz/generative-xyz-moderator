@@ -58,15 +58,9 @@ func (u Usecase) AggregateVolumn(payType string) {
 	}
 
 	u.Logger.LogAny("AggregateVolumn", zap.Any("payType", payType), zap.Any("data", data))
-	processed := 0
+	
 	for _, item := range data {
-		go u.CreateVolumn(item)
-
-		if processed%10 == 0 {
-			time.Sleep(2 * time.Second)
-		}
-
-		processed++
+		u.CreateVolumn(item)
 	}
 }
 
@@ -362,24 +356,39 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 		return
 	}
 
-	mintPrice := "0"
+	mintPrice := 0.0
 	if item.Paytype  == string(entity.BIT) {
-		mintPrice = p.MintPrice
+		ar, err := u.Repo.AggregateProjectMintPrice(item.ProjectID, item.Paytype)
+		if err == nil && len(ar) > 0 {
+			mintPrice = ar[0].Amount
+		}else{
+			pFl, _ := strconv.ParseFloat(p.MintPrice, 10)
+			mintPrice = pFl
+		}
+
 		oldData, err := u.AggregateOldBtcAddress(item.ProjectID)
 		if err == nil {
+			spew.Dump(item, oldData)
 			item.Amount += oldData.Amount
 			item.Minted += oldData.Minted
 		}
 	}else{
-		mintPrice = p.MintPriceEth
+		ar, err := u.Repo.AggregateProjectMintPrice(item.ProjectID, item.Paytype)
+		if err == nil && len(ar) > 0 { 
+			mintPrice = ar[0].Amount
+		}else{
+			pFl, _ := strconv.ParseFloat(p.MintPrice, 10)
+			mintPrice = pFl
+		}
+
 		oldData, err := u.AggregateOldETHAddress(item.ProjectID)
 		if err == nil {
+			spew.Dump(item, oldData)
 			item.Amount += oldData.Amount
 			item.Minted += oldData.Minted
 		}
-
 	}
-	mintPriceInt, _ := strconv.Atoi(mintPrice)
+
 	ev, err := u.Repo.FindVolumn(pID, item.Paytype)
 	if err != nil {
 		amount := fmt.Sprintf("%d", int(item.Amount))
@@ -394,7 +403,7 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 				Earning:        &earning,
 				GenEarning:     &gearning,
 				Minted:         item.Minted,
-				MintPrice:      int64(mintPriceInt),
+				MintPrice:      int64(mintPrice),
 				Project: entity.VolumeProjectInfo{
 					Name:     p.Name,
 					TokenID:  p.TokenID,
@@ -431,7 +440,7 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 			return
 		}
 
-		if int(mintPriceInt) != int(ev.MintPrice) {
+		if int(mintPrice) != int(ev.MintPrice) {
 			_, err := u.Repo.UpdateVolumMintPrice(*ev.ProjectID, *ev.PayType, item.MintPrice)
 			if err != nil {
 				u.Logger.ErrorAny("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
@@ -442,11 +451,13 @@ func (u Usecase) CreateVolumn(item entity.AggregateProjectItemResp)  {
 }
 
 func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
+	u.Logger.LogAny("AggregationBTCWalletAddress", zap.Any("projectID", projectID))
 	data, err := u.Repo.AggregationBTCWalletAddress(projectID)
 	if err != nil {
 		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
+	u.Logger.LogAny("AggregationBTCWalletAddress", zap.Any("data", data))
 	if len(data) > 0 {
 		item  := data[0]
 		item.Paytype = string(entity.BIT)
@@ -459,11 +470,13 @@ func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProj
 }
 
 func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
+	u.Logger.LogAny("AggregateOldETHAddress", zap.Any("projectID", projectID))
 	dataETH, err := u.Repo.AggregationETHWalletAddress(projectID)
 	if err != nil {
 		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
+	u.Logger.LogAny("AggregateOldETHAddress", zap.Any("dataETH", dataETH))
 	if len(dataETH) > 0 {
 		item  := dataETH[0]
 		item.MintPrice = item.MintPrice / 1e10
@@ -474,5 +487,5 @@ func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProj
 		return &item, nil
 	}
 
-	return nil, errors.New("no olf data")
+	return nil, errors.New("no old data")
 }

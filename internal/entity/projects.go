@@ -102,9 +102,16 @@ type Projects struct {
 	Source                   string             `bson:"source" json:"source"`
 	AnimationHtml            *string            `bson:"animation_html"`
 	CatureThumbnailDelayTime *int               `bson:"cature_thumbnail_delay_time"`
-
-	ReserveMintPrice string `bson:"reserveMintPrice" json:"reserveMintPrice"`
-	ReserveMintLimit string `bson:"reserveMintLimit" json:"reserveMintLimit"`
+	ReserveMintPrice         string             `bson:"reserveMintPrice" json:"reserveMintPrice"`
+	ReserveMintLimit         string             `bson:"reserveMintLimit" json:"reserveMintLimit"`
+	FromAuthentic            bool               `bson:"fromAuthentic"`
+	TokenAddress             string             `bson:"tokenAddress"`
+	TokenId                  string             `bson:"tokenId"`
+	OwnerOf                  string             `bson:"ownerOf"`
+	OrdinalsTx               string             `bson:"ordinalsTx"`
+	InscribedBy              string             `bson:"inscribedBy"`
+	HtmlFile                 string             `bson:"htmlFile"`
+	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
 }
 
 type ReportProject struct {

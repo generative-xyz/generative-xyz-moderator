@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 
+	"github.com/go-resty/resty/v2"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -49,13 +50,15 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	}
 
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
-
 	resp, err := algoliaClient.Search("inscriptions", filter)
 	if err != nil {
 		return nil, 0, 0, err
 	}
 
 	inscriptions := []*response.SearhcInscription{}
+	userAddresses := []string{}
+	inscriptionIds := []string{}
+	client := resty.New()
 	for _, h := range resp.Hits {
 		i := &response.SearhcInscription{
 			ObjectId:      h["objectID"].(string),
@@ -67,14 +70,66 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			GenesisHeight: int64(h["genesis_height"].(float64)),
 			Timestamp:     h["timestamp"].(string),
 			ContentType:   h["content_type"].(string),
-			Address:       h["address"].(string),
+		}
+		inscriptionIds = append(inscriptionIds, i.InscriptionId)
+		if v, ok := h["address"]; ok && v.(string) != "" {
+			i.Address = v.(string)
+			resp := &response.SearhcInscription{}
+			_, err := client.R().
+				SetResult(&resp).
+				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, i.InscriptionId))
+			if err != nil {
+				continue
+			}
+			userAddresses = append(userAddresses, resp.Address)
 		}
 		inscriptions = append(inscriptions, i)
 	}
-	resp.UnmarshalHits(&inscriptions)
+
+	users, err := uc.Repo.ListUserBywalletAddressBtcTaproot(userAddresses)
+	mapOwner := make(map[string]*response.ArtistResponse)
+	for _, o := range users {
+		mapOwner[o.WalletAddressBTCTaproot] = o
+	}
+
+	pe := &entity.FilterTokenUris{TokenIDs: inscriptionIds}
+	pe.Limit = int64(filter.Limit)
+	pe.Page = 1
+	tokens, err := uc.Repo.FilterTokenUri(*pe)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	iTokens := tokens.Result
+	rTokens := iTokens.([]entity.TokenUri)
+
+	mapData := make(map[string]string)
+	projectIds := []string{}
+	for _, t := range rTokens {
+		projectIds = append(projectIds, t.ProjectID)
+		mapData[t.TokenID] = t.ProjectID
+	}
+
+	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	mapProject := make(map[string]*entity.Projects)
+	for _, p := range projects {
+		mapProject[p.TokenID] = p
+	}
 
 	dataResp := []*response.SearchResponse{}
 	for _, i := range inscriptions {
+		i.Owner = mapOwner[i.Address]
+		pId := mapData[i.InscriptionId]
+		if pId != "" {
+			if p, ok := mapProject[pId]; ok {
+				i.ProjectName = p.Name
+				i.ProjectTokenId = p.TokenID
+			}
+		}
+
 		obj := &response.SearchResponse{
 			ObjectType:  "inscription",
 			Inscription: i,
