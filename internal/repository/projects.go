@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -552,4 +553,74 @@ func (r Repository) UpdateProjectTraitStats(projectID string, traitStat []entity
 	}
 
 	return err
+}
+
+func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingPage{}
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_listing"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let",
+						bson.D{
+							{"cancelled", "$cancelled"},
+							{"matched", "$matched"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"matched", false},
+										{"cancelled", false},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$facet",
+				bson.D{
+					{"totalCount",
+						bson.A{
+							bson.D{{"$count", "count"}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		if len(result[0].TotalCount) > 0 {
+			return uint64(result[0].TotalCount[0].Count), nil
+		}
+		return 0, nil
+	}
+
+	return 0, nil
 }
