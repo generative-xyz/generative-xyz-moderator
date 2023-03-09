@@ -102,6 +102,9 @@ type TokenUriListingFilter struct {
 	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
 	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
 	Buyable               bool               `bson:"buyable" json:"buyable"`
+	Project               struct {
+		TokenID string `bson:"tokenid" json:"tokenID"`
+	} `bson:"project" json:"project"`
 }
 
 type TokenUriAttr struct {
