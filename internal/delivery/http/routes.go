@@ -300,7 +300,7 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 	}
 
 	sortQuery := r.URL.Query().Get("sort")
-	sortObject := utils.ParseSort(sortQuery)
+	sortObject := utils.ParseSortNew(sortQuery)
 
 	f.SortBy = sortObject.SortBy
 	f.Sort = sortObject.Sort
