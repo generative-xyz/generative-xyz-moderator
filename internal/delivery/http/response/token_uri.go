@@ -47,7 +47,6 @@ type InternalTokenURIResp struct {
 	Description           string           `json:"description"`
 	Image                 string           `json:"image"`
 	AnimationURL          string           `json:"animationUrl"`
-	AnimationHtml         string           `json:"animationHtml"`
 	Attributes            interface{}      `json:"attributes"`
 	MintedTime            time.Time        `json:"mintedTime"`
 	GenNFTAddr            string           `json:"genNFTAddr"`
@@ -61,6 +60,7 @@ type InternalTokenURIResp struct {
 	InscriptionIndex      string           `json:"inscriptionIndex"`
 	OrderInscriptionIndex int              `json:"orderInscriptionIndex"`
 	OrdinalsData          *OrdinalsData    `json:"ordinalsData"`
+	NftTokenId            string           `json:"nftTokenId"`
 
 	// for buyable:
 	Buyable     bool   `json:"buyable"`
