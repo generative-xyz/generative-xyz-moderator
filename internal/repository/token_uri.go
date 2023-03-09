@@ -2,8 +2,11 @@ package repository
 
 import (
 	"context"
+	"log"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -76,6 +79,42 @@ func (r Repository) FindTokenByTokenID(tokenID string) (*entity.TokenUri, error)
 	return r.FindTokenUriWithoutCache(f)
 }
 
+func (r Repository) FindTokenByTokenIDCustomField(tokenID string, fields []string) (*entity.TokenUri, error) {
+	projectField := bson.D{
+		{"_id", 1},
+	}
+	for _, field := range fields {
+		projectField = append(projectField, bson.E{Key: field, Value: 1})
+	}
+
+	aggregates := bson.A{
+		bson.D{
+			{Key: "$project",
+				Value: projectField,
+			},
+		},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "token_id", Value: tokenID}}}},
+	}
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	tokenList := []entity.TokenUri{}
+
+	if err = cursor.All((context.TODO()), &tokenList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(tokenList) > 0 {
+		return &tokenList[0], nil
+	}
+	return nil, errors.New("token_id not found")
+}
+
+// func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWithProjectInfoReq) ([]entity.DexBtcListingWithProjectInfo, error) {
+
+// }
+
 func (r Repository) FindTokenBy(contractAddress string, tokenID string) (*entity.TokenUri, error) {
 	key := helpers.TokenURIKey(contractAddress, tokenID)
 	f := bson.D{{"contract_address", contractAddress}, {"token_id", tokenID}}
@@ -121,6 +160,194 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	resp.Page = t.Pagination.Page
 	resp.Total = t.Pagination.Total
 	resp.PageSize = filter.Limit
+	//resp.PageSize = filter.Limit
+	return resp, nil
+}
+
+func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
+	tokens := []entity.TokenUriListingPage{}
+	resp := &entity.Pagination{}
+
+	f := r.filterToken(filter)
+	if filter.SortBy == "" {
+		filter.SortBy = "priceBTC"
+	}
+
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
+	listingAmountDefault := -1
+	if filter.SortBy == "priceBTC" && filter.Sort == 1 {
+		listingAmountDefault = 99999999999999
+	}
+
+	f2 := bson.A{
+		bson.D{{"$match", f}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_listing"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let",
+						bson.D{
+							{"cancelled", "$cancelled"},
+							{"matched", "$matched"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"matched", false},
+										{"cancelled", false},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"buyable",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", false},
+									{"else", true},
+								},
+							},
+						},
+					},
+					{"priceBTC",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", listingAmountDefault},
+									{"else", "$listing.amount"},
+								},
+							},
+						},
+					},
+					{"orderID", "$listing._id"},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 1},
+					{"token_id", 1},
+					{"gen_nft_addrress", 1},
+					{"contract_address", 1},
+					{"project_id", 1},
+					{"image", 1},
+					{"priority", 1},
+					{"inscription_index", 1},
+					{"order_inscription_index", 1},
+					{"thumbnail", 1},
+					{"buyable", 1},
+					{"priceBTC", 1},
+					{"orderID", 1},
+					{"project.tokenid", 1},
+				},
+			},
+		},
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
+		bson.D{
+			{"$facet",
+				bson.D{
+					{"totalData",
+						bson.A{
+							bson.D{{"$match", bson.D{}}},
+							bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
+							bson.D{{"$limit", filter.Limit}},
+						},
+					},
+					{"totalCount",
+						bson.A{
+							bson.D{{"$count", "count"}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// t, err := r.Aggregate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f2, r.SelectedTokenFieldsNew(), r.SortToken(filter), &tokens)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), f2)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(tokens) > 0 {
+		log.Println("len(tokens)", len(tokens[0].TotalCount))
+
+		resp.Result = tokens[0].TotalData
+		resp.Page = filter.Page
+		if len(tokens[0].TotalCount) > 0 {
+			resp.Total = tokens[0].TotalCount[0].Count
+		}
+		resp.TotalPage = resp.Total / filter.Limit
+		resp.PageSize = filter.Limit
+	}
+
 	//resp.PageSize = filter.Limit
 	return resp, nil
 }
@@ -315,7 +542,101 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	return tokens, nil
 }
 
+func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.AggregateTokenUriTraits, error) {
+	tokens := []entity.AggregateTokenUriTraits{}
+	matchStage := bson.D{{
+		Key:   utils.KEY_PROJECT_ID,
+		Value: projectID,
+	}}
+
+	pipeLine :=  bson.A{
+		bson.D{
+			{"$unwind", bson.D{
+				{"path", "$parsed_attributes_str"},
+			 	{"preserveNullAndEmptyArrays", true},
+			}},
+		},
+		bson.D{
+			{"$match", matchStage},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"project_id", "$projectID"},
+							{"token_id", "$token_id"},
+						},
+					},
+					{"parsed_attributes_str", bson.D{{"$push", "$parsed_attributes_str" }}},
+					{"size", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort", bson.M{"size": -1}},
+		},
+	}
+
+	
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), pipeLine )
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+	spew.Dump(results)
+
+	for _, results := range results {
+		i := &entity.AggregateTokenUriTraits{}
+		err := helpers.Transform(results, i)
+		if err != nil {
+			continue
+		}
+		tokens = append(tokens, *i)
+
+	}
+	return tokens, nil
+}
+
 func (r Repository) SelectedTokenFields() bson.D {
+	f := bson.D{
+		{"token_id", 1},
+		{"gen_nft_addrress", 1},
+		{"contract_address", 1},
+		{"thumbnail", 1},
+		{"description", 1},
+		{"name", 1},
+		{"price", 1},
+		{"owner_addrress", 1},
+		{"creator_address", 1},
+		{"project_id", 1},
+		{"minted_time", 1},
+		{"priority", 1},
+		{"image", 1},
+		{"project.tokenid", 1},
+		{"project.tokenIDInt", 1},
+		{"project.contractAddress", 1},
+		{"project.name", 1},
+		//{"project", 1},
+		{"owner.wallet_address", 1},
+		{"owner.display_name", 1},
+		{"owner.avatar", 1},
+		{"creator.wallet_address", 1},
+		{"creator.display_name", 1},
+		{"creator.avatar", 1},
+		{"stats.price_int", 1},
+		{"minter_address", 1},
+		{"inscription_index", 1},
+		{"order_inscription_index", 1},
+	}
+	return f
+}
+
+func (r Repository) SelectedTokenFieldsNew() bson.D {
 	f := bson.D{
 		{"token_id", 1},
 		{"gen_nft_addrress", 1},

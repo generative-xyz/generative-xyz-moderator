@@ -61,9 +61,16 @@ type ProjectResp struct {
 	CaptureThumbnailDelayTime int              `json:"captureThumbnailDelayTime"`
 	FromAuthentic             bool             `json:"fromAuthentic"`
 	TokenAddress              string           `json:"tokenAddress"`
-	TokenId                   string           `json:"tokenId"`
+	TokenId                   string           `json:"nftTokenId"`
 	OwnerOf                   string           `json:"ownerOf"`
 	OrdinalsTx                string           `json:"ordinalsTx"`
+	InscribedBy               string           `json:"inscribedBy"`
+	HtmlFile                  string           `json:"htmlFile"`
+	LimitMintPerProcess       int              `json:"limitMintPerProcess"`
+	FileExtension             string           `json:"fileExtension"`
+	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
+	ReserveMintPrice          string           `json:"reserveMintPrice"`
+	ReserveMintLimit          int              `json:"reserveMintLimit"`
 }
 
 type ReportProject struct {
@@ -82,4 +89,10 @@ type ProjectStatResp struct {
 type NftMintingDetail struct {
 	Index        int64 `json:"index"`
 	IndexReserve int64 `json:"indexReserve"`
+}
+
+type ProjectMarketplaceData struct {
+	Listed     uint64 `json:"listed"`
+	FloorPrice uint64 `json:"floor_price"`
+	Volume     uint64 `json:"volume"`
 }

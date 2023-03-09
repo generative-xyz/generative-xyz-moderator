@@ -8,6 +8,10 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+type DexBtcProjectInfo struct {
+	ProjectID string `bson:"project_id"`
+}
+
 type DexBTCListing struct {
 	BaseEntity    `bson:",inline"`
 	RawPSBT       string `bson:"raw_psbt"`
@@ -26,6 +30,16 @@ type DexBTCListing struct {
 	MatchedTx string     `bson:"matched_tx"`
 	MatchAt   *time.Time `bson:"matched_at"`
 	Buyer     string     `bson:"buyer"`
+}
+
+type DexBtcListingWithProjectInfo struct {
+	DexBTCListing
+	ProjectInfo   []DexBtcProjectInfo `bson:"project_info"`
+}
+
+type GetDexBtcListingWithProjectInfoReq struct {
+	Page int64
+	Limit int64
 }
 
 func (u DexBTCListing) TableName() string {

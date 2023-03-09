@@ -46,6 +46,11 @@ type InscribeBTC struct {
 	IsAuthentic       bool        `bson:"is_authentic"`
 	OrdinalsTx        string      `bson:"ordinals_tx"`
 	OrdinalsTxStatus  uint64      `bson:"ordinals_tx_status"`
+	PayType           string      `bson:"pay_type"`
+	BTCRate           float64     `bson:"btc_rate"`
+	ETHRate           float64     `bson:"eth_rate"`
+
+	IsMergeMint bool `bson:"isMergeMint"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -62,6 +67,10 @@ func (u InscribeBTC) NeedAddContractToOrdinalsContract() bool {
 		u.OrdinalsTx == ""
 }
 
+func (u InscribeBTC) Expired() bool {
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
+}
+
 type StatusInscribe int
 
 const (
@@ -69,7 +78,7 @@ const (
 	StatusInscribe_ReceivedFund                       // 1: received fund from user (buyer)
 
 	StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr // 2: sending btc from segwit address to ord address
-	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success
+	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success, or ready to mint.
 
 	StatusInscribe_Minting // 4: minting
 	StatusInscribe_Minted  // 5: mint success
@@ -122,20 +131,25 @@ type FilterInscribeBT struct {
 }
 
 type InscribeBTCResp struct {
-	UUID          string         `bson:"uuid" json:"uuid"`
-	Amount        string         `bson:"amount"  json:"amount"`
-	IsConfirm     bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
-	IsMinted      bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
-	IsSuccess     bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
-	InscriptionID string         `bson:"inscriptionID" json:"inscriptionID"` // tokenID in ETH
-	FeeRate       int32          `bson:"fee_rate" json:"feeRate"`
-	ExpiredAt     time.Time      `bson:"expired_at" json:"expiredAt"`
-	Status        StatusInscribe `bson:"status" json:"status"` // status for record
-	TxSendBTC     string         `bson:"tx_send_btc" json:"txSendBtc"`
-	TxSendNft     string         `bson:"tx_send_nft" json:"txSendNft"`
-	TxMintNft     string         `bson:"tx_mint_nft" json:"txMintNft"`
-	UserUuid      string         `bson:"user_uuid" json:"userUuid"`
-	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
-	TokenAddress  string         `bson:"token_address" json:"tokenAddress"`
-	TokenId       string         `bson:"token_id" json:"tokenId"`
+	UUID           string         `bson:"uuid" json:"uuid"`
+	Amount         string         `bson:"amount"  json:"amount"`
+	IsConfirm      bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
+	IsMinted       bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
+	IsSuccess      bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
+	InscriptionID  string         `bson:"inscriptionID" json:"inscriptionID"` // tokenID in ETH
+	FeeRate        int32          `bson:"fee_rate" json:"feeRate"`
+	ExpiredAt      time.Time      `bson:"expired_at" json:"expiredAt"`
+	Status         StatusInscribe `bson:"status" json:"status"` // status for record
+	TxSendBTC      string         `bson:"tx_send_btc" json:"txSendBtc"`
+	TxSendNft      string         `bson:"tx_send_nft" json:"txSendNft"`
+	TxMintNft      string         `bson:"tx_mint_nft" json:"txMintNft"`
+	UserUuid       string         `bson:"user_uuid" json:"userUuid"`
+	IsAuthentic    bool           `bson:"is_authentic" json:"isAuthentic"`
+	TokenAddress   string         `bson:"token_address" json:"tokenAddress"`
+	TokenId        string         `bson:"token_id" json:"tokenId"`
+	ProjectTokenId string         `json:"projectTokenId"`
+}
+
+func (u InscribeBTCResp) Expired() bool {
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
 }

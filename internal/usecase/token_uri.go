@@ -173,10 +173,15 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 	client := resty.New()
 	resp := &response.SearhcInscription{}
-	client.R().
+	_, err = client.R().
 		EnableTrace().
 		SetResult(&resp).
 		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
+	u.Logger.Info("incriptionData", zap.Any("data", resp))
+	if err != nil {
+		u.Logger.ErrorAny("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
+		// return nil, err
+	}
 
 	tokenUri.Owner = nil
 	if resp.Address != "" {
@@ -582,6 +587,24 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 	return tokens, nil
 }
 
+func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
+	pe := &entity.FilterTokenUris{}
+	err := copier.Copy(pe, filter)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	tokens, err := u.Repo.FilterTokenUriNew(*pe)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	u.Logger.Info("tokens", tokens.Total)
+	return tokens, nil
+}
+
 func (u Usecase) UpdateToken(req structure.UpdateTokenReq) (*entity.TokenUri, error) {
 
 	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)
@@ -638,7 +661,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, nftTokenIds ...string) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -669,6 +692,9 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.PaidType = paidType
 	tokenUri.IsOnchain = false
+	if len(nftTokenIds) > 0 {
+		tokenUri.NftTokenId = nftTokenIds[0]
+	}
 
 	nftTokenUri := project.NftTokenUri
 	u.Logger.Info("nftTokenUri", nftTokenUri)
@@ -856,15 +882,16 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 		return nil, err
 	}
 	now := time.Now().Unix()
-	uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now))
+
+	base64Data := strings.ReplaceAll(req.Thumbnail, "data:image/png;base64,", "")
+	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, fmt.Sprintf("btc-projects/%s/thumb/token-%s-%d.png", token.ProjectID, token.TokenID, now))
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/upload/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-
-	token.Image = thumb
+	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"),uploaded.Name)
+	spew.Dump(thumb)
 	token.Thumbnail = thumb
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)

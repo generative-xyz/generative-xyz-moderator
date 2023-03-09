@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -38,6 +39,17 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	}
 
 	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects, error) {
+	resp := []*entity.Projects{}
+	f := bson.M{}
+	f["tokenid"] = bson.M{"$in": tokenIds}
+	_, err := r.Paginate(utils.COLLECTION_PROJECTS, 1, int64(len(tokenIds)), f, r.SelectedProjectFields(), nil, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -495,6 +507,12 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"isFullChain", 1},
 		{"reportUsers", 1},
 		{"mintpriceeth", 1},
+		{"fromAuthentic", 1},
+		{"tokenAddress", 1},
+		{"tokenId", 1},
+		{"ownerOf", 1},
+		{"ordinalsTx", 1},
+		{"inscribedBy", 1},
 	}
 	return f
 }
@@ -535,4 +553,74 @@ func (r Repository) UpdateProjectTraitStats(projectID string, traitStat []entity
 	}
 
 	return err
+}
+
+func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingPage{}
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_listing"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let",
+						bson.D{
+							{"cancelled", "$cancelled"},
+							{"matched", "$matched"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"matched", false},
+										{"cancelled", false},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$facet",
+				bson.D{
+					{"totalCount",
+						bson.A{
+							bson.D{{"$count", "count"}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		if len(result[0].TotalCount) > 0 {
+			return uint64(result[0].TotalCount[0].Count), nil
+		}
+		return 0, nil
+	}
+
+	return 0, nil
 }

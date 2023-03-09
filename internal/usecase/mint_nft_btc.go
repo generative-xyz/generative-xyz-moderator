@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -41,6 +40,12 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	feeSendMaster := big.NewInt(0)
 	var err error
 
+	if input.Quantity <= 0 {
+		err = errors.New("quantity invalid")
+		u.Logger.Error("input.Quantity", err.Error(), err)
+		return nil, err
+	}
+
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
 		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
@@ -54,42 +59,18 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	if p.MintingInfo.Index+int64(input.Quantity) > p.MaxSupply {
+		err = fmt.Errorf("not enough quantity %s", input.ProjectID)
+		u.Logger.Error("projectIsMintedOut", err.Error(), err)
+		return nil, err
+	}
+
 	// verify paytype:
 	if input.PayType != utils.NETWORK_BTC && input.PayType != utils.NETWORK_ETH {
 		err = errors.New("only support payType is eth or btc")
 		u.Logger.Error("u.CreateMintReceiveAddress.Check(payType)", err.Error(), err)
 		return nil, err
 	}
-
-	// cal min price:
-	mintPriceStr := "0"
-	mintPriceInt, err := strconv.Atoi(p.MintPrice)
-	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
-		return nil, err
-	}
-	projectMintPrice := mintPriceInt
-
-	// network fee:
-
-	networkFee := utils.FEE_BTC_SEND_NFT // fee send nft in ord service.
-
-	if p.MaxFileSize > 0 {
-		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
-		if calNetworkFee > 0 {
-			networkFee += int(calNetworkFee)
-		} else {
-			networkFeeFromProject, err := strconv.Atoi(p.NetworkFee)
-			if err == nil {
-				networkFee += networkFeeFromProject
-			}
-		}
-	}
-
-	// sum total amount:
-	mintPriceInt += networkFee
-
-	var btcRate, ethRate float64
 
 	// check type:
 	if input.PayType == utils.NETWORK_BTC {
@@ -98,15 +79,6 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", err.Error(), err)
 			return nil, err
 		}
-		mintPriceStr = strconv.Itoa(mintPriceInt)
-
-		_, btcRate, ethRate, err = u.convertBTCToETH("1")
-		if err != nil {
-			u.Logger.Error("convertBTCToETH", err.Error(), err)
-			return nil, err
-		}
-		networkFee += utils.FEE_BTC_SEND_AGV
-		mintPriceInt += utils.FEE_BTC_SEND_AGV
 
 	} else if input.PayType == utils.NETWORK_ETH {
 		ethClient := eth.NewClient(nil)
@@ -116,25 +88,6 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			u.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", err.Error(), err)
 			return nil, err
 		}
-		mintPriceStr, btcRate, ethRate, err = u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-		if err != nil {
-			u.Logger.Error("convertBTCToETH", err.Error(), err)
-			return nil, err
-		}
-		fmt.Println("mintPriceStr1: ", mintPriceStr)
-		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr1", mintPriceStr, false)
-		// + fee send master:
-		// FEE_ETH_SEND_MASTER
-		mintPriceEthBigint, _ := big.NewInt(0).SetString(mintPriceStr, 10)
-
-		feeSendMaster = big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-
-		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-
-		mintPriceStr = mintPriceEthBigint.String()
-
-		fmt.Println("mintPriceStr2: ", mintPriceStr)
-		go u.trackMintNftBtcHistory(receiveAddress, "CreateMintReceiveAddress", "", -1, "CreateMintReceiveAddress.mintPriceStr2", mintPriceStr, false)
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {
@@ -165,12 +118,26 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
-	// for analytics
+	// cal fee:
+	feeInfos, err := u.calMintFeeInfo(p)
+	if err != nil {
+		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+		return nil, err
+	}
 
-	walletAddress.ProjectNetworkFee = networkFee
-	walletAddress.ProjectMintPrice = projectMintPrice
-	walletAddress.BtcRate = btcRate
-	walletAddress.EthRate = ethRate
+	fmt.Println("feeInfos: ", feeInfos)
+
+	walletAddress.ProjectNetworkFee = int(feeInfos["btc"].NetworkFeeBigInt.Int64()) // btc value
+	walletAddress.ProjectMintPrice = int(feeInfos["btc"].MintPriceBigInt.Int64())   // btc value
+
+	walletAddress.MintPriceByPayType = feeInfos[input.PayType].MintPrice   // 1 item
+	walletAddress.NetworkFeeByPayType = feeInfos[input.PayType].NetworkFee // 1 item
+
+	walletAddress.BtcRate = feeInfos[input.PayType].BtcPrice
+	walletAddress.EthRate = feeInfos[input.PayType].EthPrice
+
+	walletAddress.EstFeeInfo = feeInfos
+
 	walletAddress.FeeSendMaster = feeSendMaster.String()
 
 	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
@@ -183,12 +150,23 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		expiredTime = 1 // just 1h for checking eth balance
 	}
 
-	walletAddress.Amount = mintPriceStr
+	walletAddress.Amount = feeInfos[input.PayType].TotalAmount
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.Status = entity.StatusMint_Pending
 	walletAddress.ProjectID = input.ProjectID
 	walletAddress.Balance = "0"
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
+
+	fmt.Println("feeInfos[eth].MintPriceBigIn", feeInfos["eth"].MintPriceBigInt)
+	fmt.Println("feeInfos[btc].MintPriceBigIn", feeInfos["btc"].MintPriceBigInt)
+
+	// for batch mint, update here:
+	walletAddress.Quantity = input.Quantity
+	walletAddress.MintPriceByPayTypeTotal = big.NewInt(0).Mul(feeInfos[input.PayType].MintPriceBigInt, big.NewInt(int64(input.Quantity))).String()   // total
+	walletAddress.NetworkFeeByPayTypeTotal = big.NewInt(0).Mul(feeInfos[input.PayType].NetworkFeeBigInt, big.NewInt(int64(input.Quantity))).String() // total
+
+	// update total amount:
+	walletAddress.Amount = big.NewInt(0).Mul(feeInfos[input.PayType].TotalAmountBigInt, big.NewInt(int64(input.Quantity))).String()
 
 	// insert now:
 	err = u.Repo.InsertMintNftBtc(walletAddress)
@@ -354,6 +332,11 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 	for _, item := range listPending {
 
+		if len(item.ReceiveAddress) == 0 {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "the receive address empty", "", false)
+			continue
+		}
+
 		time.Sleep(1 * time.Second)
 
 		// check balance:
@@ -438,6 +421,49 @@ func (u Usecase) JobMint_CheckBalance() error {
 		if err != nil {
 			fmt.Printf("Could not UpdateMintNftBtc uuid %s - with err: %v", item.UUID, err)
 			continue
+		}
+		// create batch record:
+		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 1 {
+			// create
+			// verify item
+			listPath, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+
+			totaltem := item.Quantity - len(listPath)
+
+			for i := 0; i < totaltem-1; i++ { // n - item
+				batchItem := entity.MintNftBtc{
+					BatchParentId:     item.UUID,
+					ProjectID:         item.ProjectID,
+					Status:            entity.StatusMint_ReceivedFund, // wait for mint.
+					PayType:           item.PayType,
+					IsConfirm:         true,
+					UserAddress:       item.UserAddress,
+					OriginUserAddress: item.OriginUserAddress,
+					RefundUserAdress:  item.RefundUserAdress,
+					IsSubItem:         true,
+					ProjectMintPrice:  item.ProjectMintPrice,
+					ProjectNetworkFee: item.ProjectNetworkFee,
+
+					NetworkFeeByPayType: item.NetworkFeeByPayType,
+					MintPriceByPayType:  item.MintPriceByPayType,
+					Amount:              item.EstFeeInfo[item.PayType].TotalAmount,
+					Quantity:            1,
+					UserID:              item.UserID,
+					IsMerged:            item.IsMerged,
+					EthRate:             item.EthRate,
+					BtcRate:             item.BtcRate,
+
+					EstFeeInfo: item.EstFeeInfo,
+				}
+				// insert now:
+				err = u.Repo.InsertMintNftBtc(&batchItem)
+				if err != nil {
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Can not InsertMintNftBtc sub item", i, true)
+					u.Logger.Error("u.CheckReceiveFund.InsertMintNftBtc", err.Error(), err)
+					continue
+				}
+
+			}
 		}
 
 	}
@@ -909,6 +935,10 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
+		if item.IsSubItem {
+			// go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
+			continue
+		}
 
 		if item.PayType == utils.NETWORK_BTC {
 
@@ -953,7 +983,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
-			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
+			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, ethAdressRefund)
 			if err != nil {
 				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.ethClient.TransferMax", err.Error(), true)
@@ -980,7 +1010,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 // send send max fund to master address:
 func (u Usecase) JobMint_SendFundToMaster() error {
 
-	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_SentNFTToUser)})
+	listToSentMaster, _ := u.Repo.ListMintNftBtcToSendFundToMaster() //u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_SentNFTToUser)})
 
 	if len(listToSentMaster) == 0 {
 		return nil
@@ -1003,6 +1033,10 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 	ethClient := eth.NewClient(ethClientWrap)
 
 	for _, item := range listToSentMaster {
+
+		if item.IsSubItem || item.Quantity > 1 {
+			continue
+		}
 
 		if item.PayType == utils.NETWORK_BTC {
 
@@ -1224,7 +1258,7 @@ func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) err
 	return nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
 
 	//amount = "0.1"
@@ -1302,4 +1336,166 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 
 	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
 	return result.String(), btcPrice, ethPrice, nil
+}
+
+// please donate P some money:
+func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeInfo, error) {
+
+	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
+
+	mintPrice := big.NewInt(0)
+	feeSendFund := big.NewInt(utils.FEE_BTC_SEND_AGV)
+	feeSendNft := big.NewInt(utils.FEE_BTC_SEND_NFT)
+	feeMintNft := big.NewInt(0)
+
+	totalAmountToMint := big.NewInt(0)
+	netWorkFee := big.NewInt(0)
+
+	var err error
+
+	// cal min price:
+	mintPrice, ok := mintPrice.SetString(p.MintPrice, 10)
+	if !ok {
+		err = errors.New("can not parse MintPrice")
+		u.Logger.Error("u.calMintFeeInfo.Check(SetString)", err.Error(), err)
+		return nil, err
+	}
+
+	if p.MaxFileSize > 0 {
+		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
+		if calNetworkFee == -1 {
+			err = errors.New("can not cal networkFeeBySize")
+			u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
+			return nil, err
+		}
+		// fee mint:
+		feeMintNft = big.NewInt(calNetworkFee)
+
+	} else {
+		feeMintNft, _ = feeMintNft.SetString(p.MintPrice, 10)
+		if !ok {
+			feeMintNft = big.NewInt(0)
+		}
+	}
+
+	var btcRate, ethRate float64
+
+	btcRate, err = helpers.GetExternalPrice("BTC")
+	if err != nil {
+		u.Logger.Error("getExternalPrice", zap.Error(err))
+		return nil, err
+	}
+
+	ethRate, err = helpers.GetExternalPrice("ETH")
+	if err != nil {
+		u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
+		return nil, err
+	}
+	// total amount by BTC:
+	netWorkFee = netWorkFee.Add(feeMintNft, feeSendNft)  // + feeMintNft	+ feeSendNft
+	netWorkFee = netWorkFee.Add(netWorkFee, feeSendFund) // + feeSendFund
+
+	totalAmountToMint = totalAmountToMint.Add(mintPrice, netWorkFee) // mintPrice, netWorkFee
+
+	listMintFeeInfo["btc"] = entity.MintFeeInfo{
+
+		MintPrice:   mintPrice.String(),
+		MintFee:     feeMintNft.String(),
+		NetworkFee:  netWorkFee.String(),
+		TotalAmount: totalAmountToMint.String(),
+		SendNftFee:  feeSendNft.String(),
+		SendFundFee: feeSendFund.String(),
+
+		MintPriceBigInt:   mintPrice,
+		MintFeeBigInt:     feeMintNft,
+		SendNftFeeBigInt:  feeSendNft,
+		SendFundFeeBigInt: feeSendFund,
+		NetworkFeeBigInt:  netWorkFee,
+		TotalAmountBigInt: totalAmountToMint,
+
+		EthPrice: ethRate,
+		BtcPrice: btcRate,
+
+		Decimal: 8,
+	}
+
+	fmt.Println("feeInfos[btc].MintPriceBigIn1", listMintFeeInfo["btc"].MintPriceBigInt)
+
+	// 1. convert mint price btc to eth  ==========
+	mintPriceByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(mintPrice.Uint64())/1e8), btcRate, ethRate)
+	if err != nil {
+		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		return nil, err
+	}
+	// 1. set mint price by eth
+	mintPriceEth, ok := big.NewInt(0).SetString(mintPriceByEth, 10)
+	if !ok {
+		err = errors.New("can not set mintPriceByEth")
+		u.Logger.Error("u.calMintFeeInfo.Set(mintPriceByEth)", err.Error(), err)
+		return nil, err
+	}
+
+	// 2. convert mint fee btc to eth  ==========
+	feeMintNftByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(feeMintNft.Uint64())/1e8), btcRate, ethRate)
+	if err != nil {
+		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		return nil, err
+	}
+	// 2. set mint fee by eth
+	feeMintNftEth, ok := big.NewInt(0).SetString(feeMintNftByEth, 10)
+	if !ok {
+		err = errors.New("can not set feeMintNftByEth")
+		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
+		return nil, err
+	}
+
+	// 3. convert mint fee btc to eth ==========
+	feeSendNftByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(feeSendNft.Uint64())/1e8), btcRate, ethRate)
+	if err != nil {
+		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		return nil, err
+	}
+	// 3. set mint fee by eth
+	feeSendNftEth, ok := big.NewInt(0).SetString(feeSendNftByEth, 10)
+	if !ok {
+		err = errors.New("can not set feeMintNftByEth")
+		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
+		return nil, err
+	}
+
+	// 4. fee send master by eth:
+	feeSendFundEth := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+
+	// total amount by ETH:
+	netWorkFeeEth := big.NewInt(0).Add(feeMintNftEth, feeSendNftEth) // + feeMintNft	+ feeSendNft
+	netWorkFeeEth = netWorkFeeEth.Add(netWorkFeeEth, feeSendFundEth) // + feeSendFund
+
+	totalAmountToMintEth := big.NewInt(0).Add(mintPriceEth, netWorkFeeEth) // mintPrice, netWorkFee
+
+	listMintFeeInfo["eth"] = entity.MintFeeInfo{
+		MintPrice:   mintPriceEth.String(),
+		MintFee:     feeMintNftEth.String(),
+		NetworkFee:  netWorkFeeEth.String(),
+		TotalAmount: totalAmountToMintEth.String(),
+		SendNftFee:  feeSendNftEth.String(),
+		SendFundFee: feeSendFundEth.String(),
+
+		MintPriceBigInt:   mintPriceEth,
+		MintFeeBigInt:     feeMintNftEth,
+		SendNftFeeBigInt:  feeSendNftEth,
+		SendFundFeeBigInt: feeSendFundEth,
+
+		NetworkFeeBigInt:  netWorkFeeEth,
+		TotalAmountBigInt: totalAmountToMintEth,
+
+		EthPrice: ethRate,
+		BtcPrice: btcRate,
+
+		Decimal: 18,
+	}
+
+	fmt.Println("feeInfos[eth].MintPriceBigIn2", listMintFeeInfo["eth"].MintPriceBigInt)
+	fmt.Println("feeInfos[btc].MintPriceBigIn2", listMintFeeInfo["btc"].MintPriceBigInt)
+
+	return listMintFeeInfo, err
 }

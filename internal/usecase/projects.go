@@ -36,6 +36,7 @@ import (
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
 )
@@ -77,7 +78,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		u.Logger.Error(err)
-		return 0
+		return -1
 	} else {
 		type feeRate struct {
 			fastestFee  int
@@ -113,6 +114,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		return nil, err
 	}
 
+	mReserveMintPrice := helpers.StringToBTCAmount(req.ReserveMintPrice)
+
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
@@ -124,6 +127,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.TokenID = fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
+	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = false
 	pe.Status = true
@@ -791,6 +795,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		}
 	}
 
+	if req.LimitMintPerProcess != nil {
+		if p.LimitMintPerProcess != *req.LimitMintPerProcess {
+			p.LimitMintPerProcess = *req.LimitMintPerProcess
+		}
+	}
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.Error("updated", err.Error(), err)
@@ -1071,45 +1081,60 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		// return p, nil
 		return nil, errors.New("project is not found")
 	}
-	mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
-	if err != nil {
-		u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
-		return nil, err
-	}
-	ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-	if err != nil {
-		u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-		return nil, err
-	}
-	c.MintPriceEth = ethPrice
 
-	// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
-
-	networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
-
-	if c.MaxFileSize > 0 {
-		calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
-		if calNetworkFee > 0 {
-			networkFeeInt = calNetworkFee
-			c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
-
+	/*
+		mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
+		if err != nil {
+			u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
+			return nil, err
 		}
-	}
-
-	if networkFeeInt > 0 {
-		ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+		ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 		if err != nil {
 			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
 			return nil, err
 		}
+		c.MintPriceEth = ethPrice
 
-		// add fee send master:
-		mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
-		feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-		mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-		ethNetworkFeePrice = mintPriceEthBigint.String()
+		// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
 
-		c.NetworkFeeEth = ethNetworkFeePrice
+		networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
+
+		if c.MaxFileSize > 0 {
+			calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
+			if calNetworkFee > 0 {
+				networkFeeInt = calNetworkFee
+				c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
+
+			}
+		}
+
+		if networkFeeInt > 0 {
+			ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
+			if err != nil {
+				u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
+				return nil, err
+			}
+
+			// add fee send master:
+			mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
+			feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
+			mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
+			ethNetworkFeePrice = mintPriceEthBigint.String()
+
+			c.NetworkFeeEth = ethNetworkFeePrice
+		} */
+	// cal fee info:
+	if c.MintingInfo.Index < c.MaxSupply {
+		feeInfos, err := u.calMintFeeInfo(c)
+		if err != nil {
+			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+			return nil, err
+		}
+		// set price, fee:
+		c.NetworkFee = feeInfos["btc"].NetworkFee
+		c.NetworkFeeEth = feeInfos["eth"].NetworkFee
+
+		c.MintPriceEth = feeInfos["eth"].MintPrice
 	}
 
 	go func() {
@@ -1937,33 +1962,33 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 	if err := u.Repo.FindOneBy(ctx, entity.Projects{}.TableName(), bson.M{
 		"fromAuthentic": true,
 		"tokenAddress":  item.TokenAddress,
-		"tokenId":       item.TokenId,
 	}, project); err != nil {
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
-		user := &entity.Users{}
+		creator := &entity.Users{}
 		if err := u.Repo.FindOneBy(ctx, entity.Users{}.TableName(),
-			bson.M{"wallet_address": item.UserWalletAddress},
-			user); err != nil {
+			bson.M{"wallet_address": "0x1111111111111111111111111111111111111111"},
+			creator); err != nil {
 			return err
 		}
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
-			CreatorName:     user.DisplayName,
-			CreatorAddrr:    user.WalletAddress,
-			CreatorAddrrBTC: item.OriginUserAddress,
+			CreatorName:     creator.DisplayName,
+			CreatorAddrr:    creator.WalletAddress,
+			CreatorAddrrBTC: creator.WalletAddressBTC,
 			FromAuthentic:   true,
 			TokenAddress:    item.TokenAddress,
 			TokenId:         item.TokenId,
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
+			Thumbnail:       item.FileURI,
+			InscribedBy:     item.UserWalletAddress,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
 			if err := json.Unmarshal([]byte(*nft.MetadataString), metadata); err == nil {
-				reqBtcProject.Thumbnail = metadata.Image
 				reqBtcProject.AnimationURL = &metadata.AnimationUrl
 			}
 		}
@@ -1984,9 +2009,166 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 	}
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT)
+
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
+	max := 10
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+
+	if totalImages == 0 && totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any images")
+	}
+
+	returnImages := []string{}
+	for _, item := range p.Images {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+
+	for _, item := range p.ProcessingImages {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+
+	return returnImages, nil
+
+}
+
+func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, error) {
+	resp := []structure.TokenTraits{}
+	tokens, err := u.Repo.GetAllTokenTraitsByProjectID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		attrs := []structure.TraitAttribute{}
+		tmp := structure.TokenTraits{}
+		tmp.ID = token.TokenID
+		tmp.Atrributes = attrs
+
+		for _, attr := range token.ParsedAttributesStr {
+			attrsTmp := structure.TraitAttribute{
+				TraitType: attr.TraitType,
+				Value:     attr.Value,
+			}
+
+			attrs = append(attrs, attrsTmp)
+		}
+
+		tmp.Atrributes = attrs
+		resp = append(resp, tmp)
+	}
+	return resp, nil
+}
+
+func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+	if totalImages == 0 && totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any files")
+	}
+
+	_, handler, err := r.FormFile("file")
+	if err != nil {
+		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		return nil, err
+	}
+
+	key := helpers.GenerateSlug(projectID)
+	key = fmt.Sprintf("btc-projects/%s/json", key)
+	gf := googlecloud.GcsFile{
+		FileHeader: handler,
+		Path:       &key,
+	}
+
+	uploaded, err := u.GCS.FileUploadToBucket(gf)
+	if err != nil {
+		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		return nil, err
+	}
+
+	content, err := u.GCS.ReadFile(uploaded.Name)
+	if err != nil {
+		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
+		return nil, err
+	}
+
+	data := []entity.TokenTraits{}
+	err = json.Unmarshal(content, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	h := &entity.TokenUriMetadata{
+		ProjectID:    projectID,
+		UploadedFile: uploaded.FullPath,
+		Content:      data,
+	}
+
+	err = u.Repo.CreateTokenUriMetadata(h)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range data {
+		tokenID := item.ID
+		token, err := u.Repo.FindTokenByTokenID(tokenID)
+		if err != nil {
+			return nil, err
+		}
+
+		if token.ProjectID != p.TokenID {
+			err = errors.New("token is not belong to this project")
+			return nil, err
+		}
+
+		attrs := []entity.TokenUriAttr{}
+		attrStrs := []entity.TokenUriAttrStr{}
+
+		for _, itemAttr := range item.Atrributes {
+			attr := entity.TokenUriAttr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
+			}
+
+			attrStr := entity.TokenUriAttrStr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
+			}
+
+			attrs = append(attrs, attr)
+			attrStrs = append(attrStrs, attrStr)
+		}
+
+		token.ParsedAttributes = attrs
+		token.ParsedAttributesStr = attrStrs
+
+		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return h, nil
 }
