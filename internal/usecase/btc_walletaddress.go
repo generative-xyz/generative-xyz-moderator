@@ -737,7 +737,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
@@ -772,7 +772,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	u.Logger.Info("sending message to discord", discordMsg)
 
 	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("error sending message to discord", err)
+		u.Logger.ErrorAny("error sending message to discord", zap.Error(err), zap.Any("discordMsg", discordMsg))
+
 	}
 }
 
@@ -868,146 +869,146 @@ func (u Usecase) JobBtcSendBtcToMaster() error {
 
 func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
 	result := []structure.MintingInscription{}
-	listBTC, err := u.Repo.ListMintingWaitingForFundByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
+	// listBTC, err := u.Repo.ListMintingWaitingForFundByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	listBTC1, err := u.Repo.ListMintingByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
+	// listBTC1, err := u.Repo.ListMintingByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	listBTC2, err := u.Repo.ListMintingWaitingToSendByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
-	listBTC = append(listBTC, listBTC1...)
-	listBTC = append(listBTC, listBTC2...)
+	// listBTC2, err := u.Repo.ListMintingWaitingToSendByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// listBTC = append(listBTC, listBTC1...)
+	// listBTC = append(listBTC, listBTC2...)
 
-	listETH, err := u.Repo.ListMintingETHByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
+	// listETH, err := u.Repo.ListMintingETHByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	listETH1, err := u.Repo.ListMintingETHByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
+	// listETH1, err := u.Repo.ListMintingETHByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	listETH2, err := u.Repo.ListMintingWaitingToSendETHByWalletAddress(address)
-	if err != nil {
-		return nil, err
-	}
-	listETH = append(listETH, listETH1...)
-	listETH = append(listETH, listETH2...)
+	// listETH2, err := u.Repo.ListMintingWaitingToSendETHByWalletAddress(address)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// listETH = append(listETH, listETH1...)
+	// listETH = append(listETH, listETH2...)
 
 	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
 	if err != nil {
 		return nil, err
 	}
 
-	itemIDMap := make(map[string]struct{})
+	// itemIDMap := make(map[string]struct{})
 
-	for _, item := range listBTC {
-		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := itemIDMap[item.UUID]; ok {
-			continue
-		}
-		var minting *structure.MintingInscription
-		if time.Since(*item.CreatedAt) >= 2*time.Hour {
-			continue // timeout if  waited for 2 hours
-		}
-		if !item.IsConfirm {
-			minting = &structure.MintingInscription{
-				ID:           item.UUID,
-				CreatedAt:    item.CreatedAt,
-				Status:       "Waiting for payment",
-				FileURI:      item.FileURI,
-				ProjectID:    item.ProjectID,
-				ProjectImage: projectInfo.Thumbnail,
-				ProjectName:  projectInfo.Name,
-			}
-		} else {
-			if !item.IsMinted {
-				minting = &structure.MintingInscription{
-					ID:           item.UUID,
-					CreatedAt:    item.CreatedAt,
-					Status:       "Minting",
-					FileURI:      item.FileURI,
-					ProjectID:    item.ProjectID,
-					ProjectImage: projectInfo.Thumbnail,
-					ProjectName:  projectInfo.Name,
-				}
-			} else {
-				minting = &structure.MintingInscription{
-					ID:            item.UUID,
-					CreatedAt:     item.CreatedAt,
-					Status:        "Transferring",
-					FileURI:       item.FileURI,
-					ProjectID:     item.ProjectID,
-					ProjectImage:  projectInfo.Thumbnail,
-					ProjectName:   projectInfo.Name,
-					InscriptionID: item.InscriptionID,
-				}
-			}
-		}
-		itemIDMap[item.UUID] = struct{}{}
-		result = append(result, *minting)
-	}
+	// for _, item := range listBTC {
+	// 	projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if _, ok := itemIDMap[item.UUID]; ok {
+	// 		continue
+	// 	}
+	// 	var minting *structure.MintingInscription
+	// 	if time.Since(*item.CreatedAt) >= 2*time.Hour {
+	// 		continue // timeout if  waited for 2 hours
+	// 	}
+	// 	if !item.IsConfirm {
+	// 		minting = &structure.MintingInscription{
+	// 			ID:           item.UUID,
+	// 			CreatedAt:    item.CreatedAt,
+	// 			Status:       "Waiting for payment",
+	// 			FileURI:      item.FileURI,
+	// 			ProjectID:    item.ProjectID,
+	// 			ProjectImage: projectInfo.Thumbnail,
+	// 			ProjectName:  projectInfo.Name,
+	// 		}
+	// 	} else {
+	// 		if !item.IsMinted {
+	// 			minting = &structure.MintingInscription{
+	// 				ID:           item.UUID,
+	// 				CreatedAt:    item.CreatedAt,
+	// 				Status:       "Minting",
+	// 				FileURI:      item.FileURI,
+	// 				ProjectID:    item.ProjectID,
+	// 				ProjectImage: projectInfo.Thumbnail,
+	// 				ProjectName:  projectInfo.Name,
+	// 			}
+	// 		} else {
+	// 			minting = &structure.MintingInscription{
+	// 				ID:            item.UUID,
+	// 				CreatedAt:     item.CreatedAt,
+	// 				Status:        "Transferring",
+	// 				FileURI:       item.FileURI,
+	// 				ProjectID:     item.ProjectID,
+	// 				ProjectImage:  projectInfo.Thumbnail,
+	// 				ProjectName:   projectInfo.Name,
+	// 				InscriptionID: item.InscriptionID,
+	// 			}
+	// 		}
+	// 	}
+	// 	itemIDMap[item.UUID] = struct{}{}
+	// 	result = append(result, *minting)
+	// }
 
-	for _, item := range listETH {
-		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := itemIDMap[item.UUID]; ok {
-			continue
-		}
-		if time.Since(*item.CreatedAt) >= 2*time.Hour {
-			continue // timeout if  waited for 2 hours
-		}
-		var minting *structure.MintingInscription
-		if !item.IsConfirm {
-			minting = &structure.MintingInscription{
-				ID:           item.UUID,
-				CreatedAt:    item.CreatedAt,
-				Status:       "Waiting for payment",
-				FileURI:      item.FileURI,
-				ProjectID:    item.ProjectID,
-				ProjectImage: projectInfo.Thumbnail,
-				ProjectName:  projectInfo.Name,
-			}
-		} else {
-			if !item.IsMinted {
-				minting = &structure.MintingInscription{
-					ID:           item.UUID,
-					CreatedAt:    item.CreatedAt,
-					Status:       "Minting",
-					FileURI:      item.FileURI,
-					ProjectID:    item.ProjectID,
-					ProjectImage: projectInfo.Thumbnail,
-					ProjectName:  projectInfo.Name,
-				}
-			} else {
-				minting = &structure.MintingInscription{
-					ID:            item.UUID,
-					CreatedAt:     item.CreatedAt,
-					Status:        "Transferring",
-					FileURI:       item.FileURI,
-					ProjectID:     item.ProjectID,
-					ProjectImage:  projectInfo.Thumbnail,
-					ProjectName:   projectInfo.Name,
-					InscriptionID: item.InscriptionID,
-				}
-			}
-		}
-		itemIDMap[item.UUID] = struct{}{}
-		result = append(result, *minting)
-	}
+	// for _, item := range listETH {
+	// 	projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if _, ok := itemIDMap[item.UUID]; ok {
+	// 		continue
+	// 	}
+	// 	if time.Since(*item.CreatedAt) >= 2*time.Hour {
+	// 		continue // timeout if  waited for 2 hours
+	// 	}
+	// 	var minting *structure.MintingInscription
+	// 	if !item.IsConfirm {
+	// 		minting = &structure.MintingInscription{
+	// 			ID:           item.UUID,
+	// 			CreatedAt:    item.CreatedAt,
+	// 			Status:       "Waiting for payment",
+	// 			FileURI:      item.FileURI,
+	// 			ProjectID:    item.ProjectID,
+	// 			ProjectImage: projectInfo.Thumbnail,
+	// 			ProjectName:  projectInfo.Name,
+	// 		}
+	// 	} else {
+	// 		if !item.IsMinted {
+	// 			minting = &structure.MintingInscription{
+	// 				ID:           item.UUID,
+	// 				CreatedAt:    item.CreatedAt,
+	// 				Status:       "Minting",
+	// 				FileURI:      item.FileURI,
+	// 				ProjectID:    item.ProjectID,
+	// 				ProjectImage: projectInfo.Thumbnail,
+	// 				ProjectName:  projectInfo.Name,
+	// 			}
+	// 		} else {
+	// 			minting = &structure.MintingInscription{
+	// 				ID:            item.UUID,
+	// 				CreatedAt:     item.CreatedAt,
+	// 				Status:        "Transferring",
+	// 				FileURI:       item.FileURI,
+	// 				ProjectID:     item.ProjectID,
+	// 				ProjectImage:  projectInfo.Thumbnail,
+	// 				ProjectName:   projectInfo.Name,
+	// 				InscriptionID: item.InscriptionID,
+	// 			}
+	// 		}
+	// 	}
+	// 	itemIDMap[item.UUID] = struct{}{}
+	// 	result = append(result, *minting)
+	// }
 
 	for _, item := range listMintV2 {
 		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)

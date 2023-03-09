@@ -127,9 +127,9 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 		err = errors.New("WalletAddress is invalid")
 	}
 
-	if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
+	/*if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
 		err = errors.New("fee rate is invalid")
-	}
+	}*/
 
 	if len(reqUsecase.File) == 0 {
 		err = errors.New("file is invalid")
@@ -234,7 +234,6 @@ func (h *httpDelivery) developerDetailInscribe(w http.ResponseWriter, r *http.Re
 // @Produce json
 // @Param ID path string true "inscribe ID"
 // @Success 200
-// @Router developer/inscribe/retry/{ID} [POST]
 // @Security ApiKeyAuth
 func (h *httpDelivery) developerRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 

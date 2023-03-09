@@ -32,11 +32,13 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/llgcode/draw2d v0.0.0-20210904075650-80aa0a2a901d
 	github.com/pkg/errors v0.9.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/http-swagger v1.3.3
 	github.com/swaggo/swag v1.8.10
 	github.com/tdewolff/minify/v2 v2.12.4
+	github.com/test-go/testify v1.1.4
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/xakep666/mongo-migrate v0.2.1
 	go.mongodb.org/mongo-driver v1.11.2

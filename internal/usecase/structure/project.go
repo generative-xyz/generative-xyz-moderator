@@ -68,20 +68,22 @@ type CreateBtcProjectReq struct {
 	OwnerOf                string   `json:"ownerOf"`
 	OrdinalsTx             string   `json:"ordinalsTx"`
 	InscribedBy            string   `json:"inscribedBy"`
+	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectReq struct {
-	ProjectID        *string  `json:"projectID"`
-	Name             *string  `json:"name"`
-	Description      *string  `json:"description"`
-	Thumbnail        *string  `json:"thumbnail"`
-	IsHidden         *bool    `json:"isHidden"`
-	Royalty          *int     `json:"royalty"`
-	MintPrice        *string  `json:"mintPrice"`
-	MaxSupply        *int64   `json:"maxSupply"`
-	CreatetorAddress *string  `json:"createtorAddress"`
-	Categories       []string `json:"categories"`
-	CaptureImageTime *int     `json:"captureImageTime"`
+	ProjectID           *string  `json:"projectID"`
+	Name                *string  `json:"name"`
+	Description         *string  `json:"description"`
+	Thumbnail           *string  `json:"thumbnail"`
+	IsHidden            *bool    `json:"isHidden"`
+	Royalty             *int     `json:"royalty"`
+	MintPrice           *string  `json:"mintPrice"`
+	MaxSupply           *int64   `json:"maxSupply"`
+	CreatetorAddress    *string  `json:"createtorAddress"`
+	Categories          []string `json:"categories"`
+	CaptureImageTime    *int     `json:"captureImageTime"`
+	LimitMintPerProcess *int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {

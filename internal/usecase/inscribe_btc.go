@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -14,7 +16,11 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -259,7 +265,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.Amount = mfTotal
 	walletAddress.MintFee = mfMintFee
 	walletAddress.SentTokenFee = mfSentTokenFee
-
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
@@ -273,21 +278,28 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.BTCRate = feeInfos[payType].BtcPrice
 	walletAddress.ETHRate = feeInfos[payType].EthPrice
 	if input.NeedVerifyAuthentic() {
-		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
-			BaseFilters: entity.BaseFilters{
-				Page:  1,
-				Limit: 1,
+		inscribeBtc := &entity.InscribeBTC{}
+		opt := &options.FindOneOptions{}
+		opt.SetSort(bson.M{"_id": -1})
+		err := u.Repo.FindOneBy(ctx,
+			inscribeBtc.TableName(),
+			bson.M{
+				"user_uuid":     input.UserUuid,
+				"token_address": input.TokenAddress,
+				"token_id":      input.TokenId,
 			},
-			TokenAddress: &input.TokenAddress,
-			TokenId:      &input.TokenId,
-			NeStatuses:   []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
-		})
+			inscribeBtc,
+			opt)
 		if err != nil {
-			return nil, err
-		}
-		inscribers := pags.Result.([]entity.InscribeBTCResp)
-		if len(inscribers) > 0 {
-			return nil, errors.New("Inscribe was minted")
+			if !errors.Is(err, mongo.ErrNoDocuments) {
+				return nil, err
+			}
+		} else {
+			if inscribeBtc.Status == entity.StatusInscribe_Pending && !inscribeBtc.Expired() {
+				return inscribeBtc, nil
+			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
+				return inscribeBtc, nil
+			}
 		}
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
@@ -808,7 +820,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err.Error())
-			u.Logger.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
+			u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
 			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
 			continue
 		}
@@ -954,7 +966,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		pageListInscribe  = int64(1)
 		limitListInscribe = int64(100)
 	)
-	mapNftMinted := make(map[string]bool)
+	mapNftMinted := make(map[string]entity.InscribeBTCResp)
 	for {
 		resp, err := u.Repo.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
@@ -975,7 +987,19 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
-			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
+			if inscribe.Status == entity.StatusInscribe_Pending && !inscribe.Expired() {
+				continue
+			}
+			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
+				continue
+			}
+			if inscribe.InscriptionID != "" {
+				tokenUri := &entity.TokenUri{}
+				if err := u.Repo.FindOneBy(ctx, tokenUri.TableName(), bson.M{"token_id": inscribe.InscriptionID}, tokenUri); err == nil {
+					inscribe.ProjectTokenId = tokenUri.ProjectID
+				}
+			}
+			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = inscribe
 		}
 		if len(inscribes) < int(limitListInscribe) {
 			break
@@ -995,17 +1019,23 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 					Page:     pag.Page,
 					PageSize: pag.PageSize,
 				}
-				nfts, err := u.MoralisNft.GetNftByWalletAddress(delegateWalletAddress, reqMoralisFilter)
+				nft, err := u.MoralisNft.GetNftByWalletAddress(delegateWalletAddress, reqMoralisFilter)
 				if err != nil {
 					return nil, err
 				}
-				for i := range nfts.Result {
-					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
-						nfts.Result[i].IsMinted = val
+				for i := range nft.Result {
+					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
+						nft.Result[i].IsMinted = true
+						nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
+							Status:         val.Status.Ordinal(),
+							ProjectTokenId: val.ProjectTokenId,
+							InscriptionID:  val.InscriptionID,
+						}
+
 					}
 				}
-				resp[delegateWalletAddress].Result = nfts.Result
-				resp[delegateWalletAddress].Cursor = nfts.Cursor
+				resp[delegateWalletAddress].Result = nft.Result
+				resp[delegateWalletAddress].Cursor = nft.Cursor
 			}
 		} else {
 			walletAddress = userWallet
@@ -1016,24 +1046,76 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 
 	if walletAddress != "" {
 		resp[walletAddress] = pag
-		nfts, err := u.MoralisNft.GetNftByWalletAddress(walletAddress, reqMoralisFilter)
+		nft, err := u.MoralisNft.GetNftByWalletAddress(walletAddress, reqMoralisFilter)
 		if err != nil {
 			return nil, err
 		}
-		for i := range nfts.Result {
-			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nfts.Result[i].TokenAddress, nfts.Result[i].TokenID)]; ok {
-				nfts.Result[i].IsMinted = val
+		for i := range nft.Result {
+			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
+				nft.Result[i].IsMinted = true
+				nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
+					Status:         val.Status.Ordinal(),
+					ProjectTokenId: val.ProjectTokenId,
+					InscriptionID:  val.InscriptionID,
+				}
 			}
 		}
-		pag.Result = nfts.Result
-		pag.Cursor = nfts.Cursor
+		pag.Result = nft.Result
+		pag.Cursor = nft.Cursor
 	}
 
 	return resp, nil
 }
 
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
-	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	if err != nil {
+		return nil, err
+	}
+	metaData := &nfts.MoralisTokenMetadata{}
+	if nft.MetadataString != nil {
+		if err := json.Unmarshal([]byte(*nft.MetadataString), metaData); err != nil {
+			return nil, err
+		}
+	}
+	nft.Metadata = metaData
+	if metaData.Image == "" {
+		return nft, nil
+	}
+	urlStr := utils.ConvertIpfsToHttp(metaData.Image)
+	if strings.HasPrefix(urlStr, "http") {
+		uploadImage := func(urlStr string) string {
+			client := http.Client{}
+			r, err := client.Get(urlStr)
+			if err != nil {
+				return urlStr
+			}
+			defer r.Body.Close()
+			buf, err := io.ReadAll(r.Body)
+			if err != nil {
+				return urlStr
+			}
+			ext, err := utils.GetFileExtensionFromUrl(urlStr)
+			if err != nil {
+				contentType := r.Header.Get("content-type")
+				arr := strings.Split(contentType, "/")
+				if len(arr) > 1 {
+					ext = arr[1]
+				} else {
+					return urlStr
+				}
+			}
+			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
+			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(buf), name)
+			if err != nil {
+				return urlStr
+			}
+			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+		}
+		urlStr = uploadImage(urlStr)
+	}
+	nft.Metadata.Image = urlStr
+	return nft, nil
 }
 
 func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv *ordinals.Service, item entity.InscribeBTC) error {

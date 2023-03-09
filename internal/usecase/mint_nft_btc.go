@@ -935,8 +935,8 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
-		if item.IsSubItem || item.Quantity > 1 { // temp hold
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
+		if item.IsSubItem {
+			// go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
 			continue
 		}
 
@@ -1034,7 +1034,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
-		if item.IsSubItem || item.Quantity > 1 { // temp hold
+		if item.IsSubItem || item.Quantity > 1 {
 			continue
 		}
 
@@ -1258,7 +1258,7 @@ func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) err
 	return nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
 
 	//amount = "0.1"

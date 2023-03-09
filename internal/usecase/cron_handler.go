@@ -614,7 +614,7 @@ func (u Usecase) SyncProjectsStats() error {
 	return nil
 }
 
-func (u Usecase) SyncTokenInscribeIndex() error {
+func (u Usecase) JobSyncTokenInscribeIndex() error {
 	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
 	if err != nil {
 		return err
@@ -645,24 +645,24 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 }
 
 const (
-	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
-	SATOSHI_EACH_BTC               int64 = 100000000
-	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000000
-	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 5000
-	TRENDING_SCORE_EACH_MINT       int64 = 10
-	TRENDING_SCORE_EACH_VIEW       int64 = 1
+	INF_TRENDING_SCORE                  int64 = 9223372036854775807 // max int64 value
+	SATOSHI_EACH_BTC                    int64 = 100000000
+	TRENDING_SCORE_EACH_BTC_VOLUMN      int64 = 1000000
+	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 30
+	TRENDING_SCORE_EACH_MINT            int64 = 10
+	TRENDING_SCORE_EACH_VIEW            int64 = 1
 )
 
-func (u Usecase) SyncProjectTrending() error {
-	u.Logger.Info("SyncProjectTrending.StartSyncProjectTrending")
+func (u Usecase) JobSyncProjectTrending() error {
+	u.Logger.Info("JobSyncProjectTrending.StartJobSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	btcActivites, err := u.Repo.GetRecentBTCActivity()
 	if err != nil {
-		u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
+		u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetBtcActivities", zap.Any("err", err.Error()))
 		return err
 	}
 
-	u.Logger.Info("SyncProjectTrending.DoneGetBtcActivities", zap.Any("act_len", len(btcActivites)))
+	u.Logger.Info("JobSyncProjectTrending.DoneGetBtcActivities", zap.Any("act_len", len(btcActivites)))
 
 	// Mapping from projectID to latest 24h's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
@@ -678,10 +678,10 @@ func (u Usecase) SyncProjectTrending() error {
 
 	fromProjectIDToCountListing := map[string]int64{}
 
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		u.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
 		listings, err := u.Repo.GetDexBtcsAlongWithProjectInfo(entity.GetDexBtcListingWithProjectInfoReq{
-			Page: page,
+			Page:  page,
 			Limit: 100,
 		})
 		if err != nil {
@@ -713,15 +713,15 @@ func (u Usecase) SyncProjectTrending() error {
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
-		u.Logger.Info("SyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
+		u.Logger.Info("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
+			u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
 		uProjects := resp.Result
 		projects := uProjects.([]entity.Projects)
-		u.Logger.Info("SyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
+		u.Logger.Info("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
 		if len(projects) == 0 {
 			break
 		}
@@ -740,21 +740,25 @@ func (u Usecase) SyncProjectTrending() error {
 			numActivity := int64(len(btcActivites))
 
 			numListings := fromProjectIDToCountListing[project.TokenID]
-			
+
 			if project.MintingInfo.Index == project.MaxSupply && numListings == 0 {
 				numActivity = 0
 				volumnInBtc = 0
 			}
-			trendingScore := countView * TRENDING_SCORE_EACH_VIEW 
+			trendingScore := countView * TRENDING_SCORE_EACH_VIEW
 			trendingScore += int64(volumnInBtc * float64(TRENDING_SCORE_EACH_BTC_VOLUMN))
 			trendingScore += numActivity * TRENDING_SCORE_EACH_MINT
 			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
 			if project.MintingInfo.Index == project.MaxSupply {
 				if numListings == 0 {
 					trendingScore /= 5
-				} else {
-					trendingScore *= 2
 				}
+			}
+			if project.MintingInfo.Index != project.MaxSupply && project.CreatorAddrr != "0x0000000000000000000000000000000000000000" {
+				trendingScore += project.MintingInfo.Index * TRENDING_SCORE_EACH_MINT
+			}
+			if project.MintPrice == "0" {
+				trendingScore /= 5
 			}
 			isWhitelistedProject := false
 			isBoostedProject := false
@@ -790,11 +794,11 @@ func (u Usecase) SyncProjectTrending() error {
 	return nil
 }
 
-func (u Usecase) DeleteOldActivities() error {
-	u.Logger.Info("DeleteOldActivities.Start")
-	err := u.Repo.DeleteOldActivities()
+func (u Usecase) JobDeleteOldActivities() error {
+	u.Logger.Info("JobDeleteOldActivities.Start")
+	err := u.Repo.JobDeleteOldActivities()
 	if err != nil {
-		return errors.Wrap(err, "u.Repo.DeleteOldActivities")
+		return errors.Wrap(err, "u.Repo.JobDeleteOldActivities")
 	}
 	return nil
 }

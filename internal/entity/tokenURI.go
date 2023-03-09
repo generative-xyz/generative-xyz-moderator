@@ -92,6 +92,17 @@ type TokenUri struct {
 	NftTokenId                     string        `bson:"nftTokenId"`
 }
 
+type AggregateTokenUriTraits struct {
+	AggregateTokenUriTraitsID `bson:"_id"`
+	ParsedAttributes          []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
+	ParsedAttributesStr       []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
+}
+
+type AggregateTokenUriTraitsID struct {
+	ProjectID string `bson:"project_id"`
+	TokenID   string `bson:"token_id"`
+}
+
 type TokenUriListingFilter struct {
 	ID                    primitive.ObjectID `bson:"_id" json:"_id"`
 	TokenID               string             `bson:"token_id" json:"tokenID"`

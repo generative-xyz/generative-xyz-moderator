@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -140,6 +141,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
 		filter.SortBy = "minted_time"
+		filter.Sort = entity.SORT_DESC
 	}
 
 	if len(filter.Ids) != 0 {
@@ -537,6 +539,66 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 		return nil, err
 	}
 
+	return tokens, nil
+}
+
+func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.AggregateTokenUriTraits, error) {
+	tokens := []entity.AggregateTokenUriTraits{}
+	matchStage := bson.D{{
+		Key:   utils.KEY_PROJECT_ID,
+		Value: projectID,
+	}}
+
+	pipeLine :=  bson.A{
+		bson.D{
+			{"$unwind", bson.D{
+				{"path", "$parsed_attributes_str"},
+			 	{"preserveNullAndEmptyArrays", true},
+			}},
+		},
+		bson.D{
+			{"$match", matchStage},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"project_id", "$projectID"},
+							{"token_id", "$token_id"},
+						},
+					},
+					{"parsed_attributes_str", bson.D{{"$push", "$parsed_attributes_str" }}},
+					{"size", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort", bson.M{"size": -1}},
+		},
+	}
+
+	
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), pipeLine )
+	if err != nil {
+		return nil, err
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+	spew.Dump(results)
+
+	for _, results := range results {
+		i := &entity.AggregateTokenUriTraits{}
+		err := helpers.Transform(results, i)
+		if err != nil {
+			continue
+		}
+		tokens = append(tokens, *i)
+
+	}
 	return tokens, nil
 }
 
