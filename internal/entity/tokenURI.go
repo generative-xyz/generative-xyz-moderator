@@ -99,13 +99,13 @@ type TokenUriListingFilter struct {
 	Image                 string             `bson:"image" json:"image"`
 	ContractAddress       string             `bson:"contract_address" json:"contract_address"`
 	AnimationURL          string             `bson:"animation_url" json:"animation_url"`
-	AnimationHtml         *string            `bson:"animation_html" json:"animation"`
-	ProjectID             string             `bson:"project_id" json:"project_id"`
+	AnimationHtml         *string            `bson:"animation_html"`
+	ProjectID             string             `bson:"project_id" json:"projectID"`
 	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
 	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"gen_nft_addrress"`
 	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
-	InscriptionIndex      string             `bson:"inscription_index" json:"inscription_index"`
-	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"order_inscription_index"`
+	InscriptionIndex      string             `bson:"inscription_index" json:"inscriptionIndex"`
+	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
 	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
 	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
 	Buyable               bool               `bson:"buyable" json:"buyable"`
