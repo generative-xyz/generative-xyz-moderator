@@ -70,7 +70,7 @@ type ProjectResp struct {
 	FileExtension             string           `json:"fileExtension"`
 	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
 	ReserveMintPrice          string           `json:"reserveMintPrice"`
-	ReserveMintLimit          string           `json:"reserveMintLimit"`
+	ReserveMintLimit          int              `json:"reserveMintLimit"`
 }
 
 type ReportProject struct {
