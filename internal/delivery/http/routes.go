@@ -85,8 +85,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
-	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
-	project.HandleFunc("/{genNFTAddr}/newtokens", h.TokensOfAProjectNew).Methods("GET")
+	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
+	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProjectNew).Methods("GET")
 
 	projectAuth := api.PathPrefix("/project").Subrouter()
 	projectAuth.Use(h.MiddleWare.AccessToken)
