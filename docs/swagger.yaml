@@ -1,5 +1,32 @@
 basePath: /rederinghub.io/v1
 definitions:
+  entity.DeveloperKey:
+    properties:
+      apiCompany:
+        type: string
+      apiDescription:
+        type: string
+      apiEmail:
+        type: string
+      apiKey:
+        type: string
+      apiName:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      status:
+        type: integer
+      updatedAt:
+        type: string
+      userUuid:
+        type: string
+      uuid:
+        type: string
+    type: object
   entity.InscribeBTCResp:
     properties:
       amount:
@@ -155,9 +182,13 @@ definitions:
         type: string
       description:
         type: string
+      fromAuthentic:
+        type: boolean
       genNFTAddr:
         type: string
       hash:
+        type: string
+      htmlFile:
         type: string
       id:
         type: string
@@ -166,6 +197,8 @@ definitions:
         items:
           type: string
         type: array
+      inscribedBy:
+        type: string
       inscriptionIcon:
         type: string
       isFullChain:
@@ -176,6 +209,8 @@ definitions:
         type: boolean
       license:
         type: string
+      limitMintPerProcess:
+        type: integer
       limitSupply:
         type: integer
       maxFileSize:
@@ -209,6 +244,10 @@ definitions:
         type: string
       openMintUnixTimestamp:
         type: integer
+      ordinalsTx:
+        type: string
+      ownerOf:
+        type: string
       priority:
         type: integer
       processingImages:
@@ -261,12 +300,16 @@ definitions:
         type: array
       thumbnail:
         type: string
+      tokenAddress:
+        type: string
       tokenDescription:
         type: string
       tokenID:
         type: string
       tokenIDInt:
         type: integer
+      tokenId:
+        type: string
       traceID:
         description: TO find log easily
         type: string
@@ -333,6 +376,8 @@ definitions:
       minterAddress:
         type: string
       name:
+        type: string
+      nftTokenId:
         type: string
       order_inscription_index:
         type: integer
@@ -479,6 +524,8 @@ definitions:
         type: boolean
       metadata:
         type: string
+      metadata_obj:
+        $ref: '#/definitions/nfts.MoralisTokenMetadata'
       name:
         type: string
       owner_of:
@@ -494,6 +541,20 @@ definitions:
       token_uri:
         type: string
     type: object
+  nfts.MoralisTokenMetadata:
+    properties:
+      animation_url:
+        type: string
+      description:
+        type: string
+      external_link:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      traits: {}
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -503,6 +564,8 @@ definitions:
     properties:
       animationURL:
         type: string
+      captureImageTime:
+        type: integer
       categories:
         items:
           type: string
@@ -605,6 +668,8 @@ definitions:
         type: string
       name:
         type: string
+      payType:
+        type: string
       tokenAddress:
         type: string
       tokenId:
@@ -654,6 +719,23 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.DeveloperCreateInscribeBtcReq:
+    properties:
+      feeRate:
+        type: integer
+      file:
+        type: string
+      fileName:
+        type: string
+      name:
+        type: string
+      tokenAddress:
+        type: string
+      tokenId:
+        type: string
+      walletAddress:
+        type: string
+    type: object
   request.FileResize:
     properties:
       file:
@@ -662,6 +744,19 @@ definitions:
   request.GenerateMessageRequest:
     properties:
       address:
+        type: string
+    type: object
+  request.GetApiKeyReq:
+    properties:
+      company:
+        type: string
+      description:
+        type: string
+      email:
+        type: string
+      g-recaptcha-response:
+        type: string
+      name:
         type: string
     type: object
   request.ListNftIdsReq:
@@ -710,6 +805,8 @@ definitions:
     type: object
   request.UpdateBTCProjectReq:
     properties:
+      captureImageTime:
+        type: integer
       categories:
         items:
           type: string
@@ -863,7 +960,7 @@ definitions:
         type: string
       sentTokenFee:
         type: string
-      timeout_at:
+      timeoutAt:
         type: string
       userAddress:
         description: user's wallet address from FE
@@ -910,8 +1007,6 @@ definitions:
     type: object
   response.InternalTokenURIResp:
     properties:
-      animationHtml:
-        type: string
       animationUrl:
         type: string
       attributes: {}
@@ -937,6 +1032,8 @@ definitions:
       mintedTime:
         type: string
       name:
+        type: string
+      nftTokenId:
         type: string
       orderID:
         type: string
@@ -1045,6 +1142,10 @@ definitions:
         type: string
       blockNumberMinted:
         type: string
+      btcFloorPrice:
+        type: integer
+      captureThumbnailDelayTime:
+        type: integer
       categories:
         items:
           type: string
@@ -1065,11 +1166,17 @@ definitions:
         type: string
       editableIsHidden:
         type: boolean
+      fromAuthentic:
+        type: boolean
       genNFTAddr:
+        type: string
+      htmlFile:
         type: string
       id:
         type: string
       image:
+        type: string
+      inscribedBy:
         type: string
       isFullChain:
         type: boolean
@@ -1080,6 +1187,8 @@ definitions:
       license:
         type: string
       limit:
+        type: integer
+      limitMintPerProcess:
         type: integer
       maxFileSize:
         type: integer
@@ -1101,8 +1210,14 @@ definitions:
         type: string
       networkFeeEth:
         type: string
+      nftTokenId:
+        type: string
       openMintUnixTimestamp:
         type: integer
+      ordinalsTx:
+        type: string
+      ownerOf:
+        type: string
       priority:
         type: integer
       projectURI:
@@ -1131,6 +1246,8 @@ definitions:
       status:
         type: boolean
       styles:
+        type: string
+      tokenAddress:
         type: string
       tokenID:
         type: string
@@ -1921,6 +2038,109 @@ paths:
       summary: DAO proposal's votes
       tags:
       - DAO
+  /developer/get-api-key:
+    get:
+      consumes:
+      - application/json
+      description: Get an api key for developer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.DeveloperKey'
+      security:
+      - No Authorization: []
+      summary: Get api key for developer
+      tags:
+      - developer
+    post:
+      consumes:
+      - application/json
+      description: Generate an api key for developer
+      parameters:
+      - description: Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.GetApiKeyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Generate an api key for developer
+      tags:
+      - developer
+  /developer/inscribe:
+    get:
+      consumes:
+      - application/json
+      description: BTC List Inscribe
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: BTC List Inscribe
+      tags:
+      - Inscribe
+    post:
+      consumes:
+      - application/json
+      description: BTC Generate receive wallet address
+      parameters:
+      - description: Create mint request for dev
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeveloperCreateInscribeBtcReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.InscribeBtcResp'
+      security:
+      - api-key: []
+      summary: BTC Generate receive wallet address
+      tags:
+      - Inscribe
+  /developer/inscribe/{ID}:
+    get:
+      consumes:
+      - application/json
+      description: BTC NFT Detail Inscribe
+      parameters:
+      - description: inscribe ID
+        in: path
+        name: ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.InscribeBTCResp'
+      security:
+      - ApiKeyAuth: []
+      summary: BTC NFT Detail Inscribe
+      tags:
+      - Inscribe
   /eth/receive-address:
     post:
       consumes:
@@ -2258,7 +2478,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
