@@ -386,10 +386,10 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (
 	if err != nil {
 		txInfo, err := CheckTxFromBTC(txhash)
 		if err != nil {
-			fmt.Printf("checkTxFromBTC err: %v", err)
+			// fmt.Printf("checkTxFromBTC err: %v", err)
 			txInfo2, err := CheckTxfromQuickNode(txhash, qn)
 			if err != nil {
-				fmt.Printf("checkTxFromBTC err: %v", err)
+				// fmt.Printf("checkTxFromBTC err: %v", err)
 				status = "Failed"
 			} else {
 				if txInfo2.Result.Confirmations > 0 {
@@ -528,7 +528,7 @@ func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
 		btcRateLock.Unlock()
 	}()
 	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=2", txhash)
-	fmt.Println("url", url)
+	// fmt.Println("url", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
