@@ -1,6 +1,7 @@
 package global
 
 import (
+	"rederinghub.io/external/dev5service"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/utils/blockchain"
@@ -36,4 +37,5 @@ type Global struct {
 	Slack               slack.Slack
 	DiscordClient       *discordclient.Client
 	DelegateService     *delegate.Service
+	Dev5Services     *dev5service.Dev5Service
 }

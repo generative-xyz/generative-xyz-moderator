@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"rederinghub.io/external/dev5service"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
@@ -44,6 +45,7 @@ type Usecase struct {
 	OrdServiceDeveloper *ord_service.BtcOrd
 	gData               gData
 	DelegateService     *delegate.Service
+	Dev5service     *dev5service.Dev5Service
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -64,6 +66,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.OrdService = global.OrdService
 	u.OrdServiceDeveloper = global.OrdServiceDeveloper
 	u.DelegateService = global.DelegateService
+	u.Dev5service = global.Dev5Services
 	return u, nil
 }
 
