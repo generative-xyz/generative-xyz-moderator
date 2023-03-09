@@ -18,7 +18,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) AggregateVolumns() {
+func (u Usecase) JobAggregateVolumns() {
 	payTypes := []string{
 		string(entity.BIT),
 		string(entity.ETH),
@@ -45,7 +45,7 @@ func (u Usecase) AggregateVolumns() {
 	// }
 
 	for _, payType := range payTypes {
-		u.Logger.LogAny("AggregateVolumns", zap.Any("payType", payType))
+		u.Logger.LogAny("JobAggregateVolumns", zap.Any("payType", payType))
 		u.AggregateVolumn(payType)
 	}
 }
