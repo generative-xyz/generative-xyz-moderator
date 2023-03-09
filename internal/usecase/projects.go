@@ -794,8 +794,8 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 			p.CatureThumbnailDelayTime = req.CaptureImageTime
 		}
 	}
-	
-	if req.LimitMintPerProcess != nil  {
+
+	if req.LimitMintPerProcess != nil {
 		if p.LimitMintPerProcess != *req.LimitMintPerProcess {
 			p.LimitMintPerProcess = *req.LimitMintPerProcess
 		}
@@ -2026,7 +2026,7 @@ func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 
-	if totalImages == 0 &&  totalProcessingImages == 0 {
+	if totalImages == 0 && totalProcessingImages == 0 {
 		return nil, errors.New("Project doesn's have any images")
 	}
 
@@ -2037,7 +2037,7 @@ func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
 		}
 		returnImages = append(returnImages, item)
 	}
-	
+
 	for _, item := range p.ProcessingImages {
 		if len(returnImages) >= max {
 			break
@@ -2046,7 +2046,7 @@ func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
 	}
 
 	return returnImages, nil
-	
+
 }
 
 func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, error) {
@@ -2065,7 +2065,7 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 		for _, attr := range token.ParsedAttributesStr {
 			attrsTmp := structure.TraitAttribute{
 				TraitType: attr.TraitType,
-				Value: attr.Value,
+				Value:     attr.Value,
 			}
 
 			attrs = append(attrs, attrsTmp)
@@ -2077,7 +2077,6 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 	return resp, nil
 }
 
-
 func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
@@ -2086,7 +2085,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
-	if totalImages == 0 &&  totalProcessingImages == 0 {
+	if totalImages == 0 && totalProcessingImages == 0 {
 		return nil, errors.New("Project doesn's have any files")
 	}
 
@@ -2108,8 +2107,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
 		return nil, err
 	}
-	
-	spew.Dump(uploaded)
+
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
 		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
@@ -2123,9 +2121,9 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	}
 
 	h := &entity.TokenUriMetadata{
-		ProjectID:  projectID,
-		UploadedFile:  uploaded.FullPath,
-		Content: data,
+		ProjectID:    projectID,
+		UploadedFile: uploaded.FullPath,
+		Content:      data,
 	}
 
 	err = u.Repo.CreateTokenUriMetadata(h)
@@ -2133,47 +2131,43 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	processed := 0
 	for _, item := range data {
-		if processed % 10 == 0 {
-			time.Sleep(time.Microsecond * 500)
+		tokenID := item.ID
+		token, err := u.Repo.FindTokenByTokenID(tokenID)
+		if err != nil {
+			return nil, err
 		}
 
-		go func (item entity.TokenTraits)  {
-			tokenID := item.ID
-			token, err := u.Repo.FindTokenByTokenID(tokenID)
-			if err != nil {
-				return 
+		if token.ProjectID != p.TokenID {
+			err = errors.New("token is not belong to this project")
+			return nil, err
+		}
+
+		attrs := []entity.TokenUriAttr{}
+		attrStrs := []entity.TokenUriAttrStr{}
+
+		for _, itemAttr := range item.Atrributes {
+			attr := entity.TokenUriAttr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
 			}
 
-			attrs :=[]entity.TokenUriAttr{}
-			attrStrs :=[]entity.TokenUriAttrStr{}
-
-			for _, itemAttr := range item.Atrributes {
-				attr := entity.TokenUriAttr{
-					TraitType: itemAttr.TraitType,
-					Value: itemAttr.Value,
-				}
-
-				attrStr := entity.TokenUriAttrStr{
-					TraitType: itemAttr.TraitType,
-					Value: itemAttr.Value,
-				}
-
-				attrs = append(attrs, attr)
-				attrStrs = append(attrStrs, attrStr)
+			attrStr := entity.TokenUriAttrStr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
 			}
 
-			token.ParsedAttributes = attrs
-			token.ParsedAttributesStr = attrStrs
+			attrs = append(attrs, attr)
+			attrStrs = append(attrStrs, attrStr)
+		}
 
-			_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
-			if err != nil {
-				return 
-			}
-		}(item)
+		token.ParsedAttributes = attrs
+		token.ParsedAttributesStr = attrStrs
 
-		processed ++
+		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return h, nil
