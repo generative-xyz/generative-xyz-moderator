@@ -61,7 +61,6 @@ type Projects struct {
 	Thumbnail                string             `bson:"thumbnail" json:"thumbnail"`
 	ThirdPartyScripts        []string           `bson:"thirdPartyScripts" json:"thirdPartyScripts"`
 	Scripts                  []string           `bson:"scripts" json:"scripts"`
-	ReservationList          []string           `bson:"reservationList" json:"reservationList"`
 	MintFee                  int                `bson:"mintFee" json:"mintFee"`
 	TokenDescription         string             `bson:"tokenDescription" json:"tokenDescription"`
 	Styles                   string             `bson:"styles" json:"styles"`
