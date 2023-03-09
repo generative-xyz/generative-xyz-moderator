@@ -75,7 +75,7 @@ func GenerateKey(key string) string {
 
 func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, " ", "-")
-	key = strings.ReplaceAll(key, "#", "")
+	key = strings.ReplaceAll(key, "#", "-")
 	key = strings.ReplaceAll(key, "@", "")
 	key = strings.ReplaceAll(key, `%`, "")
 	key = strings.ReplaceAll(key, `?`, "")

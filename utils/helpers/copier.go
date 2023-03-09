@@ -1,21 +1,29 @@
 package helpers
 
 import (
-	"archive/zip"
-	"io/ioutil"
+	"os"
 )
 
-func ReadFile(file *zip.File) ([]byte, error) {
-	fc, err := file.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer fc.Close()
-
-	content, err := ioutil.ReadAll(fc)
+func ReadFile(fileName string) ([]byte, error) {
+	f, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
 
-	return content, nil
+	return f, nil
+}
+
+func CreateFile(fileName string, data []byte) error {
+	f, err := os.Create(fileName)
+    if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
