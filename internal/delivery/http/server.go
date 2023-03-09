@@ -64,14 +64,14 @@ func (h *httpDelivery) StartServer() {
 
 	timeOut := h.Config.Context.TimeOut * 10
 	srv := &http.Server{
-		Handler: hCORS,
-		Addr:    fmt.Sprintf(":%s",h.Config.ServicePort),
+		Handler: handlers.CompressHandler(hCORS),
+		Addr:    fmt.Sprintf(":%s", h.Config.ServicePort),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: time.Duration(timeOut) * time.Second,
-		ReadTimeout: time.Duration(timeOut) * time.Second,
+		ReadTimeout:  time.Duration(timeOut) * time.Second,
 	}
 
-	h.Logger.Info(fmt.Sprintf("Server is listening at port %s ...",h.Config.ServicePort))
+	h.Logger.Info(fmt.Sprintf("Server is listening at port %s ...", h.Config.ServicePort))
 	if err := srv.ListenAndServe(); err != nil {
 		h.Logger.Error("httpDelivery.StartServer - Can not start http server", err)
 	}

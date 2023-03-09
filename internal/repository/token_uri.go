@@ -168,7 +168,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
-		filter.SortBy = "minted_time"
+		filter.SortBy = "priceBTC"
 	}
 
 	if len(filter.Ids) != 0 {
@@ -177,8 +177,14 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			f["_id"] = bson.M{"$in": objectIDs}
 		}
 	}
+
+	listingAmountDefault := -1
+	if filter.SortBy == "priceBTC" && filter.Sort == 1 {
+		listingAmountDefault = 99999999999999
+	}
+
 	f2 := bson.A{
-		bson.D{{"$match", bson.D{{"project_id", "1000264"}}}},
+		bson.D{{"$match", f}},
 		bson.D{
 			{"$lookup",
 				bson.D{
@@ -196,7 +202,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 							bson.D{
 								{"$match",
 									bson.D{
-										{"matched", true},
+										{"matched", false},
 										{"cancelled", false},
 									},
 								},
@@ -216,6 +222,67 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 		bson.D{
+			{"$addFields",
+				bson.D{
+					{"buyable",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", false},
+									{"else", true},
+								},
+							},
+						},
+					},
+					{"priceBTC",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", listingAmountDefault},
+									{"else", "$listing.amount"},
+								},
+							},
+						},
+					},
+					{"orderID", "$listing._id"},
+				},
+			},
+		},
+		bson.D{
 			{"$project",
 				bson.D{
 					{"_id", 1},
@@ -228,15 +295,15 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"inscription_index", 1},
 					{"order_inscription_index", 1},
 					{"thumbnail", 1},
-					{"listing.matched", 1},
-					{"listing.cancelled", 1},
-					{"listing.inscription_id", 1},
-					{"listing.amount", 1},
-					{"listing._id", 1},
+					{"buyable", 1},
+					{"priceBTC", 1},
+					{"orderID", 1},
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{"listing", -1}}}},
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
+		bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
+		bson.D{{"$limit", filter.Limit}},
 	}
 
 	// t, err := r.Aggregate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f2, r.SelectedTokenFieldsNew(), r.SortToken(filter), &tokens)
@@ -247,7 +314,6 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
 	if err = cursor.All((context.TODO()), &tokens); err != nil {
 		return nil, errors.WithStack(err)
 	}
