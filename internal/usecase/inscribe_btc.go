@@ -288,7 +288,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 				"token_address": input.TokenAddress,
 				"token_id":      input.TokenId,
 				"status": bson.M{
-					"$ne": entity.StatusInscribe_TxMintFailed,
+					"$lt": entity.StatusInscribe_TxMintFailed,
 				}},
 			inscribeBtc,
 			opt)
