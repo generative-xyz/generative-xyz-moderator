@@ -303,16 +303,14 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
-		bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
-		bson.D{{"$limit", filter.Limit}},
 		bson.D{
 			{"$facet",
 				bson.D{
 					{"totalData",
 						bson.A{
 							bson.D{{"$match", bson.D{}}},
-							bson.D{{"$skip", 0}},
-							bson.D{{"$limit", 2}},
+							bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
+							bson.D{{"$limit", filter.Limit}},
 						},
 					},
 					{"totalCount",
