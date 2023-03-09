@@ -882,15 +882,16 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 		return nil, err
 	}
 	now := time.Now().Unix()
-	uploaded, err := u.GCS.UploadBaseToBucket(req.Thumbnail, fmt.Sprintf("upload/token-%s-%d.glb", token.TokenID, now))
+
+	base64Data := strings.ReplaceAll(req.Thumbnail, "data:image/png;base64,", "")
+	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, fmt.Sprintf("btc-projects/%s/thumb/token-%s-%d.png", token.ProjectID, token.TokenID, now))
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/upload/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-
-	token.Image = thumb
+	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"),uploaded.Name)
+	spew.Dump(thumb)
 	token.Thumbnail = thumb
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)

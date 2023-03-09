@@ -4,24 +4,23 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/robfig/cron.v2"
+	"github.com/robfig/cron/v3"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 )
 
-
 type ScronHandler struct {
-	Logger   logger.Ilogger
-	Cache    redis.IRedisCache
-	Usecase    usecase.Usecase
+	Logger  logger.Ilogger
+	Cache   redis.IRedisCache
+	Usecase usecase.Usecase
 }
 
 func NewScronHandler(global *global.Global, uc usecase.Usecase) *ScronHandler {
 	return &ScronHandler{
-		Logger: global.Logger,
-		Cache: global.Cache,
+		Logger:  global.Logger,
+		Cache:   global.Cache,
 		Usecase: uc,
 	}
 }
@@ -30,7 +29,7 @@ func (h ScronHandler) StartServer() {
 	c := cron.New()
 
 	disPatchOn := os.Getenv("CRONTAB_SCHEDULE")
-	h.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))	
+	h.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))
 
 	//check device's statues each 1 hours
 	c.AddFunc(disPatchOn, func() {
@@ -108,7 +107,7 @@ func (h ScronHandler) StartServer() {
 		// 	defer func() {
 		// 		chanDone <- true
 		// 	}()
-		
+
 		// }(chanDone)
 
 		// go func (chanDone chan bool) {
@@ -132,7 +131,7 @@ func (h ScronHandler) StartServer() {
 		// }(chanDone)
 
 	})
-    
+
 	//alway 10 minutes crontab
 	// c.AddFunc("*/1 * * * *", func() {
 	// 	err := h.Usecase.UpdateProposalState()
@@ -143,13 +142,13 @@ func (h ScronHandler) StartServer() {
 
 	//alway 10 minutes crontab
 	c.AddFunc("*/5 * * * *", func() {
-		h.Usecase.AggregateVolumns()
+		h.Usecase.JobAggregateVolumns()
 
-		h.Usecase.AggregateReferal()
+		h.Usecase.JobAggregateReferral()
 	})
 
 	c.AddFunc("*/10 * * * *", func() {
-		err := h.Usecase.SyncTraitStats()
+		err := h.Usecase.JobSyncTraitStats()
 		if err != nil {
 			h.Logger.Error("error when sync trait stats", err)
 		}

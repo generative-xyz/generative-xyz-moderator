@@ -17,7 +17,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Security Authorization
-// @Param request body request.GetApiKeyReq
+// @Param request body request.GetApiKeyReq true "Request API key"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /developer/get-api-key [POST]
 func (h *httpDelivery) apiDeveloper_GenApiKey(w http.ResponseWriter, r *http.Request) {

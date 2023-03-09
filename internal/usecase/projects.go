@@ -36,6 +36,7 @@ import (
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
 )
@@ -249,10 +250,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	return pe, nil
 }
 
-func (u Usecase) CheckAirdrop() error {
+func (u Usecase) JobCheckAirdrop() error {
 	airdrops, err := u.Repo.FindAirdropByStatus(0)
 	if err != nil {
-		fmt.Printf("CheckAirdrop - with err: %v", err)
+		fmt.Printf("JobCheckAirdrop - with err: %v", err)
 		return err
 	}
 	u.Logger.Info(fmt.Sprintf("Start check airdrops len %d", len(airdrops)))
@@ -262,18 +263,18 @@ func (u Usecase) CheckAirdrop() error {
 			_, bs, err := u.buildBTCClient()
 
 			if err != nil {
-				fmt.Printf("CheckAirdrop - with err: %v", err)
+				fmt.Printf("JobCheckAirdrop - with err: %v", err)
 				continue
 			}
 			// check with api:
 			txInfo, err := bs.CheckTx(airdrop.Tx)
 			if err != nil {
-				fmt.Printf("CheckAirdrop - with err: %v", err)
+				fmt.Printf("JobCheckAirdrop - with err: %v", err)
 				u.Repo.UpdateAirdropStatusByTx(airdrop.Tx, 2, "")
 				continue
 			}
 			if txInfo.Confirmations > 0 {
-				fmt.Printf("CheckAirdrop success - %v", txInfo)
+				fmt.Printf("JobCheckAirdrop success - %v", txInfo)
 				data, err := json.Marshal(txInfo)
 				temp := ""
 				if err == nil {
@@ -291,13 +292,13 @@ func (u Usecase) CheckAirdrop() error {
 	return nil
 }
 
-func (u Usecase) CheckAirdropInit() error {
+func (u Usecase) JobCheckAirdropInit() error {
 	airdrops, err := u.Repo.FindAirdropByStatus(-1)
 	if err != nil {
-		fmt.Printf("CheckAirdropInit - with err: %v", err)
+		fmt.Printf("JobCheckAirdropInit - with err: %v", err)
 		return err
 	}
-	u.Logger.Info(fmt.Sprintf("Start check CheckAirdropInit len %d", len(airdrops)))
+	u.Logger.Info(fmt.Sprintf("Start check JobCheckAirdropInit len %d", len(airdrops)))
 	for _, airdrop := range airdrops {
 		if airdrop.Type == 0 {
 			// for airdrop artist
@@ -305,20 +306,20 @@ func (u Usecase) CheckAirdropInit() error {
 			projectId := airdrop.ProjectId
 			project, err := u.Repo.FindProjectByTokenID(projectId)
 			if err != nil {
-				u.Logger.ErrorAny("CheckAirdropInit project not found", zap.Any("projectID", projectId))
+				u.Logger.ErrorAny("JobCheckAirdropInit project not found", zap.Any("projectID", projectId))
 				continue
 			}
 			if project.MintingInfo.Index == 0 {
-				u.Logger.ErrorAny("CheckAirdropInit project still not mint", zap.Any("project", project))
+				u.Logger.ErrorAny("JobCheckAirdropInit project still not mint", zap.Any("project", project))
 				continue
 			}
 			mintPrice, e := strconv.Atoi(project.MintPrice)
 			if e != nil {
-				u.Logger.ErrorAny("CheckAirdropInit project get mint price", zap.Any("project", project))
+				u.Logger.ErrorAny("JobCheckAirdropInit project get mint price", zap.Any("project", project))
 				continue
 			}
 			if project.MintingInfo.Index*int64(mintPrice) < 430000 {
-				u.Logger.ErrorAny("CheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
+				u.Logger.ErrorAny("JobCheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
 				continue
 			}
 		}
@@ -791,6 +792,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 		if p.CatureThumbnailDelayTime == nil {
 			p.CatureThumbnailDelayTime = req.CaptureImageTime
+		}
+	}
+
+	if req.LimitMintPerProcess != nil {
+		if p.LimitMintPerProcess != *req.LimitMintPerProcess {
+			p.LimitMintPerProcess = *req.LimitMintPerProcess
 		}
 	}
 
@@ -2008,4 +2015,160 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		return err
 	}
 	return nil
+}
+
+func (u Usecase) ProjectRandomImages(projectID string) ([]string, error) {
+	max := 10
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+
+	if totalImages == 0 && totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any images")
+	}
+
+	returnImages := []string{}
+	for _, item := range p.Images {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+
+	for _, item := range p.ProcessingImages {
+		if len(returnImages) >= max {
+			break
+		}
+		returnImages = append(returnImages, item)
+	}
+
+	return returnImages, nil
+
+}
+
+func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, error) {
+	resp := []structure.TokenTraits{}
+	tokens, err := u.Repo.GetAllTokenTraitsByProjectID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, token := range tokens {
+		attrs := []structure.TraitAttribute{}
+		tmp := structure.TokenTraits{}
+		tmp.ID = token.TokenID
+		tmp.Atrributes = attrs
+
+		for _, attr := range token.ParsedAttributesStr {
+			attrsTmp := structure.TraitAttribute{
+				TraitType: attr.TraitType,
+				Value:     attr.Value,
+			}
+
+			attrs = append(attrs, attrsTmp)
+		}
+
+		tmp.Atrributes = attrs
+		resp = append(resp, tmp)
+	}
+	return resp, nil
+}
+
+func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+	if totalImages == 0 && totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any files")
+	}
+
+	_, handler, err := r.FormFile("file")
+	if err != nil {
+		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		return nil, err
+	}
+
+	key := helpers.GenerateSlug(projectID)
+	key = fmt.Sprintf("btc-projects/%s/json", key)
+	gf := googlecloud.GcsFile{
+		FileHeader: handler,
+		Path:       &key,
+	}
+
+	uploaded, err := u.GCS.FileUploadToBucket(gf)
+	if err != nil {
+		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		return nil, err
+	}
+
+	content, err := u.GCS.ReadFile(uploaded.Name)
+	if err != nil {
+		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
+		return nil, err
+	}
+
+	data := []entity.TokenTraits{}
+	err = json.Unmarshal(content, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	h := &entity.TokenUriMetadata{
+		ProjectID:    projectID,
+		UploadedFile: uploaded.FullPath,
+		Content:      data,
+	}
+
+	err = u.Repo.CreateTokenUriMetadata(h)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range data {
+		tokenID := item.ID
+		token, err := u.Repo.FindTokenByTokenID(tokenID)
+		if err != nil {
+			return nil, err
+		}
+
+		if token.ProjectID != p.TokenID {
+			err = errors.New("token is not belong to this project")
+			return nil, err
+		}
+
+		attrs := []entity.TokenUriAttr{}
+		attrStrs := []entity.TokenUriAttrStr{}
+
+		for _, itemAttr := range item.Atrributes {
+			attr := entity.TokenUriAttr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
+			}
+
+			attrStr := entity.TokenUriAttrStr{
+				TraitType: itemAttr.TraitType,
+				Value:     itemAttr.Value,
+			}
+
+			attrs = append(attrs, attr)
+			attrStrs = append(attrStrs, attrStr)
+		}
+
+		token.ParsedAttributes = attrs
+		token.ParsedAttributesStr = attrStrs
+
+		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return h, nil
 }

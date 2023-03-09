@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -14,6 +15,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -270,6 +272,36 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	// contractAddress := vars["contractAddress"]
+
+	projectID := vars["projectID"]
+
+	currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var result response.ProjectMarketplaceData
+
+	result.FloorPrice = floorPrice
+	result.Listed = currentListing
+	result.Volume = 0
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 // UserCredits godoc
 // @Summary get projects
 // @Description get projects
@@ -443,6 +475,17 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.CreatorAddrrBTC = input.CreatorAddrrBTC
 	resp.AnimationHtml = input.AnimationHtml
 	resp.MaxFileSize = input.MaxFileSize
+
+	fileExt := ""
+	if len(input.Images) > 0 {
+		fileExt = input.Images[0]
+	} else if len(input.ProcessingImages) > 0 {
+		fileExt = input.ProcessingImages[0]
+	}
+	spew.Dump(fileExt)
+	//fileExt := strings.Split(".")
+
+	resp.FileExtension = helpers.FileExtension(fileExt)
 	if input.CatureThumbnailDelayTime == nil || *input.CatureThumbnailDelayTime == 0 {
 		resp.CaptureThumbnailDelayTime = entity.DEFAULT_CAPTURE_TIME
 	} else {
@@ -767,6 +810,33 @@ func (h *httpDelivery) projectVolumn(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserCredits godoc
+// @Summary get project's random-images
+// @Description get project's random-images
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param payType query string false "payType eth|btc"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/random-images [GET]
+func (h *httpDelivery) projectRandomImages(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	v, err := h.Usecase.ProjectRandomImages(projectID)
+	if err != nil {
+		h.Logger.ErrorAny("projectVolumn", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
+}
+
+// UserCredits godoc
 // @Summary get upcomming projects
 // @Description upcomming get projects
 // @Tags Project
@@ -828,4 +898,54 @@ func (h *httpDelivery) getUpcommingProjects(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}
+
+// UserCredits godoc
+// @Summary get project's token-traits
+// @Description get project's token-traits
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param empty-trait query bool false "only tokens which don't have any trait are exported"
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/token-traits [GET]
+func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	//contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+
+	v, err := h.Usecase.ProjectTokenTraits(projectID)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
+}
+
+
+// UserCredits godoc
+// @Summary upload project's token-traits
+// @Description upload project's token-traits
+// @Tags Project
+// @Content-Type: multipart/form-data
+// @Param file formData file true "file"
+// @Produce  multipart/form-data
+// @Param contractAddress path string true "contractAddress"
+// @Param projectID path string true "token ID"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/tokens/{projectID}/token-traits [POST]
+func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	v, err := h.Usecase.UploadTokenTraits(projectID, r)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
 }

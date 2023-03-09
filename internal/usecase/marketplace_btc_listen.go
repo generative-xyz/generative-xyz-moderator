@@ -81,7 +81,7 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 
 //JOBS:
 // job1:  check receive the nft from seller:
-func (u Usecase) JobMKP_BtcChecktListNft() error {
+func (u Usecase) JobMKP_CheckReceivedNftFromSeller() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -605,7 +605,7 @@ func (u Usecase) JobMKP_Payment() error {
 	return nil
 }
 
-func (u Usecase) JpbMKP_CheckTxSendPayment() error {
+func (u Usecase) JobMKP_CheckTxSendPayment() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -702,7 +702,7 @@ func (u Usecase) JpbMKP_CheckTxSendPayment() error {
 }
 
 // send nft for buy order records:
-func (u Usecase) BtcSendNFTForBuyOrder() error {
+func (u Usecase) JobMKP_SendNftToBuyer() error {
 
 	// get list buy order status = StatusBuy_ReceivedFund:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_ReceivedFund)
@@ -716,11 +716,11 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 			// check nft in master wallet or not:
 			listNFTsRep, err := u.GetMasterNfts()
 			if err != nil {
-				go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.Error", err.Error())
+				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "GetMasterNfts.Error", err.Error())
 				continue
 			}
 
-			go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.listNFTsRep", listNFTsRep)
+			go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "GetMasterNfts.listNFTsRep", listNFTsRep)
 
 			// parse nft data:
 			var resp []struct {
@@ -731,7 +731,7 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 
 			err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
 			if err != nil {
-				go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.Unmarshal(listNFTsRep)", err.Error())
+				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "GetMasterNfts.Unmarshal(listNFTsRep)", err.Error())
 				continue
 			}
 			owner := false
@@ -742,7 +742,7 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 				}
 
 			}
-			go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "GetMasterNfts.CheckNFTOwner", owner)
+			go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "GetMasterNfts.CheckNFTOwner", owner)
 			if !owner {
 				continue
 			}
@@ -750,10 +750,10 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 			// transfer now:
 			sentTokenResp, err := u.SendTokenMKP(item.OrdAddress, item.InscriptionID)
 
-			go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
+			go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("BtcSendNFTForBuyOrder.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+				u.Logger.Error(fmt.Sprintf("JobMKP_SendNftToBuyer.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
 				continue
 			}
 
@@ -768,8 +768,8 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err.Error())
-				u.Logger.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
-				go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "SendTokenMKP.UpdateBTCNFTBuyOrder", err.Error())
+				u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
+				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "SendTokenMKP.UpdateBTCNFTBuyOrder", err.Error())
 				continue
 			}
 
@@ -783,17 +783,17 @@ func (u Usecase) BtcSendNFTForBuyOrder() error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-				u.Logger.Error("BtcSendNFTForBuyOrder.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
-				go u.trackHistory(item.UUID, "BtcSendNFTForBuyOrder", item.TableName(), item.Status, "u.Repo.UpdateBTCNFTBuyOrder", err.Error())
+				u.Logger.Error("JobMKP_SendNftToBuyer.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
+				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "u.Repo.UpdateBTCNFTBuyOrder", err.Error())
 			}
 			// save log:
-			u.Logger.Info(fmt.Sprintf("BtcSendNFTForBuyOrder.execResp.%s", item.OrdAddress), sentTokenResp)
+			u.Logger.Info(fmt.Sprintf("JobMKP_SendNftToBuyer.execResp.%s", item.OrdAddress), sentTokenResp)
 		}
 	}
 	return nil
 }
 
-func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
+func (u Usecase) JobMKP_CheckTxSendNftToBuyer() error {
 
 	btcClient, bs, err := u.buildBTCClient()
 
@@ -805,7 +805,7 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
 	// get list buy order status = sent nft:
 	listTosendBtc, _ := u.Repo.RetrieveBTCNFTBuyOrdersByStatus(entity.StatusBuy_SendingNFT)
 	if len(listTosendBtc) == 0 {
-		fmt.Printf("BtcCheckSendNFTForBuyOrder empty")
+		fmt.Printf("JobMKP_CheckTxSendNftToBuyer empty")
 		return nil
 	}
 
@@ -840,18 +840,18 @@ func (u Usecase) BtcCheckSendNFTForBuyOrder() error {
 				}
 			} else {
 				fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-				go u.trackHistory(item.UUID, "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendNFT, err.Error())
+				go u.trackHistory(item.UUID, "JobMKP_CheckTxSendNftToBuyer", item.TableName(), item.Status, "btcClient.GetTransaction: "+item.TxSendNFT, err.Error())
 
-				go u.trackHistory(item.UUID, "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, "Begin check tx via api.")
+				go u.trackHistory(item.UUID, "JobMKP_CheckTxSendNftToBuyer", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, "Begin check tx via api.")
 
 				// check with api:
 				txInfo, err := bs.CheckTx(item.TxSendNFT)
 				if err != nil {
 					fmt.Printf("Could not bs - with err: %v", err)
-					go u.trackHistory(item.UUID, "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, err.Error())
+					go u.trackHistory(item.UUID, "JobMKP_CheckTxSendNftToBuyer", item.TableName(), item.Status, "bs.CheckTx: "+item.TxSendNFT, err.Error())
 				}
 				if txInfo.Confirmations >= 1 {
-					go u.trackHistory(item.UUID, "BtcCheckSendNFTForBuyOrder", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendNFT, txInfo.Confirmations)
+					go u.trackHistory(item.UUID, "JobMKP_CheckTxSendNftToBuyer", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+item.TxSendNFT, txInfo.Confirmations)
 					// send nft ok now:
 					item.Status = entity.StatusBuy_SentNFT
 					_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)

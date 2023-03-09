@@ -67,6 +67,7 @@ type ProjectResp struct {
 	InscribedBy               string           `json:"inscribedBy"`
 	HtmlFile                  string           `json:"htmlFile"`
 	LimitMintPerProcess       int              `json:"limitMintPerProcess"`
+	FileExtension             string           `json:"fileExtension"`
 	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
 	ReserveMintPrice          string           `json:"reserveMintPrice"`
 	ReserveMintLimit          int              `json:"reserveMintLimit"`
@@ -88,4 +89,10 @@ type ProjectStatResp struct {
 type NftMintingDetail struct {
 	Index        int64 `json:"index"`
 	IndexReserve int64 `json:"indexReserve"`
+}
+
+type ProjectMarketplaceData struct {
+	Listed     uint64 `json:"listed"`
+	FloorPrice uint64 `json:"floor_price"`
+	Volume     uint64 `json:"volume"`
 }
