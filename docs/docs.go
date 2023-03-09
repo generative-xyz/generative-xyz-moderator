@@ -1077,6 +1077,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Request API key",
+                        "description": "Data",
                         "name": "request",
                         "in": "body",
                         "required": true,
