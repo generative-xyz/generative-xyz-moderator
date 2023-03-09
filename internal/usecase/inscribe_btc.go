@@ -119,27 +119,43 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		return nil, err
 	}
 
+	// need function get size only:
 	mintFee, err := calculateMintPrice(input)
 	if err != nil {
 		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
 		return nil, err
 	}
-	mfTotal := mintFee.Amount
-	mfMintFee := mintFee.MintFee
-	mfSentTokenFee := mintFee.SentTokenFee
+
+	var mfTotal, mfMintFee, mfSentTokenFee string
+
+	// cal fee again:
+	feeInfos, err := u.calMintFeeInfo(&entity.Projects{
+		MaxFileSize: int64(mintFee.Size),
+		MintPrice:   "0",
+	})
+	if err != nil {
+		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+		return nil, err
+	}
+
+	mfTotal = big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt).String()
+	mfMintFee = feeInfos[input.PayType].MintFee
+	mfSentTokenFee = feeInfos[input.PayType].SendNftFee
+
+	if input.PayType == utils.NETWORK_ETH {
+		mfTotal = big.NewInt(0).Add(big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt), feeInfos[input.PayType].SendFundFeeBigInt).String()
+		mfMintFee = feeInfos[input.PayType].MintFee
+		mfSentTokenFee = big.NewInt(0).Add(feeInfos[input.PayType].SendNftFeeBigInt, feeInfos[input.PayType].SendFundFeeBigInt).String()
+	}
 
 	privKey := ""
 	addressSegwit := ""
 	payType := input.PayType
 
+	fmt.Println("payType: ", payType)
+
 	if len(payType) == 0 {
 		payType = utils.NETWORK_BTC
-	}
-
-	_, btcRate, ethRate, err := u.convertBTCToETH("1")
-	if err != nil {
-		u.Logger.Error("convertBTCToETH", err.Error(), err)
-		return nil, err
 	}
 
 	if strings.ToLower(payType) == strings.ToLower(utils.NETWORK_ETH) {
@@ -155,27 +171,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 		privKey = strings.ToLower(privKey)
 		addressSegwit = strings.ToLower(addressSegwit)
-
-		mfMintFeeF, err := strconv.ParseFloat(mfMintFee, 10)
-		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.ParseFloat.mfMintFeeF", zap.Error(err))
-			return nil, err
-		}
-
-		mfSentTokenFeeF, err := strconv.ParseFloat(mfSentTokenFee, 10)
-		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.ParseFloat.mfSentTokenFeeF", zap.Error(err))
-			return nil, err
-		}
-
-		mfTotalF := mfMintFeeF + mfSentTokenFeeF
-		mfMintFeeF = mfMintFeeF * (btcRate / ethRate)
-		mfSentTokenFeeF = mfSentTokenFeeF * (btcRate / ethRate)
-		mfTotalF = mfTotalF * (btcRate / ethRate)
-
-		mfMintFee = fmt.Sprintf("%d", int(mfMintFeeF))
-		mfTotal = fmt.Sprintf("%d", int(mfTotalF))
-		mfSentTokenFee = fmt.Sprintf("%d", int(mfSentTokenFeeF))
 
 	} else {
 		// just create ord wallet for btc payment:
@@ -274,8 +269,8 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.FileName = input.FileName
 	walletAddress.UserUuid = input.UserUuid
 	walletAddress.UserWalletAddress = input.UserWallerAddress
-	walletAddress.BTCRate = btcRate
-	walletAddress.ETHRate = ethRate
+	walletAddress.BTCRate = feeInfos[payType].BtcPrice
+	walletAddress.ETHRate = feeInfos[payType].EthPrice
 	if input.NeedVerifyAuthentic() {
 		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
 			BaseFilters: entity.BaseFilters{
@@ -655,7 +650,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		}
 
 		now := time.Now().UTC().Unix()
-		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.OrdAddress, now, typeFile))
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.SegwitAddress, now, typeFile))
 		if err != nil {
 			u.Logger.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())

@@ -1031,6 +1031,13 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		default:
 			status = entity.StatusMintToText[item.Status]
 		}
+
+		if item.PayType == "eth" {
+			if item.Status == entity.StatusMint_Refunded {
+				status = entity.StatusMintToText[entity.StatusMint_Refunding]
+			}
+		}
+
 		minting := structure.MintingInscription{
 			ID:            item.UUID,
 			CreatedAt:     item.CreatedAt,
