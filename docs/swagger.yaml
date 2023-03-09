@@ -597,7 +597,7 @@ definitions:
       openMintUnixTimestamp:
         type: integer
       reserveMintLimit:
-        type: string
+        type: integer
       reserveMintPrice:
         type: string
       reservers:
@@ -2498,7 +2498,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
