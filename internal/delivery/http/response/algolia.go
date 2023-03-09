@@ -21,6 +21,8 @@ type SearhcInscription struct {
 	Timestamp      string          `json:"timestamp"`
 	ProjectName    string          `json:"projectName"`
 	ProjectTokenId string          `json:"projectTokenId"`
+	Buyable        bool            `json:"buyable"`
+	PriceBTC       string          `json:"priceBtc"`
 	Owner          *ArtistResponse `json:"owner"`
 }
 

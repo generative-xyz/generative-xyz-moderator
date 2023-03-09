@@ -71,6 +71,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			Timestamp:     h["timestamp"].(string),
 			ContentType:   h["content_type"].(string),
 		}
+
 		inscriptionIds = append(inscriptionIds, i.InscriptionId)
 		if v, ok := h["address"]; ok && v.(string) != "" {
 			i.Address = v.(string)
@@ -128,6 +129,12 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 				i.ProjectName = p.Name
 				i.ProjectTokenId = p.TokenID
 			}
+		}
+
+		listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
+		if err == nil && listingInfo.CancelTx == "" {
+			i.Buyable = true
+			i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 		}
 
 		obj := &response.SearchResponse{
