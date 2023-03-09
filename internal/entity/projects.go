@@ -102,7 +102,7 @@ type Projects struct {
 	AnimationHtml            *string            `bson:"animation_html"`
 	CatureThumbnailDelayTime *int               `bson:"cature_thumbnail_delay_time"`
 	ReserveMintPrice         string             `bson:"reserveMintPrice" json:"reserveMintPrice"`
-	ReserveMintLimit         string             `bson:"reserveMintLimit" json:"reserveMintLimit"`
+	ReserveMintLimit         int                `bson:"reserveMintLimit" json:"reserveMintLimit"`
 	FromAuthentic            bool               `bson:"fromAuthentic"`
 	TokenAddress             string             `bson:"tokenAddress"`
 	TokenId                  string             `bson:"tokenId"`
