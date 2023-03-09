@@ -342,6 +342,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		if len(tokens[0].TotalCount) > 0 {
 			resp.Total = tokens[0].TotalCount[0].Count
 		}
+		resp.TotalPage = resp.Total / filter.Limit
 		resp.PageSize = filter.Limit
 	}
 
