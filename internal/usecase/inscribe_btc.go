@@ -1065,10 +1065,9 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 	if metaData.Image == "" {
 		return nft, nil
 	}
-	var urlStr string
-	if strings.HasPrefix(metaData.Image, "http") {
+	urlStr := utils.ConvertIpfsToHttp(metaData.Image)
+	if strings.HasPrefix(urlStr, "http") {
 		uploadImage := func(urlStr string) string {
-			urlStr = utils.ConvertIpfsToHttp(metaData.Image)
 			client := http.Client{}
 			r, err := client.Get(urlStr)
 			if err != nil {
@@ -1096,7 +1095,7 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			}
 			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
-		urlStr = uploadImage(metaData.Image)
+		urlStr = uploadImage(urlStr)
 	}
 	nft.Metadata.Image = urlStr
 	return nft, nil
