@@ -128,7 +128,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	fmt.Println("feeInfos: ", feeInfos)
 
 	walletAddress.ProjectNetworkFee = int(feeInfos["btc"].NetworkFeeBigInt.Int64()) // btc value
-	walletAddress.ProjectMintPrice = int(feeInfos["btc"].NetworkFeeBigInt.Int64())  // btc value
+	walletAddress.ProjectMintPrice = int(feeInfos["btc"].MintPriceBigInt.Int64())   // btc value
 
 	walletAddress.MintPriceByPayType = feeInfos[input.PayType].MintPrice   // 1 item
 	walletAddress.NetworkFeeByPayType = feeInfos[input.PayType].NetworkFee // 1 item
@@ -936,7 +936,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 			continue
 		}
 		if item.IsSubItem {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
+			// go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
 			continue
 		}
 
@@ -983,7 +983,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
-			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
+			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, ethAdressRefund)
 			if err != nil {
 				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.ethClient.TransferMax", err.Error(), true)
