@@ -645,12 +645,12 @@ func (u Usecase) SyncTokenInscribeIndex() error {
 }
 
 const (
-	INF_TRENDING_SCORE             int64 = 9223372036854775807 // max int64 value
-	SATOSHI_EACH_BTC               int64 = 100000000
-	TRENDING_SCORE_EACH_BTC_VOLUMN int64 = 1000000
-	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 5000
-	TRENDING_SCORE_EACH_MINT       int64 = 10
-	TRENDING_SCORE_EACH_VIEW       int64 = 1
+	INF_TRENDING_SCORE                  int64 = 9223372036854775807 // max int64 value
+	SATOSHI_EACH_BTC                    int64 = 100000000
+	TRENDING_SCORE_EACH_BTC_VOLUMN      int64 = 1000000
+	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 30
+	TRENDING_SCORE_EACH_MINT            int64 = 10
+	TRENDING_SCORE_EACH_VIEW            int64 = 1
 )
 
 func (u Usecase) SyncProjectTrending() error {
@@ -752,9 +752,13 @@ func (u Usecase) SyncProjectTrending() error {
 			if project.MintingInfo.Index == project.MaxSupply {
 				if numListings == 0 {
 					trendingScore /= 5
-				} else {
-					trendingScore *= 2
 				}
+			}
+			if project.MintingInfo.Index != project.MaxSupply && project.CreatorAddrr != "0x0000000000000000000000000000000000000000" {
+				trendingScore += project.MintingInfo.Index * TRENDING_SCORE_EACH_MINT
+			}
+			if project.MintPrice == "0" {
+				trendingScore /= 5
 			}
 			isWhitelistedProject := false
 			isBoostedProject := false

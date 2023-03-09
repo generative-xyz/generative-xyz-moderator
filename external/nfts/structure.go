@@ -48,7 +48,7 @@ type MoralisToken struct {
 	TokenUri          string                `json:"token_uri"`
 	MetadataString    *string               `json:"metadata"`
 	BlockNumberMinted string                `json:"block_number_minted"`
-	Metadata          *MoralisTokenMetadata `json:"-"`
+	Metadata          *MoralisTokenMetadata `json:"metadata_obj,omitempty"`
 	IsMinted          bool                  `json:"is_minted"`
 }
 
