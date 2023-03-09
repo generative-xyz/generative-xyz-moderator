@@ -135,6 +135,7 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 
 		if eventItem.Enabled == false {
 			h.Usecase.Repo.UpdateCronJobManagerLastSatus(cronJobManager.UUID, "Job is paused!")
+			return
 		} else {
 			h.Usecase.Repo.UpdateCronJobManagerLastSatus(cronJobManager.UUID, "Job is running...")
 		}
