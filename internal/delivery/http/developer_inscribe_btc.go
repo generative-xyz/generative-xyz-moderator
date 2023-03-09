@@ -127,9 +127,9 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 		err = errors.New("WalletAddress is invalid")
 	}
 
-	if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
+	/*if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
 		err = errors.New("fee rate is invalid")
-	}
+	}*/
 
 	if len(reqUsecase.File) == 0 {
 		err = errors.New("file is invalid")

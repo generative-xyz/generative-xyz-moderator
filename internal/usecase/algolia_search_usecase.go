@@ -52,6 +52,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 	resp, err := algoliaClient.Search("inscriptions", filter)
 	if err != nil {
+		uc.Logger.Error(err)
 		return nil, 0, 0, err
 	}
 
@@ -80,6 +81,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 				SetResult(&resp).
 				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, i.InscriptionId))
 			if err != nil {
+				uc.Logger.Error(err)
 				continue
 			}
 			userAddresses = append(userAddresses, resp.Address)
@@ -98,7 +100,8 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	pe.Page = 1
 	tokens, err := uc.Repo.FilterTokenUri(*pe)
 	if err != nil {
-		return nil, 0, 0, err
+		uc.Logger.Error(err)
+		// return nil, 0, 0, err
 	}
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
@@ -112,7 +115,8 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 
 	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
 	if err != nil {
-		return nil, 0, 0, err
+		uc.Logger.Error(err)
+		// return nil, 0, 0, err
 	}
 
 	mapProject := make(map[string]*entity.Projects)
@@ -131,11 +135,11 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			}
 		}
 
-		listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
-		if err == nil && listingInfo.CancelTx == "" {
-			i.Buyable = true
-			i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-		}
+		// listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
+		// if err == nil && listingInfo.CancelTx == "" {
+		// 	i.Buyable = true
+		// 	i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+		// }
 
 		obj := &response.SearchResponse{
 			ObjectType:  "inscription",
@@ -207,6 +211,5 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 	}
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
-
 	return rTokens, resp.NbHits, resp.NbPages, nil
 }
