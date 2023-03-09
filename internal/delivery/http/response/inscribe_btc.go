@@ -12,7 +12,7 @@ type InscribeBtcResp struct {
 	IsConfirm     bool   `json:"isConfirm"`     //default: false, if OrdAddress get all amount it will be set true
 	InscriptionID string `json:"inscriptionID"` // tokenID in ETH
 	Balance       string `json:"balance"`       // balance after check
-	TimeoutAt     string `json:"timeout_at"`
+	TimeoutAt     string `json:"timeoutAt"`
 
 	ID string `json:"id"`
 }

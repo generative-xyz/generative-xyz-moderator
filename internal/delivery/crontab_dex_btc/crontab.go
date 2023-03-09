@@ -41,6 +41,6 @@ func (h ScronBTCHandler) StartServer() {
 
 		h.Logger.Info("h.Usecase.JobWatchPendingDexBTCListing", "wait")
 		wg.Wait()
-		time.Sleep(8 * time.Minute)
+		time.Sleep(3 * time.Minute)
 	}
 }

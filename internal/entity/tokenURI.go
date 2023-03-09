@@ -81,6 +81,7 @@ type TokenUri struct {
 	SyncedInscriptionInfo          bool          `bson:"synced_inscription_info"`
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
 	Source                         string        `bson:"source" json:"source"`
+	NftTokenId                     string        `bson:"nftTokenId"`
 }
 
 type TokenUriAttr struct {

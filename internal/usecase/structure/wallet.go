@@ -23,6 +23,7 @@ type InscriptionOrdInfoByID struct {
 	InscriptionID string `json:"inscription_id"`
 	Next          string `json:"next"`
 	Number        int    `json:"number"`
+	Address       string `json:"address"`
 	Output        struct {
 		Value        int    `json:"value"`
 		ScriptPubkey string `json:"script_pubkey"`
@@ -48,22 +49,23 @@ type BlockCypherWalletInfo struct {
 	Error              string  `json:"error"`
 }
 type TxRef struct {
-	TxHash        string     `json:"tx_hash"`
-	BlockHeight   int        `json:"block_height"`
-	TxInputN      int        `json:"tx_input_n"`
-	TxOutputN     int        `json:"tx_output_n"`
-	Value         int        `json:"value"`
-	RefBalance    int        `json:"ref_balance"`
-	Spent         bool       `json:"spent"`
-	Confirmations int        `json:"confirmations"`
-	Confirmed     time.Time  `json:"confirmed"`
-	DoubleSpend   bool       `json:"double_spend"`
-	SatRanges     [][]uint64 `json:"sat_ranges"`
+	TxHash        string    `json:"tx_hash"`
+	BlockHeight   int       `json:"block_height"`
+	TxInputN      int       `json:"tx_input_n"`
+	TxOutputN     int       `json:"tx_output_n"`
+	Value         int       `json:"value"`
+	RefBalance    int       `json:"ref_balance"`
+	Spent         bool      `json:"spent"`
+	Confirmations int       `json:"confirmations"`
+	Confirmed     time.Time `json:"confirmed"`
+	DoubleSpend   bool      `json:"double_spend"`
+	// SatRanges     [][]uint64 `json:"sat_ranges"`
 }
 type WalletInfo struct {
 	BlockCypherWalletInfo
 	Inscriptions          []WalletInscriptionInfo                `json:"inscriptions"`
 	InscriptionsByOutputs map[string][]WalletInscriptionByOutput `json:"inscriptions_by_outputs"`
+	Loadtime              map[string]string                      `json:"loadtime"`
 }
 
 type WalletInscriptionInfo struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
@@ -84,7 +83,6 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
 	
-	spew.Dump(f)
 	cursor, err := r.DB.Collection(entity.Withdraw{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err

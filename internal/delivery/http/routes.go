@@ -151,12 +151,16 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// btcV2.HandleFunc("/receive-address", h.btcGetReceiveWalletAddressV2).Methods("POST")
 
 	inscribe := api.PathPrefix("/inscribe").Subrouter()
-	inscribe.Use(h.MiddleWare.AccessToken)
+	// inscribe.Use(h.MiddleWare.AccessToken)
 	inscribe.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/list", h.btcListInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
+
+	inscribeAuth := inscribe.PathPrefix("/auth").Subrouter()
+	inscribeAuth.Use(h.MiddleWare.AccessToken)
+	inscribeAuth.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
 
 	tokenMoralis := api.PathPrefix("/token-moralis").Subrouter()
 	tokenMoralis.Use(h.MiddleWare.AccessToken)

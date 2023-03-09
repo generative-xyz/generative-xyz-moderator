@@ -36,14 +36,21 @@ type InscribeBTC struct {
 	TxSendNft string         `bson:"tx_send_nft"`
 	TxMintNft string         `bson:"tx_mint_nft"`
 
-	OutputMintNFT    interface{} `bson:"output_mint_nft"`
-	OutputSendNFT    interface{} `bson:"output_send_nft"`
-	UserUuid         string      `bson:"user_uuid"`
-	TokenAddress     string      `bson:"token_address"`
-	TokenId          string      `bson:"token_id"`
-	IsAuthentic      bool        `bson:"is_authentic"`
-	OrdinalsTx       string      `bson:"ordinals_tx"`
-	OrdinalsTxStatus uint64      `bson:"ordinals_tx_status"`
+	OutputMintNFT     interface{} `bson:"output_mint_nft"`
+	OutputSendNFT     interface{} `bson:"output_send_nft"`
+	UserUuid          string      `bson:"user_uuid"`
+	UserWalletAddress string      `bson:"user_wallet_address"`
+	TokenAddress      string      `bson:"token_address"`
+	TokenId           string      `bson:"token_id"`
+	OwnerOf           string      `bson:"owner_of"`
+	IsAuthentic       bool        `bson:"is_authentic"`
+	OrdinalsTx        string      `bson:"ordinals_tx"`
+	OrdinalsTxStatus  uint64      `bson:"ordinals_tx_status"`
+	PayType           string      `bson:"pay_type"`
+	BTCRate           float64     `bson:"btc_rate"`
+	ETHRate           float64     `bson:"eth_rate"`
+
+	IsMergeMint bool `bson:"isMergeMint"`
 }
 
 func (u InscribeBTC) TableName() string {
@@ -67,7 +74,7 @@ const (
 	StatusInscribe_ReceivedFund                       // 1: received fund from user (buyer)
 
 	StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr // 2: sending btc from segwit address to ord address
-	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success
+	StatusInscribe_SentBTCFromSegwitAddrToOrdAdd     // 3: send btc from segwit address to ord address success, or ready to mint.
 
 	StatusInscribe_Minting // 4: minting
 	StatusInscribe_Minted  // 5: mint success
