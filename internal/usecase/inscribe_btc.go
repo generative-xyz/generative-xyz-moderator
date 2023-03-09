@@ -987,7 +987,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
-			if inscribe.Status == entity.StatusInscribe_Pending && inscribe.Expired() {
+			if inscribe.Status == entity.StatusInscribe_Pending && !inscribe.Expired() {
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
