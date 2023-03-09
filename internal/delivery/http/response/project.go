@@ -68,6 +68,8 @@ type ProjectResp struct {
 	HtmlFile                  string           `json:"htmlFile"`
 	LimitMintPerProcess       int              `json:"limitMintPerProcess"`
 	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
+	ReserveMintPrice          string           `json:"reserveMintPrice"`
+	ReserveMintLimit          int              `json:"reserveMintLimit"`
 }
 
 type ReportProject struct {
