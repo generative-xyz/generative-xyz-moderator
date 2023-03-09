@@ -983,7 +983,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
-			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, u.Config.MASTER_ADDRESS_CLAIM_ETH)
+			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, ethAdressRefund)
 			if err != nil {
 				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), err.Error(), err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.ethClient.TransferMax", err.Error(), true)
