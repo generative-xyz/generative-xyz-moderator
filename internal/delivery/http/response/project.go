@@ -90,3 +90,9 @@ type NftMintingDetail struct {
 	Index        int64 `json:"index"`
 	IndexReserve int64 `json:"indexReserve"`
 }
+
+type ProjectMarketplaceData struct {
+	Listed     uint64 `json:"listed"`
+	FloorPrice uint64 `json:"floor_price"`
+	Volume     uint64 `json:"volume"`
+}
