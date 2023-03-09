@@ -163,7 +163,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 }
 
 func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
-	tokens := []entity.TokenUriListingFilter{}
+	tokens := entity.TokenUriListingPage{}
 	resp := &entity.Pagination{}
 
 	f := r.filterToken(filter)
@@ -319,11 +319,13 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		return nil, errors.WithStack(err)
 	}
 
-	log.Println("len(tokens)", len(tokens))
+	log.Println("len(tokens)", len(tokens.TotalCount))
 
-	resp.Result = tokens
-	// resp.Page = t.Pagination.Page
-	// resp.Total = t.Pagination.Total
+	resp.Result = tokens.TotalData
+	resp.Page = filter.Page
+	if len(tokens.TotalCount) > 0 {
+		resp.Total = tokens.TotalCount[0].Count
+	}
 	resp.PageSize = filter.Limit
 	//resp.PageSize = filter.Limit
 	return resp, nil
