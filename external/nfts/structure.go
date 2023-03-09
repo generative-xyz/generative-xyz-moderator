@@ -37,19 +37,28 @@ type MoralisTokensResp struct {
 }
 
 type MoralisToken struct {
-	TokenAddress      string                `json:"token_address"`
-	TokenID           string                `json:"token_id"`
-	Amount            string                `json:"amount"`
-	Owner             string                `json:"owner_of"`
-	TokenHash         string                `json:"token_hash"`
-	ContractType      string                `json:"contract_type"`
-	Name              string                `json:"name"`
-	Symbol            string                `json:"symbol"`
-	TokenUri          string                `json:"token_uri"`
-	MetadataString    *string               `json:"metadata"`
-	BlockNumberMinted string                `json:"block_number_minted"`
-	Metadata          *MoralisTokenMetadata `json:"metadata_obj,omitempty"`
-	IsMinted          bool                  `json:"is_minted"`
+	TokenAddress      string  `json:"token_address"`
+	TokenID           string  `json:"token_id"`
+	Amount            string  `json:"amount"`
+	Owner             string  `json:"owner_of"`
+	TokenHash         string  `json:"token_hash"`
+	ContractType      string  `json:"contract_type"`
+	Name              string  `json:"name"`
+	Symbol            string  `json:"symbol"`
+	TokenUri          string  `json:"token_uri"`
+	MetadataString    *string `json:"metadata"`
+	BlockNumberMinted string  `json:"block_number_minted"`
+
+	// Custom
+	Metadata    *MoralisTokenMetadata `json:"metadata_obj,omitempty"`
+	IsMinted    bool                  `json:"is_minted"`
+	InscribeBTC *InscribeBTC          `json:"inscribe_btc"`
+}
+
+type InscribeBTC struct {
+	Status         int    `json:"status"`
+	ProjectTokenId string `json:"project_token_id"`
+	InscriptionID  string `json:"inscription_id"`
 }
 
 type MoralisTokenMetadata struct {

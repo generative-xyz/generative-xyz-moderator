@@ -131,22 +131,23 @@ type FilterInscribeBT struct {
 }
 
 type InscribeBTCResp struct {
-	UUID          string         `bson:"uuid" json:"uuid"`
-	Amount        string         `bson:"amount"  json:"amount"`
-	IsConfirm     bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
-	IsMinted      bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
-	IsSuccess     bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
-	InscriptionID string         `bson:"inscriptionID" json:"inscriptionID"` // tokenID in ETH
-	FeeRate       int32          `bson:"fee_rate" json:"feeRate"`
-	ExpiredAt     time.Time      `bson:"expired_at" json:"expiredAt"`
-	Status        StatusInscribe `bson:"status" json:"status"` // status for record
-	TxSendBTC     string         `bson:"tx_send_btc" json:"txSendBtc"`
-	TxSendNft     string         `bson:"tx_send_nft" json:"txSendNft"`
-	TxMintNft     string         `bson:"tx_mint_nft" json:"txMintNft"`
-	UserUuid      string         `bson:"user_uuid" json:"userUuid"`
-	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
-	TokenAddress  string         `bson:"token_address" json:"tokenAddress"`
-	TokenId       string         `bson:"token_id" json:"tokenId"`
+	UUID           string         `bson:"uuid" json:"uuid"`
+	Amount         string         `bson:"amount"  json:"amount"`
+	IsConfirm      bool           `bson:"isConfirm" json:"isConfirm"`         //default: false, if OrdAddress get all amount it will be set true
+	IsMinted       bool           `bson:"isMinted" json:"isMinted"`           //default: false. If InscriptionID exist which means token is minted, it's true
+	IsSuccess      bool           `bson:"isSuccess" json:"isSuccess"`         //default: false. If InscriptionID was sent to user, it's true
+	InscriptionID  string         `bson:"inscriptionID" json:"inscriptionID"` // tokenID in ETH
+	FeeRate        int32          `bson:"fee_rate" json:"feeRate"`
+	ExpiredAt      time.Time      `bson:"expired_at" json:"expiredAt"`
+	Status         StatusInscribe `bson:"status" json:"status"` // status for record
+	TxSendBTC      string         `bson:"tx_send_btc" json:"txSendBtc"`
+	TxSendNft      string         `bson:"tx_send_nft" json:"txSendNft"`
+	TxMintNft      string         `bson:"tx_mint_nft" json:"txMintNft"`
+	UserUuid       string         `bson:"user_uuid" json:"userUuid"`
+	IsAuthentic    bool           `bson:"is_authentic" json:"isAuthentic"`
+	TokenAddress   string         `bson:"token_address" json:"tokenAddress"`
+	TokenId        string         `bson:"token_id" json:"tokenId"`
+	ProjectTokenId string         `json:"projectTokenId"`
 }
 
 func (u InscribeBTCResp) Expired() bool {
