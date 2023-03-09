@@ -1081,7 +1081,13 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			}
 			ext, err := utils.GetFileExtensionFromUrl(urlStr)
 			if err != nil {
-				return urlStr
+				contentType := r.Header.Get("content-type")
+				arr := strings.Split(contentType, "/")
+				if len(arr) > 1 {
+					ext = arr[1]
+				} else {
+					return urlStr
+				}
 			}
 			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
 			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(buf), name)
