@@ -12,6 +12,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 
+	"github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -81,11 +82,16 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/minted-out", h.getMintedOutProjects).Methods("GET")
 	project.HandleFunc("/recent-works", h.getRecentWorksProjects).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}", h.projectDetail).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/marketplace-data", h.projectMarketplaceData).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/volumn", h.projectVolumn).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/random-images", h.projectRandomImages).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
-	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
+	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
+	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProjectNew).Methods("GET")
 
 	projectAuth := api.PathPrefix("/project").Subrouter()
 	projectAuth.Use(h.MiddleWare.AccessToken)
@@ -158,6 +164,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
 
+	inscribeAuth := inscribe.PathPrefix("/auth").Subrouter()
+	inscribeAuth.Use(h.MiddleWare.AccessToken)
+	inscribeAuth.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
+
 	tokenMoralis := api.PathPrefix("/token-moralis").Subrouter()
 	tokenMoralis.Use(h.MiddleWare.AccessToken)
 	tokenMoralis.HandleFunc("/nfts", h.listNftFromMoralis).Methods("GET")
@@ -200,6 +210,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
+	wallet.Use(handlers.CompressHandler)
 	// wallet.Use(h.MiddleWare.AccessToken)
 	// wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
@@ -295,7 +306,7 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 	}
 
 	sortQuery := r.URL.Query().Get("sort")
-	sortObject := utils.ParseSort(sortQuery)
+	sortObject := utils.ParseSortNew(sortQuery)
 
 	f.SortBy = sortObject.SortBy
 	f.Sort = sortObject.Sort

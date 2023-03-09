@@ -59,25 +59,31 @@ type CreateBtcProjectReq struct {
 	Royalty                int      `json:"royalty"`
 	IsFullChain            bool     `json:"isFullChain"`
 	CaptureImageTime       *int     `json:"captureImageTime"`
+	Reservers              []string `json:"reservers"`
+	ReserveMintPrice       string   `json:"reserveMintPrice"`
+	ReserveMintLimit       int      `json:"reserveMintLimit"`
 	FromAuthentic          bool     `json:"fromAuthentic"`
 	TokenAddress           string   `json:"tokenAddress"`
 	TokenId                string   `json:"tokenId"`
 	OwnerOf                string   `json:"ownerOf"`
-	OrdinalsTx             string   `bson:"ordinalsTx"`
+	OrdinalsTx             string   `json:"ordinalsTx"`
+	InscribedBy            string   `json:"inscribedBy"`
+	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectReq struct {
-	ProjectID        *string  `json:"projectID"`
-	Name             *string  `json:"name"`
-	Description      *string  `json:"description"`
-	Thumbnail        *string  `json:"thumbnail"`
-	IsHidden         *bool    `json:"isHidden"`
-	Royalty          *int     `json:"royalty"`
-	MintPrice        *string  `json:"mintPrice"`
-	MaxSupply        *int64   `json:"maxSupply"`
-	CreatetorAddress *string  `json:"createtorAddress"`
-	Categories       []string `json:"categories"`
-	CaptureImageTime *int     `json:"captureImageTime"`
+	ProjectID           *string  `json:"projectID"`
+	Name                *string  `json:"name"`
+	Description         *string  `json:"description"`
+	Thumbnail           *string  `json:"thumbnail"`
+	IsHidden            *bool    `json:"isHidden"`
+	Royalty             *int     `json:"royalty"`
+	MintPrice           *string  `json:"mintPrice"`
+	MaxSupply           *int64   `json:"maxSupply"`
+	CreatetorAddress    *string  `json:"createtorAddress"`
+	Categories          []string `json:"categories"`
+	CaptureImageTime    *int     `json:"captureImageTime"`
+	LimitMintPerProcess *int      `json:"limitMintPerProcess"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {

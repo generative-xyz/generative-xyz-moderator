@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"rederinghub.io/internal/delivery/http/response"
@@ -60,7 +61,9 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, p := range uProjects {
+			result, err := h.Usecase.GetCollectionMarketplaceStats(p.TokenID)
 			r, err := h.projectToResp(&p)
+			r.BtcFloorPrice = result.FloorPrice
 			if err != nil {
 				h.Logger.Error("copier.Copy", err.Error(), err)
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -95,12 +98,19 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
+
 		for _, token := range uTokens {
 			r, err := h.tokenToResp(&token)
 			if err != nil {
 				h.Logger.Error("copier.Copy", err.Error(), err)
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
+			}
+
+			listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(token.TokenID)
+			if err == nil && listingInfo.CancelTx == "" {
+				r.Buyable = true
+				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 			}
 
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})

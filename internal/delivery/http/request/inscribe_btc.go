@@ -8,4 +8,5 @@ type CreateInscribeBtcReq struct {
 	FileName      string `json:"fileName"`
 	TokenAddress  string `json:"tokenAddress"`
 	TokenId       string `json:"tokenId"`
+	PayType       string `json:"payType"`
 }

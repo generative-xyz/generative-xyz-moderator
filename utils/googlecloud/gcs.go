@@ -9,9 +9,11 @@ import (
 	"image"
 	"io"
 	"io/ioutil"
+	"mime"
 	"mime/multipart"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -33,6 +35,7 @@ const (
 type IGcstorage interface {
 	FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error)
 	ReadFileFromBucket(fileName string) ([]byte, error)
+	ReadFile(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
 	ReadFolder(name string) ([]*storage.ObjectAttrs, error)
 	UnzipFile(object string) error
@@ -127,7 +130,7 @@ func (g gcstorage) UnzipFile(object string) error {
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
 	outputBucket := g.bucketName
 	groups := make(map[string]*zip.File)
-	spew.Dump( len(zr.File))
+	spew.Dump(len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue
@@ -170,10 +173,10 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
 
-	now :=  time.Now().UTC().UnixNano()
+	now := time.Now().UTC().UnixNano()
 	fname := NormalizeFileName(file.FileHeader.Filename)
-	fname = fmt.Sprintf("%d-%s",now,fname)
-	path := fmt.Sprintf("upload/%s",fname)
+	fname = fmt.Sprintf("%d-%s", now, fname)
+	path := fmt.Sprintf("upload/%s", fname)
 	if file.Path != nil {
 		if *file.Path != "" {
 			path = fmt.Sprintf("%s/%s", *file.Path, fname)
@@ -239,6 +242,26 @@ func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 
 }
 
+func (g gcstorage) ReadFile(fileName string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
+	defer cancel()
+
+	// create reader
+	r, err := g.bucket.Object(fileName).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.Close()
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll: %v", err)
+	}
+	return data, nil
+
+}
+
 func (g *gcstorage) UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error) {
 	return g.writer(base64Srting, name)
 }
@@ -274,7 +297,12 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 
 		decode, err := base64.StdEncoding.DecodeString(base64Image)
 		// create writer
+
 		sw := g.bucket.Object(objectName).NewWriter(ctx)
+		ext := path.Ext(objectName)
+		if ext != "" {
+			sw.ContentType = mime.TypeByExtension(ext)
+		}
 
 		channel := &uploadGcsChannel{}
 
@@ -289,7 +317,6 @@ func (g *gcstorage) writer(base64Image string, objectName string) (*GcsUploadedO
 			channel.Err = err
 			return
 		}
-
 		if err = sw.Close(); err != nil {
 			channel.Err = err
 			return

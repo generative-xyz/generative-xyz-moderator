@@ -11,6 +11,7 @@ type GenerateMessage struct {
 }
 
 type VerifyMessage struct {
+	ETHSignature     string
 	Signature        string
 	Address          string
 	AddressBTC       *string // taproot address
@@ -59,8 +60,8 @@ type ProfileChan struct {
 
 type WithDrawItemRequest struct {
 	Amount       string `json:"amount"`
-	PaymentType   string `json:"paymentType"`
-	ID string `json:"ID"`
+	PaymentType  string `json:"paymentType"`
+	ID           string `json:"ID"`
 	WithdrawType string `json:"type"`
 }
 

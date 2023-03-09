@@ -1037,6 +1037,173 @@ var doc = `{
                 }
             }
         },
+        "/developer/get-api-key": {
+            "get": {
+                "security": [
+                    {
+                        "No Authorization": []
+                    }
+                ],
+                "description": "Get an api key for developer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "developer"
+                ],
+                "summary": "Get api key for developer",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.DeveloperKey"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Generate an api key for developer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "developer"
+                ],
+                "summary": "Generate an api key for developer",
+                "parameters": [
+                    {
+                        "description": "Request API key",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GetApiKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/developer/inscribe": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "BTC List Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC List Inscribe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "api-key": []
+                    }
+                ],
+                "description": "BTC Generate receive wallet address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC Generate receive wallet address",
+                "parameters": [
+                    {
+                        "description": "Create mint request for dev",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeveloperCreateInscribeBtcReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.InscribeBtcResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/developer/inscribe/{ID}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "BTC NFT Detail Inscribe",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Inscribe"
+                ],
+                "summary": "BTC NFT Detail Inscribe",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "inscribe ID",
+                        "name": "ID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.InscribeBTCResp"
+                        }
+                    }
+                }
+            }
+        },
         "/eth/receive-address": {
             "post": {
                 "description": "Generate receive wallet address",
@@ -2950,6 +3117,137 @@ var doc = `{
                 }
             }
         },
+        "/project/{contractAddress}/tokens/{projectID}/random-images": {
+            "get": {
+                "description": "get project's random-images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's random-images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "payType eth|btc",
+                        "name": "payType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tokens/{projectID}/token-traits": {
+            "get": {
+                "description": "get project's token-traits",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get project's token-traits",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "only tokens which don't have any trait are exported",
+                        "name": "empty-trait",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "upload project's token-traits",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "upload project's token-traits",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{contractAddress}/tokens/{projectID}/volumn": {
             "get": {
                 "description": "get project's volumn",
@@ -4065,6 +4363,47 @@ var doc = `{
         }
     },
     "definitions": {
+        "entity.DeveloperKey": {
+            "type": "object",
+            "properties": {
+                "apiCompany": {
+                    "type": "string"
+                },
+                "apiDescription": {
+                    "type": "string"
+                },
+                "apiEmail": {
+                    "type": "string"
+                },
+                "apiKey": {
+                    "type": "string"
+                },
+                "apiName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "userUuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.InscribeBTCResp": {
             "type": "object",
             "properties": {
@@ -4294,10 +4633,16 @@ var doc = `{
                 "description": {
                     "type": "string"
                 },
+                "fromAuthentic": {
+                    "type": "boolean"
+                },
                 "genNFTAddr": {
                     "type": "string"
                 },
                 "hash": {
+                    "type": "string"
+                },
+                "htmlFile": {
                     "type": "string"
                 },
                 "id": {
@@ -4309,6 +4654,9 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "inscribedBy": {
+                    "type": "string"
                 },
                 "inscriptionIcon": {
                     "type": "string"
@@ -4324,6 +4672,9 @@ var doc = `{
                 },
                 "license": {
                     "type": "string"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "limitSupply": {
                     "type": "integer"
@@ -4374,6 +4725,12 @@ var doc = `{
                 "openMintUnixTimestamp": {
                     "type": "integer"
                 },
+                "ordinalsTx": {
+                    "type": "string"
+                },
+                "ownerOf": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
                 },
@@ -4389,11 +4746,11 @@ var doc = `{
                         "$ref": "#/definitions/entity.ReportProject"
                     }
                 },
-                "reservationList": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
                 },
                 "reservers": {
                     "type": "array",
@@ -4452,6 +4809,9 @@ var doc = `{
                 "thumbnail": {
                     "type": "string"
                 },
+                "tokenAddress": {
+                    "type": "string"
+                },
                 "tokenDescription": {
                     "type": "string"
                 },
@@ -4460,6 +4820,9 @@ var doc = `{
                 },
                 "tokenIDInt": {
                     "type": "integer"
+                },
+                "tokenId": {
+                    "type": "string"
                 },
                 "traceID": {
                     "description": "TO find log easily",
@@ -4560,6 +4923,9 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nftTokenId": {
                     "type": "string"
                 },
                 "order_inscription_index": {
@@ -4780,6 +5146,9 @@ var doc = `{
                 "metadata": {
                     "type": "string"
                 },
+                "metadata_obj": {
+                    "$ref": "#/definitions/nfts.MoralisTokenMetadata"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4803,6 +5172,27 @@ var doc = `{
                 }
             }
         },
+        "nfts.MoralisTokenMetadata": {
+            "type": "object",
+            "properties": {
+                "animation_url": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "external_link": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "traits": {}
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -4816,6 +5206,9 @@ var doc = `{
             "properties": {
                 "animationURL": {
                     "type": "string"
+                },
+                "captureImageTime": {
+                    "type": "integer"
                 },
                 "categories": {
                     "type": "array",
@@ -4844,6 +5237,9 @@ var doc = `{
                 "license": {
                     "type": "string"
                 },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
                 "limitSupply": {
                     "type": "integer"
                 },
@@ -4858,6 +5254,18 @@ var doc = `{
                 },
                 "openMintUnixTimestamp": {
                     "type": "integer"
+                },
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "royalty": {
                     "type": "integer"
@@ -4972,6 +5380,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "payType": {
+                    "type": "string"
+                },
                 "tokenAddress": {
                     "type": "string"
                 },
@@ -5048,6 +5459,32 @@ var doc = `{
                 }
             }
         },
+        "request.DeveloperCreateInscribeBtcReq": {
+            "type": "object",
+            "properties": {
+                "feeRate": {
+                    "type": "integer"
+                },
+                "file": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenId": {
+                    "type": "string"
+                },
+                "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
         "request.FileResize": {
             "type": "object",
             "properties": {
@@ -5060,6 +5497,26 @@ var doc = `{
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.GetApiKeyReq": {
+            "type": "object",
+            "properties": {
+                "company": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "g-recaptcha-response": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -5135,6 +5592,9 @@ var doc = `{
         "request.UpdateBTCProjectReq": {
             "type": "object",
             "properties": {
+                "captureImageTime": {
+                    "type": "integer"
+                },
                 "categories": {
                     "type": "array",
                     "items": {
@@ -5146,6 +5606,9 @@ var doc = `{
                 },
                 "isHidden": {
                     "type": "boolean"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
                 },
                 "maxSupply": {
                     "type": "integer"
@@ -5235,6 +5698,9 @@ var doc = `{
                     "type": "string"
                 },
                 "addressBtcSegwit": {
+                    "type": "string"
+                },
+                "ethSignature": {
                     "type": "string"
                 },
                 "messagePrefix": {
@@ -5366,7 +5832,7 @@ var doc = `{
                 "sentTokenFee": {
                     "type": "string"
                 },
-                "timeout_at": {
+                "timeoutAt": {
                     "type": "string"
                 },
                 "userAddress": {
@@ -5437,9 +5903,6 @@ var doc = `{
         "response.InternalTokenURIResp": {
             "type": "object",
             "properties": {
-                "animationHtml": {
-                    "type": "string"
-                },
                 "animationUrl": {
                     "type": "string"
                 },
@@ -5476,6 +5939,9 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nftTokenId": {
                     "type": "string"
                 },
                 "orderID": {
@@ -5642,6 +6108,12 @@ var doc = `{
                 "blockNumberMinted": {
                     "type": "string"
                 },
+                "btcFloorPrice": {
+                    "type": "integer"
+                },
+                "captureThumbnailDelayTime": {
+                    "type": "integer"
+                },
                 "categories": {
                     "type": "array",
                     "items": {
@@ -5672,13 +6144,25 @@ var doc = `{
                 "editableIsHidden": {
                     "type": "boolean"
                 },
+                "fileExtension": {
+                    "type": "string"
+                },
+                "fromAuthentic": {
+                    "type": "boolean"
+                },
                 "genNFTAddr": {
+                    "type": "string"
+                },
+                "htmlFile": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
                 "image": {
+                    "type": "string"
+                },
+                "inscribedBy": {
                     "type": "string"
                 },
                 "isFullChain": {
@@ -5694,6 +6178,9 @@ var doc = `{
                     "type": "string"
                 },
                 "limit": {
+                    "type": "integer"
+                },
+                "limitMintPerProcess": {
                     "type": "integer"
                 },
                 "maxFileSize": {
@@ -5726,8 +6213,17 @@ var doc = `{
                 "networkFeeEth": {
                     "type": "string"
                 },
+                "nftTokenId": {
+                    "type": "string"
+                },
                 "openMintUnixTimestamp": {
                     "type": "integer"
+                },
+                "ordinalsTx": {
+                    "type": "string"
+                },
+                "ownerOf": {
+                    "type": "string"
                 },
                 "priority": {
                     "type": "integer"
@@ -5740,6 +6236,12 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/response.ReportProject"
                     }
+                },
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
                 },
                 "reservers": {
                     "type": "array",
@@ -5770,6 +6272,9 @@ var doc = `{
                     "type": "boolean"
                 },
                 "styles": {
+                    "type": "string"
+                },
+                "tokenAddress": {
                     "type": "string"
                 },
                 "tokenID": {

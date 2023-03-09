@@ -9,16 +9,21 @@ type SearchResponse struct {
 }
 
 type SearhcInscription struct {
-	ObjectId      string `json:"objectId"`
-	InscriptionId string `json:"inscriptionId"`
-	ContentType   string `json:"contentType"`
-	Number        int64  `json:"number"`
-	Sat           string `json:"sat"`
-	Chain         string `json:"chain"`
-	Address       string `json:"address"`
-	GenesisFee    int64  `json:"genesisFee"`
-	GenesisHeight int64  `json:"genesisHeight"`
-	Timestamp     string `json:"timestamp"`
+	ObjectId       string          `json:"objectId"`
+	InscriptionId  string          `json:"inscriptionId"`
+	ContentType    string          `json:"contentType"`
+	Number         int64           `json:"number"`
+	Sat            string          `json:"sat"`
+	Chain          string          `json:"chain"`
+	Address        string          `json:"address"`
+	GenesisFee     int64           `json:"genesisFee"`
+	GenesisHeight  int64           `json:"genesisHeight"`
+	Timestamp      string          `json:"timestamp"`
+	ProjectName    string          `json:"projectName"`
+	ProjectTokenId string          `json:"projectTokenId"`
+	Buyable        bool            `json:"buyable"`
+	PriceBTC       string          `json:"priceBtc"`
+	Owner          *ArtistResponse `json:"owner"`
 }
 
 type SearchArtist struct {

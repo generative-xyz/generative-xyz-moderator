@@ -386,10 +386,10 @@ func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (
 	if err != nil {
 		txInfo, err := CheckTxFromBTC(txhash)
 		if err != nil {
-			fmt.Printf("checkTxFromBTC err: %v", err)
+			// fmt.Printf("checkTxFromBTC err: %v", err)
 			txInfo2, err := CheckTxfromQuickNode(txhash, qn)
 			if err != nil {
-				fmt.Printf("checkTxFromBTC err: %v", err)
+				// fmt.Printf("checkTxFromBTC err: %v", err)
 				status = "Failed"
 			} else {
 				if txInfo2.Result.Confirmations > 0 {
@@ -491,7 +491,7 @@ func SendRawTxfromQuickNode(raw_tx string, qn string) (string, error) {
 func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	var result QuickNodeTx
 
-	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t1\n\t]\n}", txhash))
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t2\n\t]\n}", txhash))
 
 	req, err := http.NewRequest("POST", qn, payload)
 	if err != nil {
@@ -513,7 +513,7 @@ func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
 	if err != nil {
 		return nil, err
 	}
-	if result.Result.Hash != txhash {
+	if result.Result.Txid != txhash {
 		return nil, errors.New("tx not found")
 	}
 	return &result, nil
@@ -528,7 +528,7 @@ func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
 		btcRateLock.Unlock()
 	}()
 	url := fmt.Sprintf("https://chain.api.btc.com/v3/tx/%s?verbose=2", txhash)
-	fmt.Println("url", url)
+	// fmt.Println("url", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

@@ -27,6 +27,28 @@ func ParseSort(key string) QuerySort {
 	return sort
 }
 
+func ParseSortNew(key string) QuerySort {
+	sortParams := make(map[string]QuerySort)
+	sortParams["custom"] = QuerySort{Sort: -1, SortBy: ""}
+	sortParams["newest"] = QuerySort{Sort: -1, SortBy: "created_at"}
+	sortParams["oldest"] = QuerySort{Sort: 1, SortBy: "created_at"}
+	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy: "priority"}
+	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy: "priority"}
+	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy: "priceBTC"}
+	sortParams["price-desc"] = QuerySort{Sort: -1, SortBy: "priceBTC"}
+	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy: "minted_time"}
+	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy: "stats.price_int"}
+	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy: "stats.price_int"}
+	sortParams["trending-score"] = QuerySort{Sort: -1, SortBy: "stats.trending_score"}
+
+	sort, ok := sortParams[key]
+	if !ok {
+		return sortParams["custom"]
+	}
+
+	return sort
+}
+
 const (
 	MAX_CHECK_BALANCE int    = 15
 	PERCENT_EARNING   int    = 900
@@ -72,7 +94,7 @@ const (
 	DB_CACHE_EXPIRED_TIME            int    = 86400            //a day
 	REDIS_CACHE_EXPIRED_TIME         int    = 86400            //a day
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
-	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
+	NONCE_MESSAGE_FORMAT             string = "%s"
 
 	KEY_UUID                       string = "uuid"
 	KEY_BASE_PRODUCT_KEY           string = "product_key"
@@ -91,6 +113,7 @@ const (
 	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
+	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
