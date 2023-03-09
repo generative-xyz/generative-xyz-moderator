@@ -165,7 +165,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 }
 
 func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
-	tokens := []entity.TokenUriListingFilter{}
+	tokens := []entity.TokenUriListingPage{}
 	resp := &entity.Pagination{}
 
 	f := r.filterToken(filter)
@@ -300,12 +300,29 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"buyable", 1},
 					{"priceBTC", 1},
 					{"orderID", 1},
+					{"project.tokenid", 1},
 				},
 			},
 		},
 		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
-		bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
-		bson.D{{"$limit", filter.Limit}},
+		bson.D{
+			{"$facet",
+				bson.D{
+					{"totalData",
+						bson.A{
+							bson.D{{"$match", bson.D{}}},
+							bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
+							bson.D{{"$limit", filter.Limit}},
+						},
+					},
+					{"totalCount",
+						bson.A{
+							bson.D{{"$count", "count"}},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	// t, err := r.Aggregate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f2, r.SelectedTokenFieldsNew(), r.SortToken(filter), &tokens)
@@ -319,13 +336,18 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if err = cursor.All((context.TODO()), &tokens); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if len(tokens) > 0 {
+		log.Println("len(tokens)", len(tokens[0].TotalCount))
 
-	log.Println("len(tokens)", len(tokens))
+		resp.Result = tokens[0].TotalData
+		resp.Page = filter.Page
+		if len(tokens[0].TotalCount) > 0 {
+			resp.Total = tokens[0].TotalCount[0].Count
+		}
+		resp.TotalPage = resp.Total / filter.Limit
+		resp.PageSize = filter.Limit
+	}
 
-	resp.Result = tokens
-	// resp.Page = t.Pagination.Page
-	// resp.Total = t.Pagination.Total
-	resp.PageSize = filter.Limit
 	//resp.PageSize = filter.Limit
 	return resp, nil
 }

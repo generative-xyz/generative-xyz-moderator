@@ -1258,7 +1258,7 @@ func (u Usecase) getInscribeInfoForMintSuccessToUpdate(inscriptionID string) err
 	return nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error) {
 
 	//amount = "0.1"
