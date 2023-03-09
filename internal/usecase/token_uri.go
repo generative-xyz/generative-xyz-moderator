@@ -173,10 +173,15 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 	client := resty.New()
 	resp := &response.SearhcInscription{}
-	client.R().
+	_, err = client.R().
 		EnableTrace().
 		SetResult(&resp).
 		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
+	u.Logger.Info("incriptionData", zap.Any("data", resp))
+	if err != nil {
+		u.Logger.ErrorAny("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
+		// return nil, err
+	}
 
 	tokenUri.Owner = nil
 	if resp.Address != "" {
