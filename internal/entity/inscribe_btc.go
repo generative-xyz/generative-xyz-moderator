@@ -148,3 +148,7 @@ type InscribeBTCResp struct {
 	TokenAddress  string         `bson:"token_address" json:"tokenAddress"`
 	TokenId       string         `bson:"token_id" json:"tokenId"`
 }
+
+func (u InscribeBTCResp) Expired() bool {
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
+}
