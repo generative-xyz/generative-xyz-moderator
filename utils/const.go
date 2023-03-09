@@ -27,6 +27,28 @@ func ParseSort(key string) QuerySort {
 	return sort
 }
 
+func ParseSortNew(key string) QuerySort {
+	sortParams := make(map[string]QuerySort)
+	sortParams["custom"] = QuerySort{Sort: -1, SortBy: ""}
+	sortParams["newest"] = QuerySort{Sort: -1, SortBy: "created_at"}
+	sortParams["oldest"] = QuerySort{Sort: 1, SortBy: "created_at"}
+	sortParams["priority-asc"] = QuerySort{Sort: 1, SortBy: "priority"}
+	sortParams["priority-desc"] = QuerySort{Sort: -1, SortBy: "priority"}
+	sortParams["price-asc"] = QuerySort{Sort: 1, SortBy: "priceBTC"}
+	sortParams["price-desc"] = QuerySort{Sort: -1, SortBy: "priceBTC"}
+	sortParams["minted-newest"] = QuerySort{Sort: -1, SortBy: "minted_time"}
+	sortParams["token-price-desc"] = QuerySort{Sort: -1, SortBy: "stats.price_int"}
+	sortParams["token-price-asc"] = QuerySort{Sort: 1, SortBy: "stats.price_int"}
+	sortParams["trending-score"] = QuerySort{Sort: -1, SortBy: "stats.trending_score"}
+
+	sort, ok := sortParams[key]
+	if !ok {
+		return sortParams["custom"]
+	}
+
+	return sort
+}
+
 const (
 	MAX_CHECK_BALANCE int    = 15
 	PERCENT_EARNING   int    = 900
