@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -28,6 +30,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/contracts/ordinals"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/fileutil"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -1042,7 +1045,40 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 }
 
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
-	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	if err != nil {
+		return nil, err
+	}
+	metaData := &nfts.MoralisTokenMetadata{}
+	if nft.MetadataString != nil {
+		if err := json.Unmarshal([]byte(*nft.MetadataString), metaData); err != nil {
+			return nil, err
+		}
+	}
+	nft.Metadata = metaData
+	if metaData.Image == "" {
+		return nft, nil
+	}
+
+	if strings.HasPrefix(metaData.Image, "http") {
+		url := utils.ConvertIpfsToHttp(metaData.Image)
+		client := http.Client{}
+		r, err := client.Get(url)
+		if err != nil {
+			return nil, err
+		}
+		defer r.Body.Close()
+		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		if ext, err := utils.GetFileExtensionFromUrl(url); err == nil {
+			if imageByte, err := fileutil.ResizeImage(buf, ext, fileutil.MaxImageByteSize); err == nil {
+				nft.Metadata.Image = helpers.Base64Encode(imageByte)
+			}
+		}
+	}
+	return nft, nil
 }
 
 func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv *ordinals.Service, item entity.InscribeBTC) error {
