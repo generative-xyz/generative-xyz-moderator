@@ -61,7 +61,7 @@ type CreateBtcProjectReq struct {
 	CaptureImageTime       *int     `json:"captureImageTime"`
 	Reservers              []string `json:"reservers"`
 	ReserveMintPrice       string   `json:"reserveMintPrice"`
-	ReserveMintLimit       string   `json:"reserveMintLimit"`
+	ReserveMintLimit       int      `json:"reserveMintLimit"`
 	FromAuthentic          bool     `json:"fromAuthentic"`
 	TokenAddress           string   `json:"tokenAddress"`
 	TokenId                string   `json:"tokenId"`
