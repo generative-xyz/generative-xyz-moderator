@@ -43,7 +43,7 @@ type CreateBTCProjectReq struct {
 
 	Reservers        []string `json:"reservers"`
 	ReserveMintPrice string   `json:"reserveMintPrice"`
-	ReserveMintLimit string   `json:"reserveMintLimit"`
+	ReserveMintLimit int      `json:"reserveMintLimit"`
 }
 
 type UpdateBTCProjectReq struct {
