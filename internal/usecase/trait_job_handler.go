@@ -2,7 +2,7 @@ package usecase
 
 import "rederinghub.io/internal/usecase/structure"
 
-func (u Usecase) SyncTraitStats() error {
+func (u Usecase) JobSyncTraitStats() error {
 	allTokens, err := u.Repo.GetAllTokensHasTraitSeletedFields()
 	if err != nil {
 		return err

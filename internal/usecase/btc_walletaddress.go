@@ -737,7 +737,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
@@ -772,7 +772,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	u.Logger.Info("sending message to discord", discordMsg)
 
 	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("error sending message to discord", err)
+		u.Logger.ErrorAny("error sending message to discord", zap.Error(err), zap.Any("discordMsg", discordMsg))
+
 	}
 }
 
