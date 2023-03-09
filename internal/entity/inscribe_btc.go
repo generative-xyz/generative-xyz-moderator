@@ -68,7 +68,7 @@ func (u InscribeBTC) NeedAddContractToOrdinalsContract() bool {
 }
 
 func (u InscribeBTC) Expired() bool {
-	return u.ExpiredAt.After(time.Now())
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
 }
 
 type StatusInscribe int
