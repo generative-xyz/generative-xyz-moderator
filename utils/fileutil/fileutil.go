@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	MaxImageByteSize = 1024 * 1024 // 1MB
-	MaxImagePx       = 1024        // px
-	JpegQuality      = 90          // %
+	MaxImageByteSize = 400 * 1024 // 400KB
+	MaxImagePx       = 1024       // px
+	JpegQuality      = 90         // %
 )
 
 func ResizeImage(imgSrc []byte, imageType string, maxImageByteSize int) ([]byte, error) {
