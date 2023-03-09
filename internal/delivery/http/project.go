@@ -893,7 +893,7 @@ func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
 
 
