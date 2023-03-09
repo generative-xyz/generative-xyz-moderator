@@ -19,7 +19,7 @@ const (
 
 func (u Usecase) FindInscriptions() {
 	totalItem := 100
-	max := 10000
+	max := 11100
 	inscriptions := []string{}
 	for {
 		if totalItem > max {
@@ -52,7 +52,7 @@ func (u Usecase) FindInscriptions() {
 		return
 	}
 
-	//spew.Dump(inscriptions)
+	spew.Dump(len(inscriptions))
 }
 
 type Inscription struct {
@@ -92,34 +92,33 @@ func (u Usecase) CreateInscriptionFiles() {
 		defer wg.Done()
 
 		data100 := data[0:100]
-		u.CreateData("100 items", "100", data100)
+		u.CreateData("100 items", "100", data100, 0)
 	}(&wg)
 	
 	go func(wg *sync.WaitGroup){
 		defer wg.Done()
-		data100 := data[101:1000]
-		u.CreateData("1000 items", "1000", data100)
+		data100 := data[100:(100 + 1000)]
+		u.CreateData("1000 items", "1000", data100, 100)
 	}(&wg)
 	
 	go func(wg *sync.WaitGroup){
 		defer wg.Done()
-		data100 := data[1001:10000]
-		u.CreateData("9000 items", "9000", data100)
+		data100 := data[(100 + 1000):(100 + 1000 + 10000)]
+		u.CreateData("9000 items",  "9000", data100, (100 + 1000))
 	}(&wg)
 	
 	wg.Wait()
 	
 }
 
-func (u Usecase) CreateData(pjName string, folderName string, data[]string) {
+func (u Usecase) CreateData(pjName string, folderName string, data[]string, from int) {
 	data100Data := []Inscription{}
 	for i, item := range data {
 		data100Item :=  Inscription{}
 		data100Item.ID = item
 		data100Item.Meta = make(map[string]string)
-		data100Item.Meta["name"] = fmt.Sprintf("#%d", i+1)
+		data100Item.Meta["name"] = fmt.Sprintf("#%d", i+1 + from)
 		data100Data = append(data100Data, data100Item)
-		logger.AtLog.Infof("Creating data %v", data100Item)
 	}
 
 	bytes, err := json.Marshal(data100Data)
@@ -130,13 +129,15 @@ func (u Usecase) CreateData(pjName string, folderName string, data[]string) {
 	if err != nil {
 		return
 	}
-	logger.AtLog.Infof("Created file inscriptions.json")
+	
 
 	mtdata := MetaJson{
 		Name: fmt.Sprintf("Project %s",pjName),
 		InscriptionIcon: data[0],
 		Supply: fmt.Sprintf("%d", len(data)),
 		Slug: helpers.GenerateSlug(fmt.Sprintf("Project %s",pjName)),
+		WalletAddress: "0x0000000000000000000000000000000000000000",
+		Royalty: "0",
 	}
 
 	byteMt, err := json.Marshal(mtdata)
@@ -148,6 +149,5 @@ func (u Usecase) CreateData(pjName string, folderName string, data[]string) {
 		return
 	}
 
-	logger.AtLog.Infof("Created file meta.json")
 	spew.Dump(len(data100Data))
 }

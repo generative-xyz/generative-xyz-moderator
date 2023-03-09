@@ -167,5 +167,6 @@ func startServer() {
 		return
 	}
 
+	//uc.FindInscriptions()
 	uc.CreateInscriptionFiles()
 }
