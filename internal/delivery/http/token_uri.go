@@ -574,6 +574,42 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
 		return nil, err
 	}
+	newList := []entity.TokenUriListingFilter{}
+	for _, item := range pag.Result.([]entity.TokenUriListingFilter) {
+		if strings.HasSuffix(item.AnimationURL, ".html") {
+			client := http.Client{
+				CheckRedirect: func(r *http.Request, via []*http.Request) error {
+					r.URL.Opaque = r.URL.Path
+					return nil
+				},
+			}
+			r, err := client.Get(item.AnimationURL)
+			if err != nil {
+				h.Usecase.Logger.LogAny("fail")
+			}
+			defer r.Body.Close()
+			b, err := io.ReadAll(r.Body)
+			if err != nil {
+				h.Usecase.Logger.LogAny("fail")
+			}
+			base64 := helpers.Base64Encode(b)
+			item.AnimationURL = "data:text/html;base64," + base64
+		}
+		if err != nil {
+			return nil, err
+		}
+		// resp.Attributes = input.ParsedAttributes
+		// if input.ParsedImage != nil {
+		// 	resp.Image = *input.ParsedImage
+		// } else {
+		// 	resp.Image = input.Thumbnail
+		// }
+		if strings.Index(item.Image, "glb") == -1 {
+			item.Image = item.Thumbnail
+		}
+		newList = append(newList, item)
+	}
+	pag.Result = newList
 
 	// respItems := []response.InternalTokenURIResp{}
 	// tokens := []entity.TokenUri{}
