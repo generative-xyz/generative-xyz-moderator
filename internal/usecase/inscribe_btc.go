@@ -991,6 +991,9 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.Status == entity.StatusInscribe_Pending && !inscribe.Expired() {
 				continue
 			}
+			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
+				continue
+			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
 		}
 		if len(inscribes) < int(limitListInscribe) {
