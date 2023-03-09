@@ -272,6 +272,36 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	// contractAddress := vars["contractAddress"]
+
+	projectID := vars["projectID"]
+
+	currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var result response.ProjectMarketplaceData
+
+	result.FloorPrice = floorPrice
+	result.Listed = currentListing
+	result.Volume = 0
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 // UserCredits godoc
 // @Summary get projects
 // @Description get projects
