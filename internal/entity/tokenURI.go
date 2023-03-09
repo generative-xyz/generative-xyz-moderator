@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 )
@@ -86,13 +87,50 @@ type TokenUri struct {
 
 type AggregateTokenUriTraits struct {
 	AggregateTokenUriTraitsID `bson:"_id"`
-	ParsedAttributes    []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
-	ParsedAttributesStr []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
+	ParsedAttributes          []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`
+	ParsedAttributesStr       []TokenUriAttrStr `bson:"parsed_attributes_str" json:"parsed_attributes_str"`
 }
 
 type AggregateTokenUriTraitsID struct {
 	ProjectID string `bson:"project_id"`
-	TokenID string `bson:"token_id"`
+	TokenID   string `bson:"token_id"`
+}
+
+type TokenUriListingFilter struct {
+	ID                    primitive.ObjectID `bson:"_id" json:"_id"`
+	TokenID               string             `bson:"token_id" json:"token_id"`
+	Name                  string             `bson:"name" json:"name"`
+	Image                 string             `bson:"image" json:"image"`
+	ContractAddress       string             `bson:"contract_address" json:"contract_address"`
+	AnimationURL          string             `bson:"animation_url" json:"animation_url"`
+	AnimationHtml         *string            `bson:"animation_html" json:"animation"`
+	ProjectID             string             `bson:"project_id" json:"project_id"`
+	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
+	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"gen_nft_addrress"`
+	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
+	InscriptionIndex      string             `bson:"inscription_index" json:"inscription_index"`
+	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"order_inscription_index"`
+	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
+	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
+	Buyable               bool               `bson:"buyable" json:"buyable"`
+
+	// Listing               *ListingInfo       `bson:"listing" json:"listing"`
+}
+
+//	"listing": {
+//	    "_id": {
+//	      "$oid": "6401c28716d9ec27ef8519e1"
+//	    },
+//	    "inscription_id": "b4e20295fa3c738490cf1d8a542a9a1354affa649f601866b12c092a956de1c3i0",
+//	    "amount": 1000,
+//	    "cancelled": false,
+//	    "matched": true
+//	  }
+type ListingInfo struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	Amount    uint64             `bson:"amount"`
+	Cancelled bool               `bson:"cancelled"`
+	Matched   bool               `bson:"matched"`
 }
 
 type TokenUriAttr struct {

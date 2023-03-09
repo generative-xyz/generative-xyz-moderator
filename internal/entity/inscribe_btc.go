@@ -67,6 +67,10 @@ func (u InscribeBTC) NeedAddContractToOrdinalsContract() bool {
 		u.OrdinalsTx == ""
 }
 
+func (u InscribeBTC) Expired() bool {
+	return u.ExpiredAt.After(time.Now())
+}
+
 type StatusInscribe int
 
 const (

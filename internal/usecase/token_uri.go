@@ -587,6 +587,24 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 	return tokens, nil
 }
 
+func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
+	pe := &entity.FilterTokenUris{}
+	err := copier.Copy(pe, filter)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	tokens, err := u.Repo.FilterTokenUriNew(*pe)
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	u.Logger.Info("tokens", tokens.Total)
+	return tokens, nil
+}
+
 func (u Usecase) UpdateToken(req structure.UpdateTokenReq) (*entity.TokenUri, error) {
 
 	p, err := u.Repo.FindTokenBy(req.ContracAddress, req.TokenID)

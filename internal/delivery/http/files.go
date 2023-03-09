@@ -1,7 +1,6 @@
 package http
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
@@ -260,27 +258,11 @@ func (h *httpDelivery) resizeImage(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, err
 		}
-		byteSize := len(dec)
-		if byteSize <= fileutil.MaxImageByteSize {
-			return &request.FileResize{
-				File: reqBody.File,
-			}, nil
-		}
-		img, err := imaging.Decode(bytes.NewReader(dec))
-		if err != nil {
-			return nil, err
-		}
-		var imgByte []byte
-		switch strings.TrimSuffix(reqBody.File[5:coI], ";base64") {
-		case "image/png":
-			imgByte, err = fileutil.ResizeImage(img, imaging.PNG)
-		case "image/jpeg":
-			imgByte, err = fileutil.ResizeImage(img, imaging.JPEG, imaging.JPEGQuality(fileutil.JpegQuality))
-		case "image/gif":
-			imgByte, err = fileutil.ResizeImage(img, imaging.GIF)
-		default:
+		exts := strings.Split(strings.TrimSuffix(reqBody.File[5:coI], ";base64"), "/")
+		if len(exts) < 2 {
 			return nil, errors.New("image not support")
 		}
+		imgByte, err := fileutil.ResizeImage(dec, exts[1], fileutil.MaxImageByteSize)
 		if err != nil {
 			return nil, err
 		}
