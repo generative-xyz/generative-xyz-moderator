@@ -131,11 +131,11 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			}
 		}
 
-		listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
-		if err == nil && listingInfo.CancelTx == "" {
-			i.Buyable = true
-			i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-		}
+		// listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
+		// if err == nil && listingInfo.CancelTx == "" {
+		// 	i.Buyable = true
+		// 	i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+		// }
 
 		obj := &response.SearchResponse{
 			ObjectType:  "inscription",
