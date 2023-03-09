@@ -68,7 +68,7 @@ func (u InscribeBTC) NeedAddContractToOrdinalsContract() bool {
 }
 
 func (u InscribeBTC) Expired() bool {
-	return u.ExpiredAt.After(time.Now())
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
 }
 
 type StatusInscribe int
@@ -147,4 +147,8 @@ type InscribeBTCResp struct {
 	IsAuthentic   bool           `bson:"is_authentic" json:"isAuthentic"`
 	TokenAddress  string         `bson:"token_address" json:"tokenAddress"`
 	TokenId       string         `bson:"token_id" json:"tokenId"`
+}
+
+func (u InscribeBTCResp) Expired() bool {
+	return time.Now().UTC().Unix() > u.ExpiredAt.UTC().Unix()
 }
