@@ -207,6 +207,5 @@ func (uc *Usecase) AlgoliaSearchTokenUri(filter *algolia.AlgoliaFilter) ([]entit
 	}
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
-
 	return rTokens, resp.NbHits, resp.NbPages, nil
 }
