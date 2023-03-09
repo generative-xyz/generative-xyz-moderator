@@ -2079,6 +2079,17 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 
 
 func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
+	p, err := u.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+	if totalImages == 0 &&  totalProcessingImages == 0 {
+		return nil, errors.New("Project doesn's have any files")
+	}
+
 	_, handler, err := r.FormFile("file")
 	if err != nil {
 		u.Logger.Error("r.FormFile.File", err.Error(), err)
