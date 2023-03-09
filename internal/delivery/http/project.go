@@ -28,7 +28,6 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project [POST]
 func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
-
 	var reqBody request.CreateProjectReq
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -76,7 +75,6 @@ func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/btc [POST]
 func (h *httpDelivery) createBTCProject(w http.ResponseWriter, r *http.Request) {
-
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	walletAddress, ok := iWalletAddress.(string)

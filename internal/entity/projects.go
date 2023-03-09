@@ -61,7 +61,6 @@ type Projects struct {
 	Thumbnail                string             `bson:"thumbnail" json:"thumbnail"`
 	ThirdPartyScripts        []string           `bson:"thirdPartyScripts" json:"thirdPartyScripts"`
 	Scripts                  []string           `bson:"scripts" json:"scripts"`
-	ReservationList          []string           `bson:"reservationList" json:"reservationList"`
 	MintFee                  int                `bson:"mintFee" json:"mintFee"`
 	TokenDescription         string             `bson:"tokenDescription" json:"tokenDescription"`
 	Styles                   string             `bson:"styles" json:"styles"`
@@ -102,6 +101,8 @@ type Projects struct {
 	Source                   string             `bson:"source" json:"source"`
 	AnimationHtml            *string            `bson:"animation_html"`
 	CatureThumbnailDelayTime *int               `bson:"cature_thumbnail_delay_time"`
+	ReserveMintPrice         string             `bson:"reserveMintPrice" json:"reserveMintPrice"`
+	ReserveMintLimit         string             `bson:"reserveMintLimit" json:"reserveMintLimit"`
 	FromAuthentic            bool               `bson:"fromAuthentic"`
 	TokenAddress             string             `bson:"tokenAddress"`
 	TokenId                  string             `bson:"tokenId"`
