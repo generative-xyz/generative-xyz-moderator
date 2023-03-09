@@ -44,6 +44,17 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects, error) {
+	resp := []*entity.Projects{}
+	f := bson.M{}
+	f["tokenid"] = bson.M{"$in": tokenIds}
+	_, err := r.Paginate(utils.COLLECTION_PROJECTS, 1, int64(len(tokenIds)), f, r.SelectedProjectFields(), nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
