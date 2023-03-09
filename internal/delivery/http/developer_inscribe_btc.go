@@ -234,7 +234,6 @@ func (h *httpDelivery) developerDetailInscribe(w http.ResponseWriter, r *http.Re
 // @Produce json
 // @Param ID path string true "inscribe ID"
 // @Success 200
-// @Router /developer/inscribe/retry/{ID} [POST]
 // @Security ApiKeyAuth
 func (h *httpDelivery) developerRetryInscribeBTC(w http.ResponseWriter, r *http.Request) {
 

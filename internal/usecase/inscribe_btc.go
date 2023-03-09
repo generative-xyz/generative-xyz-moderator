@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +17,9 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -25,6 +30,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/contracts/ordinals"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/fileutil"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -272,21 +278,27 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.BTCRate = feeInfos[payType].BtcPrice
 	walletAddress.ETHRate = feeInfos[payType].EthPrice
 	if input.NeedVerifyAuthentic() {
-		pags, err := u.ListInscribeBTC(&entity.FilterInscribeBT{
-			BaseFilters: entity.BaseFilters{
-				Page:  1,
-				Limit: 1,
-			},
-			TokenAddress: &input.TokenAddress,
-			TokenId:      &input.TokenId,
-			NeStatuses:   []entity.StatusInscribe{entity.StatusInscribe_TxMintFailed},
-		})
+		inscribeBtc := &entity.InscribeBTC{}
+		opt := &options.FindOneOptions{}
+		opt.SetSort(bson.M{"_id": -1})
+		err := u.Repo.FindOneBy(ctx,
+			inscribeBtc.TableName(),
+			bson.M{
+				"token_address": input.TokenAddress,
+				"token_id":      input.TokenId,
+				"status": bson.M{
+					"$ne": entity.StatusInscribe_TxMintFailed,
+				}},
+			inscribeBtc,
+			opt)
 		if err != nil {
-			return nil, err
-		}
-		inscribers := pags.Result.([]entity.InscribeBTCResp)
-		if len(inscribers) > 0 {
-			return nil, errors.New("Inscribe was minted")
+			if !errors.Is(err, mongo.ErrNilDocument) {
+				return nil, err
+			}
+		} else {
+			if !inscribeBtc.Expired() {
+				return inscribeBtc, nil
+			}
 		}
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
@@ -1032,7 +1044,40 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 }
 
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
-	return u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	nft, err := u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
+	if err != nil {
+		return nil, err
+	}
+	metaData := &nfts.MoralisTokenMetadata{}
+	if nft.MetadataString != nil {
+		if err := json.Unmarshal([]byte(*nft.MetadataString), metaData); err != nil {
+			return nil, err
+		}
+	}
+	nft.Metadata = metaData
+	if metaData.Image == "" {
+		return nft, nil
+	}
+
+	if strings.HasPrefix(metaData.Image, "http") {
+		url := utils.ConvertIpfsToHttp(metaData.Image)
+		client := http.Client{}
+		r, err := client.Get(url)
+		if err != nil {
+			return nil, err
+		}
+		defer r.Body.Close()
+		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		if ext, err := utils.GetFileExtensionFromUrl(url); err == nil {
+			if imageByte, err := fileutil.ResizeImage(buf, ext, fileutil.MaxImageByteSize); err == nil {
+				nft.Metadata.Image = helpers.Base64Encode(imageByte)
+			}
+		}
+	}
+	return nft, nil
 }
 
 func (u Usecase) AddContractToOrdinalsContract(ctx context.Context, ordinalsSrv *ordinals.Service, item entity.InscribeBTC) error {

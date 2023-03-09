@@ -90,6 +90,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
+	project.HandleFunc("/{genNFTAddr}/newtokens", h.TokensOfAProjectNew).Methods("GET")
 
 	projectAuth := api.PathPrefix("/project").Subrouter()
 	projectAuth.Use(h.MiddleWare.AccessToken)
@@ -304,7 +305,7 @@ func (h *httpDelivery) BaseFilters(r *http.Request) (*structure.BaseFilters, err
 	}
 
 	sortQuery := r.URL.Query().Get("sort")
-	sortObject := utils.ParseSort(sortQuery)
+	sortObject := utils.ParseSortNew(sortQuery)
 
 	f.SortBy = sortObject.SortBy
 	f.Sort = sortObject.Sort

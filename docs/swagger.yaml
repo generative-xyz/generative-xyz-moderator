@@ -258,10 +258,10 @@ definitions:
         items:
           $ref: '#/definitions/entity.ReportProject'
         type: array
-      reservationList:
-        items:
-          type: string
-        type: array
+      reserveMintLimit:
+        type: integer
+      reserveMintPrice:
+        type: string
       reservers:
         items:
           type: string
@@ -376,6 +376,8 @@ definitions:
       minterAddress:
         type: string
       name:
+        type: string
+      nftTokenId:
         type: string
       order_inscription_index:
         type: integer
@@ -522,6 +524,8 @@ definitions:
         type: boolean
       metadata:
         type: string
+      metadata_obj:
+        $ref: '#/definitions/nfts.MoralisTokenMetadata'
       name:
         type: string
       owner_of:
@@ -536,6 +540,20 @@ definitions:
         type: string
       token_uri:
         type: string
+    type: object
+  nfts.MoralisTokenMetadata:
+    properties:
+      animation_url:
+        type: string
+      description:
+        type: string
+      external_link:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      traits: {}
     type: object
   request.CheckBalanceAddressReq:
     properties:
@@ -578,6 +596,14 @@ definitions:
         type: string
       openMintUnixTimestamp:
         type: integer
+      reserveMintLimit:
+        type: string
+      reserveMintPrice:
+        type: string
+      reservers:
+        items:
+          type: string
+        type: array
       royalty:
         type: integer
       scripts:
@@ -859,6 +885,8 @@ definitions:
         type: string
       addressBtcSegwit:
         type: string
+      ethSignature:
+        type: string
       messagePrefix:
         type: string
       signature:
@@ -993,8 +1021,6 @@ definitions:
     type: object
   response.InternalTokenURIResp:
     properties:
-      animationHtml:
-        type: string
       animationUrl:
         type: string
       attributes: {}
@@ -1020,6 +1046,8 @@ definitions:
       mintedTime:
         type: string
       name:
+        type: string
+      nftTokenId:
         type: string
       orderID:
         type: string
@@ -1214,6 +1242,10 @@ definitions:
         items:
           $ref: '#/definitions/response.ReportProject'
         type: array
+      reserveMintLimit:
+        type: integer
+      reserveMintPrice:
+        type: string
       reservers:
         items:
           type: string
@@ -2129,27 +2161,6 @@ paths:
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
-  /developer/inscribe/retry/{ID}:
-    post:
-      consumes:
-      - application/json
-      description: BTC Retry Inscribe
-      parameters:
-      - description: inscribe ID
-        in: path
-        name: ID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - ApiKeyAuth: []
-      summary: BTC Retry Inscribe
-      tags:
-      - Inscribe
   /eth/receive-address:
     post:
       consumes:
@@ -2487,7 +2498,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
