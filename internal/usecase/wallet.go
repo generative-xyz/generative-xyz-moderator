@@ -357,7 +357,7 @@ func getInscriptionByID(ordServer, id string) (*structure.InscriptionOrdInfoByID
 
 func checkTxInBlockFromOrd(ordServer, txhash string) error {
 	url := fmt.Sprintf("%s/tx/%s", ordServer, txhash)
-	fmt.Println("url", url)
+	// fmt.Println("url", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -445,52 +445,75 @@ func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error
 
 func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]structure.WalletTrackTx, error) {
 	var result []structure.WalletTrackTx
+	// t := time.Now()
 	txList, err := u.Repo.GetTrackTxs(address, limit, offset)
 	if err != nil {
 		return nil, err
 	}
+
+	// t2 := time.Since(t)
+	// log.Println("t2", t2)
 	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
 	if ordServer == "" {
 		ordServer = "https://dev-v5.generativeexplorer.com"
 	}
-	for _, tx := range txList {
-		createdAt := uint64(0)
-		if tx.CreatedAt != nil {
-			createdAt = uint64(tx.CreatedAt.Unix())
-		}
-		trackTx := structure.WalletTrackTx{
-			Txhash:            tx.Txhash,
-			Type:              tx.Type,
-			Amount:            tx.Amount,
-			InscriptionID:     tx.InscriptionID,
-			InscriptionNumber: tx.InscriptionNumber,
-			Receiver:          tx.Receiver,
-			CreatedAt:         createdAt,
-		}
-		_, bs, err := u.buildBTCClient()
-		if err != nil {
-			fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-			return nil, err
-		}
-		if createdAt != 0 && time.Since(*tx.CreatedAt) >= 24*time.Hour {
-			if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
-				trackTx.Status = "Success"
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	for _, item := range txList {
+		wg.Add(1)
+		// time.Sleep(10 * time.Millisecond)
+		go func(tx entity.WalletTrackTx) {
+			defer wg.Done()
+			createdAt := uint64(0)
+			if tx.CreatedAt != nil {
+				createdAt = uint64(tx.CreatedAt.Unix())
+			}
+			trackTx := structure.WalletTrackTx{
+				Txhash:            tx.Txhash,
+				Type:              tx.Type,
+				Amount:            tx.Amount,
+				InscriptionID:     tx.InscriptionID,
+				InscriptionNumber: tx.InscriptionNumber,
+				Receiver:          tx.Receiver,
+				CreatedAt:         createdAt,
+			}
+			_, bs, err := u.buildBTCClient()
+			if err != nil {
+				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+				// return nil, err
+				return
+			}
+			if createdAt != 0 && time.Since(*tx.CreatedAt) >= 24*time.Hour {
+				if err := checkTxInBlockFromOrd(ordServer, trackTx.Txhash); err == nil {
+					trackTx.Status = "Success"
+				} else {
+					// status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
+					// if err != nil {
+					// 	// return nil, err
+					// 	return
+					// }
+					trackTx.Status = "Failed"
+				}
+				lock.Lock()
+				result = append(result, trackTx)
+				lock.Unlock()
 			} else {
 				status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
 				if err != nil {
-					return nil, err
+					// return nil, err
+					return
 				}
 				trackTx.Status = status
+				lock.Lock()
+				result = append(result, trackTx)
+				lock.Unlock()
 			}
-			result = append(result, trackTx)
-		} else {
-			status, err := btc.GetBTCTxStatusExtensive(trackTx.Txhash, bs, u.Config.QuicknodeAPI)
-			if err != nil {
-				return nil, err
-			}
-			trackTx.Status = status
-			result = append(result, trackTx)
-		}
+			// t3 := time.Since(t)
+			// log.Println("t3 tx.Txhash", tx.Txhash, t3)
+		}(item)
 	}
+	wg.Wait()
+	// t3 := time.Since(t)
+	// log.Println("t3", t3)
 	return result, nil
 }
