@@ -87,7 +87,7 @@ type TokenUri struct {
 
 type TokenUriListingFilter struct {
 	ID                    primitive.ObjectID `bson:"_id" json:"_id"`
-	TokenID               string             `bson:"token_id" json:"token_id"`
+	TokenID               string             `bson:"token_id" json:"tokenID"`
 	Name                  string             `bson:"name" json:"name"`
 	Image                 string             `bson:"image" json:"image"`
 	ContractAddress       string             `bson:"contract_address" json:"contract_address"`
@@ -102,24 +102,6 @@ type TokenUriListingFilter struct {
 	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
 	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
 	Buyable               bool               `bson:"buyable" json:"buyable"`
-
-	// Listing               *ListingInfo       `bson:"listing" json:"listing"`
-}
-
-//	"listing": {
-//	    "_id": {
-//	      "$oid": "6401c28716d9ec27ef8519e1"
-//	    },
-//	    "inscription_id": "b4e20295fa3c738490cf1d8a542a9a1354affa649f601866b12c092a956de1c3i0",
-//	    "amount": 1000,
-//	    "cancelled": false,
-//	    "matched": true
-//	  }
-type ListingInfo struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	Amount    uint64             `bson:"amount"`
-	Cancelled bool               `bson:"cancelled"`
-	Matched   bool               `bson:"matched"`
 }
 
 type TokenUriAttr struct {
