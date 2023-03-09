@@ -1,20 +1,17 @@
 package usecase
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
-	discordclient "rederinghub.io/utils/discord"
 )
 
 type addUserDiscordFieldReq struct {
-	Fields []discordclient.Field
+	Fields []entity.Field
 	Key string
 	Address string
 	UserID string
@@ -22,18 +19,18 @@ type addUserDiscordFieldReq struct {
 	Domain string
 }
 
-func addDiscordField(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
+func addDiscordField(fields []entity.Field, name string, value string, inline bool) []entity.Field {
 	if value == "" {
 		return fields
 	}
-	return append(fields, discordclient.Field{
+	return append(fields, entity.Field{
 		Name:   name,
 		Value:  value,
 		Inline: inline,
 	})
 }
 
-func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []discordclient.Field {
+func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []entity.Field {
 	var user *entity.Users
 	var err error
 	if req.Address != "" {
@@ -68,7 +65,7 @@ func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []discordclient
 func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	domain := os.Getenv("DOMAIN")
 	webhook := os.Getenv("DISCORD_AIRDROP_WEBHOOK")
-	fields := make([]discordclient.Field, 0)
+	fields := make([]entity.Field, 0)
 	file := strings.Replace(airdrop.File, "html", "png", 1)
 
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
@@ -100,27 +97,27 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 		u.Logger.Error("ErrorWhenGetInscribeInfo", zap.Any("inscriptionId", airdrop.InscriptionId))
 	}
 
-	discordMsg := discordclient.Message{
+	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
 		Content:   "**NEW KEY**",
-		Embeds: []discordclient.Embed{{
+		Embeds: []entity.Embed{{
 			Title: fmt.Sprintf("%s%s", title, inscriptionNumTitle),
 			Url: fmt.Sprintf("https://generativeexplorer.com/inscription/%s", airdrop.InscriptionId),
 			Fields: fields,
-			Image: discordclient.Image{
+			Image: entity.Image{
 				Url: file,
 			},
 		}},
 	}
 
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
+	u.Logger.Info("sending new airdrop message to discord", zap.Any("message", discordMsg))
 
-	u.Logger.Info("sending new airdrop message to discord", discordMsg)
-
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("NotifyNewAirdrop.errorSendingMessageToDiscord", err)
+	// create discord message
+	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNewAirdrop.CreateDiscordNoti", zap.Error(err))
+		return err
 	}
 	return nil
 }
@@ -158,7 +155,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 	collectionName := project.Name
 	mintedCount := tokenUri.OrderInscriptionIndex
 
-	fields := make([]discordclient.Field, 0)
+	fields := make([]entity.Field, 0)
 
 	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
 
@@ -182,29 +179,30 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		Domain: domain,
 	})
 
-	discordMsg := discordclient.Message{
+	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
 		Content:   "**NEW SALE**",
-		Embeds: []discordclient.Embed{{
+		Embeds: []entity.Embed{{
 			Title: fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
 			Url: fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
 			Description: description,
 			Fields: fields,
-			Image: discordclient.Image{
+			Image: entity.Image{
 				Url: tokenUri.Thumbnail,
 			},
 		}},
 	}
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
 
-	u.Logger.Info("sending new sale message to discord", discordMsg)
+	u.Logger.Info("sending new sale message to discord", zap.Any("message", discordMsg))
 
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("NotifyNewSale.errorSendingMessageToDiscord", err)
+	// create discord message
+	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
+		return err
 	}
-	return nil	
+	return nil
 }
 
 
@@ -241,8 +239,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	collectionName := project.Name
 	mintedCount := tokenUri.OrderInscriptionIndex
 
-
-	fields := make([]discordclient.Field, 0)
+	fields := make([]entity.Field, 0)
 
 	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
 
@@ -256,27 +253,195 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 		Domain: domain,
 	})
 
-	discordMsg := discordclient.Message{
+	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
 		Content:   "**NEW LISTING**",
-		Embeds: []discordclient.Embed{{
+		Embeds: []entity.Embed{{
 			Title: fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
 			Url: fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
 			Description: description,
 			Fields: fields,
-			Image: discordclient.Image{
+			Image: entity.Image{
 				Url: tokenUri.Thumbnail,
 			},
 		}},
 	}
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
 
-	u.Logger.Info("sending new listing message to discord", discordMsg)
+	u.Logger.Info("sending new new listing message to discord", zap.Any("message", discordMsg))
 
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("NotifyNewListing.errorSendingMessageToDiscord", err)
+	// create discord message
+	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNewListing.CreateDiscordNoti", zap.Error(err))
+		return err
 	}
-	return nil	
+	return nil
+}
+
+func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
+	domain := os.Getenv("DOMAIN")
+	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
+	u.Logger.Info(
+		"NotifyNFTMinted",
+		zap.String("btcUserAddr", btcUserAddr),
+		zap.String("inscriptionID", inscriptionID),
+		zap.Int("networkFee", networkFee),
+	)
+
+	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
+		return
+	}
+
+	var minterDisplayName string
+	minterAddress := btcUserAddr
+	{
+		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
+		if err == nil {
+			minterDisplayName = minter.DisplayName
+		} else {
+			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
+		}
+	}
+
+	if tokenUri.Creator == nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
+		return
+	}
+
+	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
+		return
+	}
+	var category, description string
+	if len(project.Categories) > 0 {
+		// we assume that there are only one category
+		categoryEntity, err := u.GetCategory(project.Categories[0])
+		if err != nil {
+			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			return
+		}
+		category = categoryEntity.Name
+		description = fmt.Sprintf("Category: %s\n", category)
+	}
+
+	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
+	collectionName := project.Name
+	// itemCount := project.MaxSupply
+	mintedCount := tokenUri.OrderInscriptionIndex
+
+	fields := make([]entity.Field, 0)
+	addFields := func(fields []entity.Field, name string, value string, inline bool) []entity.Field {
+		if value == "" {
+			return fields
+		}
+		return append(fields, entity.Field{
+			Name:   name,
+			Value:  value,
+			Inline: inline,
+		})
+	}
+	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
+		u.resolveShortName(minterDisplayName, btcUserAddr),
+		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
+	), true)
+
+	// fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
+	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
+
+	discordMsg := entity.DiscordMessage{
+		Username:  "Satoshi 27",
+		AvatarUrl: "",
+		Content:   "**NEW MINT**",
+		Embeds: []entity.Embed{{
+			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
+			Url:         fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
+			Description: description,
+			//Author: discordclient.Author{
+			//	Name:    u.resolveShortName(minter.DisplayName, minter.WalletAddress),
+			//	Url:     fmt.Sprintf("%s/profile/%s", domain, minter.WalletAddress),
+			//	IconUrl: minter.Avatar,
+			//},
+			Fields: fields,
+			Image: entity.Image{
+				Url: tokenUri.Thumbnail,
+			},
+		}},
+	}
+
+	u.Logger.Info("sending new nft minted message to discord", zap.Any("message", discordMsg))
+
+	// create discord message
+	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
+	}
+}
+
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
+	domain := os.Getenv("DOMAIN")
+	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
+
+	var category, description string
+	if len(project.Categories) > 0 {
+		// we assume that there are only one category
+		categoryEntity, err := u.GetCategory(project.Categories[0])
+		if err != nil {
+			u.Logger.ErrorAny("NotifyCreateNewProjectToDiscord.GetCategory failed", zap.Any("err", err))
+			return
+		}
+		category = categoryEntity.Name
+		description = fmt.Sprintf("Category: %s\n", category)
+	}
+	address := owner.WalletAddressBTC
+	if address == "" {
+		address = owner.WalletAddress
+	}
+	ownerName := u.resolveShortName(owner.DisplayName, address)
+	collectionName := project.Name
+
+	fields := make([]entity.Field, 0)
+	addFields := func(fields []entity.Field, name string, value string, inline bool) []entity.Field {
+		if value == "" {
+			return fields
+		}
+		return append(fields, entity.Field{
+			Name:   name,
+			Value:  value,
+			Inline: inline,
+		})
+	}
+	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
+
+	discordMsg := entity.DiscordMessage{
+		Username: "Satoshi 27",
+		Content:  "**NEW DROP**",
+		Embeds: []entity.Embed{{
+			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
+			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Description: description,
+			//Author: discordclient.Author{
+			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),
+			//	Url:     fmt.Sprintf("%s/profile/%s", domain, owner.WalletAddress),
+			//	IconUrl: owner.Avatar,
+			//},
+			Fields: fields,
+			Image: entity.Image{
+				Url: project.Thumbnail,
+			},
+		}},
+	}
+	u.Logger.Info("sending new create new project message to discord", zap.Any("message", discordMsg))
+	// create discord message
+	err := u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyCreateNewProjectToDiscord.CreateDiscordNoti", zap.Error(err))
+	}
 }

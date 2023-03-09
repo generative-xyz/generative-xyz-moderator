@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
 
@@ -21,6 +22,16 @@ import (
 // @Success 200 {object} response.JsonResponse{data=[]response.RedisResponse}
 // @Router /admin/redis [GET]
 func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
+
+	order := entity.DexBTCListing{
+		SellerAddress: "",
+		InscriptionID: "",
+	}
+
+	h.Usecase.NotifyNewListing(order)
+
+	return
+
 	res, err := h.Usecase.GetAllRedis()
 
 	if err != nil {

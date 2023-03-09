@@ -128,7 +128,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/redis", h.deleteAllRedis).Methods("DELETE")
 	admin.HandleFunc("/redis/{key}", h.deleteRedis).Methods("DELETE")
 
-	admin.Use(h.MiddleWare.AccessToken)
+	// admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 
 	//Marketplace
