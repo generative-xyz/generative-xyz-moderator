@@ -94,7 +94,7 @@ const (
 	DB_CACHE_EXPIRED_TIME            int    = 86400            //a day
 	REDIS_CACHE_EXPIRED_TIME         int    = 86400            //a day
 	DB_CACHE_KEY                     string = "db.cache.%s.%s" //a week
-	NONCE_MESSAGE_FORMAT             string = "Welcome %s to Generative"
+	NONCE_MESSAGE_FORMAT             string = "%s"
 
 	KEY_UUID                       string = "uuid"
 	KEY_BASE_PRODUCT_KEY           string = "product_key"
@@ -113,7 +113,7 @@ const (
 	COLLECTION_WITHDRAW                 string = "withdraw"
 	COLLECTION_TOKEN_URI                string = "token_uri"
 	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
-	COLLECTION_TOKEN_URI_METADATA      string = "token_uri_metadata"
+	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
 	COLLECTION_CONFIGS                  string = "configs"
