@@ -21,6 +21,13 @@ type TokenUriAttrFilter struct {
 	Values    []string
 }
 
+type TokenUriListingPage struct {
+	TotalData  []TokenUriListingFilter `bson:"totalData" json:"totalData"`
+	TotalCount []struct {
+		Count int64 `bson:"count" json:"count"`
+	} `bson:"totalCount" json:"totalCount"`
+}
+
 type FilterTokenUris struct {
 	BaseFilters
 	ContractAddress *string
