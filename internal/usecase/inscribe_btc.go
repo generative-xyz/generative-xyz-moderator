@@ -660,7 +660,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		}
 
 		now := time.Now().UTC().Unix()
-		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.OrdAddress, now, typeFile))
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.SegwitAddress, now, typeFile))
 		if err != nil {
 			u.Logger.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
 			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
