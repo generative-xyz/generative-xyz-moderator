@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"rederinghub.io/utils/helpers"
 	"strconv"
 	"strings"
+
+	"rederinghub.io/utils/helpers"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
@@ -283,6 +284,39 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
+func (h *httpDelivery) TokensOfAProjectNew(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	genNFTAddr := vars["genNFTAddr"]
+	h.Logger.Info("genNFTAddr", genNFTAddr)
+
+	f := structure.FilterTokens{}
+	err := f.CreateFilter(r)
+	if err != nil {
+		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	f.GenNFTAddr = &genNFTAddr
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	resp, err := h.getTokensNew(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	//
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
 // UserCredits godoc
 // @Summary User profile's nft
 // @Description User profile's nft
@@ -531,6 +565,96 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	}
 
 	resp := h.PaginationResp(pag, respItems)
+	return &resp, nil
+}
+
+func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.PaginationResponse, error) {
+	pag, err := h.Usecase.FilterTokensNew(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		return nil, err
+	}
+
+	// respItems := []response.InternalTokenURIResp{}
+	// tokens := []entity.TokenUri{}
+	// iTokensData := pag.Result
+
+	// bytes, err := json.Marshal(iTokensData)
+	// if err != nil {
+	// 	err := errors.New("Cannot parse respItems")
+	// 	h.Logger.Error("respItems", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// err = json.Unmarshal(bytes, &tokens)
+	// if err != nil {
+	// 	err := errors.New("Cannot Unmarshal")
+	// 	h.Logger.Error("Unmarshal", err.Error(), err)
+	// 	return nil, err
+	// }
+
+	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
+	// nftListing, _ := h.Usecase.GetAllListListingWithRule()
+
+	// get btc, btc rate:
+	// btcPrice, err := helpers.GetExternalPrice("BTC")
+	// if err != nil {
+	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	return nil, err
+	// }
+
+	// h.Logger.Info("btcPrice", btcPrice)
+	// ethPrice, err := helpers.GetExternalPrice("ETH")
+	// if err != nil {
+	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	return nil, err
+	// }
+	// h.Logger.Info("btcPrice", btcPrice)
+
+	// for _, token := range tokens {
+	// 	resp, err := h.tokenToResp(&token)
+	// 	if err != nil {
+	// 		err := errors.New("Cannot parse products")
+	// 		h.Logger.Error("tokenToResp", err.Error(), err)
+	// 		return nil, err
+	// 	}
+
+	// listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
+	// if err != nil {
+	// 	h.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
+	// } else {
+	// 	if listingInfo.CancelTx == "" {
+	// 		resp.Buyable = true
+	// 		resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+	// 		resp.OrderID = listingInfo.UUID
+	// 	}
+	// }
+	// for _, v := range nftListing {
+	// 	if resp != nil {
+	// 		if strings.EqualFold(v.InscriptionID, resp.TokenID) {
+	// 			resp.Buyable = v.Buyable
+	// 			resp.PriceBTC = v.Price
+	// 			resp.OrderID = v.OrderID
+	// resp.IsCompleted = v.IsCompleted
+
+	// listPaymentInfo, err := h.Usecase.GetListingPaymentInfoWithEthBtcPrice(v.PayType, v.Price, btcPrice, ethPrice)
+
+	// if err != nil {
+	// 	continue
+	// }
+	// v.PaymentListingInfo = listPaymentInfo
+
+	// resp.ListingDetail = &v
+
+	// 			break
+	// 		}
+	// 	}
+	// }
+
+	// 	respItems = append(respItems, *resp)
+	// }
+
+	resp := h.PaginationResp(pag, pag.Result)
 	return &resp, nil
 }
 
