@@ -55,9 +55,9 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 				return nil, errors.New("WalletAddress is invalid")
 			}
 
-			if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
+			/*if reqUsecase.FeeRate != 15 && reqUsecase.FeeRate != 20 && reqUsecase.FeeRate != 25 {
 				return nil, errors.New("fee rate is invalid")
-			}
+			}*/
 
 			if len(reqUsecase.File) == 0 {
 				return nil, errors.New("file is invalid")
