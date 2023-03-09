@@ -16,6 +16,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +31,6 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/contracts/ordinals"
 	"rederinghub.io/utils/eth"
-	"rederinghub.io/utils/fileutil"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -1064,9 +1064,9 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 	}
 
 	if strings.HasPrefix(metaData.Image, "http") {
-		url := utils.ConvertIpfsToHttp(metaData.Image)
+		urlStr := utils.ConvertIpfsToHttp(metaData.Image)
 		client := http.Client{}
-		r, err := client.Get(url)
+		r, err := client.Get(urlStr)
 		if err != nil {
 			return nil, err
 		}
@@ -1075,12 +1075,20 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 		if err != nil {
 			return nil, err
 		}
-		if ext, err := utils.GetFileExtensionFromUrl(url); err == nil {
-			if imageByte, err := fileutil.ResizeImage(buf, ext, fileutil.MaxImageByteSize); err == nil {
-				nft.Metadata.Image = helpers.Base64Encode(imageByte)
+		ext, err := utils.GetFileExtensionFromUrl(urlStr)
+		if err == nil {
+			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
+			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(buf), name)
+			if err != nil {
+				nft.Metadata.Image = urlStr
+			} else {
+				nft.Metadata.Image = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
+		} else {
+			nft.Metadata.Image = urlStr
 		}
 	}
+
 	return nft, nil
 }
 
