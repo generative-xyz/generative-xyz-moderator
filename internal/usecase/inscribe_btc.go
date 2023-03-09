@@ -284,11 +284,10 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		err := u.Repo.FindOneBy(ctx,
 			inscribeBtc.TableName(),
 			bson.M{
+				"user_uuid":     input.UserUuid,
 				"token_address": input.TokenAddress,
 				"token_id":      input.TokenId,
-				"status": bson.M{
-					"$ne": entity.StatusInscribe_TxMintFailed,
-				}},
+			},
 			inscribeBtc,
 			opt)
 		if err != nil {
@@ -296,7 +295,9 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 				return nil, err
 			}
 		} else {
-			if !inscribeBtc.Expired() {
+			if inscribeBtc.Status == entity.StatusInscribe_Pending && !inscribeBtc.Expired() {
+				return inscribeBtc, nil
+			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
 				return inscribeBtc, nil
 			}
 		}
@@ -984,6 +985,9 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		}
 		for _, inscribe := range inscribes {
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
+				continue
+			}
+			if inscribe.Status == entity.StatusInscribe_Pending && inscribe.Expired() {
 				continue
 			}
 			mapNftMinted[fmt.Sprintf("%s_%s", inscribe.TokenAddress, inscribe.TokenId)] = true
