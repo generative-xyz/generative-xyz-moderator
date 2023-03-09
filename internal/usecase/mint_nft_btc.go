@@ -1034,7 +1034,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
-		if item.IsSubItem {
+		if item.IsSubItem || item.Quantity > 1 {
 			continue
 		}
 
