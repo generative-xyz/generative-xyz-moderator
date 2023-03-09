@@ -52,6 +52,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 	resp, err := algoliaClient.Search("inscriptions", filter)
 	if err != nil {
+		uc.Logger.Error(err)
 		return nil, 0, 0, err
 	}
 
@@ -80,6 +81,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 				SetResult(&resp).
 				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, i.InscriptionId))
 			if err != nil {
+				uc.Logger.Error(err)
 				continue
 			}
 			userAddresses = append(userAddresses, resp.Address)
@@ -98,6 +100,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	pe.Page = 1
 	tokens, err := uc.Repo.FilterTokenUri(*pe)
 	if err != nil {
+		uc.Logger.Error(err)
 		// return nil, 0, 0, err
 	}
 	iTokens := tokens.Result
@@ -112,6 +115,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 
 	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
 	if err != nil {
+		uc.Logger.Error(err)
 		// return nil, 0, 0, err
 	}
 
