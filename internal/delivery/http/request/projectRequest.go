@@ -41,6 +41,9 @@ type CreateBTCProjectReq struct {
 	IsFullChain            bool     `json:"isFullChain"`
 	CaptureImageTime       *int     `json:"captureImageTime"`
 	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
+	Reservers              []string `json:"reservers"`
+	ReserveMintPrice       string   `json:"reserveMintPrice"`
+	ReserveMintLimit       string   `json:"reserveMintLimit"`
 }
 
 type UpdateBTCProjectReq struct {
