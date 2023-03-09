@@ -1065,33 +1065,34 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 	if metaData.Image == "" {
 		return nft, nil
 	}
-
+	var urlStr string
 	if strings.HasPrefix(metaData.Image, "http") {
-		urlStr := utils.ConvertIpfsToHttp(metaData.Image)
-		client := http.Client{}
-		r, err := client.Get(urlStr)
-		if err != nil {
-			return nil, err
-		}
-		defer r.Body.Close()
-		buf, err := io.ReadAll(r.Body)
-		if err != nil {
-			return nil, err
-		}
-		ext, err := utils.GetFileExtensionFromUrl(urlStr)
-		if err == nil {
+		uploadImage := func(urlStr string) string {
+			urlStr = utils.ConvertIpfsToHttp(metaData.Image)
+			client := http.Client{}
+			r, err := client.Get(urlStr)
+			if err != nil {
+				return urlStr
+			}
+			defer r.Body.Close()
+			buf, err := io.ReadAll(r.Body)
+			if err != nil {
+				return urlStr
+			}
+			ext, err := utils.GetFileExtensionFromUrl(urlStr)
+			if err != nil {
+				return urlStr
+			}
 			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
 			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(buf), name)
 			if err != nil {
-				nft.Metadata.Image = urlStr
-			} else {
-				nft.Metadata.Image = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+				return urlStr
 			}
-		} else {
-			nft.Metadata.Image = urlStr
+			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
+		urlStr = uploadImage(metaData.Image)
 	}
-
+	nft.Metadata.Image = urlStr
 	return nft, nil
 }
 
