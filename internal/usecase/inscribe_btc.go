@@ -292,7 +292,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			inscribeBtc,
 			opt)
 		if err != nil {
-			if !errors.Is(err, mongo.ErrNilDocument) {
+			if !errors.Is(err, mongo.ErrNoDocuments) {
 				return nil, err
 			}
 		} else {
