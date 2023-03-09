@@ -98,7 +98,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	pe.Page = 1
 	tokens, err := uc.Repo.FilterTokenUri(*pe)
 	if err != nil {
-		return nil, 0, 0, err
+		// return nil, 0, 0, err
 	}
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
@@ -112,7 +112,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 
 	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
 	if err != nil {
-		return nil, 0, 0, err
+		// return nil, 0, 0, err
 	}
 
 	mapProject := make(map[string]*entity.Projects)
