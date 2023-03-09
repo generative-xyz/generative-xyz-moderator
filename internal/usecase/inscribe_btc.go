@@ -265,7 +265,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.Amount = mfTotal
 	walletAddress.MintFee = mfMintFee
 	walletAddress.SentTokenFee = mfSentTokenFee
-
 	walletAddress.OriginUserAddress = input.WalletAddress
 	walletAddress.IsConfirm = false
 	walletAddress.IsMinted = false
@@ -821,7 +820,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err.Error())
-			u.Logger.Error("BtcSendNFTForBuyOrder.helpers.JsonTransform", errPack.Error(), errPack)
+			u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
 			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
 			continue
 		}

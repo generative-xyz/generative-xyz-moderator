@@ -17,6 +17,11 @@ test:
 build:
 	go build -v -ldflags $(LDFLAGS) -o $(APP) 
 
+swagger:
+	swag init -g main.go
+
+api:
+	go run main.go
 
 unittest:
 	go test -short  ./internal/app_test
