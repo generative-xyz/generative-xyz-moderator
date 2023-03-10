@@ -281,6 +281,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 						},
 					},
 					{"orderID", "$listing._id"},
+					{"sell_verified", "$listing.verified"},
 				},
 			},
 		},
@@ -296,6 +297,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"priority", 1},
 					{"inscription_index", 1},
 					{"order_inscription_index", 1},
+					{"sell_verified", 1},
 					{"thumbnail", 1},
 					{"buyable", 1},
 					{"priceBTC", 1},
@@ -549,11 +551,11 @@ func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.Agg
 		Value: projectID,
 	}}
 
-	pipeLine :=  bson.A{
+	pipeLine := bson.A{
 		bson.D{
 			{"$unwind", bson.D{
 				{"path", "$parsed_attributes_str"},
-			 	{"preserveNullAndEmptyArrays", true},
+				{"preserveNullAndEmptyArrays", true},
 			}},
 		},
 		bson.D{
@@ -568,7 +570,7 @@ func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.Agg
 							{"token_id", "$token_id"},
 						},
 					},
-					{"parsed_attributes_str", bson.D{{"$push", "$parsed_attributes_str" }}},
+					{"parsed_attributes_str", bson.D{{"$push", "$parsed_attributes_str"}}},
 					{"size", bson.D{{"$sum", 1}}},
 				},
 			},
@@ -578,8 +580,7 @@ func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.Agg
 		},
 	}
 
-	
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), pipeLine )
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), pipeLine)
 	if err != nil {
 		return nil, err
 	}
