@@ -59,7 +59,7 @@ type MoralisToken struct {
 }
 
 func (s MoralisToken) IsERC1155Type() bool {
-	return strings.ToLower(s.ContractType) == "ERC1155"
+	return strings.ToUpper(s.ContractType) == "ERC1155"
 }
 
 type InscribeBTC struct {
