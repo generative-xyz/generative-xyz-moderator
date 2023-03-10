@@ -89,7 +89,7 @@ func GenerateSlug(key string) string {
 	key = strings.ReplaceAll(key, `=`, "")
 	//key = regexp.MustCompile(`[^a-zA-Z0-9?:-]+`).ReplaceAllString(key, "")
 	key = strings.ToLower(key)
-	key = ReplaceNonUTF8(key)
+	//key = ReplaceNonUTF8(key)
 	return key
 }
 

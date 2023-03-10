@@ -92,19 +92,22 @@ func (u Usecase) CreateInscriptionFiles() {
 		defer wg.Done()
 
 		data100 := data[0:100]
+		spew.Dump(len(data100))
 		u.CreateData("100 items", "100", data100, 0)
 	}(&wg)
 	
 	go func(wg *sync.WaitGroup){
 		defer wg.Done()
 		data100 := data[100:(100 + 1000)]
+		spew.Dump(len(data100))
 		u.CreateData("1000 items", "1000", data100, 100)
 	}(&wg)
 	
 	go func(wg *sync.WaitGroup){
 		defer wg.Done()
 		data100 := data[(100 + 1000):(100 + 1000 + 10000)]
-		u.CreateData("9000 items",  "9000", data100, (100 + 1000))
+		spew.Dump(len(data100))
+		u.CreateData("10000 items",  "10000", data100, (100 + 1000))
 	}(&wg)
 	
 	wg.Wait()
@@ -132,10 +135,10 @@ func (u Usecase) CreateData(pjName string, folderName string, data[]string, from
 	
 
 	mtdata := MetaJson{
-		Name: fmt.Sprintf("Project %s",pjName),
+		Name: fmt.Sprintf("%s",pjName),
 		InscriptionIcon: data[0],
 		Supply: fmt.Sprintf("%d", len(data)),
-		Slug: helpers.GenerateSlug(fmt.Sprintf("Project %s",pjName)),
+		Slug: helpers.GenerateSlug(fmt.Sprintf("%s",pjName)),
 		WalletAddress: "0x0000000000000000000000000000000000000000",
 		Royalty: "0",
 	}
@@ -149,5 +152,4 @@ func (u Usecase) CreateData(pjName string, folderName string, data[]string, from
 		return
 	}
 
-	spew.Dump(len(data100Data))
 }
