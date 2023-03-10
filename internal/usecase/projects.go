@@ -34,7 +34,6 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
-	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
@@ -571,71 +570,6 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 	}
 
 	return airDrop, nil
-}
-
-func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
-	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
-
-	var category, description string
-	if len(project.Categories) > 0 {
-		// we assume that there are only one category
-		categoryEntity, err := u.GetCategory(project.Categories[0])
-		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
-			return
-		}
-		category = categoryEntity.Name
-		description = fmt.Sprintf("Category: %s\n", category)
-	}
-	address := owner.WalletAddressBTC
-	if address == "" {
-		address = owner.WalletAddress
-	}
-	ownerName := u.resolveShortName(owner.DisplayName, address)
-	collectionName := project.Name
-
-	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
-		if value == "" {
-			return fields
-		}
-		return append(fields, discordclient.Field{
-			Name:   name,
-			Value:  value,
-			Inline: inline,
-		})
-	}
-	fields = addFields(fields, "", project.Description, false)
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
-	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
-
-	discordMsg := discordclient.Message{
-		Username: "Satoshi 27",
-		Content:  "**NEW DROP**",
-		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
-			Description: description,
-			//Author: discordclient.Author{
-			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),
-			//	Url:     fmt.Sprintf("%s/profile/%s", domain, owner.WalletAddress),
-			//	IconUrl: owner.Avatar,
-			//},
-			Fields: fields,
-			Image: discordclient.Image{
-				Url: project.Thumbnail,
-			},
-		}},
-	}
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
-
-	u.Logger.Info("sending message to discord", discordMsg)
-
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("error sending message to discord", err)
-	}
 }
 
 func (u Usecase) resolveMintPriceBTC(priceStr string) string {
