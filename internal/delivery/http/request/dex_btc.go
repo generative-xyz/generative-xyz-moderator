@@ -14,6 +14,7 @@ type CancelDexBTCListing struct {
 
 type SubmitDexBTCBuy struct {
 	Txhash        string `json:"txhash"`
+	RawTx         string `json:"raw_tx"`
 	InscriptionID string `json:"inscription_id"`
 	OrderID       string `json:"order_id"`
 }

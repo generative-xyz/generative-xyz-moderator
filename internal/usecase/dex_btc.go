@@ -37,6 +37,36 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 	return nil
 }
 
+func (u Usecase) BuyDexBTCListing(txhash string, raw_tx string, inscription_id string, order_id string) error {
+	orderInfo, err := u.Repo.GetDexBTCListingOrderByID(order_id)
+	if err != nil {
+		return err
+	}
+	if orderInfo.InscriptionID != inscription_id {
+		return errors.New("invalid buy request")
+	}
+
+	//todo: 2077 check valid tx
+
+	if !orderInfo.Matched && orderInfo.MatchedTx == "" {
+		_, err = btc.SendRawTxfromQuickNode(raw_tx, u.Config.QuicknodeAPI)
+		if err != nil {
+			fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, txhash)
+			return err
+		}
+		currentTime := time.Now()
+		orderInfo.MatchedTx = txhash
+		orderInfo.MatchAt = &currentTime
+	} else {
+		return errors.New("order already buying/bought")
+	}
+	_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(orderInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscription_id string, split_tx string) (*entity.DexBTCListing, error) {
 	newListing := entity.DexBTCListing{
 		RawPSBT:       raw_psbt,
