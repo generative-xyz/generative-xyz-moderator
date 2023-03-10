@@ -72,11 +72,11 @@ type InternalTokenURIResp struct {
 }
 
 type OrdinalsData struct {
-	Sat           string `json:"sat"`
-	ContentType   string `json:"contentType"`
-	ContentLength string `json:"contentLength"`
-	Timestamp     string `json:"timestamp"`
-	Block         int64  `json:"block"`
+	Sat           float64 `json:"sat"`
+	ContentType   string  `json:"contentType"`
+	ContentLength string  `json:"contentLength"`
+	Timestamp     string  `json:"timestamp"`
+	Block         int64   `json:"block"`
 }
 
 type InternalTokenTraitsResp struct {
