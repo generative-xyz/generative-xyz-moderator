@@ -989,7 +989,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
-			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
+			if inscribe.Status == entity.StatusInscribe_TxMintFailed ||
+				inscribe.Status == entity.StatusInscribe_Pending {
 				continue
 			}
 			if inscribe.InscriptionID != "" {
