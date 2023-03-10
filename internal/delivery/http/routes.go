@@ -188,6 +188,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
+	// mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	// mintNftBtc.HandleFunc("/{uuid}", h.getDetailMintNftBtc).Methods("GET")
+
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
 	marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
@@ -226,6 +229,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
+	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
@@ -251,6 +255,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	// inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
 
+	// Firebase FCM registration token management
+	fcm := api.PathPrefix("/fcm").Subrouter()
+	fcm.Use(h.MiddleWare.AuthorizeFunc)
+	fcm.HandleFunc("/token", h.getFcmToken).Methods("GET")
+	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
+	// For test, will remove
+	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

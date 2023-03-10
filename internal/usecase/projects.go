@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -35,7 +34,6 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/contracts/generative_project_contract"
-	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/redis"
@@ -63,45 +61,6 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 
 	u.Logger.ErrorAny("CreateProject", zap.Any("project", pe))
 	return pe, nil
-}
-
-func (u Usecase) networkFeeBySize(size int64) int64 {
-	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
-
-	if err != nil {
-		fmt.Print(err.Error())
-		// os.Exit(1) // remove for B
-		return -1
-	}
-
-	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		u.Logger.Error(err)
-		return -1
-	} else {
-		type feeRate struct {
-			fastestFee  int
-			halfHourFee int
-			hourFee     int
-			economyFee  int
-			minimumFee  int
-		}
-
-		feeRateObj := feeRate{}
-
-		err = json.Unmarshal(responseData, &feeRateObj)
-		if err != nil {
-			u.Logger.Error(err)
-			return -1
-		}
-		if feeRateObj.fastestFee > 0 {
-			feeRateValue = int64(feeRateObj.fastestFee)
-		}
-	}
-
-	return size * feeRateValue
-
 }
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
@@ -613,71 +572,6 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 	return airDrop, nil
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
-	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
-
-	var category, description string
-	if len(project.Categories) > 0 {
-		// we assume that there are only one category
-		categoryEntity, err := u.GetCategory(project.Categories[0])
-		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
-			return
-		}
-		category = categoryEntity.Name
-		description = fmt.Sprintf("Category: %s\n", category)
-	}
-	address := owner.WalletAddressBTC
-	if address == "" {
-		address = owner.WalletAddress
-	}
-	ownerName := u.resolveShortName(owner.DisplayName, address)
-	collectionName := project.Name
-
-	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
-		if value == "" {
-			return fields
-		}
-		return append(fields, discordclient.Field{
-			Name:   name,
-			Value:  value,
-			Inline: inline,
-		})
-	}
-	fields = addFields(fields, "", project.Description, false)
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
-	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
-
-	discordMsg := discordclient.Message{
-		Username: "Satoshi 27",
-		Content:  "**NEW DROP**",
-		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
-			Description: description,
-			//Author: discordclient.Author{
-			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),
-			//	Url:     fmt.Sprintf("%s/profile/%s", domain, owner.WalletAddress),
-			//	IconUrl: owner.Avatar,
-			//},
-			Fields: fields,
-			Image: discordclient.Image{
-				Url: project.Thumbnail,
-			},
-		}},
-	}
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
-
-	u.Logger.Info("sending message to discord", discordMsg)
-
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.Error("error sending message to discord", err)
-	}
-}
-
 func (u Usecase) resolveMintPriceBTC(priceStr string) string {
 	price, err := strconv.Atoi(priceStr)
 	if err != nil {
@@ -746,6 +640,14 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 	if len(req.Categories) > 0 {
 		p.Categories = []string{req.Categories[0]}
+	}
+
+	p.Reservers = req.Reservers
+	p.ReserveMintLimit = *req.ReserveMintLimit
+
+	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
+		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
+		p.ReserveMintPrice = mReserveMintPrice.String()
 	}
 
 	if req.MaxSupply != nil && *req.MaxSupply != 0 && *req.MaxSupply != p.MaxSupply {
@@ -1125,11 +1027,19 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		} */
 	// cal fee info:
 	if c.MintingInfo.Index < c.MaxSupply {
-		feeInfos, err := u.calMintFeeInfo(c)
+
+		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)
+		if !ok {
+			mintPrice = big.NewInt(0)
+		}
+
+		// cal fee:
+		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE)
 		if err != nil {
 			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 			return nil, err
 		}
+
 		// set price, fee:
 		c.NetworkFee = feeInfos["btc"].NetworkFee
 		c.NetworkFeeEth = feeInfos["eth"].NetworkFee

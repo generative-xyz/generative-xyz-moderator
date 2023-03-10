@@ -104,6 +104,47 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 
 }
 
+func (r Repository) AggregateWithDrawByProject(projectID string, paytype string) ( []entity.AggregateAmount, error) {
+	confs := []entity.AggregateAmount{}
+	f :=  bson.A{}
+	f = append(f, bson.M{"payType": paytype})
+	f = append(f, bson.M{"withdrawItemID": projectID})
+	f = append(f, bson.M{"status": bson.M{"$in": []uint{entity.StatusWithdraw_Approve}}})
+	
+	// PayType *string
+	// ReferreeIDs []string
+	matchStage := bson.M{"$match": bson.M{"$and": f}}
+
+	pipeLine := bson.A{
+		matchStage,
+		bson.M{"$group": bson.M{"_id": 
+			bson.M{"walletAddress": "$walletAddress", "payType": "$payType"}, 
+			"amount": bson.M{"$sum": bson.M{"$toDouble": "$amount"}},
+		}},
+		bson.M{"$sort": bson.M{"_id": -1}},
+	}
+	
+	cursor, err := r.DB.Collection(entity.Withdraw{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {	
+		tmp := &entity.AggregateAmount{}
+		err = helpers.Transform(item, tmp)
+		confs = append(confs, *tmp)
+	}
+	
+	return confs, nil
+
+}
+
 func (r Repository) UpdateWithDrawStatus(UUID string, status int) error {
 	filter := bson.D{
 		{Key: utils.KEY_UUID, Value: UUID},

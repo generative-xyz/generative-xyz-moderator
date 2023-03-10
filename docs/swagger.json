@@ -1262,6 +1262,113 @@
                 }
             }
         },
+        "/fcm/token": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "FCM Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "FCM"
+                ],
+                "summary": "FCM Token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device Type",
+                        "name": "device_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.FirebaseRegistrationToken"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create FCM Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "FCM"
+                ],
+                "summary": "Create FCM Token",
+                "parameters": [
+                    {
+                        "description": "Create fcm request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateFcmRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/fcm/token/data": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create FCM Token Test Data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "FCM"
+                ],
+                "summary": "Create FCM Token Test Data",
+                "parameters": [
+                    {
+                        "description": "Create fcm test data request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateFcmDataTest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/files": {
             "post": {
                 "security": [
@@ -1759,7 +1866,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -4389,6 +4496,38 @@
                 }
             }
         },
+        "entity.FirebaseRegistrationToken": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "type": "string"
+                },
+                "device_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "registration_token": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "user_wallet": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.InscribeBTCResp": {
             "type": "object",
             "properties": {
@@ -4419,6 +4558,9 @@
                 "isSuccess": {
                     "description": "default: false. If InscriptionID was sent to user, it's true",
                     "type": "boolean"
+                },
+                "projectTokenId": {
+                    "type": "string"
                 },
                 "status": {
                     "description": "status for record",
@@ -5113,6 +5255,20 @@
                 }
             }
         },
+        "nfts.InscribeBTC": {
+            "type": "object",
+            "properties": {
+                "inscription_id": {
+                    "type": "string"
+                },
+                "project_token_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "nfts.MoralisToken": {
             "type": "object",
             "properties": {
@@ -5125,6 +5281,9 @@
                 "contract_type": {
                     "type": "string"
                 },
+                "inscribe_btc": {
+                    "$ref": "#/definitions/nfts.InscribeBTC"
+                },
                 "is_minted": {
                     "type": "boolean"
                 },
@@ -5132,6 +5291,7 @@
                     "type": "string"
                 },
                 "metadata_obj": {
+                    "description": "Custom",
                     "$ref": "#/definitions/nfts.MoralisTokenMetadata"
                 },
                 "name": {
@@ -5346,6 +5506,42 @@
                     "type": "string"
                 },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateFcmDataTest": {
+            "type": "object",
+            "required": [
+                "data",
+                "device_type"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "device_type": {
+                    "type": "string"
+                },
+                "registration_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateFcmRequest": {
+            "type": "object",
+            "required": [
+                "device_type",
+                "registration_token"
+            ],
+            "properties": {
+                "device_type": {
+                    "type": "string"
+                },
+                "registration_token": {
                     "type": "string"
                 }
             }
@@ -5606,6 +5802,18 @@
                 },
                 "projectID": {
                     "type": "string"
+                },
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "royalty": {
                     "type": "integer"
@@ -6016,7 +6224,7 @@
                     "type": "string"
                 },
                 "sat": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "timestamp": {
                     "type": "string"

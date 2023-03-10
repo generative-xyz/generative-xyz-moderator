@@ -113,6 +113,16 @@ type Projects struct {
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
 }
 
+type ProjectsHaveMinted struct {
+	TokenID string `bson:"tokenid" json:"tokenID"`
+	Name    string `bson:"name" json:"name"`
+	Index   int    `bson:"index" json:"index"`
+	MintPrice   			 string    `bson:"mintPrice"` 
+	MintPriceEth             string `bson:"mintpriceeth"`
+	CreatorAddrr             string             `bson:"creatorAddress" json:"creatorAddrr"`
+
+}
+
 type ReportProject struct {
 	OriginalLink      string `bson:"originalLink" json:"originalLink"`
 	ReportUserAddress string `bson:"reportUserAddress" json:"reportUserAddress"`

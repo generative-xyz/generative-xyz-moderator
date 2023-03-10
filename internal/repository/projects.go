@@ -31,6 +31,33 @@ func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
+
+func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error) {
+	projects := []entity.ProjectsHaveMinted{}
+	f := bson.M{}
+	f["index"] = bson.M{"$gte": 1}
+	//f["tokenid"] = "1001572"
+	opts := options.Find().SetProjection(bson.D{
+		{"tokenid", 1},
+		{"name", 1},
+		{"index", 1},
+		{"mintpriceeth", 1},
+		{"mintPrice", 1},
+		{"creatorAddrr", 1},
+		
+	})
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
 func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
@@ -620,6 +647,73 @@ func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, er
 			return uint64(result[0].TotalCount[0].Count), nil
 		}
 		return 0, nil
+	}
+
+	return 0, nil
+}
+
+func (r Repository) ProjectGetListingVolume(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingVolume{}
+	pipeline := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"matched", true},
+					{"cancelled", false},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"let", bson.D{{"id", "$_id"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+						},
+					},
+					{"as", "collection_id"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$collection_id"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"Amount", bson.D{{"$sum", "$amount"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 0},
+					{"totalAmount", "$Amount"},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		return uint64(result[0].TotalAmount), nil
 	}
 
 	return 0, nil
