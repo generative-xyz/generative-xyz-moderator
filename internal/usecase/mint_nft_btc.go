@@ -118,8 +118,13 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
+	mintPrice, ok := big.NewInt(0).SetString(p.MintPrice, 10)
+	if !ok {
+		mintPrice = big.NewInt(0)
+	}
+
 	// cal fee:
-	feeInfos, err := u.calMintFeeInfo(p)
+	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate))
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err
@@ -199,6 +204,67 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 	return u.Repo.UpdateCancelMintNftBtc(mintItem.UUID)
 }
 
+// get list mint:
+func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
+	result := []structure.MintingInscription{}
+
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range listMintV2 {
+		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+		if err != nil {
+			return nil, err
+		}
+
+		status := ""
+		if time.Since(item.ExpiredAt) >= 1*time.Second && item.Status == entity.StatusMint_Pending {
+			continue
+		}
+		if (item.Status) == -1 {
+			continue
+		}
+		switch item.Status {
+		case entity.StatusMint_NeedToRefund, entity.StatusMint_TxRefundFailed:
+			status = entity.StatusMintToText[entity.StatusMint_Refunding]
+		case entity.StatusMint_TxMintFailed:
+			status = entity.StatusMintToText[entity.StatusMint_Minting]
+		default:
+			status = entity.StatusMintToText[item.Status]
+		}
+
+		if item.PayType == "eth" {
+			if item.Status == entity.StatusMint_Refunded {
+				status = entity.StatusMintToText[entity.StatusMint_Refunding]
+			}
+		}
+
+		minting := structure.MintingInscription{
+			ID:            item.UUID,
+			CreatedAt:     item.CreatedAt,
+			Status:        status,
+			StatusIndex:   int(item.Status),
+			FileURI:       item.FileURI,
+			ProjectID:     item.ProjectID,
+			ProjectImage:  projectInfo.Thumbnail,
+			ProjectName:   projectInfo.Name,
+			InscriptionID: item.InscriptionID,
+			IsCancel:      int(item.Status) == 0,
+			Quantity:      item.Quantity,
+		}
+
+		if minting.StatusIndex != 0 {
+			minting.Quantity = 1
+		}
+
+		result = append(result, minting)
+	}
+
+	return result, nil
+}
+
 func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription, error) {
 	mintItem, _ := u.Repo.FindMintNftBtcByNftID(uuid)
 	if mintItem == nil {
@@ -213,65 +279,48 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 	type statusprogressStruct struct {
 		Message string `json:"message"`
 		Status  bool   `json:"status"`
+		Title   string `json:"title"`
 		Tx      string `json:"tx"`
 	}
 
 	statusMap := make(map[string]statusprogressStruct)
 
 	statusMap["1"] = statusprogressStruct{
-		Message: entity.StatusMintToText[entity.StatusMint_Pending],
-		Status:  int(mintItem.Status) > 0,
+		Title:  entity.StatusMintToText[entity.StatusMint_Pending],
+		Status: int(mintItem.Status) > 0,
 	}
 	statusMap["2"] = statusprogressStruct{
-		Message: entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
-		Status:  int(mintItem.Status) > 1,
+		Title:  entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
+		Status: int(mintItem.Status) > 1,
 	}
 
 	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded || mintItem.Status == entity.StatusMint_TxRefundFailed {
 		statusMap["3"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Refunding],
-			Status:  mintItem.Status == entity.StatusMint_Refunding,
+			Title:   entity.StatusMintToText[entity.StatusMint_Refunding],
+			Status:  mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded || mintItem.Status == entity.StatusMint_TxRefundFailed,
 			Tx:      mintItem.TxRefund,
+			Message: mintItem.ReasonRefund,
 		}
-		if mintItem.IsRefund {
-			statusMap["3"] = statusprogressStruct{
-				Message: entity.StatusMintToText[entity.StatusMint_Refunded],
-				Status:  mintItem.Status == entity.StatusMint_Refunded,
-				Tx:      mintItem.TxRefund,
-			}
-		} else {
-			statusMap["3"] = statusprogressStruct{
-				Message: entity.StatusMintToText[entity.StatusMint_Refunding],
-				Status:  false,
-				Tx:      mintItem.TxRefund,
-			}
+
+		statusMap["4"] = statusprogressStruct{
+			Title:   entity.StatusMintToText[entity.StatusMint_Refunded],
+			Status:  mintItem.Status == entity.StatusMint_Refunded,
+			Tx:      mintItem.TxRefund,
+			Message: mintItem.ReasonRefund,
 		}
 
 	} else {
 
 		statusMap["3"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Minting],
-			Status:  mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
-			Tx:      mintItem.TxMintNft,
-		}
-		if mintItem.IsMinted {
-			statusMap["3"] = statusprogressStruct{
-				Message: entity.StatusMintToText[entity.StatusMint_Minted],
-				Status:  mintItem.IsMinted,
-				Tx:      mintItem.TxMintNft,
-			}
+			Title:  entity.StatusMintToText[entity.StatusMint_Minting],
+			Status: mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
+			Tx:     mintItem.TxMintNft,
 		}
 
 		statusMap["4"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_SendingNFTToUser],
-			Status:  mintItem.IsSentUser || mintItem.Status == entity.StatusMint_SendingNFTToUser,
-			Tx:      mintItem.TxSendNft,
-		}
-
-		statusMap["5"] = statusprogressStruct{
-			Message: "Completed",
-			Status:  mintItem.IsSentUser,
-			Tx:      mintItem.TxSendNft,
+			Title:  entity.StatusMintToText[entity.StatusMint_Minted],
+			Status: mintItem.IsMinted,
+			Tx:     mintItem.TxMintNft,
 		}
 
 	}
@@ -398,7 +447,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "compare balance err", err.Error(), true)
 
 			item.Status = entity.StatusMint_NeedToRefund
-			item.ReasonRefund = "Not enough balance"
+			item.ReasonRefund = "Not enough balance."
 			u.Repo.UpdateMintNftBtc(&item)
 			continue
 		}
@@ -494,7 +543,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if p.MintingInfo.Index >= p.MaxSupply {
 
 			// update need to return:
-			item.ReasonRefund = "project is minted out"
+			item.ReasonRefund = "Project is minted out."
 			item.Status = entity.StatusMint_NeedToRefund
 
 			_, err = u.Repo.UpdateMintNftBtc(&item)
@@ -1339,7 +1388,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 }
 
 // please donate P some money:
-func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeInfo, error) {
+func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[string]entity.MintFeeInfo, error) {
 
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
@@ -1354,28 +1403,30 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 	var err error
 
 	// cal min price:
-	mintPrice, ok := mintPrice.SetString(p.MintPrice, 10)
-	if !ok {
-		err = errors.New("can not parse MintPrice")
-		u.Logger.Error("u.calMintFeeInfo.Check(SetString)", err.Error(), err)
-		return nil, err
+	mintPrice = mintPrice.SetUint64(uint64(mintBtcPrice))
+
+	if fileSize > 0 {
+
+		// auto fee if feeRate <= 0:
+		if feeRate <= 0 {
+			calNetworkFee := u.networkFeeBySize(int64(fileSize / 4))
+			if calNetworkFee == -1 {
+				err = errors.New("can not cal networkFeeBySize")
+				u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
+				return nil, err
+			}
+			feeMintNft = big.NewInt(calNetworkFee)
+		} else {
+			calNetworkFee := int64(fileSize/4) * feeRate
+			// fee mint:
+			feeMintNft = big.NewInt(calNetworkFee)
+		}
+
 	}
 
-	if p.MaxFileSize > 0 {
-		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
-		if calNetworkFee == -1 {
-			err = errors.New("can not cal networkFeeBySize")
-			u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
-			return nil, err
-		}
-		// fee mint:
-		feeMintNft = big.NewInt(calNetworkFee)
-
-	} else {
-		feeMintNft, _ = feeMintNft.SetString(p.MintPrice, 10)
-		if !ok {
-			feeMintNft = big.NewInt(0)
-		}
+	// default feeMintNft if 0:
+	if feeMintNft.Uint64() == 0 {
+		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
 
 	var btcRate, ethRate float64

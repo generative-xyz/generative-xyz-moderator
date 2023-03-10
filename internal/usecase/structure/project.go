@@ -119,3 +119,21 @@ type ProjectAnimationUrl struct {
 	Image        string `json:"image"`
 	AnimationUrl string `json:"animation_url"`
 }
+
+type VolumnLogs struct {
+	ProjectID string `json:"projectID"`
+	Paytype string `json:"payType"`
+	OldMinted int `json:"oldMinted"`
+	NewMinted int `json:"newMinted"`
+	TotalMinted int `json:"totaMinted"`
+	
+	OldAmount string `json:"oldEthAmount"`
+	NewAmount string `json:"newAmount"`
+	TotalAmount string `json:"totalAmount"`
+	TotalEarnings string `json:"totalEarnings"`
+	ApprovedWithdraw string `json:"approvedWithdraw"`
+	Available string `json:"available"`
+	SeparateRate string `json:"separateRate"`
+	GenEarnings string `json:"genEarnings"`
+	MintPrice int `json:"mintPrice"`
+}

@@ -141,11 +141,11 @@ func (h ScronHandler) StartServer() {
 	// })
 
 	//alway 10 minutes crontab
-	// c.AddFunc("0 */5 * * *", func() {
-	// 	h.Usecase.JobAggregateVolumns()
+	c.AddFunc("0 */1 * * *", func() {
+		h.Usecase.JobAggregateVolumns()
 
-	// 	h.Usecase.JobAggregateReferral()
-	// })
+		h.Usecase.JobAggregateReferral()
+	})
 
 	c.AddFunc("*/10 * * * *", func() {
 		err := h.Usecase.JobSyncTraitStats()
