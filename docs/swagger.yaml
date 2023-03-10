@@ -2314,9 +2314,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create FCM Token
+      description: Create FCM Token Test Data
       parameters:
-      - description: Create fcm request
+      - description: Create fcm test data request
         in: body
         name: request
         required: true
@@ -2329,7 +2329,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: Create FCM Token
+      summary: Create FCM Token Test Data
       tags:
       - FCM
   /files:

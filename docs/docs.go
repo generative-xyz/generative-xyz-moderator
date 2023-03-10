@@ -1348,7 +1348,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create FCM Token",
+                "description": "Create FCM Token Test Data",
                 "consumes": [
                     "application/json"
                 ],
@@ -1358,10 +1358,10 @@ const docTemplate = `{
                 "tags": [
                     "FCM"
                 ],
-                "summary": "Create FCM Token",
+                "summary": "Create FCM Token Test Data",
                 "parameters": [
                     {
-                        "description": "Create fcm request",
+                        "description": "Create fcm test data request",
                         "name": "request",
                         "in": "body",
                         "required": true,
