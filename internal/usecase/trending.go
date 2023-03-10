@@ -45,6 +45,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 	}
 
 	fromProjectIDToCountListing := map[string]int64{}
+	fromProjectIDToListingVolumn := map[string]int64{}
 
 	for page := int64(1); ; page++ {
 		u.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
@@ -69,6 +70,9 @@ func (u Usecase) JobSyncProjectTrending() error {
 			}
 			projectId := listing.ProjectInfo[0].ProjectID
 			fromProjectIDToCountListing[projectId]++
+			if listing.Matched == true {
+				fromProjectIDToListingVolumn[projectId] += int64(listing.Amount)
+			}
 		}
 	}
 
@@ -105,6 +109,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 			}
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
 			volumnInBtc := float64(volumnInSatoshi) / float64(SATOSHI_EACH_BTC)
+			volumnInBtc += float64(fromProjectIDToListingVolumn[project.TokenID])
 			_countMint, err := u.Repo.CountMintActivity(project.TokenID)
 			if err != nil {
 				return err
