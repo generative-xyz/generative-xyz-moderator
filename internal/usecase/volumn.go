@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -251,49 +250,61 @@ type csvLine struct {
 }
 
 func (u Usecase) MigrateFromCSV() {
-	f, err := os.Open("artist_balance_1.csv")
-	if err != nil {
-		return
-	}
+	// f, err := os.Open("artist_balance_1.csv")
+	// if err != nil {
+	// 	return
+	// }
 
-	// remember to close the file at the end of the program
-	defer f.Close()
+	// // remember to close the file at the end of the program
+	// defer f.Close()
 
-	// read csv values using csv.Reader
-	csvReader := csv.NewReader(f)
-	data, err := csvReader.ReadAll()
-	if err != nil {
-		return
-	}
+	// // read csv values using csv.Reader
+	// csvReader := csv.NewReader(f)
+	// data, err := csvReader.ReadAll()
+	// if err != nil {
+	// 	return
+	// }
 
-	csvData := []csvLine{}
+	//csvData := []csvLine{}
 	// convert records to array of structs
-	for i, line := range data {
-		if i > 1 { // omit header line
-			tmp := csvLine{
-				ProjectID:  line[0],
-				Artist:     line[1],
-				Collection: line[2],
-				Status:     line[3],
-				BTC:        line[4],
-				ETH:        line[5],
-			}
+	// for i, _ := range data {
+	// 	if i > 1 { // omit header line
+	// 		tmp := csvLine{
+	// 			ProjectID:  "1001311",
+	// 			Artist:     "crashblossom",
+	// 			Collection: "RECALL",
+	// 			//Status:     line[3],
+	// 			BTC:        "0.045",
+	// 			ETH:        "43.40304",
+	// 		}
 
-			csvData = append(csvData, tmp)
-		}
+	// 		csvData = append(csvData, tmp)
+	// 	}
+	// }
+	//spew.Dump(len(csvData))
+	//processCsvData := []csvLine{}
+	// for _, csv := range csvData {
+	// 	// if strings.ToLower(csv.Status) == "scam" {
+	// 	// 	continue
+	// 	// }
+	// 	// if csv.BTC == "0.00000" && csv.ETH == "0.00000" {
+	// 	// 	continue
+	// 	// }
+	// 	processCsvData = append(processCsvData, csv)
+	// }
+
+	tmp := csvLine{
+		ProjectID:  "1001311",
+		Artist:     "crashblossom",
+		Collection: "RECALL",
+		//Status:     line[3],
+		BTC:        "0.045",
+		ETH:        "43.40304",
 	}
-	spew.Dump(len(csvData))
+
+	//csvData = append(csvData, tmp)
 	processCsvData := []csvLine{}
-	for _, csv := range csvData {
-		// if strings.ToLower(csv.Status) == "scam" {
-		// 	continue
-		// }
-		// if csv.BTC == "0.00000" && csv.ETH == "0.00000" {
-		// 	continue
-		// }
-		processCsvData = append(processCsvData, csv)
-	}
-
+	processCsvData = append(processCsvData, tmp)
 	spew.Dump(len(processCsvData))
 	wdsETH := []*entity.Withdraw{}
 	for _, csv := range processCsvData {
@@ -333,7 +344,7 @@ func (u Usecase) MigrateFromCSV() {
 
 func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bool, error) {
 	p, err := u.Repo.FindProjectByTokenID(csv.ProjectID)
-	dateString := "2023-02-28T04:05:26.385+00:00"
+	dateString := "2023-03-10T04:05:26.385+00:00"
 	date, _ := time.Parse("2023-02-28T00:00:00.000+00:00", dateString)
 	if err != nil {
 		u.Logger.ErrorAny("CreateWD.FindProjectByTokenID", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType))
@@ -345,13 +356,29 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		PayType:        paymentType,
 		Status:         entity.StatusWithdraw_Approve,
 		WalletAddress:  p.CreatorProfile.WalletAddress,
-		WithdrawFrom:   "migrate_csv",
+		WithdrawFrom:   "fix_bug_while_calculating_volumn",
 		Amount:         "0",
 		EarningReferal: "0",
 		EarningVolume:  "0",
 		TotalEarnings:  "0",
 		WithdrawType:   entity.WithDrawProject,
 		WithdrawItemID: p.TokenID,
+	}
+
+	arrge, err := u.Repo.FindVolumnByWalletAddress(p.CreatorProfile.WalletAddress, paymentType)
+	if err == nil &&  arrge !=nil {
+		wd.EarningVolume = *arrge.Earning
+		wd.TotalEarnings = *arrge.Earning
+		
+		wdf := 0.0
+		wds, err := u.Repo.AggregateWithDrawByProject(csv.ProjectID, paymentType)
+		if err == nil && len(wds) > 0 {
+			for _, wdt := range wds {
+				wdf += wdt.Amount
+			}
+			earningF, _  := strconv.ParseFloat(*arrge.Earning, 10)
+			wd.AvailableBalance = fmt.Sprintf("%d", int(earningF - wdf))
+		}
 	}
 
 	amount := ""
@@ -362,13 +389,13 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("eth", eth))
 			return nil, false, err
 		}
-		if ethFloat > 0 {
-			return nil, false, errors.New("User was not paid")
-		}
+		// if ethFloat > 0 {
+		// 	return nil, false, errors.New("User was not paid")
+		// }
 		if ethFloat == 0 {
 			return nil, false, errors.New("Witdraw with zero")
 		}
-		ethFloat = ethFloat * -1 * 1e10
+		ethFloat = ethFloat * 1e8
 		amount = fmt.Sprintf("%d", int(ethFloat))
 
 	} else {
@@ -378,13 +405,13 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("btc", btc))
 			return nil, false, err
 		}
-		if btcFloat > 0 {
-			return nil, false, errors.New("User was not paid")
-		}
+		// if btcFloat > 0 {
+		// 	return nil, false, errors.New("User was not paid")
+		// }
 		if btcFloat == 0 {
 			return nil, false, errors.New("Witdraw with zero")
 		}
-		btcFloat = btcFloat * -1 * 1e8
+		btcFloat = btcFloat  * 1e8
 		amount = fmt.Sprintf("%d", int(btcFloat))
 	}
 
@@ -398,10 +425,8 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		usr.Avatar = &user.Avatar
 	}
 	wd.Amount = amount
-	wd.EarningVolume = amount
-	wd.TotalEarnings = amount
 	wd.CreatedAt = &date
-	wd.Note = "Add the paid artist on Feb 2023"
+	wd.Note = "Add the paid artist on Mar 2023"
 	u.Logger.LogAny("CreateWD.wd", zap.String("paymentType", paymentType), zap.Any("wd", wd))
 	wd.User = usr
 
