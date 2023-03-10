@@ -1007,6 +1007,25 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		pageListInscribe += 1
 	}
 
+	filterMoralisTokens := func(datas []nfts.MoralisToken) []nfts.MoralisToken {
+		results := make([]nfts.MoralisToken, 0, len(datas))
+		for _, data := range datas {
+			if data.IsERC1155Type() {
+				continue
+			}
+			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", data.TokenAddress, data.TokenID)]; ok {
+				data.IsMinted = true
+				data.InscribeBTC = &nfts.InscribeBTC{
+					Status:         val.Status.Ordinal(),
+					ProjectTokenId: val.ProjectTokenId,
+					InscriptionID:  val.InscriptionID,
+				}
+			}
+			results = append(results, data)
+		}
+		return results
+	}
+
 	if delegateWallet == "" {
 		delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userWallet)
 		if err != nil {
@@ -1023,18 +1042,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				if err != nil {
 					return nil, err
 				}
-				for i := range nft.Result {
-					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
-						nft.Result[i].IsMinted = true
-						nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
-							Status:         val.Status.Ordinal(),
-							ProjectTokenId: val.ProjectTokenId,
-							InscriptionID:  val.InscriptionID,
-						}
-
-					}
-				}
-				resp[delegateWalletAddress].Result = nft.Result
+				resp[delegateWalletAddress].Result = filterMoralisTokens(nft.Result)
 				resp[delegateWalletAddress].Cursor = nft.Cursor
 			}
 		} else {
@@ -1050,17 +1058,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		if err != nil {
 			return nil, err
 		}
-		for i := range nft.Result {
-			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
-				nft.Result[i].IsMinted = true
-				nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
-					Status:         val.Status.Ordinal(),
-					ProjectTokenId: val.ProjectTokenId,
-					InscriptionID:  val.InscriptionID,
-				}
-			}
-		}
-		pag.Result = nft.Result
+		pag.Result = filterMoralisTokens(nft.Result)
 		pag.Cursor = nft.Cursor
 	}
 
