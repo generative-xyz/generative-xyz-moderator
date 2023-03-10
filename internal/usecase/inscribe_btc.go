@@ -295,8 +295,10 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 				return nil, err
 			}
 		} else {
-			if inscribeBtc.Status == entity.StatusInscribe_Pending && !inscribeBtc.Expired() {
-				return inscribeBtc, nil
+			if inscribeBtc.Status == entity.StatusInscribe_Pending {
+				if !inscribeBtc.Expired() {
+					return inscribeBtc, nil
+				}
 			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
 				return inscribeBtc, nil
 			}
@@ -985,9 +987,6 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		}
 		for _, inscribe := range inscribes {
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
-				continue
-			}
-			if inscribe.Status == entity.StatusInscribe_Pending && !inscribe.Expired() {
 				continue
 			}
 			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
