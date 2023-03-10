@@ -58,6 +58,9 @@ type UpdateBTCProjectReq struct {
 	Categories          []string `json:"categories"`
 	CaptureImageTime    *int     `json:"captureImageTime"`
 	LimitMintPerProcess int      `json:"limitMintPerProcess"`
+	Reservers           []string `json:"reservers"`
+	ReserveMintPrice    *string  `json:"reserveMintPrice"`
+	ReserveMintLimit    *int     `json:"reserveMintLimit"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {
