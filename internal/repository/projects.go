@@ -31,6 +31,33 @@ func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
+
+func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error) {
+	projects := []entity.ProjectsHaveMinted{}
+	f := bson.M{}
+	f["index"] = bson.M{"$gte": 1}
+	//f["tokenid"] = "1001572"
+	opts := options.Find().SetProjection(bson.D{
+		{"tokenid", 1},
+		{"name", 1},
+		{"index", 1},
+		{"mintpriceeth", 1},
+		{"mintPrice", 1},
+		{"creatorAddrr", 1},
+		
+	})
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
 func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"tokenid", tokenID}})
