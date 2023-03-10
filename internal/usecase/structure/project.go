@@ -83,7 +83,10 @@ type UpdateBTCProjectReq struct {
 	CreatetorAddress    *string  `json:"createtorAddress"`
 	Categories          []string `json:"categories"`
 	CaptureImageTime    *int     `json:"captureImageTime"`
-	LimitMintPerProcess *int      `json:"limitMintPerProcess"`
+	LimitMintPerProcess *int     `json:"limitMintPerProcess"`
+	Reservers           []string `json:"reservers"`
+	ReserveMintPrice    *string  `json:"reserveMintPrice"`
+	ReserveMintLimit    *int     `json:"reserveMintLimit"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {

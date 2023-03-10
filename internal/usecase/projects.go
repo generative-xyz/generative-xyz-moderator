@@ -682,6 +682,19 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		p.Categories = []string{req.Categories[0]}
 	}
 
+	if len(req.Reservers) > 0 {
+		p.Reservers = req.Reservers
+	}
+
+	if req.ReserveMintLimit != nil && *req.ReserveMintLimit > 0 {
+		p.ReserveMintLimit = *req.ReserveMintLimit
+	}
+
+	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
+		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
+		p.ReserveMintPrice = mReserveMintPrice.String()
+	}
+
 	if req.MaxSupply != nil && *req.MaxSupply != 0 && *req.MaxSupply != p.MaxSupply {
 		// if p.MintingInfo.Index > 0 {
 		// 	err := errors.New("Project is minted, cannot update max supply")
