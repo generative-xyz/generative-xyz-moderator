@@ -279,45 +279,48 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 	type statusprogressStruct struct {
 		Message string `json:"message"`
 		Status  bool   `json:"status"`
+		Title   string `json:"title"`
 		Tx      string `json:"tx"`
 	}
 
 	statusMap := make(map[string]statusprogressStruct)
 
 	statusMap["1"] = statusprogressStruct{
-		Message: entity.StatusMintToText[entity.StatusMint_Pending],
-		Status:  int(mintItem.Status) > 0,
+		Title:  entity.StatusMintToText[entity.StatusMint_Pending],
+		Status: int(mintItem.Status) > 0,
 	}
 	statusMap["2"] = statusprogressStruct{
-		Message: entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
-		Status:  int(mintItem.Status) > 1,
+		Title:  entity.StatusMintToText[entity.StatusMint_WaitingForConfirms],
+		Status: int(mintItem.Status) > 1,
 	}
 
 	if mintItem.Status == entity.StatusMint_NeedToRefund || mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded || mintItem.Status == entity.StatusMint_TxRefundFailed {
 		statusMap["3"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Refunding],
+			Title:   entity.StatusMintToText[entity.StatusMint_Refunding],
 			Status:  mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_Refunded || mintItem.Status == entity.StatusMint_TxRefundFailed,
 			Tx:      mintItem.TxRefund,
+			Message: mintItem.ReasonRefund,
 		}
 
 		statusMap["4"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Refunded],
+			Title:   entity.StatusMintToText[entity.StatusMint_Refunded],
 			Status:  mintItem.Status == entity.StatusMint_Refunded,
 			Tx:      mintItem.TxRefund,
+			Message: mintItem.ReasonRefund,
 		}
 
 	} else {
 
 		statusMap["3"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Minting],
-			Status:  mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
-			Tx:      mintItem.TxMintNft,
+			Title:  entity.StatusMintToText[entity.StatusMint_Minting],
+			Status: mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
+			Tx:     mintItem.TxMintNft,
 		}
 
 		statusMap["4"] = statusprogressStruct{
-			Message: entity.StatusMintToText[entity.StatusMint_Minted],
-			Status:  mintItem.IsMinted,
-			Tx:      mintItem.TxMintNft,
+			Title:  entity.StatusMintToText[entity.StatusMint_Minted],
+			Status: mintItem.IsMinted,
+			Tx:     mintItem.TxMintNft,
 		}
 
 	}
@@ -444,7 +447,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "compare balance err", err.Error(), true)
 
 			item.Status = entity.StatusMint_NeedToRefund
-			item.ReasonRefund = "Not enough balance"
+			item.ReasonRefund = "Not enough balance."
 			u.Repo.UpdateMintNftBtc(&item)
 			continue
 		}
@@ -540,7 +543,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		if p.MintingInfo.Index >= p.MaxSupply {
 
 			// update need to return:
-			item.ReasonRefund = "project is minted out"
+			item.ReasonRefund = "Project is minted out."
 			item.Status = entity.StatusMint_NeedToRefund
 
 			_, err = u.Repo.UpdateMintNftBtc(&item)
