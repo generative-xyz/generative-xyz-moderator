@@ -25,7 +25,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 		resp, err := u.Repo.GetRecentBTCActivity(page, 100)
 		if err != nil {
 			u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetPagingActitvities", zap.Error(err))
-			break
+			return errors.WithStack(err)
 		}
 		uActivities := resp.Result
 		btcActivities := uActivities.([]entity.Activity)
@@ -164,7 +164,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 			}
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
-			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore))
+			u.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("volumnInBtc", volumnInBtc))
 			if numListings != 0 {
 				u.Logger.Info("SyncProjectTrending.ProjectHasListing", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("numListings", numListings))
 			}

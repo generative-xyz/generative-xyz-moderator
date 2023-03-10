@@ -255,6 +255,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	// inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
 
+	// Firebase FCM registration token management
+	fcm := api.PathPrefix("/fcm").Subrouter()
+	fcm.Use(h.MiddleWare.AuthorizeFunc)
+	fcm.HandleFunc("/token", h.getFcmToken).Methods("GET")
+	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
+	// For test, will remove
+	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
