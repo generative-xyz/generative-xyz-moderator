@@ -56,6 +56,8 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		return nil, 0, 0, err
 	}
 
+	uc.Logger.Infof("%s", uc.Config.GenerativeExplorerApi)
+
 	inscriptions := []*response.SearhcInscription{}
 	userAddresses := []string{}
 	inscriptionIds := []string{}
@@ -65,7 +67,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			ObjectId:      h["objectID"].(string),
 			InscriptionId: h["inscription_id"].(string),
 			Number:        int64(h["number"].(float64)),
-			Sat:           fmt.Sprintf("%d", int64(h["sat"].(float64))),
+			Sat:           h["sat"].(float64),
 			Chain:         h["chain"].(string),
 			GenesisFee:    int64(h["genesis_fee"].(float64)),
 			GenesisHeight: int64(h["genesis_height"].(float64)),
@@ -86,6 +88,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		if err != nil {
 			uc.Logger.Error(err)
 		}
+
 		if resp.Address != "" {
 			i.Address = resp.Address
 			userAddresses = append(userAddresses, resp.Address)
