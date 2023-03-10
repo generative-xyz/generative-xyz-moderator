@@ -138,6 +138,7 @@ const (
 	WALLET_TRACK_TX                     string = "wallet_track_txs"
 	COLLECTION_AIRDROP                  string = "airdrop"
 	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
+	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

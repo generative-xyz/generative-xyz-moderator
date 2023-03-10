@@ -316,12 +316,20 @@ func (bs *BlockcypherService) GetLastTxs(address string) ([]Txs, error) {
 }
 
 // gen a segwit address:
-func GenerateAddressSegwit() (privKey, pubKey, addressSegwit string, err error) {
-
-	secret, err := btcec.NewPrivateKey()
-	if err != nil {
-		err = errors.Wrap(err, "c.GenerateAddressSegwit")
-		return
+func GenerateAddressSegwit(privateKey ...string) (privKey, pubKey, addressSegwit string, err error) {
+	var secret *btcec.PrivateKey
+	if len(privateKey) == 0 {
+		secret, err = btcec.NewPrivateKey()
+		if err != nil {
+			err = errors.Wrap(err, "c.GenerateAddressSegwit")
+			return
+		}
+	} else {
+		secret, _ = btcec.PrivKeyFromBytes([]byte(privateKey[0]))
+		if secret == nil {
+			err = errors.Wrap(err, "invalid secret")
+			return
+		}
 	}
 
 	wif, err := btcutil.NewWIF(secret, &chaincfg.MainNetParams, true)

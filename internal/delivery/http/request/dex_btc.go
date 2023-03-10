@@ -17,3 +17,9 @@ type SubmitDexBTCBuy struct {
 	InscriptionID string `json:"inscription_id"`
 	OrderID       string `json:"order_id"`
 }
+
+type SubmitDexBTCBuyETH struct {
+	Txhash  string `json:"txhash"`
+	OrderID string `json:"order_id"`
+	FeeRate uint64 `json:"fee_rate"`
+}

@@ -19,6 +19,13 @@ func (r Repository) CreateDexBTCListing(listing *entity.DexBTCListing) error {
 	}
 	return nil
 }
+func (r Repository) CreateDexBTCBuyWithETH(listing *entity.DexBTCBuyWithETH) error {
+	err := r.InsertOne(listing.TableName(), listing)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (r Repository) GetDexBTCListingOrderByID(id string) (*entity.DexBTCListing, error) {
 	resp := &entity.DexBTCListing{}
@@ -215,6 +222,46 @@ func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWi
 
 	if err = cursor.All((context.TODO()), &listings); err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetDexBTCBuyETHOrderByStatus(statuses []entity.DexBTCETHBuyStatus) ([]entity.DexBTCBuyWithETH, error) {
+	listings := []entity.DexBTCBuyWithETH{}
+	f := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_BUY_ETH).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetDexBTCBuyETHOrderByUserID(userID string, limit, offset int64) ([]entity.DexBTCBuyWithETH, error) {
+	listings := []entity.DexBTCBuyWithETH{}
+	f := bson.M{
+		"user_id": bson.M{"$eq": userID},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_BUY_ETH).Find(context.TODO(), f, &options.FindOptions{
+		Sort:  bson.D{{Key: "created_at", Value: -1}},
+		Limit: &limit,
+		Skip:  &offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
 	}
 
 	return listings, nil

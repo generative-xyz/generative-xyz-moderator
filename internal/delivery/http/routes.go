@@ -226,7 +226,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
-	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("")
+	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
+	inscriptionDex.HandleFunc("/thor-btc-address", h.getDexThorBTCAddress).Methods("GET")
+	inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
+	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")

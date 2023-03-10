@@ -34,11 +34,11 @@ type DexBTCListing struct {
 
 type DexBtcListingWithProjectInfo struct {
 	DexBTCListing
-	ProjectInfo   []DexBtcProjectInfo `bson:"project_info"`
+	ProjectInfo []DexBtcProjectInfo `bson:"project_info"`
 }
 
 type GetDexBtcListingWithProjectInfoReq struct {
-	Page int64
+	Page  int64
 	Limit int64
 }
 
@@ -49,3 +49,38 @@ func (u DexBTCListing) TableName() string {
 func (u DexBTCListing) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+type DexBTCBuyWithETH struct {
+	BaseEntity `bson:",inline"`
+	OrderID    string             `bson:"order_id" json:"order_id"`
+	AmountBTC  uint64             `bson:"amount_btc" json:"amount_btc"`
+	AmountETH  uint64             `bson:"amount_eth" json:"amount_eth"`
+	UserID     string             `bson:"user_id" json:"user_id"`
+	Txhash     string             `bson:"txhash" json:"txhash"`
+	BTCTx      string             `bson:"btc_tx" json:"btc_tx"`
+	UXTOList   []string           `bson:"uxto_list" json:"uxto_list"`
+	BuyTx      string             `bson:"buy_tx" json:"buy_tx"`
+	RefundTx   string             `bson:"refund_tx" json:"refund"`
+	FeeRate    uint64             `bson:"fee_rate" json:"fee_rate"`
+	Status     DexBTCETHBuyStatus `bson:"status" json:"status"`
+}
+
+func (u DexBTCBuyWithETH) TableName() string {
+	return utils.COLLECTION_DEX_BTC_BUY_ETH
+}
+
+func (u DexBTCBuyWithETH) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
+
+type DexBTCETHBuyStatus int
+
+const (
+	StatusDEXBuy_Pending DexBTCETHBuyStatus = iota // 0: pending: waiting for fund
+	StatusDEXBuy_ReceivedFund
+	StatusDEXBuy_Buying
+	StatusDEXBuy_Bought
+	StatusDEXBuy_WaitingToRefund
+	StatusDEXBuy_Refunding
+	StatusDEXBuy_Refunded
+)
