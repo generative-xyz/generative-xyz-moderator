@@ -31,7 +31,7 @@ func (r Repository) GetRecentBTCActivity(page int64, limit int64) (*entity.Pagin
 		{SortBy: "created_at", Sort: entity.SORT_ASC},
 	}
 
-	p, err := r.Paginate(entity.Activity{}.TableName(), page, limit, f, r.SelectedProjectFields(), s, &activities)
+	p, err := r.Paginate(entity.Activity{}.TableName(), page, limit, f, bson.D{}, s, &activities)
 	if err != nil {
 		return nil, err
 	}
