@@ -28,6 +28,10 @@ type TokenUriListingPage struct {
 	} `bson:"totalCount" json:"totalCount"`
 }
 
+type TokenUriListingVolume struct {
+	TotalAmount uint64 `bson:"totalAmount" json:"totalAmount"`
+}
+
 type FilterTokenUris struct {
 	BaseFilters
 	ContractAddress *string
