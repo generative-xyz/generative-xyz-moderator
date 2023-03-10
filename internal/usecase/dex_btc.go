@@ -205,6 +205,20 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 			log.Printf("JobWatchPendingDexBTCListing strconv.Atoi(inscriptionTx[1]) %v\n", order.Inputs)
 			continue
 		}
+		if !order.Verified {
+			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
+			if err != nil {
+				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
+			} else {
+				if txDetail.Result.Confirmations > 0 {
+					order.Verified = true
+					_, err = u.Repo.UpdateDexBTCListingOrderConfirm(&order)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderConfirm err %v\n", err)
+					}
+				}
+			}
+		}
 		if order.CancelTx == "" {
 			spentTx := ""
 			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
@@ -271,21 +285,6 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
 				continue
-			}
-		}
-		if !order.Verified {
-			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
-			if err != nil {
-				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
-			} else {
-				if txDetail.Result.Confirmations > 0 {
-					order.Verified = true
-					_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
-					if err != nil {
-						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
-						continue
-					}
-				}
 			}
 		}
 	}

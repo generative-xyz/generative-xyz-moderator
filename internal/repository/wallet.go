@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -12,6 +13,9 @@ import (
 func (r Repository) CreateTrackTx(trackTx *entity.WalletTrackTx) error {
 	err := r.InsertOne(trackTx.TableName(), trackTx)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return nil
+		}
 		return err
 	}
 	return nil
