@@ -201,8 +201,12 @@ type GENToken struct {
 	Contract string
 }
 
-func NewConfig() (*Config, error) {
-	godotenv.Load()
+func NewConfig(filePaths ...string) (*Config, error) {
+	if len(filePaths) > 0 {
+		godotenv.Load(filePaths[0])
+	} else {
+		godotenv.Load()
+	}
 	services := make(map[string]string)
 	isDebug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	isStartHTTP, _ := strconv.ParseBool(os.Getenv("START_HTTP"))
