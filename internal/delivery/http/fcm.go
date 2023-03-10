@@ -85,6 +85,9 @@ func (h *httpDelivery) createFcmTestData(w http.ResponseWriter, r *http.Request)
 			if err != nil {
 				return nil, err
 			}
+			if err := h.Validator.Struct(reqBody); err != nil {
+				return nil, err
+			}
 			app, err := firebase.NewService(h.Config.Gcs.Auth)
 			if err != nil {
 				return nil, err
