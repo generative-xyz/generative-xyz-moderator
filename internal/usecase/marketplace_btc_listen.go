@@ -1012,3 +1012,40 @@ func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
 
 	return listIdSuccess
 }
+
+func (u Usecase) ResetEvenManager() {
+	list, _ := u.Repo.GetAllCronJobManagerByJobKey()
+
+	fmt.Println("stop di")
+
+	// time.Sleep(time.Second * 15)
+
+	for _, v := range list {
+
+		// temp := entity.CronJobManager{
+		// 	JobKey: v.JobKey,
+
+		// 	Group: v.Group,
+
+		// 	JobName: v.JobName,
+
+		// 	Schedule: v.Schedule,
+
+		// 	Enabled: v.Enabled,
+
+		// 	Description: v.Description,
+
+		// 	LastStatus: v.LastStatus,
+
+		// 	FunctionName: v.FunctionName,
+
+		// 	WebHook: v.WebHook,
+		// }
+
+		// v.Enabled = true
+
+		_, err := u.Repo.UpdateCronJobManager(&v)
+		fmt.Println("err: ", err)
+
+	}
+}

@@ -11,3 +11,9 @@ type CancelDexBTCListing struct {
 	InscriptionID string `json:"inscription_id"`
 	OrderID       string `json:"order_id"`
 }
+
+type SubmitDexBTCBuy struct {
+	Txhash        string `json:"txhash"`
+	InscriptionID string `json:"inscription_id"`
+	OrderID       string `json:"order_id"`
+}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -184,11 +185,20 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						Offset:        offset,
 						Sat:           data.Sat,
 					}
-					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
+					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail", "creator_address"})
 					if internalInfo != nil {
 						inscWalletInfo.ProjectID = internalInfo.ProjectID
-						inscWalletInfo.ProjecName = internalInfo.Project.Name
+						inscWalletInfo.ProjectName = internalInfo.Project.Name
 						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+						creator, err := u.Repo.FindUserByAddress(internalInfo.CreatorAddr)
+						if err != nil {
+							log.Println("InscriptionsByOutputs.FindUserByAddress", err)
+						} else {
+							if creator != nil {
+								inscWalletInfo.ArtistID = creator.UUID
+								inscWalletInfo.ArtistName = creator.DisplayName
+							}
+						}
 					}
 					for _, listing := range currentListing {
 						if listing.InscriptionID == data.InscriptionID {
@@ -197,6 +207,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 							} else {
 								inscWalletInfo.Cancelling = true
 							}
+							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
 							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
 						}

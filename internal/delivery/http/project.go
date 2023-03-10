@@ -293,11 +293,18 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	var result response.ProjectMarketplaceData
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.Volume = 0
+	result.Volume = volume
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
@@ -926,7 +933,6 @@ func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
 
-
 // UserCredits godoc
 // @Summary upload project's token-traits
 // @Description upload project's token-traits
@@ -947,5 +953,5 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
