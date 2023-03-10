@@ -89,12 +89,13 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		projectDetail, _ := u.Repo.FindProjectByTokenID(internalInfo.ProjectID)
 		creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 		if err == nil {
-			if creator.WalletAddressBTC != "" && creator.WalletAddressBTCTaproot != "" {
+			if creator.WalletAddressBTC != "" || creator.WalletAddressBTCTaproot != "" {
 				royaltyFeePercent = float64(projectDetail.Royalty) / 10000
-				if creator.WalletAddressBTCTaproot != "" {
-					artistAddress = creator.WalletAddressBTCTaproot
-				} else {
+				// prioritize WalletAddressBTC address
+				if creator.WalletAddressBTC != "" {
 					artistAddress = creator.WalletAddressBTC
+				} else {
+					artistAddress = creator.WalletAddressBTCTaproot
 				}
 			}
 		}
@@ -286,6 +287,41 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 				log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
 				continue
 			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) DexBTCBuyWithETH(userID string, orderID string, txhash string, feeRate uint64) error {
+	newListing := entity.DexBTCBuyWithETH{
+		OrderID: orderID,
+		Txhash:  txhash,
+		FeeRate: feeRate,
+		UserID:  userID,
+		Status:  entity.StatusDEXBuy_Pending,
+	}
+
+	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
+}
+
+func (u Usecase) JobWatchPendingDexBTCBuyETH() error {
+	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding})
+	if err != nil {
+		return err
+	}
+
+	for _, order := range pendingOrders {
+		switch order.Status {
+		case entity.StatusDEXBuy_Pending:
+			// check eth tx and btc_tx is complete
+		case entity.StatusDEXBuy_ReceivedFund:
+			// send tx buy update status to StatusDEXBuy_Buying
+		case entity.StatusDEXBuy_Buying:
+			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
+		case entity.StatusDEXBuy_WaitingToRefund:
+			//send tx refund update status to StatusDEXBuy_Refunding
+		case entity.StatusDEXBuy_Refunding:
+			// check tx refund if success => status = StatusDEXBuy_Refunded else status = StatusDEXBuy_WaitingToRefund
 		}
 	}
 	return nil
