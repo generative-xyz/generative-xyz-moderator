@@ -295,8 +295,10 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 				return nil, err
 			}
 		} else {
-			if inscribeBtc.Status == entity.StatusInscribe_Pending && !inscribeBtc.Expired() {
-				return inscribeBtc, nil
+			if inscribeBtc.Status == entity.StatusInscribe_Pending {
+				if !inscribeBtc.Expired() {
+					return inscribeBtc, nil
+				}
 			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
 				return inscribeBtc, nil
 			}
@@ -987,9 +989,6 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
-			if inscribe.Status == entity.StatusInscribe_Pending && !inscribe.Expired() {
-				continue
-			}
 			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
 				continue
 			}
@@ -1005,6 +1004,25 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			break
 		}
 		pageListInscribe += 1
+	}
+
+	filterMoralisTokens := func(datas []nfts.MoralisToken) []nfts.MoralisToken {
+		results := make([]nfts.MoralisToken, 0, len(datas))
+		for _, data := range datas {
+			if data.IsERC1155Type() {
+				continue
+			}
+			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", data.TokenAddress, data.TokenID)]; ok {
+				data.IsMinted = true
+				data.InscribeBTC = &nfts.InscribeBTC{
+					Status:         val.Status.Ordinal(),
+					ProjectTokenId: val.ProjectTokenId,
+					InscriptionID:  val.InscriptionID,
+				}
+			}
+			results = append(results, data)
+		}
+		return results
 	}
 
 	if delegateWallet == "" {
@@ -1023,18 +1041,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 				if err != nil {
 					return nil, err
 				}
-				for i := range nft.Result {
-					if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
-						nft.Result[i].IsMinted = true
-						nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
-							Status:         val.Status.Ordinal(),
-							ProjectTokenId: val.ProjectTokenId,
-							InscriptionID:  val.InscriptionID,
-						}
-
-					}
-				}
-				resp[delegateWalletAddress].Result = nft.Result
+				resp[delegateWalletAddress].Result = filterMoralisTokens(nft.Result)
 				resp[delegateWalletAddress].Cursor = nft.Cursor
 			}
 		} else {
@@ -1050,17 +1057,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		if err != nil {
 			return nil, err
 		}
-		for i := range nft.Result {
-			if val, ok := mapNftMinted[fmt.Sprintf("%s_%s", nft.Result[i].TokenAddress, nft.Result[i].TokenID)]; ok {
-				nft.Result[i].IsMinted = true
-				nft.Result[i].InscribeBTC = &nfts.InscribeBTC{
-					Status:         val.Status.Ordinal(),
-					ProjectTokenId: val.ProjectTokenId,
-					InscriptionID:  val.InscriptionID,
-				}
-			}
-		}
-		pag.Result = nft.Result
+		pag.Result = filterMoralisTokens(nft.Result)
 		pag.Cursor = nft.Cursor
 	}
 

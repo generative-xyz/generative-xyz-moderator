@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/utils"
 )
 
 func (r Repository) InsertActitvy(data *entity.Activity) error {
@@ -19,29 +18,49 @@ func (r Repository) InsertActitvy(data *entity.Activity) error {
 }
 
 // Get all BTC activity (Mint, Buy)
-func (r Repository) GetRecentBTCActivity() ([]entity.Activity, error) {
+func (r Repository) GetRecentBTCActivity(page int64, limit int64) (*entity.Pagination, error) {
 	activities := []entity.Activity{}
+	resp := &entity.Pagination{}
 
 	f := bson.M{
 		"type":       bson.M{"$in": []entity.ActivityType{entity.Mint, entity.Buy}},
-		"created_at": bson.M{"$gte": time.Now().Add(-24 * time.Hour).UTC()},
+		"created_at": bson.M{"$gte": time.Now().Add(-14 * 24 * time.Hour).UTC()},
 	}
 
-	cursor, err := r.DB.Collection(utils.COLLECTION_ACTIVITIES).Find(context.TODO(), f)
+	s := []Sort{
+		{SortBy: "created_at", Sort: entity.SORT_ASC},
+	}
+
+	p, err := r.Paginate(entity.Activity{}.TableName(), page, limit, f, r.SelectedProjectFields(), s, &activities)
 	if err != nil {
-		return nil, errors.Wrap(err, "collection.Find")
+		return nil, err
 	}
 
-	if err = cursor.All(context.TODO(), &activities); err != nil {
-		return nil, errors.Wrap(err, "collection.Cursor")
-	}
-
-	return activities, nil
+	resp.Result = activities
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
 }
 
 func (r Repository) CountViewActivity(projectID string) (*int64, error) {
 	f := bson.M{
 		"type":       entity.View,
+		"created_at": bson.M{"$gte": time.Now().Add(-24 * time.Hour).UTC()},
+		"project_id": projectID,
+	}
+
+	count, err := r.DB.Collection(entity.Activity{}.TableName()).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return nil, errors.Wrap(err, "collection.CountDocuments")
+	}
+
+	return &count, nil
+}
+
+func (r Repository) CountMintActivity(projectID string) (*int64, error) {
+	f := bson.M{
+		"type":       entity.Mint,
 		"created_at": bson.M{"$gte": time.Now().Add(-24 * time.Hour).UTC()},
 		"project_id": projectID,
 	}

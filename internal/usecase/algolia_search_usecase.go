@@ -56,6 +56,8 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		return nil, 0, 0, err
 	}
 
+	uc.Logger.Infof("%s", uc.Config.GenerativeExplorerApi)
+
 	inscriptions := []*response.SearhcInscription{}
 	userAddresses := []string{}
 	inscriptionIds := []string{}
@@ -65,7 +67,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			ObjectId:      h["objectID"].(string),
 			InscriptionId: h["inscription_id"].(string),
 			Number:        int64(h["number"].(float64)),
-			Sat:           fmt.Sprintf("%d", int64(h["sat"].(float64))),
+			Sat:           h["sat"].(float64),
 			Chain:         h["chain"].(string),
 			GenesisFee:    int64(h["genesis_fee"].(float64)),
 			GenesisHeight: int64(h["genesis_height"].(float64)),
@@ -76,18 +78,25 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		inscriptionIds = append(inscriptionIds, i.InscriptionId)
 		if v, ok := h["address"]; ok && v.(string) != "" {
 			i.Address = v.(string)
-			resp := &response.SearhcInscription{}
-			_, err := client.R().
-				SetResult(&resp).
-				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, i.InscriptionId))
-			if err != nil {
-				uc.Logger.Error(err)
-				continue
-			}
+		}
+
+		resp := &response.SearhcInscription{}
+		_, err := client.R().
+			SetResult(&resp).
+			Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, i.InscriptionId))
+
+		if err != nil {
+			uc.Logger.Error(err)
+		}
+
+		if resp.Address != "" {
+			i.Address = resp.Address
 			userAddresses = append(userAddresses, resp.Address)
 		}
+
 		inscriptions = append(inscriptions, i)
 	}
+	uc.Logger.Infof("inscription count %d", len(inscriptions))
 
 	users, err := uc.Repo.ListUserBywalletAddressBtcTaproot(userAddresses)
 	mapOwner := make(map[string]*response.ArtistResponse)
@@ -101,7 +110,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	tokens, err := uc.Repo.FilterTokenUri(*pe)
 	if err != nil {
 		uc.Logger.Error(err)
-		// return nil, 0, 0, err
+		return nil, 0, 0, err
 	}
 	iTokens := tokens.Result
 	rTokens := iTokens.([]entity.TokenUri)
@@ -116,7 +125,7 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 	projects, err := uc.Repo.FindProjectByTokenIDs(projectIds)
 	if err != nil {
 		uc.Logger.Error(err)
-		// return nil, 0, 0, err
+		return nil, 0, 0, err
 	}
 
 	mapProject := make(map[string]*entity.Projects)
@@ -135,11 +144,11 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 			}
 		}
 
-		// listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
-		// if err == nil && listingInfo.CancelTx == "" {
-		// 	i.Buyable = true
-		// 	i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-		// }
+		listingInfo, err := uc.Repo.GetDexBTCListingOrderPendingByInscriptionID(i.InscriptionId)
+		if err == nil && listingInfo.CancelTx == "" {
+			i.Buyable = true
+			i.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+		}
 
 		obj := &response.SearchResponse{
 			ObjectType:  "inscription",
