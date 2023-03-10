@@ -135,10 +135,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	var mfTotal, mfMintFee, mfSentTokenFee string
 
 	// cal fee again:
-	feeInfos, err := u.calMintFeeInfo(&entity.Projects{
-		MaxFileSize: int64(mintFee.Size),
-		MintPrice:   "0",
-	})
+	feeInfos, err := u.calMintFeeInfo(0, int64(mintFee.Size), int64(input.FeeRate))
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err

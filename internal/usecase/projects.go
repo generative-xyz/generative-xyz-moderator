@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -62,45 +61,6 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 
 	u.Logger.ErrorAny("CreateProject", zap.Any("project", pe))
 	return pe, nil
-}
-
-func (u Usecase) networkFeeBySize(size int64) int64 {
-	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
-
-	if err != nil {
-		fmt.Print(err.Error())
-		// os.Exit(1) // remove for B
-		return -1
-	}
-
-	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		u.Logger.Error(err)
-		return -1
-	} else {
-		type feeRate struct {
-			fastestFee  int
-			halfHourFee int
-			hourFee     int
-			economyFee  int
-			minimumFee  int
-		}
-
-		feeRateObj := feeRate{}
-
-		err = json.Unmarshal(responseData, &feeRateObj)
-		if err != nil {
-			u.Logger.Error(err)
-			return -1
-		}
-		if feeRateObj.fastestFee > 0 {
-			feeRateValue = int64(feeRateObj.fastestFee)
-		}
-	}
-
-	return size * feeRateValue
-
 }
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
@@ -1067,11 +1027,19 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		} */
 	// cal fee info:
 	if c.MintingInfo.Index < c.MaxSupply {
-		feeInfos, err := u.calMintFeeInfo(c)
+
+		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)
+		if !ok {
+			mintPrice = big.NewInt(0)
+		}
+
+		// cal fee:
+		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE)
 		if err != nil {
 			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 			return nil, err
 		}
+
 		// set price, fee:
 		c.NetworkFee = feeInfos["btc"].NetworkFee
 		c.NetworkFeeEth = feeInfos["eth"].NetworkFee

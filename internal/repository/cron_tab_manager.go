@@ -125,3 +125,19 @@ func (r Repository) InsertCronJobManagerLogs(data *entity.CronJobManagerLogs) er
 	}
 	return nil
 }
+
+func (r Repository) GetAllCronJobManagerByJobKey() ([]entity.CronJobManager, error) {
+	resp := []entity.CronJobManager{}
+	filter := bson.M{}
+
+	cursor, err := r.DB.Collection(entity.CronJobManager{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

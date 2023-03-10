@@ -172,6 +172,9 @@ func startServer() {
 		return
 	}
 
+	uc.MigrateFromCSV()
+	return
+
 	servers := make(map[string]delivery.AddedServer)
 
 	// api fixed run:

@@ -953,5 +953,5 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
