@@ -18,7 +18,7 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) JobAggregateVolumns() {
+func (u Usecase) JobAggregateVolumns() error {
 	payTypes := []string{
 		string(entity.BIT),
 		string(entity.ETH),
@@ -48,6 +48,7 @@ func (u Usecase) JobAggregateVolumns() {
 		u.Logger.LogAny("JobAggregateVolumns", zap.Any("payType", payType))
 		u.AggregateVolumn(payType)
 	}
+	return nil
 }
 
 func (u Usecase) AggregateVolumn(payType string) {
