@@ -118,8 +118,13 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
+	mintPrice, ok := big.NewInt(0).SetString(p.MintPrice, 10)
+	if !ok {
+		mintPrice = big.NewInt(0)
+	}
+
 	// cal fee:
-	feeInfos, err := u.calMintFeeInfo(p)
+	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate))
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err
@@ -1339,7 +1344,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 }
 
 // please donate P some money:
-func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeInfo, error) {
+func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[string]entity.MintFeeInfo, error) {
 
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
@@ -1354,28 +1359,30 @@ func (u Usecase) calMintFeeInfo(p *entity.Projects) (map[string]entity.MintFeeIn
 	var err error
 
 	// cal min price:
-	mintPrice, ok := mintPrice.SetString(p.MintPrice, 10)
-	if !ok {
-		err = errors.New("can not parse MintPrice")
-		u.Logger.Error("u.calMintFeeInfo.Check(SetString)", err.Error(), err)
-		return nil, err
+	mintPrice = mintPrice.SetUint64(uint64(mintBtcPrice))
+
+	if fileSize > 0 {
+
+		// auto fee if feeRate <= 0:
+		if feeRate == -1 {
+			calNetworkFee := u.networkFeeBySize(int64(fileSize / 4))
+			if calNetworkFee == -1 {
+				err = errors.New("can not cal networkFeeBySize")
+				u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
+				return nil, err
+			}
+			feeMintNft = big.NewInt(calNetworkFee)
+		} else {
+			calNetworkFee := int64(fileSize/4) * feeRate
+			// fee mint:
+			feeMintNft = big.NewInt(calNetworkFee)
+		}
+
 	}
 
-	if p.MaxFileSize > 0 {
-		calNetworkFee := u.networkFeeBySize(int64(p.MaxFileSize / 4))
-		if calNetworkFee == -1 {
-			err = errors.New("can not cal networkFeeBySize")
-			u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
-			return nil, err
-		}
-		// fee mint:
-		feeMintNft = big.NewInt(calNetworkFee)
-
-	} else {
-		feeMintNft, _ = feeMintNft.SetString(p.MintPrice, 10)
-		if !ok {
-			feeMintNft = big.NewInt(0)
-		}
+	// default feeMintNft if 0:
+	if feeMintNft.Uint64() == 0 {
+		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
 
 	var btcRate, ethRate float64
