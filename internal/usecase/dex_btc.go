@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
@@ -188,8 +189,32 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 	}
 	return result, nil
 }
+func (u Usecase) JobWatchPendingDexBTCListing() {
+	var wg sync.WaitGroup
 
-func (u Usecase) JobWatchPendingDexBTCListing() error {
+	wg.Add(2)
+
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		err := u.watchPendingDexBTCListing()
+		if err != nil {
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+		}
+	}(&wg)
+
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		err := u.watchPendingDexBTCBuyETH()
+		if err != nil {
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+		}
+	}(&wg)
+
+	wg.Wait()
+
+}
+
+func (u Usecase) watchPendingDexBTCListing() error {
 	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
 	if err != nil {
 		return err
@@ -304,11 +329,13 @@ func (u Usecase) DexBTCBuyWithETH(userID string, orderID string, txhash string, 
 	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
 }
 
-func (u Usecase) JobWatchPendingDexBTCBuyETH() error {
+func (u Usecase) watchPendingDexBTCBuyETH() error {
 	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding})
 	if err != nil {
 		return err
 	}
+
+	quickNodeAPI := u.Config.QuicknodeAPI
 
 	for _, order := range pendingOrders {
 		switch order.Status {
@@ -318,6 +345,36 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() error {
 			// send tx buy update status to StatusDEXBuy_Buying
 		case entity.StatusDEXBuy_Buying:
 			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
+			txStatus, err := btc.CheckTxfromQuickNode(order.BuyTx, quickNodeAPI)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH.CheckTxfromQuickNode", order.ID, err)
+				continue
+			}
+			if txStatus != nil {
+				if txStatus.Result.Confirmations > 0 {
+					order.Status = entity.StatusDEXBuy_Bought
+
+					continue
+				}
+			} else {
+				listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH.GetDexBTCListingOrderByID", order.ID, err)
+					continue
+				}
+				if listingOrder != nil {
+					if listingOrder.Cancelled || listingOrder.Matched {
+						order.Status = entity.StatusDEXBuy_WaitingToRefund
+						continue
+					}
+					if time.Since(*order.CreatedAt) >= 1*time.Hour {
+
+					}
+				} else {
+					// ?? order not exist
+				}
+			}
+
 		case entity.StatusDEXBuy_WaitingToRefund:
 			//send tx refund update status to StatusDEXBuy_Refunding
 		case entity.StatusDEXBuy_Refunding:
