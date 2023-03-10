@@ -926,7 +926,6 @@ func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
 
-
 // UserCredits godoc
 // @Summary upload project's token-traits
 // @Description upload project's token-traits
@@ -947,5 +946,5 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }

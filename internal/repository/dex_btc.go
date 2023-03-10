@@ -78,6 +78,23 @@ func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing)
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCListingOrderConfirm(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"verified": model.Verified,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]entity.DexBTCListing, error) {
 	listings := []entity.DexBTCListing{}
 	f := bson.D{{

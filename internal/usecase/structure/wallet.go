@@ -77,10 +77,11 @@ type WalletInscriptionInfo struct {
 	ProjecName    string `json:"project_name"`
 	Thumbnail     string `json:"thumbnail"`
 
-	Buyable    bool   `json:"buyable"`
-	PriceBTC   string `json:"price_btc"`
-	OrderID    string `json:"order_id"`
-	Cancelling bool   `json:"cancelling"`
+	SellVerified bool   `json:"sell_verified"`
+	Buyable      bool   `json:"buyable"`
+	PriceBTC     string `json:"price_btc"`
+	OrderID      string `json:"order_id"`
+	Cancelling   bool   `json:"cancelling"`
 }
 
 type WalletInscriptionByOutput struct {
