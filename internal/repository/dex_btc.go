@@ -266,3 +266,26 @@ func (r Repository) GetDexBTCBuyETHOrderByUserID(userID string, limit, offset in
 
 	return listings, nil
 }
+
+// func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*entity.DexBTCListing, error) {
+// 	resp := &entity.DexBTCListing{}
+
+// 	f := bson.D{
+// 		{Key: "inscription_id", Value: id},
+// 		{Key: "matched", Value: false},
+// 		{Key: "cancelled", Value: false},
+// 	}
+
+// 	orderInfo, err := r.FilterOne(utils.COLLECTION_DEX_BTC_LISTING, f, &options.FindOneOptions{
+// 		Sort: bson.D{{Key: "created_at", Value: -1}},
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	err = helpers.Transform(orderInfo, resp)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return resp, nil
+// }
