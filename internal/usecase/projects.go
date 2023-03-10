@@ -682,13 +682,8 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		p.Categories = []string{req.Categories[0]}
 	}
 
-	if len(req.Reservers) > 0 {
-		p.Reservers = req.Reservers
-	}
-
-	if req.ReserveMintLimit != nil && *req.ReserveMintLimit > 0 {
-		p.ReserveMintLimit = *req.ReserveMintLimit
-	}
+	p.Reservers = req.Reservers
+	p.ReserveMintLimit = *req.ReserveMintLimit
 
 	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
 		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
