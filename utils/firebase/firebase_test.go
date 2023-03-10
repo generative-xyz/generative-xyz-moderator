@@ -22,9 +22,10 @@ func init() {
 	}
 }
 func Test_SendMessagesToSpecificDevices(t *testing.T) {
-	err = client.SendMessagesToSpecificDevices(context.Background(), "",
+	err = client.SendMessagesToSpecificDevices(context.Background(), "c0fGiOSasYEI3FSAz9KpU2:APA91bEEnY0ZfNKjz2dE67M6W2ofpgeHmDbLb8hQj2cy61vr8ZuUrHPtYy0N5IbLKbR8o0E7DWpxzjn4-F9o5S2e-F0ZzU2YRAfCTEUiqSEudglpyP4EAlcwkc85GRsABv2fEPcgY2wJ",
 		map[string]string{
 			"test": "test",
+			"data": "test",
 		},
 	)
 	if err != nil {
