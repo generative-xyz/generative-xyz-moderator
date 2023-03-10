@@ -172,9 +172,6 @@ func startServer() {
 		return
 	}
 
-	uc.MigrateFromCSV()
-	return
-
 	servers := make(map[string]delivery.AddedServer)
 
 	// api fixed run:
@@ -189,7 +186,6 @@ func startServer() {
 		Server:  ph,
 		Enabled: conf.StartPubsub,
 	}
-		
 
 	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
@@ -281,7 +277,6 @@ func startServer() {
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
-
 
 	// Run our server in a goroutine so that it doesn't block.
 	for name, server := range servers {
