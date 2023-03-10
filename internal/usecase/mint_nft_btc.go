@@ -1405,7 +1405,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[stri
 	if fileSize > 0 {
 
 		// auto fee if feeRate <= 0:
-		if feeRate == -1 {
+		if feeRate <= 0 {
 			calNetworkFee := u.networkFeeBySize(int64(fileSize / 4))
 			if calNetworkFee == -1 {
 				err = errors.New("can not cal networkFeeBySize")
