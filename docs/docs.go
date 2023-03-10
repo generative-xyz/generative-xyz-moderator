@@ -1305,6 +1305,76 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create FCM Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "FCM"
+                ],
+                "summary": "Create FCM Token",
+                "parameters": [
+                    {
+                        "description": "Create fcm request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateFcmRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/fcm/token/data": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create FCM Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "FCM"
+                ],
+                "summary": "Create FCM Token",
+                "parameters": [
+                    {
+                        "description": "Create fcm request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateFcmDataTest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
             }
         },
         "/files": {
@@ -1695,40 +1765,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/entity.Pagination"
                         }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create FCM Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "FCM"
-                ],
-                "summary": "Create FCM Token",
-                "parameters": [
-                    {
-                        "description": "Create fcm request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateFcmRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
                     }
                 }
             }
@@ -5478,6 +5514,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "walletAddress": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateFcmDataTest": {
+            "type": "object",
+            "required": [
+                "data",
+                "device_type"
+            ],
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "device_type": {
+                    "type": "string"
+                },
+                "registration_token": {
                     "type": "string"
                 }
             }
