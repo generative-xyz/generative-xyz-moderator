@@ -257,6 +257,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	fcm.Use(h.MiddleWare.AuthorizeFunc)
 	fcm.HandleFunc("/token", h.getFcmToken).Methods("GET")
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
+	// For test, will remove
+	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

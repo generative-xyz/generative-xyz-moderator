@@ -703,6 +703,20 @@ definitions:
       walletAddress:
         type: string
     type: object
+  request.CreateFcmDataTest:
+    properties:
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      device_type:
+        type: string
+      registration_token:
+        type: string
+    required:
+    - data
+    - device_type
+    type: object
   request.CreateFcmRequest:
     properties:
       device_type:
@@ -2275,6 +2289,49 @@ paths:
       summary: FCM Token
       tags:
       - FCM
+    post:
+      consumes:
+      - application/json
+      description: Create FCM Token
+      parameters:
+      - description: Create fcm request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateFcmRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create FCM Token
+      tags:
+      - FCM
+  /fcm/token/data:
+    post:
+      consumes:
+      - application/json
+      description: Create FCM Token
+      parameters:
+      - description: Create fcm request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateFcmDataTest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create FCM Token
+      tags:
+      - FCM
   /files:
     post:
       description: Upload file
@@ -2504,27 +2561,6 @@ paths:
       summary: BTC List Inscribe
       tags:
       - Inscribe
-    post:
-      consumes:
-      - application/json
-      description: Create FCM Token
-      parameters:
-      - description: Create fcm request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateFcmRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: Create FCM Token
-      tags:
-      - FCM
   /inscribe/nft-detail/{ID}:
     get:
       consumes:
