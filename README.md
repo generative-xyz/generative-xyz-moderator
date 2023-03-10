@@ -1,6 +1,6 @@
 # rendering-hub
 
-## How to run
+## How to run code
 ```
 make run-server
 ```
