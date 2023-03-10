@@ -20,6 +20,7 @@ import (
 	"rederinghub.io/internal/delivery/crontabManager"
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	httpHandler "rederinghub.io/internal/delivery/http"
+	"rederinghub.io/internal/delivery/pubsub"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -180,6 +181,13 @@ func startServer() {
 		Enabled: conf.StartHTTP,
 	}
 
+	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
+	servers["pubsub"] = delivery.AddedServer{
+		Server:  ph,
+		Enabled: conf.StartPubsub,
+	}
+		
+
 	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
@@ -270,6 +278,7 @@ func startServer() {
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
+
 
 	// Run our server in a goroutine so that it doesn't block.
 	for name, server := range servers {

@@ -1,6 +1,9 @@
 package nfts
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type NftFilter struct {
 	TokenAddress string `json:"token_address"`
@@ -53,6 +56,10 @@ type MoralisToken struct {
 	Metadata    *MoralisTokenMetadata `json:"metadata_obj,omitempty"`
 	IsMinted    bool                  `json:"is_minted"`
 	InscribeBTC *InscribeBTC          `json:"inscribe_btc"`
+}
+
+func (s MoralisToken) IsERC1155Type() bool {
+	return strings.ToUpper(s.ContractType) == "ERC1155"
 }
 
 type InscribeBTC struct {
