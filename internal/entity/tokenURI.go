@@ -113,7 +113,7 @@ type TokenUriListingFilter struct {
 	AnimationHtml         *string            `bson:"animation_html"`
 	ProjectID             string             `bson:"project_id" json:"projectID"`
 	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
-	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"gen_nft_addrress"`
+	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"genNFTAddr"`
 	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
 	InscriptionIndex      string             `bson:"inscription_index" json:"inscriptionIndex"`
 	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
