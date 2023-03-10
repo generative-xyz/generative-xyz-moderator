@@ -34,3 +34,11 @@ func (u Usecase) CreateFcm(ctx context.Context, data *request.CreateFcmRequest) 
 	}
 	return nil
 }
+
+func (u Usecase) GetFcmByUserWallet(ctx context.Context, userWallet string) ([]*entity.FirebaseRegistrationToken, error) {
+	fcms := []*entity.FirebaseRegistrationToken{}
+	if err := u.Repo.Find(ctx, entity.FirebaseRegistrationToken{}.TableName(), bson.M{"user_wallet": userWallet}, &fcms); err != nil {
+		return nil, err
+	}
+	return fcms, nil
+}
