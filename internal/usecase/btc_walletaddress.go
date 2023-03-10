@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,14 +11,12 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
-	"go.uber.org/zap"
 
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
-	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -670,111 +667,6 @@ func (u Usecase) WaitingForMinted() ([]entity.BTCWalletAddress, error) {
 	}
 
 	return nil, nil
-}
-
-func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
-	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
-	u.Logger.Info(
-		"NotifyNFTMinted",
-		zap.String("btcUserAddr", btcUserAddr),
-		zap.String("inscriptionID", inscriptionID),
-		zap.Int("networkFee", networkFee),
-	)
-
-	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
-	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
-		return
-	}
-
-	var minterDisplayName string
-	minterAddress := btcUserAddr
-	{
-		minter, err := u.Repo.FindUserByBtcAddress(btcUserAddr)
-		if err == nil {
-			minterDisplayName = minter.DisplayName
-		} else {
-			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
-		}
-	}
-
-	if tokenUri.Creator == nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
-		return
-	}
-
-	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
-	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
-		return
-	}
-	var category, description string
-	if len(project.Categories) > 0 {
-		// we assume that there are only one category
-		categoryEntity, err := u.GetCategory(project.Categories[0])
-		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
-			return
-		}
-		category = categoryEntity.Name
-		description = fmt.Sprintf("Category: %s\n", category)
-	}
-
-	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
-	collectionName := project.Name
-	// itemCount := project.MaxSupply
-	mintedCount := tokenUri.OrderInscriptionIndex
-
-	fields := make([]discordclient.Field, 0)
-	addFields := func(fields []discordclient.Field, name string, value string, inline bool) []discordclient.Field {
-		if value == "" {
-			return fields
-		}
-		return append(fields, discordclient.Field{
-			Name:   name,
-			Value:  value,
-			Inline: inline,
-		})
-	}
-	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
-	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
-		u.resolveShortName(minterDisplayName, btcUserAddr),
-		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
-	), true)
-
-	// fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
-	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
-
-	discordMsg := discordclient.Message{
-		Username:  "Satoshi 27",
-		AvatarUrl: "",
-		Content:   "**NEW MINT**",
-		Embeds: []discordclient.Embed{{
-			Title:       fmt.Sprintf("%s\n***%s #%d***", ownerName, collectionName, mintedCount),
-			Url:         fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
-			Description: description,
-			//Author: discordclient.Author{
-			//	Name:    u.resolveShortName(minter.DisplayName, minter.WalletAddress),
-			//	Url:     fmt.Sprintf("%s/profile/%s", domain, minter.WalletAddress),
-			//	IconUrl: minter.Avatar,
-			//},
-			Fields: fields,
-			Image: discordclient.Image{
-				Url: tokenUri.Thumbnail,
-			},
-		}},
-	}
-	sendCtx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFn()
-
-	u.Logger.Info("sending message to discord", discordMsg)
-
-	if err := u.DiscordClient.SendMessage(sendCtx, webhook, discordMsg); err != nil {
-		u.Logger.ErrorAny("error sending message to discord", zap.Error(err), zap.Any("discordMsg", discordMsg))
-
-	}
 }
 
 //End Mint flow
