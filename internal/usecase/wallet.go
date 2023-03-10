@@ -197,6 +197,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 							} else {
 								inscWalletInfo.Cancelling = true
 							}
+							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
 							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
 						}
