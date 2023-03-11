@@ -984,8 +984,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
-		if item.IsSubItem {
-			// go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
+		if item.IsSubItem || item.Quantity > 1 {
 			continue
 		}
 
