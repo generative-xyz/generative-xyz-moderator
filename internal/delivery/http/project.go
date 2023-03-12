@@ -247,7 +247,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	projectID := vars["projectID"]
 
-	project, err := h.Usecase.GetProjectDetailForApi(structure.GetProjectDetailMessageReq{
+	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
 		ContractAddress: contractAddress,
 		ProjectID:       projectID,
 	})
