@@ -288,6 +288,20 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		Tx      string `json:"tx"`
 	}
 
+	// fix for project 1001311
+	if mintItem.PayType == "eth" {
+
+		if (mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_NeedToRefund) && mintItem.ProjectID == "1001311" {
+			mintItem.Status = entity.StatusMint_Refunded
+			mintItem.Amount = "0"
+			mintItem.ReceiveAddress = ""
+		}
+
+		if mintItem.Status == entity.StatusMint_Refunded && mintItem.ProjectID != "1001311" {
+			mintItem.Status = entity.StatusMint_Refunding
+		}
+	}
+
 	statusMap := make(map[string]statusprogressStruct)
 
 	statusMap["1"] = statusprogressStruct{
