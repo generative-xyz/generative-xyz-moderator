@@ -95,6 +95,8 @@ type MintNftBtc struct {
 
 	FileURI string `bson:"fileURI"` // FileURI will be mount if OrdAddress get all amount
 
+	FeeRate int64 `bson:"feeRate"`
+
 	InscriptionID string `bson:"inscriptionID"`
 
 	ProjectID string `bson:"projectID"` //projectID

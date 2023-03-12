@@ -111,6 +111,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	walletAddress.FeeRate = int64(input.FeeRate)
+
 	walletAddress.UserID = input.UserID
 	walletAddress.UserAddress = input.UserAddress
 
@@ -615,17 +617,23 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			continue
 		}
 		_ = baseUrl
+
+		feeRate := item.FeeRate
+		if feeRate == 0 {
+			feeRate = entity.DEFAULT_FEE_RATE
+		}
+
 		// start call rpc mint nft now:
 		mintData := ord_service.MintRequest{
 			WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
 			FileUrl:     baseUrl.String(),
-			FeeRate:     entity.DEFAULT_FEE_RATE, //auto
+			FeeRate:     int(feeRate),
 			DryRun:      false,
 			RequestId:   item.UUID,      // for tracking log
 			ProjectID:   item.ProjectID, // for tracking log
 			FileUrlUnit: item.FileURI,   // for tracking log
 
-			AutoFeeRateSelect: true,
+			AutoFeeRateSelect: false, // not auto
 
 			// new key for ord v5.1, support mint + send in 1 tx:
 			DestinationAddress: item.OriginUserAddress,
