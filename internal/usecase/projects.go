@@ -975,57 +975,19 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
-		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
-		// if err != nil {
-		// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
-		// 	return nil, err
-		// }
-		// return p, nil
 		return nil, errors.New("project is not found")
 	}
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
 
-	/*
-		mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
-			return nil, err
-		}
-		ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-			return nil, err
-		}
-		c.MintPriceEth = ethPrice
-
-		// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
-
-		networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
-
-		if c.MaxFileSize > 0 {
-			calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
-			if calNetworkFee > 0 {
-				networkFeeInt = calNetworkFee
-				c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
-
-			}
-		}
-
-		if networkFeeInt > 0 {
-			ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
-			if err != nil {
-				u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-				return nil, err
-			}
-
-			// add fee send master:
-			mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
-			feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-			mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-			ethNetworkFeePrice = mintPriceEthBigint.String()
-
-			c.NetworkFeeEth = ethNetworkFeePrice
-		} */
-	// cal fee info:
+// only using for project detail api, support est fee:
+func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
+	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
+		return nil, errors.New("project is not found")
+	}
 	if c.MintingInfo.Index < c.MaxSupply {
 
 		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)

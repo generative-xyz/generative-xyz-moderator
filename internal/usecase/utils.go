@@ -17,6 +17,11 @@ type FeeRates struct {
 	minimumFee  int
 }
 
+type FeeRateInfo struct {
+	FeeRate     int
+	MintFeeInfo map[string]entity.MintFeeInfo
+}
+
 func (u Usecase) networkFeeBySize(size int64) int64 {
 
 	feeRateValue := int64(entity.DEFAULT_FEE_RATE)
@@ -49,7 +54,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 }
 
-func (u Usecase) getFeeRate3Level(size int64) (*FeeRates, error) {
+func (u Usecase) getFeeRateFromChain(size int64) (*FeeRates, error) {
 
 	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
 
@@ -72,4 +77,41 @@ func (u Usecase) getFeeRate3Level(size int64) (*FeeRates, error) {
 	}
 	return &feeRateObj, nil
 
+}
+
+func (u Usecase) GetLevelFeeInfo(fileSize int64) (map[string]FeeRateInfo, error) {
+
+	levelFeeFullInfo := make(map[string]FeeRateInfo)
+
+	feeRateFromChain, err := u.getFeeRateFromChain(fileSize)
+	if err != nil {
+		return nil, err
+	}
+
+	fastestMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.fastestFee))
+	if err != nil {
+		return nil, err
+	}
+	fasterMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.halfHourFee))
+	if err != nil {
+		return nil, err
+	}
+	economyMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.hourFee))
+	if err != nil {
+		return nil, err
+	}
+
+	levelFeeFullInfo["fastest"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.fastestFee,
+		MintFeeInfo: fastestMintInfo,
+	}
+	levelFeeFullInfo["faster"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.halfHourFee,
+		MintFeeInfo: fasterMintInfo,
+	}
+	levelFeeFullInfo["economy"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.hourFee,
+		MintFeeInfo: economyMintInfo,
+	}
+	return levelFeeFullInfo, nil
 }
