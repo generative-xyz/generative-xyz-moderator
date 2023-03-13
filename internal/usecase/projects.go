@@ -643,7 +643,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	p.Reservers = req.Reservers
-	p.ReserveMintLimit = *req.ReserveMintLimit
+	if req.ReserveMintLimit != nil {
+		p.ReserveMintLimit = *req.ReserveMintLimit
+	}
 
 	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
 		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
@@ -1914,10 +1916,9 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 	} else {
 		maxSupply := project.MaxSupply + 1
 		index := project.MintingInfo.Index + 1
-		projectId := project.ID.Hex()
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
 			CreatetorAddress: &project.CreatorAddrr,
-			ProjectID:        &projectId,
+			ProjectID:        &project.TokenID,
 			MaxSupply:        &maxSupply,
 			Index:            &index,
 		})
