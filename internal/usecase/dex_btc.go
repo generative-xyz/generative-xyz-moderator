@@ -407,15 +407,15 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 				return err
 			}
-			user, err := u.Repo.FindUserByID(order.UserID)
-			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH FindUserByID", order.ID, order.UserID, err)
-				return err
-			}
+			// user, err := u.Repo.FindUserByID(order.UserID)
+			// if err != nil {
+			// 	log.Println("watchPendingDexBTCBuyETH FindUserByID", order.ID, order.UserID, err)
+			// 	return err
+			// }
 			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
 				order.TempBTCKey,
 				address,
-				user.WalletAddressBTCTaproot,
+				order.ReceiveAddress,
 				int(order.AmountBTC),
 				btc.PreferenceMedium,
 			)
@@ -461,17 +461,17 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 	return nil
 }
 
-func (u Usecase) GenBuyETHOrder(userID string, orderID string, amount uint64, feeRate uint64) (string, error) {
+func (u Usecase) GenBuyETHOrder(userID string, orderID string, amount uint64, feeRate uint64, receiveAddress string) (string, string, error) {
 	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	var newOrder entity.DexBTCBuyWithETH
 	var tempAddress string
 	privKey, _, address, err := btc.GenerateAddressSegwit()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	tempAddress = address
 	newOrder.TempBTCKey = privKey
@@ -479,11 +479,24 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, amount uint64, fe
 	newOrder.AmountBTC = order.Amount
 	newOrder.FeeRate = feeRate
 	newOrder.Status = entity.StatusDEXBuy_Pending
+	newOrder.ReceiveAddress = receiveAddress
 
 	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return tempAddress, nil
+	return newOrder.UUID, tempAddress, nil
+}
+func (u Usecase) UpdateBuyETHOrderTx(buyOrderID string, userID string, txhash string) error {
+	order, err := u.Repo.GetDexBTCBuyETHOrderByID(buyOrderID)
+	if err != nil {
+		return err
+	}
+	order.ETHTx = txhash
+	_, err = u.Repo.UpdateDexBTCBuyETHOrderTx(order)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -12,3 +12,8 @@ type DexBTCHistoryListing struct {
 	Txhash        string `json:"txhash"`
 	Amount        string `json:"amount"`
 }
+
+type GenDexBTCBuyETH struct {
+	OrderID     string `json:"order_id"`
+	TempAddress string `json:"temp_address"`
+}

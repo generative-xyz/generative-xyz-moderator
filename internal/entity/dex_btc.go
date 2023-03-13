@@ -55,9 +55,10 @@ type DexBTCBuyWithETH struct {
 	OrderID    string `bson:"order_id" json:"order_id"`
 	AmountBTC  uint64 `bson:"amount_btc" json:"amount_btc"`
 	// AmountETH  uint64 `bson:"amount_eth" json:"amount_eth"`
-	UserID string `bson:"user_id" json:"user_id"`
-	// Txhash     string             `bson:"txhash" json:"txhash"`
-	BTCTx string `bson:"btc_tx" json:"btc_tx"`
+	UserID         string `bson:"user_id" json:"user_id"`
+	ReceiveAddress string `bson:"receive_address" json:"receive_address"`
+	ETHTx          string `bson:"eth_tx" json:"eth_tx"`
+	BTCTx          string `bson:"btc_tx" json:"btc_tx"`
 	// UXTOList   []string           `bson:"uxto_list" json:"uxto_list"`
 	BuyTx      string             `bson:"buy_tx" json:"buy_tx"`
 	RefundTx   string             `bson:"refund_tx" json:"refund_tx"`
