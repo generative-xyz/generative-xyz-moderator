@@ -138,6 +138,8 @@ func (u Usecase) JobAggregateVolumns() {
 			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
 	}
+
+	u.Cache.SetData("pLogs", pLogs)
 	spew.Dump("done")
 }
 
@@ -318,10 +320,6 @@ func (u Usecase) MigrateFromCSV() {
 	}
 
 	helpers.CreateFile("projectIDs.json",projectIDs)
-
-
-
-	
 	dataResp := []mintedData{}
 	btcWalletAddresses , err := u.Repo.FindWalletAddressesIn(projectIDs, entity.BTCWalletAddress{}.TableName())
 	if err != nil {
@@ -441,7 +439,36 @@ func (u Usecase) MigrateFromCSV() {
 	//fmt.Printf("%+v\n", shoppingList)
 }
 
-func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bool, error) {
+func (u Usecase) CreateWDs() {
+	data, err := u.Cache.GetData("pLogs")
+	if err != nil {
+		return
+	}
+
+	pLogs := []structure.VolumnLogs{}
+	err = json.Unmarshal([]byte(*data), &pLogs)
+	if err != nil {
+		return
+	}
+
+	wdLog := []entity.Withdraw{}
+	for _, logs := range pLogs {
+		wd, _, err := u.CreateWD(logs, logs.Paytype)
+		if err != nil {
+			return
+		}
+
+		err = u.Repo.CreateWithDraw(wd)
+		if err != nil {
+			return
+		}
+		wdLog = append(wdLog, *wd)
+	}	
+	helpers.CreateFile("withdraw-log.json",wdLog)
+
+}
+
+func (u Usecase) CreateWD(csv structure.VolumnLogs, paymentType string) (*entity.Withdraw, bool, error) {
 	p, err := u.Repo.FindProjectByTokenID(csv.ProjectID)
 	dateString := "2023-03-10T04:05:26.385+00:00"
 	date, _ := time.Parse("2023-02-28T00:00:00.000+00:00", dateString)
@@ -455,7 +482,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		PayType:        paymentType,
 		Status:         entity.StatusWithdraw_Approve,
 		WalletAddress:  p.CreatorProfile.WalletAddress,
-		WithdrawFrom:   "fix_bug_while_calculating_volumn",
+		WithdrawFrom:   "fix_zero_balance",
 		Amount:         "0",
 		EarningReferal: "0",
 		EarningVolume:  "0",
@@ -464,55 +491,17 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		WithdrawItemID: p.TokenID,
 	}
 
+	amount := csv.Available
 	arrge, err := u.Repo.FindVolumnByWalletAddress(p.CreatorProfile.WalletAddress, paymentType)
 	if err == nil &&  arrge !=nil {
-		wd.EarningVolume = *arrge.Earning
-		wd.TotalEarnings = *arrge.Earning
+		wd.EarningVolume = amount
+		wd.TotalEarnings = amount
+		wdf, _ := strconv.ParseFloat(amount, 10)
 		
-		wdf := 0.0
-		wds, err := u.Repo.AggregateWithDrawByProject(csv.ProjectID, paymentType)
-		if err == nil && len(wds) > 0 {
-			for _, wdt := range wds {
-				wdf += wdt.Amount
-			}
-			earningF, _  := strconv.ParseFloat(*arrge.Earning, 10)
-			wd.AvailableBalance = fmt.Sprintf("%d", int(earningF - wdf))
-		}
+		earningF, _  := strconv.ParseFloat(amount, 10)
+		wd.AvailableBalance = fmt.Sprintf("%d", int(earningF - wdf))
 	}
 
-	amount := ""
-	if paymentType == string(entity.ETH) {
-		eth := csv.ETH
-		ethFloat, err := strconv.ParseFloat(eth, 10)
-		if err != nil {
-			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("eth", eth))
-			return nil, false, err
-		}
-		// if ethFloat > 0 {
-		// 	return nil, false, errors.New("User was not paid")
-		// }
-		if ethFloat == 0 {
-			return nil, false, errors.New("Witdraw with zero")
-		}
-		ethFloat = ethFloat * 1e8
-		amount = fmt.Sprintf("%d", int(ethFloat))
-
-	} else {
-		btc := csv.BTC
-		btcFloat, err := strconv.ParseFloat(btc, 10)
-		if err != nil {
-			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("btc", btc))
-			return nil, false, err
-		}
-		// if btcFloat > 0 {
-		// 	return nil, false, errors.New("User was not paid")
-		// }
-		if btcFloat == 0 {
-			return nil, false, errors.New("Witdraw with zero")
-		}
-		btcFloat = btcFloat  * 1e8
-		amount = fmt.Sprintf("%d", int(btcFloat))
-	}
 
 	usr := entity.WithdrawUserInfo{}
 	user, err := u.Repo.FindUserByWalletAddress(p.CreatorAddrr)
@@ -524,6 +513,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		usr.Avatar = &user.Avatar
 	}
 	wd.Amount = amount
+	wd.PayType = csv.Paytype
 	wd.CreatedAt = &date
 	wd.Note = "Add the paid artist on Mar 2023"
 	u.Logger.LogAny("CreateWD.wd", zap.String("paymentType", paymentType), zap.Any("wd", wd))

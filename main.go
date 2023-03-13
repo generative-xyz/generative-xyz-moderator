@@ -165,6 +165,7 @@ func startServer() {
 
 	//uc.MigrateFromCSV()
 	uc.JobAggregateVolumns()
+	uc.CreateWDs()
 
 	// servers := make(map[string]delivery.AddedServer)
 
