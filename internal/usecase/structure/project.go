@@ -87,6 +87,7 @@ type UpdateBTCProjectReq struct {
 	Reservers           []string `json:"reservers"`
 	ReserveMintPrice    *string  `json:"reserveMintPrice"`
 	ReserveMintLimit    *int     `json:"reserveMintLimit"`
+	Index               *int64   `json:"index"`
 }
 
 type UpdateBTCProjectCategoriesReq struct {
@@ -121,19 +122,19 @@ type ProjectAnimationUrl struct {
 }
 
 type VolumnLogs struct {
-	ProjectID string `json:"projectID"`
-	Paytype string `json:"payType"`
-	OldMinted int `json:"oldMinted"`
-	NewMinted int `json:"newMinted"`
-	TotalMinted int `json:"totaMinted"`
-	
-	OldAmount string `json:"oldEthAmount"`
-	NewAmount string `json:"newAmount"`
-	TotalAmount string `json:"totalAmount"`
-	TotalEarnings string `json:"totalEarnings"`
+	ProjectID   string `json:"projectID"`
+	Paytype     string `json:"payType"`
+	OldMinted   int    `json:"oldMinted"`
+	NewMinted   int    `json:"newMinted"`
+	TotalMinted int    `json:"totaMinted"`
+
+	OldAmount        string `json:"oldEthAmount"`
+	NewAmount        string `json:"newAmount"`
+	TotalAmount      string `json:"totalAmount"`
+	TotalEarnings    string `json:"totalEarnings"`
 	ApprovedWithdraw string `json:"approvedWithdraw"`
-	Available string `json:"available"`
-	SeparateRate string `json:"separateRate"`
-	GenEarnings string `json:"genEarnings"`
-	MintPrice int `json:"mintPrice"`
+	Available        string `json:"available"`
+	SeparateRate     string `json:"separateRate"`
+	GenEarnings      string `json:"genEarnings"`
+	MintPrice        int    `json:"mintPrice"`
 }
