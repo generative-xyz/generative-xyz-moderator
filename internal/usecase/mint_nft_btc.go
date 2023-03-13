@@ -131,6 +131,36 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			if strings.EqualFold(address, walletAddress.UserAddress) {
 				reserveMintPrice, ok := big.NewInt(0).SetString(p.ReserveMintPrice, 10)
 				if ok {
+
+					// get list item mint:
+					countMinted := 0
+					mintReadyList, _ := u.Repo.GetLimitWhiteList(walletAddress.UserAddress, input.ProjectID)
+
+					for _, mItem := range mintReadyList {
+
+						if mItem.IsConfirm {
+							if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+								countMinted += 1
+							}
+
+						} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+							if time.Since(mItem.ExpiredAt) < 1*time.Second {
+								countMinted += mItem.Quantity
+							}
+						}
+					}
+					maxSlot := p.ReserveMintLimit - countMinted
+
+					if maxSlot <= 0 {
+						u.Logger.Error("u.CreateMintReceiveAddress.maxSlot", err.Error(), err)
+						return nil, errors.New("You don't have enough slot for this price")
+					}
+
+					if input.Quantity >= maxSlot {
+						u.Logger.Error("u.CreateMintReceiveAddress.maxSlot", err.Error(), err)
+						return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
+					}
+
 					mintPrice = big.NewInt(reserveMintPrice.Int64())
 					walletAddress.IsDiscount = true
 					u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
@@ -508,6 +538,31 @@ func (u Usecase) JobMint_CheckBalance() error {
 			fmt.Printf("Could not UpdateMintNftBtc uuid %s - with err: %v", item.UUID, err)
 			continue
 		}
+
+		// check Project and make sure index < max supply
+		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+		if err != nil {
+			u.Logger.Error("JobMint_CheckBalance.FindProjectByTokenID", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
+			continue
+		}
+		if p.MintingInfo.Index >= p.MaxSupply {
+
+			// update need to return:
+			item.ReasonRefund = "Project is minted out."
+			item.Status = entity.StatusMint_NeedToRefund
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
+			}
+			err = fmt.Errorf("project %s is minted out", item.ProjectID)
+			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
+			continue
+		}
+
 		// create batch record:
 		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 1 {
 			// create
@@ -540,6 +595,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 					BtcRate:             item.BtcRate,
 
 					EstFeeInfo: item.EstFeeInfo,
+					IsDiscount: item.IsDiscount,
 				}
 				// insert now:
 				err = u.Repo.InsertMintNftBtc(&batchItem)

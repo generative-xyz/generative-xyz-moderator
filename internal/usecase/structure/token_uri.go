@@ -20,8 +20,9 @@ type GetTokenMessageReq struct {
 }
 
 type GetProjectDetailMessageReq struct {
-	ContractAddress string
-	ProjectID       string
+	ContractAddress            string
+	ProjectID                  string
+	UserAddressToCheckDiscount string
 }
 
 type GetTokenMessageResp struct {
