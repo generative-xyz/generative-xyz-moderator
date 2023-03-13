@@ -82,7 +82,7 @@ func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 
 }
 
-func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRateInfo, error) {
+func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[string]FeeRateInfo, error) {
 
 	var btcRate, ethRate float64
 
@@ -107,15 +107,15 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRate
 	fmt.Println("halfHourFee", feeRateFromChain.HalfHourFee)
 	fmt.Println("hourFee", feeRateFromChain.HourFee)
 
-	fastestMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
+	fastestMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	fasterMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HalfHourFee), btcRate, ethRate)
+	fasterMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HalfHourFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	economyMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
+	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRate
 	}
 
 	if customRate > 0 {
-		customRateMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(customRate), btcRate, ethRate)
+		customRateMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(customRate), btcRate, ethRate)
 		if err != nil {
 			return nil, err
 		}

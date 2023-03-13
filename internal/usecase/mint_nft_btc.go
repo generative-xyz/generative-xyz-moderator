@@ -125,6 +125,22 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		mintPrice = big.NewInt(0)
 	}
 
+	// check whitelist price in project.reservers to get reserveMintPrice
+	if len(p.Reservers) > 0 {
+		for _, address := range p.Reservers {
+			if strings.EqualFold(address, walletAddress.UserAddress) {
+				reserveMintPrice, ok := big.NewInt(0).SetString(p.ReserveMintPrice, 10)
+				if ok {
+					mintPrice = big.NewInt(reserveMintPrice.Int64())
+					walletAddress.IsDiscount = true
+					u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
+				}
+				break
+			}
+		}
+
+	}
+
 	// cal fee:
 	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)
 	if err != nil {
@@ -154,7 +170,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		expiredTime = 1
 	}
 	if input.PayType == utils.NETWORK_ETH {
-		expiredTime = 1 // just 1h for checking eth balance
+		expiredTime = 2 // just 1h for checking eth balance
 	}
 
 	walletAddress.Amount = feeInfos[input.PayType].TotalAmount
@@ -1573,9 +1589,6 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 
 		Decimal: 18,
 	}
-
-	fmt.Println("feeInfos[eth].MintPriceBigIn2", listMintFeeInfo["eth"].MintPriceBigInt)
-	fmt.Println("feeInfos[btc].MintPriceBigIn2", listMintFeeInfo["btc"].MintPriceBigInt)
 
 	return listMintFeeInfo, err
 }
