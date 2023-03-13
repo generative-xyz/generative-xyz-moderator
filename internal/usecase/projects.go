@@ -36,6 +36,7 @@ import (
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 )
 
@@ -1850,6 +1851,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	}
 
 	available := data.Earning - wdraw
+	if available < 0 {
+		available = 0
+	}
 	tmp := Volume{
 		ProjectID: data.ID.ProjectID,
 		PayType:   data.ID.Paytype,
@@ -1860,6 +1864,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Status:    status,
 	}
 
+	logger.AtLog.Logger.Info("ProjectVolume ...", zap.String("projectID", projectID), zap.Any("volume", tmp), zap.Any("AggregateWithDrawByUser", w), zap.Any("latestWd", latestWd))
 	return &tmp, nil
 }
 
