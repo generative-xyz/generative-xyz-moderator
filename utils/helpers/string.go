@@ -157,6 +157,11 @@ func CreateProfileLink(walletAdress string, displayName string) string {
 	return fmt.Sprintf("<%s|%s>", link, name)
 }
 
+
+func CreateURLLink(link string, name string) string {
+	return fmt.Sprintf("<%s|%s>", link, name)
+}
+
 func CreateTokenLink(projectID string, tokenID string, tokenName string) string {
 	link := fmt.Sprintf("%s/generative/%s/%s", os.Getenv("DOMAIN"), projectID, tokenID)
 	return fmt.Sprintf("<%s|%s>", link, tokenName)

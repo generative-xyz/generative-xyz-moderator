@@ -12,7 +12,7 @@ import (
 )
 
 
-func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectItemResp, error) {
+func (r Repository) AggregateVolumn(projectID string, payType string) ([]entity.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateProjectItemResp{}
 
@@ -28,12 +28,13 @@ func (r Repository) AggregateVolumn(payType string) ([]entity.AggregateProjectIt
 			},
 		}}
 	}
-
+		
 	// PayType *string
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
-		bson.M{"status": entity.StatusMint_SentFundToMaster},
+		bson.M{"isMinted": true},
 		bson.M{"payType": payType},		
+		bson.M{"projectID": projectID},		
 	}}}
 
 	pipeLine := bson.A{

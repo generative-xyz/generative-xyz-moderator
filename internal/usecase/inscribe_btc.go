@@ -135,10 +135,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	var mfTotal, mfMintFee, mfSentTokenFee string
 
 	// cal fee again:
-	feeInfos, err := u.calMintFeeInfo(&entity.Projects{
-		MaxFileSize: int64(mintFee.Size),
-		MintPrice:   "0",
-	})
+	feeInfos, err := u.calMintFeeInfo(0, int64(mintFee.Size), int64(input.FeeRate))
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err
@@ -989,7 +986,8 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 			if inscribe.TokenAddress == "" || inscribe.TokenId == "" {
 				continue
 			}
-			if inscribe.Status == entity.StatusInscribe_TxMintFailed {
+			if inscribe.Status == entity.StatusInscribe_TxMintFailed ||
+				inscribe.Status == entity.StatusInscribe_Pending {
 				continue
 			}
 			if inscribe.InscriptionID != "" {

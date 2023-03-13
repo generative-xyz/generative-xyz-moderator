@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
@@ -293,11 +294,29 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	minted := projectInfo.MintingInfo.Index
+	mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
+	mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
+	mintVolume := uint64(minted) * uint64(mintPrice+mintFee)
+
 	var result response.ProjectMarketplaceData
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.Volume = 0
+	result.TotalVolume = volume + mintVolume
+	result.MintVolume = mintVolume
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
@@ -926,7 +945,6 @@ func (h *httpDelivery) tokenTraits(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
 
-
 // UserCredits godoc
 // @Summary upload project's token-traits
 // @Description upload project's token-traits
@@ -947,5 +965,5 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	h.Response.RespondWithoutContainer(w, http.StatusOK, v)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }

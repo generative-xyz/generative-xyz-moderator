@@ -12,6 +12,8 @@ type MintNftBtcData struct {
 	UserID string `json:"userID"`
 
 	Quantity int `json:"quantity"`
+
+	FeeRate int32 `json:"feeRate"`
 }
 
 type MintingInscription struct {

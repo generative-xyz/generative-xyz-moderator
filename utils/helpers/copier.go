@@ -2,7 +2,9 @@ package helpers
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"io/ioutil"
+	"os"
 )
 
 func ReadFile(file *zip.File) ([]byte, error) {
@@ -18,4 +20,24 @@ func ReadFile(file *zip.File) ([]byte, error) {
 	}
 
 	return content, nil
+}
+
+func CreateFile(fileName string, data interface{}) error {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(fileName)
+    if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(bytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
