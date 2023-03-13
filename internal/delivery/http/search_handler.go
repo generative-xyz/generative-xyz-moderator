@@ -111,6 +111,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 				r.Buyable = true
 				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				r.OrderID = listingInfo.UUID
+				r.SellVerified = listingInfo.Verified
 			}
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
 		}
