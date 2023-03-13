@@ -139,6 +139,8 @@ func NewRESTHandlerTemplate(handlerFunc HandlerFunc) http.Handler {
 func (h *restHandlerTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
+	vars[utils.SIGNED_USER_ID] = ""
+	vars[utils.SIGNED_WALLET_ADDRESS] = ""
 	userUuid, ok := ctx.Value(utils.SIGNED_USER_ID).(string)
 	if ok && userUuid != "" {
 		vars[utils.SIGNED_USER_ID] = userUuid
