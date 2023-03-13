@@ -998,7 +998,7 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 		return nil, err
 	}
 
-	fmt.Println("c.MintedTime", c)
+	// fmt.Println("c.MintedTime", c)
 
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		return nil, errors.New("project is not found")
@@ -1080,7 +1080,7 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 	}()
 
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	// u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 

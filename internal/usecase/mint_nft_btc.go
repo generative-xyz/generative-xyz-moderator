@@ -154,17 +154,19 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 					}
 					maxSlot := p.ReserveMintLimit - countMinted
 
-					if maxSlot <= 0 {
-						return nil, errors.New("You don't have enough slot for this price")
-					}
+					fmt.Println("p.ReserveMintLimit: ", p.ReserveMintLimit)
+					fmt.Println("countMinted: ", countMinted)
+					fmt.Println("maxSlot: ", maxSlot)
 
-					if input.Quantity >= maxSlot {
-						return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
-					}
+					if maxSlot > 0 {
+						if input.Quantity > maxSlot {
+							return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
+						}
 
-					mintPrice = big.NewInt(reserveMintPrice.Int64())
-					walletAddress.IsDiscount = true
-					u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
+						mintPrice = big.NewInt(reserveMintPrice.Int64())
+						walletAddress.IsDiscount = true
+						u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
+					}
 				}
 				break
 			}
