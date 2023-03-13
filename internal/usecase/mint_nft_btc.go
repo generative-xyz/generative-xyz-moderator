@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"net/url"
@@ -266,6 +267,10 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		if err != nil {
 			return nil, err
 		}
+		creator, err := u.Repo.FindUserByAddress(projectInfo.CreatorAddrr)
+		if err != nil {
+			log.Println("InscriptionsByOutputs.FindUserByAddress", err)
+		}
 
 		status := ""
 		if time.Since(item.ExpiredAt) >= 1*time.Second && item.Status == entity.StatusMint_Pending {
@@ -306,6 +311,10 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 			InscriptionID: item.InscriptionID,
 			IsCancel:      int(item.Status) == 0,
 			Quantity:      item.Quantity,
+		}
+		if creator != nil {
+			minting.ArtistID = creator.UUID
+			minting.ArtistName = creator.DisplayName
 		}
 
 		if minting.StatusIndex != 0 {
