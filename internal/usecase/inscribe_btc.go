@@ -31,6 +31,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/contracts/ordinals"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/fileutil"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -1079,14 +1080,14 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 	}
 	urlStr := utils.ConvertIpfsToHttp(metaData.Image)
 	if strings.HasPrefix(urlStr, "http") {
-		uploadImage := func(urlStr string) string {
+		resizeAndUploadImage := func(urlStr string) string {
 			client := http.Client{}
 			r, err := client.Get(urlStr)
 			if err != nil {
 				return urlStr
 			}
 			defer r.Body.Close()
-			buf, err := io.ReadAll(r.Body)
+			imgByte, err := io.ReadAll(r.Body)
 			if err != nil {
 				return urlStr
 			}
@@ -1094,22 +1095,42 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			if err != nil {
 				contentType := r.Header.Get("content-type")
 				arr := strings.Split(contentType, "/")
-				if len(arr) > 1 {
-					ext = arr[1]
-				} else {
+				if len(arr) <= 1 {
 					return urlStr
 				}
+				ext = arr[1]
+			}
+			newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
+			if err == nil {
+				imgByte = newImgByte
 			}
 			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
-			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(buf), name)
+			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(imgByte), name)
 			if err != nil {
 				return urlStr
 			}
 			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
-		urlStr = uploadImage(urlStr)
+		nft.Metadata.Image = resizeAndUploadImage(urlStr)
+	} else if strings.HasPrefix(urlStr, ";base64,") {
+		resizeImage := func(imageStr string) string {
+			coI := strings.Index(imageStr, ",")
+			dec, err := base64.StdEncoding.DecodeString(imageStr[coI+1:])
+			if err != nil {
+				return imageStr
+			}
+			exts := strings.Split(strings.TrimSuffix(imageStr[5:coI], ";base64"), "/")
+			if len(exts) < 2 {
+				return imageStr
+			}
+			imgByte, err := fileutil.ResizeImage(dec, exts[1], fileutil.MaxImageByteSize)
+			if err != nil {
+				return imageStr
+			}
+			return imageStr[:coI+1] + base64.StdEncoding.EncodeToString(imgByte)
+		}
+		nft.Metadata.Image = resizeImage(urlStr)
 	}
-	nft.Metadata.Image = urlStr
 	return nft, nil
 }
 
