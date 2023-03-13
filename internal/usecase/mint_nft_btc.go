@@ -236,7 +236,12 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		}
 
 		if item.PayType == "eth" {
-			if item.Status == entity.StatusMint_Refunded {
+
+			if (item.Status == entity.StatusMint_Refunding || item.Status == entity.StatusMint_NeedToRefund) && item.ProjectID == "1001311" {
+				status = entity.StatusMintToText[entity.StatusMint_Refunded]
+			}
+
+			if item.Status == entity.StatusMint_Refunded && item.ProjectID != "1001311" {
 				status = entity.StatusMintToText[entity.StatusMint_Refunding]
 			}
 		}
@@ -281,6 +286,20 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 		Status  bool   `json:"status"`
 		Title   string `json:"title"`
 		Tx      string `json:"tx"`
+	}
+
+	// fix for project 1001311
+	if mintItem.PayType == "eth" {
+
+		if (mintItem.Status == entity.StatusMint_Refunding || mintItem.Status == entity.StatusMint_NeedToRefund) && mintItem.ProjectID == "1001311" {
+			mintItem.Status = entity.StatusMint_Refunded
+			mintItem.Amount = "0"
+			mintItem.ReceiveAddress = ""
+		}
+
+		if mintItem.Status == entity.StatusMint_Refunded && mintItem.ProjectID != "1001311" {
+			mintItem.Status = entity.StatusMint_Refunding
+		}
 	}
 
 	statusMap := make(map[string]statusprogressStruct)
@@ -984,8 +1003,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
-		if item.IsSubItem {
-			// go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.item.IsSubItem", "can not refund sub item", true)
+		if item.IsSubItem || item.Quantity > 1 {
 			continue
 		}
 
