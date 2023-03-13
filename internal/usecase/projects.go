@@ -36,6 +36,7 @@ import (
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 )
 
@@ -643,7 +644,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	p.Reservers = req.Reservers
-	p.ReserveMintLimit = *req.ReserveMintLimit
+	if req.ReserveMintLimit != nil {
+		p.ReserveMintLimit = *req.ReserveMintLimit
+	}
 
 	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
 		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
@@ -701,6 +704,10 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		if p.LimitMintPerProcess != *req.LimitMintPerProcess {
 			p.LimitMintPerProcess = *req.LimitMintPerProcess
 		}
+	}
+
+	if req.Index != nil {
+		p.MintingInfo.Index = *req.Index
 	}
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
@@ -1812,6 +1819,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	}
 
 	available := data.Earning - wdraw
+	if available < 0 {
+		available = 0
+	}
 	tmp := Volume{
 		ProjectID: data.ID.ProjectID,
 		PayType:   data.ID.Paytype,
@@ -1822,6 +1832,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Status:    status,
 	}
 
+	logger.AtLog.Logger.Info("ProjectVolume ...", zap.String("projectID", projectID), zap.Any("volume", tmp), zap.Any("AggregateWithDrawByUser", w), zap.Any("latestWd", latestWd))
 	return &tmp, nil
 }
 
@@ -1870,12 +1881,13 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 	} else {
-		project.MaxSupply += 1
-		project.MintingInfo.Index += 1
-		projectId := project.ID.Hex()
+		maxSupply := project.MaxSupply + 1
+		index := project.MintingInfo.Index + 1
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
-			ProjectID: &projectId,
-			MaxSupply: &project.MaxSupply,
+			CreatetorAddress: &project.CreatorAddrr,
+			ProjectID:        &project.TokenID,
+			MaxSupply:        &maxSupply,
+			Index:            &index,
 		})
 		if err != nil {
 			return err
