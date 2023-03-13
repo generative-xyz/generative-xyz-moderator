@@ -1106,7 +1106,7 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			if err == nil {
 				imgByte = newImgByte
 			}
-			name := fmt.Sprintf("%v.%s", uuid.New().String(), ext)
+			name := fmt.Sprintf("authentic/%v.%s", uuid.New().String(), ext)
 			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(imgByte), name)
 			if err != nil {
 				return urlStr
