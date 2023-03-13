@@ -119,7 +119,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 		Content:   "**NEW KEY**",
 		Embeds: []entity.Embed{{
 			Title: fmt.Sprintf("%s%s", title, inscriptionNumTitle),
-			Url: fmt.Sprintf("https://generativeexplorer.com/inscription/%s", airdrop.InscriptionId),
+			Url: "https://generative.xyz",
 			Fields: fields,
 			Image: entity.Image{
 				Url: parsedThumbnail,
