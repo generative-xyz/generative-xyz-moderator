@@ -300,7 +300,7 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	projectInfo, err := h.Usecase.Repo.FindProject(projectID)
+	projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
 		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
