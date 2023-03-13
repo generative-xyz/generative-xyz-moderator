@@ -703,6 +703,10 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		}
 	}
 
+	if req.Index != nil {
+		p.MintingInfo.Index = *req.Index
+	}
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.Error("updated", err.Error(), err)
@@ -1908,12 +1912,14 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 	} else {
-		project.MaxSupply += 1
-		project.MintingInfo.Index += 1
+		maxSupply := project.MaxSupply + 1
+		index := project.MintingInfo.Index + 1
 		projectId := project.ID.Hex()
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
-			ProjectID: &projectId,
-			MaxSupply: &project.MaxSupply,
+			CreatetorAddress: &project.CreatorAddrr,
+			ProjectID:        &projectId,
+			MaxSupply:        &maxSupply,
+			Index:            &index,
 		})
 		if err != nil {
 			return err
