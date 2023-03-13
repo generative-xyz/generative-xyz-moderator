@@ -189,7 +189,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
 	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}", h.getMintFeeRateInfos).Methods("GET")
+	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}", h.getMintFeeRateInfos).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")

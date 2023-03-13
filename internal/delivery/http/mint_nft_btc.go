@@ -208,6 +208,7 @@ func (h *httpDelivery) getMintFeeRateInfos(w http.ResponseWriter, r *http.Reques
 
 	vars := mux.Vars(r)
 	fileSize := vars["fileSize"]
+	customRate := vars["customRate"]
 
 	fileSizeInt, err := strconv.Atoi(fileSize)
 	if err != nil {
@@ -215,8 +216,12 @@ func (h *httpDelivery) getMintFeeRateInfos(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	customRateInt, err := strconv.Atoi(customRate)
+	if err != nil {
+		customRateInt = 0
+	}
 
-	item, err := h.Usecase.GetLevelFeeInfo(int64(fileSizeInt))
+	item, err := h.Usecase.GetLevelFeeInfo(int64(fileSizeInt), int64(customRateInt))
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetLevelFeeInfo", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
