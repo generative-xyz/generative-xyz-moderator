@@ -142,6 +142,8 @@ type MintNftBtc struct {
 	Quantity      int    `bson:"quantity"`
 	IsSubItem     bool   `bson:"isSubItem"`
 	BatchParentId string `bson:"patch_parent_id"`
+
+	IsDiscount bool `bson:"isDiscount"`
 }
 
 func (u MintNftBtc) TableName() string {
