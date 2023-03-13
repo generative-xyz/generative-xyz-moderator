@@ -262,6 +262,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
 	// For test, will remove
 	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
+
+	// DAO Project
+	daoProject := api.PathPrefix("/dao-project").Subrouter()
+	daoProject.Use(h.MiddleWare.AuthorizeFunc)
+	daoProject.HandleFunc("", h.listDaoProject).Methods("GET")
+	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
+	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
+	daoProject.HandleFunc("/{id}", h.voteDaoProject).Methods("PUT")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
