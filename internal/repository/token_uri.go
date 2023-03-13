@@ -185,6 +185,13 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		listingAmountDefault = 99999999999999
 	}
 
+	addNoneBuyItems := true
+	if filter.IsBuynow != nil {
+		if *filter.IsBuynow  == true {
+			addNoneBuyItems = false
+		}
+	}
+
 	f2 := bson.A{
 		bson.D{{"$match", f}},
 		bson.D{
@@ -219,7 +226,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			{"$unwind",
 				bson.D{
 					{"path", "$listing"},
-					{"preserveNullAndEmptyArrays", true},
+					{"preserveNullAndEmptyArrays", addNoneBuyItems},
 				},
 			},
 		},
