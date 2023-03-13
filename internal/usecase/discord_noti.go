@@ -59,7 +59,10 @@ func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []entity.Field 
 		)
 	} else {
 		u.Logger.ErrorAny("NotifyNewSale.FindUserByAddress")
-		userStr = req.Address
+		userStr = fmt.Sprintf("[%s](%s)",
+			u.resolveShortName("", req.Address),
+			fmt.Sprintf("%s/profile/%s", req.Domain, req.Address),
+		)
 	}
 	if userStr != "" {
 		return addDiscordField(req.Fields, req.Key, userStr, req.Inline)
