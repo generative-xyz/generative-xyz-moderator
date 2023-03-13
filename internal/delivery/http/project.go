@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
@@ -299,12 +300,23 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	projectInfo, err := h.Usecase.Repo.FindProject(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	minted := projectInfo.MintingInfo.Index
+	mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
+	mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
+	mintVolume := uint64(minted) * uint64(mintPrice+mintFee)
 
 	var result response.ProjectMarketplaceData
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.Volume = volume
+	result.TotalVolume = volume + mintVolume
+	result.MintVolume = mintVolume
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
