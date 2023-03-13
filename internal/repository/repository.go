@@ -195,14 +195,16 @@ func (r Repository) DeleteOne(dbName string, filter bson.D) (*mongo.DeleteResult
 	return result, nil
 }
 
-// only delete in mongo
-func (r Repository) DeleteMany(dbName string, filter bson.D) (*mongo.DeleteResult, error) {
-	result, err := r.DB.Collection(dbName).DeleteMany(context.TODO(), filter)
+func (b Repository) DeleteMany(ctx context.Context, collectionName string, filters interface{}, opts ...*options.DeleteOptions) (int64, error) {
+	rs, err := b.DB.Collection(collectionName).DeleteMany(
+		ctx,
+		filters,
+		opts...,
+	)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-
-	return result, nil
+	return rs.DeletedCount, nil
 }
 
 func (r Repository) SoftDelete(obj entity.IEntity) (*mongo.UpdateResult, error) {
@@ -403,7 +405,6 @@ func (b Repository) Find(ctx context.Context, collectionName string, filters map
 	}
 	return nil
 }
-
 func (r Repository) FindOneBy(ctx context.Context, collectionName string, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error {
 	res := r.DB.Collection(collectionName).FindOne(ctx, filters, opts...)
 	if res.Err() != nil {
@@ -413,4 +414,11 @@ func (r Repository) FindOneBy(ctx context.Context, collectionName string, filter
 		return err
 	}
 	return nil
+}
+func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
 }
