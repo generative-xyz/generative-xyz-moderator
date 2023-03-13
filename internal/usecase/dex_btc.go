@@ -345,19 +345,21 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 		}
 		switch order.Status {
 		case entity.StatusDEXBuy_Pending:
-			// check wallet receive enough fund
+			// check wallet receive enough funds
 			walletInfo, err := btc.GetBalanceFromQuickNode(address, quickNodeAPI)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH GetBalanceFromQuickNode", order.ID, address, err)
 				continue
 			}
-			if order.AmountBTC == uint64(walletInfo.Balance) {
+			if uint64(walletInfo.Balance) >= order.AmountBTC {
 				order.Status = entity.StatusDEXBuy_ReceivedFund
 				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 				if err != nil {
 					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
 				}
 				continue
+			} else {
+				// not enough funds
 			}
 		case entity.StatusDEXBuy_ReceivedFund:
 			// send tx buy update status to StatusDEXBuy_Buying
