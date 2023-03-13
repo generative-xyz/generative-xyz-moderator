@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
@@ -909,8 +910,12 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	// find project by projectID
 	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
-		u.Logger.Error(err)
-		return nil, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			u.Logger.ErrorAny("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
+			return nil, repository.ErrNoProjectsFound
+		} else {
+			return nil, err
+		}
 	}
 
 	tokenUri := entity.TokenUri{}

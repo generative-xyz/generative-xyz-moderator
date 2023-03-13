@@ -55,6 +55,7 @@ type Users struct {
 	ProfileSocial           ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
 	Stats                   UserStats     `bson:"stats" json:"stats"`
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
+	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
 }
 
 type ProfileSocial struct {
