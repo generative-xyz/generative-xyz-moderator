@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
@@ -89,12 +90,13 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		projectDetail, _ := u.Repo.FindProjectByTokenID(internalInfo.ProjectID)
 		creator, err := u.GetUserProfileByWalletAddress(projectDetail.CreatorAddrr)
 		if err == nil {
-			if creator.WalletAddressBTC != "" && creator.WalletAddressBTCTaproot != "" {
+			if creator.WalletAddressBTC != "" || creator.WalletAddressBTCTaproot != "" {
 				royaltyFeePercent = float64(projectDetail.Royalty) / 10000
-				if creator.WalletAddressBTCTaproot != "" {
-					artistAddress = creator.WalletAddressBTCTaproot
-				} else {
+				// prioritize WalletAddressBTC address
+				if creator.WalletAddressBTC != "" {
 					artistAddress = creator.WalletAddressBTC
+				} else {
+					artistAddress = creator.WalletAddressBTCTaproot
 				}
 			}
 		}
@@ -187,8 +189,32 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 	}
 	return result, nil
 }
+func (u Usecase) JobWatchPendingDexBTCListing() {
+	var wg sync.WaitGroup
 
-func (u Usecase) JobWatchPendingDexBTCListing() error {
+	wg.Add(2)
+
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		err := u.watchPendingDexBTCListing()
+		if err != nil {
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+		}
+	}(&wg)
+
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		err := u.watchPendingDexBTCBuyETH()
+		if err != nil {
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+		}
+	}(&wg)
+
+	wg.Wait()
+
+}
+
+func (u Usecase) watchPendingDexBTCListing() error {
 	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
 	if err != nil {
 		return err
@@ -208,7 +234,7 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 		if !order.Verified {
 			txDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
 			if err != nil {
-				fmt.Errorf("btc.GetBTCTxStatusExtensive %v\n", err)
+				log.Printf("btc.GetBTCTxStatusExtensive %v\n", err)
 			} else {
 				if txDetail.Result.Confirmations > 0 {
 					order.Verified = true
@@ -287,6 +313,192 @@ func (u Usecase) JobWatchPendingDexBTCListing() error {
 				continue
 			}
 		}
+	}
+	return nil
+}
+
+// func (u Usecase) DexBTCBuyWithETH(userID string, orderID string, txhash string, feeRate uint64) error {
+// 	newListing := entity.DexBTCBuyWithETH{
+// 		OrderID: orderID,
+// 		Txhash:  txhash,
+// 		FeeRate: feeRate,
+// 		UserID:  userID,
+// 		Status:  entity.StatusDEXBuy_Pending,
+// 	}
+
+// 	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
+// }
+
+func (u Usecase) watchPendingDexBTCBuyETH() error {
+	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding})
+	if err != nil {
+		return err
+	}
+
+	quickNodeAPI := u.Config.QuicknodeAPI
+
+	for _, order := range pendingOrders {
+		_, _, address, err := btc.GenerateAddressSegwit(order.TempBTCKey)
+		if err != nil {
+			log.Println("watchPendingDexBTCBuyETH GenerateAddressSegwit", err)
+			continue
+		}
+		switch order.Status {
+		case entity.StatusDEXBuy_Pending:
+			// check wallet receive enough funds
+			walletInfo, err := btc.GetBalanceFromQuickNode(address, quickNodeAPI)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH GetBalanceFromQuickNode", order.ID, address, err)
+				continue
+			}
+			if uint64(walletInfo.Balance) >= order.AmountBTC {
+				order.Status = entity.StatusDEXBuy_ReceivedFund
+				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				if err != nil {
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+				}
+				continue
+			} else {
+				// not enough funds
+			}
+		case entity.StatusDEXBuy_ReceivedFund:
+			// send tx buy update status to StatusDEXBuy_Buying
+		case entity.StatusDEXBuy_Buying:
+			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
+			txStatus, err := btc.CheckTxfromQuickNode(order.BuyTx, quickNodeAPI)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.BuyTx, err)
+				continue
+			}
+			if txStatus != nil {
+				if txStatus.Result.Confirmations > 0 {
+					order.Status = entity.StatusDEXBuy_Bought
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					}
+					continue
+				}
+			} else {
+				listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
+					continue
+				}
+				if listingOrder != nil {
+					if listingOrder.Cancelled || listingOrder.Matched {
+						order.Status = entity.StatusDEXBuy_WaitingToRefund
+						_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+						if err != nil {
+							log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+						}
+						continue
+					}
+					if time.Since(*order.CreatedAt) >= 1*time.Hour {
+
+					}
+				} else {
+					// ?? order not exist
+				}
+			}
+
+		case entity.StatusDEXBuy_WaitingToRefund:
+			//send tx refund and update status to StatusDEXBuy_Refunding
+			_, bs, err := u.buildBTCClient()
+			if err != nil {
+				fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
+				return err
+			}
+			// user, err := u.Repo.FindUserByID(order.UserID)
+			// if err != nil {
+			// 	log.Println("watchPendingDexBTCBuyETH FindUserByID", order.ID, order.UserID, err)
+			// 	return err
+			// }
+			txID, err := bs.SendTransactionWithPreferenceFromSegwitAddress(
+				order.TempBTCKey,
+				address,
+				order.ReceiveAddress,
+				int(order.AmountBTC),
+				btc.PreferenceMedium,
+			)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH.SendTransactionWithPreferenceFromSegwitAddress", order.ID, order.UserID, err)
+				return err
+			}
+
+			order.RefundTx = txID
+			order.Status = entity.StatusDEXBuy_Refunding
+			order.SetUpdatedAt()
+			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+			if err != nil {
+				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+			}
+			continue
+		case entity.StatusDEXBuy_Refunding:
+			// check tx refund if success => status = StatusDEXBuy_Refunded else status = StatusDEXBuy_WaitingToRefund
+			txStatus, err := btc.CheckTxfromQuickNode(order.RefundTx, quickNodeAPI)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.RefundTx, err)
+				continue
+			}
+			if txStatus != nil {
+				if txStatus.Result.Confirmations > 0 {
+					order.Status = entity.StatusDEXBuy_Refunded
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					}
+					continue
+				}
+			} else {
+
+				order.Status = entity.StatusDEXBuy_WaitingToRefund
+				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				if err != nil {
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) GenBuyETHOrder(userID string, orderID string, amount uint64, feeRate uint64, receiveAddress string) (string, string, error) {
+	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
+	if err != nil {
+		return "", "", err
+	}
+
+	var newOrder entity.DexBTCBuyWithETH
+	var tempAddress string
+	privKey, _, address, err := btc.GenerateAddressSegwit()
+	if err != nil {
+		return "", "", err
+	}
+	tempAddress = address
+	newOrder.TempBTCKey = privKey
+	newOrder.OrderID = orderID
+	newOrder.AmountBTC = order.Amount
+	newOrder.FeeRate = feeRate
+	newOrder.Status = entity.StatusDEXBuy_Pending
+	newOrder.ReceiveAddress = receiveAddress
+
+	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
+	if err != nil {
+		return "", "", err
+	}
+
+	return newOrder.UUID, tempAddress, nil
+}
+func (u Usecase) UpdateBuyETHOrderTx(buyOrderID string, userID string, txhash string) error {
+	order, err := u.Repo.GetDexBTCBuyETHOrderByID(buyOrderID)
+	if err != nil {
+		return err
+	}
+	order.ETHTx = txhash
+	_, err = u.Repo.UpdateDexBTCBuyETHOrderTx(order)
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -33,7 +33,6 @@ func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
-
 func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error) {
 	projects := []entity.ProjectsHaveMinted{}
 	f := bson.M{}
@@ -46,7 +45,6 @@ func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error
 		{"mintpriceeth", 1},
 		{"mintPrice", 1},
 		{"creatorAddrr", 1},
-		
 	})
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -708,6 +706,41 @@ func (r Repository) ProjectGetListingVolume(projectID string) (uint64, error) {
 	}
 
 	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		return uint64(result[0].TotalAmount), nil
+	}
+
+	return 0, nil
+}
+
+func (r Repository) ProjectGetMintVolume(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingVolume{}
+	pipeline := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"isMinted", true},
+					{"projectID", projectID},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"Amount", bson.D{{"$sum", "$project_mint_price"}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
