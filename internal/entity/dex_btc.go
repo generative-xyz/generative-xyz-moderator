@@ -52,17 +52,18 @@ func (u DexBTCListing) ToBson() (*bson.D, error) {
 
 type DexBTCBuyWithETH struct {
 	BaseEntity `bson:",inline"`
-	OrderID    string             `bson:"order_id" json:"order_id"`
-	AmountBTC  uint64             `bson:"amount_btc" json:"amount_btc"`
-	AmountETH  uint64             `bson:"amount_eth" json:"amount_eth"`
-	UserID     string             `bson:"user_id" json:"user_id"`
-	Txhash     string             `bson:"txhash" json:"txhash"`
-	BTCTx      string             `bson:"btc_tx" json:"btc_tx"`
-	UXTOList   []string           `bson:"uxto_list" json:"uxto_list"`
+	OrderID    string `bson:"order_id" json:"order_id"`
+	AmountBTC  uint64 `bson:"amount_btc" json:"amount_btc"`
+	// AmountETH  uint64 `bson:"amount_eth" json:"amount_eth"`
+	UserID string `bson:"user_id" json:"user_id"`
+	// Txhash     string             `bson:"txhash" json:"txhash"`
+	BTCTx string `bson:"btc_tx" json:"btc_tx"`
+	// UXTOList   []string           `bson:"uxto_list" json:"uxto_list"`
 	BuyTx      string             `bson:"buy_tx" json:"buy_tx"`
-	RefundTx   string             `bson:"refund_tx" json:"refund"`
+	RefundTx   string             `bson:"refund_tx" json:"refund_tx"`
 	FeeRate    uint64             `bson:"fee_rate" json:"fee_rate"`
 	Status     DexBTCETHBuyStatus `bson:"status" json:"status"`
+	TempBTCKey string             `bson:"temp_btc_key" json:"temp_btc_key"`
 }
 
 func (u DexBTCBuyWithETH) TableName() string {

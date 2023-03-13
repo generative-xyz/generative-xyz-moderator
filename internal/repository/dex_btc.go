@@ -267,6 +267,34 @@ func (r Repository) GetDexBTCBuyETHOrderByUserID(userID string, limit, offset in
 	return listings, nil
 }
 
+func (r Repository) UpdateDexBTCBuyETHOrderStatus(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status": model.Status,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 // func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*entity.DexBTCListing, error) {
 // 	resp := &entity.DexBTCListing{}
 
