@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/repository"
 )
 
 func (u Usecase) FindProjectByInscriptionIcon(inscriptionIcon string) (*entity.Projects, error) {
@@ -71,7 +72,7 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		}
 
 		if project == nil {
-			_, err = u.CreateProjectFromCollectionMeta(meta)
+			project, err = u.CreateProjectFromCollectionMeta(meta)
 			if err != nil {
 				u.Logger.Error("u.CreateProjectFromCollectionMeta", err.Error(), err)
 				return err
@@ -84,6 +85,18 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			u.Logger.Error("u.Repo.SetProjectCreatedMeta", err.Error(), err)
 			continue
 		}
+
+		if project == nil {
+			u.Logger.ErrorAny("CreateProjectsFromMetas.NilProject")
+			continue
+		}
+		
+		err = u.Repo.SetMetaMappedProjectID(meta, project.TokenID)
+		if err != nil {
+			u.Logger.Error("CreateProjectsFromMetas.SetMetaMappedProjectID", zap.Error(err))
+			continue
+		}
+		u.Logger.Info("SetMetaMappedProjectID", zap.Any("projectID", project.TokenID))
 		
 		if processed % 20 == 0 {
 			time.Sleep(1 * time.Second)
@@ -118,10 +131,13 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 				}
 				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 				if err != nil {
-					u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
-					continue
+					if !errors.Is(err, repository.ErrNoProjectsFound) {
+						u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+						continue
+					}
+				} else {
+					u.Logger.Info(fmt.Sprintf("Done create token %s", inscription.ID))
 				}
-				u.Logger.Info(fmt.Sprintf("Done create token %s", inscription.ID))
 			}
 		}
 

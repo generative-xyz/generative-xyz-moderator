@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var ErrNoProjectsFound = errors.New("projects: no documents in result")
+
 func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{utils.KEY_UUID, projectID}})
