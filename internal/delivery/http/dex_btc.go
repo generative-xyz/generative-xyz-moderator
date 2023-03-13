@@ -224,10 +224,11 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	artistAddress := ""
-	if creator.WalletAddressBTCTaproot != "" {
-		artistAddress = creator.WalletAddressBTCTaproot
-	} else {
+	// prioritize WalletAddressBTC address
+	if creator.WalletAddressBTC != "" {
 		artistAddress = creator.WalletAddressBTC
+	} else {
+		artistAddress = creator.WalletAddressBTCTaproot
 	}
 
 	resp := response.ListingFee{
@@ -273,4 +274,128 @@ func (h *httpDelivery) submitDexBTCBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
+
+func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.GenDexBTCBuyETH
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	if reqBody.ReceiveAddress == "" {
+		user, err := h.Usecase.Repo.FindUserByID(userID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
+			return
+		}
+		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
+	}
+	buyOrderID, tempAddress, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.Amount, reqBody.FeeRate, reqBody.ReceiveAddress)
+	if err != nil {
+		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	result := response.GenDexBTCBuyETH{
+		OrderID:     buyOrderID,
+		TempAddress: tempAddress,
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) updateDexBTCBuyETHOrderTx(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.UpdateDexBTCBuyETHTx
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
+	if err != nil {
+		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
+
+// func (h *httpDelivery) submitDexBTCBuyETHTx(w http.ResponseWriter, r *http.Request) {
+// 	var reqBody request.SubmitDexBTCBuyETH
+// 	decoder := json.NewDecoder(r.Body)
+// 	err := decoder.Decode(&reqBody)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	var ok bool
+// 	ctx := r.Context()
+// 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+// 	userID, ok := iUserID.(string)
+// 	if !ok {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+// 		return
+// 	}
+
+// 	err = h.Usecase.DexBTCBuyWithETH(userID, reqBody.OrderID, reqBody.Txhash, reqBody.FeeRate)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.submitDexBTCBuyETHTx.DexBTCBuyWithETH", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+
+// 	// address := userInfo.WalletAddressBTCTaproot
+// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+// }
+
+func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+
+	list, err := h.Usecase.Repo.GetDexBTCBuyETHOrderByUserID(userID, int64(limit), int64(offset))
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCBuyETHHistory.GetDexBTCBuyETHOrderByUserID", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	// address := userInfo.WalletAddressBTCTaproot
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
 }
