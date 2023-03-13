@@ -1031,10 +1031,9 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 		}
 		if len(delegations) > 0 {
 			for i := range delegations {
-				delegateWalletAddress := delegations[i].Contract.String()
+				delegateWalletAddress := delegations[i].Vault.String()
 				resp[delegateWalletAddress] = &entity.Pagination{
-					Page:     pag.Page,
-					PageSize: pag.PageSize,
+					PageSize: int64(*reqMoralisFilter.Limit),
 				}
 				nft, err := u.MoralisNft.GetNftByWalletAddress(delegateWalletAddress, reqMoralisFilter)
 				if err != nil {
