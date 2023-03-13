@@ -415,6 +415,16 @@ func (r Repository) FindOneBy(ctx context.Context, collectionName string, filter
 	}
 	return nil
 }
+func (b Repository) Create(ctx context.Context, collectionName string, model interface{}, opts ...*options.InsertOneOptions) (primitive.ObjectID, error) {
+	result, err := b.DB.Collection(collectionName).InsertOne(ctx, model, opts...)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if id, ok := result.InsertedID.(primitive.ObjectID); ok {
+		return id, nil
+	}
+	return primitive.NilObjectID, nil
+}
 func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
