@@ -67,3 +67,20 @@ func (r Repository) SetProjectCreatedMeta(meta entity.CollectionMeta) error {
 	return err
 } 
 
+func (r Repository) SetMetaMappedProjectID(meta entity.CollectionMeta, projectID string) error {
+	f := bson.D{
+		{Key: "uuid", Value: meta.UUID,},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"project_id": projectID,
+		},
+	}
+
+	_, err := r.DB.Collection(meta.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
