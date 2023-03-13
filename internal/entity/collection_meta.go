@@ -20,6 +20,7 @@ type CollectionMeta struct {
 	Royalty					string  `bson:"royalty" json:"royalty"`
 	Source          string `bson:"source"`
 	WalletAddress   string `bson:"wallet_address" json:"wallet_address"`
+	ProjectID       string `bson:"project_id" json:"project_id"`
 }
 
 func (u CollectionMeta) TableName() string { 
