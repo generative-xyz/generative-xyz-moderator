@@ -27,6 +27,27 @@ definitions:
       uuid:
         type: string
     type: object
+  entity.FirebaseRegistrationToken:
+    properties:
+      created_at:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      device_type:
+        type: string
+      id:
+        type: string
+      registration_token:
+        type: string
+      updatedAt:
+        type: string
+      user_wallet:
+        type: string
+      uuid:
+        type: string
+    type: object
   entity.InscribeBTCResp:
     properties:
       amount:
@@ -51,6 +72,8 @@ definitions:
       isSuccess:
         description: 'default: false. If InscriptionID was sent to user, it''s true'
         type: boolean
+      projectTokenId:
+        type: string
       status:
         description: status for record
         type: integer
@@ -512,6 +535,15 @@ definitions:
         description: eth wallet artist receive royalty
         type: string
     type: object
+  nfts.InscribeBTC:
+    properties:
+      inscription_id:
+        type: string
+      project_token_id:
+        type: string
+      status:
+        type: integer
+    type: object
   nfts.MoralisToken:
     properties:
       amount:
@@ -520,12 +552,15 @@ definitions:
         type: string
       contract_type:
         type: string
+      inscribe_btc:
+        $ref: '#/definitions/nfts.InscribeBTC'
       is_minted:
         type: boolean
       metadata:
         type: string
       metadata_obj:
         $ref: '#/definitions/nfts.MoralisTokenMetadata'
+        description: Custom
       name:
         type: string
       owner_of:
@@ -667,6 +702,30 @@ definitions:
         type: string
       walletAddress:
         type: string
+    type: object
+  request.CreateFcmDataTest:
+    properties:
+      data:
+        additionalProperties:
+          type: string
+        type: object
+      device_type:
+        type: string
+      registration_token:
+        type: string
+    required:
+    - data
+    - device_type
+    type: object
+  request.CreateFcmRequest:
+    properties:
+      device_type:
+        type: string
+      registration_token:
+        type: string
+    required:
+    - device_type
+    - registration_token
     type: object
   request.CreateInscribeBtcReq:
     properties:
@@ -835,6 +894,14 @@ definitions:
         type: string
       projectID:
         type: string
+      reserveMintLimit:
+        type: integer
+      reserveMintPrice:
+        type: string
+      reservers:
+        items:
+          type: string
+        type: array
       royalty:
         type: integer
       thumbnail:
@@ -1106,7 +1173,7 @@ definitions:
       contentType:
         type: string
       sat:
-        type: string
+        type: number
       timestamp:
         type: string
     type: object
@@ -2207,6 +2274,72 @@ paths:
       summary: ETH Generate receive wallet address
       tags:
       - ETH
+  /fcm/token:
+    get:
+      consumes:
+      - application/json
+      description: FCM Token
+      parameters:
+      - description: Device Type
+        in: query
+        name: device_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.FirebaseRegistrationToken'
+      security:
+      - ApiKeyAuth: []
+      summary: FCM Token
+      tags:
+      - FCM
+    post:
+      consumes:
+      - application/json
+      description: Create FCM Token
+      parameters:
+      - description: Create fcm request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateFcmRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create FCM Token
+      tags:
+      - FCM
+  /fcm/token/data:
+    post:
+      consumes:
+      - application/json
+      description: Create FCM Token Test Data
+      parameters:
+      - description: Create fcm test data request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateFcmDataTest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create FCM Token Test Data
+      tags:
+      - FCM
   /files:
     post:
       description: Upload file
@@ -2498,7 +2631,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe

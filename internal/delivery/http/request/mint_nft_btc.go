@@ -6,4 +6,5 @@ type CreateMintReceiveAddressReq struct {
 	PayType           string `json:"payType"`
 	RefundUserAddress string `json:"refundUserAddress"`
 	Quantity          int    `json:"quantity"`
+	FeeRate           int32  `json:"feeRate"`
 }

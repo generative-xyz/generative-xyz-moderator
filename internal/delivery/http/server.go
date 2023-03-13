@@ -13,6 +13,7 @@ import (
 	_logger "rederinghub.io/utils/logger"
 	_redis "rederinghub.io/utils/redis"
 
+	"github.com/go-playground/validator"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -41,6 +42,7 @@ type httpDelivery struct {
 	deliveryConfig
 	Usecase    usecase.Usecase
 	MiddleWare middleware.IMiddleware
+	Validator  *validator.Validate
 }
 
 func NewHandler(global *global.Global, uc usecase.Usecase) (*httpDelivery, error) {
@@ -49,6 +51,7 @@ func NewHandler(global *global.Global, uc usecase.Usecase) (*httpDelivery, error
 	m := middleware.NewMiddleware(uc, global)
 	h.Usecase = uc
 	h.MiddleWare = m
+	h.Validator = validator.New()
 	return h, nil
 }
 

@@ -98,7 +98,6 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-
 		for _, token := range uTokens {
 			r, err := h.tokenToResp(&token)
 			if err != nil {
@@ -111,8 +110,8 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			if err == nil && listingInfo.CancelTx == "" {
 				r.Buyable = true
 				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
+				r.OrderID = listingInfo.UUID
 			}
-
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
 		}
 	}

@@ -393,6 +393,17 @@ func (r Repository) CreateCollectionIndexes() error {
 	return nil
 }
 
+func (b Repository) Find(ctx context.Context, collectionName string, filters map[string]interface{}, result interface{}, opts ...*options.FindOptions) error {
+	cur, err := b.DB.Collection(collectionName).Find(ctx, filters, opts...)
+	if err != nil {
+		return err
+	}
+	if err := cur.All(ctx, result); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r Repository) FindOneBy(ctx context.Context, collectionName string, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error {
 	res := r.DB.Collection(collectionName).FindOne(ctx, filters, opts...)
 	if res.Err() != nil {
