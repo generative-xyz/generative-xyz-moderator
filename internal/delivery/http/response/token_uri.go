@@ -63,10 +63,11 @@ type InternalTokenURIResp struct {
 	NftTokenId            string           `json:"nftTokenId"`
 
 	// for buyable:
-	Buyable     bool   `json:"buyable"`
-	IsCompleted bool   `json:"isCompleted"`
-	PriceBTC    string `json:"priceBTC"`
-	OrderID     string `json:"orderID"`
+	Buyable      bool   `json:"buyable"`
+	IsCompleted  bool   `json:"isCompleted"`
+	SellVerified bool   `json:"sell_verified"`
+	PriceBTC     string `json:"priceBTC"`
+	OrderID      string `json:"orderID"`
 
 	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
 }
