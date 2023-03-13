@@ -42,6 +42,7 @@ type UpdateProfile struct {
 	Avatar               *string
 	WalletAddressBTC     *string
 	WalletAddressPayment *string
+	EnableNotification   *bool
 }
 
 type ProfileSocial struct {
