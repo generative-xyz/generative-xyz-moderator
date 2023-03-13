@@ -311,8 +311,8 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 	}
 	minted := projectInfo.MintingInfo.Index
 	mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
-	mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
-	mintVolume := uint64(minted) * uint64(mintPrice+mintFee)
+	// mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
+	mintVolume := uint64(minted) * uint64(mintPrice)
 
 	var result response.ProjectMarketplaceData
 
