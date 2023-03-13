@@ -293,13 +293,53 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	tempAddress, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.FeeRate)
+	if reqBody.ReceiveAddress == "" {
+		user, err := h.Usecase.Repo.FindUserByID(userID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
+			return
+		}
+		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
+	}
+	buyOrderID, tempAddress, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.Amount, reqBody.FeeRate, reqBody.ReceiveAddress)
 	if err != nil {
 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, tempAddress, "")
+
+	result := response.GenDexBTCBuyETH{
+		OrderID:     buyOrderID,
+		TempAddress: tempAddress,
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) updateDexBTCBuyETHOrderTx(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.UpdateDexBTCBuyETHTx
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
+	if err != nil {
+		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
 }
 
 // func (h *httpDelivery) submitDexBTCBuyETHTx(w http.ResponseWriter, r *http.Request) {

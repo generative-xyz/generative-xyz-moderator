@@ -295,25 +295,35 @@ func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mo
 	return result, err
 }
 
-// func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*entity.DexBTCListing, error) {
-// 	resp := &entity.DexBTCListing{}
+func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
-// 	f := bson.D{
-// 		{Key: "inscription_id", Value: id},
-// 		{Key: "matched", Value: false},
-// 		{Key: "cancelled", Value: false},
-// 	}
+	update := bson.M{
+		"$set": bson.M{
+			"eth_tx": model.ETHTx,
+		},
+	}
 
-// 	orderInfo, err := r.FilterOne(utils.COLLECTION_DEX_BTC_LISTING, f, &options.FindOneOptions{
-// 		Sort: bson.D{{Key: "created_at", Value: -1}},
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
 
-// 	err = helpers.Transform(orderInfo, resp)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return resp, nil
-// }
+	return result, err
+}
+
+func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCBuyWithETH, error) {
+	f := bson.D{{Key: "uuid", Value: buyOrderID}}
+
+	resp := &entity.DexBTCBuyWithETH{}
+	usr, err := r.FilterOne(utils.COLLECTION_DEX_BTC_BUY_ETH, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
