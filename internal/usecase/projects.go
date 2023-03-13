@@ -1896,6 +1896,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
+			Index:           1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
 			CreatorAddrrBTC: creator.WalletAddressBTC,
