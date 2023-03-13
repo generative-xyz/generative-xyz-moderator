@@ -1003,7 +1003,7 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 		}
 
 		// cal fee:
-		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE)
+		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE, 0, 0)
 		if err != nil {
 			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 			return nil, err

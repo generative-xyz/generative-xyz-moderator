@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/helpers"
 )
 
 type FeeRates struct {
@@ -83,6 +84,18 @@ func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 
 func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRateInfo, error) {
 
+	var btcRate, ethRate float64
+
+	btcRate, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		return nil, err
+	}
+
+	ethRate, err = helpers.GetExternalPrice("ETH")
+	if err != nil {
+		return nil, err
+	}
+
 	levelFeeFullInfo := make(map[string]FeeRateInfo)
 
 	feeRateFromChain, err := u.getFeeRateFromChain()
@@ -94,15 +107,15 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRate
 	fmt.Println("halfHourFee", feeRateFromChain.HalfHourFee)
 	fmt.Println("hourFee", feeRateFromChain.HourFee)
 
-	fastestMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.FastestFee))
+	fastestMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	fasterMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HalfHourFee))
+	fasterMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HalfHourFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	economyMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HourFee))
+	economyMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +134,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRate
 	}
 
 	if customRate > 0 {
-		customRateMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(customRate))
+		customRateMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(customRate), btcRate, ethRate)
 		if err != nil {
 			return nil, err
 		}

@@ -126,7 +126,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	// cal fee:
-	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate))
+	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err
@@ -1414,7 +1414,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 }
 
 // please donate P some money:
-func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[string]entity.MintFeeInfo, error) {
+func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, ethRate float64) (map[string]entity.MintFeeInfo, error) {
 
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
@@ -1455,19 +1455,22 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[stri
 		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
 
-	var btcRate, ethRate float64
+	if btcRate <= 0 {
+		btcRate, err = helpers.GetExternalPrice("BTC")
+		if err != nil {
+			u.Logger.Error("getExternalPrice", zap.Error(err))
+			return nil, err
+		}
 
-	btcRate, err = helpers.GetExternalPrice("BTC")
-	if err != nil {
-		u.Logger.Error("getExternalPrice", zap.Error(err))
-		return nil, err
+		ethRate, err = helpers.GetExternalPrice("ETH")
+		if err != nil {
+			u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
+			return nil, err
+		}
 	}
 
-	ethRate, err = helpers.GetExternalPrice("ETH")
-	if err != nil {
-		u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
-		return nil, err
-	}
+	fmt.Println("btcRate, ethRate", btcRate, ethRate)
+
 	// total amount by BTC:
 	netWorkFee = netWorkFee.Add(feeMintNft, feeSendNft)  // + feeMintNft	+ feeSendNft
 	netWorkFee = netWorkFee.Add(netWorkFee, feeSendFund) // + feeSendFund
