@@ -248,9 +248,12 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	projectID := vars["projectID"]
 
+	userAddress := r.URL.Query().Get("userAddress")
+
 	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
-		ContractAddress: contractAddress,
-		ProjectID:       projectID,
+		ContractAddress:            contractAddress,
+		ProjectID:                  projectID,
+		UserAddressToCheckDiscount: userAddress,
 	})
 
 	if err != nil {

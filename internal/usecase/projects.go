@@ -997,6 +997,41 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 	}
 	if c.MintingInfo.Index < c.MaxSupply {
 
+		if len(req.UserAddressToCheckDiscount) > 0 {
+			if len(c.Reservers) > 0 {
+				for _, address := range c.Reservers {
+					if strings.EqualFold(address, req.UserAddressToCheckDiscount) {
+
+						// get list item mint:
+						countMinted := 0
+						mintReadyList, _ := u.Repo.GetLimitWhiteList(req.UserAddressToCheckDiscount, req.ProjectID)
+
+						for _, mItem := range mintReadyList {
+
+							if mItem.IsConfirm {
+								if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+									countMinted += 1
+								}
+
+							} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+								if time.Since(mItem.ExpiredAt) < 1*time.Second {
+									countMinted += mItem.Quantity
+								}
+							}
+						}
+						maxSlot := c.ReserveMintLimit - countMinted
+
+						if maxSlot <= 0 {
+							c.Reservers = []string{}
+						}
+
+						break
+					}
+				}
+
+			}
+		}
+
 		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)
 		if !ok {
 			mintPrice = big.NewInt(0)
