@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -21,11 +23,25 @@ import (
 )
 
 func (u Usecase) JobAggregateVolumns() {
-	now := time.Now().UTC()
-	projects, err := u.Repo.FindProjectsHaveMinted()
+	cached := []string{}
+	str, err := u.Cache.GetData("btcIDs")
 	if err != nil {
 		return
 	}
+
+	err = json.Unmarshal([]byte(*str), &cached)
+	if err != nil {
+		return
+	}
+
+	now := time.Now().UTC()
+	projects, err := u.Repo.FindProjectsHaveMinted(cached)
+	if err != nil {
+		return
+	}
+	fileName := fmt.Sprintf("projects-volumn-%s.json", now)
+	helpers.CreateFile(fileName, projects)
+	
 
 	payTypes := []string{
 		string(entity.BIT),
@@ -96,23 +112,30 @@ func (u Usecase) JobAggregateVolumns() {
 	for _, _ = range projects {
 		for _, _ = range payTypes {
 			pLog := <-pLogsChannel
-			u.CreateVolumn(pLog)
-			pLogs = append(pLogs, pLog)
+			//u.CreateVolumn(pLog)
+			a, _ :=  strconv.Atoi(pLog.Available)
+			if pLog.OldMinted > 0 &&  a > 0 {
+				pLogs = append(pLogs, pLog)
+			}
+			
 		}
 	}
 
-	fileName := fmt.Sprintf("aggregated-volumn/%s.json", now)
+	fileName = fmt.Sprintf("aggregated-volumn-%s.json", now)
 	fileName = strings.ReplaceAll(fileName, " ", "-")
 	fileName = strings.ReplaceAll(fileName, ":", "_")
 	fileName = strings.ReplaceAll(fileName, "+", "_")
 	fileName = strings.ToLower(fileName)
-	bytes, err := json.Marshal(pLogs)
+
+	helpers.CreateFile(fileName, pLogs)
+	//bytes, err := json.Marshal(pLogs)
 	if err == nil {
-		base64String := helpers.Base64Encode(bytes)
-		uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
+
+		//base64String := helpers.Base64Encode(bytes)
+		//uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
 		if err == nil {
 			//spew.Dump(uploaded)
-			u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
 	}
 	spew.Dump("done")
@@ -250,37 +273,113 @@ type csvLine struct {
 }
 
 func (u Usecase) MigrateFromCSV() {
-	// f, err := os.Open("artist_balance_1.csv")
-	// if err != nil {
-	// 	return
-	// }
+	f, err := os.Open("13-03-2023_paid_artists.csv")
+	if err != nil {
+		return
+	}
 
-	// // remember to close the file at the end of the program
-	// defer f.Close()
+	// remember to close the file at the end of the program
+	defer f.Close()
 
-	// // read csv values using csv.Reader
-	// csvReader := csv.NewReader(f)
-	// data, err := csvReader.ReadAll()
-	// if err != nil {
-	// 	return
-	// }
+	// read csv values using csv.Reader
+	csvReader := csv.NewReader(f)
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		return
+	}
 
-	//csvData := []csvLine{}
-	// convert records to array of structs
-	// for i, _ := range data {
-	// 	if i > 1 { // omit header line
-	// 		tmp := csvLine{
-	// 			ProjectID:  "1001311",
-	// 			Artist:     "crashblossom",
-	// 			Collection: "RECALL",
-	// 			//Status:     line[3],
-	// 			BTC:        "0.045",
-	// 			ETH:        "43.40304",
-	// 		}
+	csvData := []csvLine{}
+	csvDataWithAmount := make(map[string]csvLine)
+	projectIDs := []string{}
+	//convert records to array of structs
+	for i, line := range data {
+		if i > 1 { // omit header line
+			tmp := csvLine{
+				ProjectID:   line[0],
+				// Artist:      line[1],
+				// Collection:  line[2],
+				BTC:       	 line[5],
+				ETH:          line[6],
+			}
+			projectIDs = append(projectIDs, line[0])
+			csvData = append(csvData, tmp)
 
-	// 		csvData = append(csvData, tmp)
-	// 	}
-	// }
+			csvDataWithAmount[tmp.ProjectID] = tmp
+		}
+	}
+
+	type mintedData struct {
+		ProjectID string
+		Amount string
+		Withdraw string
+		PayType string
+		Minted int
+		Available string
+	}
+
+	helpers.CreateFile("projectIDs.json",projectIDs)
+
+
+
+	
+	dataResp := []mintedData{}
+	btcWalletAddresses , err := u.Repo.FindWalletAddressesIn(projectIDs, entity.BTCWalletAddress{}.TableName())
+	if err != nil {
+		logger.AtLog.Error(zap.Error(err))
+	}
+
+
+	btcIDs := []string{}
+	for _, btcWalletAddress := range btcWalletAddresses {
+		amount :=  btcWalletAddress.Amount
+		withdraw := csvDataWithAmount[btcWalletAddress.ProjectID].BTC
+		withdrawF, _ := strconv.ParseFloat(withdraw, 10)  
+		withdrawF = withdrawF * 1e8
+		a := amount*0.9 - withdrawF
+
+		dataResp  = append(dataResp, mintedData{
+			ProjectID: btcWalletAddress.ProjectID,
+			Amount: fmt.Sprintf("%d", int(amount)),
+			Withdraw: fmt.Sprintf("%d", int(withdrawF)),
+			Minted: btcWalletAddress.Minted,
+			PayType: string(entity.BIT),
+			Available: fmt.Sprintf("%d", int(a)) ,
+		}) 
+
+		btcIDs = append(btcIDs, btcWalletAddress.ProjectID)
+	}
+	
+	helpers.CreateFile("dataResp-btc.json",dataResp)
+	ethWalletAddresses , err := u.Repo.FindWalletAddressesIn(projectIDs, entity.ETHWalletAddress{}.TableName())
+	if err != nil {
+		logger.AtLog.Error(zap.Error(err))
+	}
+
+	//ethIDs := []string{}
+	dataResp = []mintedData{}
+	for _, ethWalletAddress := range ethWalletAddresses {
+		amount :=  ethWalletAddress.Amount / 1e10
+		withdraw := csvDataWithAmount[ethWalletAddress.ProjectID].ETH
+		withdrawF, _ := strconv.ParseFloat(withdraw, 10)  
+		withdrawF = withdrawF * 1e8
+		a := amount*0.9 - withdrawF
+
+		//spew.Dump(ethWalletAddress.ProjectID, ethWalletAddress.Minted, amount)
+		dataResp  = append(dataResp, mintedData{
+			ProjectID: ethWalletAddress.ProjectID,
+			Amount: fmt.Sprintf("%d", int(amount)),
+			Withdraw: fmt.Sprintf("%d", int(withdrawF)),
+			Minted: ethWalletAddress.Minted,
+			PayType: string(entity.ETH),
+			Available: fmt.Sprintf("%d", int(a)) ,
+		}) 
+
+		btcIDs = append(btcIDs, ethWalletAddress.ProjectID)
+	}
+
+	u.Cache.SetData("btcIDs",btcIDs)
+	helpers.CreateFile("dataResp-eth.json",dataResp)
+	
 	//spew.Dump(len(csvData))
 	//processCsvData := []csvLine{}
 	// for _, csv := range csvData {
@@ -293,50 +392,50 @@ func (u Usecase) MigrateFromCSV() {
 	// 	processCsvData = append(processCsvData, csv)
 	// }
 
-	tmp := csvLine{
-		ProjectID:  "1001311",
-		Artist:     "crashblossom",
-		Collection: "RECALL",
-		//Status:     line[3],
-		BTC:        "0.045",
-		ETH:        "43.40304",
-	}
+	// tmp := csvLine{
+	// 	ProjectID:  "1001311",
+	// 	Artist:     "crashblossom",
+	// 	Collection: "RECALL",
+	// 	//Status:     line[3],
+	// 	BTC:        "0.045",
+	// 	ETH:        "43.40304",
+	// }
 
-	//csvData = append(csvData, tmp)
-	processCsvData := []csvLine{}
-	processCsvData = append(processCsvData, tmp)
-	spew.Dump(len(processCsvData))
-	wdsETH := []*entity.Withdraw{}
-	for _, csv := range processCsvData {
-		wd, _, err := u.CreateWD(csv, string(entity.ETH))
-		if err != nil {
-			continue
-		}
-		wdsETH = append(wdsETH, wd)
-		// if isDuplicated {
-		// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
-		// 	wds = append(wds, wd1)
-		// }
-		u.Repo.CreateWithDraw(wd)
+	// //csvData = append(csvData, tmp)
+	// processCsvData := []csvLine{}
+	// processCsvData = append(processCsvData, tmp)
+	// spew.Dump(len(processCsvData))
+	// wdsETH := []*entity.Withdraw{}
+	// for _, csv := range processCsvData {
+	// 	wd, _, err := u.CreateWD(csv, string(entity.ETH))
+	// 	if err != nil {
+	// 		continue
+	// 	}
+	// 	wdsETH = append(wdsETH, wd)
+	// 	// if isDuplicated {
+	// 	// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
+	// 	// 	wds = append(wds, wd1)
+	// 	// }
+	// 	u.Repo.CreateWithDraw(wd)
 
-	}
-	spew.Dump(len(wdsETH))
+	// }
+	// spew.Dump(len(wdsETH))
 
-	wdsBTC := []*entity.Withdraw{}
-	for _, csv := range processCsvData {
-		wd, _, err := u.CreateWD(csv, string(entity.BIT))
-		if err != nil {
-			continue
-		}
+	// wdsBTC := []*entity.Withdraw{}
+	// for _, csv := range processCsvData {
+	// 	wd, _, err := u.CreateWD(csv, string(entity.BIT))
+	// 	if err != nil {
+	// 		continue
+	// 	}
 
-		wdsBTC = append(wdsBTC, wd)
-		u.Repo.CreateWithDraw(wd)
-		// if isDuplicated {
-		// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
-		// 	wds = append(wds, wd1)
-		// }
-	}
-	spew.Dump(len(wdsBTC))
+	// 	wdsBTC = append(wdsBTC, wd)
+	// 	u.Repo.CreateWithDraw(wd)
+	// 	// if isDuplicated {
+	// 	// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
+	// 	// 	wds = append(wds, wd1)
+	// 	// }
+	// }
+	// spew.Dump(len(wdsBTC))
 
 	// print the array
 	//fmt.Printf("%+v\n", shoppingList)
@@ -571,4 +670,24 @@ func (u Usecase) AggregateMintPrice(project entity.ProjectsHaveMinted, payType s
 		}
 	}
 	return int(mintPrice)
+}
+
+
+func (u Usecase) WriteCsv(fileName string, records []csvLine) {
+	csvFile, err := os.Create(fileName)
+		if err != nil {
+			log.Fatalf("failed creating file: %s", err)
+		}
+		csvFile.Close()
+	
+		csvwriter := csv.NewWriter(csvFile)
+		for _, record := range records {
+			row := []string{record.ProjectID}
+			_ = csvwriter.Write(row)
+		}
+		csvwriter.Flush()
+	
+	
+	
+		return 
 }

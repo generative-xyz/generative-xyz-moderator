@@ -32,10 +32,11 @@ func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 }
 
 
-func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error) {
+func (r Repository) FindProjectsHaveMinted(projectIDs []string) ([]entity.ProjectsHaveMinted, error) {
 	projects := []entity.ProjectsHaveMinted{}
 	f := bson.M{}
 	f["index"] = bson.M{"$gte": 1}
+	f["tokenid"] = bson.M{"$in": projectIDs}
 	//f["tokenid"] = "1001572"
 	opts := options.Find().SetProjection(bson.D{
 		{"tokenid", 1},

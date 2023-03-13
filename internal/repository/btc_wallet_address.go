@@ -374,3 +374,62 @@ func (r Repository) FindDataMissingRate() ([]entity.MintNftBtc, error ) {
 
 	return resp, nil
 }
+
+
+func (r Repository) FindWalletAddressesIn(projectIDs []string, collectionName string) ([]entity.AggregateProjectItemResp, error) {
+	confs := []entity.AggregateProjectItemResp{}
+	pipeLine :=  bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"mintResponse.issent", true},
+					{"projectID", bson.M{`$in`: projectIDs}},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"projectID", "$projectID"},
+						},
+					},
+					{"amount", bson.D{{"$sum", bson.D{{"$toDouble", "$amount"}}}}},
+					{"minted", bson.D{{"$sum", 1}}},
+				},
+			},
+		},
+	}
+	
+	cursor, err := r.DB.Collection(collectionName).Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// display the results
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	for _, item := range results {
+		res := &entity.AggregateProjectItem{}
+		err = helpers.Transform(item, res)
+		if err != nil {
+			return nil, err
+		}
+		tmp := entity.AggregateProjectItemResp{
+			ProjectID: res.ID.ProjectID,
+			Paytype: res.ID.Paytype,
+			BtcRate: res.ID.BtcRate,
+			EthRate: res.ID.EthRate,
+			MintPrice: res.ID.MintPrice,
+			Amount: res.Amount,
+			Minted: res.Minted,
+		}
+		confs = append(confs, tmp)
+	}
+	
+	return confs, nil
+}

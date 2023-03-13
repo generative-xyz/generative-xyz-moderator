@@ -109,7 +109,7 @@ func (r Repository) AggregateWithDrawByProject(projectID string, paytype string)
 	f :=  bson.A{}
 	f = append(f, bson.M{"payType": paytype})
 	f = append(f, bson.M{"withdrawItemID": projectID})
-	f = append(f, bson.M{"status": bson.M{"$in": []uint{entity.StatusWithdraw_Approve}}})
+	f = append(f, bson.M{"status": bson.M{"$in": []uint{entity.StatusWithdraw_Approve, entity.StatusWithdraw_Pending}}})
 	
 	// PayType *string
 	// ReferreeIDs []string
