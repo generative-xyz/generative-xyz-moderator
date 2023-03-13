@@ -1086,6 +1086,9 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			if err != nil {
 				return urlStr
 			}
+			if r.StatusCode > http.StatusNoContent {
+				return urlStr
+			}
 			defer r.Body.Close()
 			imgByte, err := io.ReadAll(r.Body)
 			if err != nil {
