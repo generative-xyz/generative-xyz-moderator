@@ -189,6 +189,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 				resp.Buyable = true
 				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				resp.OrderID = listingInfo.UUID
+				resp.SellVerified = listingInfo.Verified
 			}
 		}
 	}
