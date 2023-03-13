@@ -81,7 +81,7 @@ func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 
 }
 
-func (u Usecase) GetLevelFeeInfo(fileSize int64) (map[string]FeeRateInfo, error) {
+func (u Usecase) GetLevelFeeInfo(fileSize, customRate int64) (map[string]FeeRateInfo, error) {
 
 	levelFeeFullInfo := make(map[string]FeeRateInfo)
 
@@ -119,5 +119,17 @@ func (u Usecase) GetLevelFeeInfo(fileSize int64) (map[string]FeeRateInfo, error)
 		FeeRate:     feeRateFromChain.HourFee,
 		MintFeeInfo: economyMintInfo,
 	}
+
+	if customRate > 0 {
+		customRateMintInfo, err := u.calMintFeeInfo(0, fileSize, int64(customRate))
+		if err != nil {
+			return nil, err
+		}
+		levelFeeFullInfo["customRate"] = FeeRateInfo{
+			FeeRate:     int(customRate),
+			MintFeeInfo: customRateMintInfo,
+		}
+	}
+
 	return levelFeeFullInfo, nil
 }
