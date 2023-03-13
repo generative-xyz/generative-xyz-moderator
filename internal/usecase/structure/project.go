@@ -69,7 +69,6 @@ type CreateBtcProjectReq struct {
 	OrdinalsTx             string   `json:"ordinalsTx"`
 	InscribedBy            string   `json:"inscribedBy"`
 	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
-	Index                  int64    `json:"-"`
 }
 
 type UpdateBTCProjectReq struct {
