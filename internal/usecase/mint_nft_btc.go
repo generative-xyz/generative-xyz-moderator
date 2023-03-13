@@ -42,7 +42,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	if input.Quantity <= 0 {
 		err = errors.New("quantity invalid")
-		u.Logger.Error("input.Quantity", err.Error(), err)
+
 		return nil, err
 	}
 
@@ -127,14 +127,16 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	// check whitelist price in project.reservers to get reserveMintPrice
 	if len(p.Reservers) > 0 {
+
 		for _, address := range p.Reservers {
 			if strings.EqualFold(address, walletAddress.UserAddress) {
+
 				reserveMintPrice, ok := big.NewInt(0).SetString(p.ReserveMintPrice, 10)
 				if ok {
 
 					// get list item mint:
 					countMinted := 0
-					mintReadyList, _ := u.Repo.GetLimitWhiteList(walletAddress.UserAddress, input.ProjectID)
+					mintReadyList, _ := u.Repo.GetLimitWhiteList(input.UserAddress, input.ProjectID)
 
 					for _, mItem := range mintReadyList {
 
@@ -152,12 +154,10 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 					maxSlot := p.ReserveMintLimit - countMinted
 
 					if maxSlot <= 0 {
-						u.Logger.Error("u.CreateMintReceiveAddress.maxSlot", err.Error(), err)
 						return nil, errors.New("You don't have enough slot for this price")
 					}
 
 					if input.Quantity >= maxSlot {
-						u.Logger.Error("u.CreateMintReceiveAddress.maxSlot", err.Error(), err)
 						return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
 					}
 

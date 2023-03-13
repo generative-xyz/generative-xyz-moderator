@@ -12,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindMintNftBtc(key string) (*entity.MintNftBtc, error) {
@@ -216,40 +215,10 @@ func (r Repository) CountBatchRecordOfItems(parentRecord string) ([]entity.MintN
 
 func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.MintNftBtc, error) {
 
-	// filter := bson.M{"projectID": projectID, "user_address": userAddress, "isDiscount": true}
-
-	// resp := []entity.MintNftBtc{}
-	// cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// if err = cursor.All(context.TODO(), &resp); err != nil {
-	// 	return nil, err
-	// }
-
-	// return resp, nil
-
-	//
+	filter := bson.M{"projectID": projectID, "user_address": userAddress, "isDiscount": true}
 
 	resp := []entity.MintNftBtc{}
-	f := bson.M{}
-	f["$and"] = []interface{}{
-		bson.M{"projectID": projectID},
-		bson.M{"user_address": userAddress},
-		bson.M{"isDiscount": true},
-
-		// bson.M{"$or": []interface{}{
-		// 	bson.M{"isConfirm": true},
-		// 	bson.M{"$and": []interface{}{
-		// 		bson.M{"status": 0},
-		// 		bson.M{"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())}},
-		// 	}},
-		// }},
-	}
-
-	opts := options.Find()
-	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Find(context.TODO(), f, opts)
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -257,6 +226,36 @@ func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.M
 	if err = cursor.All(context.TODO(), &resp); err != nil {
 		return nil, err
 	}
+
+	return resp, nil
+
+	//
+
+	// resp := []entity.MintNftBtc{}
+	// f := bson.M{}
+	// f["$and"] = []interface{}{
+	// 	bson.M{"projectID": projectID},
+	// 	bson.M{"user_address": userAddress},
+	// 	bson.M{"isDiscount": true},
+
+	// 	// bson.M{"$or": []interface{}{
+	// 	// 	bson.M{"isConfirm": true},
+	// 	// 	bson.M{"$and": []interface{}{
+	// 	// 		bson.M{"status": 0},
+	// 	// 		bson.M{"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())}},
+	// 	// 	}},
+	// 	// }},
+	// }
+
+	// opts := options.Find()
+	// cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Find(context.TODO(), f, opts)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// if err = cursor.All(context.TODO(), &resp); err != nil {
+	// 	return nil, err
+	// }
 
 	return resp, nil
 }
