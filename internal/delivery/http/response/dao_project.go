@@ -9,6 +9,7 @@ import (
 
 type DaoProject struct {
 	BaseEntity      `json:",inline"`
+	SeqId           uint                  `json:"seq_id"`
 	CreatedBy       string                `json:"created_by"`
 	User            *UserForDaoProject    `json:"user"`
 	ProjectId       string                `json:"project_id"`
