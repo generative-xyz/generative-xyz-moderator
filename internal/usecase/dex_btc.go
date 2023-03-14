@@ -618,6 +618,8 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	newOrder.RefundAddress = refundAddress
 	newOrder.ETHKey = privKey
 	newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
+	newOrder.InscriptionID = order.InscriptionID
+	newOrder.AmountBTC = order.Amount
 	expiredAt := newOrder.ExpiredAt.Unix()
 	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
 	if err != nil {
