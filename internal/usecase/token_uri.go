@@ -595,7 +595,18 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 	
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
-	if filter.Rarity != nil && *filter.Rarity > 0 {
+	if filter.Rarity != nil && *filter.Rarity != "" {
+		r := strings.Split(*filter.Rarity, ",")
+		min := "0"
+		max := "100"
+		if len(r) == 2 {
+			min = r[0]
+			max = r[1]
+		}
+
+		minInt, _ := strconv.Atoi(min)
+		maxInt, _ := strconv.Atoi(max)
+
 		groupTraits := make(map [string][]string)
 		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
 		if err == nil {
@@ -604,7 +615,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				values := trait.TraitValuesStat
 				
 				for _, value := range values {
-					if value.Rarity <= int32(*filter.Rarity) {
+					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
 						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
 						
 					}
