@@ -155,7 +155,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"_id": objectId}, daoProject); err != nil {
 		return err
 	}
-	if !createdBy.IsVerified || strings.EqualFold(createdBy.WalletAddress, userWallet) {
+	if !createdBy.IsVerified || strings.EqualFold(daoProject.CreatedBy, userWallet) {
 		return errors.New("haven't permission")
 	}
 	voteDaoProject := &entity.DaoProjectVoted{
