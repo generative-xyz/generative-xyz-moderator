@@ -185,11 +185,35 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		listingAmountDefault = 99999999999999
 	}
 
+	dexBtcMatch := bson.D{
+		{"matched", false},
+		{"cancelled", false},
+	}
+
 	addNoneBuyItems := true
 	if filter.IsBuynow != nil {
 		if *filter.IsBuynow  == true {
 			addNoneBuyItems = false
 		}
+	}
+
+	priceFilter := bson.A{}
+
+	isFilterPrice := false
+	if filter.FromPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}} )
+	}
+	
+	if filter.ToPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$lte", *filter.ToPrice}}}})
+	}
+
+	if isFilterPrice {
+		dexBtcMatchAnd := bson.E{"$and",  priceFilter}
+		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
+		addNoneBuyItems = false
 	}
 
 	f2 := bson.A{
@@ -210,10 +234,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 						bson.A{
 							bson.D{
 								{"$match",
-									bson.D{
-										{"matched", false},
-										{"cancelled", false},
-									},
+									dexBtcMatch,
 								},
 							},
 						},
@@ -416,20 +437,20 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		f["token_id"] = bson.D{{Key: "$in", Value: filter.TokenIDs}}
 	}
 
-	if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
-		priceFilter := bson.M{}
-		if filter.HasPrice != nil {
-			priceFilter["$exists"] = *filter.HasPrice
-			priceFilter["$ne"] = nil
-		}
-		if filter.FromPrice != nil {
-			priceFilter["$gte"] = *filter.FromPrice
-		}
-		if filter.ToPrice != nil {
-			priceFilter["$lte"] = *filter.ToPrice
-		}
-		f["stats.price_int"] = priceFilter
-	}
+	// if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
+	// 	priceFilter := bson.M{}
+	// 	if filter.HasPrice != nil {
+	// 		priceFilter["$exists"] = *filter.HasPrice
+	// 		priceFilter["$ne"] = nil
+	// 	}
+	// 	if filter.FromPrice != nil {
+	// 		priceFilter["$gte"] = *filter.FromPrice
+	// 	}
+	// 	if filter.ToPrice != nil {
+	// 		priceFilter["$lte"] = *filter.ToPrice
+	// 	}
+	// 	f["stats.price_int"] = priceFilter
+	// }
 
 	andFilters := []bson.M{
 		f,
