@@ -63,13 +63,14 @@ func (h *httpDelivery) createDaoProject(w http.ResponseWriter, r *http.Request) 
 // @Tags DAO Project
 // @Accept json
 // @Produce json
-// @Success 200 {object} nfts.MoralisToken{}
+// @Param id path string true "Dao Project Id"
+// @Success 200 {object} response.DaoProject{}
 // @Router /dao-project/{id} [GET]
 // @Security ApiKeyAuth
 func (h *httpDelivery) getDaoProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			return h.Usecase.GetDAOProject(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS])
 		},
 	).ServeHTTP(w, r)
 }
