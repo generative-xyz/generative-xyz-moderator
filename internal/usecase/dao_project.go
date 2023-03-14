@@ -17,104 +17,36 @@ import (
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
 	result := &entity.Pagination{PageSize: request.PageSize}
-	limit := int64(100)
-	filters := make(bson.M)
-	filterIdOperation := "$lt"
-	sorts := bson.M{
-		"$sort": bson.D{{Key: "_id", Value: -1}},
-	}
-	matchFilters := bson.M{"$match": filters}
-	lookupProject := bson.M{
-		"$lookup": bson.M{
-			"from":         "projects",
-			"localField":   "project_id",
-			"foreignField": "_id",
-			"as":           "project",
-		},
-	}
-	lookupUser := bson.M{
-		"$lookup": bson.M{
-			"from":         "users",
-			"localField":   "created_by",
-			"foreignField": "wallet_address",
-			"as":           "user",
-		},
-	}
-	lookupDaoProjectVoted := bson.M{
-		"$lookup": bson.M{
-			"from":         "dao_project_voted",
-			"localField":   "_id",
-			"foreignField": "dao_project_id",
-			"as":           "dao_project_voted",
-		},
-	}
-	unwindProject := bson.M{"$unwind": "$project"}
-	unwindUser := bson.M{"$unwind": "$user"}
-	addProjectName := bson.M{
-		"$addFields": bson.M{"project_name": "$project.name"},
-	}
-	addUserName := bson.M{
-		"$addFields": bson.M{"user_name": "$user.display_name"},
-	}
-	if len(request.Sorts) > 0 {
-		sort := bson.D{}
-		for _, srt := range request.Sorts {
-			sort = append(sort, bson.E{Key: srt.Field, Value: srt.Type})
-			if srt.Field == "_id" && srt.Type == entity.SORT_ASC {
-				filterIdOperation = "$gt"
-			}
-		}
-		sorts = bson.M{
-			"$sort": sort,
+	user := &entity.Users{}
+	if userWallet != "" {
+		if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": userWallet}, user); err != nil {
+			return nil, err
 		}
 	}
-	if request.PageSize <= limit {
-		limit = request.PageSize
-	}
-	if request.Status != nil {
-		filters["status"] = request.Status
-	}
-	if request.Cursor != "" {
-		if id, err := primitive.ObjectIDFromHex(request.Cursor); err == nil {
-			filters["_id"] = bson.M{filterIdOperation: id}
-		}
-	}
-	filterSearch := bson.M{}
-	matchSearch := bson.M{"$match": filterSearch}
-	if request.Keyword != nil {
-		filterSearch["$or"] = bson.A{
-			bson.M{"project_name": primitive.Regex{
-				Pattern: *request.Keyword,
-				Options: "i",
-			}},
-			bson.M{"user_name": primitive.Regex{
-				Pattern: *request.Keyword,
-				Options: "i",
-			}},
-		}
-	}
-	projects := []*entity.DaoProject{}
-	total, err := s.Repo.Aggregation(ctx,
-		entity.DaoProject{}.TableName(),
-		0,
-		limit,
-		&projects,
-		matchFilters,
-		lookupProject,
-		unwindProject,
-		lookupUser,
-		unwindUser,
-		addProjectName,
-		addUserName,
-		matchSearch,
-		lookupDaoProjectVoted,
-		sorts)
+	projects, total, err := s.Repo.ListDAOProject(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	projectsResp := []*response.DaoProject{}
 	if err := copierInternal.Copy(&projectsResp, projects); err != nil {
 		return nil, err
+	}
+
+	for _, project := range projectsResp {
+		canVote := user.IsVerified
+		if canVote {
+			for _, voted := range project.DaoProjectVoted {
+				if voted.CreatedBy == user.WalletAddress {
+					canVote = false
+					break
+				}
+			}
+		}
+		project.SetFields(
+			project.WithAction(&response.ActionDaoProject{
+				CanVote: canVote,
+			}),
+		)
 	}
 	result.Result = projectsResp
 	result.Total = total
