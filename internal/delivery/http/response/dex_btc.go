@@ -22,6 +22,7 @@ type GenDexBTCBuyETH struct {
 
 type DEXBuyEthHistory struct {
 	ID             string `bson:"id" json:"id"`
+	CreatedAt      int64  `bson:"created_at" json:"created_at"`
 	OrderID        string `bson:"order_id" json:"order_id"`
 	InscriptionID  string `bson:"inscription_id" json:"inscription_id"`
 	AmountBTC      uint64 `bson:"amount_btc" json:"amount_btc"`
