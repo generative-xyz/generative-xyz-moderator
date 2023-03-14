@@ -12,6 +12,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/constants/dao_project"
+	"rederinghub.io/utils/constants/dao_project_voted"
 	copierInternal "rederinghub.io/utils/copier"
 )
 
@@ -103,5 +104,31 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	if len(results) < 0 {
 		return nil, nil
 	}
-	return results[0], nil
+	project := results[0]
+	userWallets := make([]string, 0, len(project.DaoProjectVoted))
+	for _, voted := range project.DaoProjectVoted {
+		userWallets = append(userWallets, voted.CreatedBy)
+		if voted.Status == dao_project_voted.Voted {
+			project.TotalVote += 1
+		}
+		if voted.Status == dao_project_voted.Against {
+			project.TotalAgainst += 1
+		}
+	}
+	if len(userWallets) > 0 {
+		users := []*entity.Users{}
+		userMap := make(map[string]*entity.Users)
+		if err := s.Repo.Find(ctx, entity.Users{}.TableName(), bson.M{"wallet_address": bson.M{"$in": userWallets}}, users); err != nil {
+			return nil, err
+		}
+		for _, user := range users {
+			userMap[user.WalletAddress] = user
+		}
+		for _, voted := range project.DaoProjectVoted {
+			if val, ok := userMap[voted.CreatedBy]; ok {
+				voted.DisplayName = val.DisplayName
+			}
+		}
+	}
+	return project, nil
 }
