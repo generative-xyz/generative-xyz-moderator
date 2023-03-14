@@ -966,6 +966,11 @@ definitions:
       signature:
         type: string
     type: object
+  request.VoteDaoProjectRequest:
+    properties:
+      int64:
+        type: integer
+    type: object
   request.WithDrawItemRequest:
     properties:
       amount:
@@ -1008,6 +1013,10 @@ definitions:
         type: string
       created_by:
         type: string
+      dao_project_voted:
+        items:
+          $ref: '#/definitions/response.DaoProjectVoted'
+        type: array
       deleted_at:
         type: string
       expired_at:
@@ -1020,12 +1029,27 @@ definitions:
         type: string
       status:
         type: integer
+      total_against:
+        type: integer
+      total_vote:
+        type: integer
       updated_at:
         type: string
       user:
         $ref: '#/definitions/response.UserForDaoProject'
       uuid:
         type: string
+    type: object
+  response.DaoProjectVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
     type: object
   response.FileRes:
     properties:
@@ -2150,6 +2174,18 @@ paths:
       consumes:
       - application/json
       description: Vote DAO Project
+      parameters:
+      - description: Create Dao Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VoteDaoProjectRequest'
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
