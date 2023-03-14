@@ -637,6 +637,14 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 	for _, item := range listToMint {
 
+		// check if it is a child item but its parent does not have mint yet, then continue:
+		if len(item.BatchParentId) > 0 {
+			parentItem, _ := u.Repo.FindMintNftBtc(item.BatchParentId)
+			if !parentItem.IsMinted {
+				continue
+			}
+		}
+
 		// get data from project
 		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
@@ -1194,7 +1202,32 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
-		if item.IsSubItem || item.Quantity > 1 {
+		// if parent item:
+		if item.Quantity > 1 {
+			// get list of sub-items, if all have minted then send all funds to master:
+			childItems, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+			minedItems := 0
+			needRefundItems := 0
+			if len(childItems) > 0 {
+				for _, childItem := range childItems {
+					if childItem.IsMinted {
+						minedItems++
+					} else if childItem.Status == entity.StatusMint_NeedToRefund {
+						needRefundItems++
+					}
+				}
+			}
+			// if not enough mint then wait or refund&fund ...
+			if !(minedItems == item.Quantity-1) {
+				if minedItems+needRefundItems == item.Quantity-1 {
+					// refund + fund now:
+					// TODO: code this function send+refund vs 1 tx.
+				}
+				continue
+			}
+			// send master all.
+
+		} else if item.IsSubItem {
 			continue
 		}
 

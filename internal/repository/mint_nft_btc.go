@@ -213,6 +213,24 @@ func (r Repository) CountBatchRecordOfItems(parentRecord string) ([]entity.MintN
 	return resp, nil
 }
 
+func (r Repository) CountBatchRecordOfItemsMined(parentRecord string) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"patch_parent_id": parentRecord, // only get child items
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.MintNftBtc, error) {
 
 	filter := bson.M{"projectID": projectID, "user_address": userAddress, "isDiscount": true}
@@ -257,5 +275,5 @@ func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.M
 	// 	return nil, err
 	// }
 
-	return resp, nil
+	// return resp, nil
 }
