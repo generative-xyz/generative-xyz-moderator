@@ -48,7 +48,7 @@ func (u Usecase) GetTokenActivities(page int64, limit int64, inscriptionID strin
 				Title: "Cancel Listing",
 				UserAAddress: listing.SellerAddress,
 				Amount: int64(listing.Amount),
-				Time: listing.CreatedAt,				
+				Time: listing.CancelAt,				
 			})
 		}
 		if listing.Matched {
@@ -57,6 +57,8 @@ func (u Usecase) GetTokenActivities(page int64, limit int64, inscriptionID strin
 				Title: "Saled",
 				UserAAddress: listing.SellerAddress,
 				UserBAddress: listing.Buyer,
+				Amount: int64(listing.Amount),
+				Time: listing.MatchAt,	
 			})
 		}
 	}
