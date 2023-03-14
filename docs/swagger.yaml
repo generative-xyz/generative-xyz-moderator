@@ -441,6 +441,8 @@ definitions:
         type: string
       image:
         type: string
+      inscribedBy:
+        type: string
       inscriptionIndex:
         type: string
       isOnchain:
@@ -1024,6 +1026,11 @@ definitions:
       type:
         type: string
     type: object
+  response.ActionDaoProject:
+    properties:
+      can_vote:
+        type: boolean
+    type: object
   response.CategoryResp:
     properties:
       id:
@@ -1038,6 +1045,33 @@ definitions:
       key:
         type: string
       value:
+        type: string
+    type: object
+  response.DaoProject:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoProject'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      project:
+        $ref: '#/definitions/response.ProjectForDaoProject'
+      project_id:
+        type: string
+      status:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDaoProject'
+      uuid:
         type: string
     type: object
   response.FileRes:
@@ -1156,6 +1190,8 @@ definitions:
         type: string
       image:
         type: string
+      inscribedBy:
+        type: string
       inscriptionIndex:
         type: string
       isCompleted:
@@ -1270,6 +1306,34 @@ definitions:
         type: boolean
       web:
         type: string
+    type: object
+  response.ProjectForDaoProject:
+    properties:
+      created_at:
+        type: string
+      creator_name:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      minting_info:
+        $ref: '#/definitions/response.ProjectMintingInfo'
+      name:
+        type: string
+      thumbnail:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  response.ProjectMintingInfo:
+    properties:
+      index:
+        type: integer
+      index_reverse:
+        type: integer
     type: object
   response.ProjectResp:
     properties:
@@ -1470,6 +1534,27 @@ definitions:
       rarity:
         type: integer
       value:
+        type: string
+    type: object
+  response.UserForDaoProject:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      display_name:
+        type: string
+      id:
+        type: string
+      is_verified:
+        type: boolean
+      updated_at:
+        type: string
+      uuid:
+        type: string
+      wallet_address:
         type: string
     type: object
   response.VerifyResponse:
@@ -2090,13 +2175,19 @@ paths:
       consumes:
       - application/json
       description: Get DAO Project
+      parameters:
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/nfts.MoralisToken'
+            $ref: '#/definitions/response.DaoProject'
       security:
       - ApiKeyAuth: []
       summary: Get DAO Project
