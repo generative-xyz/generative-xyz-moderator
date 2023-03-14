@@ -569,7 +569,7 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	return &resp, nil
 }
 
-func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.PaginationResponse, error) {
+func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.PaginationResponse, error) {	
 	pag, err := h.Usecase.FilterTokensNew(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)

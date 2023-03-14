@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
@@ -591,12 +592,51 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	
+
+	//filerAttrs := []structure.TokenUriAttrReq{}
+	if filter.Rarity != nil && *filter.Rarity != "" {
+		r := strings.Split(*filter.Rarity, ",")
+		min := "0"
+		max := "100"
+		if len(r) == 2 {
+			min = r[0]
+			max = r[1]
+		}
+
+		minInt, _ := strconv.Atoi(min)
+		maxInt, _ := strconv.Atoi(max)
+
+		groupTraits := make(map [string][]string)
+		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
+		if err == nil {
+			traits := p.TraitsStat
+			for _, trait := range traits {
+				values := trait.TraitValuesStat
+				
+				for _, value := range values {
+					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
+						
+					}
+				}
+			}
+		}
+
+		for key, groupTrait := range  groupTraits {
+			r := structure.TokenUriAttrReq{}
+			r.TraitType = key
+			r.Values = groupTrait
+			filter.RarityAttributes = append(filter.Attributes, r)
+		}
+	}
+
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
-
+	
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
@@ -916,8 +956,12 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	// find project by projectID
 	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
-		u.Logger.Error(err)
-		return nil, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			u.Logger.ErrorAny("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
+			return nil, repository.ErrNoProjectsFound
+		} else {
+			return nil, err
+		}
 	}
 
 	tokenUri := entity.TokenUri{}

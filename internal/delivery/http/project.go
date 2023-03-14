@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -247,9 +248,14 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	projectID := vars["projectID"]
 
-	project, err := h.Usecase.GetProjectDetail(structure.GetProjectDetailMessageReq{
-		ContractAddress: contractAddress,
-		ProjectID:       projectID,
+	userAddress := r.URL.Query().Get("userAddress")
+
+	fmt.Println("userAddress", userAddress)
+
+	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
+		ContractAddress:            contractAddress,
+		ProjectID:                  projectID,
+		UserAddressToCheckDiscount: userAddress,
 	})
 
 	if err != nil {
@@ -267,7 +273,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
 
-	h.Logger.Info("resp.project", resp)
+	// h.Logger.Info("resp.project", resp)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }

@@ -97,6 +97,28 @@ func (r Repository) FindUserByAddress(address string) (*entity.Users, error) {
 	return resp, nil
 }
 
+func (r Repository) FindUserByAddresses(addresses []string) ([]entity.Users, error) {
+	users := []entity.Users{}
+	f := bson.M{
+		"$or": []bson.M{
+			{utils.KEY_WALLET_ADDRESS: bson.M{"$in": addresses}},
+			{utils.KEY_WALLET_ADDRESS_BTC: bson.M{"$in": addresses}},
+			{utils.KEY_WALLET_ADDRESS_BTC_TAPROOT: bson.M{"$in": addresses}},
+		},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 func (r Repository) FindUserByID(userID string) (*entity.Users, error) {
 	resp := &entity.Users{}
 
