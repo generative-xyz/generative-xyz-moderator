@@ -40,10 +40,10 @@ type ActionDaoArtist struct {
 }
 
 type DaoArtistVoted struct {
-	CreatedBy   string                  `json:"created_by,omitempty" bson:"created_by"`
-	DisplayName string                  `json:"display_name,omitempty"`
-	DaoArtistId string                  `json:"dao_project_id,omitempty" bson:"dao_project_id"`
-	Status      dao_artist_voted.Status `json:"status,omitempty" bson:"status"`
+	CreatedBy   string                  `json:"created_by"`
+	DisplayName string                  `json:"display_name"`
+	DaoArtistId string                  `json:"dao_project_id"`
+	Status      dao_artist_voted.Status `json:"status"`
 }
 
 func (s *DaoArtistVoted) SetFields(fns ...func(*DaoArtistVoted)) {
