@@ -1676,7 +1676,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	mPrice := helpers.StringToBTCAmount("0")
 
-	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
+	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
