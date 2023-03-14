@@ -127,7 +127,7 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	if len(userWallets) > 0 {
 		users := []*entity.Users{}
 		userMap := make(map[string]*entity.Users)
-		if err := s.Repo.Find(ctx, entity.Users{}.TableName(), bson.M{"wallet_address": bson.M{"$in": userWallets}}, users); err != nil {
+		if err := s.Repo.Find(ctx, entity.Users{}.TableName(), bson.M{"wallet_address": bson.M{"$in": userWallets}}, &users); err != nil {
 			return nil, err
 		}
 		for _, user := range users {
