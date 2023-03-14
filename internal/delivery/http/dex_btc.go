@@ -398,6 +398,25 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	result := []response.DEXBuyEthHistory{}
+	for _, v := range list {
+		//TODO: 2077 update status to string
+		item := response.DEXBuyEthHistory{
+			ID:             v.ID.Hex(),
+			OrderID:        v.OrderID,
+			AmountETH:      v.AmountETH,
+			UserID:         v.UserID,
+			ReceiveAddress: v.ReceiveAddress,
+			RefundAddress:  v.RefundAddress,
+			ExpiredAt:      v.ExpiredAt.Unix(),
+			BuyTx:          v.BuyTx,
+			RefundTx:       v.RefundTx,
+			FeeRate:        v.FeeRate,
+			Status:         v.Status,
+		}
+		result = append(result, item)
+	}
+
 	// address := userInfo.WalletAddressBTCTaproot
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
