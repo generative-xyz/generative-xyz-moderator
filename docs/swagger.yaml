@@ -1027,6 +1027,8 @@ definitions:
         $ref: '#/definitions/response.ProjectForDaoProject'
       project_id:
         type: string
+      seq_id:
+        type: integer
       status:
         type: integer
       total_against:
