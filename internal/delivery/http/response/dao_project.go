@@ -9,6 +9,7 @@ import (
 
 type DaoProject struct {
 	BaseEntity      `json:",inline"`
+	SeqId           uint                  `json:"seq_id"`
 	CreatedBy       string                `json:"created_by"`
 	User            *UserForDaoProject    `json:"user"`
 	ProjectId       string                `json:"project_id"`
@@ -46,6 +47,7 @@ type ProjectForDaoProject struct {
 	Name        string             `json:"name,omitempty"`
 	CreatorName string             `json:"creator_name,omitempty"`
 	Thumbnail   string             `json:"thumbnail,omitempty"`
+	MaxSupply   int64              `json:"max_supply"`
 	MintingInfo ProjectMintingInfo `json:"minting_info,omitempty"`
 }
 
