@@ -42,13 +42,13 @@ type ActionDaoProject struct {
 }
 
 type ProjectForDaoProject struct {
-	BaseEntity  `json:",inline,omitempty"`
-	TokenID     string             `json:"token_id,omitempty"`
-	Name        string             `json:"name,omitempty"`
-	CreatorName string             `json:"creator_name,omitempty"`
-	Thumbnail   string             `json:"thumbnail,omitempty"`
+	BaseEntity  `json:",inline"`
+	TokenID     string             `json:"token_id"`
+	Name        string             `json:"name"`
+	CreatorName string             `json:"creator_name"`
+	Thumbnail   string             `json:"thumbnail"`
 	MaxSupply   int64              `json:"max_supply"`
-	MintingInfo ProjectMintingInfo `json:"minting_info,omitempty"`
+	MintingInfo ProjectMintingInfo `json:"minting_info"`
 }
 
 type ProjectMintingInfo struct {
@@ -57,19 +57,19 @@ type ProjectMintingInfo struct {
 }
 
 type UserForDao struct {
-	BaseEntity    `json:",inline,omitempty"`
-	IsVerified    bool          `json:"is_verified,omitempty"`
-	WalletAddress string        `json:"wallet_address,omitempty"`
-	DisplayName   string        `json:"display_name,omitempty"`
-	Avatar        string        `json:"avatar,omitempty"`
+	BaseEntity    `json:",inline"`
+	IsVerified    bool          `json:"is_verified"`
+	WalletAddress string        `json:"wallet_address"`
+	DisplayName   string        `json:"display_name"`
+	Avatar        string        `json:"avatar"`
 	ProfileSocial ProfileSocial `json:"profile_social"`
 }
 
 type DaoProjectVoted struct {
-	CreatedBy    string                   `json:"created_by,omitempty" bson:"created_by"`
-	DisplayName  string                   `json:"display_name,omitempty"`
-	DaoProjectId string                   `json:"dao_project_id,omitempty" bson:"dao_project_id"`
-	Status       dao_project_voted.Status `json:"status,omitempty" bson:"status"`
+	CreatedBy    string                   `json:"created_by"`
+	DisplayName  string                   `json:"display_name"`
+	DaoProjectId string                   `json:"dao_project_id"`
+	Status       dao_project_voted.Status `json:"status"`
 }
 
 func (s *DaoProjectVoted) SetFields(fns ...func(*DaoProjectVoted)) {
