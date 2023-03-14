@@ -8,6 +8,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
+	"rederinghub.io/utils/btc"
 )
 
 // UserCredits godoc
@@ -112,6 +113,20 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				r.OrderID = listingInfo.UUID
 				r.SellVerified = listingInfo.Verified
+				if r.SellVerified {
+					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+					}
+					amountBTCRequired := uint64(listingInfo.Amount) + 1000
+					amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+
+					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+					}
+					r.PriceETH = amountETH
+				}
 			}
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
 		}

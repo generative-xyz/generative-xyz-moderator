@@ -68,6 +68,7 @@ type InternalTokenURIResp struct {
 	IsCompleted  bool   `json:"isCompleted"`
 	SellVerified bool   `json:"sell_verified"`
 	PriceBTC     string `json:"priceBTC"`
+	PriceETH     string `json:"priceETH"`
 	OrderID      string `json:"orderID"`
 
 	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
@@ -88,7 +89,7 @@ type InternalTokenTraitsResp struct {
 type TokenActivityResp struct {
 	Type         int              `json:"type"`
 	Title        string           `json:"title"`
-	UserAAddress  string           `json:"user_a_address"`
+	UserAAddress string           `json:"user_a_address"`
 	UserA        *ProfileResponse `json:"user_a"`
 	UserBAddress string           `json:"user_b_address"`
 	UserB        *ProfileResponse `json:"user_b"`
