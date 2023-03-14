@@ -27,6 +27,7 @@ type UpdateProfileRequest struct {
 	ProfileSocial        ProfileSocial `json:"profileSocial"`
 	WalletAddressBTC     string        `json:"walletAddressBtc"`
 	WalletAddressPayment string        `json:"walletAddressPayment"`
+	EnableNotification   *bool         `json:"enableNotification"`
 }
 
 type ProfileSocial struct {

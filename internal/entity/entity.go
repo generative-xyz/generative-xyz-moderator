@@ -9,15 +9,15 @@ import (
 )
 
 type BaseEntity struct {
-	ID             primitive.ObjectID `bson:"_id"`
-	UUID           string             `bson:"uuid"`
+	ID             primitive.ObjectID `json:"id" bson:"_id"`
+	UUID           string             `json:"uuid" bson:"uuid"`
 	BaseEntityNoID `bson:",inline"`
 }
 
 type BaseEntityNoID struct {
-	DeletedAt  *time.Time `bson:"deleted_at"`
-	CreatedAt  *time.Time `bson:"created_at"`
-	UpdatedAt  *time.Time `bson:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at" bson:"deleted_at"`
+	CreatedAt *time.Time `json:"created_at" bson:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at" bson:"updated_at"`
 }
 
 func (b *BaseEntity) SetID() {

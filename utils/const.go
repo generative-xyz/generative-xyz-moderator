@@ -139,6 +139,7 @@ const (
 	COLLECTION_AIRDROP                  string = "airdrop"
 	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
 	COLLECTION_DISCORD_NOTI							string = "discord_notis"
+	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

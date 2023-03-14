@@ -7,14 +7,20 @@ import (
 	"net/http"
 
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/helpers"
 )
 
 type FeeRates struct {
-	fastestFee  int
-	halfHourFee int
-	hourFee     int
-	economyFee  int
-	minimumFee  int
+	FastestFee  int `json:"fastestFee"`
+	HalfHourFee int `json:"halfHourFee"`
+	HourFee     int `json:"hourFee"`
+	EconomyFee  int `json:"economyFee"`
+	MinimumFee  int `json:"minimumFee"`
+}
+
+type FeeRateInfo struct {
+	FeeRate     int                           `json:"rate"`
+	MintFeeInfo map[string]entity.MintFeeInfo `json:"mintFees"`
 }
 
 func (u Usecase) networkFeeBySize(size int64) int64 {
@@ -40,8 +46,8 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 			u.Logger.Error(err)
 			return size * feeRateValue
 		}
-		if feeRateObj.fastestFee > 0 {
-			feeRateValue = int64(feeRateObj.fastestFee)
+		if feeRateObj.FastestFee > 0 {
+			feeRateValue = int64(feeRateObj.FastestFee)
 		}
 	}
 
@@ -49,7 +55,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 }
 
-func (u Usecase) getFeeRate3Level(size int64) (*FeeRates, error) {
+func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 
 	response, err := http.Get("https://mempool.space/api/v1/fees/recommended")
 
@@ -63,13 +69,80 @@ func (u Usecase) getFeeRate3Level(size int64) (*FeeRates, error) {
 		return nil, err
 	}
 
-	feeRateObj := FeeRates{}
+	fmt.Println("responseData", string(responseData))
+
+	feeRateObj := &FeeRates{}
 
 	err = json.Unmarshal(responseData, &feeRateObj)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
-	return &feeRateObj, nil
+	return feeRateObj, nil
 
+}
+
+func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[string]FeeRateInfo, error) {
+
+	var btcRate, ethRate float64
+
+	btcRate, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		return nil, err
+	}
+
+	ethRate, err = helpers.GetExternalPrice("ETH")
+	if err != nil {
+		return nil, err
+	}
+
+	levelFeeFullInfo := make(map[string]FeeRateInfo)
+
+	feeRateFromChain, err := u.getFeeRateFromChain()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("fastestFee", feeRateFromChain.FastestFee)
+	fmt.Println("halfHourFee", feeRateFromChain.HalfHourFee)
+	fmt.Println("hourFee", feeRateFromChain.HourFee)
+
+	fastestMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
+	if err != nil {
+		return nil, err
+	}
+	fasterMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HalfHourFee), btcRate, ethRate)
+	if err != nil {
+		return nil, err
+	}
+	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
+	if err != nil {
+		return nil, err
+	}
+
+	levelFeeFullInfo["fastest"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.FastestFee,
+		MintFeeInfo: fastestMintInfo,
+	}
+	levelFeeFullInfo["faster"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.HalfHourFee,
+		MintFeeInfo: fasterMintInfo,
+	}
+	levelFeeFullInfo["economy"] = FeeRateInfo{
+		FeeRate:     feeRateFromChain.HourFee,
+		MintFeeInfo: economyMintInfo,
+	}
+
+	if customRate > 0 {
+		customRateMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(customRate), btcRate, ethRate)
+		if err != nil {
+			return nil, err
+		}
+		levelFeeFullInfo["customRate"] = FeeRateInfo{
+			FeeRate:     int(customRate),
+			MintFeeInfo: customRateMintInfo,
+		}
+	}
+
+	return levelFeeFullInfo, nil
 }
