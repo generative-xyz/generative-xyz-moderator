@@ -19,6 +19,13 @@ func (r Repository) CreateDexBTCListing(listing *entity.DexBTCListing) error {
 	}
 	return nil
 }
+func (r Repository) CreateDexBTCBuyWithETH(listing *entity.DexBTCBuyWithETH) error {
+	err := r.InsertOne(listing.TableName(), listing)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (r Repository) GetDexBTCListingOrderByID(id string) (*entity.DexBTCListing, error) {
 	resp := &entity.DexBTCListing{}
@@ -103,6 +110,26 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	},
 		{Key: "matched", Value: false},
 		{Key: "cancelled", Value: false}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetAllDexBTCListingByInscriptionID(inscriptionID string) ([]entity.DexBTCListing, error) {
+	listings := []entity.DexBTCListing{}
+	f := bson.D{
+		{Key: "inscription_id", Value: inscriptionID},
+	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},
@@ -218,4 +245,122 @@ func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWi
 	}
 
 	return listings, nil
+}
+
+func (r Repository) GetDexBTCBuyETHOrderByStatus(statuses []entity.DexBTCETHBuyStatus) ([]entity.DexBTCBuyWithETH, error) {
+	listings := []entity.DexBTCBuyWithETH{}
+	f := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_BUY_ETH).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetDexBTCBuyETHOrderByUserID(userID string, limit, offset int64) ([]entity.DexBTCBuyWithETH, error) {
+	listings := []entity.DexBTCBuyWithETH{}
+	f := bson.M{
+		"user_id": bson.M{"$eq": userID},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_BUY_ETH).Find(context.TODO(), f, &options.FindOptions{
+		Sort:  bson.D{{Key: "created_at", Value: -1}},
+		Limit: &limit,
+		Skip:  &offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) UpdateDexBTCBuyETHOrderStatus(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status": model.Status,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateDexBTCBuyETHOrderConfirmation(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"confirmation": model.Confirmation,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+// 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"eth_tx": model.ETHTx,
+// 		},
+// 	}
+
+// 	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return result, err
+// }
+
+func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCBuyWithETH, error) {
+	f := bson.D{{Key: "uuid", Value: buyOrderID}}
+
+	resp := &entity.DexBTCBuyWithETH{}
+	usr, err := r.FilterOne(utils.COLLECTION_DEX_BTC_BUY_ETH, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

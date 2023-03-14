@@ -12,3 +12,10 @@ type DexBTCHistoryListing struct {
 	Txhash        string `json:"txhash"`
 	Amount        string `json:"amount"`
 }
+
+type GenDexBTCBuyETH struct {
+	OrderID    string `json:"order_id"`
+	ETHAddress string `json:"eth_address"`
+	ETHAmount  string `json:"eth_amount"`
+	ExpiredAt  int64  `json:"expired_at"`
+}
