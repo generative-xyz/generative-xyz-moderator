@@ -938,6 +938,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Vote Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VoteDaoArtistRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -6232,6 +6241,14 @@ const docTemplate = `{
                 }
             }
         },
+        "request.VoteDaoArtistRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.VoteDaoProjectRequest": {
             "type": "object",
             "properties": {
@@ -6341,7 +6358,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/response.UserForDaoProject"
+                    "$ref": "#/definitions/response.UserForDao"
                 },
                 "uuid": {
                     "type": "string"
@@ -7069,7 +7086,7 @@ const docTemplate = `{
                 }
             }
         },
-        "response.UserForDaoProject": {
+        "response.UserForDao": {
             "type": "object",
             "properties": {
                 "avatar": {
@@ -7089,6 +7106,9 @@ const docTemplate = `{
                 },
                 "is_verified": {
                     "type": "boolean"
+                },
+                "profile_social": {
+                    "$ref": "#/definitions/response.ProfileSocial"
                 },
                 "updated_at": {
                     "type": "string"

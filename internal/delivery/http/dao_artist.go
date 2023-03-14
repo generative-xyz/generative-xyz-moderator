@@ -2,9 +2,13 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 )
 
 // @Summary List DAO Artist
@@ -22,7 +26,13 @@ import (
 func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			req := &request.ListDaoArtistRequest{}
+			if err := utils.QueryParser(r, req); err != nil {
+				return nil, err
+			}
+			req.Pagination = entity.GetPagination(r)
+			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
+			return h.Usecase.ListDAOArtist(ctx, userWallet, req)
 		},
 	).ServeHTTP(w, r)
 }
@@ -38,7 +48,7 @@ func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) createDaoArtist(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			return h.Usecase.CreateDAOArtist(ctx, muxVars[utils.SIGNED_WALLET_ADDRESS])
 		},
 	).ServeHTTP(w, r)
 }
@@ -55,7 +65,7 @@ func (h *httpDelivery) createDaoArtist(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) getDaoArtist(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			return h.Usecase.GetDAOArtist(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS])
 		},
 	).ServeHTTP(w, r)
 }
@@ -66,13 +76,19 @@ func (h *httpDelivery) getDaoArtist(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "DAO Artist Id"
+// @Param request body request.VoteDaoArtistRequest true "Vote Dao Artist Request"
 // @Success 200
 // @Router /dao-artist/{id} [PUT]
 // @Security ApiKeyAuth
 func (h *httpDelivery) voteDaoArtist(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			var reqBody request.VoteDaoArtistRequest
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+			return nil, h.Usecase.VoteDAOArtist(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS], &reqBody)
 		},
 	).ServeHTTP(w, r)
 }

@@ -9,7 +9,7 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
-func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDaoProjectRequest) ([]*entity.DaoProject, int64, error) {
+func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoArtistRequest) ([]*entity.DaoArtist, int64, error) {
 	limit := int64(100)
 	filters := make(bson.M)
 	filterIdOperation := "$lt"
@@ -17,14 +17,6 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 		"$sort": bson.D{{Key: "_id", Value: -1}},
 	}
 	matchFilters := bson.M{"$match": filters}
-	lookupProject := bson.M{
-		"$lookup": bson.M{
-			"from":         "projects",
-			"localField":   "project_id",
-			"foreignField": "_id",
-			"as":           "project",
-		},
-	}
 	lookupUser := bson.M{
 		"$lookup": bson.M{
 			"from":         "users",
@@ -33,18 +25,14 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 			"as":           "user",
 		},
 	}
-	lookupDaoProjectVoted := bson.M{
-		"$lookup": bson.M{
-			"from":         "dao_project_voted",
-			"localField":   "_id",
-			"foreignField": "dao_project_id",
-			"as":           "dao_project_voted",
-		},
-	}
-	unwindProject := bson.M{"$unwind": "$project"}
 	unwindUser := bson.M{"$unwind": "$user"}
-	addProjectName := bson.M{
-		"$addFields": bson.M{"project_name": "$project.name"},
+	lookupDaoArtistVoted := bson.M{
+		"$lookup": bson.M{
+			"from":         "dao_artist_voted",
+			"localField":   "_id",
+			"foreignField": "dao_artist_id",
+			"as":           "dao_artist_voted",
+		},
 	}
 	addUserName := bson.M{
 		"$addFields": bson.M{"user_name": "$user.display_name"},
@@ -83,31 +71,24 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	matchSearch := bson.M{"$match": filterSearch}
 	if request.Keyword != nil {
 		filterSearch["$or"] = bson.A{
-			bson.M{"project_name": primitive.Regex{
-				Pattern: *request.Keyword,
-				Options: "i",
-			}},
 			bson.M{"user_name": primitive.Regex{
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
 		}
 	}
-	projects := []*entity.DaoProject{}
+	projects := []*entity.DaoArtist{}
 	total, err := s.Aggregation(ctx,
-		entity.DaoProject{}.TableName(),
+		entity.DaoArtist{}.TableName(),
 		0,
 		limit,
 		&projects,
 		matchFilters,
-		lookupProject,
-		unwindProject,
 		lookupUser,
 		unwindUser,
-		addProjectName,
 		addUserName,
 		matchSearch,
-		lookupDaoProjectVoted,
+		lookupDaoArtistVoted,
 		sorts)
 	if err != nil {
 		return nil, 0, err
