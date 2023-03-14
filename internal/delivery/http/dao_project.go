@@ -2,9 +2,12 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/utils"
 )
 
 // @Summary List DAO Project
@@ -20,7 +23,12 @@ import (
 func (h *httpDelivery) listDaoProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			req := &request.ListDaoProjectRequest{}
+			if err := utils.QueryParser(r, req); err != nil {
+				return nil, err
+			}
+			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
+			return h.Usecase.ListDAOProject(ctx, userWallet, req)
 		},
 	).ServeHTTP(w, r)
 }
@@ -30,13 +38,20 @@ func (h *httpDelivery) listDaoProject(w http.ResponseWriter, r *http.Request) {
 // @Tags DAO Project
 // @Accept json
 // @Produce json
+// @Param request body request.CreateDaoProjectRequest true "Create Dao Project Request"
 // @Success 200
 // @Router /dao-project [POST]
 // @Security ApiKeyAuth
 func (h *httpDelivery) createDaoProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			var reqBody request.CreateDaoProjectRequest
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+			reqBody.CreatedBy = muxVars[utils.SIGNED_WALLET_ADDRESS]
+			return h.Usecase.CreateDAOProject(ctx, &reqBody)
 		},
 	).ServeHTTP(w, r)
 }
