@@ -825,6 +825,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Last Id",
                         "name": "cursor",
                         "in": "query"
@@ -898,11 +910,20 @@ const docTemplate = `{
                     "DAO Project"
                 ],
                 "summary": "Get DAO Project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dao Project Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/nfts.MoralisToken"
+                            "$ref": "#/definitions/response.DaoProject"
                         }
                     }
                 }
@@ -5169,6 +5190,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "inscribedBy": {
+                    "type": "string"
+                },
                 "inscriptionIndex": {
                     "type": "string"
                 },
@@ -5370,7 +5394,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_address": {
-                    "description": "eth wallet define user in platform by connect wallet and sign",
+                    "description": "ID                      string        ` + "`" + `bson:\"id\" json:\"id,omitempty\"` + "`" + `",
                     "type": "string"
                 },
                 "wallet_address_btc": {
@@ -6066,6 +6090,14 @@ const docTemplate = `{
                 }
             }
         },
+        "response.ActionDaoProject": {
+            "type": "object",
+            "properties": {
+                "can_vote": {
+                    "type": "boolean"
+                }
+            }
+        },
         "response.CategoryResp": {
             "type": "object",
             "properties": {
@@ -6087,6 +6119,47 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DaoProject": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/response.ActionDaoProject"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "project": {
+                    "$ref": "#/definitions/response.ProjectForDaoProject"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserForDaoProject"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
@@ -6262,6 +6335,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "inscribedBy": {
+                    "type": "string"
+                },
                 "inscriptionIndex": {
                     "type": "string"
                 },
@@ -6435,6 +6511,49 @@ const docTemplate = `{
                 },
                 "web": {
                     "type": "string"
+                }
+            }
+        },
+        "response.ProjectForDaoProject": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_name": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "minting_info": {
+                    "$ref": "#/definitions/response.ProjectMintingInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProjectMintingInfo": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer"
+                },
+                "index_reverse": {
+                    "type": "integer"
                 }
             }
         },
@@ -6739,6 +6858,38 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserForDaoProject": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "wallet_address": {
                     "type": "string"
                 }
             }

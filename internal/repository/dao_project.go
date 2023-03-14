@@ -64,6 +64,13 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	if request.PageSize <= limit {
 		limit = request.PageSize
 	}
+	if request.Id != nil {
+		id, err := primitive.ObjectIDFromHex(*request.Id)
+		if err != nil {
+			return nil, 0, err
+		}
+		filters["_id"] = id
+	}
 	if request.Status != nil {
 		filters["status"] = request.Status
 	}

@@ -16,7 +16,10 @@ import (
 )
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
-	result := &entity.Pagination{PageSize: request.PageSize}
+	result := &entity.Pagination{
+		PageSize: request.PageSize,
+		Result:   make([]*response.DaoProject, 0),
+	}
 	user := &entity.Users{}
 	if userWallet != "" {
 		if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": userWallet}, user); err != nil {
@@ -86,10 +89,19 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 }
 
 func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {
-	// objectId, err := primitive.ObjectIDFromHex(id)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	return nil, nil
+	request := &request.ListDaoProjectRequest{
+		Pagination: entity.Pagination{
+			PageSize: 1,
+		},
+		Id: &id,
+	}
+	pag, err := s.ListDAOProject(ctx, userWallet, request)
+	if err != nil {
+		return nil, err
+	}
+	results := pag.Result.([]*response.DaoProject)
+	if len(results) < 0 {
+		return nil, nil
+	}
+	return results[0], nil
 }
