@@ -31,7 +31,6 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	if err := copierInternal.Copy(&projectsResp, projects); err != nil {
 		return nil, err
 	}
-
 	for _, project := range projectsResp {
 		action := &response.ActionDaoProject{}
 		action.CanVote = user.IsVerified && project.Status == dao_project.New && user.WalletAddress != project.CreatedBy
@@ -84,4 +83,13 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		return "", err
 	}
 	return id.Hex(), nil
+}
+
+func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {
+	// objectId, err := primitive.ObjectIDFromHex(id)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	return nil, nil
 }
