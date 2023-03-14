@@ -1090,7 +1090,7 @@ const docTemplate = `{
                 "summary": "Vote DAO Project",
                 "parameters": [
                     {
-                        "description": "Create Dao Project Request",
+                        "description": "Vote Dao Project Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -6423,6 +6423,9 @@ const docTemplate = `{
                 },
                 "project_id": {
                     "type": "string"
+                },
+                "seq_id": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"

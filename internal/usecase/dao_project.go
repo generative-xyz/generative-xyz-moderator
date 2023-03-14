@@ -84,6 +84,11 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
 		Status:    dao_project.Voting,
 	}
+	seqId, err := s.Repo.NextId(ctx, daoProject.TableName())
+	if err != nil {
+		return "", err
+	}
+	daoProject.SeqId = seqId
 	daoProject.SetID()
 	daoProject.SetCreatedAt()
 	id, err := s.Repo.Create(ctx, daoProject.TableName(), daoProject)
@@ -164,36 +169,39 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err != nil {
 		return err
 	}
-	go func() {
-		voted := []*entity.DaoProjectVoted{}
-		if err := s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_project_id": daoProject.ID, "status": dao_project_voted.Voted}, &voted); err == nil {
-			count := s.Config.CountVoteDAO
-			if count <= 0 {
-				count = 2
+
+	if req.Status == dao_project_voted.Voted {
+		go func() {
+			voted := []*entity.DaoProjectVoted{}
+			if err := s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_project_id": daoProject.ID, "status": dao_project_voted.Voted}, &voted); err == nil {
+				count := s.Config.CountVoteDAO
+				if count <= 0 {
+					count = 2
+				}
+				if len(voted) >= count && daoProject.Status != dao_project.Executed {
+					project := &entity.Projects{}
+					if err := s.Repo.FindOneBy(ctx, project.TableName(), bson.M{"_id": daoProject.ProjectId}, project); err != nil {
+						logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
+						return
+					}
+					_, err = s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
+						bson.D{
+							{Key: "$set", Value: bson.D{{Key: "isHidden", Value: false}}},
+						})
+					if err != nil {
+						logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
+						return
+					}
+					_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
+						bson.D{
+							{Key: "$set", Value: bson.D{{Key: "status", Value: dao_project.Executed}}},
+						})
+					if err != nil {
+						logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
+					}
+				}
 			}
-			if len(voted) >= count && daoProject.Status != dao_project.Executed {
-				project := &entity.Projects{}
-				if err := s.Repo.FindOneBy(ctx, project.TableName(), bson.M{"_id": daoProject.ProjectId}, project); err != nil {
-					logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
-					return
-				}
-				_, err = s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
-					bson.D{
-						{Key: "$set", Value: bson.D{{Key: "isHidden", Value: false}}},
-					})
-				if err != nil {
-					logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
-					return
-				}
-				_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
-					bson.D{
-						{Key: "$set", Value: bson.D{{Key: "status", Value: dao_project.Executed}}},
-					})
-				if err != nil {
-					logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
-				}
-			}
-		}
-	}()
+		}()
+	}
 	return nil
 }

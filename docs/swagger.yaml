@@ -1074,6 +1074,8 @@ definitions:
         $ref: '#/definitions/response.ProjectForDaoProject'
       project_id:
         type: string
+      seq_id:
+        type: integer
       status:
         type: integer
       total_against:
@@ -2313,7 +2315,7 @@ paths:
       - application/json
       description: Vote DAO Project
       parameters:
-      - description: Create Dao Project Request
+      - description: Vote Dao Project Request
         in: body
         name: request
         required: true
