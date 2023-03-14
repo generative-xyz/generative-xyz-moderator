@@ -1463,6 +1463,10 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	return result.String(), btcPrice, ethPrice, nil
 }
 
+func (u Usecase) ConvertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPrice float64) (string, float64, float64, error) {
+	return u.convertBTCToETHWithPriceEthBtc(amount, btcPrice, ethPrice)
+}
+
 func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPrice float64) (string, float64, float64, error) {
 
 	//amount = "0.1"
@@ -1658,4 +1662,22 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	}
 
 	return listMintFeeInfo, err
+}
+
+// Mint flow
+func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
+	btcPrice, err := helpers.GetExternalPrice("BTC")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return 0, 0, err
+	}
+
+	u.Logger.Info("btcPrice", btcPrice)
+	ethPrice, err := helpers.GetExternalPrice("ETH")
+	if err != nil {
+		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		return 0, 0, err
+	}
+
+	return btcPrice, ethPrice, nil
 }
