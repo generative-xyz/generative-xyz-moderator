@@ -95,6 +95,7 @@ type TokenUri struct {
 	Source                         string        `bson:"source" json:"source"`
 	NftTokenId                     string        `bson:"nftTokenId"`
 	InscribedBy                    string        `bson:"inscribedBy"`
+	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 }
 
 type AggregateTokenUriTraits struct {
