@@ -968,7 +968,7 @@ definitions:
     type: object
   request.VoteDaoProjectRequest:
     properties:
-      int64:
+      status:
         type: integer
     type: object
   request.WithDrawItemRequest:
@@ -1299,6 +1299,8 @@ definitions:
       name:
         type: string
       thumbnail:
+        type: string
+      token_id:
         type: string
       updated_at:
         type: string
@@ -2092,6 +2094,95 @@ paths:
       summary: get one config
       tags:
       - Configs
+  /dao-artist:
+    get:
+      consumes:
+      - application/json
+      description: List DAO Artist
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List DAO Artist
+      tags:
+      - DAO Artist
+    post:
+      consumes:
+      - application/json
+      description: Create DAO Artist
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create DAO Artist
+      tags:
+      - DAO Artist
+  /dao-artist/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Get DAO Artist
+      tags:
+      - DAO Artist
+    put:
+      consumes:
+      - application/json
+      description: Vote DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Vote DAO Artist
+      tags:
+      - DAO Artist
   /dao-project:
     get:
       consumes:

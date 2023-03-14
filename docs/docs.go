@@ -804,6 +804,149 @@ const docTemplate = `{
                 }
             }
         },
+        "/dao-artist": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "List DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Create DAO Artist",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/dao-artist/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Get DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DAO Artist Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Vote DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Vote DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DAO Artist Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/dao-project": {
             "get": {
                 "security": [
@@ -6092,7 +6235,7 @@ const docTemplate = `{
         "request.VoteDaoProjectRequest": {
             "type": "object",
             "properties": {
-                "int64": {
+                "status": {
                     "type": "integer"
                 }
             }
@@ -6591,6 +6734,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "thumbnail": {
+                    "type": "string"
+                },
+                "token_id": {
                     "type": "string"
                 },
                 "updated_at": {
