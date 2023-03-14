@@ -8,12 +8,14 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/constants/dao_project"
 	"rederinghub.io/utils/constants/dao_project_voted"
 	copierInternal "rederinghub.io/utils/copier"
+	"rederinghub.io/utils/logger"
 )
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
@@ -131,4 +133,56 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 		}
 	}
 	return project, nil
+}
+
+func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
+	createdBy := &entity.Users{}
+	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": userWallet}, createdBy); err != nil {
+		return err
+	}
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	daoProject := &entity.DaoProject{}
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"_id": objectId}, daoProject); err != nil {
+		return err
+	}
+	if !createdBy.IsVerified || strings.EqualFold(createdBy.WalletAddress, userWallet) {
+		return errors.New("haven't permission")
+	}
+	voteDaoProject := &entity.DaoProjectVoted{
+		CreatedBy:    userWallet,
+		DaoProjectId: daoProject.ID,
+		Status:       req.Status,
+	}
+	voteDaoProject.SetID()
+	voteDaoProject.SetCreatedAt()
+	_, err = s.Repo.Create(ctx, voteDaoProject.TableName(), voteDaoProject)
+	if err != nil {
+		return err
+	}
+	go func() {
+		voted := []*entity.DaoProjectVoted{}
+		if err := s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_project_id": daoProject.ID, "status": dao_project_voted.Voted}, &voted); err == nil {
+			count := s.Config.CountVoteDAO
+			if count <= 0 {
+				count = 2
+			}
+			if len(voted) >= count && daoProject.Status != dao_project.Approved {
+				_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID, bson.D{
+					{
+						Key: "$set",
+						Value: bson.D{
+							{Key: "status", Value: dao_project.Approved},
+						},
+					},
+				})
+				if err != nil {
+					logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
+				}
+			}
+		}
+	}()
+	return nil
 }

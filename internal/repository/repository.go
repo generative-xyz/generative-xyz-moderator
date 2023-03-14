@@ -426,6 +426,13 @@ func (b Repository) Create(ctx context.Context, collectionName string, model int
 	}
 	return primitive.NilObjectID, nil
 }
+func (b Repository) UpdateByID(ctx context.Context, collectionName string, id interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	result, err := b.DB.Collection(collectionName).UpdateByID(ctx, id, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
 func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
