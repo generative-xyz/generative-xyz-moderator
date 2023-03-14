@@ -363,6 +363,36 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			}
 		case entity.StatusDEXBuy_ReceivedFund:
 			// send tx buy update status to StatusDEXBuy_Buying
+			listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
+			if err != nil {
+				log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
+				continue
+			}
+			if listingOrder != nil {
+				walletInfo, err := btc.GetBalanceFromQuickNode(address, quickNodeAPI)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH GetBalanceFromQuickNode", order.ID, address, err)
+					continue
+				}
+				utxos, err := btc.ConvertToUTXOType(walletInfo.Txrefs)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH ConvertToUTXOType", order.ID, err)
+					continue
+				}
+				rawtx, _, err := btc.CreatePSBTToBuyInscription(listingOrder.RawPSBT, order.TempBTCKey, address, order.ReceiveAddress, listingOrder.Amount, utxos, 15)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+					continue
+				}
+
+				_, err = btc.SendRawTxfromQuickNode(rawtx, quickNodeAPI)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+					continue
+				}
+			} else {
+				// ?? order not exist
+			}
 		case entity.StatusDEXBuy_Buying:
 			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
 			txStatus, err := btc.CheckTxfromQuickNode(order.BuyTx, quickNodeAPI)
@@ -467,6 +497,20 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, amount uint64, fe
 	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
 	if err != nil {
 		return "", "", err
+	}
+	expectedAmount := order.Amount + 1000
+
+	switch len(order.Inputs) {
+	case 1:
+		expectedAmount += btc.EstimateTxFee(3, 2, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+	case 2:
+		expectedAmount += btc.EstimateTxFee(4, 3, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+	case 3:
+		expectedAmount += btc.EstimateTxFee(5, 4, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+	}
+
+	if amount < expectedAmount {
+		return "", "", fmt.Errorf("expected receieve amount to be %d, got %d", expectedAmount, amount)
 	}
 
 	var newOrder entity.DexBTCBuyWithETH
