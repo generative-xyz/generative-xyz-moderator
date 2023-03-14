@@ -33,7 +33,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	}
 
 	for _, project := range projectsResp {
-		canVote := user.IsVerified
+		canVote := user.IsVerified && project.Status == dao_project.New
 		if canVote {
 			for _, voted := range project.DaoProjectVoted {
 				if voted.CreatedBy == user.WalletAddress {
