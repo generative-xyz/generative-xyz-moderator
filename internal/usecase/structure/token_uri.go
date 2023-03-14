@@ -127,7 +127,7 @@ type FilterTokens struct {
 	IsBuynow        *bool
 	FromPrice       *int64
 	ToPrice         *int64
-	Rarity          *int
+	Rarity          *string
 	Ids             []string
 }
 
@@ -229,11 +229,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 	}
 	
 	if rarity != "" {
-		rarityInt, err := strconv.Atoi(rarity)
-		if err != nil {
-			return err
-		}
-		f.Rarity = &rarityInt
+		f.Rarity = &rarity
 	}
 
 	return nil
