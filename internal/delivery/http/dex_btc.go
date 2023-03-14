@@ -402,6 +402,7 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 	result := []response.DEXBuyEthHistory{}
 	for _, v := range list {
 		item := response.DEXBuyEthHistory{
+			CreatedAt:      v.CreatedAt.Unix(),
 			ID:             v.ID.Hex(),
 			OrderID:        v.OrderID,
 			AmountETH:      v.AmountETH,
