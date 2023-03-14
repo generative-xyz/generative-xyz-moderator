@@ -33,19 +33,18 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	}
 
 	for _, project := range projectsResp {
-		canVote := user.IsVerified && project.Status == dao_project.New
-		if canVote {
+		action := &response.ActionDaoProject{}
+		action.CanVote = user.IsVerified && project.Status == dao_project.New && user.WalletAddress != project.CreatedBy
+		if action.CanVote {
 			for _, voted := range project.DaoProjectVoted {
 				if voted.CreatedBy == user.WalletAddress {
-					canVote = false
+					action.CanVote = false
 					break
 				}
 			}
 		}
 		project.SetFields(
-			project.WithAction(&response.ActionDaoProject{
-				CanVote: canVote,
-			}),
+			project.WithAction(action),
 		)
 	}
 	result.Result = projectsResp
