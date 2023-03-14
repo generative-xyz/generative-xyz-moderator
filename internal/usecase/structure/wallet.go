@@ -72,6 +72,7 @@ type WalletInscriptionInfo struct {
 	InscriptionID string `json:"inscription_id"`
 	Offset        int64  `json:"offset"`
 	Number        int    `json:"number"`
+	TokenNumber   int    `json:"token_number"`
 	ContentType   string `json:"content_type"`
 	ProjectID     string `json:"project_id"`
 	ProjectName   string `json:"project_name"`
