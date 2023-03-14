@@ -609,7 +609,7 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	}
 
 	var newOrder entity.DexBTCBuyWithETH
-
+	newOrder.UserID = userID
 	newOrder.OrderID = orderID
 	newOrder.AmountETH = amountETH
 	newOrder.FeeRate = feeRate
