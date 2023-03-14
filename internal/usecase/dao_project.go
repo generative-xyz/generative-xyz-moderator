@@ -23,7 +23,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	sorts := bson.M{
 		"$sort": bson.D{{Key: "_id", Value: -1}},
 	}
-	match := bson.M{"$match": filters}
+	matchFilters := bson.M{"$match": filters}
 	lookupProject := bson.M{
 		"$lookup": bson.M{
 			"from":         "projects",
@@ -79,15 +79,16 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 			filters["_id"] = bson.M{filterIdOperation: id}
 		}
 	}
+	filterSearch := bson.M{}
+	matchSearch := bson.M{"$match": filterSearch}
 	if request.Keyword != nil {
-		keyword := *request.Keyword
-		filters["$or"] = bson.A{
+		filterSearch["$or"] = bson.A{
 			bson.M{"project_name": primitive.Regex{
-				Pattern: keyword,
+				Pattern: *request.Keyword,
 				Options: "i",
 			}},
 			bson.M{"user_name": primitive.Regex{
-				Pattern: keyword,
+				Pattern: *request.Keyword,
 				Options: "i",
 			}},
 		}
@@ -98,14 +99,15 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 		0,
 		limit,
 		&projects,
-		match,
+		matchFilters,
 		lookupProject,
 		unwindProject,
 		lookupUser,
 		unwindUser,
-		lookupDaoProjectVoted,
 		addProjectName,
 		addUserName,
+		matchSearch,
+		lookupDaoProjectVoted,
 		sorts)
 	if err != nil {
 		return nil, err
