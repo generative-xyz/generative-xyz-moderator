@@ -801,7 +801,7 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 		},
 	}
 
-	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeline)
+	cursor, err := r.DB.Collection(entity.MarketplaceBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
