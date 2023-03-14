@@ -85,6 +85,7 @@ const (
 	StatusDEXBuy_WaitingToRefund
 	StatusDEXBuy_Refunding
 	StatusDEXBuy_Refunded
-	StatusDEXBuy_SENDING_MASTER
-	StatusDEXBuy_SENT_MASTER
+	StatusDEXBuy_SendingMaster
+	StatusDEXBuy_SentMaster
+	StatusDEXBuy_Expired
 )
