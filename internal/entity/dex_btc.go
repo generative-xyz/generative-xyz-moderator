@@ -53,6 +53,8 @@ func (u DexBTCListing) ToBson() (*bson.D, error) {
 type DexBTCBuyWithETH struct {
 	BaseEntity     `bson:",inline"`
 	OrderID        string             `bson:"order_id" json:"order_id"`
+	InscriptionID  string             `bson:"inscription_id" json:"inscription_id"`
+	AmountBTC      uint64             `bson:"amount_btc" json:"amount_btc"`
 	Confirmation   int                `bson:"confirmation" json:"confirmation" `
 	AmountETH      string             `bson:"amount_eth" json:"amount_eth"`
 	UserID         string             `bson:"user_id" json:"user_id"`
@@ -89,3 +91,16 @@ const (
 	StatusDEXBuy_SentMaster
 	StatusDEXBuy_Expired
 )
+
+var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
+	StatusDEXBuy_Pending:         "Waiting for payment",
+	StatusDEXBuy_ReceivedFund:    "Received payment",
+	StatusDEXBuy_Buying:          "Buying",
+	StatusDEXBuy_Bought:          "Bought",
+	StatusDEXBuy_WaitingToRefund: "Waiting to refund",
+	StatusDEXBuy_Refunding:       "Refunding",
+	StatusDEXBuy_Refunded:        "Refunded",
+	StatusDEXBuy_SendingMaster:   "Sending to master",
+	StatusDEXBuy_SentMaster:      "Sent to master",
+	StatusDEXBuy_Expired:         "Expired",
+}
