@@ -146,7 +146,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if err := s.Repo.FindOneBy(ctx, daoArtist.TableName(), bson.M{"_id": objectId}, daoArtist); err != nil {
 		return err
 	}
-	if !createdBy.IsVerified || strings.EqualFold(createdBy.WalletAddress, userWallet) {
+	if !createdBy.IsVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
 		return errors.New("haven't permission")
 	}
 	daoArtistVoted := &entity.DaoArtistVoted{
