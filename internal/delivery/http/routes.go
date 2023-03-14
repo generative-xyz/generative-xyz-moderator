@@ -233,7 +233,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
 	//buy with eth
 	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
-	inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
+	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
 	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
 	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
