@@ -21,6 +21,10 @@ type DaoProject struct {
 	TotalVote       int64                 `json:"total_vote"`
 }
 
+func (s DaoProject) Expired() bool {
+	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
+}
+
 func (s *DaoProject) SetFields(fns ...func(*DaoProject)) {
 	for _, fn := range fns {
 		fn(s)
@@ -37,11 +41,12 @@ type ActionDaoProject struct {
 }
 
 type ProjectForDaoProject struct {
-	BaseEntity  `json:",inline"`
-	Name        string             `json:"name"`
-	CreatorName string             `json:"creator_name"`
-	Thumbnail   string             `json:"thumbnail"`
-	MintingInfo ProjectMintingInfo `json:"minting_info"`
+	BaseEntity  `json:",inline,omitempty"`
+	TokenID     string             `json:"token_id,omitempty"`
+	Name        string             `json:"name,omitempty"`
+	CreatorName string             `json:"creator_name,omitempty"`
+	Thumbnail   string             `json:"thumbnail,omitempty"`
+	MintingInfo ProjectMintingInfo `json:"minting_info,omitempty"`
 }
 
 type ProjectMintingInfo struct {

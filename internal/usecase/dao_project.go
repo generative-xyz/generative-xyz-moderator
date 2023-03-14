@@ -39,7 +39,9 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	}
 	for _, project := range projectsResp {
 		action := &response.ActionDaoProject{}
-		action.CanVote = user.IsVerified && project.Status == dao_project.New && user.WalletAddress != project.CreatedBy
+		action.CanVote = user.IsVerified &&
+			user.WalletAddress != project.CreatedBy &&
+			!project.Expired()
 		if action.CanVote {
 			for _, voted := range project.DaoProjectVoted {
 				if voted.CreatedBy == user.WalletAddress {
@@ -80,7 +82,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		CreatedBy: req.CreatedBy,
 		ProjectId: project.ID,
 		ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
-		Status:    dao_project.New,
+		Status:    dao_project.Voting,
 	}
 	daoProject.SetID()
 	daoProject.SetCreatedAt()
@@ -169,12 +171,12 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 			if count <= 0 {
 				count = 2
 			}
-			if len(voted) >= count && daoProject.Status != dao_project.Approved {
+			if len(voted) >= count && daoProject.Status != dao_project.Executed {
 				_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID, bson.D{
 					{
 						Key: "$set",
 						Value: bson.D{
-							{Key: "status", Value: dao_project.Approved},
+							{Key: "status", Value: dao_project.Executed},
 						},
 					},
 				})
