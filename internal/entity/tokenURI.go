@@ -95,6 +95,7 @@ type TokenUri struct {
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
 	Source                         string        `bson:"source" json:"source"`
 	NftTokenId                     string        `bson:"nftTokenId"`
+	InscribedBy                    string        `bson:"inscribedBy"`
 }
 
 type AggregateTokenUriTraits struct {

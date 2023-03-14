@@ -171,7 +171,9 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
-
+	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
+		tokenUri.Project.InscribedBy = tokenUri.InscribedBy
+	}
 	client := resty.New()
 	resp := &response.SearhcInscription{}
 	_, err = client.R().
@@ -696,6 +698,9 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 	if len(nftTokenIds) > 0 {
 		tokenUri.NftTokenId = nftTokenIds[0]
 	}
+	if len(nftTokenIds) > 1 {
+		tokenUri.InscribedBy = nftTokenIds[1]
+	}
 
 	nftTokenUri := project.NftTokenUri
 	u.Logger.Info("nftTokenUri", nftTokenUri)
@@ -891,7 +896,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"),uploaded.Name)
+	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	spew.Dump(thumb)
 	token.Thumbnail = thumb
 
