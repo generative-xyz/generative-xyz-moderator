@@ -2056,6 +2056,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	err = u.Repo.CreateTokenUriMetadata(h)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2063,12 +2064,13 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		tokenID := item.ID
 		token, err := u.Repo.FindTokenByTokenID(tokenID)
 		if err != nil {
+			err = fmt.Errorf("token %s was not found: %v", tokenID, err)
 			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		if token.ProjectID != p.TokenID {
-			err = errors.New("token is not belong to this project")
+			err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
 			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
@@ -2094,9 +2096,10 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
-		//spew.Dump(token.TokenID, token.ParsedAttributes, )
+		spew.Dump(token.TokenID, token.ParsedAttributes, )
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
+			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
 			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
