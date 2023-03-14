@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -434,14 +435,37 @@ func (b Repository) UpdateMany(ctx context.Context, collectionName string, filte
 }
 
 func (b Repository) Aggregation(ctx context.Context, collectionName string, page int64, limit int64, result interface{}, agg ...interface{}) (int64, error) {
-	aggPaginatedData, err := New(b.DB.Collection(collectionName)).
-		Context(ctx).
-		Page(page).
-		Limit(limit).
-		Decode(result).
-		Aggregate(agg...)
+	query := New(b.DB.Collection(collectionName)).Context(ctx).Page(page).Limit(limit)
+	aggPaginatedData, err := query.Aggregate(agg...)
 	if err != nil {
 		return 0, err
 	}
+	to := indirect(reflect.ValueOf(result))
+	toType, _ := indirectType(to.Type())
+	if to.IsNil() {
+		slice := reflect.MakeSlice(reflect.SliceOf(to.Type().Elem()), 0, int(limit))
+		to.Set(slice)
+	}
+	for i := 0; i < len(aggPaginatedData.Data); i++ {
+		ele := reflect.New(toType).Elem().Addr()
+		if marshallErr := bson.Unmarshal(aggPaginatedData.Data[i], ele.Interface()); marshallErr == nil {
+			to.Set(reflect.Append(to, ele))
+		} else {
+			return 0, marshallErr
+		}
+	}
 	return aggPaginatedData.Pagination.Total, nil
+}
+func indirect(reflectValue reflect.Value) reflect.Value {
+	for reflectValue.Kind() == reflect.Ptr {
+		reflectValue = reflectValue.Elem()
+	}
+	return reflectValue
+}
+func indirectType(reflectType reflect.Type) (_ reflect.Type, isPtr bool) {
+	for reflectType.Kind() == reflect.Ptr || reflectType.Kind() == reflect.Slice {
+		reflectType = reflectType.Elem()
+		isPtr = true
+	}
+	return reflectType, isPtr
 }

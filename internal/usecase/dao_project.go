@@ -21,9 +21,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	filters := make(bson.M)
 	filterIdOperation := "$lt"
 	sorts := bson.M{
-		"$sort": bson.D{
-			{Key: "_id", Value: -1},
-		},
+		"$sort": bson.D{{Key: "_id", Value: -1}},
 	}
 	match := bson.M{"$match": filters}
 	lookupProject := bson.M{
@@ -52,12 +50,16 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	}
 	unwindProject := bson.M{"$unwind": "$project"}
 	unwindUser := bson.M{"$unwind": "$user"}
+	addProjectName := bson.M{
+		"$addFields": bson.M{"project_name": "$project.name"},
+	}
+	addUserName := bson.M{
+		"$addFields": bson.M{"user_name": "$user.name"},
+	}
 	if len(request.Sorts) > 0 {
 		sort := bson.D{}
 		for _, srt := range request.Sorts {
-			sort = append(sort, bson.E{
-				Key: srt.Field, Value: srt.Type,
-			})
+			sort = append(sort, bson.E{Key: srt.Field, Value: srt.Type})
 			if srt.Field == "_id" && srt.Type == entity.SORT_ASC {
 				filterIdOperation = "$gt"
 			}
@@ -77,6 +79,19 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 			filters["_id"] = bson.M{filterIdOperation: id}
 		}
 	}
+	if request.Keyword != nil {
+		keyword := *request.Keyword
+		filters["$or"] = bson.A{
+			bson.M{"project_name": primitive.Regex{
+				Pattern: keyword,
+				Options: "i",
+			}},
+			bson.M{"user_name": primitive.Regex{
+				Pattern: keyword,
+				Options: "i",
+			}},
+		}
+	}
 	projects := []*entity.DaoProject{}
 	total, err := s.Repo.Aggregation(ctx,
 		entity.DaoProject{}.TableName(),
@@ -89,6 +104,8 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 		lookupUser,
 		unwindUser,
 		lookupDaoProjectVoted,
+		addProjectName,
+		addUserName,
 		sorts)
 	if err != nil {
 		return nil, err
