@@ -336,7 +336,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 // }
 
 func (u Usecase) watchPendingDexBTCBuyETH() error {
-	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding})
+	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding, entity.StatusDEXBuy_Bought, entity.StatusDEXBuy_SendingMaster})
 	if err != nil {
 		return err
 	}
@@ -399,6 +399,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 			} else {
 				// not enough funds
+				if time.Since(order.ExpiredAt) > 1*time.Second {
+					order.Status = entity.StatusDEXBuy_Expired
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					}
+					continue
+				}
 			}
 		case entity.StatusDEXBuy_ReceivedFund:
 			// send tx buy update status to StatusDEXBuy_Buying
@@ -536,14 +544,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			}
 
 			order.MasterTx = txID
-			order.Status = entity.StatusDEXBuy_SENDING_MASTER
+			order.Status = entity.StatusDEXBuy_SendingMaster
 			order.SetUpdatedAt()
 			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
 			if err != nil {
 				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
 			}
 			continue
-		case entity.StatusDEXBuy_SENDING_MASTER:
+		case entity.StatusDEXBuy_SendingMaster:
 			// monitor tx and update status to StatusDEXBuy_SENT_MASTER
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -560,7 +568,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			if receipt.BlockNumber.Uint64()-currentBlockHeight < 15 {
 				continue
 			} else {
-				order.Status = entity.StatusDEXBuy_SENT_MASTER
+				order.Status = entity.StatusDEXBuy_SentMaster
 				_, err = u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 				if err != nil {
 					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
