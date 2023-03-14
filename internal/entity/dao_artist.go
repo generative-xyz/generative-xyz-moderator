@@ -25,7 +25,7 @@ func (m DaoArtist) TableName() string {
 type DaoArtistVoted struct {
 	BaseEntity  `json:",inline" bson:",inline"`
 	CreatedBy   string                  `json:"created_by,omitempty" bson:"created_by"`
-	DaoArtistId primitive.ObjectID      `json:"dao_project_id,omitempty" bson:"dao_project_id"`
+	DaoArtistId primitive.ObjectID      `json:"dao_artist_id,omitempty" bson:"dao_artist_id"`
 	Status      dao_artist_voted.Status `json:"status,omitempty" bson:"status"`
 }
 
