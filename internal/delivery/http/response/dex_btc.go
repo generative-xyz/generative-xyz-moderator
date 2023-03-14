@@ -14,6 +14,8 @@ type DexBTCHistoryListing struct {
 }
 
 type GenDexBTCBuyETH struct {
-	OrderID     string `json:"order_id"`
-	TempAddress string `json:"temp_address"`
+	OrderID    string `json:"order_id"`
+	ETHAddress string `json:"eth_address"`
+	ETHAmount  string `json:"eth_amount"`
+	ExpiredAt  int64  `json:"expired_at"`
 }
