@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -415,10 +416,56 @@ func (r Repository) FindOneBy(ctx context.Context, collectionName string, filter
 	}
 	return nil
 }
+func (b Repository) Create(ctx context.Context, collectionName string, model interface{}, opts ...*options.InsertOneOptions) (primitive.ObjectID, error) {
+	result, err := b.DB.Collection(collectionName).InsertOne(ctx, model, opts...)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if id, ok := result.InsertedID.(primitive.ObjectID); ok {
+		return id, nil
+	}
+	return primitive.NilObjectID, nil
+}
 func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
 		return 0, err
 	}
 	return result.ModifiedCount, nil
+}
+
+func (b Repository) Aggregation(ctx context.Context, collectionName string, page int64, limit int64, result interface{}, agg ...interface{}) (int64, error) {
+	query := New(b.DB.Collection(collectionName)).Context(ctx).Page(page).Limit(limit)
+	aggPaginatedData, err := query.Aggregate(agg...)
+	if err != nil {
+		return 0, err
+	}
+	to := indirect(reflect.ValueOf(result))
+	toType, _ := indirectType(to.Type())
+	if to.IsNil() {
+		slice := reflect.MakeSlice(reflect.SliceOf(to.Type().Elem()), 0, int(limit))
+		to.Set(slice)
+	}
+	for i := 0; i < len(aggPaginatedData.Data); i++ {
+		ele := reflect.New(toType).Elem().Addr()
+		if marshallErr := bson.Unmarshal(aggPaginatedData.Data[i], ele.Interface()); marshallErr == nil {
+			to.Set(reflect.Append(to, ele))
+		} else {
+			return 0, marshallErr
+		}
+	}
+	return aggPaginatedData.Pagination.Total, nil
+}
+func indirect(reflectValue reflect.Value) reflect.Value {
+	for reflectValue.Kind() == reflect.Ptr {
+		reflectValue = reflectValue.Elem()
+	}
+	return reflectValue
+}
+func indirectType(reflectType reflect.Type) (_ reflect.Type, isPtr bool) {
+	for reflectType.Kind() == reflect.Ptr || reflectType.Kind() == reflect.Slice {
+		reflectType = reflectType.Elem()
+		isPtr = true
+	}
+	return reflectType, isPtr
 }
