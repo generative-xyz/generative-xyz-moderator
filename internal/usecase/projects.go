@@ -1907,7 +1907,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
-			InscribedBy:     item.UserWalletAddress,
+			InscribedBy:     item.OwnerOf,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -1934,7 +1934,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.OwnerOf, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
