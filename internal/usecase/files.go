@@ -21,12 +21,14 @@ import (
 	"github.com/tdewolff/minify/v2/json"
 	"github.com/tdewolff/minify/v2/svg"
 	"github.com/tdewolff/minify/v2/xml"
+	"go.uber.org/zap"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_project_data"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 type File interface {
@@ -213,7 +215,13 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 	projectName := r.FormValue("projectName")
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "FormFile") , zap.String("err", err.Error()))
+		return nil, err
+	}
+
+	if handler.Size <= 0 {
+		err := errors.New("The uploaded file is empty")
+		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "Checkfilesize") , zap.String("err", err.Error()))
 		return nil, err
 	}
 
@@ -226,11 +234,11 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "FileUploadToBucket") , zap.String("err", err.Error()))
 		return nil, err
 	}
 
-	u.Logger.Info("uploaded", uploaded)
+	logger.AtLog.Info("uploaded", uploaded)
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
 		FileName: uploaded.Name,
@@ -241,10 +249,10 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
 	if err != nil {
-		u.Logger.Error("u.Repo.InsertOne", err.Error(), err)
+		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "InsertOne") , zap.String("err", err.Error()))
 		return nil, err
 	}
 
-	u.Logger.Info("inserted.FileModel", fileModel)
+	logger.AtLog.Info("UploadProjectFiles", zap.Any("fileModel", fileModel))
 	return fileModel, nil
 }
