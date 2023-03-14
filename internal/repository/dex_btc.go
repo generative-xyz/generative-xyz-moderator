@@ -304,6 +304,23 @@ func (r Repository) UpdateDexBTCBuyETHOrderStatus(model *entity.DexBTCBuyWithETH
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCBuyETHOrderConfirmation(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"confirmation": model.Confirmation,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
@@ -315,22 +332,22 @@ func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mo
 	return result, err
 }
 
-func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
-	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+// func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+// 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
-	update := bson.M{
-		"$set": bson.M{
-			"eth_tx": model.ETHTx,
-		},
-	}
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"eth_tx": model.ETHTx,
+// 		},
+// 	}
 
-	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return nil, err
-	}
+// 	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return result, err
-}
+// 	return result, err
+// }
 
 func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCBuyWithETH, error) {
 	f := bson.D{{Key: "uuid", Value: buyOrderID}}

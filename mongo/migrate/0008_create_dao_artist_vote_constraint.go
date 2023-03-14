@@ -15,10 +15,7 @@ func init() {
 			DB: db,
 		}
 		ctx := context.Background()
-		if err := repo.CreateIndices(ctx, entity.DaoProjectVoted{}.TableName(), []string{"dao_project_id"}, false); err != nil {
-			return err
-		}
-		if err := repo.CreateCompoundIndex(ctx, entity.DaoProjectVoted{}.TableName(), []string{"dao_project_id", "created_by"}, true); err != nil {
+		if err := repo.CreateCompoundIndex(ctx, entity.DaoArtistVoted{}.TableName(), []string{"dao_artist_id", "created_by"}, true); err != nil {
 			return err
 		}
 		return nil
