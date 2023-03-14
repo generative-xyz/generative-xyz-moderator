@@ -11,7 +11,7 @@ type DaoProject struct {
 	BaseEntity      `json:",inline"`
 	SeqId           uint                  `json:"seq_id"`
 	CreatedBy       string                `json:"created_by"`
-	User            *UserForDaoProject    `json:"user"`
+	User            *UserForDao           `json:"user"`
 	ProjectId       string                `json:"project_id"`
 	Project         *ProjectForDaoProject `json:"project"`
 	ExpiredAt       time.Time             `json:"expired_at"`
@@ -56,12 +56,13 @@ type ProjectMintingInfo struct {
 	IndexReverse int64 `json:"index_reverse"`
 }
 
-type UserForDaoProject struct {
+type UserForDao struct {
 	BaseEntity    `json:",inline,omitempty"`
-	IsVerified    bool   `json:"is_verified,omitempty"`
-	WalletAddress string `json:"wallet_address,omitempty"`
-	DisplayName   string `json:"display_name,omitempty"`
-	Avatar        string `json:"avatar,omitempty"`
+	IsVerified    bool          `json:"is_verified,omitempty"`
+	WalletAddress string        `json:"wallet_address,omitempty"`
+	DisplayName   string        `json:"display_name,omitempty"`
+	Avatar        string        `json:"avatar,omitempty"`
+	ProfileSocial ProfileSocial `json:"profile_social"`
 }
 
 type DaoProjectVoted struct {
