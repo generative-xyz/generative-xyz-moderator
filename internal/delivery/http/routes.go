@@ -34,6 +34,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
+	tokens.HandleFunc("/activities/{inscriptionID}", h.getTokenActivities).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
@@ -188,8 +189,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
-	// mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	// mintNftBtc.HandleFunc("/{uuid}", h.getDetailMintNftBtc).Methods("GET")
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -229,7 +230,12 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
-	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("")
+	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
+	//buy with eth
+	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
+	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
+	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
+	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")

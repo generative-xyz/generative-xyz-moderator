@@ -172,7 +172,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if filter.SortBy == "" {
 		filter.SortBy = "priceBTC"
 	}
-
+	
 	if len(filter.Ids) != 0 {
 		objectIDs, err := utils.StringsToObjects(filter.Ids)
 		if err == nil {
@@ -183,6 +183,37 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	listingAmountDefault := -1
 	if filter.SortBy == "priceBTC" && filter.Sort == 1 {
 		listingAmountDefault = 99999999999999
+	}
+
+	dexBtcMatch := bson.D{
+		{"matched", false},
+		{"cancelled", false},
+	}
+
+	addNoneBuyItems := true
+	if filter.IsBuynow != nil {
+		if *filter.IsBuynow  == true {
+			addNoneBuyItems = false
+		}
+	}
+
+	priceFilter := bson.A{}
+
+	isFilterPrice := false
+	if filter.FromPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}} )
+	}
+	
+	if filter.ToPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$lte", *filter.ToPrice}}}})
+	}
+
+	if isFilterPrice {
+		dexBtcMatchAnd := bson.E{"$and",  priceFilter}
+		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
+		addNoneBuyItems = false
 	}
 
 	f2 := bson.A{
@@ -203,10 +234,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 						bson.A{
 							bson.D{
 								{"$match",
-									bson.D{
-										{"matched", false},
-										{"cancelled", false},
-									},
+									dexBtcMatch,
 								},
 							},
 						},
@@ -219,7 +247,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			{"$unwind",
 				bson.D{
 					{"path", "$listing"},
-					{"preserveNullAndEmptyArrays", true},
+					{"preserveNullAndEmptyArrays", addNoneBuyItems},
 				},
 			},
 		},
@@ -303,6 +331,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"priceBTC", 1},
 					{"orderID", 1},
 					{"project.tokenid", 1},
+					{"project.royalty", 1},
 				},
 			},
 		},
@@ -409,20 +438,20 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		f["token_id"] = bson.D{{Key: "$in", Value: filter.TokenIDs}}
 	}
 
-	if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
-		priceFilter := bson.M{}
-		if filter.HasPrice != nil {
-			priceFilter["$exists"] = *filter.HasPrice
-			priceFilter["$ne"] = nil
-		}
-		if filter.FromPrice != nil {
-			priceFilter["$gte"] = *filter.FromPrice
-		}
-		if filter.ToPrice != nil {
-			priceFilter["$lte"] = *filter.ToPrice
-		}
-		f["stats.price_int"] = priceFilter
-	}
+	// if filter.HasPrice != nil || filter.FromPrice != nil || filter.ToPrice != nil {
+	// 	priceFilter := bson.M{}
+	// 	if filter.HasPrice != nil {
+	// 		priceFilter["$exists"] = *filter.HasPrice
+	// 		priceFilter["$ne"] = nil
+	// 	}
+	// 	if filter.FromPrice != nil {
+	// 		priceFilter["$gte"] = *filter.FromPrice
+	// 	}
+	// 	if filter.ToPrice != nil {
+	// 		priceFilter["$lte"] = *filter.ToPrice
+	// 	}
+	// 	f["stats.price_int"] = priceFilter
+	// }
 
 	andFilters := []bson.M{
 		f,
@@ -442,6 +471,34 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			})
 		}
 	}
+	
+	if filter.RarityAttributes != nil && len(filter.RarityAttributes) > 0 {
+		traits := []string{}
+		values := []string{}
+		for _, attribute := range filter.RarityAttributes {
+			traits = append(traits, attribute.TraitType)	
+			for _, value := range attribute.Values {
+				values = append(values, value)
+			}
+		}
+
+		andFilters = append(andFilters, bson.M{
+			"parsed_attributes_str": bson.M{
+				"$elemMatch": bson.M{
+					"trait_type": bson.M{
+						"$in": traits,
+					},
+					"value": bson.M{
+						"$in": values,
+					},
+				},
+			},
+		})
+
+	
+	}
+	
+	
 	return bson.M{
 		"$and": andFilters,
 	}

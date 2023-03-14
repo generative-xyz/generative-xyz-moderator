@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -201,4 +202,37 @@ func (h *httpDelivery) MintNftBtcResp(input *entity.MintNftBtc) (*response.MintN
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (h *httpDelivery) getMintFeeRateInfos(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	fileSize := vars["fileSize"]
+	customRate := vars["customRate"]
+	mintPrice := vars["mintPrice"]
+
+	fileSizeInt, err := strconv.Atoi(fileSize)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetLevelFeeInfo", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	customRateInt, err := strconv.Atoi(customRate)
+	if err != nil {
+		customRateInt = 0
+	}
+
+	mintPriceInt, err := strconv.Atoi(mintPrice)
+	if err != nil {
+		mintPriceInt = 0
+	}
+
+	item, err := h.Usecase.GetLevelFeeInfo(int64(fileSizeInt), int64(customRateInt), int64(mintPriceInt))
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetLevelFeeInfo", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, item, "")
 }
