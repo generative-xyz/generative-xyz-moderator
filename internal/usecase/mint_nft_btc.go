@@ -112,6 +112,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	fmt.Println("input.FeeRate", input.FeeRate)
+
 	walletAddress.FeeRate = int64(input.FeeRate)
 
 	walletAddress.UserID = input.UserID
