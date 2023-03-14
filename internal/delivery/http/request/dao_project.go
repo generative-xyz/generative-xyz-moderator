@@ -17,6 +17,6 @@ type CreateDaoProjectRequest struct {
 }
 
 type VoteDaoProjectRequest struct {
-	Status        dao_project_voted.Status `json:"int64"`
+	Status        dao_project_voted.Status `json:"status"`
 	WalletAddress string                   `json:"-"`
 }
