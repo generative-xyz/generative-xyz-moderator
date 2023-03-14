@@ -100,7 +100,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 
 func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {
 	request := &request.ListDaoProjectRequest{
-		Pagination: entity.Pagination{
+		Pagination: &entity.Pagination{
 			PageSize: 1,
 		},
 		Id: &id,
