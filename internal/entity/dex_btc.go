@@ -51,20 +51,20 @@ func (u DexBTCListing) ToBson() (*bson.D, error) {
 }
 
 type DexBTCBuyWithETH struct {
-	BaseEntity `bson:",inline"`
-	OrderID    string `bson:"order_id" json:"order_id"`
-	AmountBTC  uint64 `bson:"amount_btc" json:"amount_btc"`
-	// AmountETH  uint64 `bson:"amount_eth" json:"amount_eth"`
-	UserID         string `bson:"user_id" json:"user_id"`
-	ReceiveAddress string `bson:"receive_address" json:"receive_address"`
-	ETHTx          string `bson:"eth_tx" json:"eth_tx"`
-	BTCTx          string `bson:"btc_tx" json:"btc_tx"`
-	// UXTOList   []string           `bson:"uxto_list" json:"uxto_list"`
-	BuyTx      string             `bson:"buy_tx" json:"buy_tx"`
-	RefundTx   string             `bson:"refund_tx" json:"refund_tx"`
-	FeeRate    uint64             `bson:"fee_rate" json:"fee_rate"`
-	Status     DexBTCETHBuyStatus `bson:"status" json:"status"`
-	TempBTCKey string             `bson:"temp_btc_key" json:"temp_btc_key"`
+	BaseEntity     `bson:",inline"`
+	OrderID        string             `bson:"order_id" json:"order_id"`
+	Confirmation   int                `bson:"confirmation" json:"confirmation" `
+	AmountETH      string             `bson:"amount_eth" json:"amount_eth"`
+	UserID         string             `bson:"user_id" json:"user_id"`
+	ReceiveAddress string             `bson:"receive_address" json:"receive_address"`
+	RefundAddress  string             `bson:"refund_address" json:"refund_address"`
+	ExpiredAt      time.Time          `bson:"expired_at" json:"expired_at"`
+	BuyTx          string             `bson:"buy_tx" json:"buy_tx"`
+	RefundTx       string             `bson:"refund_tx" json:"refund_tx"`
+	MasterTx       string             `bson:"master_tx" json:"master_tx"`
+	FeeRate        uint64             `bson:"fee_rate" json:"fee_rate"`
+	Status         DexBTCETHBuyStatus `bson:"status" json:"status"`
+	ETHKey         string             `bson:"eth_key" json:"eth_key"`
 }
 
 func (u DexBTCBuyWithETH) TableName() string {
@@ -85,4 +85,6 @@ const (
 	StatusDEXBuy_WaitingToRefund
 	StatusDEXBuy_Refunding
 	StatusDEXBuy_Refunded
+	StatusDEXBuy_SENDING_MASTER
+	StatusDEXBuy_SENT_MASTER
 )
