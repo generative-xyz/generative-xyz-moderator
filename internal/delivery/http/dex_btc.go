@@ -9,6 +9,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
@@ -400,7 +401,6 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 
 	result := []response.DEXBuyEthHistory{}
 	for _, v := range list {
-		//TODO: 2077 update status to string
 		item := response.DEXBuyEthHistory{
 			ID:             v.ID.Hex(),
 			OrderID:        v.OrderID,
@@ -412,7 +412,16 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 			BuyTx:          v.BuyTx,
 			RefundTx:       v.RefundTx,
 			FeeRate:        v.FeeRate,
-			Status:         v.Status,
+			InscriptionID:  v.InscriptionID,
+			AmountBTC:      v.AmountBTC,
+		}
+		switch v.Status {
+		case entity.StatusDEXBuy_SendingMaster, entity.StatusDEXBuy_SentMaster:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Bought]
+		case entity.StatusDEXBuy_WaitingToRefund:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Refunding]
+		default:
+			item.Status = entity.StatusDexBTCETHToText[v.Status]
 		}
 		result = append(result, item)
 	}
