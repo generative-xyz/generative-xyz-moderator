@@ -96,4 +96,5 @@ type ProjectMarketplaceData struct {
 	FloorPrice  uint64 `json:"floor_price"`
 	TotalVolume uint64 `json:"volume"`
 	MintVolume  uint64 `json:"mint_volume"`
+	CEXVolume   uint64 `json:"cex_volume"`
 }
