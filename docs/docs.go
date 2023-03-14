@@ -6325,6 +6325,9 @@ const docTemplate = `{
                 "project_id": {
                     "type": "string"
                 },
+                "seq_id": {
+                    "type": "integer"
+                },
                 "status": {
                     "type": "integer"
                 },

@@ -47,6 +47,7 @@ type ProjectForDaoProject struct {
 	Name        string             `json:"name,omitempty"`
 	CreatorName string             `json:"creator_name,omitempty"`
 	Thumbnail   string             `json:"thumbnail,omitempty"`
+	MaxSupply   int64              `json:"max_supply"`
 	MintingInfo ProjectMintingInfo `json:"minting_info,omitempty"`
 }
 
