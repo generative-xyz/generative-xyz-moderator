@@ -43,10 +43,12 @@ type FilterTokenUris struct {
 	CollectionIDs   []string
 	TokenIDs        []string
 	Attributes      []TokenUriAttrFilter
+	RarityAttributes      []TokenUriAttrFilter
 	HasPrice        *bool
 	FromPrice       *int64
 	ToPrice         *int64
 	Ids             []string
+	IsBuynow        *bool
 }
 
 type TokenStats struct {
@@ -94,6 +96,8 @@ type TokenUri struct {
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
 	Source                         string        `bson:"source" json:"source"`
 	NftTokenId                     string        `bson:"nftTokenId"`
+	InscribedBy                    string        `bson:"inscribedBy"`
+	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 }
 
 type AggregateTokenUriTraits struct {
@@ -127,6 +131,7 @@ type TokenUriListingFilter struct {
 	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
 	Project               struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
+		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
 }
 

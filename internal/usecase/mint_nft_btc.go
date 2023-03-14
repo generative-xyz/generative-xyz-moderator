@@ -43,7 +43,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	if input.Quantity <= 0 {
 		err = errors.New("quantity invalid")
-		u.Logger.Error("input.Quantity", err.Error(), err)
+
 		return nil, err
 	}
 
@@ -112,6 +112,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		return nil, err
 	}
 
+	walletAddress.FeeRate = int64(input.FeeRate)
+
 	walletAddress.UserID = input.UserID
 	walletAddress.UserAddress = input.UserAddress
 
@@ -124,8 +126,56 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		mintPrice = big.NewInt(0)
 	}
 
+	// check whitelist price in project.reservers to get reserveMintPrice
+	if len(p.Reservers) > 0 {
+
+		for _, address := range p.Reservers {
+			if strings.EqualFold(address, walletAddress.UserAddress) {
+
+				reserveMintPrice, ok := big.NewInt(0).SetString(p.ReserveMintPrice, 10)
+				if ok {
+
+					// get list item mint:
+					countMinted := 0
+					mintReadyList, _ := u.Repo.GetLimitWhiteList(input.UserAddress, input.ProjectID)
+
+					for _, mItem := range mintReadyList {
+
+						if mItem.IsConfirm {
+							if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+								countMinted += 1
+							}
+
+						} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+							if time.Since(mItem.ExpiredAt) < 1*time.Second {
+								countMinted += mItem.Quantity
+							}
+						}
+					}
+					maxSlot := p.ReserveMintLimit - countMinted
+
+					fmt.Println("p.ReserveMintLimit: ", p.ReserveMintLimit)
+					fmt.Println("countMinted: ", countMinted)
+					fmt.Println("maxSlot: ", maxSlot)
+
+					if maxSlot > 0 {
+						if input.Quantity > maxSlot {
+							return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
+						}
+
+						mintPrice = big.NewInt(reserveMintPrice.Int64())
+						walletAddress.IsDiscount = true
+						u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
+					}
+				}
+				break
+			}
+		}
+
+	}
+
 	// cal fee:
-	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate))
+	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 		return nil, err
@@ -153,7 +203,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		expiredTime = 1
 	}
 	if input.PayType == utils.NETWORK_ETH {
-		expiredTime = 1 // just 1h for checking eth balance
+		expiredTime = 2 // just 1h for checking eth balance
 	}
 
 	walletAddress.Amount = feeInfos[input.PayType].TotalAmount
@@ -499,6 +549,31 @@ func (u Usecase) JobMint_CheckBalance() error {
 			fmt.Printf("Could not UpdateMintNftBtc uuid %s - with err: %v", item.UUID, err)
 			continue
 		}
+
+		// check Project and make sure index < max supply
+		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
+		if err != nil {
+			u.Logger.Error("JobMint_CheckBalance.FindProjectByTokenID", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
+			continue
+		}
+		if p.MintingInfo.Index >= p.MaxSupply {
+
+			// update need to return:
+			item.ReasonRefund = "Project is minted out."
+			item.Status = entity.StatusMint_NeedToRefund
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
+			}
+			err = fmt.Errorf("project %s is minted out", item.ProjectID)
+			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
+			continue
+		}
+
 		// create batch record:
 		if item.Status == entity.StatusMint_ReceivedFund && item.Quantity > 1 {
 			// create
@@ -531,6 +606,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 					BtcRate:             item.BtcRate,
 
 					EstFeeInfo: item.EstFeeInfo,
+					IsDiscount: item.IsDiscount,
 				}
 				// insert now:
 				err = u.Repo.InsertMintNftBtc(&batchItem)
@@ -643,17 +719,23 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			continue
 		}
 		_ = baseUrl
+
+		feeRate := item.FeeRate
+		if feeRate == 0 {
+			feeRate = entity.DEFAULT_FEE_RATE
+		}
+
 		// start call rpc mint nft now:
 		mintData := ord_service.MintRequest{
 			WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
 			FileUrl:     baseUrl.String(),
-			FeeRate:     entity.DEFAULT_FEE_RATE, //auto
+			FeeRate:     int(feeRate),
 			DryRun:      false,
 			RequestId:   item.UUID,      // for tracking log
 			ProjectID:   item.ProjectID, // for tracking log
 			FileUrlUnit: item.FileURI,   // for tracking log
 
-			AutoFeeRateSelect: true,
+			AutoFeeRateSelect: false, // not auto
 
 			// new key for ord v5.1, support mint + send in 1 tx:
 			DestinationAddress: item.OriginUserAddress,
@@ -1415,7 +1497,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 }
 
 // please donate P some money:
-func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[string]entity.MintFeeInfo, error) {
+func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, ethRate float64) (map[string]entity.MintFeeInfo, error) {
 
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
@@ -1456,19 +1538,22 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[stri
 		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
 
-	var btcRate, ethRate float64
+	if btcRate <= 0 {
+		btcRate, err = helpers.GetExternalPrice("BTC")
+		if err != nil {
+			u.Logger.Error("getExternalPrice", zap.Error(err))
+			return nil, err
+		}
 
-	btcRate, err = helpers.GetExternalPrice("BTC")
-	if err != nil {
-		u.Logger.Error("getExternalPrice", zap.Error(err))
-		return nil, err
+		ethRate, err = helpers.GetExternalPrice("ETH")
+		if err != nil {
+			u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
+			return nil, err
+		}
 	}
 
-	ethRate, err = helpers.GetExternalPrice("ETH")
-	if err != nil {
-		u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
-		return nil, err
-	}
+	fmt.Println("btcRate, ethRate", btcRate, ethRate)
+
 	// total amount by BTC:
 	netWorkFee = netWorkFee.Add(feeMintNft, feeSendNft)  // + feeMintNft	+ feeSendNft
 	netWorkFee = netWorkFee.Add(netWorkFee, feeSendFund) // + feeSendFund
@@ -1571,9 +1656,6 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64) (map[stri
 
 		Decimal: 18,
 	}
-
-	fmt.Println("feeInfos[eth].MintPriceBigIn2", listMintFeeInfo["eth"].MintPriceBigInt)
-	fmt.Println("feeInfos[btc].MintPriceBigIn2", listMintFeeInfo["btc"].MintPriceBigInt)
 
 	return listMintFeeInfo, err
 }

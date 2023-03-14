@@ -34,6 +34,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
+	tokens.HandleFunc("/activities/{inscriptionID}", h.getTokenActivities).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
@@ -188,8 +189,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
-	// mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	// mintNftBtc.HandleFunc("/{uuid}", h.getDetailMintNftBtc).Methods("GET")
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -267,6 +268,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
 	// For test, will remove
 	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
+
+	// DAO Project
+	daoProject := api.PathPrefix("/dao-project").Subrouter()
+	daoProject.Use(h.MiddleWare.AuthorizeFunc)
+	daoProject.HandleFunc("", h.listDaoProject).Methods("GET")
+	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
+	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
+	daoProject.HandleFunc("/{id}", h.voteDaoProject).Methods("PUT")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
