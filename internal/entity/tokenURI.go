@@ -43,6 +43,7 @@ type FilterTokenUris struct {
 	CollectionIDs   []string
 	TokenIDs        []string
 	Attributes      []TokenUriAttrFilter
+	RarityAttributes      []TokenUriAttrFilter
 	HasPrice        *bool
 	FromPrice       *int64
 	ToPrice         *int64

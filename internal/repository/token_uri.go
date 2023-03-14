@@ -172,7 +172,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if filter.SortBy == "" {
 		filter.SortBy = "priceBTC"
 	}
-
+	
 	if len(filter.Ids) != 0 {
 		objectIDs, err := utils.StringsToObjects(filter.Ids)
 		if err == nil {
@@ -471,6 +471,34 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			})
 		}
 	}
+	
+	if filter.RarityAttributes != nil && len(filter.RarityAttributes) > 0 {
+		traits := []string{}
+		values := []string{}
+		for _, attribute := range filter.RarityAttributes {
+			traits = append(traits, attribute.TraitType)	
+			for _, value := range attribute.Values {
+				values = append(values, value)
+			}
+		}
+
+		andFilters = append(andFilters, bson.M{
+			"parsed_attributes_str": bson.M{
+				"$elemMatch": bson.M{
+					"trait_type": bson.M{
+						"$in": traits,
+					},
+					"value": bson.M{
+						"$in": values,
+					},
+				},
+			},
+		})
+
+	
+	}
+	
+	
 	return bson.M{
 		"$and": andFilters,
 	}
