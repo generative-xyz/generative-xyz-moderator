@@ -751,3 +751,64 @@ func (r Repository) ProjectGetMintVolume(projectID string) (uint64, error) {
 
 	return 0, nil
 }
+
+func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingVolume{}
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{{"isSold", true}}}},
+		bson.D{{"$addFields", bson.D{{"price", bson.D{{"$toDouble", "$amount"}}}}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscriptionID"},
+					{"foreignField", "token_id"},
+					{"let", bson.D{{"id", "$_id"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+						},
+					},
+					{"as", "collection_id"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$collection_id"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"Amount", bson.D{{"$sum", "$price"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 0},
+					{"totalAmount", "$Amount"},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		return uint64(result[0].TotalAmount), nil
+	}
+
+	return 0, nil
+}
