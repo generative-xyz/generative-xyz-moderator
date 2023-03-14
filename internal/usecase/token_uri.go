@@ -592,12 +592,40 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	
+
+	//filerAttrs := []structure.TokenUriAttrReq{}
+	if filter.Rarity != nil && *filter.Rarity > 0 {
+		groupTraits := make(map [string][]string)
+		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
+		if err == nil {
+			traits := p.TraitsStat
+			for _, trait := range traits {
+				values := trait.TraitValuesStat
+				
+				for _, value := range values {
+					if value.Rarity <= int32(*filter.Rarity) {
+						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
+						
+					}
+				}
+			}
+		}
+
+		for key, groupTrait := range  groupTraits {
+			r := structure.TokenUriAttrReq{}
+			r.TraitType = key
+			r.Values = groupTrait
+			filter.RarityAttributes = append(filter.Attributes, r)
+		}
+	}
+
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
-
+	
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
