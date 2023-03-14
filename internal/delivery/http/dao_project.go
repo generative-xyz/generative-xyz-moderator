@@ -80,7 +80,7 @@ func (h *httpDelivery) getDaoProject(w http.ResponseWriter, r *http.Request) {
 // @Tags DAO Project
 // @Accept json
 // @Produce json
-// @Param request body request.VoteDaoProjectRequest true "Create Dao Project Request"
+// @Param request body request.VoteDaoProjectRequest true "Vote Dao Project Request"
 // @Param id path string true "Dao Project Id"
 // @Success 200
 // @Router /dao-project/{id} [PUT]
