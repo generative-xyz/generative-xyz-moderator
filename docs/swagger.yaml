@@ -2266,7 +2266,7 @@ paths:
       - application/json
       description: Vote DAO Project
       parameters:
-      - description: Create Dao Project Request
+      - description: Vote Dao Project Request
         in: body
         name: request
         required: true
