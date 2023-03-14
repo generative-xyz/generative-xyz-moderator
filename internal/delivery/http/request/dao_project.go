@@ -6,7 +6,7 @@ import (
 )
 
 type ListDaoProjectRequest struct {
-	entity.Pagination
+	*entity.Pagination
 	Status  *int64  `query:"status"`
 	Keyword *string `query:"keyword"`
 	Id      *string `query:"-"`

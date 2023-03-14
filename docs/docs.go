@@ -6730,6 +6730,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "max_supply": {
+                    "type": "integer"
+                },
                 "minting_info": {
                     "$ref": "#/definitions/response.ProjectMintingInfo"
                 },
