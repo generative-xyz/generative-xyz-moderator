@@ -998,7 +998,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	now := time.Now().UTC()
-	imageURI := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", inscription.ID)
+	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
 	tokenUri.AnimationURL = ""
 	tokenUri.Thumbnail = imageURI
 	tokenUri.Image = imageURI
