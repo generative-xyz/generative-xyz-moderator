@@ -15,8 +15,10 @@ type DaoProject struct {
 	Project         *ProjectForDaoProject `json:"project"`
 	ExpiredAt       time.Time             `json:"expired_at"`
 	Status          dao_project.Status    `json:"status"`
-	DaoProjectVoted []*DaoProjectVoted    `json:"-"`
+	DaoProjectVoted []*DaoProjectVoted    `json:"dao_project_voted"`
 	Action          *ActionDaoProject     `json:"action"`
+	TotalAgainst    int64                 `json:"total_against"`
+	TotalVote       int64                 `json:"total_vote"`
 }
 
 func (s *DaoProject) SetFields(fns ...func(*DaoProject)) {
@@ -57,6 +59,18 @@ type UserForDaoProject struct {
 
 type DaoProjectVoted struct {
 	CreatedBy    string                   `json:"created_by,omitempty" bson:"created_by"`
+	DisplayName  string                   `json:"display_name,omitempty"`
 	DaoProjectId string                   `json:"dao_project_id,omitempty" bson:"dao_project_id"`
 	Status       dao_project_voted.Status `json:"status,omitempty" bson:"status"`
+}
+
+func (s *DaoProjectVoted) SetFields(fns ...func(*DaoProjectVoted)) {
+	for _, fn := range fns {
+		fn(s)
+	}
+}
+func (s DaoProjectVoted) WithDisplayName(displayName string) func(*DaoProjectVoted) {
+	return func(dp *DaoProjectVoted) {
+		dp.DisplayName = displayName
+	}
 }
