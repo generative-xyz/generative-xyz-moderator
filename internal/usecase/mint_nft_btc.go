@@ -1104,7 +1104,33 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
-		if item.IsSubItem || item.Quantity > 1 {
+
+		// if parent item:
+		if item.Quantity > 1 {
+			// get list of sub-items, if all have minted then refund all:
+			childItems, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+			minedItems := 0
+			needRefundItems := 0
+			if len(childItems) > 0 {
+				for _, childItem := range childItems {
+					if childItem.IsMinted {
+						minedItems++
+					} else if childItem.Status == entity.StatusMint_NeedToRefund {
+						needRefundItems++
+					}
+				}
+			}
+			// if not enough need-to-refund item then wait or refund&fund ...
+			if !(needRefundItems == item.Quantity-1) {
+				if minedItems+needRefundItems == item.Quantity-1 {
+					// refund + fund now:
+					// TODO: code this function send+refund vs 1 tx.
+				}
+				continue
+			}
+			// refund all.
+
+		} else if item.IsSubItem {
 			continue
 		}
 
