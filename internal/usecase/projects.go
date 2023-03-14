@@ -1922,12 +1922,12 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	} else {
 		maxSupply := project.MaxSupply + 1
-		index := project.MintingInfo.Index + 1
+		//index := project.MintingInfo.Index + 1
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
 			CreatetorAddress: &project.CreatorAddrr,
 			ProjectID:        &project.TokenID,
 			MaxSupply:        &maxSupply,
-			Index:            &index,
+			Index:            nil,
 		})
 		if err != nil {
 			return err
