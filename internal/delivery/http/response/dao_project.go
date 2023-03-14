@@ -37,7 +37,7 @@ type ProjectForDaoProject struct {
 	Name        string             `json:"name"`
 	CreatorName string             `json:"creator_name"`
 	Thumbnail   string             `json:"thumbnail"`
-	MintingInfo ProjectMintingInfo `json:",inline"`
+	MintingInfo ProjectMintingInfo `json:"minting_info"`
 }
 
 type ProjectMintingInfo struct {

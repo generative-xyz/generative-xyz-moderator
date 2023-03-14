@@ -15,6 +15,8 @@ import (
 // @Tags DAO Project
 // @Accept json
 // @Produce json
+// @Param keyword query string false "Keyword"
+// @Param status query int false "Status"
 // @Param cursor query string false "Last Id"
 // @Param limit query int false "Limit"
 // @Success 200 {object} entity.Pagination{}

@@ -54,7 +54,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 		"$addFields": bson.M{"project_name": "$project.name"},
 	}
 	addUserName := bson.M{
-		"$addFields": bson.M{"user_name": "$user.name"},
+		"$addFields": bson.M{"user_name": "$user.display_name"},
 	}
 	if len(request.Sorts) > 0 {
 		sort := bson.D{}
