@@ -945,6 +945,24 @@ const docTemplate = `{
                     "DAO Project"
                 ],
                 "summary": "Vote DAO Project",
+                "parameters": [
+                    {
+                        "description": "Create Dao Project Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VoteDaoProjectRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Dao Project Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -6071,6 +6089,14 @@ const docTemplate = `{
                 }
             }
         },
+        "request.VoteDaoProjectRequest": {
+            "type": "object",
+            "properties": {
+                "int64": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.WithDrawItemRequest": {
             "type": "object",
             "properties": {
@@ -6135,6 +6161,12 @@ const docTemplate = `{
                 "created_by": {
                     "type": "string"
                 },
+                "dao_project_voted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DaoProjectVoted"
+                    }
+                },
                 "deleted_at": {
                     "type": "string"
                 },
@@ -6153,6 +6185,12 @@ const docTemplate = `{
                 "status": {
                     "type": "integer"
                 },
+                "total_against": {
+                    "type": "integer"
+                },
+                "total_vote": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -6161,6 +6199,23 @@ const docTemplate = `{
                 },
                 "uuid": {
                     "type": "string"
+                }
+            }
+        },
+        "response.DaoProjectVoted": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_project_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
