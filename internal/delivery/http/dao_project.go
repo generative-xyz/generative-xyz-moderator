@@ -7,6 +7,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
 
@@ -29,6 +30,7 @@ func (h *httpDelivery) listDaoProject(w http.ResponseWriter, r *http.Request) {
 			if err := utils.QueryParser(r, req); err != nil {
 				return nil, err
 			}
+			req.Pagination = entity.GetPagination(r)
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
 			return h.Usecase.ListDAOProject(ctx, userWallet, req)
 		},
