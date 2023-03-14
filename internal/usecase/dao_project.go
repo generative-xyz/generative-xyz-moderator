@@ -9,12 +9,100 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/delivery/http/request"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/constants/dao_project"
+	copierInternal "rederinghub.io/utils/copier"
 )
 
-func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, req *entity.Pagination) (*entity.Pagination, error) {
-	return nil, nil
+func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
+	result := &entity.Pagination{PageSize: request.PageSize}
+	limit := int64(100)
+	filters := make(bson.M)
+	filterIdOperation := "$lt"
+	sorts := bson.M{
+		"$sort": bson.D{
+			{Key: "_id", Value: -1},
+		},
+	}
+	match := bson.M{"$match": filters}
+	lookupProject := bson.M{
+		"$lookup": bson.M{
+			"from":         "projects",
+			"localField":   "project_id",
+			"foreignField": "_id",
+			"as":           "project",
+		},
+	}
+	lookupUser := bson.M{
+		"$lookup": bson.M{
+			"from":         "users",
+			"localField":   "created_by",
+			"foreignField": "wallet_address",
+			"as":           "user",
+		},
+	}
+	lookupDaoProjectVoted := bson.M{
+		"$lookup": bson.M{
+			"from":         "dao_project_voted",
+			"localField":   "_id",
+			"foreignField": "dao_project_id",
+			"as":           "dao_project_voted",
+		},
+	}
+	unwindProject := bson.M{"$unwind": "$project"}
+	unwindUser := bson.M{"$unwind": "$user"}
+	if len(request.Sorts) > 0 {
+		sort := bson.D{}
+		for _, srt := range request.Sorts {
+			sort = append(sort, bson.E{
+				Key: srt.Field, Value: srt.Type,
+			})
+			if srt.Field == "_id" && srt.Type == entity.SORT_ASC {
+				filterIdOperation = "$gt"
+			}
+		}
+		sorts = bson.M{
+			"$sort": sort,
+		}
+	}
+	if request.PageSize <= limit {
+		limit = request.PageSize
+	}
+	if request.Status != nil {
+		filters["status"] = request.Status
+	}
+	if request.Cursor != "" {
+		if id, err := primitive.ObjectIDFromHex(request.Cursor); err == nil {
+			filters["_id"] = bson.M{filterIdOperation: id}
+		}
+	}
+	projects := []*entity.DaoProject{}
+	total, err := s.Repo.Aggregation(ctx,
+		entity.DaoProject{}.TableName(),
+		0,
+		limit,
+		&projects,
+		match,
+		lookupProject,
+		unwindProject,
+		lookupUser,
+		unwindUser,
+		lookupDaoProjectVoted,
+		sorts)
+	if err != nil {
+		return nil, err
+	}
+	projectsResp := []*response.DaoProject{}
+	if err := copierInternal.Copy(&projectsResp, projects); err != nil {
+		return nil, err
+	}
+	result.Result = projectsResp
+	result.Total = total
+	if len(projectsResp) > 0 {
+		result.Cursor = projectsResp[len(projectsResp)-1].ID
+	}
+	return result, nil
 }
 
 func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoProjectRequest) (string, error) {

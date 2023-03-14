@@ -432,3 +432,16 @@ func (b Repository) UpdateMany(ctx context.Context, collectionName string, filte
 	}
 	return result.ModifiedCount, nil
 }
+
+func (b Repository) Aggregation(ctx context.Context, collectionName string, page int64, limit int64, result interface{}, agg ...interface{}) (int64, error) {
+	aggPaginatedData, err := New(b.DB.Collection(collectionName)).
+		Context(ctx).
+		Page(page).
+		Limit(limit).
+		Decode(result).
+		Aggregate(agg...)
+	if err != nil {
+		return 0, err
+	}
+	return aggPaginatedData.Pagination.Total, nil
+}

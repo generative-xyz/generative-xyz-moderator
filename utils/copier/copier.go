@@ -1,4 +1,4 @@
-package utils
+package copier
 
 // Fork from https://github.com/jinzhu/copier
 // For : Convert primitive.ObjectID <-> string and Convert []primitive.ObjectID <-> []string
