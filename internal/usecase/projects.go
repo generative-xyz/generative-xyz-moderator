@@ -586,8 +586,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-
-	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
+	end := 10
+	if end > len(userAddr) {
+		end = len(userAddr)
+	}
+	return userAddr[:end]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -727,14 +730,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
-	whitelist := make(map[string]bool)
-	whitelist["0xe23fcb129d6ea1b847202b14a56f957e5a464f64"] = true // andy
-	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
-	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
-	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
-	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
-	whitelist["0xd77f54424cc2bd2a7315b1018e53548f62f690c0"] = true // anne
-	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
+	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
@@ -981,59 +977,64 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
+
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
-		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
-		// if err != nil {
-		// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
-		// 	return nil, err
-		// }
-		// return p, nil
 		return nil, errors.New("project is not found")
 	}
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
 
-	/*
-		mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
-			return nil, err
-		}
-		ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-			return nil, err
-		}
-		c.MintPriceEth = ethPrice
+// only using for project detail api, support est fee:
+func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	c, err := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
-		// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+	if err != nil {
+		return nil, err
+	}
 
-		networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
+	// fmt.Println("c.MintedTime", c)
 
-		if c.MaxFileSize > 0 {
-			calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
-			if calNetworkFee > 0 {
-				networkFeeInt = calNetworkFee
-				c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
-
-			}
-		}
-
-		if networkFeeInt > 0 {
-			ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
-			if err != nil {
-				u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-				return nil, err
-			}
-
-			// add fee send master:
-			mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
-			feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-			mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-			ethNetworkFeePrice = mintPriceEthBigint.String()
-
-			c.NetworkFeeEth = ethNetworkFeePrice
-		} */
-	// cal fee info:
+	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
+		return nil, errors.New("project is not found")
+	}
 	if c.MintingInfo.Index < c.MaxSupply {
+
+		if len(req.UserAddressToCheckDiscount) > 0 {
+			if len(c.Reservers) > 0 {
+				for _, address := range c.Reservers {
+					if strings.EqualFold(address, req.UserAddressToCheckDiscount) {
+
+						// get list item mint:
+						countMinted := 0
+						mintReadyList, _ := u.Repo.GetLimitWhiteList(req.UserAddressToCheckDiscount, req.ProjectID)
+
+						for _, mItem := range mintReadyList {
+
+							if mItem.IsConfirm {
+								if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+									countMinted += 1
+								}
+
+							} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+								if time.Since(mItem.ExpiredAt) < 1*time.Second {
+									countMinted += mItem.Quantity
+								}
+							}
+						}
+						maxSlot := c.ReserveMintLimit - countMinted
+
+						if maxSlot <= 0 {
+							c.Reservers = []string{}
+						}
+
+						break
+					}
+				}
+
+			}
+		}
 
 		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)
 		if !ok {
@@ -1041,7 +1042,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 
 		// cal fee:
-		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE)
+		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE, 0, 0)
 		if err != nil {
 			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 			return nil, err
@@ -1075,7 +1076,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 	}()
 
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	// u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
@@ -1896,6 +1897,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
+			Index:           1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
 			CreatorAddrrBTC: creator.WalletAddressBTC,
@@ -1905,7 +1907,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
-			InscribedBy:     item.UserWalletAddress,
+			InscribedBy:     item.OwnerOf,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -1920,19 +1922,19 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	} else {
 		maxSupply := project.MaxSupply + 1
-		index := project.MintingInfo.Index + 1
+		//index := project.MintingInfo.Index + 1
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
 			CreatetorAddress: &project.CreatorAddrr,
 			ProjectID:        &project.TokenID,
 			MaxSupply:        &maxSupply,
-			Index:            &index,
+			Index:            nil,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId)
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.OwnerOf, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}

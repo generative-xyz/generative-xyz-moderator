@@ -40,7 +40,7 @@ func (r Repository) GetAllTokenHolders() ([]entity.TokenHolder, error) {
 }
 
 func (r Repository) DeleteAllTokenHolders() error {
-	_, err := r.DeleteMany(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, bson.D{})
+	_, err := r.DeleteMany(context.Background(), utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER, bson.D{})
 	return err
 }
 
@@ -57,10 +57,10 @@ func (r Repository) FilterTokenHolders(filter entity.FilterTokenHolders) (*entit
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit
 	return resp, nil
-} 
+}
 
 func (r Repository) SnapShotOldRankAndOldBalance() (*mongo.UpdateResult, error) {
 	result, err := r.DB.Collection(utils.COLLECTION_LEADERBOARD_TOKEN_HOLDER).UpdateMany(context.TODO(), bson.M{}, []bson.M{
-		{"$set": bson.M{"old_rank": "$current_rank", "old_balance": "$balance"}},})
+		{"$set": bson.M{"old_rank": "$current_rank", "old_balance": "$balance"}}})
 	return result, err
 }
