@@ -303,6 +303,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"priceBTC", 1},
 					{"orderID", 1},
 					{"project.tokenid", 1},
+					{"project.royalty", 1},
 				},
 			},
 		},
