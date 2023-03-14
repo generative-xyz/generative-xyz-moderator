@@ -182,3 +182,9 @@ type QuickNodeTx struct {
 	Error interface{} `json:"error"`
 	ID    interface{} `json:"id"`
 }
+
+type UTXOType struct {
+	Value      int
+	TxHash     string
+	TxOutIndex int
+}
