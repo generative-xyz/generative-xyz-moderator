@@ -12,15 +12,15 @@ definitions:
         type: string
       apiName:
         type: string
-      createdAt:
+      created_at:
         type: string
-      deletedAt:
+      deleted_at:
         type: string
       id:
         type: string
       status:
         type: integer
-      updatedAt:
+      updated_at:
         type: string
       userUuid:
         type: string
@@ -31,9 +31,7 @@ definitions:
     properties:
       created_at:
         type: string
-      createdAt:
-        type: string
-      deletedAt:
+      deleted_at:
         type: string
       device_type:
         type: string
@@ -41,7 +39,7 @@ definitions:
         type: string
       registration_token:
         type: string
-      updatedAt:
+      updated_at:
         type: string
       user_wallet:
         type: string
@@ -189,10 +187,10 @@ definitions:
         type: integer
       contractAddress:
         type: string
+      created_at:
+        type: string
       created_by_collection_meta:
         type: boolean
-      createdAt:
-        type: string
       creatorAddrr:
         type: string
       creatorAddrrBTC:
@@ -201,7 +199,7 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/entity.Users'
-      deletedAt:
+      deleted_at:
         type: string
       description:
         type: string
@@ -340,7 +338,7 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
-      updatedAt:
+      updated_at:
         type: string
       uuid:
         type: string
@@ -374,7 +372,7 @@ definitions:
         type: string
       contract_address:
         type: string
-      createdAt:
+      created_at:
         type: string
       createdByCollectionInscription:
         type: boolean
@@ -382,7 +380,7 @@ definitions:
         $ref: '#/definitions/entity.Users'
       creatorAddr:
         type: string
-      deletedAt:
+      deleted_at:
         type: string
       description:
         type: string
@@ -445,7 +443,7 @@ definitions:
         type: integer
       token_id_mini:
         type: integer
-      updatedAt:
+      updated_at:
         type: string
     type: object
   entity.TokenUriAttr:
@@ -496,12 +494,12 @@ definitions:
         type: string
       created_at:
         type: string
-      createdAt:
-        type: string
-      deletedAt:
+      deleted_at:
         type: string
       display_name:
         type: string
+      enable_notification:
+        type: boolean
       id:
         type: string
       is_updated_avatar:
@@ -516,7 +514,7 @@ definitions:
         $ref: '#/definitions/entity.ProfileSocial'
       stats:
         $ref: '#/definitions/entity.UserStats'
-      updatedAt:
+      updated_at:
         type: string
       uuid:
         type: string
@@ -695,6 +693,11 @@ definitions:
     required:
     - key
     - value
+    type: object
+  request.CreateDaoProjectRequest:
+    properties:
+      project_id:
+        type: string
     type: object
   request.CreateEthWalletAddressReq:
     properties:
@@ -915,6 +918,8 @@ definitions:
         type: string
       displayName:
         type: string
+      enableNotification:
+        type: boolean
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
       walletAddressBtc:
@@ -1132,6 +1137,8 @@ definitions:
         type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
+      sell_verified:
+        type: boolean
       stats:
         $ref: '#/definitions/response.TokenStat'
       thumbnail:
@@ -1976,6 +1983,84 @@ paths:
       summary: get one config
       tags:
       - Configs
+  /dao-project:
+    get:
+      consumes:
+      - application/json
+      description: List DAO Project
+      parameters:
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List DAO Project
+      tags:
+      - DAO Project
+    post:
+      consumes:
+      - application/json
+      description: Create DAO Project
+      parameters:
+      - description: Create Dao Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create DAO Project
+      tags:
+      - DAO Project
+  /dao-project/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DAO Project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/nfts.MoralisToken'
+      security:
+      - ApiKeyAuth: []
+      summary: Get DAO Project
+      tags:
+      - DAO Project
+    put:
+      consumes:
+      - application/json
+      description: Vote DAO Project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Vote DAO Project
+      tags:
+      - DAO Project
   /dao/proposals:
     get:
       consumes:
