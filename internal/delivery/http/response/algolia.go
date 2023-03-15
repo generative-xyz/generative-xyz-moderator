@@ -27,11 +27,14 @@ type OwnerInfo struct {
 }
 
 type ProjectInfo struct {
-	Name            string `json:"name"`
-	TokenId         string `json:"tokenId"`
-	Thumbnail       string `json:"thumbnail"`
-	ContractAddress string `json:"contractAddress"`
-	CreatorAddress  string `json:"creatorAddress"`
+	Name            string             `json:"name"`
+	TokenId         string             `json:"tokenId"`
+	Thumbnail       string             `json:"thumbnail"`
+	ContractAddress string             `json:"contractAddress"`
+	CreatorAddress  string             `json:"creatorAddress"`
+	MaxSupply       int64              `json:"maxSupply"`
+	MintingInfo     ProjectMintingInfo `json:"mintingInfo"`
+	IsMintedOut     bool               `json:"isMintedOut"`
 }
 
 type VolumneObject struct {
