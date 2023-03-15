@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -155,18 +156,17 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-// UserCredits godoc
-// @Summary get current user's projects
-// @Description get current user's projects
+// @Summary Get current user's projects
+// @Description Get current user's projects
 // @Tags Profile
-// @Accept  json
-// @Produce  json
-// @Security Authorization
-// @Param contractAddress query string false "Filter project via contract address"
+// @Accept json
+// @Produce json
+// @Param is_hidden query bool false "Is Hidden"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {array} response.ProjectResp{}
 // @Router /profile/projects [GET]
+// @Security ApiKeyAuth
 func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	var err error
 	baseF, err := h.BaseFilters(r)
@@ -191,6 +191,10 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	f.WalletAddress = &walletAddress
 	f.SortBy = "created_at"
 	f.Sort = 1
+	if r.URL.Query().Get("is_hidden") != "" {
+		hidden, _ := strconv.ParseBool(r.URL.Query().Get("is_hidden"))
+		f.IsHidden = &hidden
+	}
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
@@ -260,7 +264,6 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-
 // UserCredits godoc
 // @Summary User profile via wallet address
 // @Description User profile via wallet address
@@ -282,7 +285,7 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	var reqBody request.WithDrawItemRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -313,6 +316,6 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }
