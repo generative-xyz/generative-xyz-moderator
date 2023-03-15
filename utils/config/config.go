@@ -69,7 +69,8 @@ type Config struct {
 	CronTabList []string
 
 	//BTC DEX
-	DexBTCKey string
+	DexBTCWalletAddress string
+	DexBTCBuyService    string
 }
 
 type Ordinals struct {
@@ -386,8 +387,9 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
 		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
 		CountVoteDAO:          countVotedDAO,
-		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
-		DexBTCKey:   os.Getenv("DEX_BTC_KEY"),
+		CronTabList:           regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
+		DexBTCWalletAddress:   os.Getenv("DEX_BTC_WALLET_ADDRESS"),
+		DexBTCBuyService:      os.Getenv("DEX_BTC_BUY_SERVICE"),
 	}
 
 	return conf, nil
