@@ -4160,6 +4160,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/token-activities": {
+            "get": {
+                "description": "get referrals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token Activities"
+                ],
+                "summary": "get referrals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token inscription ID",
+                        "name": "inscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "project",
+                        "name": "project_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "activity types",
+                        "name": "types",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-moralis/nfts": {
             "get": {
                 "security": [
@@ -4415,50 +4470,6 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "The cursor returned in the previous response (used for getting the next page).",
-                        "name": "page",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tokens/activities/{inscriptionID}": {
-            "get": {
-                "description": "get referrals",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Tokens"
-                ],
-                "summary": "get referrals",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "token inscription ID",
-                        "name": "inscriptionID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page",
                         "name": "page",
                         "in": "query"
                     }
@@ -4825,6 +4836,41 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dao_artist_voted.Status": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "Report",
+                "Verify"
+            ]
+        },
+        "dao_project.Status": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "Voting",
+                "Executed",
+                "Defeated"
+            ]
+        },
+        "dao_project_voted.Status": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "Against",
+                "Voted"
+            ]
+        },
         "entity.BaseEntity": {
             "type": "object",
             "properties": {
@@ -5167,6 +5213,9 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isReviewing": {
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -5442,6 +5491,9 @@ const docTemplate = `{
                 "createdByCollectionInscription": {
                     "type": "boolean"
                 },
+                "createdMintActivity": {
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5486,6 +5538,9 @@ const docTemplate = `{
                 },
                 "order_inscription_index": {
                     "type": "integer"
+                },
+                "originalInscribedBy": {
+                    "type": "string"
                 },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
@@ -6344,7 +6399,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/dao_artist_voted.Status"
                 }
             }
         },
@@ -6352,7 +6407,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/dao_project_voted.Status"
                 }
             }
         },
@@ -6445,7 +6500,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/dao_project.Status"
                 },
                 "total_against": {
                     "type": "integer"
@@ -6477,7 +6532,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/dao_project_voted.Status"
                 }
             }
         },
@@ -6689,6 +6744,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "priceBTC": {
+                    "type": "string"
+                },
+                "priceETH": {
                     "type": "string"
                 },
                 "priority": {

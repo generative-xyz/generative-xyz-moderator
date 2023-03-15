@@ -2,54 +2,41 @@ package http
 
 import (
 	"net/http"
-	"strconv"
 
-	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 )
 
 // UserCredits godoc
 // @Summary get referrals
 // @Description get referrals
-// @Tags Tokens
+// @Tags Token Activities
 // @Accept  json
 // @Produce  json
-// @Param inscriptionID path string true "token inscription ID"
+// @Param inscription_id query string false "token inscription ID"
+// @Param project_id query string false "project"
+// @Param types query string false "activity types"
 // @Param limit query int false "limit"
 // @Param page query int false "page"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /tokens/activities/{inscriptionID} [GET]
+// @Router /token-activities [GET]
 func (h *httpDelivery) getTokenActivities(w http.ResponseWriter, r *http.Request) {
-	limitInt := 10
-	pageInt := 1
-	var err error
-
-	limit := r.URL.Query().Get("limit")
-	if limit != "" {
-		limitInt, err = strconv.Atoi(limit)
-		if err != nil {
-			h.Logger.ErrorAny("getTokenActivities.FailedParseLimit",  zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
+	f := structure.FilterTokenActivities{}
+	f.CreateFilter(r)
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("h.getTokenActivities.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
-
-	page := r.URL.Query().Get("page")
-	if page != "" {
-		pageInt, err = strconv.Atoi(page)
-		if err != nil {
-			h.Logger.ErrorAny("getTokenActivities.FailedParsePage",  zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
+	f.BaseFilters = *bf
+	uTokenActivities, err := h.Usecase.GetTokenActivities(f)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetTokenActivities", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
-
-	vars := mux.Vars(r)
-	inscriptionID := vars["inscriptionID"]
-
-	uTokenActivities, err := h.Usecase.GetTokenActivities(int64(pageInt), int64(limitInt), inscriptionID)
 
 	pResp := []response.TokenActivityResp{}
 	iTokenActivities := uTokenActivities.Result
@@ -66,7 +53,7 @@ func (h *httpDelivery) getTokenActivities(w http.ResponseWriter, r *http.Request
 		pResp = append(pResp, *p)
 	}
 
-	
+	//
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uTokenActivities, pResp), "")
 }
 
@@ -92,5 +79,14 @@ func (h *httpDelivery) tokenActivityToResp(input *entity.TokenActivity) (*respon
 		}
 		resp.UserB = userB
 	}
+	if input.TokenInfo != nil {
+		token, err := h.tokenToResp(input.TokenInfo)
+		if err != nil {
+			return nil, err
+		}
+		resp.TokenInfo = token
+	}
+	resp.InscriptionID = input.InscriptionID
+	resp.ProjectID = input.ProjectID
 	return &resp, nil
 }
