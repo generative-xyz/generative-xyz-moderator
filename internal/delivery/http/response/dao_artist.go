@@ -21,7 +21,7 @@ type DaoArtist struct {
 }
 
 func (s DaoArtist) Expired() bool {
-	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
+	return s.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
 }
 
 func (s *DaoArtist) SetFields(fns ...func(*DaoArtist)) {

@@ -51,6 +51,9 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	if !profile.ProfileSocial.TwitterVerified {
+		resp.CanCreateProposal = h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
+	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -155,18 +158,16 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-// UserCredits godoc
-// @Summary get current user's projects
-// @Description get current user's projects
+// @Summary Get current user's projects
+// @Description Get current user's projects
 // @Tags Profile
-// @Accept  json
-// @Produce  json
-// @Security Authorization
-// @Param contractAddress query string false "Filter project via contract address"
+// @Accept json
+// @Produce json
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {array} response.ProjectResp{}
 // @Router /profile/projects [GET]
+// @Security ApiKeyAuth
 func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	var err error
 	baseF, err := h.BaseFilters(r)
@@ -260,7 +261,6 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-
 // UserCredits godoc
 // @Summary User profile via wallet address
 // @Description User profile via wallet address
@@ -282,7 +282,7 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	var reqBody request.WithDrawItemRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -313,6 +313,6 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }

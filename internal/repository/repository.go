@@ -428,6 +428,19 @@ func (b Repository) Create(ctx context.Context, collectionName string, model int
 	}
 	return primitive.NilObjectID, nil
 }
+func (b Repository) CreateMany(ctx context.Context, collectionName string, models []interface{}, opts ...*options.InsertManyOptions) ([]primitive.ObjectID, error) {
+	results, err := b.DB.Collection(collectionName).InsertMany(ctx, models, opts...)
+	if err != nil {
+		return nil, err
+	}
+	var ids []primitive.ObjectID
+	for _, idResult := range results.InsertedIDs {
+		if id, ok := idResult.(primitive.ObjectID); ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids, err
+}
 func (b Repository) UpdateByID(ctx context.Context, collectionName string, id interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := b.DB.Collection(collectionName).UpdateByID(ctx, id, update, opts...)
 	if err != nil {
