@@ -1,5 +1,31 @@
 basePath: /rederinghub.io/v1
 definitions:
+  dao_artist_voted.Status:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - Report
+    - Verify
+  dao_project.Status:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - Voting
+    - Executed
+    - Defeated
+  dao_project_voted.Status:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - Against
+    - Voted
   entity.BaseEntity:
     properties:
       created_at:
@@ -228,6 +254,8 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
+      isReviewing:
+        type: boolean
       isSynced:
         type: boolean
       license:
@@ -429,6 +457,8 @@ definitions:
         type: string
       createdByCollectionInscription:
         type: boolean
+      createdMintActivity:
+        type: boolean
       creator:
         $ref: '#/definitions/entity.Users'
       creatorAddr:
@@ -457,6 +487,8 @@ definitions:
         type: string
       order_inscription_index:
         type: integer
+      originalInscribedBy:
+        type: string
       owner:
         allOf:
         - $ref: '#/definitions/entity.Users'
@@ -1016,12 +1048,12 @@ definitions:
   request.VoteDaoArtistRequest:
     properties:
       status:
-        type: integer
+        $ref: '#/definitions/dao_artist_voted.Status'
     type: object
   request.VoteDaoProjectRequest:
     properties:
       status:
-        type: integer
+        $ref: '#/definitions/dao_project_voted.Status'
     type: object
   request.WithDrawItemRequest:
     properties:
@@ -1082,7 +1114,7 @@ definitions:
       seq_id:
         type: integer
       status:
-        type: integer
+        $ref: '#/definitions/dao_project.Status'
       total_against:
         type: integer
       total_vote:
@@ -1103,7 +1135,7 @@ definitions:
       display_name:
         type: string
       status:
-        type: integer
+        $ref: '#/definitions/dao_project_voted.Status'
     type: object
   response.FileRes:
     properties:
@@ -1246,6 +1278,8 @@ definitions:
       ownerAddr:
         type: string
       priceBTC:
+        type: string
+      priceETH:
         type: string
       priority:
         type: integer
@@ -4272,6 +4306,42 @@ paths:
       summary: Search
       tags:
       - Search
+  /token-activities:
+    get:
+      consumes:
+      - application/json
+      description: get referrals
+      parameters:
+      - description: token inscription ID
+        in: query
+        name: inscription_id
+        type: string
+      - description: project
+        in: query
+        name: project_id
+        type: string
+      - description: activity types
+        in: query
+        name: types
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get referrals
+      tags:
+      - Token Activities
   /token-moralis/nfts:
     get:
       consumes:
@@ -4546,35 +4616,6 @@ paths:
                   $ref: '#/definitions/response.InternalTokenURIResp'
               type: object
       summary: Update token's thumbnail
-      tags:
-      - Tokens
-  /tokens/activities/{inscriptionID}:
-    get:
-      consumes:
-      - application/json
-      description: get referrals
-      parameters:
-      - description: token inscription ID
-        in: path
-        name: inscriptionID
-        required: true
-        type: string
-      - description: limit
-        in: query
-        name: limit
-        type: integer
-      - description: page
-        in: query
-        name: page
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: get referrals
       tags:
       - Tokens
   /tokens/traits/{contractAddress}/{tokenID}:
