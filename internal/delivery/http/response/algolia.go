@@ -1,5 +1,43 @@
 package response
 
+type ProjectListing struct {
+	ObjectID               string                  `json:"objectID"`
+	ContractAddress        string                  `json:"contractAddress"`
+	Project                *ProjectInfo            `json:"project"`
+	TotalSupply            int64                   `json:"totalSupply"`
+	NumberOwners           int64                   `json:"numberOwners"`
+	NumberOwnersPercentage float64                 `json:"numberOwnersPercentage"`
+	FloorPrice             string                  `json:"floorPrice"`
+	FloorPriceOneDay       *VolumneObject          `json:"floorPriceOneDay"`
+	FloorPriceOneWeek      *VolumneObject          `json:"floorPriceOneWeek"`
+	VolumeFifteenMinutes   *VolumneObject          `json:"volumeFifteenMinutes"`
+	VolumeOneDay           *VolumneObject          `json:"volumeOneDay"`
+	VolumeOneWeek          *VolumneObject          `json:"volumeOneWeek"`
+	ProjectMarketplaceData *ProjectMarketplaceData `json:"projectMarketplaceData"`
+	Owner                  *OwnerInfo              `json:"owner"`
+}
+
+type OwnerInfo struct {
+	WalletAddress           string `json:"walletAddress,omitempty"`
+	WalletAddressPayment    string `json:"walletAddress_payment,omitempty"`
+	WalletAddressBTC        string `json:"walletAddress_btc,omitempty"`
+	WalletAddressBTCTaproot string `json:"walletAddress_btc_taproot,omitempty"`
+	DisplayName             string `json:"displayName,omitempty"`
+	Avatar                  string `json:"avatar"`
+}
+
+type ProjectInfo struct {
+	Name            string `json:"name"`
+	TokenId         string `json:"tokenId"`
+	Thumbnail       string `json:"thumbnail"`
+	ContractAddress string `json:"contractAddress"`
+}
+
+type VolumneObject struct {
+	Amount            string  `json:"amount"`
+	PercentageChanged float64 `json:"percentageChanged"`
+}
+
 type SearchResponse struct {
 	ObjectType  string                `json:"objectType"`
 	Inscription *SearhcInscription    `json:"inscription"`
