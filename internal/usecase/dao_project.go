@@ -201,7 +201,10 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		}
 		_, err = s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
 			bson.D{
-				{Key: "$set", Value: bson.D{{Key: "isHidden", Value: false}}},
+				{Key: "$set", Value: bson.D{
+					{Key: "isHidden", Value: false},
+					{Key: "updated_at", Value: time.Now()},
+				}},
 			})
 		if err != nil {
 			logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
@@ -209,7 +212,10 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		}
 		_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
 			bson.D{
-				{Key: "$set", Value: bson.D{{Key: "status", Value: dao_project.Executed}}},
+				{Key: "$set", Value: bson.D{
+					{Key: "status", Value: dao_project.Executed},
+					{Key: "updated_at", Value: time.Now()},
+				}},
 			})
 		if err != nil {
 			logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
