@@ -22,14 +22,16 @@ type DexBTCListing struct {
 	SellerAddress string `bson:"seller_address"`
 	Verified      bool   `bson:"verified"`
 	// IsValid       bool       `bson:"is_valid"`
-	CancelAt  *time.Time `bson:"cancel_at"`
-	Cancelled bool       `bson:"cancelled"`
-	CancelTx  string     `bson:"cancel_tx"`
-	Inputs    []string   `bson:"inputs"`
-	Matched   bool       `bson:"matched"`
-	MatchedTx string     `bson:"matched_tx"`
-	MatchAt   *time.Time `bson:"matched_at"`
-	Buyer     string     `bson:"buyer"`
+	CancelAt       *time.Time `bson:"cancel_at"`
+	Cancelled      bool       `bson:"cancelled"`
+	CancelTx       string     `bson:"cancel_tx"`
+	Inputs         []string   `bson:"inputs"`
+	Matched        bool       `bson:"matched"`
+	MatchedTx      string     `bson:"matched_tx"`
+	MatchAt        *time.Time `bson:"matched_at"`
+	Buyer          string     `bson:"buyer"`
+	InvalidMatch   bool       `bson:"invalid_match"`
+	InvalidMatchTx string     `bson:"invalid_match_tx"`
 
 	CreatedVerifiedActivity bool `bson:"created_verified_activity"`
 	CreatedCancelledActivity bool `bson:"created_cancelled_activity"`

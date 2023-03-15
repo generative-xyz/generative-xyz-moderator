@@ -95,6 +95,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 	pe.Status = true
 	pe.IsSynced = true
+
+	//task Is reviewing status for the created projects
+	pe.IsHidden = true 
+	pe.IsReviewing = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -1610,7 +1614,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-	pe.IsHidden = false
+
+	//task is reviewing status for the created projects
+	pe.IsHidden = true
+	pe.IsReviewing = true
+
 	pe.Status = true
 	pe.IsSynced = true
 
