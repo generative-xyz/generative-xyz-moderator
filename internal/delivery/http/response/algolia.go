@@ -31,6 +31,7 @@ type ProjectInfo struct {
 	TokenId         string `json:"tokenId"`
 	Thumbnail       string `json:"thumbnail"`
 	ContractAddress string `json:"contractAddress"`
+	CreatorAddress  string `json:"creatorAddress"`
 }
 
 type VolumneObject struct {
