@@ -111,16 +111,16 @@ type Projects struct {
 	InscribedBy              string             `bson:"inscribedBy"`
 	HtmlFile                 string             `bson:"htmlFile"`
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
+	IsReviewing              bool               `bson:"isReviewing"`
 }
 
 type ProjectsHaveMinted struct {
-	TokenID string `bson:"tokenid" json:"tokenID"`
-	Name    string `bson:"name" json:"name"`
-	Index   int    `bson:"index" json:"index"`
-	MintPrice   			 string    `bson:"mintPrice"` 
-	MintPriceEth             string `bson:"mintpriceeth"`
-	CreatorAddrr             string             `bson:"creatorAddress" json:"creatorAddrr"`
-
+	TokenID      string `bson:"tokenid" json:"tokenID"`
+	Name         string `bson:"name" json:"name"`
+	Index        int    `bson:"index" json:"index"`
+	MintPrice    string `bson:"mintPrice"`
+	MintPriceEth string `bson:"mintpriceeth"`
+	CreatorAddrr string `bson:"creatorAddress" json:"creatorAddrr"`
 }
 
 type ReportProject struct {

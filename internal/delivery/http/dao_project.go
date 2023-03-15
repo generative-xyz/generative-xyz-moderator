@@ -7,6 +7,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 )
 
@@ -29,6 +30,7 @@ func (h *httpDelivery) listDaoProject(w http.ResponseWriter, r *http.Request) {
 			if err := utils.QueryParser(r, req); err != nil {
 				return nil, err
 			}
+			req.Pagination = entity.GetPagination(r)
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
 			return h.Usecase.ListDAOProject(ctx, userWallet, req)
 		},
@@ -63,13 +65,14 @@ func (h *httpDelivery) createDaoProject(w http.ResponseWriter, r *http.Request) 
 // @Tags DAO Project
 // @Accept json
 // @Produce json
-// @Success 200 {object} nfts.MoralisToken{}
+// @Param id path string true "Dao Project Id"
+// @Success 200 {object} response.DaoProject{}
 // @Router /dao-project/{id} [GET]
 // @Security ApiKeyAuth
 func (h *httpDelivery) getDaoProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			return h.Usecase.GetDAOProject(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS])
 		},
 	).ServeHTTP(w, r)
 }
@@ -79,13 +82,20 @@ func (h *httpDelivery) getDaoProject(w http.ResponseWriter, r *http.Request) {
 // @Tags DAO Project
 // @Accept json
 // @Produce json
+// @Param request body request.VoteDaoProjectRequest true "Vote Dao Project Request"
+// @Param id path string true "Dao Project Id"
 // @Success 200
 // @Router /dao-project/{id} [PUT]
 // @Security ApiKeyAuth
 func (h *httpDelivery) voteDaoProject(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return nil, nil
+			var reqBody request.VoteDaoProjectRequest
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+			return nil, h.Usecase.VoteDAOProject(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS], &reqBody)
 		},
 	).ServeHTTP(w, r)
 }

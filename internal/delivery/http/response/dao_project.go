@@ -9,14 +9,21 @@ import (
 
 type DaoProject struct {
 	BaseEntity      `json:",inline"`
+	SeqId           uint                  `json:"seq_id"`
 	CreatedBy       string                `json:"created_by"`
-	User            *UserForDaoProject    `json:"user"`
+	User            *UserForDao           `json:"user"`
 	ProjectId       string                `json:"project_id"`
 	Project         *ProjectForDaoProject `json:"project"`
 	ExpiredAt       time.Time             `json:"expired_at"`
 	Status          dao_project.Status    `json:"status"`
-	DaoProjectVoted []*DaoProjectVoted    `json:"-"`
+	DaoProjectVoted []*DaoProjectVoted    `json:"dao_project_voted"`
 	Action          *ActionDaoProject     `json:"action"`
+	TotalAgainst    int64                 `json:"total_against"`
+	TotalVote       int64                 `json:"total_vote"`
+}
+
+func (s DaoProject) Expired() bool {
+	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
 }
 
 func (s *DaoProject) SetFields(fns ...func(*DaoProject)) {
@@ -36,9 +43,11 @@ type ActionDaoProject struct {
 
 type ProjectForDaoProject struct {
 	BaseEntity  `json:",inline"`
+	TokenID     string             `json:"token_id"`
 	Name        string             `json:"name"`
 	CreatorName string             `json:"creator_name"`
 	Thumbnail   string             `json:"thumbnail"`
+	MaxSupply   int64              `json:"max_supply"`
 	MintingInfo ProjectMintingInfo `json:"minting_info"`
 }
 
@@ -47,16 +56,29 @@ type ProjectMintingInfo struct {
 	IndexReverse int64 `json:"index_reverse"`
 }
 
-type UserForDaoProject struct {
-	BaseEntity    `json:",inline,omitempty"`
-	IsVerified    bool   `json:"is_verified,omitempty"`
-	WalletAddress string `json:"wallet_address,omitempty"`
-	DisplayName   string `json:"display_name,omitempty"`
-	Avatar        string `json:"avatar,omitempty"`
+type UserForDao struct {
+	BaseEntity    `json:",inline"`
+	IsVerified    bool          `json:"is_verified"`
+	WalletAddress string        `json:"wallet_address"`
+	DisplayName   string        `json:"display_name"`
+	Avatar        string        `json:"avatar"`
+	ProfileSocial ProfileSocial `json:"profile_social"`
 }
 
 type DaoProjectVoted struct {
-	CreatedBy    string                   `json:"created_by,omitempty" bson:"created_by"`
-	DaoProjectId string                   `json:"dao_project_id,omitempty" bson:"dao_project_id"`
-	Status       dao_project_voted.Status `json:"status,omitempty" bson:"status"`
+	CreatedBy    string                   `json:"created_by"`
+	DisplayName  string                   `json:"display_name"`
+	DaoProjectId string                   `json:"dao_project_id"`
+	Status       dao_project_voted.Status `json:"status"`
+}
+
+func (s *DaoProjectVoted) SetFields(fns ...func(*DaoProjectVoted)) {
+	for _, fn := range fns {
+		fn(s)
+	}
+}
+func (s DaoProjectVoted) WithDisplayName(displayName string) func(*DaoProjectVoted) {
+	return func(dp *DaoProjectVoted) {
+		dp.DisplayName = displayName
+	}
 }
