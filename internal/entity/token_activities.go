@@ -28,12 +28,14 @@ type TokenActivity struct {
 	Time          *time.Time        `bson:"time" json:"time"`
 	InscriptionID string            `bson:"inscription_id" json:"inscription_id"`
 	ProjectID     string            `bson:"project_id" json:"project_id"`
+	TokenInfo     *TokenUri            `bson:"-" json:"token_info"`
 }
 
 type FilterTokenActivities struct {
 	BaseFilters
 	ProjectID *string
 	InscriptionID *string
+	Types []TokenActivityType
 }
 
 func (u TokenActivity) TableName() string { 
