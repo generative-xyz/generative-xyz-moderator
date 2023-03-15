@@ -144,7 +144,6 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	waitChan := make(chan struct{}, 10)
-
 	for _, output := range outputs {
 		wg.Add(1)
 		waitChan <- struct{}{}
@@ -226,68 +225,8 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				}
 			}
 		}(output)
-
-		// lock.Lock()
-		// if _, ok := result[output]; ok {
-		// 	lock.Unlock()
-		// 	continue
-		// }
-		// lock.Unlock()
-
-		// inscriptions, err := getInscriptionByOutput(ordServer, output)
-		// if err != nil {
-		// 	return nil, nil, err
-		// }
-		// if len(inscriptions.Inscriptions) > 0 {
-		// 	for _, insc := range inscriptions.Inscriptions {
-		// 		data, err := getInscriptionByID(ordServer, insc)
-		// 		if err != nil {
-		// 			return nil, nil, err
-		// 		}
-		// 		offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
-		// 		if err != nil {
-		// 			return nil, nil, err
-		// 		}
-		// 		inscWalletInfo := structure.WalletInscriptionInfo{
-		// 			InscriptionID: data.InscriptionID,
-		// 			Number:        data.Number,
-		// 			ContentType:   data.ContentType,
-		// 			Offset:        offset,
-		// 		}
-		// 		inscWalletByOutput := structure.WalletInscriptionByOutput{
-		// 			InscriptionID: data.InscriptionID,
-		// 			Offset:        offset,
-		// 			Sat:           data.Sat,
-		// 		}
-		// 		internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
-		// 		if internalInfo != nil {
-		// 			inscWalletInfo.ProjectID = internalInfo.ProjectID
-		// 			inscWalletInfo.ProjecName = internalInfo.Project.Name
-		// 			inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-		// 		}
-		// 		for _, listing := range currentListing {
-		// 			if listing.InscriptionID == data.InscriptionID {
-		// 				if listing.CancelTx == "" {
-		// 					inscWalletInfo.Buyable = true
-		// 				} else {
-		// 					inscWalletInfo.Cancelling = true
-		// 				}
-		// 				inscWalletInfo.OrderID = listing.UUID
-		// 				inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
-		// 			}
-		// 		}
-		// 		lock.Lock()
-		// 		result[output] = append(result[output], inscWalletInfo)
-		// 		outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
-		// 		lock.Unlock()
-		// 	}
-		// }
-		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
 	wg.Wait()
-	// if len(outputSatRanges) != len(outputs) {
-	// 	return nil, nil, nil, errors.New("")
-	// }
 	return result, outputInscMap, nil
 }
 
