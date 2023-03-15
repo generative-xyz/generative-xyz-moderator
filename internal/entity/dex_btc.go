@@ -22,14 +22,16 @@ type DexBTCListing struct {
 	SellerAddress string `bson:"seller_address"`
 	Verified      bool   `bson:"verified"`
 	// IsValid       bool       `bson:"is_valid"`
-	CancelAt  *time.Time `bson:"cancel_at"`
-	Cancelled bool       `bson:"cancelled"`
-	CancelTx  string     `bson:"cancel_tx"`
-	Inputs    []string   `bson:"inputs"`
-	Matched   bool       `bson:"matched"`
-	MatchedTx string     `bson:"matched_tx"`
-	MatchAt   *time.Time `bson:"matched_at"`
-	Buyer     string     `bson:"buyer"`
+	CancelAt       *time.Time `bson:"cancel_at"`
+	Cancelled      bool       `bson:"cancelled"`
+	CancelTx       string     `bson:"cancel_tx"`
+	Inputs         []string   `bson:"inputs"`
+	Matched        bool       `bson:"matched"`
+	MatchedTx      string     `bson:"matched_tx"`
+	MatchAt        *time.Time `bson:"matched_at"`
+	Buyer          string     `bson:"buyer"`
+	InvalidMatch   bool       `bson:"invalid_match"`
+	InvalidMatchTx string     `bson:"invalid_match_tx"`
 }
 
 type DexBtcListingWithProjectInfo struct {
@@ -53,6 +55,8 @@ func (u DexBTCListing) ToBson() (*bson.D, error) {
 type DexBTCBuyWithETH struct {
 	BaseEntity     `bson:",inline"`
 	OrderID        string             `bson:"order_id" json:"order_id"`
+	InscriptionID  string             `bson:"inscription_id" json:"inscription_id"`
+	AmountBTC      uint64             `bson:"amount_btc" json:"amount_btc"`
 	Confirmation   int                `bson:"confirmation" json:"confirmation" `
 	AmountETH      string             `bson:"amount_eth" json:"amount_eth"`
 	UserID         string             `bson:"user_id" json:"user_id"`
@@ -89,3 +93,16 @@ const (
 	StatusDEXBuy_SentMaster
 	StatusDEXBuy_Expired
 )
+
+var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
+	StatusDEXBuy_Pending:         "Waiting for payment",
+	StatusDEXBuy_ReceivedFund:    "Received payment",
+	StatusDEXBuy_Buying:          "Buying",
+	StatusDEXBuy_Bought:          "Bought",
+	StatusDEXBuy_WaitingToRefund: "Waiting to refund",
+	StatusDEXBuy_Refunding:       "Refunding",
+	StatusDEXBuy_Refunded:        "Refunded",
+	StatusDEXBuy_SendingMaster:   "Sending to master",
+	StatusDEXBuy_SentMaster:      "Sent to master",
+	StatusDEXBuy_Expired:         "Expired",
+}

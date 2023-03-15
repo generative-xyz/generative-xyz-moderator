@@ -20,6 +20,7 @@ import (
 var BTCChainConf = &chaincfg.MainNetParams
 
 const DummyValue = 1000
+const DustValue = 546
 
 func ParsePSBTFromBase64(data string) (*psbt.Packet, error) {
 	psbtTx, err := psbt.NewFromRawBytes(
@@ -197,6 +198,18 @@ func CreateTx(privateKey string, senderAddress string, utxos []UTXOType, payment
 		return "", "", 0, err
 	}
 
+	fmt.Printf("HHH TX after signing \n")
+
+	for i, in := range msgTx.TxIn {
+		fmt.Printf("HHH Tx in %v - %+v\n", i, in)
+		// fmt.Printf("HHH Tx input %v - %+v\n", i, msgTx.TxIn[i])
+	}
+
+	for i, in := range msgTx.TxOut {
+		fmt.Printf("HHH Tx out %v - %+v\n", i, in)
+		// fmt.Printf("HHH Tx output %v - %+v\n", i, finalPsbt.Outputs[i])
+	}
+
 	var signedTx bytes.Buffer
 	err = msgTx.Serialize(&signedTx)
 	if err != nil {
@@ -303,14 +316,14 @@ func createDummyOutputs(
 	}
 
 	dummyUTXO = UTXOType{
-		Value:      int(tx.TxOut[0].Value),
+		Value:      uint64(tx.TxOut[0].Value),
 		TxHash:     txID,
 		TxOutIndex: 0,
 	}
 
 	if len(tx.TxOut) > 1 {
 		changeUTXO := UTXOType{
-			Value:      int(tx.TxOut[1].Value),
+			Value:      uint64(tx.TxOut[1].Value),
 			TxHash:     txID,
 			TxOutIndex: 1,
 		}
@@ -389,6 +402,61 @@ func createDummyOutputs(
 
 // }
 
+func SelectUTXOs(utxos []UTXOType, price, fee uint64) ([]UTXOType, uint64, error) {
+	totalPaymentAmt := price + fee
+	utxos = sortUTXOs(utxos)
+	totalInputAmount := uint64(0)
+	resultUTXOs := []UTXOType{}
+
+	if totalPaymentAmt > 0 {
+		if len(utxos) == 0 {
+			return nil, 0, errors.New("BTC balance is insufficient to create tx.")
+		}
+		if utxos[len(utxos)-1].Value >= totalPaymentAmt {
+			// select the smallest utxo
+			resultUTXOs = append(resultUTXOs, utxos[len(utxos)-1])
+			totalInputAmount = utxos[len(utxos)-1].Value
+
+		} else if utxos[0].Value < totalPaymentAmt {
+			// select multiple UTXOs
+			for i := 0; i < len(utxos); i++ {
+				utxo := utxos[i]
+				resultUTXOs = append(resultUTXOs, utxo)
+				totalInputAmount += utxo.Value
+				if totalInputAmount >= totalPaymentAmt {
+					break
+				}
+			}
+			if totalInputAmount < totalPaymentAmt {
+				return nil, 0, errors.New("BTC balance is insufficient to create tx.")
+			}
+		} else {
+			// select the nearest UTXO
+			selectedUTXO := utxos[0]
+			for i := 1; i < len(utxos); i++ {
+				if utxos[i].Value < totalPaymentAmt {
+					resultUTXOs = append(resultUTXOs, selectedUTXO)
+					totalInputAmount = selectedUTXO.Value
+					break
+				}
+
+				selectedUTXO = utxos[i]
+			}
+		}
+	}
+	return resultUTXOs, totalInputAmount, nil
+}
+
+type CreateTxBuyResp struct {
+	SplitTxID  string
+	SplitTxHex string
+	SplitTxFee uint64
+	SplitUTXOs []UTXO
+	TxID       string
+	TxHex      string
+	BuyTxFee   uint64
+}
+
 func CreatePSBTToBuyInscription(
 	sellerSignedPsbtB64 string,
 	privateKey string,
@@ -397,50 +465,286 @@ func CreatePSBTToBuyInscription(
 	price uint64,
 	utxos []UTXOType,
 	feeRatePerByte uint64,
-) (string, uint64, error) {
+	maxFee uint64,
+) (*CreateTxBuyResp, error) {
 
 	// parse Seller Tx and validate
-	psbt, err := ParsePSBTFromBase64(sellerSignedPsbtB64)
+	sellerPsbt, err := ParsePSBTFromBase64(sellerSignedPsbtB64)
 	if err != nil {
 		log.Println("[CreatePSBTToBuyInscription] ParsePSBTFromBase64 err: ", err)
-		return "", 0, fmt.Errorf("[CreatePSBTToBuyInscription] ParsePSBTFromBase64 err: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] ParsePSBTFromBase64 err: %v", err)
 	}
 
-	sellerInputs := psbt.Inputs
-	sellerOutputs := psbt.Outputs
-
+	sellerInputs := sellerPsbt.Inputs
+	sellerOutputs := sellerPsbt.Outputs
 	if len(sellerInputs) == 0 {
 		log.Println("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
-		return "", 0, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
+		return nil, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
 	}
-
 	if len(sellerInputs) != len(sellerOutputs) {
 		log.Println("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
-		return "", 0, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
+		return nil, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
 	}
 	if sellerInputs[0].WitnessUtxo == nil {
 		log.Println("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
-		return "", 0, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
+		return nil, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT.")
 	}
 
+	// extract value in inscription
 	valueInscription := sellerInputs[0].WitnessUtxo.Value
-
-	if valueInscription == 0 {
+	if valueInscription <= 0 {
 		log.Println("[CreatePSBTToBuyInscription] Invalid seller's PSBT - value inscription is zero.")
-		return "", 0, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT - value inscription is zero.")
+		return nil, errors.New("[CreatePSBTToBuyInscription] Invalid seller's PSBT - value inscription is zero.")
+	}
+
+	// filter pending UTXOs
+	_, spendableUTXOs, err := FilterPendingUTXOs(utxos, address)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error filter pending utxos ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error filter pending utxos %v", err)
 	}
 
 	// create dummy UTXO
-	splitTxID, splitTxHex, splitFee, dummyUTXO, newUTXOs, err := createDummyOutputs(privateKey, address, utxos, uint32(feeRatePerByte))
+	splitTxID, splitTxHex, splitFee, dummyUTXO, newUTXOs, err := createDummyOutputs(privateKey, address, spendableUTXOs, uint32(feeRatePerByte))
 	if err != nil {
 		log.Println("[CreatePSBTToBuyInscription] create dummy utxo err: ", err)
-		return "", 0, fmt.Errorf("[CreatePSBTToBuyInscription] create dummy utxo err: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] create dummy utxo err: %v", err)
+	}
+	if splitFee > 0 {
+		if maxFee <= splitFee {
+			log.Println("[CreatePSBTToBuyInscription] invalid max fee: ", maxFee)
+			return nil, fmt.Errorf("[CreatePSBTToBuyInscription] invalid max fee: %v", maxFee)
+		}
+		maxFee -= splitFee
 	}
 
 	fmt.Println("splitTxID, splitTxHex, splitFee, dummyUTXO, newUTXOs: ", splitTxID, splitTxHex, splitFee, dummyUTXO, newUTXOs)
 
-	// TODO: create psbt to buy
+	// ====== create psbt to buy  ======
 
-	return "", 0, nil
+	// decode receiver address to PubkeyScript
+	receiverAddr, err := btcutil.DecodeAddress(receiverInscriptionAddress, BTCChainConf)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when decoding receiver address: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when decoding receiver address: %v", err)
+	}
+	receiverPKScript, err := txscript.PayToAddrScript(receiverAddr)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when new receiver PKScript: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when new receiver PKScript: %v", err)
+	}
 
+	// decode sender address to PubkeyScript
+	senderAddr, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when new sender PKScript: ", err)
+		return nil, err
+	}
+	senderPKScript, _ := txscript.PayToAddrScript(senderAddr)
+
+	// get private key from string
+	wif, err := btcutil.DecodeWIF(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	btcPrivateKey := wif.PrivKey
+
+	// select UTXOs to create tx
+	selectedUTXOs, totalInputAmount, err := SelectUTXOs(newUTXOs, price, maxFee)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when selecting utxos to create tx buy: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when selecting utxos to create tx buy: %v", err)
+	}
+
+	inputs := []*wire.OutPoint{}
+	outputs := []*wire.TxOut{}
+	witnessInputs := []*wire.TxOut{}
+	nSequences := []uint32{}
+	prevOuts := txscript.NewMultiPrevOutFetcher(nil)
+
+	// Frist in - first out: dummy utxo & receiver inscription
+	// the first output coin has value equal to the sum of dummy value and value inscription
+	// this makes sure the first output coin is inscription outcoin
+	// receiver inscription must be user's address
+	dummyUtxoHash, err := chainhash.NewHashFromStr(dummyUTXO.TxHash)
+	if err != nil {
+		return nil, err
+	}
+	in0 := wire.NewOutPoint(dummyUtxoHash, uint32(dummyUTXO.TxOutIndex))
+	out0 := wire.NewTxOut(int64(dummyUTXO.Value)+valueInscription, receiverPKScript)
+	preOutIn := &wire.TxOut{
+		Value:    int64(dummyUTXO.Value),
+		PkScript: senderPKScript,
+	}
+
+	inputs = append(inputs, in0)
+	witnessInputs = append(witnessInputs, preOutIn)
+	prevOuts.AddPrevOut(*in0, preOutIn)
+	nSequences = append(nSequences, uint32(feeRatePerByte))
+	outputs = append(outputs, out0)
+
+	// Add seller signed inputs and outputs
+	for i := 0; i < len(sellerInputs); i++ {
+		in := sellerPsbt.UnsignedTx.TxIn[i].PreviousOutPoint
+		inputs = append(inputs, &in)
+		witnessInputs = append(witnessInputs, sellerInputs[i].WitnessUtxo)
+		prevOuts.AddPrevOut(in, sellerInputs[i].WitnessUtxo)
+		nSequences = append(nSequences, sellerPsbt.UnsignedTx.TxIn[i].Sequence)
+
+		outputs = append(outputs, sellerPsbt.UnsignedTx.TxOut[i])
+	}
+
+	// Add payment utxo inputs
+	for _, utxo := range selectedUTXOs {
+		utxoHash, err := chainhash.NewHashFromStr(utxo.TxHash)
+		if err != nil {
+			return nil, err
+		}
+		outPoint := wire.NewOutPoint(utxoHash, uint32(utxo.TxOutIndex))
+		preOutIn := &wire.TxOut{
+			Value:    int64(utxo.Value),
+			PkScript: senderPKScript,
+		}
+		inputs = append(inputs, outPoint)
+		witnessInputs = append(witnessInputs, preOutIn)
+		prevOuts.AddPrevOut(*outPoint, preOutIn)
+		nSequences = append(nSequences, uint32(feeRatePerByte))
+	}
+
+	// calcalate network fee
+	fee := EstimateTxFee(uint(len(inputs)), uint(len(outputs)), uint(feeRatePerByte))
+	// max fee can paid is defined from users in advance
+	if fee > maxFee {
+		fee = maxFee
+	}
+
+	// create change output
+	changeAmount := totalInputAmount - price - fee
+	if changeAmount > 0 {
+		if changeAmount >= DustValue {
+			out := wire.NewTxOut(int64(changeAmount), senderPKScript)
+			outputs = append(outputs, out)
+		} else {
+			fee += changeAmount
+		}
+	}
+
+	// init psbt from inputs and outputs
+	finalPsbt, err := psbt.New(inputs, outputs, wire.TxVersion, 0, nSequences)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when new Psbt: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when new Psbt: %v", err)
+	}
+
+	updater, err := psbt.NewUpdater(finalPsbt)
+	if err != nil {
+		log.Println("[CreatePSBTToBuyInscription] Error when new updater PSBT: ", err)
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when new updater PSBT: %v", err)
+	}
+	// add witnesss for input coins
+	for i := range finalPsbt.Inputs {
+		err := updater.AddInWitnessUtxo(witnessInputs[i], i)
+		if err != nil {
+			log.Println("[CreatePSBTToBuyInscription] Error when add witness input index: ", i, err)
+			return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when add witness input index %v: %v", i, err)
+		}
+		// if i > 0 && i <= len(sellerInputs) {
+		// 	updater.AddInSighashType(txscript.SigHashSingle|txscript.SigHashAnyOneCanPay, i)
+		// }
+	}
+
+	fmt.Printf("finalPsbt : %+v\n", finalPsbt)
+
+	// todo: remove
+	for i, in := range finalPsbt.UnsignedTx.TxIn {
+		fmt.Printf("HHH Tx in %v - %+v\n", i, in)
+		fmt.Printf("HHH Tx input %v - %+v\n", i, finalPsbt.Inputs[i])
+	}
+	for i, in := range finalPsbt.UnsignedTx.TxOut {
+		fmt.Printf("HHH Tx out %v - %+v\n", i, in)
+		fmt.Printf("HHH Tx output %v - %+v\n", i, finalPsbt.Outputs[i])
+	}
+
+	// sign tx
+	sigs := []wire.TxWitness{}
+	for i, input := range finalPsbt.Inputs {
+		if i == 0 || i > len(sellerInputs) {
+			sig, err := txscript.WitnessSignature(finalPsbt.UnsignedTx, txscript.NewTxSigHashes(finalPsbt.UnsignedTx, prevOuts), i, int64(input.WitnessUtxo.Value), senderPKScript, txscript.SigHashAll, btcPrivateKey, true)
+			if err != nil {
+				log.Println("[CreatePSBTToBuyInscription] Error when signing on raw btc tx: ", err)
+				return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when signing on raw btc tx: %v", err)
+			}
+			fmt.Printf("sig: %+v\n", sig)
+
+			// msgTx.TxIn[i].Witness = [][]byte{sig, sourcePKScript}
+			sigs = append(sigs, sig)
+		}
+	}
+
+	indexSig := 0
+	indexSellerSig := 0
+	for i := range finalPsbt.Inputs {
+		if i == 0 || i > len(sellerInputs) {
+			signSuccess, err := updater.Sign(i, sigs[indexSig][0], sigs[indexSig][1], nil, nil)
+			if err != nil {
+				log.Println("[CreatePSBTToBuyInscription] Sign index error: ", i, err)
+				return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Sign index %v error: %v", i, err)
+			}
+			if signSuccess != psbt.SignSuccesful {
+				log.Println("[CreatePSBTToBuyInscription] Sign index not success: ", i, err)
+				return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Sign index %v not success: %v", i, err)
+			}
+			indexSig++
+		} else {
+			// signSuccess, err = updater.Sign(i, sellerInputs[indexSellerSig].FinalScriptWitness, nil, nil, nil)
+			finalPsbt.Inputs[i].FinalScriptWitness = sellerInputs[indexSellerSig].FinalScriptWitness
+			indexSellerSig++
+		}
+
+	}
+
+	// todo: remove
+	fmt.Printf("HHH PSBT after signing \n")
+	for i, in := range finalPsbt.UnsignedTx.TxIn {
+		fmt.Printf("HHH Tx in %v - %+v\n", i, in)
+		fmt.Printf("HHH Tx input %v - %+v\n", i, finalPsbt.Inputs[i])
+	}
+	for i, in := range finalPsbt.UnsignedTx.TxOut {
+		fmt.Printf("HHH Tx out %v - %+v\n", i, in)
+		fmt.Printf("HHH Tx output %v - %+v\n", i, finalPsbt.Outputs[i])
+	}
+
+	// finalize tx
+	for i := range finalPsbt.Inputs {
+		if i == 0 || i > len(sellerInputs) {
+			err := psbt.Finalize(finalPsbt, i)
+			if err != nil {
+				log.Println("[CreatePSBTToBuyInscription] Finalize Psbt index error : ", i, err)
+				return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Finalize Psbt index %v error : %v", i, err)
+			}
+		}
+	}
+
+	fmt.Printf("finalPsbt.IsComplete() : %v\n", finalPsbt.IsComplete())
+
+	msgTx, err := psbt.Extract(finalPsbt)
+	if err != nil {
+		return nil, fmt.Errorf("[CreatePSBTToBuyInscription] Error when extract final psbt: %v", err)
+	}
+
+	var buf bytes.Buffer
+	msgTx.Serialize(&buf)
+	txHex := hex.EncodeToString(buf.Bytes())
+	txID := msgTx.TxHash()
+
+	resp := &CreateTxBuyResp{
+		SplitTxID:  splitTxID,
+		SplitTxHex: splitTxHex,
+		SplitTxFee: splitFee,
+		TxID:       txID.String(),
+		TxHex:      txHex,
+		BuyTxFee:   fee,
+	}
+
+	return resp, nil
 }
