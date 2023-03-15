@@ -32,9 +32,10 @@ type DexBTCListing struct {
 	Buyer          string     `bson:"buyer"`
 	InvalidMatch   bool       `bson:"invalid_match"`
 	InvalidMatchTx string     `bson:"invalid_match_tx"`
-	CreatedVerifiedActivity bool `bson:"created_verified_activity"`
+
+	CreatedVerifiedActivity  bool `bson:"created_verified_activity"`
 	CreatedCancelledActivity bool `bson:"created_cancelled_activity"`
-	CreatedMatchedActivity bool `bson:"created_matched_activity"`
+	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 }
 
 type DexBtcListingWithProjectInfo struct {
@@ -99,7 +100,7 @@ const (
 
 var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
 	StatusDEXBuy_Pending:         "Waiting for payment",
-	StatusDEXBuy_ReceivedFund:    "Received payment",
+	StatusDEXBuy_ReceivedFund:    "Payment received",
 	StatusDEXBuy_Buying:          "Buying",
 	StatusDEXBuy_Bought:          "Bought",
 	StatusDEXBuy_WaitingToRefund: "Waiting to refund",
