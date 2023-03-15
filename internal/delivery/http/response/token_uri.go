@@ -95,4 +95,7 @@ type TokenActivityResp struct {
 	UserB        *ProfileResponse `json:"user_b"`
 	Amount       int64            `json:"amount"`
 	Time         *time.Time       `json:"time"`
+	TokenInfo    *InternalTokenURIResp    `json:"token_info"`
+	InscriptionID string			`json:"inscription_id"`
+	ProjectID string  				`json:"project_id"`
 }
