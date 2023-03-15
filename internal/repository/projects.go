@@ -660,9 +660,27 @@ func (r Repository) ProjectGetListingVolume(projectID string) (uint64, error) {
 				bson.D{
 					{"matched", true},
 					{"cancelled", false},
+					{"buyer", bson.D{{"$exists", true}}},
 				},
 			},
 		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"diffbuyer",
+						bson.D{
+							{"$ne",
+								bson.A{
+									"$buyer",
+									"$seller_address",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{{"$match", bson.D{{"diffbuyer", true}}}},
 		bson.D{
 			{"$lookup",
 				bson.D{
