@@ -23,7 +23,7 @@ type DaoProject struct {
 }
 
 func (s DaoProject) Expired() bool {
-	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
+	return s.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
 }
 
 func (s *DaoProject) SetFields(fns ...func(*DaoProject)) {
