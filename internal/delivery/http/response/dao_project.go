@@ -59,12 +59,15 @@ type ProjectMintingInfo struct {
 }
 
 type UserForDao struct {
-	BaseEntity    `json:",inline"`
-	IsVerified    bool          `json:"is_verified"`
-	WalletAddress string        `json:"wallet_address"`
-	DisplayName   string        `json:"display_name"`
-	Avatar        string        `json:"avatar"`
-	ProfileSocial ProfileSocial `json:"profile_social"`
+	BaseEntity              `json:",inline"`
+	IsVerified              bool          `json:"is_verified"`
+	WalletAddress           string        `json:"wallet_address"`
+	WalletAddressPayment    string        `json:"wallet_address_payment"`
+	WalletAddressBTC        string        `json:"wallet_address_btc"`
+	WalletAddressBTCTaproot string        `json:"wallet_address_btc_taproot"`
+	DisplayName             string        `json:"display_name"`
+	Avatar                  string        `json:"avatar"`
+	ProfileSocial           ProfileSocial `json:"profile_social"`
 }
 
 type DaoProjectVoted struct {
