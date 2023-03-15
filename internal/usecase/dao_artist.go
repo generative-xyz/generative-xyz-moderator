@@ -199,12 +199,11 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 			logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
 			return
 		}
-		now := time.Now()
+		user.ProfileSocial.TwitterVerified = true
 		_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
-					{Key: "is_verified", Value: true},
-					{Key: "verified_at", Value: &now},
+					{Key: "profile_social", Value: user.ProfileSocial},
 					{Key: "updated_at", Value: time.Now()},
 				}},
 			})
