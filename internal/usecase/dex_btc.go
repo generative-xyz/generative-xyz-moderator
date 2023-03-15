@@ -531,14 +531,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					continue
 				}
 				if respondData.SplitTxRaw != "" {
-					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxRaw, quickNodeAPI)
+					err = btc.SendTxBlockStream(respondData.SplitTxRaw)
 					if err != nil {
 						dataBytes, _ := json.Marshal(respondData)
 						log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode SplitTxHex", order.ID, string(dataBytes), err)
 						continue
 					}
 				}
-				_, err = btc.SendRawTxfromQuickNode(respondData.TxHex, quickNodeAPI)
+				err = btc.SendTxBlockStream(respondData.TxHex)
 				if err != nil {
 					dataBytes, _ := json.Marshal(respondData)
 					log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode TxHex", order.ID, string(dataBytes), err)
