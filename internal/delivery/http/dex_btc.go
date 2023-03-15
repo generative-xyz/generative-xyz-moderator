@@ -158,15 +158,27 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 			result = append(result, newHistory)
 		}
 		if listing.Matched {
-			newHistory := response.DexBTCHistoryListing{
-				OrderID:       listing.UUID,
-				InscriptionID: listing.InscriptionID,
-				Timestamp:     listing.MatchAt.Unix(),
-				Amount:        fmt.Sprintf("%v", listing.Amount),
-				Type:          "matched",
-				Txhash:        listing.MatchedTx,
+			if listing.Buyer == listing.SellerAddress {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "cancelled",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
+			} else {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "matched",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
 			}
-			result = append(result, newHistory)
 		}
 	}
 

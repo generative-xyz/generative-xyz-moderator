@@ -96,10 +96,6 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 	pe.Status = true
 	pe.IsSynced = true
-
-	//task Is reviewing status for the created projects
-	pe.IsHidden = true
-	pe.IsReviewing = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -1627,10 +1623,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-
-	//task is reviewing status for the created projects
 	pe.IsHidden = true
-	pe.IsReviewing = true
 
 	pe.Status = true
 	pe.IsSynced = true
@@ -1657,6 +1650,16 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
+	}()
+
+	go func() {
+		_, err = u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+			ProjectIds: []string{pe.ID.Hex()},
+			CreatedBy:  pe.CreatorAddrr,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+		}
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
