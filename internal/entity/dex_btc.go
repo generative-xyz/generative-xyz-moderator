@@ -30,6 +30,10 @@ type DexBTCListing struct {
 	MatchedTx string     `bson:"matched_tx"`
 	MatchAt   *time.Time `bson:"matched_at"`
 	Buyer     string     `bson:"buyer"`
+
+	CreatedVerifiedActivity bool `bson:"created_verified_activity"`
+	CreatedCancelledActivity bool `bson:"created_cancelled_activity"`
+	CreatedMatchedActivity bool `bson:"created_matched_activity"`
 }
 
 type DexBtcListingWithProjectInfo struct {
