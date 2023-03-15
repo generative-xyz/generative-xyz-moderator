@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1666,18 +1667,33 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 
 // Mint flow
 func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
+	key := "btc-eth-rate"
+	exist, err := u.Cache.Exists(key)
+	if err == nil {
+		if *exist {
+			value, err := u.Cache.GetData(key)
+			if err == nil && value != nil {
+				values := strings.Split(*value, "|")
+				btcPrice, _ := strconv.ParseFloat(values[0], 10)
+				ethPrice, _ := strconv.ParseFloat(values[1], 10)
+				return btcPrice, ethPrice, nil
+			}
+		}
+	}
+
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
 		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return 0, 0, err
 	}
 
-	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
 		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return 0, 0, err
 	}
 
+	value := fmt.Sprintf("%f|%f", btcPrice, ethPrice)
+	u.Cache.SetStringDataWithExpTime(key, value, 15)
 	return btcPrice, ethPrice, nil
 }
