@@ -39,7 +39,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	}
 	for _, project := range projectsResp {
 		action := &response.ActionDaoProject{}
-		action.CanVote = user.IsVerified &&
+		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != project.CreatedBy &&
 			!project.Expired()
 		if action.CanVote {
@@ -159,7 +159,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"_id": objectId}, daoProject); err != nil {
 		return err
 	}
-	if !createdBy.IsVerified || strings.EqualFold(daoProject.CreatedBy, userWallet) {
+	if !createdBy.ProfileSocial.TwitterVerified || strings.EqualFold(daoProject.CreatedBy, userWallet) {
 		return errors.New("Haven't permission")
 	}
 	voteDaoProject := &entity.DaoProjectVoted{

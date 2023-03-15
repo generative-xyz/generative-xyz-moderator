@@ -80,7 +80,10 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		return nil, err
 	}
 
-	go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
+	if !user.ProfileSocial.TwitterVerified {
+		go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
+
+	}
 
 	u.Logger.Info("updated", updated)
 	u.Logger.Info("updated.User", message)
