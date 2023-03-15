@@ -62,40 +62,44 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	return result, nil
 }
 
-func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoProjectRequest) (string, error) {
-	objectId, err := primitive.ObjectIDFromHex(req.ProjectId)
-	if err != nil {
-		return "", err
-	}
-	project := &entity.Projects{}
-	if err := s.Repo.FindOneBy(ctx, project.TableName(), bson.M{"_id": objectId}, project); err != nil {
-		return "", err
-	}
-	if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
-		return "", errors.New("haven't permission")
-	}
+func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoProjectRequest) ([]string, error) {
 	createdBy := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": req.CreatedBy}, createdBy); err != nil {
-		return "", err
+		return nil, err
 	}
-	daoProject := &entity.DaoProject{
-		CreatedBy: req.CreatedBy,
-		ProjectId: project.ID,
-		ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
-		Status:    dao_project.Voting,
-	}
-	seqId, err := s.Repo.NextId(ctx, daoProject.TableName())
+	objectIds, err := copierInternal.StringsToObjects(req.ProjectIds)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	daoProject.SeqId = seqId
-	daoProject.SetID()
-	daoProject.SetCreatedAt()
-	id, err := s.Repo.Create(ctx, daoProject.TableName(), daoProject)
+	daoProjects := make([]interface{}, 0, len(objectIds))
+	for _, objectId := range objectIds {
+		project := &entity.Projects{}
+		if err := s.Repo.FindOneBy(ctx, project.TableName(), bson.M{"_id": objectId}, project); err != nil {
+			return nil, err
+		}
+		if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
+			return nil, errors.New("haven't permission")
+		}
+		daoProject := &entity.DaoProject{
+			CreatedBy: req.CreatedBy,
+			ProjectId: project.ID,
+			ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
+			Status:    dao_project.Voting,
+		}
+		seqId, err := s.Repo.NextId(ctx, daoProject.TableName())
+		if err != nil {
+			return nil, err
+		}
+		daoProject.SeqId = seqId
+		daoProject.SetID()
+		daoProject.SetCreatedAt()
+		daoProjects = append(daoProjects, daoProject)
+	}
+	ids, err := s.Repo.CreateMany(ctx, entity.DaoProject{}.TableName(), daoProjects)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return id.Hex(), nil
+	return copierInternal.ObjectsToHex(ids), nil
 }
 
 func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {

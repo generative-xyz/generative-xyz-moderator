@@ -106,14 +106,14 @@ func copier(toValue interface{}, fromValue interface{}, opt Option) (err error) 
 	// Convert []primitive.ObjectID <-> []string
 	if ids, ok := fromValue.([]primitive.ObjectID); ok {
 		if _, ok := toValue.(*[]string); ok {
-			setValue(toValue, objectsToHex(ids))
+			setValue(toValue, ObjectsToHex(ids))
 			return
 		}
 	}
 	if ids, ok := fromValue.([]string); ok {
 		if _, ok := toValue.(*[]primitive.ObjectID); ok {
 			if len(ids) > 0 {
-				if objectIds, ok := stringsToObjects(ids); ok == nil {
+				if objectIds, ok := StringsToObjects(ids); ok == nil {
 					setValue(toValue, objectIds)
 					return
 				}
@@ -651,18 +651,18 @@ func setValue(to interface{}, from interface{}) {
 	set(toValue, fromValue, false)
 }
 
-func objectsToHex(ids []primitive.ObjectID) (result []string) {
+func ObjectsToHex(ids []primitive.ObjectID) (result []string) {
 	for _, v := range ids {
 		result = append(result, v.Hex())
 	}
 	return result
 }
 
-func stringsToObjects(ids []string) (result []primitive.ObjectID, err error) {
+func StringsToObjects(ids []string) (result []primitive.ObjectID, err error) {
 	for _, v := range ids {
 		id, err := primitive.ObjectIDFromHex(v)
 		if err != nil {
-			return nil, errors.WithMessage(err, "stringsToObjects parse id error")
+			return nil, errors.WithMessage(err, "StringsToObjects parse id error")
 		}
 		result = append(result, id)
 	}
