@@ -100,7 +100,7 @@ const (
 
 var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
 	StatusDEXBuy_Pending:         "Waiting for payment",
-	StatusDEXBuy_ReceivedFund:    "Received payment",
+	StatusDEXBuy_ReceivedFund:    "Payment received",
 	StatusDEXBuy_Buying:          "Buying",
 	StatusDEXBuy_Bought:          "Bought",
 	StatusDEXBuy_WaitingToRefund: "Waiting to refund",
