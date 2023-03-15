@@ -42,6 +42,11 @@ type Sort struct {
 	Sort   entity.SortType
 }
 
+type Count struct {
+	Id    string `bson:"_id" json:"id,omitempty"`
+	Count int    `bson:"count" json:"count,omitempty"`
+}
+
 func NewRepository(g *global.Global) (*Repository, error) {
 
 	clientOption := &options.ClientOptions{}

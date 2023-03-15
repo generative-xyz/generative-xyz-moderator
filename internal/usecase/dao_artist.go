@@ -43,15 +43,12 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != artist.CreatedBy &&
 			!artist.Expired()
-		for _, voted := range artist.DaoArtistVoted {
-			if voted.CreatedBy == user.WalletAddress {
-				action.CanVote = false
-			}
-			if voted.Status == dao_artist_voted.Report {
-				artist.TotalReport += 1
-			}
-			if voted.Status == dao_artist_voted.Verify {
-				artist.TotalVerify += 1
+		if action.CanVote {
+			for _, voted := range artist.DaoArtistVoted {
+				if strings.EqualFold(voted.CreatedBy, user.WalletAddress) {
+					action.CanVote = false
+					break
+				}
 			}
 		}
 		artist.SetFields(
@@ -130,12 +127,6 @@ func (s *Usecase) GetDAOArtist(ctx context.Context, id, userWallet string) (*res
 	userWallets := make([]string, 0, len(daoArtist.DaoArtistVoted))
 	for _, voted := range daoArtist.DaoArtistVoted {
 		userWallets = append(userWallets, voted.CreatedBy)
-		if voted.Status == dao_artist_voted.Report {
-			daoArtist.TotalReport += 1
-		}
-		if voted.Status == dao_artist_voted.Verify {
-			daoArtist.TotalVerify += 1
-		}
 	}
 	if len(userWallets) > 0 {
 		users := []*entity.Users{}
@@ -208,21 +199,17 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		return nil
 	}
 
-	_ = s.processVerifyArtist(ctx, daoArtist)
+	go s.processVerifyArtist(ctx, daoArtist)
 
 	return nil
 }
 func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.DaoArtist) error {
-	voted := []*entity.DaoArtistVoted{}
-	err := s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
-	if err != nil {
-		return err
-	}
+	voted := s.Repo.CountDAOArtistVoteByStatus(ctx, daoArtist.ID, dao_artist_voted.Verify)
 	count := s.Config.CountVoteDAO
 	if count <= 0 {
 		count = 2
 	}
-	if len(voted) < count {
+	if voted < count {
 		return nil
 	}
 	user := &entity.Users{}
@@ -234,7 +221,7 @@ func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.Dao
 		return nil
 	}
 	user.ProfileSocial.TwitterVerified = true
-	_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
+	_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
 		bson.D{
 			{Key: "$set", Value: bson.D{
 				{Key: "profile_social", Value: user.ProfileSocial},
