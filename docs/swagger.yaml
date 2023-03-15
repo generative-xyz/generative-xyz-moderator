@@ -4313,6 +4313,42 @@ paths:
       summary: Search
       tags:
       - Search
+  /token-activities:
+    get:
+      consumes:
+      - application/json
+      description: get referrals
+      parameters:
+      - description: token inscription ID
+        in: query
+        name: inscription_id
+        type: string
+      - description: project
+        in: query
+        name: project_id
+        type: string
+      - description: activity types
+        in: query
+        name: types
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get referrals
+      tags:
+      - Token Activities
   /token-moralis/nfts:
     get:
       consumes:
@@ -4587,35 +4623,6 @@ paths:
                   $ref: '#/definitions/response.InternalTokenURIResp'
               type: object
       summary: Update token's thumbnail
-      tags:
-      - Tokens
-  /tokens/activities/{inscriptionID}:
-    get:
-      consumes:
-      - application/json
-      description: get referrals
-      parameters:
-      - description: token inscription ID
-        in: path
-        name: inscriptionID
-        required: true
-        type: string
-      - description: limit
-        in: query
-        name: limit
-        type: integer
-      - description: page
-        in: query
-        name: page
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: get referrals
       tags:
       - Tokens
   /tokens/traits/{contractAddress}/{tokenID}:

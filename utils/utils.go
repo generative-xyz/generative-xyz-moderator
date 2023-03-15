@@ -8,6 +8,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func StringUnique(s []string) []string {
+	inResult := make(map[string]bool)
+	var result []string
+	for _, str := range s {
+		if _, ok := inResult[str]; !ok {
+			inResult[str] = true
+			result = append(result, str)
+		}
+	}
+	return result
+}
+
 func StringsToObjects(ids []string) (result []primitive.ObjectID, err error) {
 	for _, v := range ids {
 		id, err := primitive.ObjectIDFromHex(v)
