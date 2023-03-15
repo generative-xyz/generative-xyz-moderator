@@ -70,9 +70,6 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	if user.IsVerified {
 		return "", errors.New("Haven't permission")
 	}
-	if req.Twitter == "" && user.ProfileSocial.Twitter == "" {
-		return "", errors.New("Please update your twitter url")
-	}
 	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
 		user.ProfileSocial.Twitter = req.Twitter
 		_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
