@@ -72,6 +72,10 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 	if err != nil {
 		return nil, err
 	}
+	expireDay := s.Config.VoteDAOExpireDay
+	if expireDay <= 0 {
+		expireDay = 7
+	}
 	daoProjects := make([]interface{}, 0, len(objectIds))
 	for _, objectId := range objectIds {
 		project := &entity.Projects{}
@@ -84,7 +88,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		daoProject := &entity.DaoProject{
 			CreatedBy: req.CreatedBy,
 			ProjectId: project.ID,
-			ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
+			ExpiredAt: time.Now().Add(24 * time.Duration(expireDay) * time.Hour),
 			Status:    dao_project.Voting,
 		}
 		seqId, err := s.Repo.NextId(ctx, daoProject.TableName())
