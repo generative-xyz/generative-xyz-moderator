@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"rederinghub.io/internal/delivery/http/request"
@@ -99,6 +100,34 @@ func (h *httpDelivery) voteDaoProject(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			return nil, h.Usecase.VoteDAOProject(ctx, muxVars["id"], muxVars[utils.SIGNED_WALLET_ADDRESS], &reqBody)
+		},
+	).ServeHTTP(w, r)
+}
+
+// @Summary List Projects Is Hidden
+// @Description List Projects Is Hidden
+// @Tags DAO Project
+// @Accept json
+// @Produce json
+// @Param keyword query string false "Keyword"
+// @Param cursor query string false "Last Id"
+// @Param limit query int false "Limit"
+// @Success 200 {object} entity.Pagination{}
+// @Router /dao-project/me/projects-hidden [GET]
+// @Security ApiKeyAuth
+func (h *httpDelivery) listYourProjectsIsHidden(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
+			req := &request.ListProjectHiddenRequest{}
+			if err := utils.QueryParser(r, req); err != nil {
+				return nil, err
+			}
+			req.Pagination = entity.GetPagination(r)
+			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
+			if userWallet == "" {
+				return nil, errors.New("token is empty")
+			}
+			return h.Usecase.ListYourProjectsIsHidden(ctx, userWallet, req)
 		},
 	).ServeHTTP(w, r)
 }
