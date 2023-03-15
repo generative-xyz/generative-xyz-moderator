@@ -1048,3 +1048,15 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 	return &link, nil
 
 }
+
+func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, error) {
+	tokens, err := u.Repo.FindTokenByTokenIds(tokenIDs)
+	if err != nil {
+		return nil, err
+	}
+	tokenIdToToken := map[string]*entity.TokenUri{}
+	for _, token := range tokens {
+		tokenIdToToken[token.TokenID] = &token
+	}
+	return tokenIdToToken, nil
+}
