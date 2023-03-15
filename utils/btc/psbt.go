@@ -810,5 +810,15 @@ func CreatePSBTToBuyInscriptionViaAPI(
 	if err != nil {
 		return nil, err
 	}
+	if res.TxHex == "" {
+		var resErr struct {
+			Message string `json:"message"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&resErr)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(resErr.Message)
+	}
 	return &res, nil
 }
