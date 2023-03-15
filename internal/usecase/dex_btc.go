@@ -508,6 +508,13 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					log.Println("watchPendingDexBTCBuyETH ConvertToUTXOType", order.ID, err)
 					continue
 				}
+
+				filteredUTXOs, err := u.filterUTXOInscription(utxos)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH filterUTXOInscription", order.ID, err)
+					continue
+				}
+
 				psbt, err := btc.ParsePSBTFromBase64(listingOrder.RawPSBT)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
@@ -518,7 +525,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				amountBTCFee := uint64(0)
 				amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
-				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
+				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, 15, amountBTCFee)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 					continue
@@ -764,3 +771,36 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 // 	}
 // 	return nil
 // }
+
+func (u Usecase) filterUTXOInscription(utxos []btc.UTXOType) ([]btc.UTXOType, error) {
+	var result []btc.UTXOType
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	waitChan := make(chan struct{}, 10)
+	for _, output := range utxos {
+		wg.Add(1)
+		waitChan <- struct{}{}
+		go func(op btc.UTXOType) {
+			defer func() {
+				wg.Done()
+				<-waitChan
+			}()
+			outStr := fmt.Sprintf("%v:%v", op.TxHash, op.TxOutIndex)
+			inscriptions, err := getInscriptionByOutput(ordServer, outStr)
+			if err != nil {
+				return
+			}
+			if len(inscriptions.Inscriptions) == 0 {
+				lock.Lock()
+				result = append(result, op)
+				lock.Unlock()
+			}
+		}(output)
+	}
+	wg.Wait()
+	return result, nil
+}
