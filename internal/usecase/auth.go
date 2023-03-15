@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -78,6 +79,8 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 	if err != nil {
 		return nil, err
 	}
+
+	go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
 
 	u.Logger.Info("updated", updated)
 	u.Logger.Info("updated.User", message)
