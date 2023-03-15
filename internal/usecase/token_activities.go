@@ -111,6 +111,7 @@ func (u Usecase) GetTokenActivities(page int64, limit int64, inscriptionID strin
 		}
 	}
 	
+	
 	return &entity.Pagination{
 		Result: pagedActivities,
 		Page: page,
