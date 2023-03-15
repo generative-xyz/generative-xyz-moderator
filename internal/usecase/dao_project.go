@@ -159,6 +159,9 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"_id": objectId}, daoProject); err != nil {
 		return err
 	}
+	if daoProject.Expired() {
+		return errors.New("Proposal was expired")
+	}
 	if !createdBy.ProfileSocial.TwitterVerified || strings.EqualFold(daoProject.CreatedBy, userWallet) {
 		return errors.New("Haven't permission")
 	}
