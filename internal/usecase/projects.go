@@ -655,6 +655,11 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
+		if !*req.IsHidden {
+			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
+				return nil, errors.New("Collection is reviewing")
+			}
+		}
 		p.IsHidden = *req.IsHidden
 	}
 
