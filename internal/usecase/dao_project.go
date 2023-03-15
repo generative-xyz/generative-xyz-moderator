@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -144,6 +145,33 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 		}
 	}
 	return daoProject, nil
+}
+
+func (s *Usecase) GetDAOProjectByProjectId(ctx context.Context, projectId string) (*entity.DaoProject, error) {
+	objectId, err := primitive.ObjectIDFromHex(projectId)
+	if err != nil {
+		return nil, err
+	}
+	daoProject := &entity.DaoProject{}
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": objectId}, daoProject); err != nil {
+		return nil, err
+	}
+	return daoProject, nil
+}
+
+func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool {
+	daoProject, err := s.GetDAOProjectByProjectId(ctx, projectId)
+	if err != nil {
+		return false
+	}
+	if slices.Contains([]dao_project.Status{
+		dao_project.Voting,
+		dao_project.Defeated,
+		dao_project.Executed,
+	}, daoProject.Status) {
+		return true
+	}
+	return false
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {

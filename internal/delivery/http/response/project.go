@@ -71,6 +71,7 @@ type ProjectResp struct {
 	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
 	ReserveMintPrice          string           `json:"reserveMintPrice"`
 	ReserveMintLimit          int              `json:"reserveMintLimit"`
+	IsReviewing               bool             `json:"isReviewing"`
 }
 
 type ReportProject struct {
