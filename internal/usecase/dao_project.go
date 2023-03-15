@@ -78,7 +78,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 			return nil, err
 		}
 		if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
-			return nil, errors.New("haven't permission")
+			return nil, errors.New("Haven't permission")
 		}
 		daoProject := &entity.DaoProject{
 			CreatedBy: req.CreatedBy,
@@ -160,7 +160,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		return err
 	}
 	if !createdBy.IsVerified || strings.EqualFold(daoProject.CreatedBy, userWallet) {
-		return errors.New("haven't permission")
+		return errors.New("Haven't permission")
 	}
 	voteDaoProject := &entity.DaoProjectVoted{
 		CreatedBy:    userWallet,
