@@ -585,7 +585,7 @@ func ConvertToUTXOType(utxos []structure.TxRef) ([]UTXOType, error) {
 	var result []UTXOType
 	for _, utxo := range utxos {
 		newUTXO := UTXOType{
-			Value:      utxo.Value,
+			Value:      uint64(utxo.Value),
 			TxHash:     utxo.TxHash,
 			TxOutIndex: utxo.TxOutputN,
 		}

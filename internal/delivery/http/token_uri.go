@@ -196,8 +196,17 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 					if err != nil {
 						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 					}
+					outLen := 0
+					psbt, err := btc.ParsePSBTFromBase64(listingInfo.RawPSBT)
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder ParsePSBTFromBase64", listingInfo.ID, err)
+					} else {
+						outLen = len(psbt.UnsignedTx.TxOut)
+					}
+					amountBTCFee := btc.EstimateTxFee(uint(len(listingInfo.Inputs)+3), uint(outLen+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
-					amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+					amountBTCRequired += amountBTCFee
+					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
 
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
@@ -598,7 +607,7 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 	for _, item := range pag.Result.([]entity.TokenUriListingFilter) {
 
 		amountBTCRequired := uint64(item.Price) + 1000
-		amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+		amountBTCRequired += btc.EstimateTxFee(4, 3, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 
 		amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 		if err != nil {
