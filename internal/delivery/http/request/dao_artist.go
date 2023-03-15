@@ -12,6 +12,10 @@ type ListDaoArtistRequest struct {
 	Id      *string `query:"-"`
 }
 
+type CreateDaoArtistRequest struct {
+	Twitter string `json:"twitter"`
+}
+
 type VoteDaoArtistRequest struct {
 	Status dao_artist_voted.Status `json:"status"`
 }

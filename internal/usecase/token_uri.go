@@ -1055,8 +1055,8 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, e
 		return nil, err
 	}
 	tokenIdToToken := map[string]*entity.TokenUri{}
-	for _, token := range tokens {
-		tokenIdToToken[token.TokenID] = &token
+	for id := range tokens {
+		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
 	}
 	return tokenIdToToken, nil
 }
