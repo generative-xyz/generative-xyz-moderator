@@ -798,7 +798,7 @@ func CreatePSBTToBuyInscriptionViaAPI(
 		return nil, err
 	}
 
-	resp, err := http.Post(endpoint, "application/json",
+	resp, err := http.Post(endpoint+"/api/createtxbuy", "application/json",
 		bytes.NewBuffer(json_data))
 
 	if err != nil {
