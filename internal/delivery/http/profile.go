@@ -258,6 +258,10 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !profile.ProfileSocial.TwitterVerified {
+		resp.CanCreateProposal = h.Usecase.CanCreateProposal(r.Context(), profile.WalletAddress)
+	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
