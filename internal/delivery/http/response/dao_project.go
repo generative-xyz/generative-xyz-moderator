@@ -51,6 +51,8 @@ type ProjectForDaoProject struct {
 	MaxSupply    int64              `json:"max_supply"`
 	MintingInfo  ProjectMintingInfo `json:"minting_info"`
 	IsHidden     bool               `json:"is_hidden"`
+	MintPrice    string             `json:"mint_price"`
+	MintPriceEth string             `json:"mint_price_eth"`
 }
 
 type ProjectMintingInfo struct {
