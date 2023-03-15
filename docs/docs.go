@@ -874,6 +874,17 @@ const docTemplate = `{
                     "DAO Artist"
                 ],
                 "summary": "Create DAO Artist",
+                "parameters": [
+                    {
+                        "description": "Create Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDaoArtistRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -5919,6 +5930,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateDaoArtistRequest": {
+            "type": "object",
+            "properties": {
+                "twitter": {
                     "type": "string"
                 }
             }
