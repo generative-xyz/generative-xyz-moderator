@@ -21,6 +21,9 @@ func (r Repository) buildFilterTokenActivities(filter entity.FilterTokenActiviti
 	if filter.ProjectID != nil {
 		f["project_id"] = *filter.ProjectID
 	}
+	if len(filter.Types) > 0 {
+		f["type"] = bson.M{"$in": filter.Types}
+	}
 	return f
 }
 
@@ -36,7 +39,7 @@ func (r Repository) GetTokenActivities(filter entity.FilterTokenActivities) (*en
 		{SortBy: filter.SortBy, Sort: filter.Sort},
 		{SortBy: "uuid", Sort: entity.SORT_DESC},
 	}
-	t, err := r.Paginate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, s, &activities)
+	t, err := r.Paginate(entity.TokenActivity{}.TableName(), filter.Page, filter.Limit, f, bson.D{}, s, &activities)
 	if err != nil {
 		return nil, err
 	}

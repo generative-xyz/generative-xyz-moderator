@@ -34,7 +34,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	tokens := api.PathPrefix("/tokens").Subrouter()
 	tokens.HandleFunc("", h.Tokens).Methods("GET")
 	tokens.HandleFunc("/{tokenID}/thumbnail", h.updateTokenThumbnail).Methods("POST")
-	tokens.HandleFunc("/activities/{inscriptionID}", h.getTokenActivities).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("GET")
 	tokens.HandleFunc("/{contractAddress}/{tokenID}", h.tokenURIWithResp).Methods("PUT")
 	tokens.HandleFunc("/traits/{contractAddress}/{tokenID}", h.tokenTraitWithResp).Methods("GET")
@@ -46,6 +45,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth := api.PathPrefix("/auth").Subrouter()
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
+
+	tokenActivities := api.PathPrefix("/token-activities").Subrouter()
+	tokenActivities.HandleFunc("", h.getTokenActivities).Methods("GET")
 
 	files := api.PathPrefix("/files").Subrouter()
 	files.HandleFunc("", h.UploadFile).Methods("POST")
@@ -140,6 +142,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.ListingOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
+
+	// New Marketplace
+	collection := api.PathPrefix("/collections").Subrouter()
+	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()

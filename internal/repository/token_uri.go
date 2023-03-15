@@ -724,6 +724,7 @@ func (r Repository) SelectedTokenFieldsNew() bson.D {
 		{"minter_address", 1},
 		{"inscription_index", 1},
 		{"order_inscription_index", 1},
+		{"created_at", 1},
 	}
 	return f
 }
@@ -927,4 +928,24 @@ func (r Repository) UpdateTokenCreatedMintActivity(tokenID string) (*mongo.Updat
 	}
 
 	return result, err
+}
+
+func (r Repository) FindTokenByTokenIds(tokenIDs []string) ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+	f := bson.M{
+		"token_id": bson.M{
+			"$in": tokenIDs,
+		},
+	}
+	opts := options.Find().SetProjection(r.SelectedTokenFields())
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }
