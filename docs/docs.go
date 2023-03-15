@@ -2915,12 +2915,6 @@ const docTemplate = `{
                 "summary": "Get current user's projects",
                 "parameters": [
                     {
-                        "type": "boolean",
-                        "description": "Is Hidden",
-                        "name": "is_hidden",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
@@ -5260,9 +5254,6 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
-                "isReviewing": {
-                    "type": "boolean"
-                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -7028,6 +7019,9 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isReviewing": {
+                    "type": "boolean"
+                },
                 "itemDesc": {
                     "type": "string"
                 },
@@ -7292,6 +7286,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_address": {
+                    "type": "string"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
+                },
+                "wallet_address_btc_taproot": {
+                    "type": "string"
+                },
+                "wallet_address_payment": {
                     "type": "string"
                 }
             }
