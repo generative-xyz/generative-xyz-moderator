@@ -181,47 +181,45 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if req.Status != dao_artist_voted.Verify {
 		return nil
 	}
-	go func() {
-		voted := []*entity.DaoArtistVoted{}
-		err := s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
-		if err != nil {
-			return
-		}
-		count := s.Config.CountVoteDAO
-		if count <= 0 {
-			count = 2
-		}
-		if len(voted) < count || daoArtist.Status == dao_artist.Verified {
-			return
-		}
-		user := &entity.Users{}
-		if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
-			logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
-			return
-		}
-		user.ProfileSocial.TwitterVerified = true
-		_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
-			bson.D{
-				{Key: "$set", Value: bson.D{
-					{Key: "profile_social", Value: user.ProfileSocial},
-					{Key: "updated_at", Value: time.Now()},
-				}},
-			})
-		if err != nil {
-			logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
-			return
-		}
-		_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
-			bson.D{
-				{Key: "$set", Value: bson.D{
-					{Key: "status", Value: dao_artist.Verified},
-					{Key: "updated_at", Value: time.Now()},
-				}},
-			})
-		if err != nil {
-			logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
-		}
-	}()
+	voted := []*entity.DaoArtistVoted{}
+	err = s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
+	if err != nil {
+		return nil
+	}
+	count := s.Config.CountVoteDAO
+	if count <= 0 {
+		count = 2
+	}
+	if len(voted) < count || daoArtist.Status == dao_artist.Verified {
+		return nil
+	}
+	user := &entity.Users{}
+	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
+		logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
+		return nil
+	}
+	user.ProfileSocial.TwitterVerified = true
+	_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "profile_social", Value: user.ProfileSocial},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+	if err != nil {
+		logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
+		return nil
+	}
+	_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "status", Value: dao_artist.Verified},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+	if err != nil {
+		logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
+	}
 
 	return nil
 }
