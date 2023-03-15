@@ -154,5 +154,10 @@ func (h *restHandlerTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		h.httpResp.RespondWithError(w, http.StatusBadRequest, Error, err)
 		return
 	}
+	if item == nil {
+		item = map[string]interface{}{
+			"status": true,
+		}
+	}
 	h.httpResp.RespondSuccess(w, http.StatusOK, Success, item, "")
 }

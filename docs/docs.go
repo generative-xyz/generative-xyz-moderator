@@ -911,6 +911,17 @@ const docTemplate = `{
                     "DAO Artist"
                 ],
                 "summary": "Create DAO Artist",
+                "parameters": [
+                    {
+                        "description": "Create Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDaoArtistRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1077,6 +1088,54 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/dao-project/me/projects-hidden": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List Projects Is Hidden",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "List Projects Is Hidden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
                     }
                 }
             }
@@ -2840,10 +2899,10 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Authorization": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "get current user's projects",
+                "description": "Get current user's projects",
                 "consumes": [
                     "application/json"
                 ],
@@ -2853,14 +2912,8 @@ const docTemplate = `{
                 "tags": [
                     "Profile"
                 ],
-                "summary": "get current user's projects",
+                "summary": "Get current user's projects",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter project via contract address",
-                        "name": "contractAddress",
-                        "in": "query"
-                    },
                     {
                         "type": "integer",
                         "description": "limit",
@@ -2878,7 +2931,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.ProjectResp"
+                            }
                         }
                     }
                 }
@@ -5209,9 +5265,6 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
-                "isReviewing": {
-                    "type": "boolean"
-                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -5926,11 +5979,25 @@ const docTemplate = `{
                 }
             }
         },
-        "request.CreateDaoProjectRequest": {
+        "request.CreateDaoArtistRequest": {
             "type": "object",
             "properties": {
-                "project_id": {
+                "twitter": {
                     "type": "string"
+                }
+            }
+        },
+        "request.CreateDaoProjectRequest": {
+            "type": "object",
+            "required": [
+                "project_ids"
+            ],
+            "properties": {
+                "project_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -6784,6 +6851,9 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "canCreateProposal": {
+                    "type": "boolean"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6842,6 +6912,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "creator_by": {
+                    "type": "string"
+                },
                 "creator_name": {
                     "type": "string"
                 },
@@ -6850,6 +6923,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
                 },
                 "max_supply": {
                     "type": "integer"
@@ -6955,6 +7031,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "isHidden": {
+                    "type": "boolean"
+                },
+                "isReviewing": {
                     "type": "boolean"
                 },
                 "itemDesc": {
@@ -7221,6 +7300,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_address": {
+                    "type": "string"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
+                },
+                "wallet_address_btc_taproot": {
+                    "type": "string"
+                },
+                "wallet_address_payment": {
                     "type": "string"
                 }
             }

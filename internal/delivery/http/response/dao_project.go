@@ -23,7 +23,7 @@ type DaoProject struct {
 }
 
 func (s DaoProject) Expired() bool {
-	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
+	return s.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
 }
 
 func (s *DaoProject) SetFields(fns ...func(*DaoProject)) {
@@ -42,13 +42,17 @@ type ActionDaoProject struct {
 }
 
 type ProjectForDaoProject struct {
-	BaseEntity  `json:",inline"`
-	TokenID     string             `json:"token_id"`
-	Name        string             `json:"name"`
-	CreatorName string             `json:"creator_name"`
-	Thumbnail   string             `json:"thumbnail"`
-	MaxSupply   int64              `json:"max_supply"`
-	MintingInfo ProjectMintingInfo `json:"minting_info"`
+	BaseEntity   `json:",inline"`
+	TokenID      string             `json:"token_id"`
+	Name         string             `json:"name"`
+	CreatorAddrr string             `json:"creator_by"`
+	CreatorName  string             `json:"creator_name"`
+	Thumbnail    string             `json:"thumbnail"`
+	MaxSupply    int64              `json:"max_supply"`
+	MintingInfo  ProjectMintingInfo `json:"minting_info"`
+	IsHidden     bool               `json:"is_hidden"`
+	MintPrice    string             `json:"mint_price"`
+	MintPriceEth string             `json:"mint_price_eth"`
 }
 
 type ProjectMintingInfo struct {
@@ -57,12 +61,15 @@ type ProjectMintingInfo struct {
 }
 
 type UserForDao struct {
-	BaseEntity    `json:",inline"`
-	IsVerified    bool          `json:"is_verified"`
-	WalletAddress string        `json:"wallet_address"`
-	DisplayName   string        `json:"display_name"`
-	Avatar        string        `json:"avatar"`
-	ProfileSocial ProfileSocial `json:"profile_social"`
+	BaseEntity              `json:",inline"`
+	IsVerified              bool          `json:"is_verified"`
+	WalletAddress           string        `json:"wallet_address"`
+	WalletAddressPayment    string        `json:"wallet_address_payment"`
+	WalletAddressBTC        string        `json:"wallet_address_btc"`
+	WalletAddressBTCTaproot string        `json:"wallet_address_btc_taproot"`
+	DisplayName             string        `json:"display_name"`
+	Avatar                  string        `json:"avatar"`
+	ProfileSocial           ProfileSocial `json:"profile_social"`
 }
 
 type DaoProjectVoted struct {

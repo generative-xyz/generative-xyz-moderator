@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -250,14 +249,13 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	userAddress := r.URL.Query().Get("userAddress")
 
-	fmt.Println("userAddress", userAddress)
+	// fmt.Println("userAddress", userAddress)
 
 	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
 		ContractAddress:            contractAddress,
 		ProjectID:                  projectID,
 		UserAddressToCheckDiscount: userAddress,
 	})
-
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -270,6 +268,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	resp.IsReviewing = h.Usecase.IsProjectReviewing(r.Context(), project.ID.Hex())
 
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
 

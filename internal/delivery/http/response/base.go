@@ -17,9 +17,9 @@ type PaginationResponse struct {
 }
 
 type BaseEntity struct {
-	ID        string     `json:"id"`
-	UUID      string     `json:"uuid"`
-	DeletedAt *time.Time `json:"deleted_at"`
-	CreatedAt *time.Time `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	ID        string     `json:"id" bson:"_id"`
+	UUID      string     `json:"uuid" bson:"uuid"`
+	DeletedAt *time.Time `json:"deleted_at" bson:"deleted_at"`
+	CreatedAt *time.Time `json:"created_at" bson:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at" bson:"updated_at"`
 }
