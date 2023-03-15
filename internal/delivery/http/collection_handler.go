@@ -131,6 +131,12 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 				return
 			}
 
+			volumeCEX, err := h.Usecase.Repo.ProjectGetCEXVolume(projectID)
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+				return
+			}
+
 			mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
 			if err != nil {
 				h.Logger.Error(" h.Usecase.Repo.ProjectGetMintVolume", err.Error(), err)
@@ -151,7 +157,7 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 			var result response.ProjectMarketplaceData
 			result.FloorPrice = floorPrice
 			result.Listed = currentListing
-			result.TotalVolume = volume + mintVolume
+			result.TotalVolume = volume + mintVolume + volumeCEX
 			result.MintVolume = mintVolume
 
 			data := &response.ProjectListing{
