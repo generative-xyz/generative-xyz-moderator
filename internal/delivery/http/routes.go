@@ -141,6 +141,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
 
+	// New Marketplace
+	collection := api.PathPrefix("/collections").Subrouter()
+	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
+
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
