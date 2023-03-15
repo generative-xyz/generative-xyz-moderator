@@ -671,7 +671,13 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	if err != nil {
 		return "", "", "", 0, err
 	}
+	if order.Cancelled || order.Matched || order.InvalidMatch {
+		return "", "", "", 0, errors.New("order no longer valid")
+	}
 
+	if !order.Verified {
+		return "", "", "", 0, errors.New("order not ready yet")
+	}
 	psbt, err := btc.ParsePSBTFromBase64(order.RawPSBT)
 	if err != nil {
 		log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
