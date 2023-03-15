@@ -666,41 +666,54 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 	return nil
 }
 
-func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, error) {
+func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, string, string, error) {
 	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
 	if err != nil {
-		return "", "", "", 0, err
+		return "", "", "", 0, "", "", err
 	}
 	if order.Cancelled || order.Matched || order.InvalidMatch {
-		return "", "", "", 0, errors.New("order no longer valid")
+		return "", "", "", 0, "", "", errors.New("order no longer valid")
 	}
 
 	if !order.Verified {
-		return "", "", "", 0, errors.New("order not ready yet")
+		return "", "", "", 0, "", "", errors.New("order not ready yet")
 	}
 	psbt, err := btc.ParsePSBTFromBase64(order.RawPSBT)
 	if err != nil {
 		log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
-		return "", "", "", 0, err
+		return "", "", "", 0, "", "", err
 	}
-	amountBTCFee := uint64(0)
-	amountBTCFee = btc.EstimateTxFee(uint(len(order.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
 	amountBTCRequired := order.Amount + 1000
-	amountBTCRequired += amountBTCFee
 	amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+	amountBTCNoFee := amountBTCRequired
+	amountBTCFee := btc.EstimateTxFee(uint(len(order.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
-	amountETH, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8))
+	btcRate, ethRate, _ := u.GetBTCToETHRate()
+
+	amountETHFee, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCFee)/1e8), btcRate, ethRate)
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
-		return "", "", "", 0, err
+		return "", "", "", 0, "", "", err
+	}
+	amountETHOriginal, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCNoFee)/1e8), btcRate, ethRate)
+	if err != nil {
+		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+		return "", "", "", 0, "", "", err
+	}
+
+	amountBTCRequired += amountBTCFee
+	amountETH, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+	if err != nil {
+		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+		return "", "", "", 0, "", "", err
 	}
 
 	ethClient := eth.NewClient(nil)
 	privKey, _, tempETHAddress, err := ethClient.GenerateAddress()
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
-		return "", "", "", 0, err
+		return "", "", "", 0, "", "", err
 	}
 
 	var newOrder entity.DexBTCBuyWithETH
@@ -718,10 +731,10 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	expiredAt := newOrder.ExpiredAt.Unix()
 	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
 	if err != nil {
-		return "", "", "", expiredAt, err
+		return "", "", "", expiredAt, "", "", err
 	}
 
-	return newOrder.UUID, tempETHAddress, amountETH, expiredAt, nil
+	return newOrder.UUID, tempETHAddress, amountETH, expiredAt, amountETHOriginal, amountETHFee, nil
 }
 
 // func (u Usecase) UpdateBuyETHOrderTx(buyOrderID string, userID string, txhash string) error {
