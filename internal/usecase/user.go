@@ -33,18 +33,18 @@ func (u Usecase) GetUsersMap(addresses []string) (map[string]*entity.Users, erro
 		return nil, err
 	}
 	addressToUser := map[string]*entity.Users{}
-	for _, user := range users {
+	for id, user := range users {
 		if user.WalletAddress != "" {
-			addressToUser[user.WalletAddress] = &user
+			addressToUser[user.WalletAddress] = &users[id]
 		}
 		if user.WalletAddressBTC != "" {
-			addressToUser[user.WalletAddressBTC] = &user
+			addressToUser[user.WalletAddressBTC] = &users[id]
 		}
 		if user.WalletAddressBTCTaproot != "" {
-			addressToUser[user.WalletAddressBTCTaproot] = &user
+			addressToUser[user.WalletAddressBTCTaproot] = &users[id]
 		}
 		if user.WalletAddressPayment != "" {
-			addressToUser[user.WalletAddressPayment] = &user
+			addressToUser[user.WalletAddressPayment] = &users[id]
 		}
 	}
 	return addressToUser, nil
