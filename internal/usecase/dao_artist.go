@@ -181,10 +181,16 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if req.Status != dao_artist_voted.Verify {
 		return nil
 	}
+
+	_ = s.processVerifyArtist(ctx, daoArtist)
+
+	return nil
+}
+func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.DaoArtist) error {
 	voted := []*entity.DaoArtistVoted{}
-	err = s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
+	err := s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
 	if err != nil {
-		return nil
+		return err
 	}
 	count := s.Config.CountVoteDAO
 	if count <= 0 {
@@ -196,7 +202,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	user := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
 		logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
-		return nil
+		return err
 	}
 	user.ProfileSocial.TwitterVerified = true
 	_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
@@ -208,7 +214,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		})
 	if err != nil {
 		logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
-		return nil
+		return err
 	}
 	_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
 		bson.D{
@@ -219,7 +225,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		})
 	if err != nil {
 		logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
+		return err
 	}
-
 	return nil
 }
