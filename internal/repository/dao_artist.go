@@ -26,15 +26,7 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		},
 	}
 	unwindUser := bson.M{"$unwind": "$user"}
-	lookupDaoArtistVoted := bson.M{
-		"$lookup": bson.M{
-			"from":         "dao_artist_voted",
-			"localField":   "_id",
-			"foreignField": "dao_artist_id",
-			"as":           "dao_artist_voted",
-		},
-	}
-	addUserName := bson.M{
+	addFieldUserName := bson.M{
 		"$addFields": bson.M{"user_name": "$user.display_name"},
 	}
 	if len(request.Sorts) > 0 {
@@ -77,6 +69,50 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 			}},
 		}
 	}
+	lookupDaoArtistVoted := bson.M{
+		"$lookup": bson.M{
+			"from":         "dao_artist_voted",
+			"localField":   "_id",
+			"foreignField": "dao_artist_id",
+			"as":           "dao_artist_voted",
+		},
+	}
+	addFieldsCount := bson.M{
+		"$addFields": bson.M{
+			"verify": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_artist_voted",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", 1},
+					},
+				},
+			},
+			"report": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_artist_voted",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", 0},
+					},
+				},
+			},
+		},
+	}
+	projectAgg := bson.M{
+		"$project": bson.M{
+			"_id":              1,
+			"uuid":             1,
+			"created_at":       1,
+			"seq_id":           1,
+			"created_by":       1,
+			"user":             1,
+			"expired_at":       1,
+			"status":           1,
+			"dao_artist_voted": 1,
+			"user_name":        1,
+			"total_verify":     bson.M{"$size": "$verify"},
+			"total_report":     bson.M{"$size": "$report"},
+		},
+	}
 	projects := []*entity.DaoArtist{}
 	total, err := s.Aggregation(ctx,
 		entity.DaoArtist{}.TableName(),
@@ -86,10 +122,12 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		matchFilters,
 		lookupUser,
 		unwindUser,
-		addUserName,
+		addFieldUserName,
 		matchSearch,
 		lookupDaoArtistVoted,
-		sorts)
+		addFieldsCount,
+		sorts,
+		projectAgg)
 	if err != nil {
 		return nil, 0, err
 	}

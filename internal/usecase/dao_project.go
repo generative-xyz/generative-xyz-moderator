@@ -43,15 +43,11 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != project.CreatedBy &&
 			!project.Expired()
-		for _, voted := range project.DaoProjectVoted {
-			if voted.CreatedBy == user.WalletAddress {
-				action.CanVote = false
-			}
-			if voted.Status == dao_project_voted.Voted {
-				project.TotalVote += 1
-			}
-			if voted.Status == dao_project_voted.Against {
-				project.TotalAgainst += 1
+		if action.CanVote {
+			for _, voted := range project.DaoProjectVoted {
+				if voted.CreatedBy == user.WalletAddress {
+					action.CanVote = false
+				}
 			}
 		}
 		project.SetFields(
@@ -129,12 +125,6 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	userWallets := make([]string, 0, len(daoProject.DaoProjectVoted))
 	for _, voted := range daoProject.DaoProjectVoted {
 		userWallets = append(userWallets, voted.CreatedBy)
-		if voted.Status == dao_project_voted.Voted {
-			daoProject.TotalVote += 1
-		}
-		if voted.Status == dao_project_voted.Against {
-			daoProject.TotalAgainst += 1
-		}
 	}
 	if len(userWallets) > 0 {
 		users := []*entity.Users{}

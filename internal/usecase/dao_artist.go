@@ -88,9 +88,13 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 			return "", err
 		}
 	}
+	expireDay := s.Config.VoteDAOExpireDay
+	if expireDay <= 0 {
+		expireDay = 7
+	}
 	daoArtist := &entity.DaoArtist{
 		CreatedBy: user.WalletAddress,
-		ExpiredAt: time.Now().Add(24 * 7 * time.Hour),
+		ExpiredAt: time.Now().Add(24 * time.Duration(expireDay) * time.Hour),
 		Status:    dao_artist.Verifying,
 	}
 	seqId, err := s.Repo.NextId(ctx, daoArtist.TableName())
