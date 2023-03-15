@@ -34,21 +34,21 @@ type TokenUriListingVolume struct {
 
 type FilterTokenUris struct {
 	BaseFilters
-	ContractAddress *string
-	OwnerAddr       *string
-	CreatorAddr     *string
-	GenNFTAddr      *string
-	Keyword         *string
-	Search          *string
-	CollectionIDs   []string
-	TokenIDs        []string
-	Attributes      []TokenUriAttrFilter
-	RarityAttributes      []TokenUriAttrFilter
-	HasPrice        *bool
-	FromPrice       *int64
-	ToPrice         *int64
-	Ids             []string
-	IsBuynow        *bool
+	ContractAddress  *string
+	OwnerAddr        *string
+	CreatorAddr      *string
+	GenNFTAddr       *string
+	Keyword          *string
+	Search           *string
+	CollectionIDs    []string
+	TokenIDs         []string
+	Attributes       []TokenUriAttrFilter
+	RarityAttributes []TokenUriAttrFilter
+	HasPrice         *bool
+	FromPrice        *int64
+	ToPrice          *int64
+	Ids              []string
+	IsBuynow         *bool
 }
 
 type TokenStats struct {
@@ -128,6 +128,7 @@ type TokenUriListingFilter struct {
 	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
 	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
 	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
+	PriceETH              string             `bson:"priceETH" json:"priceETH"`
 	Buyable               bool               `bson:"buyable" json:"buyable"`
 	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
 	Project               struct {
