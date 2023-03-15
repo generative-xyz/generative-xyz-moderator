@@ -7,7 +7,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -124,16 +123,16 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 				return
 			}
 
-			tokens, err := h.Usecase.Repo.GetAllTokensByProjectID(projectID)
-			if err != nil {
-				h.Logger.Error(" h.Usecase.Repo.GetAllTokensByProjectID", err.Error(), err)
-				return
-			}
+			// tokens, err := h.Usecase.Repo.GetAllTokensByProjectID(projectID)
+			// if err != nil {
+			// 	h.Logger.Error(" h.Usecase.Repo.GetAllTokensByProjectID", err.Error(), err)
+			// 	return
+			// }
 
-			checkers := []string{}
-			for _, t := range tokens {
-				checkers = append(checkers, t.OwnerAddr)
-			}
+			// checkers := []string{}
+			// for _, t := range tokens {
+			// 	checkers = append(checkers, t.OwnerAddr)
+			// }
 
 			var result response.ProjectMarketplaceData
 			result.FloorPrice = floorPrice
@@ -142,7 +141,7 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 			result.MintVolume = mintVolume
 
 			data := &response.ProjectListing{
-				NumberOwners: int64(len(utils.StringUnique(checkers))),
+				// NumberOwners: int64(len(utils.StringUnique(checkers))),
 				Project: &response.ProjectInfo{
 					Name:            p.Name,
 					TokenId:         projectID,
