@@ -54,6 +54,9 @@ func (h *httpDelivery) createDaoProject(w http.ResponseWriter, r *http.Request) 
 			if err != nil {
 				return nil, err
 			}
+			if err := h.Validator.Struct(reqBody); err != nil {
+				return nil, err
+			}
 			reqBody.CreatedBy = muxVars[utils.SIGNED_WALLET_ADDRESS]
 			return h.Usecase.CreateDAOProject(ctx, &reqBody)
 		},
