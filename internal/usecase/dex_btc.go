@@ -20,7 +20,6 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
-	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
 )
 
@@ -487,16 +486,17 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			}
 			if listingOrder != nil {
 
-				privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
-				if err != nil {
-					log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
-					continue
-				}
-				_, _, address, err := btc.GenerateAddressSegwit(privKeyDecrypt)
-				if err != nil {
-					log.Println("watchPendingDexBTCBuyETH GenerateAddressSegwit", order.ID, err)
-					continue
-				}
+				// privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
+				// if err != nil {
+				// 	log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
+				// 	continue
+				// }
+				// _, _, address, err := btc.GenerateAddressSegwit(privKeyDecrypt)
+				// if err != nil {
+				// 	log.Println("watchPendingDexBTCBuyETH GenerateAddressSegwit", order.ID, err)
+				// 	continue
+				// }
+				address := u.Config.DexBTCWalletAddress
 
 				walletInfo, err := btc.GetBalanceFromQuickNode(address, quickNodeAPI)
 				if err != nil {
@@ -518,13 +518,13 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				amountBTCFee := uint64(0)
 				amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
-				respondData, err := btc.CreatePSBTToBuyInscription(listingOrder.RawPSBT, privKeyDecrypt, address, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
+				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 					continue
 				}
-				if respondData.SplitTxHex != "" {
-					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxHex, quickNodeAPI)
+				if respondData.SplitTxRaw != "" {
+					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxRaw, quickNodeAPI)
 					if err != nil {
 						dataBytes, _ := json.Marshal(respondData)
 						log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode SplitTxHex", order.ID, string(dataBytes), err)
