@@ -4253,6 +4253,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/token-activities": {
+            "get": {
+                "description": "get referrals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token Activities"
+                ],
+                "summary": "get referrals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token inscription ID",
+                        "name": "inscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "project",
+                        "name": "project_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "activity types",
+                        "name": "types",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-moralis/nfts": {
             "get": {
                 "security": [
@@ -4508,50 +4563,6 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "The cursor returned in the previous response (used for getting the next page).",
-                        "name": "page",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tokens/activities/{inscriptionID}": {
-            "get": {
-                "description": "get referrals",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Tokens"
-                ],
-                "summary": "get referrals",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "token inscription ID",
-                        "name": "inscriptionID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page",
                         "name": "page",
                         "in": "query"
                     }
