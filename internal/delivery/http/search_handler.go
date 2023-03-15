@@ -41,7 +41,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 
 	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

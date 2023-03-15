@@ -10,6 +10,17 @@ import (
 	"rederinghub.io/utils/algolia"
 )
 
+func (uc *Usecase) AlgoliaSearchProjectListing(filter *algolia.AlgoliaFilter) ([]*response.ProjectListing, int, int, error) {
+	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
+	resp, err := algoliaClient.Search("project-listing", filter)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	listings := []*response.ProjectListing{}
+	resp.UnmarshalHits(&listings)
+	return listings, resp.NbHits, resp.NbPages, nil
+}
+
 func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity.Projects, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "project" {
 		return nil, 0, 0, nil
