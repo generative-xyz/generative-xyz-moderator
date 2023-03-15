@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -39,7 +40,7 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 	}
 	for _, artist := range artistsResp {
 		action := &response.ActionDaoArtist{}
-		action.CanVote = user.IsVerified &&
+		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != artist.CreatedBy &&
 			!artist.Expired()
 		if action.CanVote {
@@ -62,13 +63,27 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 	return result, nil
 }
 
-func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string) (string, error) {
+func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *request.CreateDaoArtistRequest) (string, error) {
 	user := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": userWallet}, user); err != nil {
 		return "", err
 	}
-	if user.IsVerified {
-		return "", errors.New("haven't permission")
+	if user.ProfileSocial.TwitterVerified {
+		return "", errors.New("Haven't permission")
+	}
+	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
+		user.ProfileSocial.Twitter = req.Twitter
+		_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "profile_social", Value: user.ProfileSocial},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update twitter artist failed", zap.Error(err))
+			return "", err
+		}
 	}
 	daoArtist := &entity.DaoArtist{
 		CreatedBy: user.WalletAddress,
@@ -133,6 +148,24 @@ func (s *Usecase) GetDAOArtist(ctx context.Context, id, userWallet string) (*res
 	return daoArtist, nil
 }
 
+func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string) (*entity.DaoArtist, error) {
+	daoArtist := &entity.DaoArtist{}
+	if err := s.Repo.FindOneBy(ctx, daoArtist.TableName(), bson.M{"created_by": walletAddress}, daoArtist); err != nil {
+		return nil, err
+	}
+	return daoArtist, nil
+}
+
+func (s *Usecase) CanCreateProposal(ctx context.Context, walletAddress string) bool {
+	_, err := s.GetDAOArtistByWallet(ctx, walletAddress)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {
 	createdBy := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": userWallet}, createdBy); err != nil {
@@ -146,8 +179,11 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if err := s.Repo.FindOneBy(ctx, daoArtist.TableName(), bson.M{"_id": objectId}, daoArtist); err != nil {
 		return err
 	}
-	if !createdBy.IsVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
-		return errors.New("haven't permission")
+	if daoArtist.Expired() {
+		return errors.New("Proposal was expired")
+	}
+	if !createdBy.ProfileSocial.TwitterVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
+		return errors.New("Haven't permission")
 	}
 	daoArtistVoted := &entity.DaoArtistVoted{
 		CreatedBy:   userWallet,
@@ -161,42 +197,60 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		return err
 	}
 
-	if req.Status == dao_artist_voted.Verify {
-		go func() {
-			voted := []*entity.DaoArtistVoted{}
-			if err := s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted); err == nil {
-				count := s.Config.CountVoteDAO
-				if count <= 0 {
-					count = 2
-				}
-				if len(voted) >= count && daoArtist.Status != dao_artist.Verified {
-					user := &entity.Users{}
-					if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
-						logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
-						return
-					}
-					now := time.Now()
-					_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
-						bson.D{
-							{Key: "$set", Value: bson.D{
-								{Key: "is_verified", Value: true},
-								{Key: "verified_at", Value: &now},
-							}},
-						})
-					if err != nil {
-						logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
-						return
-					}
-					_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
-						bson.D{
-							{Key: "$set", Value: bson.D{{Key: "status", Value: dao_artist.Verified}}},
-						})
-					if err != nil {
-						logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
-					}
-				}
-			}
-		}()
+	if req.Status != dao_artist_voted.Verify {
+		return nil
 	}
+
+	_ = s.processVerifyArtist(ctx, daoArtist)
+
+	return nil
+}
+func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.DaoArtist) error {
+	voted := []*entity.DaoArtistVoted{}
+	err := s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
+	if err != nil {
+		return err
+	}
+	count := s.Config.CountVoteDAO
+	if count <= 0 {
+		count = 2
+	}
+	if len(voted) < count {
+		return nil
+	}
+	user := &entity.Users{}
+	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
+		logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
+		return err
+	}
+	if user.ProfileSocial.TwitterVerified {
+		return nil
+	}
+	user.ProfileSocial.TwitterVerified = true
+	_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "profile_social", Value: user.ProfileSocial},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+	if err != nil {
+		logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
+		return err
+	}
+
+	if daoArtist.Status != dao_artist.Verified {
+		_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "status", Value: dao_artist.Verified},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
+		}
+	}
+
 	return nil
 }

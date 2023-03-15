@@ -226,8 +226,6 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
-      isReviewing:
-        type: boolean
       isSynced:
         type: boolean
       license:
@@ -702,10 +700,19 @@ definitions:
     - key
     - value
     type: object
+  request.CreateDaoArtistRequest:
+    properties:
+      twitter:
+        type: string
+    type: object
   request.CreateDaoProjectRequest:
     properties:
-      project_id:
-        type: string
+      project_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - project_ids
     type: object
   request.CreateEthWalletAddressReq:
     properties:
@@ -1265,6 +1272,8 @@ definitions:
         type: string
       bio:
         type: string
+      canCreateProposal:
+        type: boolean
       createdAt:
         type: string
       displayName:
@@ -1303,12 +1312,16 @@ definitions:
     properties:
       created_at:
         type: string
+      creator_by:
+        type: string
       creator_name:
         type: string
       deleted_at:
         type: string
       id:
         type: string
+      is_hidden:
+        type: boolean
       max_supply:
         type: integer
       minting_info:
@@ -1378,6 +1391,8 @@ definitions:
       isFullChain:
         type: boolean
       isHidden:
+        type: boolean
+      isReviewing:
         type: boolean
       itemDesc:
         type: string
@@ -1553,6 +1568,12 @@ definitions:
       uuid:
         type: string
       wallet_address:
+        type: string
+      wallet_address_btc:
+        type: string
+      wallet_address_btc_taproot:
+        type: string
+      wallet_address_payment:
         type: string
     type: object
   response.VerifyResponse:
@@ -2175,6 +2196,13 @@ paths:
       consumes:
       - application/json
       description: Create DAO Artist
+      parameters:
+      - description: Create Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoArtistRequest'
       produces:
       - application/json
       responses:
@@ -2334,6 +2362,36 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
+      tags:
+      - DAO Project
+  /dao-project/me/projects-hidden:
+    get:
+      consumes:
+      - application/json
+      description: List Projects Is Hidden
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List Projects Is Hidden
       tags:
       - DAO Project
   /dao/proposals:
@@ -3381,12 +3439,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: get current user's projects
+      description: Get current user's projects
       parameters:
-      - description: Filter project via contract address
-        in: query
-        name: contractAddress
-        type: string
       - description: limit
         in: query
         name: limit
@@ -3402,10 +3456,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.JsonResponse'
+            items:
+              $ref: '#/definitions/response.ProjectResp'
+            type: array
       security:
-      - Authorization: []
-      summary: get current user's projects
+      - ApiKeyAuth: []
+      summary: Get current user's projects
       tags:
       - Profile
   /profile/wallet/{walletAddress}:

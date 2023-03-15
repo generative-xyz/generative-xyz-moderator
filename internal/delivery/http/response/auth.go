@@ -28,6 +28,7 @@ type ProfileResponse struct {
 	Avatar                  string        `json:"avatar"`
 	CreatedAt               *time.Time    `json:"createdAt"`
 	ProfileSocial           ProfileSocial `json:"profileSocial"`
+	CanCreateProposal       bool          `json:"canCreateProposal"`
 }
 
 type ArtistResponse struct {
