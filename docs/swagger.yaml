@@ -1345,6 +1345,8 @@ definitions:
         type: string
       bio:
         type: string
+      canCreateProposal:
+        type: boolean
       createdAt:
         type: string
       displayName:

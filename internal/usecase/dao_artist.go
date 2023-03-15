@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -145,6 +146,24 @@ func (s *Usecase) GetDAOArtist(ctx context.Context, id, userWallet string) (*res
 		}
 	}
 	return daoArtist, nil
+}
+
+func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string) (*entity.DaoArtist, error) {
+	daoArtist := &entity.DaoArtist{}
+	if err := s.Repo.FindOneBy(ctx, daoArtist.TableName(), bson.M{"created_by": walletAddress}, daoArtist); err != nil {
+		return nil, err
+	}
+	return daoArtist, nil
+}
+
+func (s *Usecase) CanCreateProposal(ctx context.Context, walletAddress string) bool {
+	_, err := s.GetDAOArtistByWallet(ctx, walletAddress)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {
