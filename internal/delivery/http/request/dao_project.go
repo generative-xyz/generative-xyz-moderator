@@ -19,3 +19,8 @@ type CreateDaoProjectRequest struct {
 type VoteDaoProjectRequest struct {
 	Status dao_project_voted.Status `json:"status"`
 }
+
+type ListProjectHiddenRequest struct {
+	*entity.Pagination
+	Keyword *string `query:"keyword"`
+}

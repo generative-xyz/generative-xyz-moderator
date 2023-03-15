@@ -276,6 +276,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
 	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
 	daoProject.HandleFunc("/{id}", h.voteDaoProject).Methods("PUT")
+	daoProject.HandleFunc("/me/projects-hidden", h.listYourProjectsIsHidden).Methods("GET")
+
 	// DAO Artist
 	daoArtist := api.PathPrefix("/dao-artist").Subrouter()
 	daoArtist.Use(h.MiddleWare.AuthorizeFunc)

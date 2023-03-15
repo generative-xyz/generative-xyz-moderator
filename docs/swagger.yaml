@@ -1301,12 +1301,16 @@ definitions:
     properties:
       created_at:
         type: string
+      creator_by:
+        type: string
       creator_name:
         type: string
       deleted_at:
         type: string
       id:
         type: string
+      is_hidden:
+        type: boolean
       max_supply:
         type: integer
       minting_info:
@@ -2308,6 +2312,36 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
+      tags:
+      - DAO Project
+  /dao-project/me/projects-hidden:
+    get:
+      consumes:
+      - application/json
+      description: List Projects Is Hidden
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List Projects Is Hidden
       tags:
       - DAO Project
   /dao/proposals:
