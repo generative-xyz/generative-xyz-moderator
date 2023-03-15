@@ -98,6 +98,7 @@ type TokenUri struct {
 	NftTokenId                     string        `bson:"nftTokenId"`
 	InscribedBy                    string        `bson:"inscribedBy"`
 	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
+	CreatedMintActivity            bool          `bson:"created_mint_activity"`
 }
 
 type AggregateTokenUriTraits struct {

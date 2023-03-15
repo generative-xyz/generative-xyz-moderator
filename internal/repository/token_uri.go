@@ -897,3 +897,34 @@ func (r Repository) CountTokenUriByProjectId(projectId string) (*int64, error) {
 
 	return &count, nil
 }
+
+func (r Repository) GetNotCreatedActivitiesToken(page int64, limit int64) (*entity.Pagination, error) {
+	confs := []entity.TokenUri{}
+	resp := &entity.Pagination{}
+	f := bson.M{"created_mint_activity": bson.M{"$ne": true}}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	p, err := r.Paginate(entity.TokenUri{}.TableName(), page, limit, f, r.SelectedTokenFieldsNew(), s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
+}
+
+func (r Repository) UpdateTokenCreatedMintActivity(tokenID string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "token_id", Value: tokenID}}
+	update := bson.M{
+		"$set": bson.M{"created_mint_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.TokenUri{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
