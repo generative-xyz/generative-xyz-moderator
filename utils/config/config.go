@@ -72,6 +72,7 @@ type Config struct {
 	//BTC DEX
 	DexBTCWalletAddress string
 	DexBTCBuyService    string
+	DexBTCMasterETH     string
 }
 
 type Ordinals struct {
@@ -393,6 +394,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		CronTabList:           regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
 		DexBTCWalletAddress:   os.Getenv("DEX_BTC_WALLET_ADDRESS"),
 		DexBTCBuyService:      os.Getenv("DEX_BTC_BUY_SERVICE"),
+		DexBTCMasterETH:       os.Getenv("DEX_BTC_MASTER_ETH"),
 	}
 
 	return conf, nil
