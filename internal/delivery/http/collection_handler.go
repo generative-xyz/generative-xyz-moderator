@@ -1,12 +1,14 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"sync"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -47,12 +49,23 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, result.Result), "")
 	//
-
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
 		h.Logger.Error("BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
+	}
+
+	bytes, _ := json.Marshal(*baseF)
+	key := helpers.GenerateMd5String(string(bytes))
+	cached, err := h.Usecase.Cache.GetData(key)
+	if err == nil && cached != nil {
+		resp := response.PaginationResponse{}
+		err = json.Unmarshal([]byte(*cached), &resp)
+		if err == nil {
+			h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+			return
+		}
 	}
 
 	f := structure.FilterProjects{}
@@ -61,6 +74,7 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 	f.IsHidden = &hidden
 	f.Sort = -1
 	f.SortBy = "stats.trending_score"
+
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
@@ -172,12 +186,13 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 		}(mainW, project)
 	}
 	mainW.Wait()
-
 	data := []*response.ProjectListing{}
 	for _, k := range mapProject {
 		if d, ok := listings[k]; ok {
 			data = append(data, d)
 		}
 	}
+
+	h.Usecase.Cache.SetDataWithExpireTime(key, h.PaginationResp(uProjects, data), 15*60)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, data), "")
 }
