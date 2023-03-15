@@ -89,10 +89,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = true
-	if req.IsHidden != nil {
-		pe.IsHidden = *req.IsHidden
-	}
+	pe.IsHidden = false
+	// if req.IsHidden != nil {
+	// 	pe.IsHidden = *req.IsHidden
+	// }
 	pe.Status = true
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
@@ -2016,7 +2016,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 	if totalImages == 0 && totalProcessingImages == 0 {
-		err  = errors.New("Project doesn's have any files")
+		err = errors.New("Project doesn's have any files")
 		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
@@ -2101,7 +2101,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
-		spew.Dump(token.TokenID, token.ParsedAttributes, )
+		spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
 			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
