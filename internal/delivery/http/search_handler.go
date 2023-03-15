@@ -8,7 +8,6 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
-	"rederinghub.io/utils/btc"
 )
 
 // UserCredits godoc
@@ -119,7 +118,8 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 					}
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
-					amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+					// amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
