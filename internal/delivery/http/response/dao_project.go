@@ -18,8 +18,8 @@ type DaoProject struct {
 	Status          dao_project.Status    `json:"status"`
 	DaoProjectVoted []*DaoProjectVoted    `json:"dao_project_voted"`
 	Action          *ActionDaoProject     `json:"action"`
-	TotalAgainst    int64                 `json:"total_against"`
-	TotalVote       int64                 `json:"total_vote"`
+	TotalAgainst    *int64                `json:"total_against"`
+	TotalVote       *int64                `json:"total_vote"`
 }
 
 func (s DaoProject) Expired() bool {
