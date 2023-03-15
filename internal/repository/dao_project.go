@@ -33,21 +33,13 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 			"as":           "user",
 		},
 	}
-	lookupDaoProjectVoted := bson.M{
-		"$lookup": bson.M{
-			"from":         "dao_project_voted",
-			"localField":   "_id",
-			"foreignField": "dao_project_id",
-			"as":           "dao_project_voted",
-		},
-	}
 	unwindProject := bson.M{"$unwind": "$project"}
 	unwindUser := bson.M{"$unwind": "$user"}
-	addProjectName := bson.M{
-		"$addFields": bson.M{"project_name": "$project.name"},
-	}
-	addUserName := bson.M{
-		"$addFields": bson.M{"user_name": "$user.display_name"},
+	addFields := bson.M{
+		"$addFields": bson.M{
+			"project_name": "$project.name",
+			"user_name":    "$user.display_name",
+		},
 	}
 	if len(request.Sorts) > 0 {
 		sort := bson.D{}
@@ -93,6 +85,53 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 			}},
 		}
 	}
+	lookupDaoProjectVoted := bson.M{
+		"$lookup": bson.M{
+			"from":         "dao_project_voted",
+			"localField":   "_id",
+			"foreignField": "dao_project_id",
+			"as":           "dao_project_voted",
+		},
+	}
+	addFieldsCount := bson.M{
+		"$addFields": bson.M{
+			"voted": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project_voted",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", 1},
+					},
+				},
+			},
+			"against": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project_voted",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", 0},
+					},
+				},
+			},
+		},
+	}
+	projectAgg := bson.M{
+		"$project": bson.M{
+			"_id":               1,
+			"uuid":              1,
+			"created_at":        1,
+			"seq_id":            1,
+			"created_by":        1,
+			"user":              1,
+			"project_id":        1,
+			"project":           1,
+			"expired_at":        1,
+			"status":            1,
+			"dao_project_voted": 1,
+			"user_name":         1,
+			"project_name":      1,
+			"total_vote":        bson.M{"$size": "$voted"},
+			"total_against":     bson.M{"$size": "$against"},
+		},
+	}
 	projects := []*entity.DaoProject{}
 	total, err := s.Aggregation(ctx,
 		entity.DaoProject{}.TableName(),
@@ -104,11 +143,12 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 		unwindProject,
 		lookupUser,
 		unwindUser,
-		addProjectName,
-		addUserName,
+		addFields,
 		matchSearch,
 		lookupDaoProjectVoted,
-		sorts)
+		addFieldsCount,
+		sorts,
+		projectAgg)
 	if err != nil {
 		return nil, 0, err
 	}
