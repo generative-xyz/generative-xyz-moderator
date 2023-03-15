@@ -18,8 +18,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
-	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
 )
 
@@ -486,16 +486,17 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			}
 			if listingOrder != nil {
 
-				privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
-				if err != nil {
-					log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
-					continue
-				}
-				_, _, address, err := btc.GenerateAddressSegwit(privKeyDecrypt)
-				if err != nil {
-					log.Println("watchPendingDexBTCBuyETH GenerateAddressSegwit", order.ID, err)
-					continue
-				}
+				// privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
+				// if err != nil {
+				// 	log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
+				// 	continue
+				// }
+				// _, _, address, err := btc.GenerateAddressSegwit(privKeyDecrypt)
+				// if err != nil {
+				// 	log.Println("watchPendingDexBTCBuyETH GenerateAddressSegwit", order.ID, err)
+				// 	continue
+				// }
+				address := u.Config.DexBTCWalletAddress
 
 				walletInfo, err := btc.GetBalanceFromQuickNode(address, quickNodeAPI)
 				if err != nil {
@@ -517,13 +518,13 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				amountBTCFee := uint64(0)
 				amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
-				respondData, err := btc.CreatePSBTToBuyInscription(listingOrder.RawPSBT, privKeyDecrypt, address, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
+				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 					continue
 				}
-				if respondData.SplitTxHex != "" {
-					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxHex, quickNodeAPI)
+				if respondData.SplitTxRaw != "" {
+					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxRaw, quickNodeAPI)
 					if err != nil {
 						dataBytes, _ := json.Marshal(respondData)
 						log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode SplitTxHex", order.ID, string(dataBytes), err)
@@ -666,22 +667,22 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 	return nil
 }
 
-func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, string, string, error) {
+func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, string, string, bool, error) {
 	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
 	if err != nil {
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
 	}
 	if order.Cancelled || order.Matched || order.InvalidMatch {
-		return "", "", "", 0, "", "", errors.New("order no longer valid")
+		return "", "", "", 0, "", "", false, errors.New("order no longer valid")
 	}
 
 	if !order.Verified {
-		return "", "", "", 0, "", "", errors.New("order not ready yet")
+		return "", "", "", 0, "", "", false, errors.New("order not ready yet")
 	}
 	psbt, err := btc.ParsePSBTFromBase64(order.RawPSBT)
 	if err != nil {
 		log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
 	}
 
 	amountBTCRequired := order.Amount + 1000
@@ -694,26 +695,40 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	amountETHFee, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCFee)/1e8), btcRate, ethRate)
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
 	}
 	amountETHOriginal, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCNoFee)/1e8), btcRate, ethRate)
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
 	}
 
 	amountBTCRequired += amountBTCFee
 	amountETH, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
 	}
 
 	ethClient := eth.NewClient(nil)
 	privKey, _, tempETHAddress, err := ethClient.GenerateAddress()
 	if err != nil {
 		u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
-		return "", "", "", 0, "", "", err
+		return "", "", "", 0, "", "", false, err
+	}
+	hasRoyalty := false
+	tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
+	if err == nil {
+		projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
+			ContractAddress: tokenUri.ContractAddress,
+			ProjectID:       tokenUri.ProjectID,
+		})
+		if err == nil {
+			if projectDetail.Royalty > 0 {
+				hasRoyalty = true
+			}
+		}
+
 	}
 
 	var newOrder entity.DexBTCBuyWithETH
@@ -731,10 +746,10 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	expiredAt := newOrder.ExpiredAt.Unix()
 	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
 	if err != nil {
-		return "", "", "", expiredAt, "", "", err
+		return "", "", "", expiredAt, "", "", false, err
 	}
 
-	return newOrder.UUID, tempETHAddress, amountETH, expiredAt, amountETHOriginal, amountETHFee, nil
+	return newOrder.UUID, tempETHAddress, amountETH, expiredAt, amountETHOriginal, amountETHFee, hasRoyalty, nil
 }
 
 // func (u Usecase) UpdateBuyETHOrderTx(buyOrderID string, userID string, txhash string) error {
