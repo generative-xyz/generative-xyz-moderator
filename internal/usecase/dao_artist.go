@@ -79,6 +79,7 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 			bson.D{
 				{Key: "$set", Value: bson.D{
 					{Key: "profile_social", Value: user.ProfileSocial},
+					{Key: "updated_at", Value: time.Now()},
 				}},
 			})
 		if err != nil {
@@ -204,6 +205,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 				{Key: "$set", Value: bson.D{
 					{Key: "is_verified", Value: true},
 					{Key: "verified_at", Value: &now},
+					{Key: "updated_at", Value: time.Now()},
 				}},
 			})
 		if err != nil {
@@ -212,7 +214,10 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		}
 		_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
 			bson.D{
-				{Key: "$set", Value: bson.D{{Key: "status", Value: dao_artist.Verified}}},
+				{Key: "$set", Value: bson.D{
+					{Key: "status", Value: dao_artist.Verified},
+					{Key: "updated_at", Value: time.Now()},
+				}},
 			})
 		if err != nil {
 			logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
