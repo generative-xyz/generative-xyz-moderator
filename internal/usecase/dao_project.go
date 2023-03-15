@@ -174,7 +174,12 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	}
 	go func() {
 		voted := []*entity.DaoProjectVoted{}
-		err = s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_project_id": daoProject.ID, "status": dao_project_voted.Voted}, &voted)
+		err = s.Repo.Find(ctx,
+			entity.DaoProjectVoted{}.TableName(),
+			bson.M{
+				"dao_project_id": daoProject.ID,
+				"status":         dao_project_voted.Voted,
+			}, &voted)
 		if err != nil {
 			return
 		}
