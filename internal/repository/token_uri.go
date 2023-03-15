@@ -724,6 +724,7 @@ func (r Repository) SelectedTokenFieldsNew() bson.D {
 		{"minter_address", 1},
 		{"inscription_index", 1},
 		{"order_inscription_index", 1},
+		{"created_at", 1},
 	}
 	return f
 }
