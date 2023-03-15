@@ -639,6 +639,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/collections": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/configs": {
             "get": {
                 "description": "Get configs",
@@ -5223,6 +5260,9 @@ const docTemplate = `{
                 "isHidden": {
                     "type": "boolean"
                 },
+                "isReviewing": {
+                    "type": "boolean"
+                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -5443,6 +5483,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "createdByCollectionInscription": {
+                    "type": "boolean"
+                },
+                "createdMintActivity": {
                     "type": "boolean"
                 },
                 "created_at": {
@@ -6713,6 +6756,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "priceBTC": {
+                    "type": "string"
+                },
+                "priceETH": {
                     "type": "string"
                 },
                 "priority": {
