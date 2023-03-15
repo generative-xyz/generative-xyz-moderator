@@ -314,7 +314,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 		}
 		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
 	}
-	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
+	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, hasRoyalty, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
 	if err != nil {
 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -328,6 +328,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 		ExpiredAt:       expiredAt,
 		ETHAmountOrigin: originalETH,
 		ETHFee:          feeETH,
+		HasRoyalty:      hasRoyalty,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
