@@ -364,3 +364,66 @@ func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCB
 	}
 	return resp, nil
 }
+
+func (r Repository) GetNotCreatedActivitiesListing(page int64, limit int64) (*entity.Pagination, error) {
+	confs := []entity.DexBTCListing{}
+	resp := &entity.Pagination{}
+	f := bson.M{"$or": bson.A{
+		bson.M{"verified": true, "careated_verified_activity": bson.M{"$ne": true}},
+		bson.M{"cancelled": true, "careated_cancelled_activity": bson.M{"$ne": true}},
+		bson.M{"matched": true, "careated_matched_activity": bson.M{"$ne": true}},
+	}}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	p, err := r.Paginate(entity.DexBTCListing{}.TableName(), page, limit, f, bson.D{}, s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
+}
+
+func (r Repository) UpdateListingCreatedVerifiedActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_verified_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateListingCreatedCancelledActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_cancelled_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateListingCreatedMatchedActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_matched_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
