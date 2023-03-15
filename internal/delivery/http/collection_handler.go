@@ -7,6 +7,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -61,7 +62,6 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 	f.IsHidden = &hidden
 	f.Sort = -1
 	f.SortBy = "stats.trending_score"
-
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
@@ -71,11 +71,13 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
-	listings := []*response.ProjectListing{}
+	listings := make(map[string]*response.ProjectListing)
 	mainW := &sync.WaitGroup{}
 
 	address := []string{}
+	mapProject := []string{}
 	for _, project := range projects {
+		mapProject = append(mapProject, project.ID.Hex())
 		if project.CreatorAddrr == "" {
 			continue
 		}
@@ -117,14 +119,30 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 			}
 
 			mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
-			var result response.ProjectMarketplaceData
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.ProjectGetMintVolume", err.Error(), err)
+				return
+			}
 
+			tokens, err := h.Usecase.Repo.GetAllTokensByProjectID(projectID)
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.GetAllTokensByProjectID", err.Error(), err)
+				return
+			}
+
+			checkers := []string{}
+			for _, t := range tokens {
+				checkers = append(checkers, t.OwnerAddr)
+			}
+
+			var result response.ProjectMarketplaceData
 			result.FloorPrice = floorPrice
 			result.Listed = currentListing
 			result.TotalVolume = volume + mintVolume
 			result.MintVolume = mintVolume
 
 			data := &response.ProjectListing{
+				NumberOwners: int64(len(utils.StringUnique(checkers))),
 				Project: &response.ProjectInfo{
 					Name:            p.Name,
 					TokenId:         projectID,
@@ -151,11 +169,16 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 					Avatar:                  user.Avatar,
 				}
 			}
-
-			listings = append(listings, data)
+			listings[p.ID.Hex()] = data
 		}(mainW, project)
 	}
-
 	mainW.Wait()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, listings), "")
+
+	data := []*response.ProjectListing{}
+	for _, k := range mapProject {
+		if d, ok := listings[k]; ok {
+			data = append(data, d)
+		}
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, data), "")
 }
