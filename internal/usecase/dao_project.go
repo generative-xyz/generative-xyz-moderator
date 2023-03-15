@@ -43,12 +43,15 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != project.CreatedBy &&
 			!project.Expired()
-		if action.CanVote {
-			for _, voted := range project.DaoProjectVoted {
-				if voted.CreatedBy == user.WalletAddress {
-					action.CanVote = false
-					break
-				}
+		for _, voted := range project.DaoProjectVoted {
+			if voted.CreatedBy == user.WalletAddress {
+				action.CanVote = false
+			}
+			if voted.Status == dao_project_voted.Voted {
+				project.TotalVote += 1
+			}
+			if voted.Status == dao_project_voted.Against {
+				project.TotalAgainst += 1
 			}
 		}
 		project.SetFields(

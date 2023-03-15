@@ -43,12 +43,15 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != artist.CreatedBy &&
 			!artist.Expired()
-		if action.CanVote {
-			for _, voted := range artist.DaoArtistVoted {
-				if voted.CreatedBy == user.WalletAddress {
-					action.CanVote = false
-					break
-				}
+		for _, voted := range artist.DaoArtistVoted {
+			if voted.CreatedBy == user.WalletAddress {
+				action.CanVote = false
+			}
+			if voted.Status == dao_artist_voted.Report {
+				artist.TotalReport += 1
+			}
+			if voted.Status == dao_artist_voted.Verify {
+				artist.TotalVerify += 1
 			}
 		}
 		artist.SetFields(
