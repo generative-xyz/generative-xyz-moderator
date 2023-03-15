@@ -544,7 +544,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode TxHex", order.ID, string(dataBytes), err)
 					continue
 				}
-				order.BuyTx = respondData.TxHex
+				order.BuyTx = respondData.TxID
 				order.Status = entity.StatusDEXBuy_Buying
 				_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
 				if err != nil {
