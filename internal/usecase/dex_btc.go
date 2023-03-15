@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -275,26 +276,94 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			}
 
 			if spentTx != "" {
-				currentTime := time.Now()
-				order.MatchedTx = spentTx
-				order.MatchAt = &currentTime
-				order.Matched = true
-
-				txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
+				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
 				}
-				output := txDetail.Result.Vout[0]
-				order.Buyer = output.ScriptPubKey.Address
 
-				_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
-				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+				isValidMatch := false
+				if spentTxDetail != nil {
+					psbtData, _ := btc.ParsePSBTFromBase64(order.RawPSBT)
+					matchIns := 0
+					matchOuts := 0
+					for _, vin := range spentTxDetail.Result.Vin {
+						input := fmt.Sprintf("%v:%v", vin.Txid, vin.Vout)
+						for _, oin := range order.Inputs {
+							if input == oin {
+								matchIns += 1
+								break
+							}
+						}
+					}
+					totalOutvalue := uint64(0)
+					for _, vout := range spentTxDetail.Result.Vout {
+						voutAddress := vout.ScriptPubKey.Address
+						totalOutvalue += uint64(vout.Value * 1e8)
+						for _, out := range psbtData.UnsignedTx.TxOut {
+							pkAddress, _ := btc.GetAddressFromPKScript(out.PkScript)
+							if pkAddress == voutAddress {
+								matchOuts += 1
+								break
+							}
+						}
+					}
+					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts == len(psbtData.UnsignedTx.TxOut) {
+						isValidMatch = true
+					}
+				} else {
 					continue
 				}
-				// Discord Notify NEW SALE
-				buyerAddress := order.Buyer
-				go u.NotifyNewSale(order, buyerAddress)
+
+				if isValidMatch {
+					currentTime := time.Now()
+					order.MatchedTx = spentTx
+					order.MatchAt = &currentTime
+					order.Matched = true
+					txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
+					}
+					output := txDetail.Result.Vout[0]
+					order.Buyer = output.ScriptPubKey.Address
+
+					_, err = u.Repo.UpdateDexBTCListingOrderMatchTx(&order)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
+						continue
+					}
+					// Discord Notify NEW SALE
+					buyerAddress := order.Buyer
+					go u.NotifyNewSale(order, buyerAddress)
+				} else {
+					log.Printf("JobWatchPendingDexBTCListing not valid match err %v\n", err)
+					txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
+					}
+					output := txDetail.Result.Vout[0]
+					if output.ScriptPubKey.Address == order.SellerAddress {
+						currentTime := time.Now()
+						order.CancelAt = &currentTime
+						order.CancelTx = spentTx
+						order.Cancelled = true
+						_, err = u.Repo.UpdateDexBTCListingOrderCancelTx(&order)
+						if err != nil {
+							log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
+							continue
+						}
+					} else {
+						currentTime := time.Now()
+						order.CancelAt = &currentTime
+						order.Cancelled = true
+						order.InvalidMatch = true
+						order.InvalidMatchTx = spentTx
+						_, err = u.Repo.UpdateDexBTCListingOrderInvalidMatch(&order)
+						if err != nil {
+							log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderCancelTx err %v\n", err)
+							continue
+						}
+					}
+				}
 			}
 		} else {
 			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
@@ -438,15 +507,33 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					log.Println("watchPendingDexBTCBuyETH ConvertToUTXOType", order.ID, err)
 					continue
 				}
-				rawtx, _, err := btc.CreatePSBTToBuyInscription(listingOrder.RawPSBT, privKeyDecrypt, address, order.ReceiveAddress, listingOrder.Amount, utxos, 15)
+				psbt, err := btc.ParsePSBTFromBase64(listingOrder.RawPSBT)
+				if err != nil {
+					log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
+					continue
+				}
+
+				feeRate := order.FeeRate
+				amountBTCFee := uint64(0)
+				amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+
+				respondData, err := btc.CreatePSBTToBuyInscription(listingOrder.RawPSBT, privKeyDecrypt, address, order.ReceiveAddress, listingOrder.Amount, utxos, 15, amountBTCFee)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 					continue
 				}
-
-				_, err = btc.SendRawTxfromQuickNode(rawtx, quickNodeAPI)
+				if respondData.SplitTxHex != "" {
+					_, err = btc.SendRawTxfromQuickNode(respondData.SplitTxHex, quickNodeAPI)
+					if err != nil {
+						dataBytes, _ := json.Marshal(respondData)
+						log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode SplitTxHex", order.ID, string(dataBytes), err)
+						continue
+					}
+				}
+				_, err = btc.SendRawTxfromQuickNode(respondData.TxHex, quickNodeAPI)
 				if err != nil {
-					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+					dataBytes, _ := json.Marshal(respondData)
+					log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode TxHex", order.ID, string(dataBytes), err)
 					continue
 				}
 			} else {
@@ -584,16 +671,18 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	if err != nil {
 		return "", "", "", 0, err
 	}
-	amountBTCRequired := order.Amount + 1000
 
-	switch len(order.Inputs) {
-	case 1:
-		amountBTCRequired += btc.EstimateTxFee(3, 2, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
-	case 2:
-		amountBTCRequired += btc.EstimateTxFee(4, 3, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
-	case 3:
-		amountBTCRequired += btc.EstimateTxFee(5, 4, uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+	psbt, err := btc.ParsePSBTFromBase64(order.RawPSBT)
+	if err != nil {
+		log.Println("watchPendingDexBTCBuyETH ParsePSBTFromBase64", order.ID, err)
+		return "", "", "", 0, err
 	}
+	amountBTCFee := uint64(0)
+	amountBTCFee = btc.EstimateTxFee(uint(len(order.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+
+	amountBTCRequired := order.Amount + 1000
+	amountBTCRequired += amountBTCFee
+	amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
 
 	amountETH, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8))
 	if err != nil {
