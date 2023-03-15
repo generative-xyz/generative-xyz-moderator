@@ -217,3 +217,74 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	}()
 	return nil
 }
+
+func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet string, req *request.ListProjectHiddenRequest) (*entity.Pagination, error) {
+	result := &entity.Pagination{
+		PageSize: req.PageSize,
+		Result:   make([]*response.DaoProject, 0),
+	}
+	limit := int64(100)
+	filters := make(bson.M)
+	sorts := bson.M{
+		"$sort": bson.D{{Key: "_id", Value: -1}},
+	}
+	matchFilters := bson.M{"$match": filters}
+	lookupDaoProject := bson.M{
+		"$lookup": bson.M{
+			"from":         "dao_project",
+			"localField":   "_id",
+			"foreignField": "project_id",
+			"as":           "dao_project",
+		},
+	}
+	if req.PageSize > 0 && req.PageSize <= limit {
+		limit = req.PageSize
+	}
+	if req.Keyword != nil {
+		filters["$or"] = bson.A{
+			bson.M{"name": primitive.Regex{
+				Pattern: *req.Keyword,
+				Options: "i",
+			}},
+		}
+	}
+	filters["creatorAddress"] = userWallet
+	filters["isHidden"] = true
+	if req.Cursor != "" {
+		if id, err := primitive.ObjectIDFromHex(req.Cursor); err == nil {
+			filters["_id"] = bson.M{"$lt": id}
+		}
+	}
+	addCountDaoProject := bson.M{
+		"$addFields": bson.M{"count_dao_project": bson.M{"$size": "$dao_project"}},
+	}
+	matchCount := bson.M{
+		"$match": bson.M{
+			"count_dao_project": bson.M{"$lt": 1},
+		},
+	}
+	projects := []*entity.Projects{}
+	total, err := s.Repo.Aggregation(ctx,
+		entity.Projects{}.TableName(),
+		0,
+		limit,
+		&projects,
+		matchFilters,
+		lookupDaoProject,
+		addCountDaoProject,
+		matchCount,
+		sorts)
+	if err != nil {
+		return nil, err
+	}
+	projectsResp := []*response.ProjectForDaoProject{}
+	if err := copierInternal.Copy(&projectsResp, projects); err != nil {
+		return nil, err
+	}
+	result.Result = projectsResp
+	result.Total = total
+	if len(projectsResp) > 0 {
+		result.Cursor = projectsResp[len(projectsResp)-1].ID
+	}
+	return result, nil
+}

@@ -42,13 +42,15 @@ type ActionDaoProject struct {
 }
 
 type ProjectForDaoProject struct {
-	BaseEntity  `json:",inline"`
-	TokenID     string             `json:"token_id"`
-	Name        string             `json:"name"`
-	CreatorName string             `json:"creator_name"`
-	Thumbnail   string             `json:"thumbnail"`
-	MaxSupply   int64              `json:"max_supply"`
-	MintingInfo ProjectMintingInfo `json:"minting_info"`
+	BaseEntity   `json:",inline"`
+	TokenID      string             `json:"token_id"`
+	Name         string             `json:"name"`
+	CreatorAddrr string             `json:"creator_by"`
+	CreatorName  string             `json:"creator_name"`
+	Thumbnail    string             `json:"thumbnail"`
+	MaxSupply    int64              `json:"max_supply"`
+	MintingInfo  ProjectMintingInfo `json:"minting_info"`
+	IsHidden     bool               `json:"is_hidden"`
 }
 
 type ProjectMintingInfo struct {

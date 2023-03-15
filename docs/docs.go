@@ -1044,6 +1044,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/dao-project/me/projects-hidden": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List Projects Is Hidden",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "List Projects Is Hidden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
         "/dao-project/{id}": {
             "get": {
                 "security": [
@@ -6794,6 +6842,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "creator_by": {
+                    "type": "string"
+                },
                 "creator_name": {
                     "type": "string"
                 },
@@ -6802,6 +6853,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
                 },
                 "max_supply": {
                     "type": "integer"
