@@ -131,6 +131,12 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 					Thumbnail:       project.Thumbnail,
 					ContractAddress: project.ContractAddress,
 					CreatorAddress:  project.CreatorAddrr,
+					MaxSupply:       project.MaxSupply,
+					MintingInfo: response.ProjectMintingInfo{
+						Index:        project.MintingInfo.Index,
+						IndexReverse: project.MintingInfo.IndexReverse,
+					},
+					IsMintedOut: project.MintingInfo.Index == project.MaxSupply,
 				},
 				ProjectMarketplaceData: &result,
 			}
@@ -148,7 +154,6 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 
 			listings = append(listings, data)
 		}()
-
 		mainW.Wait()
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, listings), "")
