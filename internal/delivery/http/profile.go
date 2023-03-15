@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -161,7 +160,6 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 // @Tags Profile
 // @Accept json
 // @Produce json
-// @Param is_hidden query bool false "Is Hidden"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {array} response.ProjectResp{}
@@ -191,10 +189,6 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	f.WalletAddress = &walletAddress
 	f.SortBy = "created_at"
 	f.Sort = 1
-	if r.URL.Query().Get("is_hidden") != "" {
-		hidden, _ := strconv.ParseBool(r.URL.Query().Get("is_hidden"))
-		f.IsHidden = &hidden
-	}
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
