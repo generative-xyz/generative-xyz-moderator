@@ -254,8 +254,6 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
-      isReviewing:
-        type: boolean
       isSynced:
         type: boolean
       license:
@@ -1465,6 +1463,8 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
+      isReviewing:
+        type: boolean
       itemDesc:
         type: string
       license:
@@ -1639,6 +1639,12 @@ definitions:
       uuid:
         type: string
       wallet_address:
+        type: string
+      wallet_address_btc:
+        type: string
+      wallet_address_btc_taproot:
+        type: string
+      wallet_address_payment:
         type: string
     type: object
   response.VerifyResponse:
@@ -3506,10 +3512,6 @@ paths:
       - application/json
       description: Get current user's projects
       parameters:
-      - description: Is Hidden
-        in: query
-        name: is_hidden
-        type: boolean
       - description: limit
         in: query
         name: limit

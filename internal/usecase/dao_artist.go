@@ -196,13 +196,16 @@ func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.Dao
 	if count <= 0 {
 		count = 2
 	}
-	if len(voted) < count || daoArtist.Status == dao_artist.Verified {
+	if len(voted) < count {
 		return nil
 	}
 	user := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": daoArtist.CreatedBy}, user); err != nil {
 		logger.AtLog.Logger.Error("Get artist failed", zap.Error(err))
 		return err
+	}
+	if user.ProfileSocial.TwitterVerified {
+		return nil
 	}
 	user.ProfileSocial.TwitterVerified = true
 	_, err = s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
@@ -216,16 +219,19 @@ func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.Dao
 		logger.AtLog.Logger.Error("Update artist failed", zap.Error(err))
 		return err
 	}
-	_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
-		bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "status", Value: dao_artist.Verified},
-				{Key: "updated_at", Value: time.Now()},
-			}},
-		})
-	if err != nil {
-		logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
-		return err
+
+	if daoArtist.Status != dao_artist.Verified {
+		_, err = s.Repo.UpdateByID(ctx, daoArtist.TableName(), daoArtist.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "status", Value: dao_artist.Verified},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update DAO artist failed", zap.Error(err))
+		}
 	}
+
 	return nil
 }
