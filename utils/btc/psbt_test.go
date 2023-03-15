@@ -1,9 +1,13 @@
 package btc
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
 )
 
@@ -66,4 +70,34 @@ func TestCreateTxBuy(t *testing.T) {
 	fmt.Printf("Buy tx: %v\n", resp.TxHex)
 	fmt.Printf("Buy txID: %v\n", resp.TxID)
 	fmt.Printf("tx fee: %v\n", resp.BuyTxFee)
+}
+
+func TestParsePSBTFromBase64(t *testing.T) {
+	type args struct {
+		data string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *psbt.Packet
+		wantErr bool
+	}{
+		{name: "asdasd", args: args{
+			data: "cHNidP8BAF4CAAAAAV250MCfjiwSJas0NO8cvPiGPTPSWOiWr6N7jzousaeOAAAAAAD/////AegDAAAAAAAAIlEgGxz5T+DwrsJGRufyQoJG2ewRKchw2qz6eM1pTu9I+EwAAAAAAAEBK3YkAAAAAAAAIlEgGxz5T+DwrsJGRufyQoJG2ewRKchw2qz6eM1pTu9I+EwBCEMBQa7Bm4mP/Qo36HlXPe7s88tC+LUzqF4dzIZvsnKhJ9JwjK+PCPKb3pVr5dlDBIQxh0L+PLArhb+nl3ScKJ6qRwaDAAA=",
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParsePSBTFromBase64(tt.args.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParsePSBTFromBase64() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			gotBytes, _ := json.MarshalIndent(got, "", " ")
+			log.Println("got", string(gotBytes))
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParsePSBTFromBase64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
