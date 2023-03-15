@@ -51,6 +51,9 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	if !profile.ProfileSocial.TwitterVerified {
+		resp.CanCreateProposal = h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
+	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
