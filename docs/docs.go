@@ -5877,9 +5877,15 @@ const docTemplate = `{
         },
         "request.CreateDaoProjectRequest": {
             "type": "object",
+            "required": [
+                "project_ids"
+            ],
             "properties": {
-                "project_id": {
-                    "type": "string"
+                "project_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
