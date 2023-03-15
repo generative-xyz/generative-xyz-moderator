@@ -73,6 +73,21 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 	projects := iProjects.([]entity.Projects)
 	listings := []*response.ProjectListing{}
 	mainW := &sync.WaitGroup{}
+
+	address := []string{}
+	for _, project := range projects {
+		if project.CreatorAddrr == "" {
+			continue
+		}
+		address = append(address, project.CreatorAddrr)
+	}
+
+	users, _ := h.Usecase.Repo.FindUserByAddresses(address)
+	usersMap := make(map[string]entity.Users)
+	for _, u := range users {
+		usersMap[u.WalletAddress] = u
+	}
+
 	for _, project := range projects {
 		mainW.Add(1)
 		go func() {
@@ -115,12 +130,12 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 					TokenId:         projectID,
 					Thumbnail:       project.Thumbnail,
 					ContractAddress: project.ContractAddress,
+					CreatorAddress:  project.CreatorAddrr,
 				},
 				ProjectMarketplaceData: &result,
 			}
 
-			user, err := h.Usecase.Repo.FindUserByWalletAddress(project.CreatorAddrr)
-			if err == nil {
+			if user, ok := usersMap[project.CreatorAddrr]; ok {
 				data.Owner = &response.OwnerInfo{
 					DisplayName:             user.DisplayName,
 					WalletAddress:           user.WalletAddress,
