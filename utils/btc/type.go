@@ -184,7 +184,7 @@ type QuickNodeTx struct {
 }
 
 type UTXOType struct {
-	Value      int
+	Value      uint64
 	TxHash     string
 	TxOutIndex int
 }

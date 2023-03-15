@@ -9,6 +9,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
@@ -398,6 +399,34 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	result := []response.DEXBuyEthHistory{}
+	for _, v := range list {
+		item := response.DEXBuyEthHistory{
+			CreatedAt:      v.CreatedAt.Unix(),
+			ID:             v.ID.Hex(),
+			OrderID:        v.OrderID,
+			AmountETH:      v.AmountETH,
+			UserID:         v.UserID,
+			ReceiveAddress: v.ReceiveAddress,
+			RefundAddress:  v.RefundAddress,
+			ExpiredAt:      v.ExpiredAt.Unix(),
+			BuyTx:          v.BuyTx,
+			RefundTx:       v.RefundTx,
+			FeeRate:        v.FeeRate,
+			InscriptionID:  v.InscriptionID,
+			AmountBTC:      v.AmountBTC,
+		}
+		switch v.Status {
+		case entity.StatusDEXBuy_SendingMaster, entity.StatusDEXBuy_SentMaster:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Bought]
+		case entity.StatusDEXBuy_WaitingToRefund:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Refunding]
+		default:
+			item.Status = entity.StatusDexBTCETHToText[v.Status]
+		}
+		result = append(result, item)
+	}
+
 	// address := userInfo.WalletAddressBTCTaproot
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
