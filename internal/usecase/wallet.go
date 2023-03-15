@@ -170,6 +170,10 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					if err != nil {
 						return
 					}
+					tokenURI, err := u.Repo.FindTokenByTokenID(insc)
+					if err != nil {
+						fmt.Errorf("FindTokenByTokenID error", err)
+					}
 					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 					if err != nil {
 						return
@@ -179,6 +183,9 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						Number:        data.Number,
 						ContentType:   data.ContentType,
 						Offset:        offset,
+					}
+					if tokenURI != nil {
+						inscWalletInfo.TokenNumber = tokenURI.OrderInscriptionIndex
 					}
 					inscWalletByOutput := structure.WalletInscriptionByOutput{
 						InscriptionID: data.InscriptionID,
