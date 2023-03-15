@@ -65,6 +65,26 @@ func (r Repository) UpdateDexBTCListingOrderCancelTx(model *entity.DexBTCListing
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCListingOrderInvalidMatch(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"invalid_match":    model.InvalidMatch,
+			"invalid_match_tx": model.InvalidMatchTx,
+			"cancelled":        model.Cancelled,
+			"cancel_at":        model.CancelAt,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 

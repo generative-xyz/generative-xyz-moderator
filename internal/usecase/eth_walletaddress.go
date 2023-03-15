@@ -434,7 +434,7 @@ func (u Usecase) MintLogicETH(ethEntity *entity.ETHWalletAddress) (*entity.ETHWa
 	return ethEntity, nil
 }
 
-//Mint flow
+// Mint flow
 func (u Usecase) WaitingForETHBalancing() ([]entity.ETHWalletAddress, error) {
 
 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
