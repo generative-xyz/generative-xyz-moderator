@@ -313,12 +313,14 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
+	h.Usecase.JobMint_RefundBtc()
+
 	// h.Usecase.ResetEvenManager()
 
 	// meth := reflect.ValueOf(h.Usecase).MethodByName("JobMKP_CheckTxSendNftToBuyer")
 	// meth.Call(nil)
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 	// err := h.Usecase.JobMKP_CheckTxSendNftToBuyer()
 
