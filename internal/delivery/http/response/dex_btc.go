@@ -19,10 +19,12 @@ type DexBTCHistoryListing struct {
 }
 
 type GenDexBTCBuyETH struct {
-	OrderID    string `json:"order_id"`
-	ETHAddress string `json:"eth_address"`
-	ETHAmount  string `json:"eth_amount"`
-	ExpiredAt  int64  `json:"expired_at"`
+	OrderID         string `json:"order_id"`
+	ETHAddress      string `json:"eth_address"`
+	ETHAmount       string `json:"eth_amount"`
+	ExpiredAt       int64  `json:"expired_at"`
+	ETHAmountOrigin string `json:"eth_amount_origin"`
+	ETHFee          string `json:"eth_fee"`
 }
 
 type DEXBuyEthHistory struct {
