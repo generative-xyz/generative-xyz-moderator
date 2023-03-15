@@ -80,10 +80,6 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		return nil, err
 	}
 
-	if !user.ProfileSocial.TwitterVerified {
-		go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
-	}
-
 	u.Logger.Info("updated", updated)
 	u.Logger.Info("updated.User", message)
 	return &message, nil
@@ -172,6 +168,10 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		Token:        token,
 		RefreshToken: refreshToken,
 		IsVerified:   isVeried,
+	}
+
+	if !user.ProfileSocial.TwitterVerified {
+		go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
 	}
 
 	go u.AirdropTokenGatedNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)
