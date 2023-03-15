@@ -1,124 +1,63 @@
 package usecase
 
 import (
-	"sort"
 	"time"
 
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 )
 
-func (u Usecase) GetTokenActivities(page int64, limit int64, inscriptionID string) (*entity.Pagination, error) {
-	token, err := u.Repo.FindTokenByTokenID(inscriptionID)
+func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*entity.Pagination, error) {
+	pe := &entity.FilterTokenActivities{}
+	err := copier.Copy(pe, filter)
 	if err != nil {
+		u.Logger.Error(err)
 		return nil, errors.WithStack(err)
 	}
-	var minterAddress string
-	if token.MinterAddress != nil {
-		minterAddress = *token.MinterAddress
-	}
-	allDexBtcListings, err := u.Repo.GetAllDexBTCListingByInscriptionID(inscriptionID)
+	activitiesResp, err := u.Repo.GetTokenActivities(*pe)
 	if err != nil {
+		u.Logger.Error(err)
 		return nil, errors.WithStack(err)
 	}
-	
-	activities := []entity.TokenActivity{
-		{
-			Type: entity.TokenMint,
-			Title: "Minted",
-			UserAAddress: "",
-			UserBAddress: minterAddress,
-			Time: token.CreatedAt,
-			Amount: 0,
-		},
-	}
+	activities := activitiesResp.Result.([]entity.TokenActivity)
 
-	for _, listing := range allDexBtcListings {
-		if listing.Verified {
-			activities = append(activities, entity.TokenActivity{
-				Type: entity.TokenListing,
-				Title: "Listing",
-				UserAAddress: listing.SellerAddress,
-				Amount: int64(listing.Amount),
-				Time: listing.CreatedAt,			
-			})
-		}
-		if listing.Cancelled {
-			activities = append(activities, entity.TokenActivity{
-				Type: entity.TokenCancelListing,
-				Title: "Cancel Listing",
-				UserAAddress: listing.SellerAddress,
-				Amount: int64(listing.Amount),
-				Time: listing.CancelAt,				
-			})
-		}
-		if listing.Matched {
-			activities = append(activities, entity.TokenActivity{
-				Type: entity.TokenMatched,
-				Title: "Saled",
-				UserAAddress: listing.SellerAddress,
-				UserBAddress: listing.Buyer,
-				Amount: int64(listing.Amount),
-				Time: listing.MatchAt,	
-			})
-		}
-	}
+	userAddresses := []string{}
+	tokenIds := []string{}
 
-	sort.SliceStable(activities, func (i, j int) bool {
-		if activities[j].Time == nil {
-			return false
-		}
-		if activities[i].Time == nil {
-			return true
-		}
-		return activities[i].Time.Before(*activities[j].Time)
-	})
-
-	// paginating on slice
-	skip := (page - 1) * limit
-	if skip > int64(len(activities)) {
-		skip = int64(len(activities))
-	}
-	end := skip + limit
-	if end > int64(len(activities)) {
-		end = int64(len(activities))
-	}
-	
-	pagedActivities := activities[skip:end]
-	addresses := []string{}
-	for _, activity := range pagedActivities {
+	for _, activity := range activities {
 		if activity.UserAAddress != "" {
-			addresses = append(addresses, activity.UserAAddress)
+			userAddresses = append(userAddresses, activity.UserAAddress)
 		}
 		if activity.UserBAddress != "" {
-			addresses = append(addresses, activity.UserBAddress)
+			userAddresses = append(userAddresses, activity.UserBAddress)
 		}
+		tokenIds = append(tokenIds, activity.InscriptionID)
 	}
 
-	userMap, err := u.GetUsersMap(addresses)
+	userMap, err := u.GetUsersMap(userAddresses)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	tokenMap, err := u.GetTokensMap(tokenIds)
 
-	for _, activity := range pagedActivities {
-		if activity.UserAAddress != "" {
-			activity.UserA = userMap[activity.UserAAddress]
+	for id, _ := range activities {
+		if activities[id].UserAAddress != "" {
+			activities[id].UserA = userMap[activities[id].UserAAddress]
 		}
-		if activity.UserBAddress != "" {
-			activity.UserB = userMap[activity.UserBAddress]
+		if activities[id].UserBAddress != "" {
+			activities[id].UserB = userMap[activities[id].UserBAddress]
 		}
+		activities[id].TokenInfo = tokenMap[activities[id].InscriptionID]
 	}
-	
-	
-	return &entity.Pagination{
-		Result: pagedActivities,
-		Page: page,
-		PageSize: limit, 
-		Total: int64(len(activities)),
-		TotalPage: int64(float64(len(activities)) / float64(limit)),
-	}, nil
+
+	activitiesResp.Result = activities
+
+	u.Logger.Info("activities", activitiesResp.Total)
+	return activitiesResp, nil
 }
 
 func (u Usecase) JobCreateTokenActivityFromListings() error {
