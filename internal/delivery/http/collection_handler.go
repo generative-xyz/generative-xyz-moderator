@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"sync"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -71,63 +72,69 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
 	listings := []*response.ProjectListing{}
-
+	mainW := &sync.WaitGroup{}
 	for _, project := range projects {
-		projectID := project.TokenID
-		floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
-		if err != nil {
-			h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
-			continue
-		}
-
-		if floorPrice <= 0 {
-			continue
-		}
-
-		currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
-		if err != nil {
-			h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			return
-		}
-
-		volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
-		if err != nil {
-			h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
-			continue
-		}
-
-		mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
-		var result response.ProjectMarketplaceData
-
-		result.FloorPrice = floorPrice
-		result.Listed = currentListing
-		result.TotalVolume = volume + mintVolume
-		result.MintVolume = mintVolume
-
-		data := &response.ProjectListing{
-			Project: &response.ProjectInfo{
-				Name:            project.Name,
-				TokenId:         projectID,
-				Thumbnail:       project.Thumbnail,
-				ContractAddress: project.ContractAddress,
-			},
-			ProjectMarketplaceData: &result,
-		}
-
-		user, err := h.Usecase.Repo.FindUserByWalletAddress(project.CreatorAddrr)
-		if err == nil {
-			data.Owner = &response.OwnerInfo{
-				DisplayName:             user.DisplayName,
-				WalletAddress:           user.WalletAddress,
-				WalletAddressPayment:    user.WalletAddressPayment,
-				WalletAddressBTC:        user.WalletAddressBTC,
-				WalletAddressBTCTaproot: user.WalletAddressBTCTaproot,
-				Avatar:                  user.Avatar,
+		mainW.Add(1)
+		go func() {
+			defer mainW.Done()
+			projectID := project.TokenID
+			floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
+				return
 			}
-		}
 
-		listings = append(listings, data)
+			// if floorPrice <= 0 {
+			// 	continue
+			// }
+
+			currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
+				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+				return
+			}
+
+			volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
+			if err != nil {
+				h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+				return
+			}
+
+			mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
+			var result response.ProjectMarketplaceData
+
+			result.FloorPrice = floorPrice
+			result.Listed = currentListing
+			result.TotalVolume = volume + mintVolume
+			result.MintVolume = mintVolume
+
+			data := &response.ProjectListing{
+				Project: &response.ProjectInfo{
+					Name:            project.Name,
+					TokenId:         projectID,
+					Thumbnail:       project.Thumbnail,
+					ContractAddress: project.ContractAddress,
+				},
+				ProjectMarketplaceData: &result,
+			}
+
+			user, err := h.Usecase.Repo.FindUserByWalletAddress(project.CreatorAddrr)
+			if err == nil {
+				data.Owner = &response.OwnerInfo{
+					DisplayName:             user.DisplayName,
+					WalletAddress:           user.WalletAddress,
+					WalletAddressPayment:    user.WalletAddressPayment,
+					WalletAddressBTC:        user.WalletAddressBTC,
+					WalletAddressBTCTaproot: user.WalletAddressBTCTaproot,
+					Avatar:                  user.Avatar,
+				}
+			}
+
+			listings = append(listings, data)
+		}()
+
+		mainW.Wait()
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, listings), "")
 }
