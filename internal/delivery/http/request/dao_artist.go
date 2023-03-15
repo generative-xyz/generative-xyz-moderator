@@ -9,7 +9,7 @@ type ListDaoArtistRequest struct {
 	*entity.Pagination
 	Status  *int64  `query:"status"`
 	Keyword *string `query:"keyword"`
-	Id      *string `query:"-"`
+	Id      *string `query:"id"`
 }
 
 type CreateDaoArtistRequest struct {
