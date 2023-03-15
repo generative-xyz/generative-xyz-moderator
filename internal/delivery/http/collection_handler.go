@@ -90,23 +90,23 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 
 	for _, project := range projects {
 		mainW.Add(1)
-		go func() {
-			defer mainW.Done()
-			projectID := project.TokenID
+		go func(w *sync.WaitGroup, p entity.Projects) {
+			defer w.Done()
+
+			projectID := p.TokenID
 			floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
 			if err != nil {
 				h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
 				return
 			}
 
-			// if floorPrice <= 0 {
-			// 	continue
-			// }
+			if floorPrice <= 0 && p.MintingInfo.Index < p.MaxSupply {
+				return
+			}
 
 			currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
 			if err != nil {
 				h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
-				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
 			}
 
@@ -126,22 +126,22 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 
 			data := &response.ProjectListing{
 				Project: &response.ProjectInfo{
-					Name:            project.Name,
+					Name:            p.Name,
 					TokenId:         projectID,
-					Thumbnail:       project.Thumbnail,
-					ContractAddress: project.ContractAddress,
-					CreatorAddress:  project.CreatorAddrr,
-					MaxSupply:       project.MaxSupply,
+					Thumbnail:       p.Thumbnail,
+					ContractAddress: p.ContractAddress,
+					CreatorAddress:  p.CreatorAddrr,
+					MaxSupply:       p.MaxSupply,
 					MintingInfo: response.ProjectMintingInfo{
-						Index:        project.MintingInfo.Index,
-						IndexReverse: project.MintingInfo.IndexReverse,
+						Index:        p.MintingInfo.Index,
+						IndexReverse: p.MintingInfo.IndexReverse,
 					},
-					IsMintedOut: project.MintingInfo.Index == project.MaxSupply,
+					IsMintedOut: p.MintingInfo.Index == p.MaxSupply,
 				},
 				ProjectMarketplaceData: &result,
 			}
 
-			if user, ok := usersMap[project.CreatorAddrr]; ok {
+			if user, ok := usersMap[p.CreatorAddrr]; ok {
 				data.Owner = &response.OwnerInfo{
 					DisplayName:             user.DisplayName,
 					WalletAddress:           user.WalletAddress,
@@ -153,8 +153,9 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 			}
 
 			listings = append(listings, data)
-		}()
-		mainW.Wait()
+		}(mainW, project)
 	}
+
+	mainW.Wait()
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, listings), "")
 }
