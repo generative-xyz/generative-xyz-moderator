@@ -89,10 +89,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = false
-	// if req.IsHidden != nil {
-	// 	pe.IsHidden = *req.IsHidden
-	// }
+	pe.IsHidden = true
+	if req.IsHidden != nil {
+		pe.IsHidden = *req.IsHidden
+	}
 	pe.Status = true
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
