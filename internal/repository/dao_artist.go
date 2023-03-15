@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/constants/dao_artist_voted"
 )
 
 func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoArtistRequest) ([]*entity.DaoArtist, int64, error) {
@@ -132,4 +133,29 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		return nil, 0, err
 	}
 	return projects, total, nil
+}
+
+func (s Repository) CountDAOArtistVoteByStatus(ctx context.Context, daoArtistId primitive.ObjectID, status dao_artist_voted.Status) int {
+	match := bson.M{"$match": bson.M{
+		"dao_artist_id": daoArtistId,
+		"status":        status,
+	}}
+	group := bson.M{
+		"$group": bson.M{
+			"_id":   "$dao_artist_id",
+			"count": bson.M{"$sum": 1},
+		},
+	}
+	cur, err := s.DB.Collection(entity.DaoArtist{}.TableName()).Aggregate(ctx, bson.A{match, group})
+	if err != nil {
+		return 0
+	}
+	var results []*Count
+	if err := cur.All(ctx, &results); err != nil {
+		return 0
+	}
+	if len(results) > 0 {
+		return results[0].Count
+	}
+	return 0
 }
