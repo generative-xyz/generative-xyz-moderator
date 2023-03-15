@@ -19,6 +19,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const MongoIdGenCollectionName = "id-gen"
+
 type Repository struct {
 	Connection *mongo.Client
 	Logger     logger.Ilogger
@@ -426,6 +428,13 @@ func (b Repository) Create(ctx context.Context, collectionName string, model int
 	}
 	return primitive.NilObjectID, nil
 }
+func (b Repository) UpdateByID(ctx context.Context, collectionName string, id interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	result, err := b.DB.Collection(collectionName).UpdateByID(ctx, id, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
 func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
 	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
@@ -434,6 +443,26 @@ func (b Repository) UpdateMany(ctx context.Context, collectionName string, filte
 	return result.ModifiedCount, nil
 }
 
+type Counter struct {
+	ID  string `json:"id" bson:"_id"`
+	Seq uint   `json:"seq" bson:"seq"`
+}
+
+func (b Repository) NextId(ctx context.Context, sequenceName string) (uint, error) {
+	findOptions := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
+	var counter Counter
+	err := b.DB.Collection(MongoIdGenCollectionName).
+		FindOneAndUpdate(ctx,
+			bson.M{"_id": sequenceName},
+			bson.M{"$inc": bson.M{"seq": 1}},
+			findOptions,
+		).Decode(&counter)
+
+	if err != nil {
+		return 0, err
+	}
+	return counter.Seq, nil
+}
 func (b Repository) Aggregation(ctx context.Context, collectionName string, page int64, limit int64, result interface{}, agg ...interface{}) (int64, error) {
 	query := New(b.DB.Collection(collectionName)).Context(ctx).Page(page).Limit(limit)
 	aggPaginatedData, err := query.Aggregate(agg...)

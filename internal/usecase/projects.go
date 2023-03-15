@@ -89,9 +89,12 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = false
 	pe.Status = true
 	pe.IsSynced = true
+
+	//task Is reviewing status for the created projects
+	pe.IsHidden = true 
+	pe.IsReviewing = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -1607,7 +1610,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-	pe.IsHidden = false
+
+	//task is reviewing status for the created projects
+	pe.IsHidden = true
+	pe.IsReviewing = true
+
 	pe.Status = true
 	pe.IsSynced = true
 
@@ -1676,7 +1683,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	mPrice := helpers.StringToBTCAmount("0")
 
-	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
+	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
@@ -1907,7 +1914,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OwnerOf:         item.OwnerOf,
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
-			InscribedBy:     item.OwnerOf,
+			InscribedBy:     item.UserWalletAddress,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -1922,19 +1929,19 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	} else {
 		maxSupply := project.MaxSupply + 1
-		//index := project.MintingInfo.Index + 1
+		index := project.MintingInfo.Index + 1
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
 			CreatetorAddress: &project.CreatorAddrr,
 			ProjectID:        &project.TokenID,
 			MaxSupply:        &maxSupply,
-			Index:            nil,
+			Index:            &index,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.OwnerOf, item.UserWalletAddress)
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
@@ -2004,18 +2011,21 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
+		logger.AtLog.Errorf("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 	if totalImages == 0 && totalProcessingImages == 0 {
-		return nil, errors.New("Project doesn's have any files")
+		err  = errors.New("Project doesn's have any files")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
 	}
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2028,19 +2038,20 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
-		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	data := []entity.TokenTraits{}
 	err = json.Unmarshal(content, &data)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2052,6 +2063,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	err = u.Repo.CreateTokenUriMetadata(h)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2059,18 +2071,21 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		tokenID := item.ID
 		token, err := u.Repo.FindTokenByTokenID(tokenID)
 		if err != nil {
+			err = fmt.Errorf("token %s was not found: %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		if token.ProjectID != p.TokenID {
-			err = errors.New("token is not belong to this project")
+			err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		attrs := []entity.TokenUriAttr{}
 		attrStrs := []entity.TokenUriAttrStr{}
 
-		for _, itemAttr := range item.Atrributes {
+		for _, itemAttr := range item.Attributes {
 			attr := entity.TokenUriAttr{
 				TraitType: itemAttr.TraitType,
 				Value:     itemAttr.Value,
@@ -2088,8 +2103,11 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
+		spew.Dump(token.TokenID, token.ParsedAttributes, )
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
+			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 	}

@@ -63,6 +63,7 @@ type Config struct {
 
 	CaptcharSecret        string
 	GenerativeExplorerApi string
+	CountVoteDAO          int
 
 	// list crontab to run:
 	CronTabList []string
@@ -249,6 +250,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		maxReportCount = 3
 	}
 	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
+	countVotedDAO, _ := strconv.Atoi(os.Getenv("COUNT_VOTED_DAO"))
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
 		ENV:         os.Getenv("ENV"),
@@ -383,7 +385,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 
 		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
 		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
-
+		CountVoteDAO:          countVotedDAO,
 		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
 		DexBTCKey:   os.Getenv("DEX_BTC_KEY"),
 	}

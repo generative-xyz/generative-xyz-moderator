@@ -441,6 +441,8 @@ definitions:
         type: string
       image:
         type: string
+      inscribedBy:
+        type: string
       inscriptionIndex:
         type: string
       isOnchain:
@@ -1011,6 +1013,16 @@ definitions:
       signature:
         type: string
     type: object
+  request.VoteDaoArtistRequest:
+    properties:
+      status:
+        type: integer
+    type: object
+  request.VoteDaoProjectRequest:
+    properties:
+      status:
+        type: integer
+    type: object
   request.WithDrawItemRequest:
     properties:
       amount:
@@ -1023,6 +1035,11 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  response.ActionDaoProject:
+    properties:
+      can_vote:
+        type: boolean
     type: object
   response.CategoryResp:
     properties:
@@ -1039,6 +1056,54 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  response.DaoProject:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoProject'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      dao_project_voted:
+        items:
+          $ref: '#/definitions/response.DaoProjectVoted'
+        type: array
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      project:
+        $ref: '#/definitions/response.ProjectForDaoProject'
+      project_id:
+        type: string
+      seq_id:
+        type: integer
+      status:
+        type: integer
+      total_against:
+        type: integer
+      total_vote:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDao'
+      uuid:
+        type: string
+    type: object
+  response.DaoProjectVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
     type: object
   response.FileRes:
     properties:
@@ -1156,6 +1221,8 @@ definitions:
         type: string
       image:
         type: string
+      inscribedBy:
+        type: string
       inscriptionIndex:
         type: string
       isCompleted:
@@ -1270,6 +1337,38 @@ definitions:
         type: boolean
       web:
         type: string
+    type: object
+  response.ProjectForDaoProject:
+    properties:
+      created_at:
+        type: string
+      creator_name:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      max_supply:
+        type: integer
+      minting_info:
+        $ref: '#/definitions/response.ProjectMintingInfo'
+      name:
+        type: string
+      thumbnail:
+        type: string
+      token_id:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  response.ProjectMintingInfo:
+    properties:
+      index:
+        type: integer
+      index_reverse:
+        type: integer
     type: object
   response.ProjectResp:
     properties:
@@ -1470,6 +1569,29 @@ definitions:
       rarity:
         type: integer
       value:
+        type: string
+    type: object
+  response.UserForDao:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      display_name:
+        type: string
+      id:
+        type: string
+      is_verified:
+        type: boolean
+      profile_social:
+        $ref: '#/definitions/response.ProfileSocial'
+      updated_at:
+        type: string
+      uuid:
+        type: string
+      wallet_address:
         type: string
     type: object
   response.VerifyResponse:
@@ -2030,6 +2152,101 @@ paths:
       summary: get one config
       tags:
       - Configs
+  /dao-artist:
+    get:
+      consumes:
+      - application/json
+      description: List DAO Artist
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List DAO Artist
+      tags:
+      - DAO Artist
+    post:
+      consumes:
+      - application/json
+      description: Create DAO Artist
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Create DAO Artist
+      tags:
+      - DAO Artist
+  /dao-artist/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Get DAO Artist
+      tags:
+      - DAO Artist
+    put:
+      consumes:
+      - application/json
+      description: Vote DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VoteDaoArtistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: Vote DAO Artist
+      tags:
+      - DAO Artist
   /dao-project:
     get:
       consumes:
@@ -2090,13 +2307,19 @@ paths:
       consumes:
       - application/json
       description: Get DAO Project
+      parameters:
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/nfts.MoralisToken'
+            $ref: '#/definitions/response.DaoProject'
       security:
       - ApiKeyAuth: []
       summary: Get DAO Project
@@ -2106,6 +2329,18 @@ paths:
       consumes:
       - application/json
       description: Vote DAO Project
+      parameters:
+      - description: Vote Dao Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VoteDaoProjectRequest'
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
