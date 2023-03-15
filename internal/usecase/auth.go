@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -168,10 +167,6 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		Token:        token,
 		RefreshToken: refreshToken,
 		IsVerified:   isVeried,
-	}
-
-	if !user.ProfileSocial.TwitterVerified {
-		go u.CreateDAOArtist(context.Background(), user.WalletAddress, &request.CreateDaoArtistRequest{})
 	}
 
 	go u.AirdropTokenGatedNewUser(os.Getenv("AIRDROP_WALLET"), *user, 3)

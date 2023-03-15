@@ -6840,6 +6840,9 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "canCreateProposal": {
+                    "type": "boolean"
+                },
                 "createdAt": {
                     "type": "string"
                 },
