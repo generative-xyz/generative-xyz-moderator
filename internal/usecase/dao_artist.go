@@ -39,7 +39,7 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 	}
 	for _, artist := range artistsResp {
 		action := &response.ActionDaoArtist{}
-		action.CanVote = user.IsVerified &&
+		action.CanVote = user.ProfileSocial.TwitterVerified &&
 			user.WalletAddress != artist.CreatedBy &&
 			!artist.Expired()
 		if action.CanVote {
@@ -67,7 +67,7 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": userWallet}, user); err != nil {
 		return "", err
 	}
-	if user.IsVerified {
+	if user.ProfileSocial.TwitterVerified {
 		return "", errors.New("Haven't permission")
 	}
 	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
@@ -160,7 +160,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if err := s.Repo.FindOneBy(ctx, daoArtist.TableName(), bson.M{"_id": objectId}, daoArtist); err != nil {
 		return err
 	}
-	if !createdBy.IsVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
+	if !createdBy.ProfileSocial.TwitterVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
 		return errors.New("Haven't permission")
 	}
 	daoArtistVoted := &entity.DaoArtistVoted{
