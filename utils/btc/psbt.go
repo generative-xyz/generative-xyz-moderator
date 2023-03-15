@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -821,4 +822,24 @@ func CreatePSBTToBuyInscriptionViaAPI(
 		return nil, errors.New(resErr.Message)
 	}
 	return &res, nil
+}
+
+func SendTxBlockStream(txraw string) error {
+	resp, err := http.Post("https://blockstream.info/api/tx", "application/json",
+		bytes.NewBuffer([]byte(txraw)))
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	bodyStr := string(body)
+	if strings.Contains(bodyStr, "RPC error") {
+		return errors.New(bodyStr)
+	}
+	return nil
 }
