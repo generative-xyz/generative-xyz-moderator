@@ -183,7 +183,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	}
 	go func() {
 		voted := []*entity.DaoArtistVoted{}
-		err := s.Repo.Find(ctx, entity.DaoProjectVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
+		err := s.Repo.Find(ctx, entity.DaoArtistVoted{}.TableName(), bson.M{"dao_artist_id": daoArtist.ID, "status": dao_artist_voted.Verify}, &voted)
 		if err != nil {
 			return
 		}
