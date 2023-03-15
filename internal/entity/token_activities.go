@@ -17,7 +17,7 @@ const (
 )
 
 type TokenActivity struct {
-	BaseEntity    `bson:"base_entity" json:"base_entity"`
+	BaseEntity    `bson:",inline" json:"base_entity"`
 	Type          TokenActivityType `bson:"type" json:"type"`
 	Title         string            `bson:"title" json:"title"`
 	UserAAddress  string            `bson:"user_a_address" json:"user_a_address"`
@@ -28,6 +28,12 @@ type TokenActivity struct {
 	Time          *time.Time        `bson:"time" json:"time"`
 	InscriptionID string            `bson:"inscription_id" json:"inscription_id"`
 	ProjectID     string            `bson:"project_id" json:"project_id"`
+}
+
+type FilterTokenActivities struct {
+	BaseFilters
+	ProjectID *string
+	InscriptionID *string
 }
 
 func (u TokenActivity) TableName() string { 
