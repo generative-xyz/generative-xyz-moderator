@@ -18,6 +18,9 @@ type DaoArtist struct {
 	DaoArtistVoted []*DaoArtistVoted `json:"dao_artist_voted,omitempty" bson:"dao_artist_voted,omitempty"`
 }
 
+func (m DaoArtist) Expired() bool {
+	return m.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
+}
 func (m DaoArtist) TableName() string {
 	return "dao_artist"
 }

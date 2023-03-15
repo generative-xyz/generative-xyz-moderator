@@ -24,6 +24,10 @@ func (m DaoProject) TableName() string {
 	return "dao_project"
 }
 
+func (m DaoProject) Expired() bool {
+	return m.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
+}
+
 type DaoProjectVoted struct {
 	BaseEntity   `json:",inline" bson:",inline"`
 	CreatedBy    string                   `json:"created_by,omitempty" bson:"created_by"`
