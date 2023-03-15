@@ -62,13 +62,29 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 	return result, nil
 }
 
-func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string) (string, error) {
+func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *request.CreateDaoArtistRequest) (string, error) {
 	user := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, user.TableName(), bson.M{"wallet_address": userWallet}, user); err != nil {
 		return "", err
 	}
 	if user.IsVerified {
-		return "", errors.New("haven't permission")
+		return "", errors.New("Haven't permission")
+	}
+	if req.Twitter == "" && user.ProfileSocial.Twitter == "" {
+		return "", errors.New("Please update your twitter url")
+	}
+	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
+		user.ProfileSocial.Twitter = req.Twitter
+		_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "profile_social", Value: user.ProfileSocial},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update twitter artist failed", zap.Error(err))
+			return "", err
+		}
 	}
 	daoArtist := &entity.DaoArtist{
 		CreatedBy: user.WalletAddress,
@@ -147,7 +163,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		return err
 	}
 	if !createdBy.IsVerified || strings.EqualFold(daoArtist.CreatedBy, userWallet) {
-		return errors.New("haven't permission")
+		return errors.New("Haven't permission")
 	}
 	daoArtistVoted := &entity.DaoArtistVoted{
 		CreatedBy:   userWallet,

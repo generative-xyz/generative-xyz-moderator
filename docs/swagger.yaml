@@ -698,6 +698,11 @@ definitions:
     - key
     - value
     type: object
+  request.CreateDaoArtistRequest:
+    properties:
+      twitter:
+        type: string
+    type: object
   request.CreateDaoProjectRequest:
     properties:
       project_ids:
@@ -2153,6 +2158,13 @@ paths:
       consumes:
       - application/json
       description: Create DAO Artist
+      parameters:
+      - description: Create Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoArtistRequest'
       produces:
       - application/json
       responses:
