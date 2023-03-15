@@ -171,7 +171,6 @@ func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool
 	if slices.Contains([]dao_project.Status{
 		dao_project.Voting,
 		dao_project.Defeated,
-		dao_project.Executed,
 	}, daoProject.Status) {
 		return true
 	}
@@ -211,15 +210,21 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if req.Status != dao_project_voted.Voted {
 		return nil
 	}
+
+	_ = s.processEnableProject(ctx, daoProject)
+
+	return nil
+}
+func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.DaoProject) error {
 	voted := []*entity.DaoProjectVoted{}
-	err = s.Repo.Find(ctx,
+	err := s.Repo.Find(ctx,
 		entity.DaoProjectVoted{}.TableName(),
 		bson.M{
 			"dao_project_id": daoProject.ID,
 			"status":         dao_project_voted.Voted,
 		}, &voted)
 	if err != nil {
-		return nil
+		return err
 	}
 	count := s.Config.CountVoteDAO
 	if count <= 0 {
@@ -231,7 +236,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	project := &entity.Projects{}
 	if err := s.Repo.FindOneBy(ctx, project.TableName(), bson.M{"_id": daoProject.ProjectId}, project); err != nil {
 		logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
-		return nil
+		return err
 	}
 	_, err = s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
 		bson.D{
@@ -242,7 +247,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		})
 	if err != nil {
 		logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
-		return nil
+		return err
 	}
 	_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
 		bson.D{
