@@ -525,7 +525,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				amountBTCFee := uint64(0)
 				amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 
-				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, 15, amountBTCFee)
+				respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, order.FeeRate, amountBTCFee)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 					continue
