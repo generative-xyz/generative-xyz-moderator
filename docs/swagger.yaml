@@ -700,8 +700,12 @@ definitions:
     type: object
   request.CreateDaoProjectRequest:
     properties:
-      project_id:
-        type: string
+      project_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - project_ids
     type: object
   request.CreateEthWalletAddressReq:
     properties:
