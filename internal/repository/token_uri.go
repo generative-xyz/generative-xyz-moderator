@@ -224,18 +224,37 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"from", "users"},
 					{"localField", "owner_addrress"},
 					{"foreignField", "wallet_address_btc_taproot"},
-					{"as", "owner"},
+					{"as", "owner_object"},
+					{"let",
+						bson.D{
+							{"wallet_address_btc_taproot", "$wallet_address_btc_taproot"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"wallet_address_btc_taproot", bson.D{{"$ne", ""}, {"$exists", true}}},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
+
 		bson.D{
 			{"$unwind",
 				bson.D{
-					{"path", "$owner"},
+					{"path", "$owner_object"},
 					{"preserveNullAndEmptyArrays", true},
 				},
 			},
 		},
+
+	
 		bson.D{	
 			{"$lookup",
 				bson.D{
@@ -351,10 +370,10 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
 					{"owner_addrress", 1},
-					{"owner.wallet_address", 1},
-					{"owner.wallet_address_btc_taproot", 1},
-					{"owner.avatar", 1},
-					{"owner.display_name", 1},
+					{"owner_object.wallet_address", 1},
+					{"owner_object.wallet_address_btc_taproot", 1},
+					{"owner_object.avatar", 1},
+					{"owner_object.display_name", 1},
 					
 				},
 			},
