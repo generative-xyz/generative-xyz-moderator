@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -286,4 +287,21 @@ func (r Repository) UpdateMintNftBtcSubItemRefundOrDone(uuids []string, status e
 	}
 
 	return result, err
+}
+
+func (r Repository) FindMintNftBtcByInscriptionID(inscriptionID string) (*entity.MintNftBtc, error) {
+	resp := &entity.MintNftBtc{}
+	filter := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+	}
+	mintNftBtc, err := r.FilterOne(entity.MintNftBtc{}.TableName(), filter)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = helpers.Transform(mintNftBtc, resp)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return resp, nil
 }

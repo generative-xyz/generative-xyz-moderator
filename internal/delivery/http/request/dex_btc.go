@@ -25,10 +25,11 @@ type SubmitDexBTCBuy struct {
 // }
 
 type GenDexBTCBuyETH struct {
-	Amount         uint64 `json:"amount"`
 	OrderID        string `json:"order_id"`
 	FeeRate        uint64 `json:"fee_rate"`
 	ReceiveAddress string `json:"receive_address"`
+	RefundAddress  string `json:"refund_address"`
+	IsEstimate     bool   `json:"is_estimate"`
 }
 
 type UpdateDexBTCBuyETHTx struct {

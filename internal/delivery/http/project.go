@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -250,14 +249,13 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 
 	userAddress := r.URL.Query().Get("userAddress")
 
-	fmt.Println("userAddress", userAddress)
+	// fmt.Println("userAddress", userAddress)
 
 	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
 		ContractAddress:            contractAddress,
 		ProjectID:                  projectID,
 		UserAddressToCheckDiscount: userAddress,
 	})
-
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -270,6 +268,7 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	resp.IsReviewing = h.Usecase.IsProjectReviewing(r.Context(), project.ID.Hex())
 
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
 
@@ -305,6 +304,13 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	volumeCEX, err := h.Usecase.Repo.ProjectGetCEXVolume(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 	// projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
 	// if err != nil {
 	// 	h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
@@ -326,8 +332,9 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.TotalVolume = volume + mintVolume
+	result.TotalVolume = volume + mintVolume + volumeCEX
 	result.MintVolume = mintVolume
+	result.CEXVolume = volumeCEX
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
