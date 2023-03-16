@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -68,10 +67,10 @@ func (u *Usecase) GetOrdinalTemplate() (*os.File, error)  {
 	return zipFile, nil
 }
 
-func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
+func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*googlecloud.GcsUploadedObject, error)  {
 	
 	projectName := ""
-	zippedBytes,folderName, err := u.uploadAndReadFile(r, "file")
+	zippedBytes, folderName , err := u.uploadAndReadFile(r, "file")
 	if err != nil {
 		return nil, err
 	}
@@ -153,18 +152,17 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 		metaCollection.InscriptionIcon = inscription
 	}
 
-	_ = folderName
-
 	//err = u.pushToGithub(*folderName, *metaCollection, metaInscriptions)
 	err = u.pushToGithub(metaCollection.Name, *metaCollection, metaInscriptions)
 	if err != nil {
 		return nil, err
 	}
+
 	logger.AtLog.Infof("collection %s ",projectName)
-	return nil, err
+	return folderName, err
 }
 
-func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *string, error) {
+func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *googlecloud.GcsUploadedObject, error) {
 	_, handler, err := r.FormFile(fileName)
 	key := "btc-projects/ordinal-inscriptions"
 	gf := googlecloud.GcsFile{
@@ -185,10 +183,10 @@ func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *s
 		return nil,nil, err
 	}
 
-	folerNames := strings.Split(uploaded.Name, "/")
-	folerName := folerNames[len(folerNames) - 1]
+	// folerNames := strings.Split(uploaded.Name, "/")
+	// folerName := folerNames[len(folerNames) - 1]
 	
-	return content, &folerName, nil
+	return content, uploaded, nil
 }
 
 func (u Usecase) pushToGithub(folderName string, metaCollection structure.OrdinalCollectionMeta, inscription []structure.OrdinalInscriptionMeta) error   {
@@ -228,15 +226,17 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 	ref := plumbing.NewHashReference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch)), headRef.Hash())
 	err = repo.Storer.SetReference(ref)
 	if err != nil {
+		err = fmt.Errorf("Cannot create branch %s", branch)
 		return  err
 	}
 
-	spew.Dump(collectionPath)
+	//spew.Dump(collectionPath)
 	branchName :=  plumbing.NewBranchReferenceName(branch)
 	err = w.Checkout(&git.CheckoutOptions{
 		Branch: branchName,
 	})
 	if err != nil {
+		err = fmt.Errorf("Cannot switch to branch %s", branch)
 		return  err
 	}
 
@@ -248,7 +248,7 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 	
 	//_ = ref
 	_ = collectionFolders
-	spew.Dump(collectionPath)
+	//spew.Dump(collectionPath)
 	//spew.Dump(repo)
 	//spew.Dump(ref)
 
@@ -260,27 +260,32 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 
 	err = os.Mkdir(collectionPath, os.ModePerm)
 	if err != nil {
+		err = fmt.Errorf("Folder %s existed", folderName)
 		return  err
 	}
 
 	err = helpers.CreateFile(fmt.Sprintf("%s/meta.json",collectionPath), metaCollection)
 	if err != nil {
+		err = fmt.Errorf("Cannot create %s", "meta.json")
 		return  err
 	}
 
 	err = helpers.CreateFile(fmt.Sprintf("%s/inscriptions.json",collectionPath), metaCollection)
 	if err != nil {
+		err = fmt.Errorf("Cannot create %s", "inscriptions.json")
 		return  err
 	}
 
 	//add . and commmit them
 	_, err = w.Add(".")
 	if err != nil {
+		err = fmt.Errorf("Cannot add %s, %s to git", "meta.json",  "inscriptions.json")
 		return  err
 	}
 
 	status, err := w.Status()
 	if err != nil {
+		err = fmt.Errorf("Cannot check git status")
 		return  err
 	}
 
@@ -293,6 +298,7 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 		},
 	})
 	if err != nil {
+		err = fmt.Errorf("Cannot commit files")
 		return  err
 	}
 
@@ -305,6 +311,7 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 		//Force: true,
 	})
 	if err != nil {
+		err = fmt.Errorf("Cannot push files to github")
 		return  err
 	}
 

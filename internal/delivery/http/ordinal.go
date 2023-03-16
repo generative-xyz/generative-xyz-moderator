@@ -45,12 +45,12 @@ func (h *httpDelivery) getOrdinalTemplate(w http.ResponseWriter, r *http.Request
 // @Success 200 {object} response.JsonResponse{data=response.CategoryResp}
 // @Router /ordinal/collections [POST]
 func (h *httpDelivery) uploadOrdinalTemplate(w http.ResponseWriter, r *http.Request) {
-	_, err := h.Usecase.UploadOrdinalTemplate(r)
+	uploaded, err := h.Usecase.UploadOrdinalTemplate(r)
 	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		h.Response.RespondWithError(w, http.StatusOK, response.Error, err)
 		return
 	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uploaded, "The uploaded files have been push to github successfully")
 }
 
