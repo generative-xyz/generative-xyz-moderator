@@ -596,7 +596,13 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							}
 						}
 						if txStatusSplit != nil {
-							if txStatusSplit.Result.Confirmations >= 0 {
+							if txStatusSplit.Result.Confirmations >= 1 {
+								//retry send buy tx
+								order.Status = entity.StatusDEXBuy_ReceivedFund
+								_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+								if err != nil {
+									log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+								}
 								continue
 							}
 						}
