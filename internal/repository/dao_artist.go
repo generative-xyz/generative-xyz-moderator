@@ -7,10 +7,12 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/constants/dao_artist"
 	"rederinghub.io/utils/constants/dao_artist_voted"
+	"rederinghub.io/utils/logger"
 )
 
 func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoArtistRequest) ([]*entity.DaoArtist, int64, error) {
@@ -164,7 +166,22 @@ func (s Repository) CheckDAOArtistAvailableByUser(ctx context.Context, userWalle
 	}
 	return daoArtist, true
 }
-
+func (s Repository) SetExpireYourProposalArtist(ctx context.Context, userWallet string) error {
+	filter := bson.M{
+		"created_by": userWallet,
+		"$or": bson.A{
+			bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+			bson.M{"status": dao_artist.Verified},
+		},
+	}
+	update := bson.M{"$set": bson.M{"expired_at": time.Now(), "status": dao_artist.Verifying}}
+	count, err := s.UpdateMany(ctx, entity.DaoArtist{}.TableName(), filter, update)
+	if err != nil {
+		return err
+	}
+	logger.AtLog.Logger.Info("SetExpireYourProposalArtist success", zap.Int64("count", count))
+	return nil
+}
 func (s Repository) CountDAOArtistVoteByStatus(ctx context.Context, daoArtistId primitive.ObjectID, status dao_artist_voted.Status) int {
 	match := bson.M{"$match": bson.M{
 		"dao_artist_id": daoArtistId,
