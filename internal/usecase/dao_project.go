@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -19,11 +18,12 @@ import (
 	"rederinghub.io/utils/constants/dao_project_voted"
 	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
 	result := &entity.Pagination{}
-	redisKey := fmt.Sprintf("%s_list_%s_%s", entity.DaoProject{}.TableName(), userWallet, utils.HashStruct(request, nil))
+	redisKey := rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list", userWallet).WithStructHash(request, nil).String()
 	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
 		return result, nil
 	}
@@ -109,7 +109,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		return nil, err
 	}
 
-	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoProject{}.TableName()))
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	return utils.ObjectsToHex(ids), nil
 }
@@ -209,7 +209,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		return err
 	}
 
-	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoProject{}.TableName()))
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	if req.Status != dao_project_voted.Voted {
 		return nil
