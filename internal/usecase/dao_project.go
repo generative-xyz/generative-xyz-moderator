@@ -184,6 +184,14 @@ func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool
 	return isReviewing
 }
 
+func (s *Usecase) CanCreateNewProposalProject(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (string, bool) {
+	daoProject, exists := s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
+	if exists && daoProject != nil {
+		return daoProject.ID.Hex(), false
+	}
+	return "", true
+}
+
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
 	createdBy := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": userWallet}, createdBy); err != nil {
