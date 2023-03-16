@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -40,6 +41,7 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 		"$addFields": bson.M{
 			"project_name": "$project.name",
 			"user_name":    "$user.display_name",
+			// "user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -75,7 +77,7 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	filterSearch := make(bson.M)
 	matchSearch := bson.M{"$match": filterSearch}
 	if request.Keyword != nil {
-		filterSearch["$or"] = bson.A{
+		search := bson.A{
 			bson.M{"project_name": primitive.Regex{
 				Pattern: *request.Keyword,
 				Options: "i",
@@ -84,7 +86,19 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
+			// bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
+			// 	Pattern: *request.Keyword,
+			// 	Options: "i",
+			// }},
 		}
+		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
+			search = append(search, bson.M{"seq_id": seqId})
+		} else {
+			if id, err := primitive.ObjectIDFromHex(*request.Keyword); err == nil {
+				search = append(search, bson.M{"_id": id})
+			}
+		}
+		filterSearch["$or"] = search
 	}
 	lookupDaoProjectVoted := bson.M{
 		"$lookup": bson.M{
