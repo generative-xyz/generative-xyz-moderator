@@ -75,7 +75,7 @@ func (r Repository) CountMintActivity(projectID string) (*int64, error) {
 
 func (r Repository) JobDeleteOldActivities() error {
 	f := bson.M{
-		"created_at": bson.M{"$lte": time.Now().Add(-7 * 24 * time.Hour)},
+		"created_at": bson.M{"$lte": time.Now().Add(-21 * 24 * time.Hour)},
 	}
 
 	_, err := r.DB.Collection(entity.Activity{}.TableName()).DeleteMany(context.TODO(), f)
