@@ -258,7 +258,35 @@ func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.M
 	// 	return nil, err
 	// }
 
-	return resp, nil
+	// return resp, nil
+}
+
+func (r Repository) UpdateMintNftBtcSubItemRefundOrDone(uuids []string, status entity.StatusMint, tx string, isRefund bool) (*mongo.UpdateResult, error) {
+	filter := bson.M{
+		"uuid": bson.M{"$in": uuids},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"tx_send_master": tx,
+			"status":         status,
+		},
+	}
+	if isRefund {
+		update = bson.M{
+			"$set": bson.M{
+				"tx_refund": tx,
+				"status":    status,
+			},
+		}
+	}
+
+	result, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }
 
 func (r Repository) FindMintNftBtcByInscriptionID(inscriptionID string) (*entity.MintNftBtc, error) {

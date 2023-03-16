@@ -341,16 +341,74 @@ func (r Repository) UpdateDexBTCBuyETHOrderConfirmation(model *entity.DexBTCBuyW
 	return result, err
 }
 
-func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateDexBTCBuyETHOrderSendMaster(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
-	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, model)
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.Status,
+			"master_tx":  model.MasterTx,
+			"updated_at": model.UpdatedAt,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, err
 }
+
+func (r Repository) UpdateDexBTCBuyETHOrderRefund(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.Status,
+			"refund_tx":  model.RefundTx,
+			"updated_at": model.UpdatedAt,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateDexBTCBuyETHOrderBuy(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.Status,
+			"buy_tx":     model.BuyTx,
+			"updated_at": model.UpdatedAt,
+			"split_tx":   model.SplitTx,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+// 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+// 	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, model)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return result, err
+// }
 
 // func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
 // 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
