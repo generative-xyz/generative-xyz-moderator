@@ -87,6 +87,7 @@ type InternalTokenTraitsResp struct {
 }
 
 type TokenActivityResp struct {
+	UUID         string           `json:"uuid"`
 	Type         int              `json:"type"`
 	Title        string           `json:"title"`
 	UserAAddress string           `json:"user_a_address"`
