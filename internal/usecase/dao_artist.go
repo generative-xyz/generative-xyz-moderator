@@ -154,14 +154,15 @@ func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string
 	return daoArtist, nil
 }
 
-func (s *Usecase) CanCreateProposal(ctx context.Context, walletAddress string) bool {
-	_, err := s.GetDAOArtistByWallet(ctx, walletAddress)
+func (s *Usecase) CanCreateProposal(ctx context.Context, walletAddress string) (*entity.DaoArtist, bool) {
+	daoArtist, err := s.GetDAOArtistByWallet(ctx, walletAddress)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return true
+			return nil, true
 		}
+		return nil, false
 	}
-	return false
+	return daoArtist, false
 }
 
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {

@@ -1002,6 +1002,11 @@ definitions:
       type:
         type: string
     type: object
+  response.ActionDaoArtist:
+    properties:
+      can_vote:
+        type: boolean
+    type: object
   response.ActionDaoProject:
     properties:
       can_vote:
@@ -1022,6 +1027,50 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  response.DaoArtist:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoArtist'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      dao_artist_voted:
+        items:
+          $ref: '#/definitions/response.DaoArtistVoted'
+        type: array
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      seq_id:
+        type: integer
+      status:
+        type: integer
+      total_report:
+        type: integer
+      total_verify:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDao'
+      uuid:
+        type: string
+    type: object
+  response.DaoArtistVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
     type: object
   response.DaoProject:
     properties:
@@ -1282,6 +1331,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
+      proposal:
+        $ref: '#/definitions/response.DaoArtist'
       walletAddress:
         type: string
       walletAddressBtc:

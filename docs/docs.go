@@ -6527,6 +6527,14 @@ var doc = `{
                 }
             }
         },
+        "response.ActionDaoArtist": {
+            "type": "object",
+            "properties": {
+                "can_vote": {
+                    "type": "boolean"
+                }
+            }
+        },
         "response.ActionDaoProject": {
             "type": "object",
             "properties": {
@@ -6557,6 +6565,73 @@ var doc = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "response.DaoArtist": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/response.ActionDaoArtist"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_artist_voted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DaoArtistVoted"
+                    }
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "seq_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "total_report": {
+                    "type": "integer"
+                },
+                "total_verify": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserForDao"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DaoArtistVoted": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_project_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -6948,6 +7023,9 @@ var doc = `{
                 },
                 "profileSocial": {
                     "$ref": "#/definitions/response.ProfileSocial"
+                },
+                "proposal": {
+                    "$ref": "#/definitions/response.DaoArtist"
                 },
                 "walletAddress": {
                     "type": "string"

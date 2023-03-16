@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -75,7 +76,7 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	filterSearch := make(bson.M)
 	matchSearch := bson.M{"$match": filterSearch}
 	if request.Keyword != nil {
-		filterSearch["$or"] = bson.A{
+		search := bson.A{
 			bson.M{"project_name": primitive.Regex{
 				Pattern: *request.Keyword,
 				Options: "i",
@@ -85,6 +86,10 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 				Options: "i",
 			}},
 		}
+		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
+			search = append(search, bson.M{"seq_id": seqId})
+		}
+		filterSearch["$or"] = search
 	}
 	lookupDaoProjectVoted := bson.M{
 		"$lookup": bson.M{
