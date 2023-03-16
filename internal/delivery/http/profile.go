@@ -1,11 +1,11 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
@@ -13,9 +13,10 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	copierInternal "rederinghub.io/utils/copier"
+	"rederinghub.io/utils/logger"
 )
 
-// UserCredits godoc
 // @Summary User profile
 // @Description User profile
 // @Tags Profile
@@ -25,37 +26,30 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile [GET]
 func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		err := errors.New("Token is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	profile, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Logger.Info("profile", profile)
-
-	resp, err := h.profileToResp(profile)
-	if err != nil {
-		h.Logger.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	if !profile.ProfileSocial.TwitterVerified {
-		resp.CanCreateProposal = h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			userID := vars[utils.SIGNED_USER_ID]
+			if userID == "" {
+				return nil, errors.New("Token is empty")
+			}
+			profile, err := h.Usecase.UserProfile(userID)
+			if err != nil {
+				return nil, err
+			}
+			resp := &response.ProfileResponse{}
+			if err := copierInternal.Copy(resp, profile); err != nil {
+				return nil, err
+			}
+			if !profile.ProfileSocial.TwitterVerified {
+				daoArtist, canCreateProposal := h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = canCreateProposal
+				if !resp.CanCreateProposal && daoArtist != nil {
+					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtist.ID.Hex(), resp.WalletAddress)
+				}
+			}
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
 
 // UserCredits godoc
@@ -219,50 +213,47 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileResponse, error) {
 	resp := &response.ProfileResponse{}
-
 	err := response.CopyEntityToRes(resp, profile)
 	if err != nil {
 		return nil, err
 	}
-
 	return resp, nil
 }
 
-// UserCredits godoc
 // @Summary User profile via wallet address
 // @Description User profile via wallet address
 // @Tags Profile
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param walletAddress path string true "Wallet address"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/wallet/{walletAddress} [GET]
 func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	walletAddress := vars["walletAddress"]
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
-	if err != nil {
-		profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
-		if err != nil {
-			h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
-			profile = &entity.Users{}
-		}
-	}
-
-	h.Logger.Info("profile", profile)
-	resp, err := h.profileToResp(profile)
-	if err != nil {
-		h.Logger.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	if !profile.ProfileSocial.TwitterVerified {
-		resp.CanCreateProposal = h.Usecase.CanCreateProposal(r.Context(), profile.WalletAddress)
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			walletAddress := vars["walletAddress"]
+			profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
+			if err != nil {
+				profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
+				if err != nil {
+					logger.AtLog.Logger.Error("GetUserProfileByWalletAddress failed", zap.Error(err))
+					profile = &entity.Users{}
+				}
+			}
+			resp := &response.ProfileResponse{}
+			if err := copierInternal.Copy(resp, profile); err != nil {
+				return nil, err
+			}
+			if !profile.ProfileSocial.TwitterVerified {
+				daoArtist, canCreateProposal := h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = canCreateProposal
+				if !resp.CanCreateProposal && daoArtist != nil {
+					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtist.ID.Hex(), resp.WalletAddress)
+				}
+			}
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
 
 // UserCredits godoc
