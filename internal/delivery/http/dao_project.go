@@ -33,7 +33,11 @@ func (h *httpDelivery) listDaoProject(w http.ResponseWriter, r *http.Request) {
 			}
 			req.Pagination = entity.GetPagination(r)
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
-			return h.Usecase.ListDAOProject(ctx, userWallet, req)
+			resp, err := h.Usecase.ListDAOProject(ctx, userWallet, req)
+			if err != nil {
+				resp.Result = make([]*response.DaoProject, 0)
+			}
+			return resp, nil
 		},
 	).ServeHTTP(w, r)
 }
