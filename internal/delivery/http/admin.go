@@ -178,3 +178,36 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	res := h.Usecase.AutoListing(&reqBody)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
 }
+func (h *httpDelivery) checkRefundMintBtc(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		h.Logger.Error("permission", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	res := h.Usecase.CheckRefundNftBtc()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+}
