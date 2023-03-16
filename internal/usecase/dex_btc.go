@@ -451,18 +451,18 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if balance.Cmp(amountRequired) > -1 {
-				if order.Confirmation > 1 && time.Since(*order.CreatedAt) > 3*time.Minute {
+				if order.Confirmation > 1 {
 					order.Status = entity.StatusDEXBuy_ReceivedFund
 					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 					}
 					continue
 				} else {
 					order.Confirmation += 1
 					_, err := u.Repo.UpdateDexBTCBuyETHOrderConfirmation(&order)
 					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderConfirmation err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 					}
 					continue
 				}
@@ -472,7 +472,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					order.Status = entity.StatusDEXBuy_Expired
 					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 					}
 					continue
 				}
@@ -485,7 +485,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if listingOrder != nil {
-
+				if listingOrder.Cancelled || listingOrder.Matched {
+					order.Status = entity.StatusDEXBuy_WaitingToRefund
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+					}
+					continue
+				}
 				// privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
 				// if err != nil {
 				// 	log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
@@ -546,10 +553,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					continue
 				}
 				order.BuyTx = respondData.TxID
+				order.SplitTx = respondData.SplitTxID
 				order.Status = entity.StatusDEXBuy_Buying
-				_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+				_, err = u.Repo.UpdateDexBTCBuyETHOrderBuy(&order)
 				if err != nil {
-					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderBuy err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
 				continue
 			} else {
@@ -559,15 +567,58 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
 			txStatus, err := btc.CheckTxfromQuickNode(order.BuyTx, quickNodeAPI)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.BuyTx, err)
-				continue
+				if strings.Contains(err.Error(), "tx not found") {
+					if order.SplitTx != "" {
+						txStatusSplit, err := btc.CheckTxfromQuickNode(order.SplitTx, quickNodeAPI)
+						if err != nil {
+							log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode split", order.ID, order.SplitTx, err)
+							listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
+							if err != nil {
+								log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
+								continue
+							}
+							if listingOrder != nil {
+								if listingOrder.Cancelled || listingOrder.Matched {
+									order.Status = entity.StatusDEXBuy_WaitingToRefund
+									_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+									if err != nil {
+										log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+									}
+									continue
+								}
+								//retry send buy tx
+								order.Status = entity.StatusDEXBuy_ReceivedFund
+								_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+								if err != nil {
+									log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+								}
+								continue
+							}
+						}
+						if txStatusSplit != nil {
+							if txStatusSplit.Result.Confirmations >= 1 {
+								//retry send buy tx
+								order.Status = entity.StatusDEXBuy_ReceivedFund
+								_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+								if err != nil {
+									log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+								}
+								continue
+							}
+						}
+					}
+				} else {
+					log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.BuyTx, err)
+					continue
+				}
+
 			}
 			if txStatus != nil {
 				if txStatus.Result.Confirmations > 0 {
 					order.Status = entity.StatusDEXBuy_Bought
 					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 					}
 					continue
 				}
@@ -582,7 +633,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						order.Status = entity.StatusDEXBuy_WaitingToRefund
 						_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 						if err != nil {
-							log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+							log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 						}
 						continue
 					}
@@ -605,9 +656,9 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			order.RefundTx = txID
 			order.Status = entity.StatusDEXBuy_Refunding
 			order.SetUpdatedAt()
-			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+			_, err = u.Repo.UpdateDexBTCBuyETHOrderRefund(&order)
 			if err != nil {
-				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderRefund err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 			}
 			continue
 		case entity.StatusDEXBuy_Refunding:
@@ -630,7 +681,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				order.Status = entity.StatusDEXBuy_Refunded
 				_, err = u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 				if err != nil {
-					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
 			}
 		case entity.StatusDEXBuy_Bought:
@@ -644,9 +695,9 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			order.MasterTx = txID
 			order.Status = entity.StatusDEXBuy_SendingMaster
 			order.SetUpdatedAt()
-			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+			_, err = u.Repo.UpdateDexBTCBuyETHOrderSendMaster(&order)
 			if err != nil {
-				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderSendMaster err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 			}
 			continue
 		case entity.StatusDEXBuy_SendingMaster:
@@ -669,7 +720,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				order.Status = entity.StatusDEXBuy_SentMaster
 				_, err = u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 				if err != nil {
-					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v\n", err)
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
 			}
 		}

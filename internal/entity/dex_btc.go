@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -33,13 +34,13 @@ type DexBTCListing struct {
 	InvalidMatch   bool       `bson:"invalid_match"`
 	InvalidMatchTx string     `bson:"invalid_match_tx"`
 
-	CreatedVerifiedActivity bool `bson:"created_verified_activity"`
+	CreatedVerifiedActivity  bool `bson:"created_verified_activity"`
 	CreatedCancelledActivity bool `bson:"created_cancelled_activity"`
-	CreatedMatchedActivity bool `bson:"created_matched_activity"`
+	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 }
 
 type DexBtcListingWithProjectInfo struct {
-	DexBTCListing
+	DexBTCListing `bson:",inline"`
 	ProjectInfo []DexBtcProjectInfo `bson:"project_info"`
 }
 
@@ -70,9 +71,15 @@ type DexBTCBuyWithETH struct {
 	BuyTx          string             `bson:"buy_tx" json:"buy_tx"`
 	RefundTx       string             `bson:"refund_tx" json:"refund_tx"`
 	MasterTx       string             `bson:"master_tx" json:"master_tx"`
+	SplitTx        string             `bson:"split_tx" json:"split_tx"`
 	FeeRate        uint64             `bson:"fee_rate" json:"fee_rate"`
 	Status         DexBTCETHBuyStatus `bson:"status" json:"status"`
 	ETHKey         string             `bson:"eth_key" json:"eth_key"`
+}
+
+func (u DexBTCBuyWithETH) ToJsonString() string {
+	dataBytes, _ := json.MarshalIndent(u, "", " ")
+	return string(dataBytes)
 }
 
 func (u DexBTCBuyWithETH) TableName() string {
