@@ -156,18 +156,24 @@ func (h *httpDelivery) retrieveBTCListingOrdersInfo(w http.ResponseWriter, r *ht
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	psbtList := []string{}
+	psbtList := make(map[string]string)
+	psbtListNotAvail := make(map[string]string)
 	for _, orderID := range reqBody.OrderList {
 		orderInfo, err := h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
 		if err != nil {
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
-			return
+			psbtListNotAvail[orderID] = orderInfo.RawPSBT
+			continue
 		}
-		psbtList = append(psbtList, orderInfo.RawPSBT)
+		if orderInfo.Cancelled || orderInfo.Matched {
+			psbtListNotAvail[orderID] = orderInfo.RawPSBT
+			continue
+		}
+		psbtList[orderID] = orderInfo.RawPSBT
 	}
 
 	result := response.DexBTCListingOrdersInfo{
-		RawPSBTList: psbtList,
+		RawPSBTList:         psbtList,
+		RawPSBTListNotAvail: psbtListNotAvail,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")

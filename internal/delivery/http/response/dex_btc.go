@@ -10,7 +10,8 @@ type DexBTCListingOrderInfo struct {
 }
 
 type DexBTCListingOrdersInfo struct {
-	RawPSBTList []string `json:"raw_psbt_list"`
+	RawPSBTList         map[string]string `json:"raw_psbt_list"`
+	RawPSBTListNotAvail map[string]string `json:"raw_psbt_list_not_avail"`
 }
 
 type DexBTCHistoryListing struct {
