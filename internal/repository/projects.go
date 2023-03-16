@@ -72,6 +72,39 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenIDCustomField(tokenID string, fields []string) (*entity.Projects, error) {
+	projectField := bson.D{
+		{"_id", 1},
+	}
+	for _, field := range fields {
+		projectField = append(projectField, bson.E{Key: field, Value: 1})
+	}
+
+	aggregates := bson.A{
+		bson.D{
+			{Key: "$project",
+				Value: projectField,
+			},
+		},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "tokenid", Value: tokenID}}}},
+	}
+
+	cursor, err := r.DB.Collection(entity.Projects{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	projectList := []entity.Projects{}
+
+	if err = cursor.All((context.TODO()), &projectList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(projectList) > 0 {
+		return &projectList[0], nil
+	}
+	return nil, errors.New("tokenid not found")
+}
+
 func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects, error) {
 	resp := []*entity.Projects{}
 	f := bson.M{}
