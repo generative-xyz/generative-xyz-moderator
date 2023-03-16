@@ -8,7 +8,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -73,6 +72,10 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	}
 	if user.ProfileSocial.TwitterVerified {
 		return "", errors.New("Haven't permission")
+	}
+	_, exists := s.Repo.CheckDAOArtistAvailableByUser(ctx, userWallet)
+	if exists {
+		return "", errors.New("Proposal is exists")
 	}
 	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
 		user.ProfileSocial.Twitter = req.Twitter
@@ -160,15 +163,12 @@ func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string
 	return daoArtist, nil
 }
 
-func (s *Usecase) CanCreateProposal(ctx context.Context, walletAddress string) (*entity.DaoArtist, bool) {
-	daoArtist, err := s.GetDAOArtistByWallet(ctx, walletAddress)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, true
-		}
-		return nil, false
+func (s *Usecase) CanCreateNewProposal(ctx context.Context, walletAddress string) (string, bool) {
+	daoArtist, exists := s.Repo.CheckDAOArtistAvailableByUser(ctx, walletAddress)
+	if exists && daoArtist != nil {
+		return daoArtist.ID.Hex(), false
 	}
-	return daoArtist, false
+	return "", true
 }
 
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {

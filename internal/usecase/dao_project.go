@@ -89,6 +89,9 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
 			return nil, errors.New("Haven't permission")
 		}
+		if s.Repo.CheckDAOProjectAvailableByProjectId(ctx, project.ID) {
+			return nil, errors.New("Proposal is exists")
+		}
 		daoProject := &entity.DaoProject{
 			CreatedBy: req.CreatedBy,
 			ProjectId: project.ID,

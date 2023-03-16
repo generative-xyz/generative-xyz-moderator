@@ -3,11 +3,13 @@ package repository
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/constants/dao_artist"
 	"rederinghub.io/utils/constants/dao_artist_voted"
 )
 
@@ -31,7 +33,6 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 	addFieldUserName := bson.M{
 		"$addFields": bson.M{
 			"user_name": "$user.display_name",
-			// "user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -48,6 +49,9 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 	}
 	if request.PageSize > 0 && request.PageSize <= limit {
 		limit = request.PageSize
+	}
+	filters["expired_at"] = bson.M{
+		"$gt": time.Now(),
 	}
 	if request.Id != nil {
 		id, err := primitive.ObjectIDFromHex(*request.Id)
@@ -72,10 +76,6 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
-			// bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
-			// 	Pattern: *request.Keyword,
-			// 	Options: "i",
-			// }},
 		}
 		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
 			search = append(search, bson.M{"seq_id": seqId})
@@ -149,6 +149,20 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		return nil, 0, err
 	}
 	return projects, total, nil
+}
+
+func (s Repository) CheckDAOArtistAvailableByUser(ctx context.Context, userWallet string) (*entity.DaoArtist, bool) {
+	daoArtist := &entity.DaoArtist{}
+	if err := s.FindOneBy(ctx, daoArtist.TableName(), bson.M{
+		"created_by": userWallet,
+		"$or": bson.A{
+			bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+			bson.M{"status": dao_artist.Verified},
+		},
+	}, daoArtist); err != nil {
+		return nil, false
+	}
+	return daoArtist, true
 }
 
 func (s Repository) CountDAOArtistVoteByStatus(ctx context.Context, daoArtistId primitive.ObjectID, status dao_artist_voted.Status) int {
