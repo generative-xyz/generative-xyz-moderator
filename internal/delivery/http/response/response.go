@@ -137,7 +137,8 @@ func NewRESTHandlerTemplate(handlerFunc HandlerFunc) http.Handler {
 }
 
 func (h *restHandlerTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx, cancel := context.WithTimeout(r.Context(), utils.HttpContextTimeOut)
+	defer cancel()
 	vars := mux.Vars(r)
 	vars[utils.SIGNED_USER_ID] = ""
 	vars[utils.SIGNED_WALLET_ADDRESS] = ""

@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -39,14 +40,22 @@ type BaseFilters struct {
 }
 
 type Pagination struct {
-	Result    interface{} `json:"result"`
+	Result    interface{} `json:"result" query:"-"`
 	Page      int64       `json:"page" query:"page"`
 	PageSize  int64       `json:"pageSize" query:"limit"`
-	Total     int64       `json:"total"`
-	TotalPage int64       `json:"totalPage"`
+	Total     int64       `json:"total" query:"-"`
+	TotalPage int64       `json:"totalPage" query:"-"`
 	Cursor    string      `json:"cursor" query:"cursor"`
 	Sort      []string    `json:"sort" query:"sort"`
-	Sorts     []*Sort     `json:"-"`
+	Sorts     []*Sort     `json:"sorts" query:"-"`
+}
+
+func (m Pagination) MarshalBinary() ([]byte, error) {
+	return json.Marshal(m)
+}
+
+func (m *Pagination) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, m)
 }
 
 func (m *Pagination) SetTotalPage() {
