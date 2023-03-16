@@ -639,6 +639,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/collections": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/configs": {
             "get": {
                 "description": "Get configs",
@@ -800,6 +837,383 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    }
+                }
+            }
+        },
+        "/dao-artist": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "List DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Create DAO Artist",
+                "parameters": [
+                    {
+                        "description": "Create Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDaoArtistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/dao-artist/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Get DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DAO Artist Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Vote DAO Artist",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Artist"
+                ],
+                "summary": "Vote DAO Artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "DAO Artist Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VoteDaoArtistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/dao-project": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List DAO Project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "List DAO Project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create DAO Project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "Create DAO Project",
+                "parameters": [
+                    {
+                        "description": "Create Dao Project Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDaoProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/dao-project/me/projects-hidden": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List Projects Is Hidden",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "List Projects Is Hidden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
+                    }
+                }
+            }
+        },
+        "/dao-project/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get DAO Project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "Get DAO Project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Dao Project Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DaoProject"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Vote DAO Project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "Vote DAO Project",
+                "parameters": [
+                    {
+                        "description": "Vote Dao Project Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VoteDaoProjectRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Dao Project Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -2485,10 +2899,10 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "Authorization": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "get current user's projects",
+                "description": "Get current user's projects",
                 "consumes": [
                     "application/json"
                 ],
@@ -2498,14 +2912,8 @@ const docTemplate = `{
                 "tags": [
                     "Profile"
                 ],
-                "summary": "get current user's projects",
+                "summary": "Get current user's projects",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter project via contract address",
-                        "name": "contractAddress",
-                        "in": "query"
-                    },
                     {
                         "type": "integer",
                         "description": "limit",
@@ -2523,7 +2931,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.ProjectResp"
+                            }
                         }
                     }
                 }
@@ -3842,6 +4253,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/token-activities": {
+            "get": {
+                "description": "get referrals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token Activities"
+                ],
+                "summary": "get referrals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token inscription ID",
+                        "name": "inscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "project",
+                        "name": "project_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "activity types",
+                        "name": "types",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-moralis/nfts": {
             "get": {
                 "security": [
@@ -4481,10 +4947,10 @@ const docTemplate = `{
                 "apiName": {
                     "type": "string"
                 },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
-                "deletedAt": {
+                "deleted_at": {
                     "type": "string"
                 },
                 "id": {
@@ -4493,7 +4959,7 @@ const docTemplate = `{
                 "status": {
                     "type": "integer"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 },
                 "userUuid": {
@@ -4507,13 +4973,10 @@ const docTemplate = `{
         "entity.FirebaseRegistrationToken": {
             "type": "object",
             "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
-                "deletedAt": {
+                "deleted_at": {
                     "type": "string"
                 },
                 "device_type": {
@@ -4525,7 +4988,7 @@ const docTemplate = `{
                 "registration_token": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 },
                 "user_wallet": {
@@ -4744,7 +5207,7 @@ const docTemplate = `{
                 "contractAddress": {
                     "type": "string"
                 },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "created_by_collection_meta": {
@@ -4762,7 +5225,7 @@ const docTemplate = `{
                 "creatorProfile": {
                     "$ref": "#/definitions/entity.Users"
                 },
-                "deletedAt": {
+                "deleted_at": {
                     "type": "string"
                 },
                 "description": {
@@ -4969,7 +5432,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/entity.TraitStat"
                     }
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 },
                 "uuid": {
@@ -5021,11 +5484,14 @@ const docTemplate = `{
                 "contract_address": {
                     "type": "string"
                 },
-                "createdAt": {
-                    "type": "string"
-                },
                 "createdByCollectionInscription": {
                     "type": "boolean"
+                },
+                "createdMintActivity": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
                 },
                 "creator": {
                     "$ref": "#/definitions/entity.Users"
@@ -5033,7 +5499,7 @@ const docTemplate = `{
                 "creatorAddr": {
                     "type": "string"
                 },
-                "deletedAt": {
+                "deleted_at": {
                     "type": "string"
                 },
                 "description": {
@@ -5043,6 +5509,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "image": {
+                    "type": "string"
+                },
+                "inscribedBy": {
                     "type": "string"
                 },
                 "inscriptionIndex": {
@@ -5065,6 +5534,9 @@ const docTemplate = `{
                 },
                 "order_inscription_index": {
                     "type": "integer"
+                },
+                "originalInscribedBy": {
+                    "type": "string"
                 },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
@@ -5127,7 +5599,7 @@ const docTemplate = `{
                 "token_id_mini": {
                     "type": "integer"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -5203,17 +5675,17 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
-                "createdAt": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
-                "deletedAt": {
+                "deleted_at": {
                     "type": "string"
                 },
                 "display_name": {
                     "type": "string"
+                },
+                "enable_notification": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
@@ -5236,7 +5708,7 @@ const docTemplate = `{
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 },
                 "uuid": {
@@ -5246,7 +5718,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_address": {
-                    "description": "eth wallet define user in platform by connect wallet and sign",
+                    "description": "ID                      string        ` + "`" + `bson:\"id\" json:\"id,omitempty\"` + "`" + `",
                     "type": "string"
                 },
                 "wallet_address_btc": {
@@ -5504,6 +5976,28 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "request.CreateDaoArtistRequest": {
+            "type": "object",
+            "properties": {
+                "twitter": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateDaoProjectRequest": {
+            "type": "object",
+            "required": [
+                "project_ids"
+            ],
+            "properties": {
+                "project_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -5843,6 +6337,9 @@ const docTemplate = `{
                 "displayName": {
                     "type": "string"
                 },
+                "enableNotification": {
+                    "type": "boolean"
+                },
                 "profileSocial": {
                     "$ref": "#/definitions/request.ProfileSocial"
                 },
@@ -5912,6 +6409,22 @@ const docTemplate = `{
                 }
             }
         },
+        "request.VoteDaoArtistRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "request.VoteDaoProjectRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.WithDrawItemRequest": {
             "type": "object",
             "properties": {
@@ -5928,6 +6441,14 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "response.ActionDaoProject": {
+            "type": "object",
+            "properties": {
+                "can_vote": {
+                    "type": "boolean"
                 }
             }
         },
@@ -5953,6 +6474,79 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "response.DaoProject": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/response.ActionDaoProject"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_project_voted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DaoProjectVoted"
+                    }
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "project": {
+                    "$ref": "#/definitions/response.ProjectForDaoProject"
+                },
+                "project_id": {
+                    "type": "string"
+                },
+                "seq_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "total_against": {
+                    "type": "integer"
+                },
+                "total_vote": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserForDao"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DaoProjectVoted": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_project_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -6127,6 +6721,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "inscribedBy": {
+                    "type": "string"
+                },
                 "inscriptionIndex": {
                     "type": "string"
                 },
@@ -6163,11 +6760,17 @@ const docTemplate = `{
                 "priceBTC": {
                     "type": "string"
                 },
+                "priceETH": {
+                    "type": "string"
+                },
                 "priority": {
                     "type": "integer"
                 },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
+                },
+                "sell_verified": {
+                    "type": "boolean"
                 },
                 "stats": {
                     "$ref": "#/definitions/response.TokenStat"
@@ -6248,6 +6851,9 @@ const docTemplate = `{
                 "bio": {
                     "type": "string"
                 },
+                "canCreateProposal": {
+                    "type": "boolean"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6297,6 +6903,61 @@ const docTemplate = `{
                 },
                 "web": {
                     "type": "string"
+                }
+            }
+        },
+        "response.ProjectForDaoProject": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_by": {
+                    "type": "string"
+                },
+                "creator_name": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "max_supply": {
+                    "type": "integer"
+                },
+                "minting_info": {
+                    "$ref": "#/definitions/response.ProjectMintingInfo"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "token_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProjectMintingInfo": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer"
+                },
+                "index_reverse": {
+                    "type": "integer"
                 }
             }
         },
@@ -6370,6 +7031,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "isHidden": {
+                    "type": "boolean"
+                },
+                "isReviewing": {
                     "type": "boolean"
                 },
                 "itemDesc": {
@@ -6601,6 +7265,50 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserForDao": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_verified": {
+                    "type": "boolean"
+                },
+                "profile_social": {
+                    "$ref": "#/definitions/response.ProfileSocial"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "wallet_address": {
+                    "type": "string"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
+                },
+                "wallet_address_btc_taproot": {
+                    "type": "string"
+                },
+                "wallet_address_payment": {
                     "type": "string"
                 }
             }

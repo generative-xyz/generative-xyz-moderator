@@ -171,7 +171,9 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
-
+	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
+		tokenUri.Project.InscribedBy = tokenUri.InscribedBy
+	}
 	client := resty.New()
 	resp := &response.SearhcInscription{}
 	_, err = client.R().
@@ -590,12 +592,51 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	
+
+	//filerAttrs := []structure.TokenUriAttrReq{}
+	if filter.Rarity != nil && *filter.Rarity != "" {
+		r := strings.Split(*filter.Rarity, ",")
+		min := "0"
+		max := "100"
+		if len(r) == 2 {
+			min = r[0]
+			max = r[1]
+		}
+
+		minInt, _ := strconv.Atoi(min)
+		maxInt, _ := strconv.Atoi(max)
+
+		groupTraits := make(map [string][]string)
+		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
+		if err == nil {
+			traits := p.TraitsStat
+			for _, trait := range traits {
+				values := trait.TraitValuesStat
+				
+				for _, value := range values {
+					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
+						
+					}
+				}
+			}
+		}
+
+		for key, groupTrait := range  groupTraits {
+			r := structure.TokenUriAttrReq{}
+			r.TraitType = key
+			r.Values = groupTrait
+			filter.RarityAttributes = append(filter.Attributes, r)
+		}
+	}
+
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
-
+	
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
@@ -662,7 +703,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, nftTokenIds ...string) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, opts ...string) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -693,10 +734,15 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.PaidType = paidType
 	tokenUri.IsOnchain = false
-	if len(nftTokenIds) > 0 {
-		tokenUri.NftTokenId = nftTokenIds[0]
+	if len(opts) > 0 {
+		tokenUri.NftTokenId = opts[0]
 	}
-
+	if len(opts) > 1 {
+		tokenUri.InscribedBy = opts[1]
+	}
+	if len(opts) > 2 {
+		tokenUri.OriginalInscribedBy = opts[2]
+	}
 	nftTokenUri := project.NftTokenUri
 	u.Logger.Info("nftTokenUri", nftTokenUri)
 
@@ -952,7 +998,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	now := time.Now().UTC()
-	imageURI := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", inscription.ID)
+	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
 	tokenUri.AnimationURL = ""
 	tokenUri.Thumbnail = imageURI
 	tokenUri.Image = imageURI
@@ -1001,4 +1047,16 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 	spew.Dump(link)
 	return &link, nil
 
+}
+
+func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, error) {
+	tokens, err := u.Repo.FindTokenByTokenIds(tokenIDs)
+	if err != nil {
+		return nil, err
+	}
+	tokenIdToToken := map[string]*entity.TokenUri{}
+	for id := range tokens {
+		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
+	}
+	return tokenIdToToken, nil
 }

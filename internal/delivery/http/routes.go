@@ -46,6 +46,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
+	tokenActivities := api.PathPrefix("/token-activities").Subrouter()
+	tokenActivities.HandleFunc("", h.getTokenActivities).Methods("GET")
+
 	files := api.PathPrefix("/files").Subrouter()
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
@@ -141,6 +144,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
 
+	// New Marketplace
+	collection := api.PathPrefix("/collections").Subrouter()
+	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
+
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
@@ -233,7 +240,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
 	//buy with eth
 	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
-	inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
+	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
 	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
 	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
@@ -268,6 +275,23 @@ func (h *httpDelivery) RegisterV1Routes() {
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
 	// For test, will remove
 	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
+
+	// DAO Project
+	daoProject := api.PathPrefix("/dao-project").Subrouter()
+	daoProject.Use(h.MiddleWare.AuthorizeFunc)
+	daoProject.HandleFunc("", h.listDaoProject).Methods("GET")
+	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
+	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
+	daoProject.HandleFunc("/{id}", h.voteDaoProject).Methods("PUT")
+	daoProject.HandleFunc("/me/projects-hidden", h.listYourProjectsIsHidden).Methods("GET")
+
+	// DAO Artist
+	daoArtist := api.PathPrefix("/dao-artist").Subrouter()
+	daoArtist.Use(h.MiddleWare.AuthorizeFunc)
+	daoArtist.HandleFunc("", h.listDaoArtist).Methods("GET")
+	daoArtist.HandleFunc("", h.createDaoArtist).Methods("POST")
+	daoArtist.HandleFunc("/{id}", h.getDaoArtist).Methods("GET")
+	daoArtist.HandleFunc("/{id}", h.voteDaoArtist).Methods("PUT")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

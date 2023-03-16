@@ -580,3 +580,16 @@ func CheckTxFromBTC(txhash string) (*BTCTxInfo, error) {
 
 	return &result, nil
 }
+
+func ConvertToUTXOType(utxos []structure.TxRef) ([]UTXOType, error) {
+	var result []UTXOType
+	for _, utxo := range utxos {
+		newUTXO := UTXOType{
+			Value:      uint64(utxo.Value),
+			TxHash:     utxo.TxHash,
+			TxOutIndex: utxo.TxOutputN,
+		}
+		result = append(result, newUTXO)
+	}
+	return result, nil
+}
