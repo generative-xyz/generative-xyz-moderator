@@ -30,8 +30,8 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 	unwindUser := bson.M{"$unwind": "$user"}
 	addFieldUserName := bson.M{
 		"$addFields": bson.M{
-			"user_name":                       "$user.display_name",
-			"user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
+			"user_name": "$user.display_name",
+			// "user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -72,10 +72,10 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
-			bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
-				Pattern: *request.Keyword,
-				Options: "i",
-			}},
+			// bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
+			// 	Pattern: *request.Keyword,
+			// 	Options: "i",
+			// }},
 		}
 		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
 			search = append(search, bson.M{"seq_id": seqId})
