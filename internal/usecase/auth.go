@@ -344,7 +344,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 	}
 
 	needUpdateProposalForCreateNew := false
-	if data.ProfileSocial.Twitter != nil {
+	if data.ProfileSocial.Twitter != nil && user.ProfileSocial.Twitter != *data.ProfileSocial.Twitter {
 		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
 		user.ProfileSocial.TwitterVerified = false
 		needUpdateProposalForCreateNew = true
