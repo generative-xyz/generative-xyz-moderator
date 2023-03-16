@@ -39,7 +39,7 @@ type DexBTCListing struct {
 }
 
 type DexBtcListingWithProjectInfo struct {
-	DexBTCListing
+	DexBTCListing `bson:",inline"`
 	ProjectInfo []DexBtcProjectInfo `bson:"project_info"`
 }
 
