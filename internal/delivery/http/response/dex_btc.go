@@ -1,7 +1,12 @@
 package response
 
 type DexBTCListingOrderInfo struct {
-	RawPSBT string `json:"raw_psbt"`
+	RawPSBT      string `json:"raw_psbt"`
+	Buyable      bool   `json:"buyable"`
+	SellVerified bool   `json:"sell_verified"`
+	PriceBTC     uint64 `json:"priceBTC"`
+	PriceETH     string `json:"priceETH"`
+	OrderID      string `json:"orderID"`
 }
 
 type DexBTCHistoryListing struct {

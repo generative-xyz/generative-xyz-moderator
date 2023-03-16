@@ -143,6 +143,7 @@ const (
 	COLLECTION_DISCORD_NOTI             string = "discord_notis"
 	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
 	COLLECTION_TOKEN_ACTIVITY           string = "token_activities"
+	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1674,7 +1675,9 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				fmt.Println("SendMasterAndRefund gasPrice: ", gasPrice, len(destinations))
 
-				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+				gasLimit := 21000 + 11000*(len(destinations)-1)
+
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetInt64(int64(gasLimit)))
 
 				fmt.Println("txFee: ", txFee)
 
@@ -1730,6 +1733,8 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
 					privateKeyDeCrypt,
 					destinations,
+					gasPrice,
+					uint64(gasLimit),
 				)
 
 				if err != nil {
@@ -2064,18 +2069,33 @@ func (u Usecase) CheckRefundNftBtc() error {
 
 // Mint flow
 func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
+	key := "btc-eth-rate"
+	exist, err := u.Cache.Exists(key)
+	if err == nil {
+		if *exist {
+			value, err := u.Cache.GetData(key)
+			if err == nil && value != nil {
+				values := strings.Split(*value, "|")
+				btcPrice, _ := strconv.ParseFloat(values[0], 10)
+				ethPrice, _ := strconv.ParseFloat(values[1], 10)
+				return btcPrice, ethPrice, nil
+			}
+		}
+	}
+
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
 		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return 0, 0, err
 	}
 
-	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
 		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
 		return 0, 0, err
 	}
 
+	value := fmt.Sprintf("%f|%f", btcPrice, ethPrice)
+	u.Cache.SetStringDataWithExpTime(key, value, 15)
 	return btcPrice, ethPrice, nil
 }

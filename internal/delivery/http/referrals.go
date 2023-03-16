@@ -76,16 +76,16 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	referreeID := r.URL.Query().Get("referreeID")
 	amountType := r.URL.Query().Get("amountType")
 
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	referrerID, ok := iUserID.(string)
+	// ctx := r.Context()
+	// iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	// referrerID, ok := iUserID.(string)
 
-	if !ok {
-		err := errors.New( "Token is incorect")
-		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// if !ok {
+	// 	err := errors.New( "Token is incorect")
+	// 	h.Logger.Error("ctx.Value.Token",  err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
 	f := structure.FilterReferrals{}
 	f.BaseFilters = *baseF
