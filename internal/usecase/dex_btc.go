@@ -641,7 +641,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			// send eth to master and update status to StatusDEXBuy_SENDING_MASTER
 			txID, _, err := ethClient.TransferMax(order.ETHKey, u.Config.DexBTCMasterETHAddress)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH TransferMax", order.ID, order.RefundAddress, err)
+				log.Println("watchPendingDexBTCBuyETH TransferMax", order.ID, u.Config.DexBTCMasterETHAddress, err)
 				return err
 			}
 
