@@ -485,7 +485,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if listingOrder != nil {
-
+				if listingOrder.Cancelled || listingOrder.Matched {
+					order.Status = entity.StatusDEXBuy_WaitingToRefund
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+					}
+					continue
+				}
 				// privKeyDecrypt, err := encrypt.DecryptToString(u.Config.DexBTCKey, os.Getenv("SECRET_KEY"))
 				// if err != nil {
 				// 	log.Println("watchPendingDexBTCBuyETH DecryptToString", order.ID, err)
