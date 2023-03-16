@@ -12,6 +12,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 )
 
 func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
@@ -88,17 +89,59 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 
 func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *http.Request) {
 	orderID := r.URL.Query().Get("order_id")
-	if orderID == "" {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("orderID cannot be empty"))
+
+	inscription := r.URL.Query().Get("inscription")
+
+	if inscription == "" && orderID == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("need to have inscription or order_id"))
 		return
 	}
-	orderInfo, err := h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+
+	var orderInfo *entity.DexBTCListing
+	var err error
+	if orderID != "" {
+		orderInfo, err = h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+			return
+		}
+	} else {
+		orderInfo, err = h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(inscription)
+		if err != nil {
+			h.Logger.Error("httpDelivery retrieveListingOrderByInscription GetDexBTCListingOrderPendingByInscriptionID", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	}
+
+	psbt, err := btc.ParsePSBTFromBase64(orderInfo.RawPSBT)
 	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+		h.Logger.Error("httpDelivery ParsePSBTFromBase64", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	amountBTCFee := uint64(0)
+	amountBTCFee = btc.EstimateTxFee(uint(len(orderInfo.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+	amountBTCRequired := orderInfo.Amount + 1000
+	amountBTCRequired += amountBTCFee
+	amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+
+	btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+	if err != nil {
+		h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+	}
+	amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+	if err != nil {
+		h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+	}
+
 	result := response.DexBTCListingOrderInfo{
-		RawPSBT: orderInfo.RawPSBT,
+		RawPSBT:      orderInfo.RawPSBT,
+		Buyable:      !(orderInfo.Cancelled && orderInfo.Matched),
+		SellVerified: orderInfo.Verified,
+		PriceBTC:     orderInfo.Amount,
+		PriceETH:     amountETH,
+		OrderID:      orderInfo.ID.Hex(),
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
@@ -409,7 +452,7 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 
 	list, err := h.Usecase.Repo.GetDexBTCBuyETHOrderByUserID(userID, int64(limit), int64(offset))
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCBuyETHHistory.GetDexBTCBuyETHOrderByUserID", err.Error(), err)
+		h.Logger.Error("httpDelivery dexBTCBuyETHHistory GetDexBTCBuyETHOrderByUserID", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
