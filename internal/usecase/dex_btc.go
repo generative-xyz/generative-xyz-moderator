@@ -547,9 +547,9 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 				order.BuyTx = respondData.TxID
 				order.Status = entity.StatusDEXBuy_Buying
-				_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+				_, err = u.Repo.UpdateDexBTCBuyETHOrderBuy(&order)
 				if err != nil {
-					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrder err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderBuy err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
 				continue
 			} else {
@@ -605,9 +605,9 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			order.RefundTx = txID
 			order.Status = entity.StatusDEXBuy_Refunding
 			order.SetUpdatedAt()
-			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+			_, err = u.Repo.UpdateDexBTCBuyETHOrderRefund(&order)
 			if err != nil {
-				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderRefund err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 			}
 			continue
 		case entity.StatusDEXBuy_Refunding:
@@ -644,9 +644,9 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			order.MasterTx = txID
 			order.Status = entity.StatusDEXBuy_SendingMaster
 			order.SetUpdatedAt()
-			_, err = u.Repo.UpdateDexBTCBuyETHOrder(&order)
+			_, err = u.Repo.UpdateDexBTCBuyETHOrderSendMaster(&order)
 			if err != nil {
-				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrder err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderSendMaster err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 			}
 			continue
 		case entity.StatusDEXBuy_SendingMaster:
