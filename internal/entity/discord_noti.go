@@ -9,8 +9,18 @@ import (
 type DiscordNotiStatus int
 const (
 	PENDING DiscordNotiStatus = 0
-	DONE		DiscordNotiStatus	= 1
+	DONE	DiscordNotiStatus = 1
 	FAILED  DiscordNotiStatus = 2
+)
+
+type DiscordNotiType string
+const (
+	UNREGCONIZE DiscordNotiType = ""
+	NEW_AIRDROP DiscordNotiType = "new_airdrop"
+	NEW_SALE    DiscordNotiType = "new_sale"
+	NEW_LISTING DiscordNotiType = "new_listing"
+	NEW_MINT    DiscordNotiType = "new_mint"
+	NEW_PROJECT DiscordNotiType = "new_project"
 )
 
 type GetDiscordNotiReq struct {
@@ -19,12 +29,20 @@ type GetDiscordNotiReq struct {
 	Status *DiscordNotiStatus
 }
 
+type DiscordNotiMeta struct {
+	InscriptionID string `bson:"inscription_id"`
+	ProjectID     string `bson:"project_id"`
+	SentTo        string `bson:"sent_to"`
+}
+
 type DiscordNoti struct {
 	BaseEntity    `bson:",inline"`
 	Message    DiscordMessage           `bson:"message"`
 	Status     DiscordNotiStatus `bson:"status"`
 	NumRetried int               `bson:"num_retried"`
 	Webhook    string `bson:"webhook"`
+	Type DiscordNotiType `bson:"type"`
+	Meta DiscordNotiMeta `bson:"meta"`
 }
 
 type DiscordMessage struct {
