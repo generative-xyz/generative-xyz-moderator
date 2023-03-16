@@ -29,6 +29,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -89,7 +90,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = false
+	pe.IsHidden = true
+	if req.IsHidden != nil {
+		pe.IsHidden = *req.IsHidden
+	}
 	pe.Status = true
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
@@ -206,6 +210,21 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
+
+	if pe.IsHidden && pe.IsSynced {
+		ids, err := u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+			ProjectIds: []string{pe.ID.Hex()},
+			CreatedBy:  pe.CreatorAddrr,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("CreateDAOProject success",
+				zap.String("project_id", pe.ID.Hex()),
+				zap.Strings("ids", ids),
+			)
+		}
+	}
 
 	return pe, nil
 }
@@ -586,8 +605,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-
-	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
+	end := 10
+	if end > len(userAddr) {
+		end = len(userAddr)
+	}
+	return userAddr[:end]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -636,6 +658,11 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
+		if !*req.IsHidden {
+			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
+				return nil, errors.New("Collection is reviewing")
+			}
+		}
 		p.IsHidden = *req.IsHidden
 	}
 
@@ -727,14 +754,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
-	whitelist := make(map[string]bool)
-	whitelist["0xe23fcb129d6ea1b847202b14a56f957e5a464f64"] = true // andy
-	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
-	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
-	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
-	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
-	whitelist["0xd77f54424cc2bd2a7315b1018e53548f62f690c0"] = true // anne
-	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
+	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
@@ -1611,7 +1631,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-	pe.IsHidden = false
+	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
 
@@ -1623,6 +1643,19 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	if err != nil {
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
 		return nil, err
+	}
+
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+		ProjectIds: []string{pe.ID.Hex()},
+		CreatedBy:  pe.CreatorAddrr,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", pe.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
 	}
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
@@ -1680,7 +1713,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	mPrice := helpers.StringToBTCAmount("0")
 
-	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
+	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
@@ -1898,6 +1931,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			creator); err != nil {
 			return err
 		}
+		isFalse := false
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
@@ -1912,6 +1946,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
 			InscribedBy:     item.UserWalletAddress,
+			IsHidden:        &isFalse,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -1938,7 +1973,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId)
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
@@ -2008,18 +2043,21 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
+		logger.AtLog.Errorf("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 	if totalImages == 0 && totalProcessingImages == 0 {
-		return nil, errors.New("Project doesn's have any files")
+		err = errors.New("Project doesn's have any files")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
 	}
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2032,19 +2070,20 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
-		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	data := []entity.TokenTraits{}
 	err = json.Unmarshal(content, &data)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2056,6 +2095,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	err = u.Repo.CreateTokenUriMetadata(h)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2063,18 +2103,21 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		tokenID := item.ID
 		token, err := u.Repo.FindTokenByTokenID(tokenID)
 		if err != nil {
+			err = fmt.Errorf("token %s was not found: %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		if token.ProjectID != p.TokenID {
-			err = errors.New("token is not belong to this project")
+			err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		attrs := []entity.TokenUriAttr{}
 		attrStrs := []entity.TokenUriAttrStr{}
 
-		for _, itemAttr := range item.Atrributes {
+		for _, itemAttr := range item.Attributes {
 			attr := entity.TokenUriAttr{
 				TraitType: itemAttr.TraitType,
 				Value:     itemAttr.Value,
@@ -2092,8 +2135,11 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
+		spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
+			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 	}

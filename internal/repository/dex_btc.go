@@ -65,6 +65,26 @@ func (r Repository) UpdateDexBTCListingOrderCancelTx(model *entity.DexBTCListing
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCListingOrderInvalidMatch(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"invalid_match":    model.InvalidMatch,
+			"invalid_match_tx": model.InvalidMatchTx,
+			"cancelled":        model.Cancelled,
+			"cancel_at":        model.CancelAt,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
@@ -110,6 +130,26 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	},
 		{Key: "matched", Value: false},
 		{Key: "cancelled", Value: false}}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetAllDexBTCListingByInscriptionID(inscriptionID string) ([]entity.DexBTCListing, error) {
+	listings := []entity.DexBTCListing{}
+	f := bson.D{
+		{Key: "inscription_id", Value: inscriptionID},
+	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},
@@ -284,6 +324,23 @@ func (r Repository) UpdateDexBTCBuyETHOrderStatus(model *entity.DexBTCBuyWithETH
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCBuyETHOrderConfirmation(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+
+	update := bson.M{
+		"$set": bson.M{
+			"confirmation": model.Confirmation,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
@@ -295,22 +352,22 @@ func (r Repository) UpdateDexBTCBuyETHOrder(model *entity.DexBTCBuyWithETH) (*mo
 	return result, err
 }
 
-func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
-	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+// func (r Repository) UpdateDexBTCBuyETHOrderTx(model *entity.DexBTCBuyWithETH) (*mongo.UpdateResult, error) {
+// 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
-	update := bson.M{
-		"$set": bson.M{
-			"eth_tx": model.ETHTx,
-		},
-	}
+// 	update := bson.M{
+// 		"$set": bson.M{
+// 			"eth_tx": model.ETHTx,
+// 		},
+// 	}
 
-	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return nil, err
-	}
+// 	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return result, err
-}
+// 	return result, err
+// }
 
 func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCBuyWithETH, error) {
 	f := bson.D{{Key: "uuid", Value: buyOrderID}}
@@ -326,4 +383,67 @@ func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCB
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) GetNotCreatedActivitiesListing(page int64, limit int64) (*entity.Pagination, error) {
+	confs := []entity.DexBTCListing{}
+	resp := &entity.Pagination{}
+	f := bson.M{"$or": bson.A{
+		bson.M{"verified": true, "careated_verified_activity": bson.M{"$ne": true}},
+		bson.M{"cancelled": true, "careated_cancelled_activity": bson.M{"$ne": true}},
+		bson.M{"matched": true, "careated_matched_activity": bson.M{"$ne": true}},
+	}}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	p, err := r.Paginate(entity.DexBTCListing{}.TableName(), page, limit, f, bson.D{}, s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
+}
+
+func (r Repository) UpdateListingCreatedVerifiedActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_verified_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateListingCreatedCancelledActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_cancelled_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateListingCreatedMatchedActivity(id string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: id}}
+	update := bson.M{
+		"$set": bson.M{"created_matched_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }

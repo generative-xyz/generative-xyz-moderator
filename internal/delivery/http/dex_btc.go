@@ -9,6 +9,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 )
@@ -157,15 +158,27 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 			result = append(result, newHistory)
 		}
 		if listing.Matched {
-			newHistory := response.DexBTCHistoryListing{
-				OrderID:       listing.UUID,
-				InscriptionID: listing.InscriptionID,
-				Timestamp:     listing.MatchAt.Unix(),
-				Amount:        fmt.Sprintf("%v", listing.Amount),
-				Type:          "matched",
-				Txhash:        listing.MatchedTx,
+			if listing.Buyer == listing.SellerAddress {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "cancelled",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
+			} else {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "matched",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
 			}
-			result = append(result, newHistory)
 		}
 	}
 
@@ -301,7 +314,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 		}
 		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
 	}
-	buyOrderID, tempAddress, err := h.Usecase.GenBuyETHOrder(userID, reqBody.OrderID, reqBody.Amount, reqBody.FeeRate, reqBody.ReceiveAddress)
+	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, hasRoyalty, err := h.Usecase.GenBuyETHOrder(reqBody.IsEstimate, userID, reqBody.OrderID, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
 	if err != nil {
 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -309,38 +322,43 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 	}
 
 	result := response.GenDexBTCBuyETH{
-		OrderID:     buyOrderID,
-		TempAddress: tempAddress,
+		OrderID:         buyOrderID,
+		ETHAddress:      tempETHAddress,
+		ETHAmount:       amountETH,
+		ExpiredAt:       expiredAt,
+		ETHAmountOrigin: originalETH,
+		ETHFee:          feeETH,
+		HasRoyalty:      hasRoyalty,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
-func (h *httpDelivery) updateDexBTCBuyETHOrderTx(w http.ResponseWriter, r *http.Request) {
-	var reqBody request.UpdateDexBTCBuyETHTx
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	var ok bool
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
-		return
-	}
-	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
-	if err != nil {
-		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
-}
+// func (h *httpDelivery) updateDexBTCBuyETHOrderTx(w http.ResponseWriter, r *http.Request) {
+// 	var reqBody request.UpdateDexBTCBuyETHTx
+// 	decoder := json.NewDecoder(r.Body)
+// 	err := decoder.Decode(&reqBody)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	var ok bool
+// 	ctx := r.Context()
+// 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+// 	userID, ok := iUserID.(string)
+// 	if !ok {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+// 		return
+// 	}
+// 	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+// }
 
 // func (h *httpDelivery) submitDexBTCBuyETHTx(w http.ResponseWriter, r *http.Request) {
 // 	var reqBody request.SubmitDexBTCBuyETH
@@ -396,6 +414,34 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	result := []response.DEXBuyEthHistory{}
+	for _, v := range list {
+		item := response.DEXBuyEthHistory{
+			CreatedAt:      v.CreatedAt.Unix(),
+			ID:             v.ID.Hex(),
+			OrderID:        v.OrderID,
+			AmountETH:      v.AmountETH,
+			UserID:         v.UserID,
+			ReceiveAddress: v.ReceiveAddress,
+			RefundAddress:  v.RefundAddress,
+			ExpiredAt:      v.ExpiredAt.Unix(),
+			BuyTx:          v.BuyTx,
+			RefundTx:       v.RefundTx,
+			FeeRate:        v.FeeRate,
+			InscriptionID:  v.InscriptionID,
+			AmountBTC:      v.AmountBTC,
+		}
+		switch v.Status {
+		case entity.StatusDEXBuy_SendingMaster, entity.StatusDEXBuy_SentMaster:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Bought]
+		case entity.StatusDEXBuy_WaitingToRefund:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Refunding]
+		default:
+			item.Status = entity.StatusDexBTCETHToText[v.Status]
+		}
+		result = append(result, item)
+	}
+
 	// address := userInfo.WalletAddressBTCTaproot
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }

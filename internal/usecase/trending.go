@@ -10,7 +10,7 @@ const (
 	INF_TRENDING_SCORE                  int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC                    int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN      int64 = 1000000
-	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 30
+	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 300
 	TRENDING_SCORE_EACH_MINT            int64 = 10
 	TRENDING_SCORE_EACH_VIEW            int64 = 1
 )
@@ -107,9 +107,14 @@ func (u Usecase) JobSyncProjectTrending() error {
 			if _countView != nil {
 				countView = *_countView
 			}
-			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID]
+			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID] + fromProjectIDToListingVolumn[project.TokenID]
+			u.Logger.Info(
+				"JobSyncProjectTrending.Volumn", 
+				zap.String("project", project.TokenID), 
+				zap.Any("mintVolumn", fromProjectIDToRecentVolumn[project.TokenID]),
+				zap.Any("tradeVolumn", fromProjectIDToListingVolumn[project.TokenID]),
+			)
 			volumnInBtc := float64(volumnInSatoshi) / float64(SATOSHI_EACH_BTC)
-			volumnInBtc += float64(fromProjectIDToListingVolumn[project.TokenID])
 			_countMint, err := u.Repo.CountMintActivity(project.TokenID)
 			if err != nil {
 				return err
