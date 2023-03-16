@@ -37,3 +37,7 @@ type UpdateDexBTCBuyETHTx struct {
 	Txhash  string `json:"txhash"`
 	OrderID string `json:"order_id"`
 }
+
+type RetrieveBTCListingOrdersInfo struct {
+	OrderList []string `json:"order_list"`
+}
