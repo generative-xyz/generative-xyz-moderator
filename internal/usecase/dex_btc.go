@@ -451,7 +451,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if balance.Cmp(amountRequired) > -1 {
-				if order.Confirmation > 1 && time.Since(*order.CreatedAt) > 3*time.Minute {
+				if order.Confirmation > 1 {
 					order.Status = entity.StatusDEXBuy_ReceivedFund
 					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
 					if err != nil {
