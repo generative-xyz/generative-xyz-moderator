@@ -236,23 +236,23 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
 		return err
 	}
-	if !project.IsHidden {
-		return nil
-	}
-	_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
-		bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "isHidden", Value: false},
-				{Key: "updated_at", Value: time.Now()},
-			}},
-		})
-	if err != nil {
-		logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
-		return err
+
+	if project.IsHidden {
+		_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "isHidden", Value: false},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
+			return err
+		}
 	}
 
 	if daoProject.Status != dao_project.Executed {
-		_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
+		_, err := s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
 					{Key: "status", Value: dao_project.Executed},
