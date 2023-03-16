@@ -218,24 +218,24 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 
 	f2 := bson.A{
 		bson.D{{"$match", f}},
-		bson.D{
-			{"$lookup",
-				bson.D{
-					{"from", "users"},
-					{"localField", "owner_addrress"},
-					{"foreignField", "wallet_address_btc_taproot"},
-					{"as", "owner"},
-				},
-			},
-		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$owner"},
-					{"preserveNullAndEmptyArrays", true},
-				},
-			},
-		},
+		// bson.D{
+		// 	{"$lookup",
+		// 		bson.D{
+		// 			{"from", "users"},
+		// 			{"localField", "owner_addrress"},
+		// 			{"foreignField", "wallet_address_btc_taproot"},
+		// 			{"as", "owner"},
+		// 		},
+		// 	},
+		// },
+		// bson.D{
+		// 	{"$unwind",
+		// 		bson.D{
+		// 			{"path", "$owner"},
+		// 			{"preserveNullAndEmptyArrays", true},
+		// 		},
+		// 	},
+		// },
 		bson.D{	
 			{"$lookup",
 				bson.D{
