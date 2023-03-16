@@ -258,22 +258,5 @@ func (s *Usecase) processVerifyArtist(ctx context.Context, daoArtist *entity.Dao
 }
 
 func (s *Usecase) SetExpireYourProposalArtist(ctx context.Context, userWallet string) error {
-	filter := bson.M{
-		"created_by": userWallet,
-		"$or": bson.A{
-			bson.M{
-				"expired_at": bson.M{
-					"$gt": time.Now(),
-				},
-			},
-			bson.M{"status": dao_artist.Verified},
-		},
-	}
-	update := bson.M{"$set": bson.M{"expired_at": time.Now(), "status": dao_artist.Verifying}}
-	count, err := s.Repo.UpdateMany(ctx, entity.DaoArtist{}.TableName(), filter, update)
-	if err != nil {
-		return err
-	}
-	logger.AtLog.Logger.Info("SetExpireYourProposalArtist success", zap.Int64("count", count))
-	return nil
+	return s.Repo.SetExpireYourProposalArtist(ctx, userWallet)
 }
