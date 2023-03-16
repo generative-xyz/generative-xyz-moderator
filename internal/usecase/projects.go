@@ -212,15 +212,18 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	if pe.IsHidden && pe.IsSynced {
-		go func() {
-			_, err = u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
-				ProjectIds: []string{pe.ID.Hex()},
-				CreatedBy:  pe.CreatorAddrr,
-			})
-			if err != nil {
-				logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
-			}
-		}()
+		ids, err := u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+			ProjectIds: []string{pe.ID.Hex()},
+			CreatedBy:  pe.CreatorAddrr,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("CreateDAOProject success",
+				zap.String("project_id", pe.ID.Hex()),
+				zap.Strings("ids", ids),
+			)
+		}
 	}
 
 	return pe, nil
@@ -1642,6 +1645,19 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+		ProjectIds: []string{pe.ID.Hex()},
+		CreatedBy:  pe.CreatorAddrr,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", pe.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
+	}
+
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
@@ -1654,16 +1670,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 		u.NotifyCreateNewProjectToDiscord(pe, owner)
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
-	}()
-
-	go func() {
-		_, err = u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
-			ProjectIds: []string{pe.ID.Hex()},
-			CreatedBy:  pe.CreatorAddrr,
-		})
-		if err != nil {
-			logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
-		}
 	}()
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
