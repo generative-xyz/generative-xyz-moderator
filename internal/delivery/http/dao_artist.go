@@ -32,7 +32,11 @@ func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 			}
 			req.Pagination = entity.GetPagination(r)
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
-			return h.Usecase.ListDAOArtist(ctx, userWallet, req)
+			resp, err := h.Usecase.ListDAOArtist(ctx, userWallet, req)
+			if err != nil {
+				return &entity.Pagination{Result: make([]*response.DaoArtist, 0)}, nil
+			}
+			return resp, nil
 		},
 	).ServeHTTP(w, r)
 }
