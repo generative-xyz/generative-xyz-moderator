@@ -205,7 +205,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		return nil
 	}
 
-	go s.processEnableProject(ctx, daoProject)
+	_ = s.processEnableProject(ctx, daoProject)
 
 	return nil
 }
