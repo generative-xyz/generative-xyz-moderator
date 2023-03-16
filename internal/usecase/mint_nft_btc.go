@@ -1675,7 +1675,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				fmt.Println("SendMasterAndRefund gasPrice: ", gasPrice, len(destinations))
 
-				gasLimit := 21000 + 11000*(len(destinations)-1)
+				gasLimit := 25000 * (len(destinations))
 
 				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetInt64(int64(gasLimit)))
 
