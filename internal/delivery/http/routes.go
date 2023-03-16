@@ -131,6 +131,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
+	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()

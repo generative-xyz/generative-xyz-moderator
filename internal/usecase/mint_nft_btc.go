@@ -1136,6 +1136,13 @@ func (u Usecase) JobMint_RefundBtc() error {
 
 				}
 				continue
+			} else {
+				// check test first:
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "pause for test: ", item.UUID, true)
+					continue
+				}
 			}
 			// refund all.
 
@@ -1265,6 +1272,12 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 					}
 				}
 				continue
+			} else {
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					go u.trackMintNftBtcHistory("", "JobMint_SendFundToMaster", "", "", "u.SendMasterAndRefund.pause for test", item.UUID, true)
+					continue
+				}
 			}
 			// send master all.
 
@@ -1395,7 +1408,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			txToCheck = item.TxSendMaster
 		}
 
-		amountSent := ""
+		// amountSent := ""
 
 		if item.PayType == utils.NETWORK_ETH {
 			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -1422,7 +1435,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			}
 
 			confirm = int64(txInfo.Confirmations)
-			amountSent = txInfo.Total.String()
+			// amountSent = txInfo.Total.String()
 
 		}
 
@@ -1437,29 +1450,41 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 				item.Status = entity.StatusMint_Refunded
 				item.IsRefund = true
 				if item.PayType == utils.NETWORK_BTC {
-					item.AmountRefundUser = amountSent
+					// item.AmountRefundUser = amountSent
 				}
 			} else if item.Status == entity.StatusMint_SendingFundToMaster {
 				item.Status = entity.StatusMint_SentFundToMaster
 				item.IsSentMaster = true
-
-				if item.Quantity <= 1 {
-					if item.PayType == utils.NETWORK_BTC {
-						item.AmountSentMaster = amountSent
-					}
-				} else {
-					// loop on sub items:
-					listSubItem, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
-					for _, sub := range listSubItem {
-						if sub.Status == entity.StatusMint_Refunding {
-							sub.Status = entity.StatusMint_Refunded
-							sub.IsRefund = true
-							u.Repo.UpdateMintNftBtc(&sub)
-						} else if sub.Status == entity.StatusMint_SendingFundToMaster {
-							sub.Status = entity.StatusMint_SendingFundToMaster
-							sub.IsSentMaster = true
-							u.Repo.UpdateMintNftBtc(&sub)
+			}
+			if item.Quantity <= 1 {
+				if item.PayType == utils.NETWORK_BTC {
+					// item.AmountSentMaster = amountSent
+				}
+			} else {
+				// loop on sub items:
+				listSubItem, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+				for _, sub := range listSubItem {
+					if sub.Status == entity.StatusMint_Refunding || sub.Status == entity.StatusMint_NeedToRefund {
+						sub.Status = entity.StatusMint_Refunded
+						if item.Status == entity.StatusMint_Refunded {
+							sub.TxRefund = item.TxRefund
 						}
+						if item.Status == entity.StatusMint_SentFundToMaster {
+							sub.TxRefund = item.TxSendMaster
+						}
+						sub.IsRefund = true
+						u.Repo.UpdateMintNftBtc(&sub)
+					}
+					if sub.Status == entity.StatusMint_SendingFundToMaster || sub.Status == entity.StatusMint_SentNFTToUser {
+						sub.Status = entity.StatusMint_SendingFundToMaster
+						sub.IsSentMaster = true
+						if item.Status == entity.StatusMint_Refunded {
+							sub.TxSendMaster = item.TxRefund
+						}
+						if item.Status == entity.StatusMint_SentFundToMaster {
+							sub.TxSendMaster = item.TxSendMaster
+						}
+						u.Repo.UpdateMintNftBtc(&sub)
 					}
 				}
 			}
@@ -1579,6 +1604,12 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				// log destinations:
 				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations final to send", destinations, true)
 
+				// pause to test first
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					return errors.New("pause for test -> SendMasterAndRefund" + mintItem.UUID)
+				}
+
 				txID, err := bs.SendTransactionWithPreferenceFromSegwitAddressMultiAddress(
 					privateKeyDeCrypt,
 					mintItem.ReceiveAddress,
@@ -1631,7 +1662,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				fmt.Println("destinations 1: ", destinations)
 
 				// log destinations:
-				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations est to send", destinations, true)
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth est to send", destinations, true)
 
 				// cal tx fee:
 				gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
@@ -1680,7 +1711,13 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				}
 
 				// log destinations:
-				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations to send", destinations, true)
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth final to send", destinations, true)
+
+				// check test first:
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
+				}
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
@@ -1693,12 +1730,9 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					privateKeyDeCrypt,
 					destinations,
 				)
+
 				if err != nil {
-					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "ethClientSendMulti", err.Error(), true)
-					return err
-				}
-				if err != nil {
-					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendTransactionWithPreferenceFromReceiveAddressMultiAddress err", err.Error(), true)
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err", err.Error(), true)
 					return err
 				}
 				// update now:
@@ -2017,4 +2051,8 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	}
 
 	return listMintFeeInfo, err
+}
+
+func (u Usecase) CheckRefundNftBtc() error {
+	return nil
 }
