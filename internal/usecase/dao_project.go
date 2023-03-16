@@ -13,16 +13,19 @@ import (
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/constants/dao_project"
 	"rederinghub.io/utils/constants/dao_project_voted"
 	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
-	result := &entity.Pagination{
-		PageSize: request.PageSize,
-		Result:   make([]*response.DaoProject, 0),
+	result := &entity.Pagination{}
+	redisKey := rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list", userWallet).WithStructHash(request, nil).String()
+	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
+		return result, nil
 	}
 	user := &entity.Users{}
 	if userWallet != "" {
@@ -60,6 +63,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	if len(projectsResp) > 0 {
 		result.Cursor = projectsResp[len(projectsResp)-1].ID
 	}
+	_ = s.RedisV9.Set(ctx, redisKey, result, time.Minute*5)
 	return result, nil
 }
 
@@ -68,7 +72,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": req.CreatedBy}, createdBy); err != nil {
 		return nil, err
 	}
-	objectIds, err := copierInternal.StringsToObjects(req.ProjectIds)
+	objectIds, err := utils.StringsToObjects(req.ProjectIds)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +88,9 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		}
 		if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
 			return nil, errors.New("Haven't permission")
+		}
+		if s.Repo.CheckDAOProjectAvailableByProjectId(ctx, project.ID) {
+			return nil, errors.New("Proposal is exists")
 		}
 		daoProject := &entity.DaoProject{
 			CreatedBy: req.CreatedBy,
@@ -104,7 +111,10 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 	if err != nil {
 		return nil, err
 	}
-	return copierInternal.ObjectsToHex(ids), nil
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
+	return utils.ObjectsToHex(ids), nil
 }
 
 func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {
@@ -201,6 +211,9 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err != nil {
 		return err
 	}
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
 	if req.Status != dao_project_voted.Voted {
 		return nil
 	}
@@ -223,23 +236,23 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
 		return err
 	}
-	if !project.IsHidden {
-		return nil
-	}
-	_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
-		bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "isHidden", Value: false},
-				{Key: "updated_at", Value: time.Now()},
-			}},
-		})
-	if err != nil {
-		logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
-		return err
+
+	if project.IsHidden {
+		_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "isHidden", Value: false},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
+			return err
+		}
 	}
 
 	if daoProject.Status != dao_project.Executed {
-		_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
+		_, err := s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
 					{Key: "status", Value: dao_project.Executed},
