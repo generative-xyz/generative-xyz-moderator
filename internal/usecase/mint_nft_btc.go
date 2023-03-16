@@ -1477,7 +1477,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 						u.Repo.UpdateMintNftBtc(&sub)
 					}
 					if sub.Status == entity.StatusMint_SendingFundToMaster || sub.Status == entity.StatusMint_SentNFTToUser {
-						sub.Status = entity.StatusMint_SendingFundToMaster
+						sub.Status = entity.StatusMint_SentFundToMaster
 						sub.IsSentMaster = true
 						if item.Status == entity.StatusMint_Refunded {
 							sub.TxSendMaster = item.TxRefund
