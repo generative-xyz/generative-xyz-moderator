@@ -610,6 +610,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 					EstFeeInfo: item.EstFeeInfo,
 					IsDiscount: item.IsDiscount,
+
+					FeeRate: item.FeeRate,
 				}
 				// insert now:
 				err = u.Repo.InsertMintNftBtc(&batchItem)
