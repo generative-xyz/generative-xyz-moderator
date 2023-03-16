@@ -9,7 +9,7 @@ type ListDaoProjectRequest struct {
 	*entity.Pagination
 	Status  *int64  `query:"status"`
 	Keyword *string `query:"keyword"`
-	Id      *string `query:"-"`
+	Id      *string `query:"id"`
 }
 type CreateDaoProjectRequest struct {
 	ProjectIds []string `json:"project_ids" validate:"required"`

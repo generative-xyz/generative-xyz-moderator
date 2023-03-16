@@ -211,7 +211,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
-	if pe.IsHidden {
+	if pe.IsHidden && pe.IsSynced {
 		go func() {
 			_, err = u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
 				ProjectIds: []string{pe.ID.Hex()},
@@ -1629,7 +1629,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	}
 	pe.IsHidden = true
-
 	pe.Status = true
 	pe.IsSynced = true
 
