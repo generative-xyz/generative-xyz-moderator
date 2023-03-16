@@ -8,13 +8,7 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
-func (r Repository) CreateDiscordNoti(message entity.DiscordMessage, webhook string) error {
-	noti := entity.DiscordNoti{
-		Message: message,
-		NumRetried: 0,
-		Status: entity.PENDING,
-		Webhook: webhook,
-	}
+func (r Repository) CreateDiscordNoti(noti entity.DiscordNoti) error {
 	err := r.InsertOne(noti.TableName(), &noti)
 	if err != nil {
 		return err
