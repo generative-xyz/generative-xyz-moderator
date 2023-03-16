@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
@@ -112,6 +113,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		u.Logger.Error("u.CreateMintReceiveAddress.Encrypt", err.Error(), err)
 		return nil, err
 	}
+
+	fmt.Println("input.FeeRate", input.FeeRate)
 
 	walletAddress.FeeRate = int64(input.FeeRate)
 
@@ -636,6 +639,14 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 	for _, item := range listToMint {
 
+		// check if it is a child item but its parent does not have mint yet, then continue:
+		if len(item.BatchParentId) > 0 {
+			parentItem, _ := u.Repo.FindMintNftBtc(item.BatchParentId)
+			if !parentItem.IsMinted {
+				continue
+			}
+		}
+
 		// get data from project
 		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
@@ -1095,7 +1106,48 @@ func (u Usecase) JobMint_RefundBtc() error {
 		if len(item.RefundUserAdress) == 0 {
 			continue
 		}
-		if item.IsSubItem || item.Quantity > 1 {
+
+		// if parent item:
+		if item.Quantity > 1 {
+			// get list of sub-items, if all have minted then refund all:
+			childItems, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+
+			fmt.Println("childItems: ", len(childItems))
+
+			minedItems := 0
+			needRefundItems := 0
+			if len(childItems) > 0 {
+				for _, childItem := range childItems {
+					if childItem.IsMinted {
+						minedItems++
+					} else if childItem.Status == entity.StatusMint_NeedToRefund {
+						needRefundItems++
+					}
+				}
+			}
+			// if not enough need-to-refund item then wait or refund&fund ...
+			if !(needRefundItems == item.Quantity-1) {
+				if minedItems+needRefundItems == item.Quantity-1 {
+					// refund + fund now:
+					// this function send+refund vs 1 tx.
+					err := u.SendMasterAndRefund(item.UUID, bs, ethClient)
+					if err != nil {
+						go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "u.SendMasterAndRefund", err.Error(), true)
+					}
+
+				}
+				continue
+			} else {
+				// check test first:
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "pause for test: ", item.UUID, true)
+					continue
+				}
+			}
+			// refund all.
+
+		} else if item.IsSubItem {
 			continue
 		}
 
@@ -1169,7 +1221,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 // send send max fund to master address:
 func (u Usecase) JobMint_SendFundToMaster() error {
 
-	listToSentMaster, _ := u.Repo.ListMintNftBtcToSendFundToMaster() //u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_SentNFTToUser)})
+	listToSentMaster, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_SentNFTToUser)})
 
 	if len(listToSentMaster) == 0 {
 		return nil
@@ -1193,7 +1245,44 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 	for _, item := range listToSentMaster {
 
-		if item.IsSubItem || item.Quantity > 1 {
+		// if parent item:
+		if item.Quantity > 1 {
+			// get list of sub-items, if all have minted then send all funds to master:
+			childItems, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+
+			fmt.Println("childItems: ", len(childItems))
+
+			minedItems := 0
+			needRefundItems := 0
+			if len(childItems) > 0 {
+				for _, childItem := range childItems {
+					if childItem.IsMinted {
+						minedItems++
+					} else if childItem.Status == entity.StatusMint_NeedToRefund {
+						needRefundItems++
+					}
+				}
+			}
+			// if not enough mint then wait or refund&fund ...
+			if !(minedItems == item.Quantity-1) {
+				if minedItems+needRefundItems == item.Quantity-1 {
+					// refund + fund now:
+					err = u.SendMasterAndRefund(item.UUID, bs, ethClient)
+					if err != nil {
+						go u.trackMintNftBtcHistory("", "JobMint_SendFundToMaster", "", "", "u.SendMasterAndRefund", err.Error(), true)
+					}
+				}
+				continue
+			} else {
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					go u.trackMintNftBtcHistory("", "JobMint_SendFundToMaster", "", "", "u.SendMasterAndRefund.pause for test", item.UUID, true)
+					continue
+				}
+			}
+			// send master all.
+
+		} else if item.IsSubItem {
 			continue
 		}
 
@@ -1307,6 +1396,10 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 
 	for _, item := range listTxToCheck {
 
+		if item.IsSubItem {
+			continue
+		}
+
 		var txToCheck string
 		var confirm int64 = -1
 
@@ -1316,7 +1409,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			txToCheck = item.TxSendMaster
 		}
 
-		amountSent := ""
+		// amountSent := ""
 
 		if item.PayType == utils.NETWORK_ETH {
 			context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -1343,7 +1436,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 			}
 
 			confirm = int64(txInfo.Confirmations)
-			amountSent = txInfo.Total.String()
+			// amountSent = txInfo.Total.String()
 
 		}
 
@@ -1358,13 +1451,42 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 				item.Status = entity.StatusMint_Refunded
 				item.IsRefund = true
 				if item.PayType == utils.NETWORK_BTC {
-					item.AmountRefundUser = amountSent
+					// item.AmountRefundUser = amountSent
 				}
 			} else if item.Status == entity.StatusMint_SendingFundToMaster {
 				item.Status = entity.StatusMint_SentFundToMaster
 				item.IsSentMaster = true
+			}
+			if item.Quantity <= 1 {
 				if item.PayType == utils.NETWORK_BTC {
-					item.AmountSentMaster = amountSent
+					// item.AmountSentMaster = amountSent
+				}
+			} else {
+				// loop on sub items:
+				listSubItem, _ := u.Repo.CountBatchRecordOfItems(item.UUID)
+				for _, sub := range listSubItem {
+					if sub.Status == entity.StatusMint_Refunding || sub.Status == entity.StatusMint_NeedToRefund {
+						sub.Status = entity.StatusMint_Refunded
+						if item.Status == entity.StatusMint_Refunded {
+							sub.TxRefund = item.TxRefund
+						}
+						if item.Status == entity.StatusMint_SentFundToMaster {
+							sub.TxRefund = item.TxSendMaster
+						}
+						sub.IsRefund = true
+						u.Repo.UpdateMintNftBtc(&sub)
+					}
+					if sub.Status == entity.StatusMint_SendingFundToMaster || sub.Status == entity.StatusMint_SentNFTToUser {
+						sub.Status = entity.StatusMint_SendingFundToMaster
+						sub.IsSentMaster = true
+						if item.Status == entity.StatusMint_Refunded {
+							sub.TxSendMaster = item.TxRefund
+						}
+						if item.Status == entity.StatusMint_SentFundToMaster {
+							sub.TxSendMaster = item.TxSendMaster
+						}
+						u.Repo.UpdateMintNftBtc(&sub)
+					}
 				}
 			}
 
@@ -1378,6 +1500,277 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 	}
 
 	return nil
+}
+
+func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, ethClient *eth.Client) error {
+	mintItem, _ := u.Repo.FindMintNftBtcByNftID(uuid)
+	if mintItem == nil {
+		return errors.New("item not found")
+	}
+	// check valid (just for parent items):
+	if mintItem.Quantity <= 1 || len(mintItem.BatchParentId) > 0 || mintItem.IsSubItem {
+		return errors.New("item invalid")
+	}
+
+	if !(mintItem.Status == entity.StatusMint_SentNFTToUser || mintItem.Status == entity.StatusMint_NeedToRefund) {
+		return errors.New("item invalid")
+	}
+
+	// get list child item:
+	childItems, _ := u.Repo.CountBatchRecordOfItems(uuid)
+
+	if len(childItems) == 0 {
+		return errors.New("list sub item not found")
+	}
+	minedItems := 0
+	needRefundItems := 0
+
+	totalMintedAmount := big.NewInt(0)
+	totalRefundAmount := big.NewInt(0)
+
+	var listSubIdMinted []string
+	var listSubIdRefund []string
+
+	amountPerItem := big.NewInt(0)
+
+	if len(childItems) > 0 {
+		for _, childItem := range childItems {
+			childAmount, _ := big.NewInt(0).SetString(childItem.Amount, 10)
+			amountPerItem = childAmount
+			if childItem.IsMinted {
+				minedItems++
+				totalMintedAmount = totalMintedAmount.Add(totalMintedAmount, childAmount)
+				listSubIdMinted = append(listSubIdMinted, childItem.UUID)
+			} else if childItem.Status == entity.StatusMint_NeedToRefund {
+				needRefundItems++
+				totalRefundAmount = totalRefundAmount.Add(totalRefundAmount, childAmount)
+				listSubIdRefund = append(listSubIdRefund, childItem.UUID)
+			}
+		}
+	}
+	// add amount of parent item:
+	if mintItem.Status == entity.StatusMint_NeedToRefund {
+		totalRefundAmount = totalRefundAmount.Add(totalRefundAmount, amountPerItem)
+	} else if mintItem.Status == entity.StatusMint_SentNFTToUser {
+		totalMintedAmount = totalMintedAmount.Add(totalMintedAmount, amountPerItem)
+	}
+
+	// if not enough need-to-refund item then wait or refund&fund ...
+	if !(needRefundItems == mintItem.Quantity-1) {
+		if minedItems+needRefundItems == mintItem.Quantity-1 {
+			// refund + fund now:
+			// code this function send+refund vs 1 tx.
+			if mintItem.PayType == utils.NETWORK_BTC {
+
+				destinations := make(map[string]int)
+				// refund info:
+				destinations[mintItem.RefundUserAdress] = int(totalRefundAmount.Int64())
+
+				// send fund to master:
+				destinations[u.Config.MASTER_ADDRESS_CLAIM_BTC] = int(totalMintedAmount.Int64())
+
+				// log destinations:
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations est to send", destinations, true)
+
+				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), err.Error(), err)
+					go u.trackMintNftBtcHistory(mintItem.UUID, "JobMint_RefundBtc", mintItem.TableName(), mintItem.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
+					return err
+				}
+
+				txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(privateKeyDeCrypt, mintItem.ReceiveAddress, destinations, btc.PreferenceMedium)
+				if err != nil {
+					// check if not enough balance:
+					if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
+						mintItem.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+						u.Repo.UpdateMintNftBtc(mintItem)
+					}
+
+					if strings.Contains(err.Error(), "already exists") {
+						mintItem.Status = entity.StatusMint_AlreadySentMaster
+						mintItem.IsSentMaster = true
+						mintItem.TxSendMaster = err.Error()
+						u.Repo.UpdateMintNftBtc(mintItem)
+
+					}
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress err", err.Error(), true)
+					return err
+				}
+
+				// update refund info with -fee:
+				amountToRefundWithFee := totalRefundAmount.Sub(totalRefundAmount, txFee)
+				destinations[mintItem.RefundUserAdress] = int(amountToRefundWithFee.Int64())
+
+				// log destinations:
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations final to send", destinations, true)
+
+				// pause to test first
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					return errors.New("pause for test -> SendMasterAndRefund" + mintItem.UUID)
+				}
+
+				txID, err := bs.SendTransactionWithPreferenceFromSegwitAddressMultiAddress(
+					privateKeyDeCrypt,
+					mintItem.ReceiveAddress,
+					destinations,
+					btc.PreferenceMedium,
+				)
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendTransactionWithPreferenceFromReceiveAddressMultiAddress err", err.Error(), true)
+					return err
+				}
+				// update now:
+				// update parent item:
+				mintItem.Status = entity.StatusMint_SendingFundToMaster
+				mintItem.AmountRefundUser = totalRefundAmount.String()
+				mintItem.AmountSentMaster = totalMintedAmount.String()
+				mintItem.IsRefund = true
+				mintItem.TxSendMaster = txID
+				mintItem.TxRefund = txID
+				mintItem.FeeSendMaster = txFee.String()
+
+				_, err = u.Repo.UpdateMintNftBtc(mintItem)
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtc.Done err", err.Error(), true)
+					return err
+				}
+
+				// update sub item:
+				if len(listSubIdMinted) > 0 {
+					_, err = u.Repo.UpdateMintNftBtcSubItemRefundOrDone(listSubIdMinted, entity.StatusMint_SendingFundToMaster, txID, false)
+					if err != nil {
+						go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtcSubItemRefundOrDone.UpdateMaster err", err.Error(), true)
+					}
+				}
+				if len(listSubIdRefund) > 0 {
+					_, err = u.Repo.UpdateMintNftBtcSubItemRefundOrDone(listSubIdRefund, entity.StatusMint_Refunding, txID, true)
+					if err != nil {
+						go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtcSubItemRefundOrDone.UpdateRefund err", err.Error(), true)
+					}
+				}
+				return nil // all is ok now!
+
+			} else if mintItem.PayType == utils.NETWORK_ETH {
+
+				destinations := make(map[string]*big.Int)
+				// refund info:
+				destinations[mintItem.RefundUserAdress] = totalRefundAmount
+				// send fund to master:
+				destinations[u.Config.MASTER_ADDRESS_CLAIM_ETH] = totalMintedAmount
+
+				fmt.Println("destinations 1: ", destinations)
+
+				// log destinations:
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth est to send", destinations, true)
+
+				// cal tx fee:
+				gasPrice, err := ethClient.GetClient().SuggestGasPrice(context.Background())
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SuggestGasPrice err", err.Error(), true)
+					return err
+				}
+
+				fmt.Println("SendMasterAndRefund gasPrice: ", gasPrice, len(destinations))
+
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+
+				fmt.Println("txFee: ", txFee)
+
+				balance, err := ethClient.GetClient().BalanceAt(context.Background(), common.HexToAddress(mintItem.ReceiveAddress), nil)
+
+				fmt.Println("SendMasterAndRefund eth balance: ", balance)
+
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "BalanceAt err", err.Error(), true)
+					return err
+				}
+
+				if txFee.Uint64() > balance.Uint64() {
+
+					mintItem.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(mintItem)
+
+					fmt.Println("not enough balance: ", txFee.Uint64(), balance.Uint64())
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "check fee and balance", "txFee > balance", true)
+					return errors.New("not enough balance < tx fee")
+				}
+
+				// update refund info with -fee:
+				amountToRefundWithFee := totalRefundAmount.Sub(totalRefundAmount, txFee)
+				destinations[mintItem.RefundUserAdress] = amountToRefundWithFee
+
+				if amountToRefundWithFee.Uint64() < txFee.Uint64() {
+
+					mintItem.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
+					u.Repo.UpdateMintNftBtc(mintItem)
+
+					fmt.Println("not enough amountToRefundWithFee: ", txFee.Uint64(), balance.Uint64())
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "check fee and balance", "amountToRefundWithFee < txFee", true)
+					return err
+				}
+
+				// log destinations:
+				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth final to send", destinations, true)
+
+				// check test first:
+				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				if testCronTab == nil || testCronTab.Enabled {
+					return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
+				}
+
+				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
+				if err != nil {
+					u.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), err.Error(), err)
+					go u.trackMintNftBtcHistory(mintItem.UUID, "JobMint_RefundBtc", mintItem.TableName(), mintItem.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
+					return err
+				}
+				txID, err := ethClient.SendMulti(
+					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
+					privateKeyDeCrypt,
+					destinations,
+				)
+
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err", err.Error(), true)
+					return err
+				}
+				// update now:
+				// update parent item:
+				mintItem.Status = entity.StatusMint_SendingFundToMaster
+				mintItem.AmountRefundUser = totalRefundAmount.String()
+				mintItem.AmountSentMaster = totalMintedAmount.String()
+				mintItem.IsRefund = true
+				mintItem.TxSendMaster = txID
+				mintItem.TxRefund = txID
+				mintItem.FeeSendMaster = txFee.String()
+				_, err = u.Repo.UpdateMintNftBtc(mintItem)
+				if err != nil {
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtc.Done err", err.Error(), true)
+					return err
+				}
+
+				// update sub item:
+				if len(listSubIdMinted) > 0 {
+					_, err = u.Repo.UpdateMintNftBtcSubItemRefundOrDone(listSubIdMinted, entity.StatusMint_SendingFundToMaster, txID, false)
+					if err != nil {
+						go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtcSubItemRefundOrDone.UpdateMaster err", err.Error(), true)
+					}
+				}
+				if len(listSubIdRefund) > 0 {
+					_, err = u.Repo.UpdateMintNftBtcSubItemRefundOrDone(listSubIdRefund, entity.StatusMint_Refunding, txID, true)
+					if err != nil {
+						go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "UpdateMintNftBtcSubItemRefundOrDone.UpdateRefund err", err.Error(), true)
+					}
+				}
+				return nil // all is ok now!
+			}
+
+		}
+	}
+	return errors.New("don't need refund for this")
+
 }
 
 func (u *Usecase) trackMintNftBtcHistory(id, name, table string, status interface{}, requestMsg interface{}, responseMsg interface{}, notify bool) {
@@ -1665,6 +2058,9 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	return listMintFeeInfo, err
 }
 
+func (u Usecase) CheckRefundNftBtc() error {
+	return nil
+}
 // Mint flow
 func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
 	key := "btc-eth-rate"

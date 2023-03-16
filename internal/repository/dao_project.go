@@ -39,9 +39,9 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	unwindUser := bson.M{"$unwind": "$user"}
 	addFields := bson.M{
 		"$addFields": bson.M{
-			"project_name":                    "$project.name",
-			"user_name":                       "$user.display_name",
-			"user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
+			"project_name": "$project.name",
+			"user_name":    "$user.display_name",
+			// "user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -86,10 +86,10 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
-			bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
-				Pattern: *request.Keyword,
-				Options: "i",
-			}},
+			// bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
+			// 	Pattern: *request.Keyword,
+			// 	Options: "i",
+			// }},
 		}
 		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
 			search = append(search, bson.M{"seq_id": seqId})

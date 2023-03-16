@@ -83,6 +83,7 @@ type WalletInscriptionInfo struct {
 	SellVerified bool   `json:"sell_verified"`
 	Buyable      bool   `json:"buyable"`
 	PriceBTC     string `json:"price_btc"`
+	PriceETH     string `json:"price_eth"`
 	OrderID      string `json:"order_id"`
 	Cancelling   bool   `json:"cancelling"`
 }
