@@ -241,15 +241,13 @@ func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	contractAddress := vars["contractAddress"]
 
 	projectID := vars["projectID"]
 
 	userAddress := r.URL.Query().Get("userAddress")
-
-	// fmt.Println("userAddress", userAddress)
 
 	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
 		ContractAddress:            contractAddress,
@@ -268,11 +266,9 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	resp.IsReviewing = h.Usecase.IsProjectReviewing(r.Context(), project.ID.Hex())
+	resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
 
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
-
-	// h.Logger.Info("resp.project", resp)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
