@@ -85,6 +85,17 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 	metaCollection  := &structure.OrdinalCollectionMeta{}
 	metaInscriptions  := []structure.OrdinalInscriptionMeta{}
 	for _, file := range zipReader.File {
+		if file.FileInfo().IsDir() {
+			continue
+		}
+		if strings.Index(strings.ToLower(file.Name), strings.ToLower("__MACOSX")) > -1 {
+			continue
+		}
+
+		if strings.Index(strings.ToLower(file.Name), strings.ToLower(".DS_Store")) > -1 {
+			continue
+		}
+
 		fc, err := file.Open()
 		if err != nil {
 			return nil, err
@@ -142,8 +153,10 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 		metaCollection.InscriptionIcon = inscription
 	}
 
-	
-	err = u.pushToGithub(*folderName, *metaCollection, metaInscriptions)
+	_ = folderName
+
+	//err = u.pushToGithub(*folderName, *metaCollection, metaInscriptions)
+	err = u.pushToGithub(metaCollection.Name, *metaCollection, metaInscriptions)
 	if err != nil {
 		return nil, err
 	}
