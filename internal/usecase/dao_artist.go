@@ -199,7 +199,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		return nil
 	}
 
-	go s.processVerifyArtist(ctx, daoArtist)
+	_ = s.processVerifyArtist(ctx, daoArtist)
 
 	return nil
 }
