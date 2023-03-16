@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -155,30 +154,34 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	return daoProject, nil
 }
 
-func (s *Usecase) GetDAOProjectByProjectId(ctx context.Context, projectId string) (*entity.DaoProject, error) {
+func (s *Usecase) ListDAOProjectsByProjectId(ctx context.Context, projectId string) ([]*entity.DaoProject, error) {
 	objectId, err := primitive.ObjectIDFromHex(projectId)
 	if err != nil {
 		return nil, err
 	}
-	daoProject := &entity.DaoProject{}
-	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": objectId}, daoProject); err != nil {
+	daoProjects := []*entity.DaoProject{}
+	if err := s.Repo.Find(ctx, entity.DaoProject{}.TableName(), bson.M{"project_id": objectId}, &daoProjects); err != nil {
 		return nil, err
 	}
-	return daoProject, nil
+	return daoProjects, nil
 }
 
 func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool {
-	daoProject, err := s.GetDAOProjectByProjectId(ctx, projectId)
+	daoProjects, err := s.ListDAOProjectsByProjectId(ctx, projectId)
 	if err != nil {
 		return false
 	}
-	if slices.Contains([]dao_project.Status{
-		dao_project.Voting,
-		dao_project.Defeated,
-	}, daoProject.Status) {
-		return true
+	if len(daoProjects) <= 0 {
+		return false
 	}
-	return false
+	isReviewing := true
+	for _, daoProject := range daoProjects {
+		if daoProject.Status == dao_project.Executed {
+			isReviewing = false
+			break
+		}
+	}
+	return isReviewing
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
@@ -304,12 +307,30 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 			filters["_id"] = bson.M{"$lt": id}
 		}
 	}
-	addCountDaoProject := bson.M{
-		"$addFields": bson.M{"count_dao_project": bson.M{"$size": "$dao_project"}},
+	addFieldsCount := bson.M{
+		"$addFields": bson.M{
+			"dao_project_not_expire": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project",
+					"cond": bson.M{
+						"$gt": []interface{}{"$$this.expire_at", time.Now()},
+					},
+				},
+			},
+			"dao_project_is_voted": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", dao_project.Executed},
+					},
+				},
+			},
+		},
 	}
 	matchCount := bson.M{
 		"$match": bson.M{
-			"count_dao_project": bson.M{"$lt": 1},
+			"dao_project_not_expire": bson.M{"$lt": 1},
+			"dao_project_is_voted":   bson.M{"$lt": 1},
 		},
 	}
 	projects := []*entity.Projects{}
@@ -320,7 +341,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 		&projects,
 		matchFilters,
 		lookupDaoProject,
-		addCountDaoProject,
+		addFieldsCount,
 		matchCount,
 		sorts)
 	if err != nil {
