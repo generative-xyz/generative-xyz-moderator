@@ -581,6 +581,8 @@ func (u Usecase) JobMKP_Payment() error {
 					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
 					privateKeyDeCrypt,
 					destinations,
+					gasPrice,
+					21000*uint64(len(destinations)),
 				)
 				if err != nil {
 					go u.trackHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "ethClientSendMulti", err.Error())

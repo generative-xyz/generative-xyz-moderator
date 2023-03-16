@@ -1674,7 +1674,9 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				fmt.Println("SendMasterAndRefund gasPrice: ", gasPrice, len(destinations))
 
-				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+				gasLimit := 21000 + 11000*(len(destinations)-1)
+
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetInt64(int64(gasLimit)))
 
 				fmt.Println("txFee: ", txFee)
 
@@ -1730,6 +1732,8 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
 					privateKeyDeCrypt,
 					destinations,
+					gasPrice,
+					uint64(gasLimit),
 				)
 
 				if err != nil {
