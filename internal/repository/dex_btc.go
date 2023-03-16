@@ -387,6 +387,7 @@ func (r Repository) UpdateDexBTCBuyETHOrderBuy(model *entity.DexBTCBuyWithETH) (
 			"status":     model.Status,
 			"buy_tx":     model.BuyTx,
 			"updated_at": model.UpdatedAt,
+			"split_tx":   model.SplitTx,
 		},
 	}
 
