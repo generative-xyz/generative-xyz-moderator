@@ -1629,7 +1629,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	}
 	pe.IsHidden = true
-
 	pe.Status = true
 	pe.IsSynced = true
 
