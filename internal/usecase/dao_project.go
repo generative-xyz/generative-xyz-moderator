@@ -335,10 +335,16 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 			},
 		},
 	}
+	addFieldsTotal := bson.M{
+		"$addFields": bson.M{
+			"total_dao_project_not_expire": bson.M{"$size": "$dao_project_not_expire"},
+			"total_dao_project_is_voted":   bson.M{"$size": "$dao_project_is_voted"},
+		},
+	}
 	matchCount := bson.M{
 		"$match": bson.M{
-			"dao_project_not_expire": bson.M{"$lt": 1},
-			"dao_project_is_voted":   bson.M{"$lt": 1},
+			"total_dao_project_not_expire": bson.M{"$lt": 1},
+			"total_dao_project_is_voted":   bson.M{"$lt": 1},
 		},
 	}
 	projects := []*entity.Projects{}
@@ -350,6 +356,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 		matchFilters,
 		lookupDaoProject,
 		addFieldsCount,
+		addFieldsTotal,
 		matchCount,
 		sorts)
 	if err != nil {
