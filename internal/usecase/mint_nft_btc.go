@@ -1325,6 +1325,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 			// save tx:
 			item.TxSendMaster = tx
+			item.AmountSentMaster = item.Amount
 			item.Status = entity.StatusMint_SendingFundToMaster // TODO: need to a job to check tx.
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
@@ -1476,7 +1477,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 						u.Repo.UpdateMintNftBtc(&sub)
 					}
 					if sub.Status == entity.StatusMint_SendingFundToMaster || sub.Status == entity.StatusMint_SentNFTToUser {
-						sub.Status = entity.StatusMint_SendingFundToMaster
+						sub.Status = entity.StatusMint_SentFundToMaster
 						sub.IsSentMaster = true
 						if item.Status == entity.StatusMint_Refunded {
 							sub.TxSendMaster = item.TxRefund
@@ -2060,6 +2061,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 func (u Usecase) CheckRefundNftBtc() error {
 	return nil
 }
+
 // Mint flow
 func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
 	btcPrice, err := helpers.GetExternalPrice("BTC")
