@@ -677,7 +677,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 	return nil
 }
 
-func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, string, string, bool, error) {
+func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, feeRate uint64, receiveAddress, refundAddress string) (string, string, string, int64, string, string, bool, error) {
 	order, err := u.Repo.GetDexBTCListingOrderByID(orderID)
 	if err != nil {
 		return "", "", "", 0, "", "", false, err
@@ -754,9 +754,11 @@ func (u Usecase) GenBuyETHOrder(userID string, orderID string, feeRate uint64, r
 	newOrder.InscriptionID = order.InscriptionID
 	newOrder.AmountBTC = order.Amount
 	expiredAt := newOrder.ExpiredAt.Unix()
-	err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
-	if err != nil {
-		return "", "", "", expiredAt, "", "", false, err
+	if !isEstimate {
+		err = u.Repo.CreateDexBTCBuyWithETH(&newOrder)
+		if err != nil {
+			return "", "", "", expiredAt, "", "", false, err
+		}
 	}
 
 	return newOrder.UUID, tempETHAddress, amountETH, expiredAt, amountETHOriginal, amountETHFee, hasRoyalty, nil
