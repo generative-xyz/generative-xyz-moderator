@@ -1326,6 +1326,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			}
 			// save tx:
 			item.TxSendMaster = tx
+			item.AmountSentMaster = item.Amount
 			item.Status = entity.StatusMint_SendingFundToMaster // TODO: need to a job to check tx.
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
@@ -1477,7 +1478,7 @@ func (u Usecase) JobMint_CheckTxMasterAndRefund() error {
 						u.Repo.UpdateMintNftBtc(&sub)
 					}
 					if sub.Status == entity.StatusMint_SendingFundToMaster || sub.Status == entity.StatusMint_SentNFTToUser {
-						sub.Status = entity.StatusMint_SendingFundToMaster
+						sub.Status = entity.StatusMint_SentFundToMaster
 						sub.IsSentMaster = true
 						if item.Status == entity.StatusMint_Refunded {
 							sub.TxSendMaster = item.TxRefund
@@ -1674,7 +1675,9 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				fmt.Println("SendMasterAndRefund gasPrice: ", gasPrice, len(destinations))
 
-				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetUint64(21000*uint64(len(destinations))))
+				gasLimit := 21000 + 11000*(len(destinations)-1)
+
+				txFee := new(big.Int).Mul(new(big.Int).SetUint64(gasPrice.Uint64()), new(big.Int).SetInt64(int64(gasLimit)))
 
 				fmt.Println("txFee: ", txFee)
 
@@ -1730,6 +1733,8 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					"0xcd5485b34c9902527bbee21f69312fe2a73bc802",
 					privateKeyDeCrypt,
 					destinations,
+					gasPrice,
+					uint64(gasLimit),
 				)
 
 				if err != nil {
@@ -2061,6 +2066,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 func (u Usecase) CheckRefundNftBtc() error {
 	return nil
 }
+
 // Mint flow
 func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
 	key := "btc-eth-rate"

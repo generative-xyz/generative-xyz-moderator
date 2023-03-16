@@ -58,23 +58,26 @@ func (u DexBTCListing) ToBson() (*bson.D, error) {
 }
 
 type DexBTCBuyWithETH struct {
-	BaseEntity     `bson:",inline"`
-	OrderID        string             `bson:"order_id" json:"order_id"`
-	InscriptionID  string             `bson:"inscription_id" json:"inscription_id"`
-	AmountBTC      uint64             `bson:"amount_btc" json:"amount_btc"`
-	Confirmation   int                `bson:"confirmation" json:"confirmation" `
-	AmountETH      string             `bson:"amount_eth" json:"amount_eth"`
-	UserID         string             `bson:"user_id" json:"user_id"`
-	ReceiveAddress string             `bson:"receive_address" json:"receive_address"`
-	RefundAddress  string             `bson:"refund_address" json:"refund_address"`
-	ExpiredAt      time.Time          `bson:"expired_at" json:"expired_at"`
-	BuyTx          string             `bson:"buy_tx" json:"buy_tx"`
-	RefundTx       string             `bson:"refund_tx" json:"refund_tx"`
-	MasterTx       string             `bson:"master_tx" json:"master_tx"`
-	SplitTx        string             `bson:"split_tx" json:"split_tx"`
-	FeeRate        uint64             `bson:"fee_rate" json:"fee_rate"`
-	Status         DexBTCETHBuyStatus `bson:"status" json:"status"`
-	ETHKey         string             `bson:"eth_key" json:"eth_key"`
+	BaseEntity      `bson:",inline"`
+	OrderID         string             `bson:"order_id" json:"order_id"`
+	InscriptionID   string             `bson:"inscription_id" json:"inscription_id"`
+	AmountBTC       uint64             `bson:"amount_btc" json:"amount_btc"`
+	Confirmation    int                `bson:"confirmation" json:"confirmation" `
+	AmountETH       string             `bson:"amount_eth" json:"amount_eth"`
+	UserID          string             `bson:"user_id" json:"user_id"`
+	ReceiveAddress  string             `bson:"receive_address" json:"receive_address"`
+	RefundAddress   string             `bson:"refund_address" json:"refund_address"`
+	ExpiredAt       time.Time          `bson:"expired_at" json:"expired_at"`
+	BuyTx           string             `bson:"buy_tx" json:"buy_tx"`
+	RefundTx        string             `bson:"refund_tx" json:"refund_tx"`
+	MasterTx        string             `bson:"master_tx" json:"master_tx"`
+	SplitTx         string             `bson:"split_tx" json:"split_tx"`
+	FeeRate         uint64             `bson:"fee_rate" json:"fee_rate"`
+	Status          DexBTCETHBuyStatus `bson:"status" json:"status"`
+	ETHKey          string             `bson:"eth_key" json:"eth_key"`
+	IsMultiBuy      bool               `bson:"multi_buy" json:"multi_buy"`
+	InscriptionList []string           `bson:"inscription_list" json:"inscription_list"`
+	OrderList       string             `bson:"order_list" json:"order_list"`
 }
 
 func (u DexBTCBuyWithETH) ToJsonString() string {
