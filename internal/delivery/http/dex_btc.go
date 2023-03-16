@@ -104,6 +104,32 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
+func (h *httpDelivery) retrieveBTCListingOrdersInfo(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.RetrieveBTCListingOrdersInfo
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	psbtList := []string{}
+	for _, orderID := range reqBody.OrderList {
+		orderInfo, err := h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+			return
+		}
+		psbtList = append(psbtList, orderInfo.RawPSBT)
+	}
+
+	result := response.DexBTCListingOrdersInfo{
+		RawPSBTList: psbtList,
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil {

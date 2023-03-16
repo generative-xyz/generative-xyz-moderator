@@ -4,6 +4,10 @@ type DexBTCListingOrderInfo struct {
 	RawPSBT string `json:"raw_psbt"`
 }
 
+type DexBTCListingOrdersInfo struct {
+	RawPSBTList []string `json:"raw_psbt_list"`
+}
+
 type DexBTCHistoryListing struct {
 	OrderID       string `json:"order_id"`
 	Type          string `json:"type"`
@@ -38,4 +42,7 @@ type DEXBuyEthHistory struct {
 	RefundTx       string `bson:"refund_tx" json:"refund_tx"`
 	FeeRate        uint64 `bson:"fee_rate" json:"fee_rate"`
 	Status         string `bson:"status" json:"status"`
+
+	OrderList       []string `bson:"order_list" json:"order_list"`
+	InscriptionList []string `bson:"inscription_list" json:"inscription_list"`
 }
