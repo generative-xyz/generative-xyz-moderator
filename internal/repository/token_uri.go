@@ -172,7 +172,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if filter.SortBy == "" {
 		filter.SortBy = "priceBTC"
 	}
-	
+
 	if len(filter.Ids) != 0 {
 		objectIDs, err := utils.StringsToObjects(filter.Ids)
 		if err == nil {
@@ -192,7 +192,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 
 	addNoneBuyItems := true
 	if filter.IsBuynow != nil {
-		if *filter.IsBuynow  == true {
+		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
 		}
 	}
@@ -202,16 +202,16 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	isFilterPrice := false
 	if filter.FromPrice != nil {
 		isFilterPrice = true
-		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}} )
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}})
 	}
-	
+
 	if filter.ToPrice != nil {
 		isFilterPrice = true
 		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$lte", *filter.ToPrice}}}})
 	}
 
 	if isFilterPrice {
-		dexBtcMatchAnd := bson.E{"$and",  priceFilter}
+		dexBtcMatchAnd := bson.E{"$and", priceFilter}
 		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
 		addNoneBuyItems = false
 	}
@@ -221,24 +221,24 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		bson.D{
 			{"$lookup",
 				bson.D{
-					{"from", "users"},
-					{"localField", "owner_addrress"},
-					{"foreignField", "wallet_address_btc_taproot"},
-					{"as", "owner"},
-				},
-			},
-		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$owner"},
-					{"preserveNullAndEmptyArrays", true},
-				},
-			},
-		},
-		bson.D{	
-			{"$lookup",
-				bson.D{
+					//			{"from", "users"},
+					//			{"localField", "owner_addrress"},
+					//			{"foreignField", "wallet_address_btc_taproot"},
+					//			{"as", "owner"},
+					//		},
+					//	},
+					//},
+					//bson.D{
+					//	{"$unwind",
+					//		bson.D{
+					//			{"path", "$owner"},
+					//			{"preserveNullAndEmptyArrays", true},
+					//		},
+					//	},
+					//},
+					//bson.D{
+					//	{"$lookup",
+					//		bson.D{
 					{"from", "dex_btc_listing"},
 					{"localField", "token_id"},
 					{"foreignField", "inscription_id"},
@@ -350,12 +350,11 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"orderID", 1},
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
-					{"owner_addrress", 1},
-					{"owner.wallet_address", 1},
-					{"owner.wallet_address_btc_taproot", 1},
-					{"owner.avatar", 1},
-					{"owner.display_name", 1},
-					
+					//{"owner_addrress", 1},
+					//{"owner.wallet_address", 1},
+					//{"owner.wallet_address_btc_taproot", 1},
+					//{"owner.avatar", 1},
+					//{"owner.display_name", 1},
 				},
 			},
 		},
@@ -495,12 +494,12 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			})
 		}
 	}
-	
+
 	if filter.RarityAttributes != nil && len(filter.RarityAttributes) > 0 {
 		traits := []string{}
 		values := []string{}
 		for _, attribute := range filter.RarityAttributes {
-			traits = append(traits, attribute.TraitType)	
+			traits = append(traits, attribute.TraitType)
 			for _, value := range attribute.Values {
 				values = append(values, value)
 			}
@@ -519,10 +518,8 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			},
 		})
 
-	
 	}
-	
-	
+
 	return bson.M{
 		"$and": andFilters,
 	}
