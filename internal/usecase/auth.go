@@ -345,6 +345,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	if data.ProfileSocial.Twitter != nil {
 		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
+		user.ProfileSocial.TwitterVerified = false
 	}
 
 	if data.ProfileSocial.Medium != nil {

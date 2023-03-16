@@ -70,6 +70,7 @@ type CreateBtcProjectReq struct {
 	InscribedBy            string   `json:"inscribedBy"`
 	LimitMintPerProcess    int      `json:"limitMintPerProcess"`
 	Index                  int64    `json:"-"`
+	IsHidden               *bool    `json:"-"`
 }
 
 type UpdateBTCProjectReq struct {

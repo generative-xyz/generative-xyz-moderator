@@ -52,6 +52,28 @@ func (c *Client) GenerateAddress() (privKey, pubKey, address string, err error) 
 	return
 }
 
+func (c *Client) GenerateAddressFromPrivKey(privKey string) (pubKey, address string, err error) {
+	privateKey, err := crypto.HexToECDSA(privKey)
+	if err != nil {
+		err = errors.Wrap(err, "crypto.HexToECDSA")
+		return
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		err = errors.New("failed to cast public key to ECDSA")
+		return
+	}
+
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	pubKey = hexutil.Encode(publicKeyBytes)[4:]
+
+	address = crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+
+	return
+}
+
 func (c *Client) GenPubPriKeyFromIncPriKey(incPrivateKey []byte) (ecdsa.PrivateKey, ecdsa.PublicKey) {
 	priKey := new(ecdsa.PrivateKey)
 	priKey.Curve = crypto.S256()

@@ -26,3 +26,26 @@ func (u Usecase) ListUsers(req structure.FilterUsers) (*entity.Pagination, error
 	u.Logger.Info("ListUsers", users.Total)
 	return users, nil
 }
+
+func (u Usecase) GetUsersMap(addresses []string) (map[string]*entity.Users, error) {
+	users, err := u.Repo.FindUserByAddresses(addresses)
+	if err != nil {
+		return nil, err
+	}
+	addressToUser := map[string]*entity.Users{}
+	for id, user := range users {
+		if user.WalletAddress != "" {
+			addressToUser[user.WalletAddress] = &users[id]
+		}
+		if user.WalletAddressBTC != "" {
+			addressToUser[user.WalletAddressBTC] = &users[id]
+		}
+		if user.WalletAddressBTCTaproot != "" {
+			addressToUser[user.WalletAddressBTCTaproot] = &users[id]
+		}
+		if user.WalletAddressPayment != "" {
+			addressToUser[user.WalletAddressPayment] = &users[id]
+		}
+	}
+	return addressToUser, nil
+}
