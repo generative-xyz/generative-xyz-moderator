@@ -457,7 +457,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	}
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users, proposed bool) {
 	domain := os.Getenv("DOMAIN")
 
 	var category, description string
@@ -499,9 +499,16 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
+	var content string
+	if proposed {
+		content = "**NEW DROP ✋**"
+	} else {
+		content = "**NEW DROP ✅**"
+	}
+
 	discordMsg := entity.DiscordMessage{
 		Username: "Satoshi 27",
-		Content:  "**NEW DROP**",
+		Content:  content,
 		Embeds: []entity.Embed{{
 			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
 			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
@@ -518,12 +525,19 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		}},
 	}
 	u.Logger.Info("sending new create new project message to discord", zap.Any("message", discordMsg))
-	
+
+	var msgType entity.DiscordNotiType
+	if proposed {
+		msgType = entity.NEW_PROJECT_PROPOSED
+	} else {
+		msgType = entity.NEW_PROJECT_APPROVED
+	}
+
 	noti := entity.DiscordNoti{
 		Message: discordMsg,
 		NumRetried: 0,
 		Status: entity.PENDING,
-		Type: entity.NEW_PROJECT,
+		Type: msgType,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 		},
