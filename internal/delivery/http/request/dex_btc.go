@@ -25,11 +25,12 @@ type SubmitDexBTCBuy struct {
 // }
 
 type GenDexBTCBuyETH struct {
-	OrderID        string `json:"order_id"`
-	FeeRate        uint64 `json:"fee_rate"`
-	ReceiveAddress string `json:"receive_address"`
-	RefundAddress  string `json:"refund_address"`
-	IsEstimate     bool   `json:"is_estimate"`
+	OrderID        string   `json:"order_id"`
+	FeeRate        uint64   `json:"fee_rate"`
+	ReceiveAddress string   `json:"receive_address"`
+	RefundAddress  string   `json:"refund_address"`
+	IsEstimate     bool     `json:"is_estimate"`
+	OrderIDList    []string `json:"order_list"`
 }
 
 type UpdateDexBTCBuyETHTx struct {
