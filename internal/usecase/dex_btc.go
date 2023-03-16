@@ -562,6 +562,12 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			} else {
 				// ?? order not exist
+				order.Status = entity.StatusDEXBuy_WaitingToRefund
+				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				if err != nil {
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				}
+				continue
 			}
 		case entity.StatusDEXBuy_Buying:
 			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
@@ -638,7 +644,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 						continue
 					} else {
-						if time.Since(*order.CreatedAt) >= 2*time.Hour {
+						if time.Since(*order.CreatedAt) <= 2*time.Hour {
 							//retry send buy tx
 							order.Status = entity.StatusDEXBuy_ReceivedFund
 							_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
@@ -657,6 +663,12 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					}
 				} else {
 					// ?? order not exist
+					order.Status = entity.StatusDEXBuy_WaitingToRefund
+					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+					if err != nil {
+						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+					}
+					continue
 				}
 			}
 
