@@ -62,14 +62,13 @@ func (s *clientImpl) Dels(ctx context.Context, keys ...string) error {
 	return s.redisClient.Del(ctx, keys...).Err()
 }
 
-// TODO: move to worker
 func (s *clientImpl) DelPrefix(ctx context.Context, prefix string) error {
+	// TODO: move to worker
 	return s.delKeys(ctx, prefix, s.redisClient)
 }
 
-// TODO: remove this func
 func (s *clientImpl) delKeys(ctx context.Context, prefix string, client redisv9.UniversalClient) error {
-	keys, err := client.Keys(ctx, prefix+"*").Result()
+	keys, err := client.Keys(ctx, prefix+"*").Result() // TODO: remove this code
 	if err == nil && len(keys) > 0 {
 		if err := client.Del(ctx, keys...).Err(); err != nil {
 			return err
