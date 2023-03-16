@@ -146,7 +146,7 @@ func (s Repository) CountDAOArtistVoteByStatus(ctx context.Context, daoArtistId 
 			"count": bson.M{"$sum": 1},
 		},
 	}
-	cur, err := s.DB.Collection(entity.DaoArtist{}.TableName()).Aggregate(ctx, bson.A{match, group})
+	cur, err := s.DB.Collection(entity.DaoArtistVoted{}.TableName()).Aggregate(ctx, bson.A{match, group})
 	if err != nil {
 		return 0
 	}
