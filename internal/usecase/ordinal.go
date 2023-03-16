@@ -71,7 +71,7 @@ func (u *Usecase) GetOrdinalTemplate() (*os.File, error)  {
 func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 	
 	projectName := ""
-	zippedBytes, err := u.uploadAndReadFile(r, "file")
+	zippedBytes,folderName, err := u.uploadAndReadFile(r, "file")
 	if err != nil {
 		return nil, err
 	}
@@ -129,14 +129,21 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 			err = fmt.Errorf("Inscription %d failure with error %v", i+1, err)
 			return nil, err
 		}
+
+		token, err := u.Repo.FindTokenByTokenID(inscription.ID)
+		if err == nil && token != nil {
+			err = fmt.Errorf("Inscription %s at line %d is existed",inscription.ID, i+1)
+			return nil, err
+		}
+
 	}
 
 	if metaCollection.InscriptionIcon != inscription {
 		metaCollection.InscriptionIcon = inscription
 	}
 
-	projectName = metaCollection.Name
-	err = u.pushToGithub(projectName, *metaCollection, metaInscriptions)
+	
+	err = u.pushToGithub(*folderName, *metaCollection, metaInscriptions)
 	if err != nil {
 		return nil, err
 	}
@@ -144,35 +151,39 @@ func (u *Usecase) UploadOrdinalTemplate(r *http.Request) (*os.File, error)  {
 	return nil, err
 }
 
-func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, error) {
+func (u Usecase) uploadAndReadFile(r *http.Request, fileName string) ([]byte, *string, error) {
 	_, handler, err := r.FormFile(fileName)
-	key := fmt.Sprintf("btc-projects/ordinal-inscriptions/%s",handler.Filename)
+	key := "btc-projects/ordinal-inscriptions"
 	gf := googlecloud.GcsFile{
 		FileHeader: handler,
 		Path:       &key,
 	}
 
+	
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
 		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", key), err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
 		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", key), err.Error())
-		return nil, err
+		return nil,nil, err
 	}
 
-	return content, nil
+	folerNames := strings.Split(uploaded.Name, "/")
+	folerName := folerNames[len(folerNames) - 1]
+	
+	return content, &folerName, nil
 }
 
 func (u Usecase) pushToGithub(folderName string, metaCollection structure.OrdinalCollectionMeta, inscription []structure.OrdinalInscriptionMeta) error   {
 	source := "https://github.com/generative-xyz/ordinals-collections.git"
 	uuid := uuid.New().String()
 	
-	timeUtc := time.Now().UTC().Nanosecond()
-	folderName = fmt.Sprintf("%s-%d",folderName, timeUtc)
+	//timeUtc := time.Now().UTC().Nanosecond()
+	//folderName = fmt.Sprintf("%s-%d",folderName, timeUtc)
 	folder_path := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
 	collectionPath := fmt.Sprintf("%s/collections/%s",folder_path, folderName)
 	repo, err := git.PlainClone(folder_path, false, &git.CloneOptions{
