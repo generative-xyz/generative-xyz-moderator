@@ -41,7 +41,7 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			if !profile.ProfileSocial.TwitterVerified {
-				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposal(ctx, profile.WalletAddress)
+				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
 				resp.CanCreateProposal = canCreateNewProposal
 				if !resp.CanCreateProposal && daoArtistID != "" {
 					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)
@@ -245,7 +245,7 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			if !profile.ProfileSocial.TwitterVerified {
-				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposal(ctx, profile.WalletAddress)
+				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
 				resp.CanCreateProposal = canCreateNewProposal
 				if !resp.CanCreateProposal && daoArtistID != "" {
 					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)

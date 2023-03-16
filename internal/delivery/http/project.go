@@ -267,6 +267,13 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
+	if resp.IsHidden {
+		daoProjectId, canCreateNewProposal := h.Usecase.CanCreateNewProposalProject(ctx, userAddress, project.ID)
+		resp.CanCreateProposal = canCreateNewProposal
+		if !resp.CanCreateProposal && daoProjectId != "" {
+			resp.Proposal, _ = h.Usecase.GetDAOProject(ctx, daoProjectId, userAddress)
+		}
+	}
 
 	go h.Usecase.CreateViewProjectActivity(project.TokenID)
 
