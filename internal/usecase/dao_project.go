@@ -45,7 +45,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 			!project.Expired()
 		if action.CanVote {
 			for _, voted := range project.DaoProjectVoted {
-				if voted.CreatedBy == user.WalletAddress {
+				if strings.EqualFold(voted.CreatedBy, user.WalletAddress) {
 					action.CanVote = false
 					break
 				}
@@ -126,12 +126,6 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	userWallets := make([]string, 0, len(daoProject.DaoProjectVoted))
 	for _, voted := range daoProject.DaoProjectVoted {
 		userWallets = append(userWallets, voted.CreatedBy)
-		if voted.Status == dao_project_voted.Voted {
-			daoProject.TotalVote += 1
-		}
-		if voted.Status == dao_project_voted.Against {
-			daoProject.TotalAgainst += 1
-		}
 	}
 	if len(userWallets) > 0 {
 		users := []*entity.Users{}
@@ -216,21 +210,12 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	return nil
 }
 func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.DaoProject) error {
-	voted := []*entity.DaoProjectVoted{}
-	err := s.Repo.Find(ctx,
-		entity.DaoProjectVoted{}.TableName(),
-		bson.M{
-			"dao_project_id": daoProject.ID,
-			"status":         dao_project_voted.Voted,
-		}, &voted)
-	if err != nil {
-		return err
-	}
+	voted := s.Repo.CountDAOProjectVoteByStatus(ctx, daoProject.ID, dao_project_voted.Voted)
 	count := s.Config.CountVoteDAO
 	if count <= 0 {
 		count = 2
 	}
-	if len(voted) < count {
+	if voted < count {
 		return nil
 	}
 	project := &entity.Projects{}
@@ -241,7 +226,7 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 	if !project.IsHidden {
 		return nil
 	}
-	_, err = s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
+	_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
 		bson.D{
 			{Key: "$set", Value: bson.D{
 				{Key: "isHidden", Value: false},

@@ -31,8 +31,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 
-	
-   resp, err := u.RunAndCap(token)
+	resp, err := u.RunAndCap(token)
 	if err != nil {
 		u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
 		return
@@ -48,16 +47,15 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 
 		updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
 		if err != nil {
-			u.Logger.ErrorAny("PubSubCreateTokenThumbnai",zap.Any("UpdateOrInsertTokenUri", err))
+			u.Logger.ErrorAny("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
 		}
 		u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
-		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)),"", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail) ))
+		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
 
 	}
 }
 
 func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channelName string, payload interface{}) {
-
 
 	bytes, err := json.Marshal(payload)
 	if err != nil {
@@ -77,6 +75,5 @@ func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channel
 		u.Logger.ErrorAny("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return
 	}
-
 
 }

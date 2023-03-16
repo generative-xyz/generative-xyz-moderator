@@ -50,6 +50,9 @@ func QueryParser(r *http.Request, out interface{}) error {
 	urlValues := r.URL.Query()
 	for k := range urlValues {
 		for _, v := range urlValues[k] {
+			if v == "" {
+				continue
+			}
 			if strings.Contains(k, "[") {
 				k, err = parseParamSquareBrackets(k)
 			}
