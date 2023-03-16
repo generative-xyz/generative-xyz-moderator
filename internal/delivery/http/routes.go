@@ -210,9 +210,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/collection-stats", h.btcMarketplaceCollectionStats).Methods("GET")
 
 	referral := api.PathPrefix("/referrals").Subrouter()
-	referral.Use(h.MiddleWare.AccessToken)
-	referral.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 	referral.HandleFunc("", h.getReferrals).Methods("GET")
+
+	referralAuth := api.PathPrefix("/referrals").Subrouter()
+	referralAuth.Use(h.MiddleWare.AccessToken)
+	referralAuth.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
@@ -292,6 +294,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	daoArtist.HandleFunc("", h.createDaoArtist).Methods("POST")
 	daoArtist.HandleFunc("/{id}", h.getDaoArtist).Methods("GET")
 	daoArtist.HandleFunc("/{id}", h.voteDaoArtist).Methods("PUT")
+
+	//ordinal collections
+	orCollections := api.PathPrefix("/ordinal").Subrouter()
+	//orCollections.Use(h.MiddleWare.AuthorizeFunc)
+	orCollections.HandleFunc("/collections/template", h.getOrdinalTemplate).Methods("GET")
+	orCollections.HandleFunc("/collections", h.uploadOrdinalTemplate).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

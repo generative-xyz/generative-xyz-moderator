@@ -141,9 +141,11 @@ func (h ScronHandler) StartServer() {
 	// })
 
 	//At minute 0.
-	c.AddFunc("0 * * * *", func() {
+	c.AddFunc("@hourly", func() {
 		h.Usecase.JobAggregateVolumns()
-
+	})
+	
+	c.AddFunc("@hourly", func() {
 		h.Usecase.JobAggregateReferral()
 	})
 
