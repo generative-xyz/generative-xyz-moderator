@@ -46,6 +46,8 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 	pe := &entity.FilterProjects{Ids: ids}
 	pe.Limit = int64(filter.Limit)
 	pe.Page = 1
+	hidden := false
+	pe.IsHidden = &hidden
 	uProjects, err := uc.Repo.GetProjects(*pe)
 	if err != nil {
 		return nil, 0, 0, err
