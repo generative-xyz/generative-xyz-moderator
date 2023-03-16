@@ -80,7 +80,7 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
 			search = append(search, bson.M{"seq_id": seqId})
 		} else {
-			if id, err := primitive.ObjectIDFromHex(*request.Id); err == nil {
+			if id, err := primitive.ObjectIDFromHex(*request.Keyword); err == nil {
 				search = append(search, bson.M{"_id": id})
 			}
 		}
