@@ -21,6 +21,8 @@ const (
 	NEW_LISTING DiscordNotiType = "new_listing"
 	NEW_MINT    DiscordNotiType = "new_mint"
 	NEW_PROJECT DiscordNotiType = "new_project"
+	NEW_PROJECT_PROPOSED DiscordNotiType = "new_project_proposed"
+	NEW_PROJECT_APPROVED DiscordNotiType = "new_project_approved"
 )
 
 type GetDiscordNotiReq struct {
