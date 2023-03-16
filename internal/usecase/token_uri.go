@@ -891,7 +891,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"),uploaded.Name)
+	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	spew.Dump(thumb)
 	token.Thumbnail = thumb
 
