@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -14,16 +13,16 @@ import (
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/constants/dao_artist"
 	"rederinghub.io/utils/constants/dao_artist_voted"
 	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request *request.ListDaoArtistRequest) (*entity.Pagination, error) {
 	result := &entity.Pagination{}
-	redisKey := fmt.Sprintf("%s_list_%s_%s", entity.DaoArtist{}.TableName(), userWallet, utils.HashStruct(request, nil))
+	redisKey := rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list", userWallet).WithStructHash(request, nil).String()
 	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
 		return result, nil
 	}
@@ -110,7 +109,7 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 		return "", err
 	}
 
-	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoArtist{}.TableName()))
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list").String())
 
 	return id.Hex(), nil
 }
@@ -203,7 +202,7 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 		return err
 	}
 
-	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoArtist{}.TableName()))
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list").String())
 
 	if req.Status != dao_artist_voted.Verify {
 		return nil
