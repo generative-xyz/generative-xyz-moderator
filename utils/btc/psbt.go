@@ -761,13 +761,13 @@ type CreatePSBTToBuyInscriptionRequest struct {
 }
 
 type CreatePSBTToBuyInscriptionRespond struct {
-	TxID          string `json:"txID"`
-	TxHex         string `json:"txHex"`
-	Fee           int    `json:"fee"`
-	SelectedUTXOs []UTXO `json:"selectedUTXOs"`
-	SplitTxID     string `json:"splitTxID"`
-	SplitUTXOs    []UTXO `json:"splitUTXOs"`
-	SplitTxRaw    string `json:"splitTxRaw"`
+	TxID          string     `json:"txID"`
+	TxHex         string     `json:"txHex"`
+	Fee           int        `json:"fee"`
+	SelectedUTXOs []UTXOType `json:"selectedUTXOs"`
+	SplitTxID     string     `json:"splitTxID"`
+	SplitUTXOs    []UTXOType `json:"splitUTXOs"`
+	SplitTxRaw    string     `json:"splitTxRaw"`
 }
 
 func CreatePSBTToBuyInscriptionViaAPI(
