@@ -195,17 +195,17 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						Offset:        offset,
 						Sat:           data.Sat,
 					}
-					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail", "creator_address"})
+					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail", "creatorProfile.uuid"})
 					if internalInfo != nil {
 						inscWalletInfo.ProjectID = internalInfo.ProjectID
 						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name"})
+						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name", "creatorAddress"})
 						if err != nil {
 							log.Println("InscriptionsByOutputs.FindProjectByTokenIDCustomField", err)
 						} else {
 							inscWalletInfo.ProjectName = project.Name
 						}
-						creator, err := u.Repo.FindUserByAddress(internalInfo.CreatorAddr)
+						creator, err := u.Repo.FindUserByID(project.CreatorProfile.UUID)
 						if err != nil {
 							log.Println("InscriptionsByOutputs.FindUserByAddress", err)
 						} else {
