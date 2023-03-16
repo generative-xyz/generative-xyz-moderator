@@ -553,6 +553,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					continue
 				}
 				order.BuyTx = respondData.TxID
+				order.SplitTx = respondData.SplitTxID
 				order.Status = entity.StatusDEXBuy_Buying
 				_, err = u.Repo.UpdateDexBTCBuyETHOrderBuy(&order)
 				if err != nil {
@@ -566,8 +567,45 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			// check tx buy if success => status = StatusDEXBuy_Bought else status = StatusDEXBuy_WaitingToRefund
 			txStatus, err := btc.CheckTxfromQuickNode(order.BuyTx, quickNodeAPI)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.BuyTx, err)
-				continue
+				if strings.Contains(err.Error(), "tx not found") {
+					if order.SplitTx != "" {
+						txStatusSplit, err := btc.CheckTxfromQuickNode(order.SplitTx, quickNodeAPI)
+						if err != nil {
+							log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode split", order.ID, order.SplitTx, err)
+							listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
+							if err != nil {
+								log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
+								continue
+							}
+							if listingOrder != nil {
+								if listingOrder.Cancelled || listingOrder.Matched {
+									order.Status = entity.StatusDEXBuy_WaitingToRefund
+									_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+									if err != nil {
+										log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+									}
+									continue
+								}
+								//retry send buy tx
+								order.Status = entity.StatusDEXBuy_ReceivedFund
+								_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+								if err != nil {
+									log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+								}
+								continue
+							}
+						}
+						if txStatusSplit != nil {
+							if txStatusSplit.Result.Confirmations >= 0 {
+								continue
+							}
+						}
+					}
+				} else {
+					log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode", order.ID, order.BuyTx, err)
+					continue
+				}
+
 			}
 			if txStatus != nil {
 				if txStatus.Result.Confirmations > 0 {

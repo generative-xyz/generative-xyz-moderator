@@ -71,6 +71,7 @@ type DexBTCBuyWithETH struct {
 	BuyTx          string             `bson:"buy_tx" json:"buy_tx"`
 	RefundTx       string             `bson:"refund_tx" json:"refund_tx"`
 	MasterTx       string             `bson:"master_tx" json:"master_tx"`
+	SplitTx        string             `bson:"split_tx" json:"split_tx"`
 	FeeRate        uint64             `bson:"fee_rate" json:"fee_rate"`
 	Status         DexBTCETHBuyStatus `bson:"status" json:"status"`
 	ETHKey         string             `bson:"eth_key" json:"eth_key"`
