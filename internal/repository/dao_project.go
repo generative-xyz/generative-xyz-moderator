@@ -182,7 +182,20 @@ func (s Repository) CheckDAOProjectAvailableByProjectId(ctx context.Context, pro
 	}
 	return true
 }
-
+func (s Repository) CheckDAOProjectAvailableByUser(ctx context.Context, userWallet string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
+	daoProject := &entity.DaoProject{}
+	if err := s.FindOneBy(ctx, daoProject.TableName(), bson.M{
+		"created_by": userWallet,
+		"project_id": projectId,
+		"$or": bson.A{
+			bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+			bson.M{"status": dao_project.Executed},
+		},
+	}, daoProject); err != nil {
+		return nil, false
+	}
+	return daoProject, true
+}
 func (s Repository) CountDAOProjectVoteByStatus(ctx context.Context, daoProjectId primitive.ObjectID, status dao_project_voted.Status) int {
 	match := bson.M{"$match": bson.M{
 		"dao_project_id": daoProjectId,
