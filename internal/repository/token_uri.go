@@ -221,6 +221,24 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		bson.D{
 			{"$lookup",
 				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{	
+			{"$lookup",
+				bson.D{
 					{"from", "dex_btc_listing"},
 					{"localField", "token_id"},
 					{"foreignField", "inscription_id"},
@@ -332,6 +350,12 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"orderID", 1},
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
+					{"owner_addrress", 1},
+					{"owner.wallet_address", 1},
+					{"owner.wallet_address_btc_taproot", 1},
+					{"owner.avatar", 1},
+					{"owner.display_name", 1},
+					
 				},
 			},
 		},
