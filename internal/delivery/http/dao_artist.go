@@ -34,7 +34,7 @@ func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
 			resp, err := h.Usecase.ListDAOArtist(ctx, userWallet, req)
 			if err != nil {
-				resp.Result = make([]*response.DaoArtist, 0)
+				return &entity.Pagination{Result: make([]*response.DaoArtist, 0)}, nil
 			}
 			return resp, nil
 		},
