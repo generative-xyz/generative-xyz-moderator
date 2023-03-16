@@ -212,12 +212,17 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
 
 	if pe.IsHidden && pe.IsSynced {
-		_, err = u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+		ids, err := u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
 			ProjectIds: []string{pe.ID.Hex()},
 			CreatedBy:  pe.CreatorAddrr,
 		})
 		if err != nil {
 			logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("CreateDAOProject success",
+				zap.String("project_id", pe.ID.Hex()),
+				zap.Strings("ids", ids),
+			)
 		}
 	}
 
@@ -1640,12 +1645,17 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	_, err = u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
 		ProjectIds: []string{pe.ID.Hex()},
 		CreatedBy:  pe.CreatorAddrr,
 	})
 	if err != nil {
 		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", pe.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
 	}
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
