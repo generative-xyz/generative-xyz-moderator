@@ -501,9 +501,9 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 
 	var content string
 	if proposed {
-		content = "**NEW DROP ✋**"
+		content = "**NEW DROP PROPOSED ✋**"
 	} else {
-		content = "**NEW DROP ✅**"
+		content = "**NEW DROP APPROVED ✅**"
 	}
 
 	discordMsg := entity.DiscordMessage{
