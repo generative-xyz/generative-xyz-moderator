@@ -18,6 +18,8 @@ type DaoProject struct {
 	ExpiredAt       time.Time          `json:"expired_at,omitempty" bson:"expired_at"`
 	Status          dao_project.Status `json:"status,omitempty" bson:"status"`
 	DaoProjectVoted []*DaoProjectVoted `json:"dao_project_voted,omitempty" bson:"dao_project_voted,omitempty"`
+	TotalAgainst    *int64             `json:"total_against,omitempty" bson:"total_against,omitempty"`
+	TotalVote       *int64             `json:"total_vote,omitempty" bson:"total_vote,omitempty"`
 }
 
 func (m DaoProject) TableName() string {
