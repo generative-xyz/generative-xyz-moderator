@@ -167,7 +167,7 @@ func (s Repository) CountDAOProjectVoteByStatus(ctx context.Context, daoProjectI
 			"count": bson.M{"$sum": 1},
 		},
 	}
-	cur, err := s.DB.Collection(entity.DaoProject{}.TableName()).Aggregate(ctx, bson.A{match, group})
+	cur, err := s.DB.Collection(entity.DaoProjectVoted{}.TableName()).Aggregate(ctx, bson.A{match, group})
 	if err != nil {
 		return 0
 	}
