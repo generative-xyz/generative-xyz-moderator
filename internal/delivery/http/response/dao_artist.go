@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"time"
 
 	"rederinghub.io/utils/constants/dao_artist"
@@ -19,14 +18,6 @@ type DaoArtist struct {
 	Action         *ActionDaoArtist  `json:"action"`
 	TotalReport    *int64            `json:"total_report"`
 	TotalVerify    *int64            `json:"total_verify"`
-}
-
-func (m DaoArtist) MarshalBinary() ([]byte, error) {
-	return json.Marshal(m)
-}
-
-func (m *DaoArtist) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, m)
 }
 
 func (s DaoArtist) Expired() bool {

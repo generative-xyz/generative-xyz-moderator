@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"time"
 
 	"rederinghub.io/utils/constants/dao_project"
@@ -21,14 +20,6 @@ type DaoProject struct {
 	Action          *ActionDaoProject     `json:"action"`
 	TotalAgainst    *int64                `json:"total_against"`
 	TotalVote       *int64                `json:"total_vote"`
-}
-
-func (m DaoProject) MarshalBinary() ([]byte, error) {
-	return json.Marshal(m)
-}
-
-func (m *DaoProject) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, m)
 }
 
 func (s DaoProject) Expired() bool {
