@@ -534,7 +534,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					err = btc.SendTxBlockStream(respondData.SplitTxRaw)
 					if err != nil {
 						dataBytes, _ := json.Marshal(respondData)
-						log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode SplitTxHex", order.ID, string(dataBytes), err)
+						log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 						continue
 					}
 					time.Sleep(1 * time.Second)
@@ -542,7 +542,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				err = btc.SendTxBlockStream(respondData.TxHex)
 				if err != nil {
 					dataBytes, _ := json.Marshal(respondData)
-					log.Println("watchPendingDexBTCBuyETH SendRawTxfromQuickNode TxHex", order.ID, string(dataBytes), err)
+					log.Println("watchPendingDexBTCBuyETH SendTxBlockStream TxHex", order.ID, string(dataBytes), err)
 					continue
 				}
 				order.BuyTx = respondData.TxID
