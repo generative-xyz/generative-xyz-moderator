@@ -144,6 +144,10 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	waitChan := make(chan struct{}, 10)
+	btcRate, ethRate, err := u.GetBTCToETHRate()
+	if err != nil {
+		log.Println("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+	}
 	for _, output := range outputs {
 		wg.Add(1)
 		waitChan <- struct{}{}
@@ -194,12 +198,12 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail", "creator_address"})
 					if internalInfo != nil {
 						inscWalletInfo.ProjectID = internalInfo.ProjectID
-						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name", "thumbnail"})
+						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
+						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name"})
 						if err != nil {
 							log.Println("InscriptionsByOutputs.FindProjectByTokenIDCustomField", err)
 						} else {
 							inscWalletInfo.ProjectName = project.Name
-							inscWalletInfo.Thumbnail = project.Thumbnail
 						}
 						creator, err := u.Repo.FindUserByAddress(internalInfo.CreatorAddr)
 						if err != nil {
@@ -221,6 +225,15 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
 							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+
+							amountBTCRequired := uint64(listing.Amount) + 1000
+							amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+
+							amountETH, _, _, err := u.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+							if err != nil {
+								log.Println("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+							}
+							inscWalletInfo.PriceETH = amountETH
 						}
 					}
 					lock.Lock()
