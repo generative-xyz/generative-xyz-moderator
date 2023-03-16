@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/redisv9"
 	"rederinghub.io/utils/slack"
 )
 
@@ -44,6 +45,7 @@ type Usecase struct {
 	OrdServiceDeveloper *ord_service.BtcOrd
 	gData               gData
 	DelegateService     *delegate.Service
+	RedisV9             redisv9.Client
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -64,6 +66,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.OrdService = global.OrdService
 	u.OrdServiceDeveloper = global.OrdServiceDeveloper
 	u.DelegateService = global.DelegateService
+	u.RedisV9 = global.RedisV9
 	return u, nil
 }
 

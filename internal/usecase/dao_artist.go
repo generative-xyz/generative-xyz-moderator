@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/constants/dao_artist"
 	"rederinghub.io/utils/constants/dao_artist_voted"
 	copierInternal "rederinghub.io/utils/copier"
@@ -20,9 +22,10 @@ import (
 )
 
 func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request *request.ListDaoArtistRequest) (*entity.Pagination, error) {
-	result := &entity.Pagination{
-		PageSize: request.PageSize,
-		Result:   make([]*response.DaoProject, 0),
+	result := &entity.Pagination{}
+	redisKey := fmt.Sprintf("%s_list_%s_%s", entity.DaoArtist{}.TableName(), userWallet, utils.HashStruct(request, nil))
+	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
+		return result, nil
 	}
 	user := &entity.Users{}
 	if userWallet != "" {
@@ -60,6 +63,7 @@ func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request 
 	if len(artistsResp) > 0 {
 		result.Cursor = artistsResp[len(artistsResp)-1].ID
 	}
+	_ = s.RedisV9.Set(ctx, redisKey, result, time.Minute*5)
 	return result, nil
 }
 
@@ -105,6 +109,9 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	if err != nil {
 		return "", err
 	}
+
+	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoArtist{}.TableName()))
+
 	return id.Hex(), nil
 }
 
@@ -195,6 +202,8 @@ func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req 
 	if err != nil {
 		return err
 	}
+
+	_ = s.RedisV9.DelPrefix(ctx, fmt.Sprintf("%s_list", entity.DaoArtist{}.TableName()))
 
 	if req.Status != dao_artist_voted.Verify {
 		return nil
