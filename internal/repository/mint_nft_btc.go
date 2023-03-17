@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
@@ -210,5 +211,97 @@ func (r Repository) CountBatchRecordOfItems(parentRecord string) ([]entity.MintN
 		return nil, err
 	}
 
+	return resp, nil
+}
+
+func (r Repository) GetLimitWhiteList(userAddress, projectID string) ([]entity.MintNftBtc, error) {
+
+	filter := bson.M{"projectID": projectID, "user_address": userAddress, "isDiscount": true}
+
+	resp := []entity.MintNftBtc{}
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+
+	//
+
+	// resp := []entity.MintNftBtc{}
+	// f := bson.M{}
+	// f["$and"] = []interface{}{
+	// 	bson.M{"projectID": projectID},
+	// 	bson.M{"user_address": userAddress},
+	// 	bson.M{"isDiscount": true},
+
+	// 	// bson.M{"$or": []interface{}{
+	// 	// 	bson.M{"isConfirm": true},
+	// 	// 	bson.M{"$and": []interface{}{
+	// 	// 		bson.M{"status": 0},
+	// 	// 		bson.M{"expired_at": bson.M{"$gte": primitive.NewDateTimeFromTime(time.Now().UTC())}},
+	// 	// 	}},
+	// 	// }},
+	// }
+
+	// opts := options.Find()
+	// cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Find(context.TODO(), f, opts)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// if err = cursor.All(context.TODO(), &resp); err != nil {
+	// 	return nil, err
+	// }
+
+	// return resp, nil
+}
+
+func (r Repository) UpdateMintNftBtcSubItemRefundOrDone(uuids []string, status entity.StatusMint, tx string, isRefund bool) (*mongo.UpdateResult, error) {
+	filter := bson.M{
+		"uuid": bson.M{"$in": uuids},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"tx_send_master": tx,
+			"status":         status,
+		},
+	}
+	if isRefund {
+		update = bson.M{
+			"$set": bson.M{
+				"tx_refund": tx,
+				"status":    status,
+			},
+		}
+	}
+
+	result, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) FindMintNftBtcByInscriptionID(inscriptionID string) (*entity.MintNftBtc, error) {
+	resp := &entity.MintNftBtc{}
+	filter := bson.D{
+		{Key: "inscriptionID", Value: inscriptionID},
+	}
+	mintNftBtc, err := r.FilterOne(entity.MintNftBtc{}.TableName(), filter)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = helpers.Transform(mintNftBtc, resp)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	return resp, nil
 }

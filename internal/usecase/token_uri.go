@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -12,17 +11,18 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
@@ -170,7 +170,9 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
-
+	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
+		tokenUri.Project.InscribedBy = tokenUri.InscribedBy
+	}
 	client := resty.New()
 	resp := &response.SearhcInscription{}
 	_, err = client.R().
@@ -215,7 +217,6 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 				ContractAddress: tokenUri.ContractAddress,
 			}}
 
-			u.Logger.LogAny("GetToken.Thumbnail", zap.Any("payload", payload))
 			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 			if err != nil {
 				u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
@@ -248,7 +249,6 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	}()
 
 	///u.Logger.Info("tokenUri", tokenUri)
-	u.Logger.LogAny("GetToken", zap.Any("req", req), zap.Any("tokenUri", tokenUri))
 	return tokenUri, nil
 }
 
@@ -589,12 +589,51 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	
+
+	//filerAttrs := []structure.TokenUriAttrReq{}
+	if filter.Rarity != nil && *filter.Rarity != "" {
+		r := strings.Split(*filter.Rarity, ",")
+		min := "0"
+		max := "100"
+		if len(r) == 2 {
+			min = r[0]
+			max = r[1]
+		}
+
+		minInt, _ := strconv.Atoi(min)
+		maxInt, _ := strconv.Atoi(max)
+
+		groupTraits := make(map [string][]string)
+		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
+		if err == nil {
+			traits := p.TraitsStat
+			for _, trait := range traits {
+				values := trait.TraitValuesStat
+				
+				for _, value := range values {
+					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
+						
+					}
+				}
+			}
+		}
+
+		for key, groupTrait := range  groupTraits {
+			r := structure.TokenUriAttrReq{}
+			r.TraitType = key
+			r.Values = groupTrait
+			filter.RarityAttributes = append(filter.Attributes, r)
+		}
+	}
+
 	err := copier.Copy(pe, filter)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
-
+	
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
@@ -661,7 +700,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, nftTokenIds ...string) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, opts ...string) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -692,10 +731,15 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.PaidType = paidType
 	tokenUri.IsOnchain = false
-	if len(nftTokenIds) > 0 {
-		tokenUri.NftTokenId = nftTokenIds[0]
+	if len(opts) > 0 {
+		tokenUri.NftTokenId = opts[0]
 	}
-
+	if len(opts) > 1 {
+		tokenUri.InscribedBy = opts[1]
+	}
+	if len(opts) > 2 {
+		tokenUri.OriginalInscribedBy = opts[2]
+	}
 	nftTokenUri := project.NftTokenUri
 	u.Logger.Info("nftTokenUri", nftTokenUri)
 
@@ -890,8 +934,8 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 		return nil, err
 	}
 	u.Logger.Info("uploaded", uploaded)
-	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"),uploaded.Name)
-	spew.Dump(thumb)
+	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	//spew.Dump(thumb)
 	token.Thumbnail = thumb
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
@@ -909,8 +953,12 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	// find project by projectID
 	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
-		u.Logger.Error(err)
-		return nil, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			u.Logger.ErrorAny("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
+			return nil, repository.ErrNoProjectsFound
+		} else {
+			return nil, err
+		}
 	}
 
 	tokenUri := entity.TokenUri{}
@@ -947,7 +995,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	now := time.Now().UTC()
-	imageURI := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", inscription.ID)
+	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
 	tokenUri.AnimationURL = ""
 	tokenUri.Thumbnail = imageURI
 	tokenUri.Image = imageURI
@@ -961,9 +1009,21 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 		u.Logger.Error(err)
 		return nil, err
 	}
+
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
 	if err != nil {
 		return nil, err
+	}
+
+	// update project index and max supply
+	index := project.MintingInfo.Index + 1
+	maxSupply := project.MaxSupply
+	if index > maxSupply {
+		maxSupply = index
+	}
+	err = u.Repo.UpdateProjectIndexAndMaxSupply(project.TokenID, maxSupply, index)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return pTokenUri, nil
@@ -993,7 +1053,19 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 	}
 
 	link := fmt.Sprintf("%s/%s/%s", "https://storage.googleapis.com", os.Getenv("GCS_BUCKET"), uploaded.Name)
-	spew.Dump(link)
+	//spew.Dump(link)
 	return &link, nil
 
+}
+
+func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, error) {
+	tokens, err := u.Repo.FindTokenByTokenIds(tokenIDs)
+	if err != nil {
+		return nil, err
+	}
+	tokenIdToToken := map[string]*entity.TokenUri{}
+	for id := range tokens {
+		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
+	}
+	return tokenIdToToken, nil
 }

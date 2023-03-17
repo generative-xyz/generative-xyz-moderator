@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -18,12 +19,15 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error) {
@@ -340,8 +344,11 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.ProfileSocial.Web = *data.ProfileSocial.Web
 	}
 
-	if data.ProfileSocial.Twitter != nil {
+	needUpdateProposalForCreateNew := false
+	if data.ProfileSocial.Twitter != nil && user.ProfileSocial.Twitter != *data.ProfileSocial.Twitter {
 		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
+		user.ProfileSocial.TwitterVerified = false
+		needUpdateProposalForCreateNew = true
 	}
 
 	if data.ProfileSocial.Medium != nil {
@@ -358,6 +365,14 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	if data.ProfileSocial.EtherScan != nil {
 		user.ProfileSocial.EtherScan = *data.ProfileSocial.EtherScan
+	}
+
+	isDisableNotification := false
+	if data.EnableNotification != nil && user.EnableNotification != *data.EnableNotification {
+		if !*data.EnableNotification {
+			isDisableNotification = true
+		}
+		user.EnableNotification = *data.EnableNotification
 	}
 
 	_, err = u.Repo.UpdateUserByID(userID, user)
@@ -406,6 +421,20 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		if user.Stats.CollectionCreated > 0 {
 			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User ETH wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("ETH wallet address payment was changed from %s to %s", oldAdressPayment, *data.WalletAddressPayment))
 		}
+	}
+
+	if isDisableNotification {
+		go func() {
+			_, err = u.Repo.DeleteMany(context.TODO(), entity.FirebaseRegistrationToken{}.TableName(), bson.M{"user_wallet": user.WalletAddress})
+			if err != nil {
+				logger.AtLog.Logger.Error("Delete FirebaseRegistrationToken failed", zap.Error(err))
+			}
+		}()
+	}
+	if needUpdateProposalForCreateNew {
+		_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list", user.WalletAddress).String())
+		_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list", user.WalletAddress).String())
+		go u.SetExpireYourProposalArtist(context.TODO(), user.WalletAddress)
 	}
 
 	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(user.WalletAddress), user)

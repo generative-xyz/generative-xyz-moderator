@@ -12,15 +12,15 @@ definitions:
         type: string
       apiName:
         type: string
-      createdAt:
+      created_at:
         type: string
-      deletedAt:
+      deleted_at:
         type: string
       id:
         type: string
       status:
         type: integer
-      updatedAt:
+      updated_at:
         type: string
       userUuid:
         type: string
@@ -31,9 +31,7 @@ definitions:
     properties:
       created_at:
         type: string
-      createdAt:
-        type: string
-      deletedAt:
+      deleted_at:
         type: string
       device_type:
         type: string
@@ -41,7 +39,7 @@ definitions:
         type: string
       registration_token:
         type: string
-      updatedAt:
+      updated_at:
         type: string
       user_wallet:
         type: string
@@ -189,10 +187,10 @@ definitions:
         type: integer
       contractAddress:
         type: string
+      created_at:
+        type: string
       created_by_collection_meta:
         type: boolean
-      createdAt:
-        type: string
       creatorAddrr:
         type: string
       creatorAddrrBTC:
@@ -201,7 +199,7 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/entity.Users'
-      deletedAt:
+      deleted_at:
         type: string
       description:
         type: string
@@ -340,7 +338,7 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
-      updatedAt:
+      updated_at:
         type: string
       uuid:
         type: string
@@ -374,21 +372,25 @@ definitions:
         type: string
       contract_address:
         type: string
-      createdAt:
+      created_at:
         type: string
       createdByCollectionInscription:
+        type: boolean
+      createdMintActivity:
         type: boolean
       creator:
         $ref: '#/definitions/entity.Users'
       creatorAddr:
         type: string
-      deletedAt:
+      deleted_at:
         type: string
       description:
         type: string
       genNFTAddr:
         type: string
       image:
+        type: string
+      inscribedBy:
         type: string
       inscriptionIndex:
         type: string
@@ -404,6 +406,8 @@ definitions:
         type: string
       order_inscription_index:
         type: integer
+      originalInscribedBy:
+        type: string
       owner:
         $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
@@ -445,7 +449,7 @@ definitions:
         type: integer
       token_id_mini:
         type: integer
-      updatedAt:
+      updated_at:
         type: string
     type: object
   entity.TokenUriAttr:
@@ -496,12 +500,12 @@ definitions:
         type: string
       created_at:
         type: string
-      createdAt:
-        type: string
-      deletedAt:
+      deleted_at:
         type: string
       display_name:
         type: string
+      enable_notification:
+        type: boolean
       id:
         type: string
       is_updated_avatar:
@@ -516,14 +520,14 @@ definitions:
         $ref: '#/definitions/entity.ProfileSocial'
       stats:
         $ref: '#/definitions/entity.UserStats'
-      updatedAt:
+      updated_at:
         type: string
       uuid:
         type: string
       verifiedAt:
         type: string
       wallet_address:
-        description: eth wallet define user in platform by connect wallet and sign
+        description: ID                      string        `bson:"id" json:"id,omitempty"`
         type: string
       wallet_address_btc:
         description: btc wallet artist receive royalty
@@ -695,6 +699,20 @@ definitions:
     required:
     - key
     - value
+    type: object
+  request.CreateDaoArtistRequest:
+    properties:
+      twitter:
+        type: string
+    type: object
+  request.CreateDaoProjectRequest:
+    properties:
+      project_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - project_ids
     type: object
   request.CreateEthWalletAddressReq:
     properties:
@@ -915,6 +933,8 @@ definitions:
         type: string
       displayName:
         type: string
+      enableNotification:
+        type: boolean
       profileSocial:
         $ref: '#/definitions/request.ProfileSocial'
       walletAddressBtc:
@@ -959,6 +979,16 @@ definitions:
       signature:
         type: string
     type: object
+  request.VoteDaoArtistRequest:
+    properties:
+      status:
+        type: integer
+    type: object
+  request.VoteDaoProjectRequest:
+    properties:
+      status:
+        type: integer
+    type: object
   request.WithDrawItemRequest:
     properties:
       amount:
@@ -971,6 +1001,16 @@ definitions:
         type: string
       type:
         type: string
+    type: object
+  response.ActionDaoArtist:
+    properties:
+      can_vote:
+        type: boolean
+    type: object
+  response.ActionDaoProject:
+    properties:
+      can_vote:
+        type: boolean
     type: object
   response.CategoryResp:
     properties:
@@ -987,6 +1027,98 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  response.DaoArtist:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoArtist'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      dao_artist_voted:
+        items:
+          $ref: '#/definitions/response.DaoArtistVoted'
+        type: array
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      seq_id:
+        type: integer
+      status:
+        type: integer
+      total_report:
+        type: integer
+      total_verify:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDao'
+      uuid:
+        type: string
+    type: object
+  response.DaoArtistVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
+    type: object
+  response.DaoProject:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoProject'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      dao_project_voted:
+        items:
+          $ref: '#/definitions/response.DaoProjectVoted'
+        type: array
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      project:
+        $ref: '#/definitions/response.ProjectForDaoProject'
+      project_id:
+        type: string
+      seq_id:
+        type: integer
+      status:
+        type: integer
+      total_against:
+        type: integer
+      total_vote:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDao'
+      uuid:
+        type: string
+    type: object
+  response.DaoProjectVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
     type: object
   response.FileRes:
     properties:
@@ -1104,6 +1236,8 @@ definitions:
         type: string
       image:
         type: string
+      inscribedBy:
+        type: string
       inscriptionIndex:
         type: string
       isCompleted:
@@ -1128,10 +1262,14 @@ definitions:
         type: string
       priceBTC:
         type: string
+      priceETH:
+        type: string
       priority:
         type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
+      sell_verified:
+        type: boolean
       stats:
         $ref: '#/definitions/response.TokenStat'
       thumbnail:
@@ -1183,6 +1321,8 @@ definitions:
         type: string
       bio:
         type: string
+      canCreateProposal:
+        type: boolean
       createdAt:
         type: string
       displayName:
@@ -1191,6 +1331,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
+      proposal:
+        $ref: '#/definitions/response.DaoArtist'
       walletAddress:
         type: string
       walletAddressBtc:
@@ -1216,6 +1358,46 @@ definitions:
         type: boolean
       web:
         type: string
+    type: object
+  response.ProjectForDaoProject:
+    properties:
+      created_at:
+        type: string
+      creator_by:
+        type: string
+      creator_name:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      is_hidden:
+        type: boolean
+      max_supply:
+        type: integer
+      mint_price:
+        type: string
+      mint_price_eth:
+        type: string
+      minting_info:
+        $ref: '#/definitions/response.ProjectMintingInfo'
+      name:
+        type: string
+      thumbnail:
+        type: string
+      token_id:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  response.ProjectMintingInfo:
+    properties:
+      index:
+        type: integer
+      index_reverse:
+        type: integer
     type: object
   response.ProjectResp:
     properties:
@@ -1264,6 +1446,8 @@ definitions:
       isFullChain:
         type: boolean
       isHidden:
+        type: boolean
+      isReviewing:
         type: boolean
       itemDesc:
         type: string
@@ -1416,6 +1600,35 @@ definitions:
       rarity:
         type: integer
       value:
+        type: string
+    type: object
+  response.UserForDao:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      display_name:
+        type: string
+      id:
+        type: string
+      is_verified:
+        type: boolean
+      profile_social:
+        $ref: '#/definitions/response.ProfileSocial'
+      updated_at:
+        type: string
+      uuid:
+        type: string
+      wallet_address:
+        type: string
+      wallet_address_btc:
+        type: string
+      wallet_address_btc_taproot:
+        type: string
+      wallet_address_payment:
         type: string
     type: object
   response.VerifyResponse:
@@ -1879,6 +2092,30 @@ paths:
       summary: update Category
       tags:
       - Categories
+  /collections:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
   /configs:
     get:
       consumes:
@@ -1976,6 +2213,242 @@ paths:
       summary: get one config
       tags:
       - Configs
+  /dao-artist:
+    get:
+      consumes:
+      - application/json
+      description: List DAO Artist
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List DAO Artist
+      tags:
+      - DAO Artist
+    post:
+      consumes:
+      - application/json
+      description: Create DAO Artist
+      parameters:
+      - description: Create Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoArtistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      security:
+      - ApiKeyAuth: []
+      summary: Create DAO Artist
+      tags:
+      - DAO Artist
+  /dao-artist/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      security:
+      - ApiKeyAuth: []
+      summary: Get DAO Artist
+      tags:
+      - DAO Artist
+    put:
+      consumes:
+      - application/json
+      description: Vote DAO Artist
+      parameters:
+      - description: DAO Artist Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Vote Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VoteDaoArtistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      security:
+      - ApiKeyAuth: []
+      summary: Vote DAO Artist
+      tags:
+      - DAO Artist
+  /dao-project:
+    get:
+      consumes:
+      - application/json
+      description: List DAO Project
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Status
+        in: query
+        name: status
+        type: integer
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List DAO Project
+      tags:
+      - DAO Project
+    post:
+      consumes:
+      - application/json
+      description: Create DAO Project
+      parameters:
+      - description: Create Dao Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      security:
+      - ApiKeyAuth: []
+      summary: Create DAO Project
+      tags:
+      - DAO Project
+  /dao-project/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DAO Project
+      parameters:
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DaoProject'
+      security:
+      - ApiKeyAuth: []
+      summary: Get DAO Project
+      tags:
+      - DAO Project
+    put:
+      consumes:
+      - application/json
+      description: Vote DAO Project
+      parameters:
+      - description: Vote Dao Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.VoteDaoProjectRequest'
+      - description: Dao Project Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      security:
+      - ApiKeyAuth: []
+      summary: Vote DAO Project
+      tags:
+      - DAO Project
+  /dao-project/me/projects-hidden:
+    get:
+      consumes:
+      - application/json
+      description: List Projects Is Hidden
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List Projects Is Hidden
+      tags:
+      - DAO Project
   /dao/proposals:
     get:
       consumes:
@@ -2312,7 +2785,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2334,7 +2807,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -2631,7 +3104,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -2945,6 +3418,50 @@ paths:
       summary: get nft transactions
       tags:
       - Blockchain
+  /ordinal/collections:
+    post:
+      description: Upload ordinal template
+      parameters:
+      - description: project.zip
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: Upload ordinal template
+      tags:
+      - Ordinal collection
+  /ordinal/collections/template:
+    get:
+      consumes:
+      - application/json
+      description: get ordinal template
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: get ordinal template
+      tags:
+      - Ordinal collection
   /profile:
     get:
       consumes:
@@ -3021,12 +3538,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: get current user's projects
+      description: Get current user's projects
       parameters:
-      - description: Filter project via contract address
-        in: query
-        name: contractAddress
-        type: string
       - description: limit
         in: query
         name: limit
@@ -3042,10 +3555,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.JsonResponse'
+            items:
+              $ref: '#/definitions/response.ProjectResp'
+            type: array
       security:
-      - Authorization: []
-      summary: get current user's projects
+      - ApiKeyAuth: []
+      summary: Get current user's projects
       tags:
       - Profile
   /profile/wallet/{walletAddress}:
@@ -3897,6 +4412,42 @@ paths:
       summary: Search
       tags:
       - Search
+  /token-activities:
+    get:
+      consumes:
+      - application/json
+      description: get referrals
+      parameters:
+      - description: token inscription ID
+        in: query
+        name: inscription_id
+        type: string
+      - description: project
+        in: query
+        name: project_id
+        type: string
+      - description: activity types
+        in: query
+        name: types
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get referrals
+      tags:
+      - Token Activities
   /token-moralis/nfts:
     get:
       consumes:

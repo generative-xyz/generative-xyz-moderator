@@ -9,8 +9,10 @@ import (
 
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 )
 
 func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
@@ -87,17 +89,91 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 
 func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *http.Request) {
 	orderID := r.URL.Query().Get("order_id")
-	if orderID == "" {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("orderID cannot be empty"))
+
+	inscription := r.URL.Query().Get("inscription")
+
+	if inscription == "" && orderID == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("need to have inscription or order_id"))
 		return
 	}
-	orderInfo, err := h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+
+	var orderInfo *entity.DexBTCListing
+	var err error
+	if orderID != "" {
+		orderInfo, err = h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+			return
+		}
+	} else {
+		orderInfo, err = h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(inscription)
+		if err != nil {
+			h.Logger.Error("httpDelivery retrieveListingOrderByInscription GetDexBTCListingOrderPendingByInscriptionID", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	}
+
+	psbt, err := btc.ParsePSBTFromBase64(orderInfo.RawPSBT)
 	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
+		h.Logger.Error("httpDelivery ParsePSBTFromBase64", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	amountBTCFee := uint64(0)
+	amountBTCFee = btc.EstimateTxFee(uint(len(orderInfo.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+	amountBTCRequired := orderInfo.Amount + 1000
+	amountBTCRequired += amountBTCFee
+	amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+
+	btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+	if err != nil {
+		h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+	}
+	amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+	if err != nil {
+		h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+	}
+
 	result := response.DexBTCListingOrderInfo{
-		RawPSBT: orderInfo.RawPSBT,
+		RawPSBT:      orderInfo.RawPSBT,
+		Buyable:      !(orderInfo.Cancelled && orderInfo.Matched),
+		SellVerified: orderInfo.Verified,
+		PriceBTC:     orderInfo.Amount,
+		PriceETH:     amountETH,
+		OrderID:      orderInfo.ID.Hex(),
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) retrieveBTCListingOrdersInfo(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.RetrieveBTCListingOrdersInfo
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	psbtList := make(map[string]string)
+	psbtListNotAvail := make(map[string]string)
+	for _, orderID := range reqBody.OrderList {
+		orderInfo, err := h.Usecase.Repo.GetDexBTCListingOrderByID(orderID)
+		if err != nil {
+			psbtListNotAvail[orderID] = orderInfo.RawPSBT
+			continue
+		}
+		if orderInfo.Cancelled || orderInfo.Matched {
+			psbtListNotAvail[orderID] = orderInfo.RawPSBT
+			continue
+		}
+		psbtList[orderID] = orderInfo.RawPSBT
+	}
+
+	result := response.DexBTCListingOrdersInfo{
+		RawPSBTList:         psbtList,
+		RawPSBTListNotAvail: psbtListNotAvail,
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
@@ -157,15 +233,27 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 			result = append(result, newHistory)
 		}
 		if listing.Matched {
-			newHistory := response.DexBTCHistoryListing{
-				OrderID:       listing.UUID,
-				InscriptionID: listing.InscriptionID,
-				Timestamp:     listing.MatchAt.Unix(),
-				Amount:        fmt.Sprintf("%v", listing.Amount),
-				Type:          "matched",
-				Txhash:        listing.MatchedTx,
+			if listing.Buyer == listing.SellerAddress {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "cancelled",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
+			} else {
+				newHistory := response.DexBTCHistoryListing{
+					OrderID:       listing.UUID,
+					InscriptionID: listing.InscriptionID,
+					Timestamp:     listing.MatchAt.Unix(),
+					Amount:        fmt.Sprintf("%v", listing.Amount),
+					Type:          "matched",
+					Txhash:        listing.MatchedTx,
+				}
+				result = append(result, newHistory)
 			}
-			result = append(result, newHistory)
 		}
 	}
 
@@ -224,10 +312,11 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	artistAddress := ""
-	if creator.WalletAddressBTCTaproot != "" {
-		artistAddress = creator.WalletAddressBTCTaproot
-	} else {
+	// prioritize WalletAddressBTC address
+	if creator.WalletAddressBTC != "" {
 		artistAddress = creator.WalletAddressBTC
+	} else {
+		artistAddress = creator.WalletAddressBTCTaproot
 	}
 
 	resp := response.ListingFee{
@@ -273,4 +362,162 @@ func (h *httpDelivery) submitDexBTCBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
+
+func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.GenDexBTCBuyETH
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	if reqBody.ReceiveAddress == "" {
+		user, err := h.Usecase.Repo.FindUserByID(userID)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
+			return
+		}
+		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
+	}
+	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, orderListInvalid, hasRoyalty, err := h.Usecase.GenBuyETHOrder(reqBody.IsEstimate, userID, reqBody.OrderID, reqBody.OrderIDList, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
+	if err != nil {
+		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	result := response.GenDexBTCBuyETH{
+		OrderID:          buyOrderID,
+		ETHAddress:       tempETHAddress,
+		ETHAmount:        amountETH,
+		ExpiredAt:        expiredAt,
+		ETHAmountOrigin:  originalETH,
+		ETHFee:           feeETH,
+		OrderListInvalid: orderListInvalid,
+		HasRoyalty:       hasRoyalty,
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+// func (h *httpDelivery) updateDexBTCBuyETHOrderTx(w http.ResponseWriter, r *http.Request) {
+// 	var reqBody request.UpdateDexBTCBuyETHTx
+// 	decoder := json.NewDecoder(r.Body)
+// 	err := decoder.Decode(&reqBody)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	var ok bool
+// 	ctx := r.Context()
+// 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+// 	userID, ok := iUserID.(string)
+// 	if !ok {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+// 		return
+// 	}
+// 	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+// }
+
+// func (h *httpDelivery) submitDexBTCBuyETHTx(w http.ResponseWriter, r *http.Request) {
+// 	var reqBody request.SubmitDexBTCBuyETH
+// 	decoder := json.NewDecoder(r.Body)
+// 	err := decoder.Decode(&reqBody)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	var ok bool
+// 	ctx := r.Context()
+// 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+// 	userID, ok := iUserID.(string)
+// 	if !ok {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+// 		return
+// 	}
+
+// 	err = h.Usecase.DexBTCBuyWithETH(userID, reqBody.OrderID, reqBody.Txhash, reqBody.FeeRate)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.submitDexBTCBuyETHTx.DexBTCBuyWithETH", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+
+// 	// address := userInfo.WalletAddressBTCTaproot
+// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+// }
+
+func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+	var ok bool
+	ctx := r.Context()
+	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+	userID, ok := iUserID.(string)
+	if !ok {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+
+	list, err := h.Usecase.Repo.GetDexBTCBuyETHOrderByUserID(userID, int64(limit), int64(offset))
+	if err != nil {
+		h.Logger.Error("httpDelivery dexBTCBuyETHHistory GetDexBTCBuyETHOrderByUserID", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	result := []response.DEXBuyEthHistory{}
+	for _, v := range list {
+		item := response.DEXBuyEthHistory{
+			CreatedAt:      v.CreatedAt.Unix(),
+			ID:             v.ID.Hex(),
+			OrderID:        v.OrderID,
+			AmountETH:      v.AmountETH,
+			UserID:         v.UserID,
+			ReceiveAddress: v.ReceiveAddress,
+			RefundAddress:  v.RefundAddress,
+			ExpiredAt:      v.ExpiredAt.Unix(),
+			BuyTx:          v.BuyTx,
+			RefundTx:       v.RefundTx,
+			FeeRate:        v.FeeRate,
+			InscriptionID:  v.InscriptionID,
+			AmountBTC:      v.AmountBTC,
+		}
+		switch v.Status {
+		case entity.StatusDEXBuy_SendingMaster, entity.StatusDEXBuy_SentMaster:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Bought]
+		case entity.StatusDEXBuy_WaitingToRefund:
+			item.Status = entity.StatusDexBTCETHToText[entity.StatusDEXBuy_Refunding]
+		default:
+			item.Status = entity.StatusDexBTCETHToText[v.Status]
+		}
+		result = append(result, item)
+	}
+
+	// address := userInfo.WalletAddressBTCTaproot
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }

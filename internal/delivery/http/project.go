@@ -1,12 +1,12 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -241,35 +242,36 @@ func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-
-	projectID := vars["projectID"]
-
-	project, err := h.Usecase.GetProjectDetail(structure.GetProjectDetailMessageReq{
-		ContractAddress: contractAddress,
-		ProjectID:       projectID,
-	})
-
-	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	resp, err := h.projectToResp(project)
-	if err != nil {
-		h.Logger.Error(" h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	go h.Usecase.CreateViewProjectActivity(project.TokenID)
-
-	h.Logger.Info("resp.project", resp)
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			contractAddress := vars["contractAddress"]
+			projectID := vars["projectID"]
+			userAddress := r.URL.Query().Get("userAddress")
+			project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
+				ContractAddress:            contractAddress,
+				ProjectID:                  projectID,
+				UserAddressToCheckDiscount: userAddress,
+			})
+			if err != nil {
+				logger.AtLog.Logger.Error("GetProjectDetailWithFeeInfo failed", zap.Error(err))
+				return nil, err
+			}
+			resp, err := h.projectToResp(project)
+			if err != nil {
+				return nil, err
+			}
+			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
+			if resp.IsHidden && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
+				daoProjectId, canCreateNewProposal := h.Usecase.CanCreateNewProposalProject(ctx, userAddress, project.ID)
+				resp.CanCreateProposal = canCreateNewProposal
+				if !resp.CanCreateProposal && daoProjectId != "" {
+					resp.Proposal, _ = h.Usecase.GetDAOProject(ctx, daoProjectId, userAddress)
+				}
+			}
+			go h.Usecase.CreateViewProjectActivity(project.TokenID)
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
 
 func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Request) {
@@ -300,11 +302,36 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	volumeCEX, err := h.Usecase.Repo.ProjectGetCEXVolume(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	// projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
+	// if err != nil {
+	// 	h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+	// minted := projectInfo.MintingInfo.Index
+	// mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
+	// // mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
+	// mintVolume := uint64(minted) * uint64(mintPrice)
+
+	mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 	var result response.ProjectMarketplaceData
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.Volume = volume
+	result.TotalVolume = volume + mintVolume + volumeCEX
+	result.MintVolume = mintVolume
+	result.CEXVolume = volumeCEX
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
@@ -489,7 +516,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	} else if len(input.ProcessingImages) > 0 {
 		fileExt = input.ProcessingImages[0]
 	}
-	spew.Dump(fileExt)
+	//spew.Dump(fileExt)
 	//fileExt := strings.Split(".")
 
 	resp.FileExtension = helpers.FileExtension(fileExt)

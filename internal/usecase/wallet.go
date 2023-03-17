@@ -144,7 +144,10 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	waitChan := make(chan struct{}, 10)
-
+	btcRate, ethRate, err := u.GetBTCToETHRate()
+	if err != nil {
+		log.Println("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+	}
 	for _, output := range outputs {
 		wg.Add(1)
 		waitChan <- struct{}{}
@@ -170,6 +173,10 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					if err != nil {
 						return
 					}
+					tokenURI, err := u.Repo.FindTokenByTokenID(insc)
+					if err != nil {
+						// fmt.Errorf("FindTokenByTokenID error", err)
+					}
 					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 					if err != nil {
 						return
@@ -180,17 +187,25 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						ContentType:   data.ContentType,
 						Offset:        offset,
 					}
+					if tokenURI != nil {
+						inscWalletInfo.TokenNumber = tokenURI.OrderInscriptionIndex
+					}
 					inscWalletByOutput := structure.WalletInscriptionByOutput{
 						InscriptionID: data.InscriptionID,
 						Offset:        offset,
 						Sat:           data.Sat,
 					}
-					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail", "creator_address"})
+					internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
 					if internalInfo != nil {
 						inscWalletInfo.ProjectID = internalInfo.ProjectID
-						inscWalletInfo.ProjectName = internalInfo.Project.Name
 						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-						creator, err := u.Repo.FindUserByAddress(internalInfo.CreatorAddr)
+						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name", "creatorProfile.uuid"})
+						if err != nil {
+							log.Println("InscriptionsByOutputs.FindProjectByTokenIDCustomField", err)
+						} else {
+							inscWalletInfo.ProjectName = project.Name
+						}
+						creator, err := u.Repo.FindUserByID(project.CreatorProfile.UUID)
 						if err != nil {
 							log.Println("InscriptionsByOutputs.FindUserByAddress", err)
 						} else {
@@ -210,6 +225,15 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
 							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
+
+							amountBTCRequired := uint64(listing.Amount) + 1000
+							amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+
+							amountETH, _, _, err := u.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+							if err != nil {
+								log.Println("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+							}
+							inscWalletInfo.PriceETH = amountETH
 						}
 					}
 					lock.Lock()
@@ -219,68 +243,8 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 				}
 			}
 		}(output)
-
-		// lock.Lock()
-		// if _, ok := result[output]; ok {
-		// 	lock.Unlock()
-		// 	continue
-		// }
-		// lock.Unlock()
-
-		// inscriptions, err := getInscriptionByOutput(ordServer, output)
-		// if err != nil {
-		// 	return nil, nil, err
-		// }
-		// if len(inscriptions.Inscriptions) > 0 {
-		// 	for _, insc := range inscriptions.Inscriptions {
-		// 		data, err := getInscriptionByID(ordServer, insc)
-		// 		if err != nil {
-		// 			return nil, nil, err
-		// 		}
-		// 		offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
-		// 		if err != nil {
-		// 			return nil, nil, err
-		// 		}
-		// 		inscWalletInfo := structure.WalletInscriptionInfo{
-		// 			InscriptionID: data.InscriptionID,
-		// 			Number:        data.Number,
-		// 			ContentType:   data.ContentType,
-		// 			Offset:        offset,
-		// 		}
-		// 		inscWalletByOutput := structure.WalletInscriptionByOutput{
-		// 			InscriptionID: data.InscriptionID,
-		// 			Offset:        offset,
-		// 			Sat:           data.Sat,
-		// 		}
-		// 		internalInfo, _ := u.Repo.FindTokenByTokenIDCustomField(insc, []string{"token_id", "project_id", "project.name", "thumbnail"})
-		// 		if internalInfo != nil {
-		// 			inscWalletInfo.ProjectID = internalInfo.ProjectID
-		// 			inscWalletInfo.ProjecName = internalInfo.Project.Name
-		// 			inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-		// 		}
-		// 		for _, listing := range currentListing {
-		// 			if listing.InscriptionID == data.InscriptionID {
-		// 				if listing.CancelTx == "" {
-		// 					inscWalletInfo.Buyable = true
-		// 				} else {
-		// 					inscWalletInfo.Cancelling = true
-		// 				}
-		// 				inscWalletInfo.OrderID = listing.UUID
-		// 				inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)
-		// 			}
-		// 		}
-		// 		lock.Lock()
-		// 		result[output] = append(result[output], inscWalletInfo)
-		// 		outputInscMap[output] = append(outputInscMap[output], inscWalletByOutput)
-		// 		lock.Unlock()
-		// 	}
-		// }
-		// outputSatRanges[output] = inscriptions.List.Unspent
 	}
 	wg.Wait()
-	// if len(outputSatRanges) != len(outputs) {
-	// 	return nil, nil, nil, errors.New("")
-	// }
 	return result, outputInscMap, nil
 }
 

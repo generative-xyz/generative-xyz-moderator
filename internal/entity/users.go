@@ -38,11 +38,11 @@ type UserStats struct {
 }
 
 type Users struct {
-	BaseEntity              `bson:",inline" json:"-"`
-	IsVerified              bool          `bson:"is_verified"`
-	VerifiedAt              *time.Time    `bson:"verified_at"`
-	Message                 string        `bson:"message"`
-	ID                      string        `bson:"id" json:"id,omitempty"`
+	BaseEntity `bson:",inline" json:"-"`
+	IsVerified bool       `bson:"is_verified"`
+	VerifiedAt *time.Time `bson:"verified_at"`
+	Message    string     `bson:"message"`
+	// ID                      string        `bson:"id" json:"id,omitempty"`
 	WalletAddress           string        `bson:"wallet_address" json:"wallet_address,omitempty"`                         // eth wallet define user in platform by connect wallet and sign
 	WalletAddressPayment    string        `bson:"wallet_address_payment" json:"wallet_address_payment,omitempty"`         // eth wallet artist receive royalty
 	WalletAddressBTC        string        `bson:"wallet_address_btc" json:"wallet_address_btc,omitempty"`                 // btc wallet artist receive royalty
@@ -55,6 +55,7 @@ type Users struct {
 	ProfileSocial           ProfileSocial `json:"profile_social,omitempty" bson:"profile_social"`
 	Stats                   UserStats     `bson:"stats" json:"stats"`
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
+	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
 }
 
 type ProfileSocial struct {

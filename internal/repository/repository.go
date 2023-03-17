@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -17,6 +18,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+const MongoIdGenCollectionName = "id-gen"
 
 type Repository struct {
 	Connection *mongo.Client
@@ -37,6 +40,11 @@ type PaginationKey struct {
 type Sort struct {
 	SortBy string
 	Sort   entity.SortType
+}
+
+type Count struct {
+	Id    string `bson:"_id" json:"id,omitempty"`
+	Count int    `bson:"count" json:"count,omitempty"`
 }
 
 func NewRepository(g *global.Global) (*Repository, error) {
@@ -195,14 +203,16 @@ func (r Repository) DeleteOne(dbName string, filter bson.D) (*mongo.DeleteResult
 	return result, nil
 }
 
-// only delete in mongo
-func (r Repository) DeleteMany(dbName string, filter bson.D) (*mongo.DeleteResult, error) {
-	result, err := r.DB.Collection(dbName).DeleteMany(context.TODO(), filter)
+func (b Repository) DeleteMany(ctx context.Context, collectionName string, filters interface{}, opts ...*options.DeleteOptions) (int64, error) {
+	rs, err := b.DB.Collection(collectionName).DeleteMany(
+		ctx,
+		filters,
+		opts...,
+	)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-
-	return result, nil
+	return rs.DeletedCount, nil
 }
 
 func (r Repository) SoftDelete(obj entity.IEntity) (*mongo.UpdateResult, error) {
@@ -403,7 +413,6 @@ func (b Repository) Find(ctx context.Context, collectionName string, filters map
 	}
 	return nil
 }
-
 func (r Repository) FindOneBy(ctx context.Context, collectionName string, filters map[string]interface{}, value interface{}, opts ...*options.FindOneOptions) error {
 	res := r.DB.Collection(collectionName).FindOne(ctx, filters, opts...)
 	if res.Err() != nil {
@@ -413,4 +422,97 @@ func (r Repository) FindOneBy(ctx context.Context, collectionName string, filter
 		return err
 	}
 	return nil
+}
+func (b Repository) Create(ctx context.Context, collectionName string, model interface{}, opts ...*options.InsertOneOptions) (primitive.ObjectID, error) {
+	result, err := b.DB.Collection(collectionName).InsertOne(ctx, model, opts...)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if id, ok := result.InsertedID.(primitive.ObjectID); ok {
+		return id, nil
+	}
+	return primitive.NilObjectID, nil
+}
+func (b Repository) CreateMany(ctx context.Context, collectionName string, models []interface{}, opts ...*options.InsertManyOptions) ([]primitive.ObjectID, error) {
+	results, err := b.DB.Collection(collectionName).InsertMany(ctx, models, opts...)
+	if err != nil {
+		return nil, err
+	}
+	var ids []primitive.ObjectID
+	for _, idResult := range results.InsertedIDs {
+		if id, ok := idResult.(primitive.ObjectID); ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids, err
+}
+func (b Repository) UpdateByID(ctx context.Context, collectionName string, id interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	result, err := b.DB.Collection(collectionName).UpdateByID(ctx, id, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+func (b Repository) UpdateMany(ctx context.Context, collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (int64, error) {
+	result, err := b.DB.Collection(collectionName).UpdateMany(ctx, filter, update, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+
+type Counter struct {
+	ID  string `json:"id" bson:"_id"`
+	Seq uint   `json:"seq" bson:"seq"`
+}
+
+func (b Repository) NextId(ctx context.Context, sequenceName string) (uint, error) {
+	findOptions := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
+	var counter Counter
+	err := b.DB.Collection(MongoIdGenCollectionName).
+		FindOneAndUpdate(ctx,
+			bson.M{"_id": sequenceName},
+			bson.M{"$inc": bson.M{"seq": 1}},
+			findOptions,
+		).Decode(&counter)
+
+	if err != nil {
+		return 0, err
+	}
+	return counter.Seq, nil
+}
+func (b Repository) Aggregation(ctx context.Context, collectionName string, page int64, limit int64, result interface{}, agg ...interface{}) (int64, error) {
+	query := New(b.DB.Collection(collectionName)).Context(ctx).Page(page).Limit(limit)
+	aggPaginatedData, err := query.Aggregate(agg...)
+	if err != nil {
+		return 0, err
+	}
+	to := indirect(reflect.ValueOf(result))
+	toType, _ := indirectType(to.Type())
+	if to.IsNil() {
+		slice := reflect.MakeSlice(reflect.SliceOf(to.Type().Elem()), 0, int(limit))
+		to.Set(slice)
+	}
+	for i := 0; i < len(aggPaginatedData.Data); i++ {
+		ele := reflect.New(toType).Elem().Addr()
+		if marshallErr := bson.Unmarshal(aggPaginatedData.Data[i], ele.Interface()); marshallErr == nil {
+			to.Set(reflect.Append(to, ele))
+		} else {
+			return 0, marshallErr
+		}
+	}
+	return aggPaginatedData.Pagination.Total, nil
+}
+func indirect(reflectValue reflect.Value) reflect.Value {
+	for reflectValue.Kind() == reflect.Ptr {
+		reflectValue = reflectValue.Elem()
+	}
+	return reflectValue
+}
+func indirectType(reflectType reflect.Type) (_ reflect.Type, isPtr bool) {
+	for reflectType.Kind() == reflect.Ptr || reflectType.Kind() == reflect.Slice {
+		reflectType = reflectType.Elem()
+		isPtr = true
+	}
+	return reflectType, isPtr
 }

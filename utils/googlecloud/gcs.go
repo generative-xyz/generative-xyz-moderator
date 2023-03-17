@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
 
@@ -42,12 +41,12 @@ type IGcstorage interface {
 }
 
 type GcsUploadedObject struct {
-	Name     string
-	FullName string
-	Path     string
-	Minetype string
-	Size     int64
-	FullPath string
+	Name     string `json:"name"`
+	FullName string	`json:"-"`
+	Path     string `json:"-"`
+	Minetype string  `json:"minetype"`
+	Size     int64 `json:"size"`
+	FullPath string `json:"-"`
 }
 
 type GcsFile struct {
@@ -130,7 +129,7 @@ func (g gcstorage) UnzipFile(object string) error {
 	baseDir := strings.TrimSuffix(object+"_unzip", filepath.Ext(object))
 	outputBucket := g.bucketName
 	groups := make(map[string]*zip.File)
-	spew.Dump(len(zr.File))
+	//spew.Dump(len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
 			continue

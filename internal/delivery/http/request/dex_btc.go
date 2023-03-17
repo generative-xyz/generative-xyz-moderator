@@ -17,3 +17,27 @@ type SubmitDexBTCBuy struct {
 	InscriptionID string `json:"inscription_id"`
 	OrderID       string `json:"order_id"`
 }
+
+// type SubmitDexBTCBuyETH struct {
+// 	Txhash  string `json:"txhash"`
+// 	OrderID string `json:"order_id"`
+// 	FeeRate uint64 `json:"fee_rate"`
+// }
+
+type GenDexBTCBuyETH struct {
+	OrderID        string   `json:"order_id"`
+	FeeRate        uint64   `json:"fee_rate"`
+	ReceiveAddress string   `json:"receive_address"`
+	RefundAddress  string   `json:"refund_address"`
+	IsEstimate     bool     `json:"is_estimate"`
+	OrderIDList    []string `json:"order_list"`
+}
+
+type UpdateDexBTCBuyETHTx struct {
+	Txhash  string `json:"txhash"`
+	OrderID string `json:"order_id"`
+}
+
+type RetrieveBTCListingOrdersInfo struct {
+	OrderList []string `json:"order_list"`
+}
