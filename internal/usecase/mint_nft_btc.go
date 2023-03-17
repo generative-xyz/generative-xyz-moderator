@@ -1554,8 +1554,10 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 	// add amount of parent item:
 	if mintItem.Status == entity.StatusMint_NeedToRefund {
 		totalRefundAmount = totalRefundAmount.Add(totalRefundAmount, amountPerItem)
+		needRefundItems++
 	} else if mintItem.Status == entity.StatusMint_SentNFTToUser {
 		totalMintedAmount = totalMintedAmount.Add(totalMintedAmount, amountPerItem)
+		minedItems++
 	}
 
 	// if not enough need-to-refund item then wait or refund&fund ...
