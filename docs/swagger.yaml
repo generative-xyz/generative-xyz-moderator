@@ -120,6 +120,10 @@ definitions:
         items:
           type: string
         type: array
+      sorts:
+        items:
+          $ref: '#/definitions/entity.Sort'
+        type: array
       total:
         type: integer
       totalPage:
@@ -354,6 +358,13 @@ definitions:
         type: string
       reportUserAddress:
         type: string
+    type: object
+  entity.Sort:
+    properties:
+      field:
+        type: string
+      type:
+        type: integer
     type: object
   entity.TokenStats:
     properties:
@@ -703,6 +714,8 @@ definitions:
   request.CreateDaoArtistRequest:
     properties:
       twitter:
+        type: string
+      web:
         type: string
     type: object
   request.CreateDaoProjectRequest:
@@ -1407,6 +1420,8 @@ definitions:
         type: string
       btcFloorPrice:
         type: integer
+      canCreateProposal:
+        type: boolean
       captureThumbnailDelayTime:
         type: integer
       categories:
@@ -1489,6 +1504,8 @@ definitions:
         type: integer
       projectURI:
         type: string
+      proposal:
+        $ref: '#/definitions/response.DaoProject'
       reportUsers:
         items:
           $ref: '#/definitions/response.ReportProject'
@@ -2262,7 +2279,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2283,7 +2300,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2309,7 +2326,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2364,7 +2381,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2413,7 +2430,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2785,7 +2802,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2807,7 +2824,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3104,7 +3121,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe

@@ -80,8 +80,16 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	if exists {
 		return "", errors.New("Proposal is exists")
 	}
-	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
+	needUpdateProfile := false
+	if req.Twitter != "" && user.ProfileSocial.Twitter != req.Twitter {
 		user.ProfileSocial.Twitter = req.Twitter
+		needUpdateProfile = true
+	}
+	if req.Web != "" && user.ProfileSocial.Web != req.Web {
+		user.ProfileSocial.Web = req.Web
+		needUpdateProfile = true
+	}
+	if needUpdateProfile {
 		_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
