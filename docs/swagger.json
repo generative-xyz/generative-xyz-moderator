@@ -916,7 +916,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -950,7 +950,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -991,7 +991,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1079,7 +1079,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1205,7 +1205,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1742,7 +1742,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1778,7 +1778,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -2280,7 +2280,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -5173,6 +5173,12 @@
                         "type": "string"
                     }
                 },
+                "sorts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.Sort"
+                    }
+                },
                 "total": {
                     "type": "integer"
                 },
@@ -5523,6 +5529,17 @@
                 },
                 "reportUserAddress": {
                     "type": "string"
+                }
+            }
+        },
+        "entity.Sort": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
                 }
             }
         },
@@ -6051,6 +6068,9 @@
             "type": "object",
             "properties": {
                 "twitter": {
+                    "type": "string"
+                },
+                "web": {
                     "type": "string"
                 }
             }
@@ -7125,6 +7145,9 @@
                 "btcFloorPrice": {
                     "type": "integer"
                 },
+                "canCreateProposal": {
+                    "type": "boolean"
+                },
                 "captureThumbnailDelayTime": {
                     "type": "integer"
                 },
@@ -7247,6 +7270,9 @@
                 },
                 "projectURI": {
                     "type": "string"
+                },
+                "proposal": {
+                    "$ref": "#/definitions/response.DaoProject"
                 },
                 "reportUsers": {
                     "type": "array",
