@@ -34,3 +34,4 @@ utils/btc/verifier/
 utils/btc/btc2.go
 internal/usecase/usecase_test.go
 utils/config/generative-firebase.json
+test.go
