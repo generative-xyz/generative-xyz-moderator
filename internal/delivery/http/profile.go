@@ -42,10 +42,13 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			if !profile.ProfileSocial.TwitterVerified {
-				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
-				resp.CanCreateProposal = canCreateNewProposal
-				if !resp.CanCreateProposal && daoArtistID != "" {
-					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)
+				daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = !exists
+				if daoArtist != nil {
+					proposal := &response.DaoArtist{}
+					if err := copierInternal.Copy(proposal, daoArtist); err == nil {
+						resp.Proposal = proposal
+					}
 				}
 			}
 			return resp, nil
@@ -247,10 +250,13 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 			}
 			if strings.EqualFold(profile.WalletAddress, vars[utils.SIGNED_WALLET_ADDRESS]) {
 				if !profile.ProfileSocial.TwitterVerified {
-					daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
-					resp.CanCreateProposal = canCreateNewProposal
-					if !resp.CanCreateProposal && daoArtistID != "" {
-						resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)
+					daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
+					resp.CanCreateProposal = !exists
+					if daoArtist != nil {
+						proposal := &response.DaoArtist{}
+						if err := copierInternal.Copy(proposal, daoArtist); err == nil {
+							resp.Proposal = proposal
+						}
 					}
 				}
 			}
