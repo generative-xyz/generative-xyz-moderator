@@ -261,12 +261,22 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
-			if resp.IsHidden && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
-				daoProjectId, canCreateNewProposal := h.Usecase.CanCreateNewProposalProject(ctx, userAddress, project.ID)
-				resp.CanCreateProposal = canCreateNewProposal
-				if !resp.CanCreateProposal && daoProjectId != "" {
-					resp.Proposal, _ = h.Usecase.GetDAOProject(ctx, daoProjectId, userAddress)
-				}
+			if project.CreatorAddrr != "" && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
+				_, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
+				resp.CanCreateProposal = !exists
+				// if daoProject != nil {
+				// 	proposal := &response.DaoProject{}
+				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
+				// 		resp.Proposal = proposal
+				// 	}
+				// }
+			} else {
+				// if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
+				// 	proposal := &response.DaoProject{}
+				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
+				// 		resp.Proposal = proposal
+				// 	}
+				// }
 			}
 			go h.Usecase.CreateViewProjectActivity(project.TokenID)
 			return resp, nil

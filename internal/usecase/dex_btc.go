@@ -347,11 +347,12 @@ func (u Usecase) watchPendingDexBTCListing() error {
 						err := userCase.Repo.InsertDexVolumeInscription(&data)
 						if err != nil {
 							userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
-						}
-						order.IsTimeSeriesData = true
-						_, err = userCase.Repo.UpdateDexBTCListingTimeseriesData(&order)
-						if err != nil {
-							userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+						} else {
+							order.IsTimeSeriesData = true
+							_, err = userCase.Repo.UpdateDexBTCListingTimeseriesData(&order)
+							if err != nil {
+								userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+							}
 						}
 					}(order, u)
 
