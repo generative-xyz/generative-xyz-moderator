@@ -60,8 +60,9 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	if request.PageSize > 0 && request.PageSize <= limit {
 		limit = request.PageSize
 	}
-	filters["expired_at"] = bson.M{
-		"$gt": time.Now(),
+	filters["$or"] = bson.A{
+		bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+		bson.M{"status": dao_project.Executed},
 	}
 	if request.Id != nil {
 		id, err := primitive.ObjectIDFromHex(*request.Id)
