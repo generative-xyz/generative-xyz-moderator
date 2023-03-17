@@ -231,7 +231,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		Message: discordMsg,
 		NumRetried: 0,
 		Status: entity.PENDING,
-		Type: entity.NEW_MINT,
+		Type: entity.NEW_SALE,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 			InscriptionID: tokenUri.TokenID,
