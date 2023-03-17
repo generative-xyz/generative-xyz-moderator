@@ -542,7 +542,11 @@ func (r Repository) UpdateListingCreatedMatchedActivity(id string) (*mongo.Updat
 
 func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
 	listings := []entity.DexBTCBuyWithETH{}
-	f := bson.M{"status": 0}
+
+	f := bson.M{
+		"status": bson.M{"$in": []entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Expired, entity.StatusDEXBuy_Pending}},
+	}
+
 	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_BUY_ETH).Find(context.TODO(), f, &options.FindOptions{})
 	if err != nil {
 		return nil, err
