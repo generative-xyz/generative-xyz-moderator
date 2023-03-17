@@ -122,6 +122,7 @@ func (h *httpDelivery) referralToResp(input *structure.ReferalResp) (*response.R
 	resp := response.ReferralResp{}
 	resp.ReferrerID = input.ReferrerID
 	resp.ReferreeID = input.ReferreeID
+	resp.Status = input.ReferreeVolume.Status
 	referree, err := h.profileToResp(input.Referree)
 	if err != nil {
 		return nil, err
