@@ -83,7 +83,7 @@ type DexBTCBuyWithETH struct {
 }
 
 func (u DexBTCBuyWithETH) ToJsonString() string {
-	dataBytes, _ := json.MarshalIndent(u, "", " ")
+	dataBytes, _ := json.Marshal(u)
 	return string(dataBytes)
 }
 
