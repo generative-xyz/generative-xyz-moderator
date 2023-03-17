@@ -248,15 +248,13 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 			if err := copierInternal.Copy(resp, profile); err != nil {
 				return nil, err
 			}
-			if strings.EqualFold(profile.WalletAddress, vars[utils.SIGNED_WALLET_ADDRESS]) {
-				if !profile.ProfileSocial.TwitterVerified {
-					daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
-					resp.CanCreateProposal = !exists
-					if daoArtist != nil {
-						proposal := &response.DaoArtist{}
-						if err := copierInternal.Copy(proposal, daoArtist); err == nil {
-							resp.Proposal = proposal
-						}
+			if !profile.ProfileSocial.TwitterVerified {
+				daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = !exists && strings.EqualFold(profile.WalletAddress, vars[utils.SIGNED_WALLET_ADDRESS])
+				if daoArtist != nil {
+					proposal := &response.DaoArtist{}
+					if err := copierInternal.Copy(proposal, daoArtist); err == nil {
+						resp.Proposal = proposal
 					}
 				}
 			}
