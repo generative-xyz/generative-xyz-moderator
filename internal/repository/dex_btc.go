@@ -539,3 +539,21 @@ func (r Repository) UpdateListingCreatedMatchedActivity(id string) (*mongo.Updat
 
 	return result, err
 }
+
+func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
+	resp := []entity.DexBTCBuyWithETH{}
+	filter := bson.M{
+		"status": bson.M{"$gt": -1},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCBuyWithETH{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
