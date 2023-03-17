@@ -14,6 +14,7 @@ type ListDaoArtistRequest struct {
 
 type CreateDaoArtistRequest struct {
 	Twitter string `json:"twitter"`
+	Web     string `json:"web"`
 }
 
 type VoteDaoArtistRequest struct {
