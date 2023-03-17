@@ -526,7 +526,7 @@ func (h *httpDelivery) ListBuyAddress(w http.ResponseWriter, r *http.Request) {
 
 	list, err := h.Usecase.ListBuyAddress()
 	if err != nil {
-		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err, "")
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
