@@ -644,7 +644,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// check if it is a child item but its parent does not have mint yet, then continue:
 		if len(item.BatchParentId) > 0 {
 			parentItem, _ := u.Repo.FindMintNftBtc(item.BatchParentId)
-			if !parentItem.IsMinted {
+			if !(parentItem.Status == entity.StatusMint_Minting || parentItem.IsMinted) {
 				continue
 			}
 		}
@@ -1554,13 +1554,15 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 	// add amount of parent item:
 	if mintItem.Status == entity.StatusMint_NeedToRefund {
 		totalRefundAmount = totalRefundAmount.Add(totalRefundAmount, amountPerItem)
+		needRefundItems++
 	} else if mintItem.Status == entity.StatusMint_SentNFTToUser {
 		totalMintedAmount = totalMintedAmount.Add(totalMintedAmount, amountPerItem)
+		minedItems++
 	}
 
-	// if not enough need-to-refund item then wait or refund&fund ...
-	if !(needRefundItems == mintItem.Quantity-1) {
-		if minedItems+needRefundItems == mintItem.Quantity-1 {
+	// if !(needRefundItems == mintItem.Quantity-1)
+	{
+		if minedItems+needRefundItems == mintItem.Quantity {
 			// refund + fund now:
 			// code this function send+refund vs 1 tx.
 			if mintItem.PayType == utils.NETWORK_BTC {
