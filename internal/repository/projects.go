@@ -865,3 +865,23 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 
 	return 0, nil
 }
+
+func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
+	f := bson.D{
+		{Key: "project_id", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"maxSupply": maxSupply,
+			"index": index,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
