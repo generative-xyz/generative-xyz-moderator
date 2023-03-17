@@ -248,6 +248,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
 	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
+	dex := api.PathPrefix("/dex").Subrouter()
+	dex.HandleFunc("/list-buy-address", h.ListBuyAddress).Methods("GET")
+
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
 	user.HandleFunc("/artist", h.listArtist).Methods("GET")
