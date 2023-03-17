@@ -59,6 +59,7 @@ func (h *httpDelivery) getTokenActivities(w http.ResponseWriter, r *http.Request
 
 func (h *httpDelivery) tokenActivityToResp(input *entity.TokenActivity) (*response.TokenActivityResp, error) {
 	resp := response.TokenActivityResp{}
+	resp.UUID = input.UUID
 	resp.Type = int(input.Type)
 	resp.Title = input.Title
 	resp.UserAAddress = input.UserAAddress

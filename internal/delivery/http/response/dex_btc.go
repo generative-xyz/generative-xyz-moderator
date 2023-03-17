@@ -1,7 +1,17 @@
 package response
 
 type DexBTCListingOrderInfo struct {
-	RawPSBT string `json:"raw_psbt"`
+	RawPSBT      string `json:"raw_psbt"`
+	Buyable      bool   `json:"buyable"`
+	SellVerified bool   `json:"sell_verified"`
+	PriceBTC     uint64 `json:"priceBTC"`
+	PriceETH     string `json:"priceETH"`
+	OrderID      string `json:"orderID"`
+}
+
+type DexBTCListingOrdersInfo struct {
+	RawPSBTList         map[string]string `json:"raw_psbt_list"`
+	RawPSBTListNotAvail map[string]string `json:"raw_psbt_list_not_avail"`
 }
 
 type DexBTCHistoryListing struct {
@@ -14,10 +24,13 @@ type DexBTCHistoryListing struct {
 }
 
 type GenDexBTCBuyETH struct {
-	OrderID    string `json:"order_id"`
-	ETHAddress string `json:"eth_address"`
-	ETHAmount  string `json:"eth_amount"`
-	ExpiredAt  int64  `json:"expired_at"`
+	OrderID         string `json:"order_id"`
+	ETHAddress      string `json:"eth_address"`
+	ETHAmount       string `json:"eth_amount"`
+	ExpiredAt       int64  `json:"expired_at"`
+	ETHAmountOrigin string `json:"eth_amount_origin"`
+	ETHFee          string `json:"eth_fee"`
+	HasRoyalty      bool   `json:"has_royalty"`
 }
 
 type DEXBuyEthHistory struct {
@@ -35,4 +48,7 @@ type DEXBuyEthHistory struct {
 	RefundTx       string `bson:"refund_tx" json:"refund_tx"`
 	FeeRate        uint64 `bson:"fee_rate" json:"fee_rate"`
 	Status         string `bson:"status" json:"status"`
+
+	OrderList       []string `bson:"order_list" json:"order_list"`
+	InscriptionList []string `bson:"inscription_list" json:"inscription_list"`
 }

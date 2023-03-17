@@ -1,11 +1,12 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
@@ -13,9 +14,10 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	copierInternal "rederinghub.io/utils/copier"
+	"rederinghub.io/utils/logger"
 )
 
-// UserCredits godoc
 // @Summary User profile
 // @Description User profile
 // @Tags Profile
@@ -25,34 +27,30 @@ import (
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile [GET]
 func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		err := errors.New("Token is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	profile, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("h.Usecase.GenerateMessage(", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Logger.Info("profile", profile)
-
-	resp, err := h.profileToResp(profile)
-	if err != nil {
-		h.Logger.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			userID := vars[utils.SIGNED_USER_ID]
+			if userID == "" {
+				return nil, errors.New("Token is empty")
+			}
+			profile, err := h.Usecase.UserProfile(userID)
+			if err != nil {
+				return nil, err
+			}
+			resp := &response.ProfileResponse{}
+			if err := copierInternal.Copy(resp, profile); err != nil {
+				return nil, err
+			}
+			if !profile.ProfileSocial.TwitterVerified {
+				daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = canCreateNewProposal
+				if !resp.CanCreateProposal && daoArtistID != "" {
+					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)
+				}
+			}
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
 
 // UserCredits godoc
@@ -155,18 +153,16 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-// UserCredits godoc
-// @Summary get current user's projects
-// @Description get current user's projects
+// @Summary Get current user's projects
+// @Description Get current user's projects
 // @Tags Profile
-// @Accept  json
-// @Produce  json
-// @Security Authorization
-// @Param contractAddress query string false "Filter project via contract address"
+// @Accept json
+// @Produce json
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
-// @Success 200 {object} response.JsonResponse{}
+// @Success 200 {array} response.ProjectResp{}
 // @Router /profile/projects [GET]
+// @Security ApiKeyAuth
 func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	var err error
 	baseF, err := h.BaseFilters(r)
@@ -218,48 +214,50 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) profileToResp(profile *entity.Users) (*response.ProfileResponse, error) {
 	resp := &response.ProfileResponse{}
-
 	err := response.CopyEntityToRes(resp, profile)
 	if err != nil {
 		return nil, err
 	}
-
 	return resp, nil
 }
 
-// UserCredits godoc
 // @Summary User profile via wallet address
 // @Description User profile via wallet address
 // @Tags Profile
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param walletAddress path string true "Wallet address"
 // @Success 200 {object} response.JsonResponse{data=response.ProfileResponse}
 // @Router /profile/wallet/{walletAddress} [GET]
 func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	walletAddress := vars["walletAddress"]
-	profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
-	if err != nil {
-		profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
-		if err != nil {
-			h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
-			profile = &entity.Users{}
-		}
-	}
-
-	h.Logger.Info("profile", profile)
-	resp, err := h.profileToResp(profile)
-	if err != nil {
-		h.Logger.Error("h.profileToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			walletAddress := vars["walletAddress"]
+			profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
+			if err != nil {
+				profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
+				if err != nil {
+					logger.AtLog.Logger.Error("GetUserProfileByWalletAddress failed", zap.Error(err))
+					profile = &entity.Users{}
+				}
+			}
+			resp := &response.ProfileResponse{}
+			if err := copierInternal.Copy(resp, profile); err != nil {
+				return nil, err
+			}
+			if strings.EqualFold(profile.WalletAddress, vars[utils.SIGNED_WALLET_ADDRESS]) {
+				if !profile.ProfileSocial.TwitterVerified {
+					daoArtistID, canCreateNewProposal := h.Usecase.CanCreateNewProposalArtist(ctx, profile.WalletAddress)
+					resp.CanCreateProposal = canCreateNewProposal
+					if !resp.CanCreateProposal && daoArtistID != "" {
+						resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtistID, resp.WalletAddress)
+					}
+				}
+			}
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
-
 
 // UserCredits godoc
 // @Summary User profile via wallet address
@@ -282,7 +280,7 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	var reqBody request.WithDrawItemRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
@@ -313,6 +311,6 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, wd, "")
 }

@@ -16,12 +16,12 @@ type DaoArtist struct {
 	Status         dao_artist.Status `json:"status"`
 	DaoArtistVoted []*DaoArtistVoted `json:"dao_artist_voted"`
 	Action         *ActionDaoArtist  `json:"action"`
-	TotalReport    int64             `json:"total_report"`
-	TotalVerify    int64             `json:"total_verify"`
+	TotalReport    *int64            `json:"total_report"`
+	TotalVerify    *int64            `json:"total_verify"`
 }
 
 func (s DaoArtist) Expired() bool {
-	return s.ExpiredAt.UTC().Unix() > time.Now().UTC().Unix()
+	return s.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
 }
 
 func (s *DaoArtist) SetFields(fns ...func(*DaoArtist)) {

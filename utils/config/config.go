@@ -63,13 +63,16 @@ type Config struct {
 
 	CaptcharSecret        string
 	GenerativeExplorerApi string
+	VoteDAOExpireDay      int
 	CountVoteDAO          int
 
 	// list crontab to run:
 	CronTabList []string
 
 	//BTC DEX
-	DexBTCKey string
+	DexBTCWalletAddress    string
+	DexBTCBuyService       string
+	DexBTCMasterETHAddress string
 }
 
 type Ordinals struct {
@@ -250,6 +253,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		maxReportCount = 3
 	}
 	chainId, _ := strconv.Atoi(os.Getenv("CHAIN_ID"))
+	votedDAOExpire, _ := strconv.Atoi(os.Getenv("VOTED_DAO_EXPIRE_DAY"))
 	countVotedDAO, _ := strconv.Atoi(os.Getenv("COUNT_VOTED_DAO"))
 	services["og"] = os.Getenv("OG_SERVICE_URL")
 	conf := &Config{
@@ -383,11 +387,14 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		ChainURL: os.Getenv("CHAIN_URL"),
 		ChainId:  chainId,
 
-		CaptcharSecret:        os.Getenv("RECAPTCHA_KEY"),
-		GenerativeExplorerApi: os.Getenv("GENERATIVE_EXPLORER_API"),
-		CountVoteDAO:          countVotedDAO,
-		CronTabList: regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
-		DexBTCKey:   os.Getenv("DEX_BTC_KEY"),
+		CaptcharSecret:         os.Getenv("RECAPTCHA_KEY"),
+		GenerativeExplorerApi:  os.Getenv("GENERATIVE_EXPLORER_API"),
+		VoteDAOExpireDay:       votedDAOExpire,
+		CountVoteDAO:           countVotedDAO,
+		CronTabList:            regexp.MustCompile(`\s*[,;]\s*`).Split(os.Getenv("CRONTAB_LIST"), -1),
+		DexBTCWalletAddress:    os.Getenv("DEX_BTC_WALLET_ADDRESS"),
+		DexBTCBuyService:       os.Getenv("DEX_BTC_BUY_SERVICE"),
+		DexBTCMasterETHAddress: os.Getenv("DEX_BTC_MASTER_ETH_ADDRESS"),
 	}
 
 	return conf, nil

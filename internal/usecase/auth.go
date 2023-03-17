@@ -343,8 +343,11 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.ProfileSocial.Web = *data.ProfileSocial.Web
 	}
 
-	if data.ProfileSocial.Twitter != nil {
+	needUpdateProposalForCreateNew := false
+	if data.ProfileSocial.Twitter != nil && user.ProfileSocial.Twitter != *data.ProfileSocial.Twitter {
 		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
+		user.ProfileSocial.TwitterVerified = false
+		needUpdateProposalForCreateNew = true
 	}
 
 	if data.ProfileSocial.Medium != nil {
@@ -426,6 +429,9 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 				logger.AtLog.Logger.Error("Delete FirebaseRegistrationToken failed", zap.Error(err))
 			}
 		}()
+	}
+	if needUpdateProposalForCreateNew {
+		go u.SetExpireYourProposalArtist(context.TODO(), user.WalletAddress)
 	}
 
 	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(user.WalletAddress), user)

@@ -226,8 +226,6 @@ definitions:
         type: boolean
       isHidden:
         type: boolean
-      isReviewing:
-        type: boolean
       isSynced:
         type: boolean
       license:
@@ -702,10 +700,19 @@ definitions:
     - key
     - value
     type: object
+  request.CreateDaoArtistRequest:
+    properties:
+      twitter:
+        type: string
+    type: object
   request.CreateDaoProjectRequest:
     properties:
-      project_id:
-        type: string
+      project_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - project_ids
     type: object
   request.CreateEthWalletAddressReq:
     properties:
@@ -995,6 +1002,11 @@ definitions:
       type:
         type: string
     type: object
+  response.ActionDaoArtist:
+    properties:
+      can_vote:
+        type: boolean
+    type: object
   response.ActionDaoProject:
     properties:
       can_vote:
@@ -1015,6 +1027,50 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  response.DaoArtist:
+    properties:
+      action:
+        $ref: '#/definitions/response.ActionDaoArtist'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      dao_artist_voted:
+        items:
+          $ref: '#/definitions/response.DaoArtistVoted'
+        type: array
+      deleted_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: string
+      seq_id:
+        type: integer
+      status:
+        type: integer
+      total_report:
+        type: integer
+      total_verify:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserForDao'
+      uuid:
+        type: string
+    type: object
+  response.DaoArtistVoted:
+    properties:
+      created_by:
+        type: string
+      dao_project_id:
+        type: string
+      display_name:
+        type: string
+      status:
+        type: integer
     type: object
   response.DaoProject:
     properties:
@@ -1265,6 +1321,8 @@ definitions:
         type: string
       bio:
         type: string
+      canCreateProposal:
+        type: boolean
       createdAt:
         type: string
       displayName:
@@ -1273,6 +1331,8 @@ definitions:
         type: string
       profileSocial:
         $ref: '#/definitions/response.ProfileSocial'
+      proposal:
+        $ref: '#/definitions/response.DaoArtist'
       walletAddress:
         type: string
       walletAddressBtc:
@@ -1303,14 +1363,22 @@ definitions:
     properties:
       created_at:
         type: string
+      creator_by:
+        type: string
       creator_name:
         type: string
       deleted_at:
         type: string
       id:
         type: string
+      is_hidden:
+        type: boolean
       max_supply:
         type: integer
+      mint_price:
+        type: string
+      mint_price_eth:
+        type: string
       minting_info:
         $ref: '#/definitions/response.ProjectMintingInfo'
       name:
@@ -1378,6 +1446,8 @@ definitions:
       isFullChain:
         type: boolean
       isHidden:
+        type: boolean
+      isReviewing:
         type: boolean
       itemDesc:
         type: string
@@ -1553,6 +1623,12 @@ definitions:
       uuid:
         type: string
       wallet_address:
+        type: string
+      wallet_address_btc:
+        type: string
+      wallet_address_btc_taproot:
+        type: string
+      wallet_address_payment:
         type: string
     type: object
   response.VerifyResponse:
@@ -2175,11 +2251,18 @@ paths:
       consumes:
       - application/json
       description: Create DAO Artist
+      parameters:
+      - description: Create Dao Artist Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateDaoArtistRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2200,7 +2283,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2226,7 +2309,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2281,7 +2364,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2330,10 +2413,40 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
+      tags:
+      - DAO Project
+  /dao-project/me/projects-hidden:
+    get:
+      consumes:
+      - application/json
+      description: List Projects Is Hidden
+      parameters:
+      - description: Keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Last Id
+        in: query
+        name: cursor
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Pagination'
+      security:
+      - ApiKeyAuth: []
+      summary: List Projects Is Hidden
       tags:
       - DAO Project
   /dao/proposals:
@@ -2672,7 +2785,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2694,7 +2807,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -2991,7 +3104,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -3305,6 +3418,50 @@ paths:
       summary: get nft transactions
       tags:
       - Blockchain
+  /ordinal/collections:
+    post:
+      description: Upload ordinal template
+      parameters:
+      - description: project.zip
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - multipart/form-data
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: Upload ordinal template
+      tags:
+      - Ordinal collection
+  /ordinal/collections/template:
+    get:
+      consumes:
+      - application/json
+      description: get ordinal template
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CategoryResp'
+              type: object
+      summary: get ordinal template
+      tags:
+      - Ordinal collection
   /profile:
     get:
       consumes:
@@ -3381,12 +3538,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: get current user's projects
+      description: Get current user's projects
       parameters:
-      - description: Filter project via contract address
-        in: query
-        name: contractAddress
-        type: string
       - description: limit
         in: query
         name: limit
@@ -3402,10 +3555,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.JsonResponse'
+            items:
+              $ref: '#/definitions/response.ProjectResp'
+            type: array
       security:
-      - Authorization: []
-      summary: get current user's projects
+      - ApiKeyAuth: []
+      summary: Get current user's projects
       tags:
       - Profile
   /profile/wallet/{walletAddress}:

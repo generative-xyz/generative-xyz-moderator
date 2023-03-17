@@ -29,6 +29,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -89,12 +90,12 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
+	pe.IsHidden = true
+	if req.IsHidden != nil {
+		pe.IsHidden = *req.IsHidden
+	}
 	pe.Status = true
 	pe.IsSynced = true
-
-	//task Is reviewing status for the created projects
-	pe.IsHidden = true 
-	pe.IsReviewing = true
 	nftTokenURI := make(map[string]interface{})
 	nftTokenURI["name"] = pe.Name
 	nftTokenURI["description"] = pe.Description
@@ -204,11 +205,26 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			//return nil, err
 		}
 	} else {
-		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
+
+	if pe.IsHidden && pe.IsSynced {
+		ids, err := u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+			ProjectIds: []string{pe.ID.Hex()},
+			CreatedBy:  pe.CreatorAddrr,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("CreateDAOProject success",
+				zap.String("project_id", pe.ID.Hex()),
+				zap.Strings("ids", ids),
+			)
+		}
+		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true)
+	}
 
 	return pe, nil
 }
@@ -642,6 +658,11 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
+		if !*req.IsHidden {
+			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
+				return nil, errors.New("Collection is reviewing")
+			}
+		}
 		p.IsHidden = *req.IsHidden
 	}
 
@@ -1610,11 +1631,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-
-	//task is reviewing status for the created projects
 	pe.IsHidden = true
-	pe.IsReviewing = true
-
 	pe.Status = true
 	pe.IsSynced = true
 
@@ -1628,6 +1645,19 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+		ProjectIds: []string{pe.ID.Hex()},
+		CreatedBy:  pe.CreatorAddrr,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", pe.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
+	}
+
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
@@ -1638,7 +1668,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
 			return
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		u.NotifyCreateNewProjectToDiscord(pe, owner, true)
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
@@ -1901,6 +1931,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			creator); err != nil {
 			return err
 		}
+		isFalse := false
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
@@ -1915,6 +1946,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
 			InscribedBy:     item.UserWalletAddress,
+			IsHidden:        &isFalse,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -2018,7 +2050,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 	if totalImages == 0 && totalProcessingImages == 0 {
-		err  = errors.New("Project doesn's have any files")
+		err = errors.New("Project doesn's have any files")
 		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
@@ -2103,7 +2135,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
-		spew.Dump(token.TokenID, token.ParsedAttributes, )
+		spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
 			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)

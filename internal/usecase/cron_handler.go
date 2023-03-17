@@ -614,7 +614,7 @@ func (u Usecase) SyncProjectsStats() error {
 }
 
 func (u Usecase) JobSyncTokenInscribeIndex() error {
-	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
+	notSyncedTokens, err := u.Repo.GetNotSyncInscriptionIndexToken()
 	if err != nil {
 		return err
 	}
@@ -623,9 +623,10 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 		processed++
 		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
-			u.Logger.Error("FailedToGetInscribeInfo", zap.String("tokenID", token.TokenID), zap.Error(err))
+			u.Logger.ErrorAny("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
 			continue
 		}
+		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id",  token.TokenID))
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
 		if token.OwnerAddr != inscribeInfo.Address {

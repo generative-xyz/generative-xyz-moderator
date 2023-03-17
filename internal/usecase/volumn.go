@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +20,7 @@ import (
 )
 
 func (u Usecase) JobAggregateVolumns() {
+	logger.AtLog.Logger.Info("JobAggregateVolumns")
 	now := time.Now().UTC()
 	projects, err := u.Repo.FindProjectsHaveMinted()
 	if err != nil {
@@ -109,13 +109,12 @@ func (u Usecase) JobAggregateVolumns() {
 	bytes, err := json.Marshal(pLogs)
 	if err == nil {
 		base64String := helpers.Base64Encode(bytes)
-		uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
+		_, err := u.GCS.UploadBaseToBucket(base64String, fileName)
 		if err == nil {
 			//spew.Dump(uploaded)
-			u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
 	}
-	spew.Dump("done")
 }
 
 // func (u Usecase) AggregateVolumn(payType string) {
@@ -133,7 +132,7 @@ func (u Usecase) JobAggregateVolumns() {
 // }
 
 func (u Usecase) JobAggregateReferral() {
-
+	logger.AtLog.Logger.Info("JobAggregateReferral")
 	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
 	if err != nil {
 		u.Logger.ErrorAny("JobAggregateReferral", zap.Any("err", err))
@@ -181,7 +180,22 @@ func (u Usecase) JobAggregateReferral() {
 			return
 		}
 	}
-	_ = referrals
+	
+	now := time.Now().UTC()
+	fileName := fmt.Sprintf("aggregated-refferals/%s.json", now)
+	fileName = strings.ReplaceAll(fileName, " ", "-")
+	fileName = strings.ReplaceAll(fileName, ":", "_")
+	fileName = strings.ReplaceAll(fileName, "+", "_")
+	fileName = strings.ToLower(fileName)
+	bytes, err := json.Marshal(referrals)
+	if err == nil {
+		base64String := helpers.Base64Encode(bytes)
+		_, err := u.GCS.UploadBaseToBucket(base64String, fileName)
+		if err == nil {
+			//spew.Dump(uploaded)
+			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+		}
+	}
 }
 
 func (u Usecase) GetVolumeOfUser(walletAddress string, amountType *string) (*entity.AggregateAmount, error) {
@@ -305,7 +319,7 @@ func (u Usecase) MigrateFromCSV() {
 	//csvData = append(csvData, tmp)
 	processCsvData := []csvLine{}
 	processCsvData = append(processCsvData, tmp)
-	spew.Dump(len(processCsvData))
+	
 	wdsETH := []*entity.Withdraw{}
 	for _, csv := range processCsvData {
 		wd, _, err := u.CreateWD(csv, string(entity.ETH))

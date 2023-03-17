@@ -73,7 +73,6 @@ func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []entity.Field 
 
 func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_AIRDROP_WEBHOOK")
 	fields := make([]entity.Field, 0)
 	file := strings.Replace(airdrop.File, "html", "png", 1)
 
@@ -129,8 +128,18 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 
 	u.Logger.Info("sending new airdrop message to discord", zap.Any("message", discordMsg))
 
+	noti := entity.DiscordNoti{
+		Message: discordMsg,
+		NumRetried: 0,
+		Status: entity.PENDING,
+		Type: entity.NEW_AIRDROP,
+		Meta: entity.DiscordNotiMeta{
+			InscriptionID: airdrop.InscriptionId,
+		},
+	}
+	
 	// create discord message
-	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyNewAirdrop.CreateDiscordNoti", zap.Error(err))
 		return err
@@ -141,7 +150,6 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) error {
 	u.Logger.Info("NotifyNewSale.Start", zap.Any("order", order), zap.Any("buyerAddress", buyerAddress))
 	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NEW_SALE_WEBHOOK")
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
@@ -195,6 +203,13 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		Domain: domain,
 	})
 
+	parsedThumbnailUrl, err := url.Parse(tokenUri.Thumbnail)
+	if err != nil {
+		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+	}
+	parsedThumbnail := parsedThumbnailUrl.String()
+
+
 	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
@@ -205,15 +220,26 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 			Description: description,
 			Fields: fields,
 			Image: entity.Image{
-				Url: tokenUri.Thumbnail,
+				Url: parsedThumbnail,
 			},
 		}},
 	}
 
 	u.Logger.Info("sending new sale message to discord", zap.Any("message", discordMsg))
 
+	noti := entity.DiscordNoti{
+		Message: discordMsg,
+		NumRetried: 0,
+		Status: entity.PENDING,
+		Type: entity.NEW_MINT,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+			InscriptionID: tokenUri.TokenID,
+		},
+	}
+	
 	// create discord message
-	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
 		return err
@@ -225,7 +251,6 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	u.Logger.Info("NotifyNewListing.Start", zap.Any("order", order))
 	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NEW_LISTING_WEBHOOK")
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
@@ -291,9 +316,19 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	}
 
 	u.Logger.Info("sending new new listing message to discord", zap.Any("message", discordMsg))
-
+	noti := entity.DiscordNoti{
+		Message: discordMsg,
+		NumRetried: 0,
+		Status: entity.PENDING,
+		Type: entity.NEW_LISTING,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+			InscriptionID: tokenUri.TokenID,
+		},
+	}
+	
 	// create discord message
-	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyNewListing.CreateDiscordNoti", zap.Error(err))
 		return err
@@ -303,7 +338,6 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 
 func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
 	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NFT_MINTED_WEBHOOK")
 	u.Logger.Info(
 		"NotifyNFTMinted",
 		zap.String("btcUserAddr", btcUserAddr),
@@ -405,16 +439,26 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	u.Logger.Info("sending new nft minted message to discord", zap.Any("message", discordMsg))
 
+	noti := entity.DiscordNoti{
+		Message: discordMsg,
+		NumRetried: 0,
+		Status: entity.PENDING,
+		Type: entity.NEW_MINT,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+			InscriptionID: tokenUri.TokenID,
+		},
+	}
+	
 	// create discord message
-	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
 	}
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users) {
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users, proposed bool) {
 	domain := os.Getenv("DOMAIN")
-	webhook := os.Getenv("DISCORD_NEW_PROJECT_WEBHOOK")
 
 	var category, description string
 	if len(project.Categories) > 0 {
@@ -455,9 +499,16 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
+	var content string
+	if proposed {
+		content = "**NEW DROP PROPOSED ✋**"
+	} else {
+		content = "**NEW DROP APPROVED ✅**"
+	}
+
 	discordMsg := entity.DiscordMessage{
 		Username: "Satoshi 27",
-		Content:  "**NEW DROP**",
+		Content:  content,
 		Embeds: []entity.Embed{{
 			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
 			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
@@ -474,8 +525,26 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		}},
 	}
 	u.Logger.Info("sending new create new project message to discord", zap.Any("message", discordMsg))
+
+	var msgType entity.DiscordNotiType
+	if proposed {
+		msgType = entity.NEW_PROJECT_PROPOSED
+	} else {
+		msgType = entity.NEW_PROJECT_APPROVED
+	}
+
+	noti := entity.DiscordNoti{
+		Message: discordMsg,
+		NumRetried: 0,
+		Status: entity.PENDING,
+		Type: msgType,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+		},
+	}
+	
 	// create discord message
-	err = u.Repo.CreateDiscordNoti(discordMsg, webhook)
+	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		u.Logger.ErrorAny("NotifyCreateNewProjectToDiscord.CreateDiscordNoti", zap.Error(err))
 	}
@@ -524,6 +593,36 @@ func (u Usecase) JobSendDiscordNoti() error {
 			if processed % 5 == 0 {
 				time.Sleep(1 * time.Second)
 			}
+		}
+	}
+
+	return nil
+}
+
+func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
+	partners, err := u.Repo.GetAllDiscordPartner()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	for _, partner := range partners {
+		webhook := partner.Webhooks[string(noti.Type)]
+		if webhook == "" {
+			continue
+		}
+		toCreate := (len(partner.ProjectIDs) == 0)
+		for _, projectID := range partner.ProjectIDs {
+			if projectID == noti.Meta.ProjectID {
+				toCreate = true
+			}
+		}
+
+		if toCreate {
+			tmpNoti := &entity.DiscordNoti{}
+			copier.Copy(tmpNoti, noti)
+			tmpNoti.Webhook = webhook
+			tmpNoti.Meta.SentTo = partner.Name
+			u.Logger.LogAny("CreateDiscordNoti.SendToPartner", zap.Any("tmpNoti", tmpNoti))
+			u.Repo.CreateDiscordNoti(*tmpNoti)
 		}
 	}
 

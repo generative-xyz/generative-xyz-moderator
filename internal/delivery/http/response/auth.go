@@ -28,6 +28,8 @@ type ProfileResponse struct {
 	Avatar                  string        `json:"avatar"`
 	CreatedAt               *time.Time    `json:"createdAt"`
 	ProfileSocial           ProfileSocial `json:"profileSocial"`
+	CanCreateProposal       bool          `json:"canCreateProposal"`
+	Proposal                *DaoArtist    `json:"proposal,omitempty"`
 }
 
 type ArtistResponse struct {
