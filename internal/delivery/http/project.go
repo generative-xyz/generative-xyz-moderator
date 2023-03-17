@@ -261,11 +261,19 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return nil, err
 			}
-			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
-			if resp.IsReviewing && resp.IsHidden && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
-				daoProject, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, userAddress, project.ID)
-				resp.CanCreateProposal = !exists && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr)
+			resp.IsReviewing = true
+			if project.CreatorAddrr != "" && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
+				resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
+				daoProject, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
+				resp.CanCreateProposal = !exists
 				if daoProject != nil {
+					proposal := &response.DaoProject{}
+					if err := copierInternal.Copy(proposal, daoProject); err == nil {
+						resp.Proposal = proposal
+					}
+				}
+			} else {
+				if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
 					proposal := &response.DaoProject{}
 					if err := copierInternal.Copy(proposal, daoProject); err == nil {
 						resp.Proposal = proposal

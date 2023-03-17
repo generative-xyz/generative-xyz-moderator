@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -157,6 +158,16 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 				voted.DisplayName = val.DisplayName
 			}
 		}
+	}
+	return daoProject, nil
+}
+
+func (s *Usecase) GetLastDAOProjectByProjectId(ctx context.Context, projectId primitive.ObjectID) (*entity.DaoProject, error) {
+	daoProject := &entity.DaoProject{}
+	opts := &options.FindOneOptions{}
+	opts.SetSort(bson.M{"created_at": -1})
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, &options.FindOneOptions{}, opts); err != nil {
+		return nil, err
 	}
 	return daoProject, nil
 }
