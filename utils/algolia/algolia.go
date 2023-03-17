@@ -6,11 +6,11 @@ import (
 )
 
 type AlgoliaFilter struct {
-	Page        int
-	Limit       int
-	SearchStr   string
-	ObjType     string
-	SearchField string
+	Page      int
+	Limit     int
+	SearchStr string
+	ObjType   string
+	FilterStr string
 }
 
 type IAlgolia interface {
@@ -44,11 +44,12 @@ func (al *algolia) Search(indexName string, builder *AlgoliaFilter) (search.Quer
 		opt.HitsPerPage(builder.Limit),
 	}
 
-	if builder.SearchField == "isHidden" {
-		opts = append(opts, opt.Filters("isHidden = 0"))
+	if builder.FilterStr != "" {
+		opts = append(opts, opt.Filters(builder.FilterStr))
 		// opts = append(opts, opt.TypoTolerance(false))
 		// opts = append(opts, opt.RestrictSearchableAttributes(builder.SearchField))
 	}
+
 	res, err := index.Search(builder.SearchStr, opts...)
 	return res, err
 }
