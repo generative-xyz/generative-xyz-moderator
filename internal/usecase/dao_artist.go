@@ -128,6 +128,9 @@ func (s *Usecase) GetDAOArtist(ctx context.Context, id, userWallet string) (*res
 	if err != nil {
 		return nil, err
 	}
+	if pag.Result == nil {
+		return nil, nil
+	}
 	results := pag.Result.([]*response.DaoArtist)
 	if len(results) < 0 {
 		return nil, nil
