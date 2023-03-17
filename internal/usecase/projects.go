@@ -606,11 +606,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-	end := 10
-	if end > len(userAddr) {
-		end = len(userAddr)
+	start := len(userAddr) - 6
+	if start < 0 {
+		start = 0
 	}
-	return userAddr[:end]
+	return userAddr[start:]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
