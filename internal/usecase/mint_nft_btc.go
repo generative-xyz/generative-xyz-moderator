@@ -1604,7 +1604,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				}
 
 				// update refund info with -fee:
-				amountToRefundWithFee := totalRefundAmount.Sub(totalRefundAmount, txFee)
+				amountToRefundWithFee := big.NewInt(0).Sub(totalRefundAmount, txFee)
 				destinations[mintItem.RefundUserAdress] = int(amountToRefundWithFee.Int64())
 
 				// log destinations:
@@ -1705,7 +1705,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				}
 
 				// update refund info with -fee:
-				amountToRefundWithFee := totalRefundAmount.Sub(totalRefundAmount, txFee)
+				amountToRefundWithFee := big.NewInt(0).Sub(totalRefundAmount, txFee)
 				destinations[mintItem.RefundUserAdress] = amountToRefundWithFee
 
 				if amountToRefundWithFee.Uint64() < txFee.Uint64() {
