@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -25,6 +26,16 @@ import (
 func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	objType := r.URL.Query().Get("type")
+	fromNumberStr := r.URL.Query().Get("fromNumber")
+	toNumberStr := r.URL.Query().Get("toNumber")
+	fromNumber := 0
+	toNumber := 0
+	if len(fromNumberStr) > 0 {
+		fromNumber, _ = strconv.Atoi(fromNumberStr)
+	}
+	if len(toNumberStr) > 0 {
+		toNumber, _ = strconv.Atoi(toNumberStr)
+	}
 	result := &entity.Pagination{}
 	dataResp := []*response.SearchResponse{}
 	if search != "" && len(search) < 3 {
@@ -73,6 +84,10 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "project", Project: r})
 		}
 	case "inscription":
+		if fromNumber > 0 && toNumber > 0 {
+			filter.FromNumber = fromNumber
+			filter.ToNumber = toNumber
+		}
 		dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {
 			h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
