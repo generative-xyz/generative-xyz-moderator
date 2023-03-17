@@ -26,7 +26,7 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 	if filter.ObjType != "" && filter.ObjType != "project" {
 		return nil, 0, 0, nil
 	}
-	filter.FilterStr = "isHidden = 0 AND status = 1 AND isSynced = 1"
+	filter.FilterStr = "isHidden = 0 AND isSynced = 1"
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 
 	resp, err := algoliaClient.Search("projects", filter)
