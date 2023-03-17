@@ -24,13 +24,14 @@ type DexBTCHistoryListing struct {
 }
 
 type GenDexBTCBuyETH struct {
-	OrderID         string `json:"order_id"`
-	ETHAddress      string `json:"eth_address"`
-	ETHAmount       string `json:"eth_amount"`
-	ExpiredAt       int64  `json:"expired_at"`
-	ETHAmountOrigin string `json:"eth_amount_origin"`
-	ETHFee          string `json:"eth_fee"`
-	HasRoyalty      bool   `json:"has_royalty"`
+	OrderID          string   `json:"order_id"`
+	ETHAddress       string   `json:"eth_address"`
+	ETHAmount        string   `json:"eth_amount"`
+	ExpiredAt        int64    `json:"expired_at"`
+	ETHAmountOrigin  string   `json:"eth_amount_origin"`
+	ETHFee           string   `json:"eth_fee"`
+	OrderListInvalid []string `json:"list_order_invalid"`
+	HasRoyalty       bool     `json:"has_royalty"`
 }
 
 type DEXBuyEthHistory struct {
