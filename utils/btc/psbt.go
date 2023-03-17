@@ -895,6 +895,7 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 		return nil, err
 	}
 
+	log.Println("CreatePSBTToBuyInscriptionMultiViaAPI payload", string(json_data))
 	var res CreatePSBTToBuyInscriptionRespond
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
