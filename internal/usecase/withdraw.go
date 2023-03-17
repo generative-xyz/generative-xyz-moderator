@@ -46,11 +46,12 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
 	//TODO - calculate refAmount
-	
+	wdType := string(entity.WithDrawReferal)
 	wdf := &entity.FilterWithdraw{
 		WalletAddress: &walletAddress,
 		WithdrawItemID: &wr.ID,
 		PaymentType: &wr.PaymentType,
+		WithdrawType: &wdType,
 		Statuses: []int{
 			entity.StatusWithdraw_Pending,
 			entity.StatusWithdraw_Approve,
@@ -98,7 +99,7 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 	//totalEarnings := refAmount + volumeAmount
 	totalEarnings := volumeAmount
 	availableBalance := totalEarnings - widthDrawAmount
-	if availableBalance <= 0 {
+	if availableBalance < 0 {
 		err = errors.New("Not enough balance")
 		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		return nil, err
@@ -168,9 +169,11 @@ func (u Usecase) CreateWithdrawReferral(walletAddress string, wr structure.WithD
 	// (refAmount + refAmount) is pushed into volumn by crontab
 	//TODO - calculate refAmount
 	
+	wdType := string(entity.WithDrawReferal)
 	wdf := &entity.FilterWithdraw{
 		WalletAddress: &walletAddress,
 		WithdrawItemID: &wr.ID,
+		WithdrawType: &wdType,
 		PaymentType: &wr.PaymentType,
 		Statuses: []int{
 			entity.StatusWithdraw_Pending,
@@ -225,7 +228,7 @@ func (u Usecase) CreateWithdrawReferral(walletAddress string, wr structure.WithD
 	//totalEarnings := refAmount + volumeAmount
 	totalEarnings := volumeAmount
 	availableBalance := totalEarnings - widthDrawAmount
-	if availableBalance <= 0 {
+	if availableBalance < 0 {
 		err = errors.New("Not enough balance")
 		u.Logger.ErrorAny("CreateWithdraw", zap.Float64("earning", availableBalance) , zap.String("walletAddress", walletAddress),  zap.Any("volumeAmount", volumeAmount), zap.Error(err))
 		return nil, err
