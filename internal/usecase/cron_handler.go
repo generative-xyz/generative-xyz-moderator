@@ -648,12 +648,32 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 }
 
 func (u Usecase) CalUserStats(ctx context.Context) error {
-	checker := user_stats.NewChecker(u.Repo, 200)
+	checker := user_stats.NewChecker(u.Repo, 100)
 
 	start := time.Now()
 	checker.Start(ctx)
 
-	cursor, err := u.Repo.DB.Collection(entity.Users{}.TableName()).Find(ctx, bson.M{})
+	lookup := bson.M{
+		"$lookup": bson.M{
+			"from":         "projects",
+			"localField":   "wallet_address",
+			"foreignField": "creatorAddress",
+			"as":           "projects",
+		},
+	}
+	match := bson.M{
+		"$match": bson.M{
+			"projects": bson.M{
+				"$ne": []interface{}{},
+			},
+		},
+	}
+	project := bson.M{
+		"$project": bson.M{
+			"projects": 0,
+		},
+	}
+	cursor, err := u.Repo.DB.Collection(entity.Users{}.TableName()).Aggregate(ctx, bson.A{lookup, match, project})
 	if err != nil {
 		return err
 	}

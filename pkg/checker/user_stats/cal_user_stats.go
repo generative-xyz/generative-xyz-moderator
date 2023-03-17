@@ -160,7 +160,7 @@ func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error
 		if !ok {
 			continue
 		}
-		needUpdate := true
+		needUpdate := false
 		if countProject.CountCollection != user.Stats.CollectionCreated {
 			needUpdate = true
 			user.Stats.CollectionCreated = countProject.CountCollection
