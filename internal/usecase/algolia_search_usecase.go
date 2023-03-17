@@ -12,6 +12,7 @@ import (
 
 func (uc *Usecase) AlgoliaSearchProjectListing(filter *algolia.AlgoliaFilter) ([]*response.ProjectListing, int, int, error) {
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
+	filter.SearchField = "isHidden"
 	resp, err := algoliaClient.Search("project-listing", filter)
 	if err != nil {
 		return nil, 0, 0, err
