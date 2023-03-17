@@ -130,8 +130,8 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	if pag.Result == nil {
 		return nil, nil
 	}
-	results := pag.Result.([]*response.DaoProject)
-	if len(results) < 0 {
+	results, ok := pag.Result.([]*response.DaoProject)
+	if !ok || len(results) <= 0 {
 		return nil, nil
 	}
 	daoProject := results[0]
