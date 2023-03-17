@@ -98,7 +98,7 @@ func (c *checkerUser) updateUsers(ctx context.Context) error {
 			}
 		}
 		count = 0
-		logger.AtLog.Infof("waiting 5s ... ")
+		logger.AtLog.Info("waiting 5s for next batchSize...")
 		time.Sleep(5 * time.Second)
 	}
 	return nil
