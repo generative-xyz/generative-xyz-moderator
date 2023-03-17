@@ -770,7 +770,7 @@ type CreatePSBTToBuyInscriptionMultiRequest struct {
 type CreatePSBTToBuyInscriptionRespond struct {
 	TxID          string      `json:"txID"`
 	TxHex         string      `json:"txHex"`
-	Fee           string      `json:"fee"`
+	Fee           interface{} `json:"fee"`
 	SelectedUTXOs interface{} `json:"selectedUTXOs"`
 	SplitTxID     string      `json:"splitTxID"`
 	SplitUTXOs    interface{} `json:"splitUTXOs"`
