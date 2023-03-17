@@ -563,11 +563,13 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 			} else {
 				newStatus := order.Status
-				psbtList := []string{}
 				feeRate := order.FeeRate
 
 				amountBTCFee := uint64(0)
 				amountBTC := uint64(0)
+
+				var buyReqInfos []btc.BuyReqInfo
+
 				for _, listingOrderID := range order.OrderList {
 					listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 					if err != nil {
@@ -586,8 +588,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 						amountBTCFee += btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 						amountBTC += listingOrder.Amount
-						psbtList = append(psbtList, listingOrder.RawPSBT)
 						newStatus = entity.StatusDEXBuy_Buying
+
+						buyReqInfos = append(buyReqInfos, btc.BuyReqInfo{
+							Price:                      int(listingOrder.Amount),
+							ReceiverInscriptionAddress: order.ReceiveAddress,
+							SellerSignedPsbtB64:        listingOrder.RawPSBT,
+						})
+
 					} else {
 						// ?? order not exist
 						newStatus = entity.StatusDEXBuy_WaitingToRefund
@@ -616,7 +624,8 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							continue
 						}
 
-						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
 							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 							continue
