@@ -260,9 +260,8 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return nil, err
 			}
-			resp.IsReviewing = true
+			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
 			if project.CreatorAddrr != "" && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
-				resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
 				_, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
 				resp.CanCreateProposal = !exists
 				// if daoProject != nil {
