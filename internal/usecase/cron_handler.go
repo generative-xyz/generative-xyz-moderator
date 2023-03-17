@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"math/big"
@@ -11,10 +12,13 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/pkg/checker/user_stats"
 	"rederinghub.io/utils/contracts/generative_dao"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 func (u *Usecase) PrepareData() error {
@@ -54,9 +58,9 @@ func roundTo8DecimalPlaces(x float64) float64 {
 
 func (u Usecase) SyncUserStats() error {
 
-	addressToCollectionCreated := make(map[string]int32)
-	addressToNftMinted := make(map[string]int32)
-	addressToOutputMinted := make(map[string]int32)
+	addressToCollectionCreated := make(map[string]int64)
+	addressToNftMinted := make(map[string]int64)
+	addressToOutputMinted := make(map[string]int64)
 	addressToVolumeMinted := make(map[string]float64)
 
 	for _, token := range u.gData.AllTokens {
@@ -625,7 +629,7 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 			u.Logger.ErrorAny("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
 			continue
 		}
-		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id",  token.TokenID))
+		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id", token.TokenID))
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
 		if token.OwnerAddr != inscribeInfo.Address {
@@ -640,5 +644,39 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 			time.Sleep(time.Second)
 		}
 	}
+	return nil
+}
+
+func (u Usecase) CalUserStats(ctx context.Context) error {
+	checker := user_stats.NewChecker(u.Repo, 200)
+
+	start := time.Now()
+	checker.Start(ctx)
+
+	cursor, err := u.Repo.DB.Collection(entity.Users{}.TableName()).Find(ctx, bson.M{})
+	if err != nil {
+		return err
+	}
+
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var user entity.Users
+		if err := cursor.Decode(&user); err != nil {
+			return err
+		}
+		checker.Add(&user)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	updated := checker.Stop()
+
+	logger.AtLog.Logger.Info("updated user stats",
+		zap.Int("users", updated),
+		zap.Duration("in", time.Since(start)))
+
 	return nil
 }
