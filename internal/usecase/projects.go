@@ -1769,14 +1769,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 		maxSupply = 0
 	}
 	pe.MaxSupply = maxSupply
-	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
-	var index int64
-	if err != nil {
-		index = 0
-	} else {
-		index = *countIndex
-	}
-	pe.MintingInfo.Index = index
+	pe.MintingInfo.Index = 0
 
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.UnverifiedCategoryID}
