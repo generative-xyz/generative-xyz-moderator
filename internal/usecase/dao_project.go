@@ -191,12 +191,8 @@ func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool
 	return isReviewing
 }
 
-func (s *Usecase) CanCreateNewProposalProject(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (string, bool) {
-	daoProject, exists := s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
-	if exists && daoProject != nil {
-		return daoProject.ID.Hex(), false
-	}
-	return "", true
+func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
+	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
