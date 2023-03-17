@@ -297,6 +297,7 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 
 			if (item.Status == entity.StatusMint_Refunding || item.Status == entity.StatusMint_NeedToRefund) && item.ProjectID == "1001311" {
 				status = entity.StatusMintToText[entity.StatusMint_Refunded]
+				continue
 			}
 
 			if item.Status == entity.StatusMint_Refunded && item.ProjectID != "1001311" {
