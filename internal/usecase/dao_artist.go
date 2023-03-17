@@ -80,8 +80,16 @@ func (s *Usecase) CreateDAOArtist(ctx context.Context, userWallet string, req *r
 	if exists {
 		return "", errors.New("Proposal is exists")
 	}
-	if req.Twitter != "" && user.ProfileSocial.Twitter == "" {
+	needUpdateProfile := false
+	if req.Twitter != "" && user.ProfileSocial.Twitter != req.Twitter {
 		user.ProfileSocial.Twitter = req.Twitter
+		needUpdateProfile = true
+	}
+	if req.Web != "" && user.ProfileSocial.Web != req.Web {
+		user.ProfileSocial.Web = req.Web
+		needUpdateProfile = true
+	}
+	if needUpdateProfile {
 		_, err := s.Repo.UpdateByID(ctx, user.TableName(), user.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
@@ -169,12 +177,8 @@ func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string
 	return daoArtist, nil
 }
 
-func (s *Usecase) CanCreateNewProposalArtist(ctx context.Context, walletAddress string) (string, bool) {
-	daoArtist, exists := s.Repo.CheckDAOArtistAvailableByUser(ctx, walletAddress)
-	if exists && daoArtist != nil {
-		return daoArtist.ID.Hex(), false
-	}
-	return "", true
+func (s *Usecase) CheckDAOArtistAvailableByUser(ctx context.Context, walletAddress string) (*entity.DaoArtist, bool) {
+	return s.Repo.CheckDAOArtistAvailableByUser(ctx, walletAddress)
 }
 
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {

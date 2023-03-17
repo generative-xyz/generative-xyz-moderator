@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
@@ -161,6 +162,16 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	return daoProject, nil
 }
 
+func (s *Usecase) GetLastDAOProjectByProjectId(ctx context.Context, projectId primitive.ObjectID) (*entity.DaoProject, error) {
+	daoProject := &entity.DaoProject{}
+	opts := &options.FindOneOptions{}
+	opts.SetSort(bson.M{"created_at": -1})
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, &options.FindOneOptions{}, opts); err != nil {
+		return nil, err
+	}
+	return daoProject, nil
+}
+
 func (s *Usecase) ListDAOProjectsByProjectId(ctx context.Context, projectId string) ([]*entity.DaoProject, error) {
 	objectId, err := primitive.ObjectIDFromHex(projectId)
 	if err != nil {
@@ -191,12 +202,8 @@ func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool
 	return isReviewing
 }
 
-func (s *Usecase) CanCreateNewProposalProject(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (string, bool) {
-	daoProject, exists := s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
-	if exists && daoProject != nil {
-		return daoProject.ID.Hex(), false
-	}
-	return "", true
+func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
+	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
