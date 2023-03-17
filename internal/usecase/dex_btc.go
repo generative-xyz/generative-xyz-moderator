@@ -435,6 +435,7 @@ func (u Usecase) ListBuyAddress() (interface{}, error) {
 
 	type AddressObject struct {
 		Uuid, Address string
+		Status        int
 	}
 
 	var listAddrssObject []AddressObject
@@ -458,6 +459,7 @@ func (u Usecase) ListBuyAddress() (interface{}, error) {
 		listAddrssObject = append(listAddrssObject, AddressObject{
 			Uuid:    v.UUID,
 			Address: ethAddress,
+			Status:  int(v.Status),
 		})
 	}
 	return listAddrssObject, nil
