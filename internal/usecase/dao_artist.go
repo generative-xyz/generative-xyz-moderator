@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -21,7 +22,9 @@ import (
 
 func (s *Usecase) ListDAOArtist(ctx context.Context, userWallet string, request *request.ListDaoArtistRequest) (*entity.Pagination, error) {
 	result := &entity.Pagination{}
-	redisKey := rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list", userWallet).WithStructHash(request, nil).String()
+	redisKey := rediskey.Beauty(entity.DaoArtist{}.TableName()).
+		WithParams("list", userWallet).
+		WithStructHash(request, &hashstructure.HashOptions{IgnoreZeroValue: true}).String()
 	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
 		return result, nil
 	}
