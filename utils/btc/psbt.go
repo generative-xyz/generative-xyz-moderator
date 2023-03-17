@@ -767,15 +767,14 @@ type CreatePSBTToBuyInscriptionMultiRequest struct {
 	FeeRate uint64     `json:"feeRatePerByte"`
 	UTXOs   []UTXOType `json:"utxos"`
 }
-
 type CreatePSBTToBuyInscriptionRespond struct {
-	TxID          string     `json:"txID"`
-	TxHex         string     `json:"txHex"`
-	Fee           string     `json:"fee"`
-	SelectedUTXOs []UTXOType `json:"selectedUTXOs"`
-	SplitTxID     string     `json:"splitTxID"`
-	SplitUTXOs    []UTXOType `json:"splitUTXOs"`
-	SplitTxRaw    string     `json:"splitTxRaw"`
+	TxID          string      `json:"txID"`
+	TxHex         string      `json:"txHex"`
+	Fee           string      `json:"fee"`
+	SelectedUTXOs interface{} `json:"selectedUTXOs"`
+	SplitTxID     string      `json:"splitTxID"`
+	SplitUTXOs    interface{} `json:"splitUTXOs"`
+	SplitTxRaw    string      `json:"splitTxRaw"`
 }
 
 func CreatePSBTToBuyInscriptionViaAPI(
