@@ -46,6 +46,24 @@ func (r Repository) GetDexBTCListingOrderByID(id string) (*entity.DexBTCListing,
 	return resp, nil
 }
 
+func (r Repository) GetDexBTListingOrderByListID(ids []string) ([]entity.DexBTCListing, error) {
+	resp := []entity.DexBTCListing{}
+	filter := bson.M{
+		"uuid": bson.M{"$in": ids},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) UpdateDexBTCListingOrderCancelTx(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
