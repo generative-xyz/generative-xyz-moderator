@@ -169,12 +169,8 @@ func (s *Usecase) GetDAOArtistByWallet(ctx context.Context, walletAddress string
 	return daoArtist, nil
 }
 
-func (s *Usecase) CanCreateNewProposalArtist(ctx context.Context, walletAddress string) (string, bool) {
-	daoArtist, exists := s.Repo.CheckDAOArtistAvailableByUser(ctx, walletAddress)
-	if exists && daoArtist != nil {
-		return daoArtist.ID.Hex(), false
-	}
-	return "", true
+func (s *Usecase) CheckDAOArtistAvailableByUser(ctx context.Context, walletAddress string) (*entity.DaoArtist, bool) {
+	return s.Repo.CheckDAOArtistAvailableByUser(ctx, walletAddress)
 }
 
 func (s *Usecase) VoteDAOArtist(ctx context.Context, id, userWallet string, req *request.VoteDaoArtistRequest) error {
