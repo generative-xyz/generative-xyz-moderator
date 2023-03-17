@@ -52,8 +52,9 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 	if request.PageSize > 0 && request.PageSize <= limit {
 		limit = request.PageSize
 	}
-	filters["expired_at"] = bson.M{
-		"$gt": time.Now(),
+	filters["$or"] = bson.A{
+		bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+		bson.M{"status": dao_artist.Verified},
 	}
 	if request.Id != nil {
 		id, err := primitive.ObjectIDFromHex(*request.Id)
