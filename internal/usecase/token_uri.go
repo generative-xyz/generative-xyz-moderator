@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
@@ -936,7 +935,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 	}
 	u.Logger.Info("uploaded", uploaded)
 	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-	spew.Dump(thumb)
+	//spew.Dump(thumb)
 	token.Thumbnail = thumb
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
@@ -1054,7 +1053,7 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 	}
 
 	link := fmt.Sprintf("%s/%s/%s", "https://storage.googleapis.com", os.Getenv("GCS_BUCKET"), uploaded.Name)
-	spew.Dump(link)
+	//spew.Dump(link)
 	return &link, nil
 
 }
