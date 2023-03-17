@@ -79,10 +79,12 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 			return nil, err
 		}
 
+		wdType := string(entity.WithDrawReferal)
 		latestWd, _ := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
 			WalletAddress: &item.Referrer.WalletAddress,
 			WithdrawItemID: &item.Referree.WalletAddress,
 			PaymentType:    req.PayType,
+			WithdrawType: &wdType,
 		})
 
 		status := entity.StatusWithdraw_Available
