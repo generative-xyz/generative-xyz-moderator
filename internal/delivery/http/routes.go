@@ -61,7 +61,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
-	profile.Use(h.MiddleWare.UserToken)
+	profile.Use(h.MiddleWare.AuthorizationFunc)
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
@@ -77,6 +77,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//project
 	project := api.PathPrefix("/project").Subrouter()
+	project.Use(h.MiddleWare.AuthorizationFunc)
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
@@ -273,7 +274,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// Firebase FCM registration token management
 	fcm := api.PathPrefix("/fcm").Subrouter()
-	fcm.Use(h.MiddleWare.AuthorizeFunc)
+	fcm.Use(h.MiddleWare.AuthorizationFunc)
 	fcm.HandleFunc("/token", h.getFcmToken).Methods("GET")
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
 	// For test, will remove
@@ -281,7 +282,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// DAO Project
 	daoProject := api.PathPrefix("/dao-project").Subrouter()
-	daoProject.Use(h.MiddleWare.AuthorizeFunc)
+	daoProject.Use(h.MiddleWare.AuthorizationFunc)
 	daoProject.HandleFunc("", h.listDaoProject).Methods("GET")
 	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
 	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
@@ -290,7 +291,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// DAO Artist
 	daoArtist := api.PathPrefix("/dao-artist").Subrouter()
-	daoArtist.Use(h.MiddleWare.AuthorizeFunc)
+	daoArtist.Use(h.MiddleWare.AuthorizationFunc)
 	daoArtist.HandleFunc("", h.listDaoArtist).Methods("GET")
 	daoArtist.HandleFunc("", h.createDaoArtist).Methods("POST")
 	daoArtist.HandleFunc("/{id}", h.getDaoArtist).Methods("GET")

@@ -12,6 +12,7 @@ import (
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/redisv9"
 	"rederinghub.io/utils/slack"
 
 	"github.com/gorilla/mux"
@@ -24,6 +25,7 @@ type Global struct {
 	DBConnection        _pConnection.IConnection
 	Cache               redis.IRedisCache
 	CacheAuthService    redis.IRedisCache
+	RedisV9             redisv9.Client
 	Pubsub              redis.IPubSubClient
 	Auth2               oauth2service.Auth2
 	GCS                 googlecloud.IGcstorage
