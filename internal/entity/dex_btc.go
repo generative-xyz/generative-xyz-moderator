@@ -79,7 +79,7 @@ type DexBTCBuyWithETH struct {
 	ETHKey          string             `bson:"eth_key" json:"eth_key"`
 	IsMultiBuy      bool               `bson:"multi_buy" json:"multi_buy"`
 	InscriptionList []string           `bson:"inscription_list" json:"inscription_list"`
-	OrderList       string             `bson:"order_list" json:"order_list"`
+	OrderList       []string           `bson:"order_list" json:"order_list"`
 }
 
 func (u DexBTCBuyWithETH) ToJsonString() string {
