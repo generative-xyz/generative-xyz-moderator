@@ -134,6 +134,7 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 		}
 
 		if eventItem.Enabled == false {
+			h.Logger.Info(fmt.Sprintf("\nTaskName %v, webhook %v is off\n", eventName, cronJobManager.FunctionName))
 			h.Usecase.Repo.UpdateCronJobManagerLastSatus(cronJobManager.UUID, "Job is paused!")
 			return
 		} else {

@@ -903,9 +903,20 @@
                     "DAO Artist"
                 ],
                 "summary": "Create DAO Artist",
+                "parameters": [
+                    {
+                        "description": "Create Dao Artist Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDaoArtistRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -939,7 +950,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             },
@@ -980,7 +991,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1068,7 +1079,55 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/dao-project/me/projects-hidden": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List Projects Is Hidden",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DAO Project"
+                ],
+                "summary": "List Projects Is Hidden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last Id",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Pagination"
+                        }
                     }
                 }
             }
@@ -1146,7 +1205,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1683,7 +1742,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1719,7 +1778,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2221,7 +2280,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2699,6 +2758,82 @@
                 }
             }
         },
+        "/ordinal/collections": {
+            "post": {
+                "description": "Upload ordinal template",
+                "produces": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Ordinal collection"
+                ],
+                "summary": "Upload ordinal template",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "project.zip",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CategoryResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/ordinal/collections/template": {
+            "get": {
+                "description": "get ordinal template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ordinal collection"
+                ],
+                "summary": "get ordinal template",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CategoryResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [
@@ -2832,10 +2967,10 @@
             "get": {
                 "security": [
                     {
-                        "Authorization": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "get current user's projects",
+                "description": "Get current user's projects",
                 "consumes": [
                     "application/json"
                 ],
@@ -2845,14 +2980,8 @@
                 "tags": [
                     "Profile"
                 ],
-                "summary": "get current user's projects",
+                "summary": "Get current user's projects",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter project via contract address",
-                        "name": "contractAddress",
-                        "in": "query"
-                    },
                     {
                         "type": "integer",
                         "description": "limit",
@@ -2870,7 +2999,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.ProjectResp"
+                            }
                         }
                     }
                 }
@@ -5201,9 +5333,6 @@
                 "isHidden": {
                     "type": "boolean"
                 },
-                "isReviewing": {
-                    "type": "boolean"
-                },
                 "isSynced": {
                     "type": "boolean"
                 },
@@ -5918,11 +6047,25 @@
                 }
             }
         },
-        "request.CreateDaoProjectRequest": {
+        "request.CreateDaoArtistRequest": {
             "type": "object",
             "properties": {
-                "project_id": {
+                "twitter": {
                     "type": "string"
+                }
+            }
+        },
+        "request.CreateDaoProjectRequest": {
+            "type": "object",
+            "required": [
+                "project_ids"
+            ],
+            "properties": {
+                "project_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -6369,6 +6512,14 @@
                 }
             }
         },
+        "response.ActionDaoArtist": {
+            "type": "object",
+            "properties": {
+                "can_vote": {
+                    "type": "boolean"
+                }
+            }
+        },
         "response.ActionDaoProject": {
             "type": "object",
             "properties": {
@@ -6399,6 +6550,73 @@
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "response.DaoArtist": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/response.ActionDaoArtist"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_artist_voted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DaoArtistVoted"
+                    }
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "seq_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "total_report": {
+                    "type": "integer"
+                },
+                "total_verify": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/response.UserForDao"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DaoArtistVoted": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "dao_project_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -6776,6 +6994,9 @@
                 "bio": {
                     "type": "string"
                 },
+                "canCreateProposal": {
+                    "type": "boolean"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -6787,6 +7008,9 @@
                 },
                 "profileSocial": {
                     "$ref": "#/definitions/response.ProfileSocial"
+                },
+                "proposal": {
+                    "$ref": "#/definitions/response.DaoArtist"
                 },
                 "walletAddress": {
                     "type": "string"
@@ -6834,6 +7058,9 @@
                 "created_at": {
                     "type": "string"
                 },
+                "creator_by": {
+                    "type": "string"
+                },
                 "creator_name": {
                     "type": "string"
                 },
@@ -6843,8 +7070,17 @@
                 "id": {
                     "type": "string"
                 },
+                "is_hidden": {
+                    "type": "boolean"
+                },
                 "max_supply": {
                     "type": "integer"
+                },
+                "mint_price": {
+                    "type": "string"
+                },
+                "mint_price_eth": {
+                    "type": "string"
                 },
                 "minting_info": {
                     "$ref": "#/definitions/response.ProjectMintingInfo"
@@ -6947,6 +7183,9 @@
                     "type": "boolean"
                 },
                 "isHidden": {
+                    "type": "boolean"
+                },
+                "isReviewing": {
                     "type": "boolean"
                 },
                 "itemDesc": {
@@ -7213,6 +7452,15 @@
                     "type": "string"
                 },
                 "wallet_address": {
+                    "type": "string"
+                },
+                "wallet_address_btc": {
+                    "type": "string"
+                },
+                "wallet_address_btc_taproot": {
+                    "type": "string"
+                },
+                "wallet_address_payment": {
                     "type": "string"
                 }
             }

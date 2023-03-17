@@ -1,5 +1,7 @@
 package utils
 
+import "time"
+
 type QuerySort struct {
 	Sort   int
 	SortBy string
@@ -138,9 +140,10 @@ const (
 	WALLET_TRACK_TX                     string = "wallet_track_txs"
 	COLLECTION_AIRDROP                  string = "airdrop"
 	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
-	COLLECTION_DISCORD_NOTI							string = "discord_notis"
+	COLLECTION_DISCORD_NOTI             string = "discord_notis"
 	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
 	COLLECTION_TOKEN_ACTIVITY           string = "token_activities"
+	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
@@ -179,3 +182,5 @@ type PubSubSendOtp struct {
 	Code    string `json:"code"`
 	AppName string `json:"app_name"`
 }
+
+const HttpContextTimeOut = time.Second * 15

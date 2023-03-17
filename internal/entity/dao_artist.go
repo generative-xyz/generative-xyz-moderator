@@ -16,8 +16,13 @@ type DaoArtist struct {
 	ExpiredAt      time.Time         `json:"expired_at,omitempty" bson:"expired_at"`
 	Status         dao_artist.Status `json:"status,omitempty" bson:"status"`
 	DaoArtistVoted []*DaoArtistVoted `json:"dao_artist_voted,omitempty" bson:"dao_artist_voted,omitempty"`
+	TotalReport    *int64            `json:"total_report,omitempty" bson:"total_report,omitempty"`
+	TotalVerify    *int64            `json:"total_verify,omitempty" bson:"total_verify,omitempty"`
 }
 
+func (m DaoArtist) Expired() bool {
+	return m.ExpiredAt.UTC().Unix() < time.Now().UTC().Unix()
+}
 func (m DaoArtist) TableName() string {
 	return "dao_artist"
 }

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -44,7 +45,7 @@ func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*en
 	}
 	tokenMap, err := u.GetTokensMap(tokenIds)
 
-	for id, _ := range activities {
+	for id := range activities {
 		if activities[id].UserAAddress != "" {
 			activities[id].UserA = userMap[activities[id].UserAAddress]
 		}
@@ -159,9 +160,21 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 		
 		for _, token := range tokens {
 			var minterAddress string
-			if token.MinterAddress != nil {
-				minterAddress = *token.MinterAddress
+			var amount int64
+			mintNftBtc, err := u.Repo.FindMintNftBtcByInscriptionID(token.TokenID)
+			if err != nil {
+				if !errors.Is(err, mongo.ErrNoDocuments) {
+					return errors.WithStack(err)
+				}
 			}
+			if mintNftBtc != nil {
+				minterAddress = mintNftBtc.OriginUserAddress
+				amount, err = strconv.ParseInt(mintNftBtc.EstFeeInfo["btc"].MintPrice, 10, 64)
+				if err != nil {
+					u.Logger.Error("JobCreateTokenMintActivityFromTokenUri.FailedParseMintPrice")
+				}
+			}
+
 			activity := entity.TokenActivity{
 				Type: entity.TokenMint,
 				Title: "Minted",
@@ -169,8 +182,9 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 				Time: token.CreatedAt,
 				InscriptionID: token.TokenID,
 				ProjectID: token.ProjectID,
+				Amount: amount,
 			}
-			err := u.Repo.InsertTokenActivity(&activity)
+			err = u.Repo.InsertTokenActivity(&activity)
 			if err != nil {
 				u.Logger.ErrorAny("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Error(err))
 			} else {

@@ -1,17 +1,19 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/gocolly/colly"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 )
 
 
-func (u Usecase) crawlInscribeWebsite( id string) (inscriptionInfo *entity.InscribeInfo, err error) {
+func (u Usecase) crawlInscribeWebsite(id string) (inscriptionInfo *entity.InscribeInfo, err error) {
 	defer func() {
 			if r := recover(); r != nil {
 					err = fmt.Errorf("was panic, id=%s recovered value: %v", id, r)
@@ -99,21 +101,25 @@ func (u Usecase) crawlInscribeWebsite( id string) (inscriptionInfo *entity.Inscr
 	}, nil
 }
 
-func (u Usecase) GetInscribeInfo( id string) (*entity.InscribeInfo, error) {
+func (u Usecase) GetInscribeInfo(id string) (*entity.InscribeInfo, error) {
+	u.Logger.LogAny("GetInscribeInfo.Start", zap.String("id", id))
 	inscribeInfo, err := u.Repo.GetInscribeInfo(id);
 	if err != nil {
 		// Failed to find inscribe info in database, try to crawl it from website
 		inscribeInfo, err = u.crawlInscribeWebsite(id)
 		if err != nil {
-			return nil, err
+			u.Logger.ErrorAny("GetInscribeInfo.ErrorCrawlInscribeWebsite", zap.Error(err))
+			return nil, errors.WithStack(err)
 		} else {
 			// If crawl successfully, create the inscribe info
 			err := u.Repo.CreateInscribeInfo(inscribeInfo)
 			if err != nil {
-				return nil, err
+				return nil, errors.WithStack(err)
 			}
 		}
 	}
+
+	u.Logger.LogAny("GetInscribeInfo.Success", zap.String("id", id))
 
 	return inscribeInfo, nil
 }

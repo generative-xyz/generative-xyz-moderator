@@ -32,7 +32,11 @@ func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 			}
 			req.Pagination = entity.GetPagination(r)
 			userWallet := muxVars[utils.SIGNED_WALLET_ADDRESS]
-			return h.Usecase.ListDAOArtist(ctx, userWallet, req)
+			resp, err := h.Usecase.ListDAOArtist(ctx, userWallet, req)
+			if err != nil {
+				return &entity.Pagination{Result: make([]*response.DaoArtist, 0)}, nil
+			}
+			return resp, nil
 		},
 	).ServeHTTP(w, r)
 }
@@ -42,13 +46,19 @@ func (h *httpDelivery) listDaoArtist(w http.ResponseWriter, r *http.Request) {
 // @Tags DAO Artist
 // @Accept json
 // @Produce json
+// @Param request body request.CreateDaoArtistRequest true "Create Dao Artist Request"
 // @Success 200
 // @Router /dao-artist [POST]
 // @Security ApiKeyAuth
 func (h *httpDelivery) createDaoArtist(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, muxVars map[string]string) (interface{}, error) {
-			return h.Usecase.CreateDAOArtist(ctx, muxVars[utils.SIGNED_WALLET_ADDRESS])
+			var reqBody request.CreateDaoArtistRequest
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+			return h.Usecase.CreateDAOArtist(ctx, muxVars[utils.SIGNED_WALLET_ADDRESS], &reqBody)
 		},
 	).ServeHTTP(w, r)
 }

@@ -172,7 +172,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	if filter.SortBy == "" {
 		filter.SortBy = "priceBTC"
 	}
-	
+
 	if len(filter.Ids) != 0 {
 		objectIDs, err := utils.StringsToObjects(filter.Ids)
 		if err == nil {
@@ -192,7 +192,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 
 	addNoneBuyItems := true
 	if filter.IsBuynow != nil {
-		if *filter.IsBuynow  == true {
+		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
 		}
 	}
@@ -202,16 +202,16 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	isFilterPrice := false
 	if filter.FromPrice != nil {
 		isFilterPrice = true
-		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}} )
+		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}})
 	}
-	
+
 	if filter.ToPrice != nil {
 		isFilterPrice = true
 		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$lte", *filter.ToPrice}}}})
 	}
 
 	if isFilterPrice {
-		dexBtcMatchAnd := bson.E{"$and",  priceFilter}
+		dexBtcMatchAnd := bson.E{"$and", priceFilter}
 		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
 		addNoneBuyItems = false
 	}
@@ -219,6 +219,43 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	f2 := bson.A{
 		bson.D{{"$match", f}},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner_object"},
+					{"let",
+						bson.D{
+							{"wallet_address_btc_taproot", "$wallet_address_btc_taproot"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"wallet_address_btc_taproot", bson.D{{"$ne", ""}, {"$exists", true}}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner_object"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+
+	
+		bson.D{	
 			{"$lookup",
 				bson.D{
 					{"from", "dex_btc_listing"},
@@ -332,6 +369,12 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"orderID", 1},
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
+					{"owner_addrress", 1},
+					{"owner_object.wallet_address", 1},
+					{"owner_object.wallet_address_btc_taproot", 1},
+					{"owner_object.avatar", 1},
+					{"owner_object.display_name", 1},
+					
 				},
 			},
 		},
@@ -471,12 +514,12 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			})
 		}
 	}
-	
+
 	if filter.RarityAttributes != nil && len(filter.RarityAttributes) > 0 {
 		traits := []string{}
 		values := []string{}
 		for _, attribute := range filter.RarityAttributes {
-			traits = append(traits, attribute.TraitType)	
+			traits = append(traits, attribute.TraitType)
 			for _, value := range attribute.Values {
 				values = append(values, value)
 			}
@@ -495,10 +538,8 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 			},
 		})
 
-	
 	}
-	
-	
+
 	return bson.M{
 		"$and": andFilters,
 	}
@@ -724,6 +765,7 @@ func (r Repository) SelectedTokenFieldsNew() bson.D {
 		{"minter_address", 1},
 		{"inscription_index", 1},
 		{"order_inscription_index", 1},
+		{"created_at", 1},
 	}
 	return f
 }
@@ -798,22 +840,30 @@ func (r Repository) UpdateTokenOnchainStatusByTokenId(tokenId string) error {
 	return err
 }
 
-func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
+func (r Repository) GetNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
-	f := bson.M{
-		"project_id_int":          bson.M{"$gt": 1000000},
-		"synced_inscription_info": bson.M{"$ne": true},
-	}
-	//f[utils.KEY_DELETED_AT] = nil
-	opts := options.Find().SetProjection(r.SelectedTokenFields()).SetLimit(100)
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
-	if err != nil {
-		return nil, err
+	aggregates := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"project_id_int", bson.D{{"$gt", 1000000}}},
+					{"synced_inscription_info", bson.D{{"$ne", true}}},
+				},
+			},
+		},
+		bson.D{{"$sample", bson.D{{"size", 100}}}},
+		bson.D{{"$project", r.SelectedTokenFieldsNew()}},
+		
 	}
 
-	if err = cursor.All(context.TODO(), &tokens); err != nil {
-		return nil, err
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return tokens, nil
