@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"log"
 	"math/big"
 	"os"
@@ -331,6 +332,29 @@ func (u Usecase) watchPendingDexBTCListing() error {
 						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
 						continue
 					}
+
+					// Insert time series data
+					go func(o entity.DexBTCListing, userCase Usecase) {
+						userCase.Logger.Info("DexVolumeInscription Insert to time series data %s", o.InscriptionID)
+						data := entity.DexVolumeInscription{
+							Amount:    o.Amount,
+							Timestamp: o.MatchAt,
+							Metadata: entity.DexVolumeInscriptionMetadata{
+								InscriptionId: o.InscriptionID,
+								MatchedTx:     o.MatchedTx,
+							},
+						}
+						err := userCase.Repo.InsertDexVolumeInscription(&data)
+						if err != nil {
+							userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+						}
+						order.IsTimeSeriesData = true
+						_, err = userCase.Repo.UpdateDexBTCListingTimeseriesData(&order)
+						if err != nil {
+							userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+						}
+					}(order, u)
+
 					// Discord Notify NEW SALE
 					buyerAddress := order.Buyer
 					go u.NotifyNewSale(order, buyerAddress)
