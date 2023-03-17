@@ -22,7 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -1574,11 +1573,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
-	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	//spew.Dump(os.Getenv("GCS_DOMAIN"))
 	groupIndex := strings.Index(zipLink, "btc-projects/")
 	strLen := len(zipLink)
 	zipLink = zipLink[groupIndex:strLen]
-	spew.Dump(zipLink)
+	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
@@ -2128,7 +2127,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
-		spew.Dump(token.TokenID, token.ParsedAttributes)
+		//spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
 			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)

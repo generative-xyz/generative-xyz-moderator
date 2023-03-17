@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -432,7 +431,7 @@ func (u Usecase) UpdateProposalState() error {
 
 				if proposal.ProposalID == "35751750717610809166312996604681477486540366891662940411672289868284123500445" {
 					test := helpers.ParseBigToFloat(vote.ForVotes)
-					spew.Dump(proposal.Vote)
+					//spew.Dump(proposal.Vote)
 					_ = test
 				}
 			}
