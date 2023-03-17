@@ -35,8 +35,8 @@ func (c *checkerUser) Start(ctx context.Context) {
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
-		if err := c.updateUser(ctx); err != nil {
-			logger.AtLog.Logger.Error("updateUser failed", zap.Error(err))
+		if err := c.updateUsers(ctx); err != nil {
+			logger.AtLog.Logger.Error("updateUsers failed", zap.Error(err))
 		}
 	}()
 
@@ -77,7 +77,7 @@ func (c *checkerUser) Stop() int {
 	return c.updated
 }
 
-func (c *checkerUser) updateUser(ctx context.Context) error {
+func (c *checkerUser) updateUsers(ctx context.Context) error {
 	count := 0
 	for user := range c.updateCh {
 		logger.AtLog.Infof("updating %s ... ", user.WalletAddress)
