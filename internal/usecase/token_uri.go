@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
@@ -1010,9 +1010,21 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 		u.Logger.Error(err)
 		return nil, err
 	}
+
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
 	if err != nil {
 		return nil, err
+	}
+
+	// update project index and max supply
+	index := project.MintingInfo.Index + 1
+	maxSupply := project.MaxSupply
+	if index > maxSupply {
+		maxSupply = index
+	}
+	err = u.Repo.UpdateProjectIndexAndMaxSupply(project.TokenID, maxSupply, index)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return pTokenUri, nil
