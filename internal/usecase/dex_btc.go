@@ -307,7 +307,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 							}
 						}
 					}
-					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts == len(psbtData.UnsignedTx.TxOut) {
+					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts >= len(psbtData.UnsignedTx.TxOut) {
 						isValidMatch = true
 					}
 				} else {
