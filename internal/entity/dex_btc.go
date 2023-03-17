@@ -37,11 +37,13 @@ type DexBTCListing struct {
 	CreatedVerifiedActivity  bool `bson:"created_verified_activity"`
 	CreatedCancelledActivity bool `bson:"created_cancelled_activity"`
 	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
+
+	IsTimeSeriesData bool `json:"is_time_series_data"`
 }
 
 type DexBtcListingWithProjectInfo struct {
 	DexBTCListing `bson:",inline"`
-	ProjectInfo []DexBtcProjectInfo `bson:"project_info"`
+	ProjectInfo   []DexBtcProjectInfo `bson:"project_info"`
 }
 
 type GetDexBtcListingWithProjectInfoReq struct {
