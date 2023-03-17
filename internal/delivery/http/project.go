@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -261,11 +262,14 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
-			if resp.IsHidden && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
-				daoProjectId, canCreateNewProposal := h.Usecase.CanCreateNewProposalProject(ctx, userAddress, project.ID)
-				resp.CanCreateProposal = canCreateNewProposal
-				if !resp.CanCreateProposal && daoProjectId != "" {
-					resp.Proposal, _ = h.Usecase.GetDAOProject(ctx, daoProjectId, userAddress)
+			if resp.IsReviewing && resp.IsHidden && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
+				daoProject, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, userAddress, project.ID)
+				resp.CanCreateProposal = !exists && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr)
+				if daoProject != nil {
+					proposal := &response.DaoProject{}
+					if err := copierInternal.Copy(proposal, daoProject); err == nil {
+						resp.Proposal = proposal
+					}
 				}
 			}
 			go h.Usecase.CreateViewProjectActivity(project.TokenID)
