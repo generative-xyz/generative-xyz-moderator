@@ -1025,9 +1025,9 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
+			tempETHAddress = address
 		}
 
-		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
 		if err == nil {
 			projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
