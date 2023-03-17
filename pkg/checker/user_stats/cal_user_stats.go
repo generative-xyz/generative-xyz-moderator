@@ -106,9 +106,9 @@ func (c *checkerUser) updateUsers(ctx context.Context) error {
 
 type CountProject struct {
 	WalletAddress   string `bson:"_id"`
-	CountCollection int64  `bson:"count_collection"`
-	CountMaxSupply  int64  `bson:"count_max_supply"`
-	CountMinted     int64  `bson:"count_minted"`
+	TotalCollection int64  `bson:"total_collection"`
+	TotalMint       int64  `bson:"total_mint"`
+	TotalMinted     int64  `bson:"total_minted"`
 }
 
 func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error {
@@ -124,13 +124,13 @@ func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error
 	group := bson.M{
 		"$group": bson.M{
 			"_id": "$creatorAddress",
-			"count_collection": bson.M{
+			"total_collection": bson.M{
 				"$sum": 1,
 			},
-			"count_max_supply": bson.M{
+			"total_mint": bson.M{
 				"$sum": "$maxSupply",
 			},
-			"count_minted": bson.M{
+			"total_minted": bson.M{
 				"$sum": "$index",
 			},
 		},
@@ -161,17 +161,17 @@ func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error
 			continue
 		}
 		needUpdate := false
-		if countProject.CountCollection != user.Stats.CollectionCreated {
+		if countProject.TotalCollection != user.Stats.CollectionCreated {
 			needUpdate = true
-			user.Stats.CollectionCreated = countProject.CountCollection
+			user.Stats.CollectionCreated = countProject.TotalCollection
 		}
-		if countProject.CountMaxSupply != user.Stats.TotalMaxSupply {
+		if countProject.TotalMint != user.Stats.TotalMint {
 			needUpdate = true
-			user.Stats.TotalMaxSupply = countProject.CountMaxSupply
+			user.Stats.TotalMint = countProject.TotalMint
 		}
-		if countProject.CountMinted != user.Stats.TotalMinted {
+		if countProject.TotalMinted != user.Stats.TotalMinted {
 			needUpdate = true
-			user.Stats.TotalMinted = countProject.CountMinted
+			user.Stats.TotalMinted = countProject.TotalMinted
 		}
 		if !needUpdate {
 			continue

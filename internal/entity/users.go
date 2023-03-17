@@ -32,7 +32,7 @@ type FilteArtist struct {
 
 type UserStats struct {
 	CollectionCreated int64 `bson:"collection_created" json:"collection_created"`
-	TotalMaxSupply    int64 `bson:"total_max_supply" json:"total_max_supply"`
+	TotalMint         int64 `bson:"total_mint" json:"total_mint"`
 	TotalMinted       int64 `bson:"total_minted" json:"total_minted"`
 
 	NftMinted    int64   `bson:"nft_minted" json:"nft_minted"`
