@@ -123,6 +123,22 @@ func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing)
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCListingTimeseriesData(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+	update := bson.M{
+		"$set": bson.M{
+			"is_time_series_data": model.IsTimeSeriesData,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCListingOrderConfirm(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
