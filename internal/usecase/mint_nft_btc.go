@@ -1776,7 +1776,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 		}
 	}
-	return errors.New("don't need refund for this")
+	return errors.New("don't need refund for this: " + uuid)
 
 }
 
