@@ -524,6 +524,10 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 
 func (h *httpDelivery) ListBuyAddress(w http.ResponseWriter, r *http.Request) {
 
-	list := h.Usecase.ListBuyAddress()
+	list, err := h.Usecase.ListBuyAddress()
+	if err != nil {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err, "")
+		return
+	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
 }
