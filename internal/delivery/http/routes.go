@@ -46,6 +46,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auth.HandleFunc("/nonce", h.generateMessage).Methods("POST")
 	auth.HandleFunc("/nonce/verify", h.verifyMessage).Methods("POST")
 
+	tokenActivities := api.PathPrefix("/token-activities").Subrouter()
+	tokenActivities.HandleFunc("", h.getTokenActivities).Methods("GET")
+
 	files := api.PathPrefix("/files").Subrouter()
 	files.HandleFunc("", h.UploadFile).Methods("POST")
 	files.HandleFunc("/minify", h.minifyFiles).Methods("POST")
@@ -58,7 +61,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//profile
 	profile := api.PathPrefix("/profile").Subrouter()
-	profile.Use(h.MiddleWare.UserToken)
+	profile.Use(h.MiddleWare.AuthorizationFunc)
 	profile.HandleFunc("/wallet/{walletAddress}", h.profileByWallet).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/nfts", h.TokensOfAProfile).Methods("GET")
 	profile.HandleFunc("/wallet/{walletAddress}/projects", h.getProjectsByWallet).Methods("GET")
@@ -74,6 +77,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	//project
 	project := api.PathPrefix("/project").Subrouter()
+	project.Use(h.MiddleWare.AuthorizationFunc)
 	project.HandleFunc("", h.getProjects).Methods("GET")
 	project.HandleFunc("", h.createProjects).Methods("POST")
 
@@ -131,6 +135,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
+	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
@@ -139,6 +144,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.ListingOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
+
+	// New Marketplace
+	collection := api.PathPrefix("/collections").Subrouter()
+	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
@@ -188,8 +197,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.getDetailMintNftBtc).Methods("GET")
 	mintNftBtcAuth.HandleFunc("/receive-address/{uuid}", h.cancelMintNftBt).Methods("DELETE")
 
-	// mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
-	// mintNftBtc.HandleFunc("/{uuid}", h.getDetailMintNftBtc).Methods("GET")
+	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
+	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -202,13 +211,15 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplaceBTC.HandleFunc("/collection-stats", h.btcMarketplaceCollectionStats).Methods("GET")
 
 	referral := api.PathPrefix("/referrals").Subrouter()
-	referral.Use(h.MiddleWare.AccessToken)
-	referral.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 	referral.HandleFunc("", h.getReferrals).Methods("GET")
+
+	referralAuth := api.PathPrefix("/referrals").Subrouter()
+	referralAuth.Use(h.MiddleWare.AccessToken)
+	referralAuth.HandleFunc("/{referrerID}", h.createReferral).Methods("POST")
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
-	//marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
@@ -228,8 +239,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
+	inscriptionDex.HandleFunc("/retrieve-orders", h.retrieveBTCListingOrdersInfo).Methods("POST")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
-	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("")
+	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
+	//buy with eth
+	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
+	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
+	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
+	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")
@@ -257,11 +274,35 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// Firebase FCM registration token management
 	fcm := api.PathPrefix("/fcm").Subrouter()
-	fcm.Use(h.MiddleWare.AuthorizeFunc)
+	fcm.Use(h.MiddleWare.AuthorizationFunc)
 	fcm.HandleFunc("/token", h.getFcmToken).Methods("GET")
 	fcm.HandleFunc("/token", h.createFcmToken).Methods("POST")
 	// For test, will remove
 	fcm.HandleFunc("/token/data", h.createFcmTestData).Methods("POST")
+
+	// DAO Project
+	daoProject := api.PathPrefix("/dao-project").Subrouter()
+	daoProject.Use(h.MiddleWare.AuthorizationFunc)
+	daoProject.HandleFunc("", h.listDaoProject).Methods("GET")
+	daoProject.HandleFunc("", h.createDaoProject).Methods("POST")
+	daoProject.HandleFunc("/{id}", h.getDaoProject).Methods("GET")
+	daoProject.HandleFunc("/{id}", h.voteDaoProject).Methods("PUT")
+	daoProject.HandleFunc("/me/projects-hidden", h.listYourProjectsIsHidden).Methods("GET")
+
+	// DAO Artist
+	daoArtist := api.PathPrefix("/dao-artist").Subrouter()
+	daoArtist.Use(h.MiddleWare.AuthorizationFunc)
+	daoArtist.HandleFunc("", h.listDaoArtist).Methods("GET")
+	daoArtist.HandleFunc("", h.createDaoArtist).Methods("POST")
+	daoArtist.HandleFunc("/{id}", h.getDaoArtist).Methods("GET")
+	daoArtist.HandleFunc("/{id}", h.voteDaoArtist).Methods("PUT")
+
+	//ordinal collections
+	orCollections := api.PathPrefix("/ordinal").Subrouter()
+	//orCollections.Use(h.MiddleWare.AuthorizeFunc)
+	orCollections.HandleFunc("/collections/template", h.getOrdinalTemplate).Methods("GET")
+	orCollections.HandleFunc("/collections", h.uploadOrdinalTemplate).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

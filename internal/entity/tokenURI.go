@@ -34,19 +34,21 @@ type TokenUriListingVolume struct {
 
 type FilterTokenUris struct {
 	BaseFilters
-	ContractAddress *string
-	OwnerAddr       *string
-	CreatorAddr     *string
-	GenNFTAddr      *string
-	Keyword         *string
-	Search          *string
-	CollectionIDs   []string
-	TokenIDs        []string
-	Attributes      []TokenUriAttrFilter
-	HasPrice        *bool
-	FromPrice       *int64
-	ToPrice         *int64
-	Ids             []string
+	ContractAddress  *string
+	OwnerAddr        *string
+	CreatorAddr      *string
+	GenNFTAddr       *string
+	Keyword          *string
+	Search           *string
+	CollectionIDs    []string
+	TokenIDs         []string
+	Attributes       []TokenUriAttrFilter
+	RarityAttributes []TokenUriAttrFilter
+	HasPrice         *bool
+	FromPrice        *int64
+	ToPrice          *int64
+	Ids              []string
+	IsBuynow         *bool
 }
 
 type TokenStats struct {
@@ -94,6 +96,9 @@ type TokenUri struct {
 	CreatedByCollectionInscription bool          `bson:"created_by_collection_inscription"`
 	Source                         string        `bson:"source" json:"source"`
 	NftTokenId                     string        `bson:"nftTokenId"`
+	InscribedBy                    string        `bson:"inscribedBy"`
+	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
+	CreatedMintActivity            bool          `bson:"created_mint_activity"`
 }
 
 type AggregateTokenUriTraits struct {
@@ -123,10 +128,20 @@ type TokenUriListingFilter struct {
 	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
 	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
 	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
+	PriceETH              string             `bson:"priceETH" json:"priceETH"`
 	Buyable               bool               `bson:"buyable" json:"buyable"`
 	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
+	OwnerAddr             bool               `bson:"ownerAddr" json:"ownerAddr"`
+	OwnerAddress          string        `bson:"owner_addrress" json:"owner_addrress"`  
+	Owner               struct { 
+		WalletAddress           string        `bson:"wallet_address" json:"walletAddress"`                         // eth wallet define user in platform by connect wallet and sign     // btc wallet artist receive royalty
+		WalletAddressBTCTaproot string        `bson:"wallet_address_btc_taproot" json:"walletAddressBtcTaproot"` // btc wallet receive minted nft
+		DisplayName             string        `bson:"display_name" json:"displayName"`
+		Avatar                  string        `bson:"avatar" json:"avatar"`
+	} `bson:"owner_object" json:"owner"`
 	Project               struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
+		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
 }
 

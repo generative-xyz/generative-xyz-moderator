@@ -40,7 +40,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 
 	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -111,6 +111,22 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 				r.Buyable = true
 				r.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				r.OrderID = listingInfo.UUID
+				r.SellVerified = listingInfo.Verified
+				if r.SellVerified {
+					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+					}
+					amountBTCRequired := uint64(listingInfo.Amount) + 1000
+					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+					// amountBTCRequired += btc.EstimateTxFee(3, 2, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+
+					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+					}
+					r.PriceETH = amountETH
+				}
 			}
 			dataResp = append(dataResp, &response.SearchResponse{ObjectType: "token", TokenUri: r})
 		}

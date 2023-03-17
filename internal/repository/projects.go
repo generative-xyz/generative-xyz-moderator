@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var ErrNoProjectsFound = errors.New("projects: no documents in result")
+
 func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{utils.KEY_UUID, projectID}})
@@ -31,7 +33,6 @@ func (r Repository) FindProject(projectID string) (*entity.Projects, error) {
 	return resp, nil
 }
 
-
 func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error) {
 	projects := []entity.ProjectsHaveMinted{}
 	f := bson.M{}
@@ -44,7 +45,6 @@ func (r Repository) FindProjectsHaveMinted() ([]entity.ProjectsHaveMinted, error
 		{"mintpriceeth", 1},
 		{"mintPrice", 1},
 		{"creatorAddrr", 1},
-		
 	})
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f, opts)
 	if err != nil {
@@ -70,6 +70,39 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) FindProjectByTokenIDCustomField(tokenID string, fields []string) (*entity.Projects, error) {
+	projectField := bson.D{
+		{"_id", 1},
+	}
+	for _, field := range fields {
+		projectField = append(projectField, bson.E{Key: field, Value: 1})
+	}
+
+	aggregates := bson.A{
+		bson.D{
+			{Key: "$project",
+				Value: projectField,
+			},
+		},
+		bson.D{{Key: "$match", Value: bson.D{{Key: "tokenid", Value: tokenID}}}},
+	}
+
+	cursor, err := r.DB.Collection(entity.Projects{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	projectList := []entity.Projects{}
+
+	if err = cursor.All((context.TODO()), &projectList); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(projectList) > 0 {
+		return &projectList[0], nil
+	}
+	return nil, errors.New("tokenid not found")
 }
 
 func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects, error) {
@@ -660,9 +693,27 @@ func (r Repository) ProjectGetListingVolume(projectID string) (uint64, error) {
 				bson.D{
 					{"matched", true},
 					{"cancelled", false},
+					{"buyer", bson.D{{"$exists", true}}},
 				},
 			},
 		},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"diffbuyer",
+						bson.D{
+							{"$ne",
+								bson.A{
+									"$buyer",
+									"$seller_address",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{{"$match", bson.D{{"diffbuyer", true}}}},
 		bson.D{
 			{"$lookup",
 				bson.D{
@@ -717,4 +768,120 @@ func (r Repository) ProjectGetListingVolume(projectID string) (uint64, error) {
 	}
 
 	return 0, nil
+}
+
+func (r Repository) ProjectGetMintVolume(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingVolume{}
+	pipeline := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"isMinted", true},
+					{"projectID", projectID},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"Amount", bson.D{{"$sum", "$project_mint_price"}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		return uint64(result[0].TotalAmount), nil
+	}
+
+	return 0, nil
+}
+
+func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
+	result := []entity.TokenUriListingVolume{}
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{{"isSold", true}}}},
+		bson.D{{"$addFields", bson.D{{"price", bson.D{{"$toDouble", "$amount"}}}}}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscriptionID"},
+					{"foreignField", "token_id"},
+					{"let", bson.D{{"id", "$_id"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{{"$match", bson.D{{"project_id", projectID}}}},
+						},
+					},
+					{"as", "collection_id"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$collection_id"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", ""},
+					{"Amount", bson.D{{"$sum", "$price"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 0},
+					{"totalAmount", "$Amount"},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.MarketplaceBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	if len(result) > 0 {
+		return uint64(result[0].TotalAmount), nil
+	}
+
+	return 0, nil
+}
+
+func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
+	f := bson.D{
+		{Key: "project_id", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"maxSupply": maxSupply,
+			"index": index,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

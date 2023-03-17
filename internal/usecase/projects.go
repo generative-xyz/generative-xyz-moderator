@@ -22,13 +22,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 
 	"go.uber.org/zap"
 
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -36,6 +36,7 @@ import (
 	"rederinghub.io/utils/contracts/generative_project_contract"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 )
 
@@ -88,7 +89,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.MintPrice = mPrice.String()
 	pe.ReserveMintPrice = mReserveMintPrice.String()
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
-	pe.IsHidden = false
+	pe.IsHidden = true
+	if req.IsHidden != nil {
+		pe.IsHidden = *req.IsHidden
+	}
 	pe.Status = true
 	pe.IsSynced = true
 	nftTokenURI := make(map[string]interface{})
@@ -200,11 +204,28 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			//return nil, err
 		}
 	} else {
-		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr)
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project is created][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), fmt.Sprintf("TraceID: %s", pe.TraceID), fmt.Sprintf("Project %s has been created by user %s", helpers.CreateProjectLink(pe.TokenID, pe.Name), helpers.CreateProfileLink(pe.CreatorAddrr, pe.CreatorName)))
+
+	if pe.IsHidden && pe.IsSynced {
+		ids, err := u.CreateDAOProject(context.Background(), &request.CreateDaoProjectRequest{
+			ProjectIds: []string{pe.ID.Hex()},
+			CreatedBy:  pe.CreatorAddrr,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("CreateDAOProject failed by", zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("CreateDAOProject success",
+				zap.String("project_id", pe.ID.Hex()),
+				zap.Strings("ids", ids),
+			)
+		}
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true, ids[0])
+		}
+	}
 
 	return pe, nil
 }
@@ -585,8 +606,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-
-	return userAddr[:4] + "..." + userAddr[len(userAddr)-4:]
+	start := len(userAddr) - 6
+	if start < 0 {
+		start = 0
+	}
+	return userAddr[start:]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -635,6 +659,11 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
+		if !*req.IsHidden {
+			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
+				return nil, errors.New("Collection is reviewing")
+			}
+		}
 		p.IsHidden = *req.IsHidden
 	}
 
@@ -643,7 +672,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	p.Reservers = req.Reservers
-	p.ReserveMintLimit = *req.ReserveMintLimit
+	if req.ReserveMintLimit != nil {
+		p.ReserveMintLimit = *req.ReserveMintLimit
+	}
 
 	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
 		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
@@ -703,6 +734,10 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		}
 	}
 
+	if req.Index != nil {
+		p.MintingInfo.Index = *req.Index
+	}
+
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
 		u.Logger.Error("updated", err.Error(), err)
@@ -720,14 +755,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
-	whitelist := make(map[string]bool)
-	whitelist["0xe23fcb129d6ea1b847202b14a56f957e5a464f64"] = true // andy
-	whitelist["0x668ea0470396138acd0b9ccf6fbdb8a845b717b0"] = true // thaibao
-	whitelist["0xe55eade1b17bba28a80a71633af8c15dc2d556a5"] = true // thaibao
-	whitelist["0x9ef2cf140a51f87d266121409304399f0d93820f"] = true // ken
-	whitelist["0xe10db08ab370eb3173ad8b0396a63f3af010364d"] = true // della
-	whitelist["0xd77f54424cc2bd2a7315b1018e53548f62f690c0"] = true // anne
-	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) && !whitelist[strings.ToLower(*req.CreatetorAddress)] {
+	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
 		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
@@ -974,59 +1002,64 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
 	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
+
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
-		// p, err := u.UpdateProjectFromChain(req.ContractAddress, req.ProjectID)
-		// if err != nil {
-		// 	u.Logger.Error("u.Repo.FindProjectBy", err.Error(), err)
-		// 	return nil, err
-		// }
-		// return p, nil
 		return nil, errors.New("project is not found")
 	}
+	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	return c, nil
+}
 
-	/*
-		mintPriceInt, err := strconv.ParseInt(c.MintPrice, 10, 64)
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("strconv.ParseInt", err))
-			return nil, err
-		}
-		ethPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
-		if err != nil {
-			u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-			return nil, err
-		}
-		c.MintPriceEth = ethPrice
+// only using for project detail api, support est fee:
+func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
+	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	c, err := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
-		// networkFeeInt, _ := strconv.ParseInt(c.NetworkFee, 10, 64) // now not use anymore
+	if err != nil {
+		return nil, err
+	}
 
-		networkFeeInt := int64(utils.FEE_BTC_SEND_NFT)
+	// fmt.Println("c.MintedTime", c)
 
-		if c.MaxFileSize > 0 {
-			calNetworkFee := u.networkFeeBySize(int64(c.MaxFileSize / 4))
-			if calNetworkFee > 0 {
-				networkFeeInt = calNetworkFee
-				c.NetworkFee = fmt.Sprintf("%d", networkFeeInt+utils.FEE_BTC_SEND_AGV)
-
-			}
-		}
-
-		if networkFeeInt > 0 {
-			ethNetworkFeePrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(networkFeeInt)/1e8))
-			if err != nil {
-				u.Logger.ErrorAny("GetProjectDetail", zap.Any("convertBTCToETH", err))
-				return nil, err
-			}
-
-			// add fee send master:
-			mintPriceEthBigint, _ := big.NewInt(0).SetString(ethNetworkFeePrice, 10)
-			feeSendMaster := big.NewInt(utils.FEE_ETH_SEND_MASTER * 1e18)
-			mintPriceEthBigint = mintPriceEthBigint.Add(mintPriceEthBigint, feeSendMaster)
-			ethNetworkFeePrice = mintPriceEthBigint.String()
-
-			c.NetworkFeeEth = ethNetworkFeePrice
-		} */
-	// cal fee info:
+	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
+		return nil, errors.New("project is not found")
+	}
 	if c.MintingInfo.Index < c.MaxSupply {
+
+		if len(req.UserAddressToCheckDiscount) > 0 {
+			if len(c.Reservers) > 0 {
+				for _, address := range c.Reservers {
+					if strings.EqualFold(address, req.UserAddressToCheckDiscount) {
+
+						// get list item mint:
+						countMinted := 0
+						mintReadyList, _ := u.Repo.GetLimitWhiteList(req.UserAddressToCheckDiscount, req.ProjectID)
+
+						for _, mItem := range mintReadyList {
+
+							if mItem.IsConfirm {
+								if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+									countMinted += 1
+								}
+
+							} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+								if time.Since(mItem.ExpiredAt) < 1*time.Second {
+									countMinted += mItem.Quantity
+								}
+							}
+						}
+						maxSlot := c.ReserveMintLimit - countMinted
+
+						if maxSlot <= 0 {
+							c.Reservers = []string{}
+						}
+
+						break
+					}
+				}
+
+			}
+		}
 
 		mintPrice, ok := big.NewInt(0).SetString(c.MintPrice, 10)
 		if !ok {
@@ -1034,7 +1067,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 		}
 
 		// cal fee:
-		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE)
+		feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), c.MaxFileSize, entity.DEFAULT_FEE_RATE, 0, 0)
 		if err != nil {
 			u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
 			return nil, err
@@ -1068,7 +1101,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 	}()
 
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	// u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
@@ -1542,11 +1575,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
-	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	//spew.Dump(os.Getenv("GCS_DOMAIN"))
 	groupIndex := strings.Index(zipLink, "btc-projects/")
 	strLen := len(zipLink)
 	zipLink = zipLink[groupIndex:strLen]
-	spew.Dump(zipLink)
+	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
@@ -1599,7 +1632,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
-	pe.IsHidden = false
+	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
 
@@ -1613,6 +1646,19 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+		ProjectIds: []string{pe.ID.Hex()},
+		CreatedBy:  pe.CreatorAddrr,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", pe.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
+	}
+
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
@@ -1623,7 +1669,9 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
 			return
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, owner)
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
+		}
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
@@ -1668,7 +1716,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	mPrice := helpers.StringToBTCAmount("0")
 
-	thumbnail := fmt.Sprintf("https://ordinals-explorer.generative.xyz/content/%s", meta.InscriptionIcon)
+	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
 	pe.MintPrice = mPrice.String()
@@ -1724,14 +1772,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 		maxSupply = 0
 	}
 	pe.MaxSupply = maxSupply
-	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
-	var index int64
-	if err != nil {
-		index = 0
-	} else {
-		index = *countIndex
-	}
-	pe.MintingInfo.Index = index
+	pe.MintingInfo.Index = 0
 
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.UnverifiedCategoryID}
@@ -1850,6 +1891,9 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 	}
 
 	available := data.Earning - wdraw
+	if available < 0 {
+		available = 0
+	}
 	tmp := Volume{
 		ProjectID: data.ID.ProjectID,
 		PayType:   data.ID.Paytype,
@@ -1860,6 +1904,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Status:    status,
 	}
 
+	logger.AtLog.Logger.Info("ProjectVolume ...", zap.String("projectID", projectID), zap.Any("volume", tmp), zap.Any("AggregateWithDrawByUser", w), zap.Any("latestWd", latestWd))
 	return &tmp, nil
 }
 
@@ -1882,9 +1927,11 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			creator); err != nil {
 			return err
 		}
+		isFalse := false
 		reqBtcProject := structure.CreateBtcProjectReq{
 			Name:            nft.Name,
 			MaxSupply:       1,
+			Index:           1,
 			CreatorName:     creator.DisplayName,
 			CreatorAddrr:    creator.WalletAddress,
 			CreatorAddrrBTC: creator.WalletAddressBTC,
@@ -1895,6 +1942,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			OrdinalsTx:      item.OrdinalsTx,
 			Thumbnail:       item.FileURI,
 			InscribedBy:     item.UserWalletAddress,
+			IsHidden:        &isFalse,
 		}
 		if nft.MetadataString != nil && *nft.MetadataString != "" {
 			metadata := &nfts.MoralisTokenMetadata{}
@@ -1908,19 +1956,20 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 			return err
 		}
 	} else {
-		project.MaxSupply += 1
-		project.MintingInfo.Index += 1
-		projectId := project.ID.Hex()
+		maxSupply := project.MaxSupply + 1
+		index := project.MintingInfo.Index + 1
 		project, err = u.UpdateBTCProject(structure.UpdateBTCProjectReq{
-			ProjectID: &projectId,
-			MaxSupply: &project.MaxSupply,
+			CreatetorAddress: &project.CreatorAddrr,
+			ProjectID:        &project.TokenID,
+			MaxSupply:        &maxSupply,
+			Index:            &index,
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId)
+	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
@@ -1990,18 +2039,21 @@ func (u Usecase) ProjectTokenTraits(projectID string) ([]structure.TokenTraits, 
 func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.TokenUriMetadata, error) {
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
+		logger.AtLog.Errorf("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	totalImages := len(p.Images)
 	totalProcessingImages := len(p.ProcessingImages)
 	if totalImages == 0 && totalProcessingImages == 0 {
-		return nil, errors.New("Project doesn's have any files")
+		err = errors.New("Project doesn's have any files")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
 	}
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2014,19 +2066,20 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	content, err := u.GCS.ReadFile(uploaded.Name)
 	if err != nil {
-		u.Logger.Error("u.GCS.ReadFileFromBucket", err.Error(), err)
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
 	data := []entity.TokenTraits{}
 	err = json.Unmarshal(content, &data)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2038,6 +2091,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	err = u.Repo.CreateTokenUriMetadata(h)
 	if err != nil {
+		logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 		return nil, err
 	}
 
@@ -2045,18 +2099,21 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		tokenID := item.ID
 		token, err := u.Repo.FindTokenByTokenID(tokenID)
 		if err != nil {
+			err = fmt.Errorf("token %s was not found: %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		if token.ProjectID != p.TokenID {
-			err = errors.New("token is not belong to this project")
+			err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 
 		attrs := []entity.TokenUriAttr{}
 		attrStrs := []entity.TokenUriAttrStr{}
 
-		for _, itemAttr := range item.Atrributes {
+		for _, itemAttr := range item.Attributes {
 			attr := entity.TokenUriAttr{
 				TraitType: itemAttr.TraitType,
 				Value:     itemAttr.Value,
@@ -2074,8 +2131,11 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
+		//spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
+			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
+			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
 			return nil, err
 		}
 	}

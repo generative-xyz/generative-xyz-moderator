@@ -189,6 +189,30 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 				resp.Buyable = true
 				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				resp.OrderID = listingInfo.UUID
+				resp.SellVerified = listingInfo.Verified
+				if resp.SellVerified {
+					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+					}
+					// outLen := 0
+					// psbt, err := btc.ParsePSBTFromBase64(listingInfo.RawPSBT)
+					// if err != nil {
+					// 	h.Logger.Error("GenBuyETHOrder ParsePSBTFromBase64", listingInfo.ID, err)
+					// } else {
+					// 	outLen = len(psbt.UnsignedTx.TxOut)
+					// }
+					// amountBTCFee := btc.EstimateTxFee(uint(len(listingInfo.Inputs)+3), uint(outLen+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+					amountBTCRequired := uint64(listingInfo.Amount) + 1000
+					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+					// amountBTCRequired += amountBTCFee
+
+					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+					if err != nil {
+						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+					}
+					resp.PriceETH = amountETH
+				}
 			}
 		}
 	}
@@ -575,7 +599,23 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 		return nil, err
 	}
 	newList := []entity.TokenUriListingFilter{}
+	btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
+	if err != nil {
+		h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+	}
 	for _, item := range pag.Result.([]entity.TokenUriListingFilter) {
+
+		amountBTCRequired := uint64(item.Price) + 1000
+		amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
+		// amountBTCRequired += btc.EstimateTxFee(4, 3, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
+
+		amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
+		if err != nil {
+			h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+		}
+
+		item.PriceETH = amountETH
+
 		if strings.HasSuffix(item.AnimationURL, ".html") {
 			client := http.Client{
 				CheckRedirect: func(r *http.Request, via []*http.Request) error {

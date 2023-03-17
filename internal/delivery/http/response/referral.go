@@ -7,6 +7,7 @@ type ReferralResp struct {
 	Referree   ProfileResponse `json:"referree"`
 	Referrer   ProfileResponse `json:"referrer"`
 	ReferreeVolumn   ReferralVolumnResp	 `json:"referreeVolumn"`
+	Status   int	 `json:"status"`
 }
 
 type ReferralVolumnResp struct {

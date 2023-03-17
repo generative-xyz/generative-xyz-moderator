@@ -72,6 +72,7 @@ type WalletInscriptionInfo struct {
 	InscriptionID string `json:"inscription_id"`
 	Offset        int64  `json:"offset"`
 	Number        int    `json:"number"`
+	TokenNumber   int    `json:"token_number"`
 	ContentType   string `json:"content_type"`
 	ProjectID     string `json:"project_id"`
 	ProjectName   string `json:"project_name"`
@@ -82,6 +83,7 @@ type WalletInscriptionInfo struct {
 	SellVerified bool   `json:"sell_verified"`
 	Buyable      bool   `json:"buyable"`
 	PriceBTC     string `json:"price_btc"`
+	PriceETH     string `json:"price_eth"`
 	OrderID      string `json:"order_id"`
 	Cancelling   bool   `json:"cancelling"`
 }

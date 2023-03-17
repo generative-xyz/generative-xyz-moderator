@@ -71,6 +71,9 @@ type ProjectResp struct {
 	BtcFloorPrice             uint64           `json:"btcFloorPrice"`
 	ReserveMintPrice          string           `json:"reserveMintPrice"`
 	ReserveMintLimit          int              `json:"reserveMintLimit"`
+	IsReviewing               bool             `json:"isReviewing"`
+	CanCreateProposal         bool             `json:"canCreateProposal"`
+	Proposal                  *DaoProject      `json:"proposal"`
 }
 
 type ReportProject struct {
@@ -92,7 +95,9 @@ type NftMintingDetail struct {
 }
 
 type ProjectMarketplaceData struct {
-	Listed     uint64 `json:"listed"`
-	FloorPrice uint64 `json:"floor_price"`
-	Volume     uint64 `json:"volume"`
+	Listed      uint64 `json:"listed"`
+	FloorPrice  uint64 `json:"floor_price"`
+	TotalVolume uint64 `json:"volume"`
+	MintVolume  uint64 `json:"mint_volume"`
+	CEXVolume   uint64 `json:"cex_volume"`
 }

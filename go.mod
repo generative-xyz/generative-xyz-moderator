@@ -25,6 +25,7 @@ require (
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/gocolly/colly v1.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -33,7 +34,9 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/joho/godotenv v1.5.1
 	github.com/llgcode/draw2d v0.0.0-20210904075650-80aa0a2a901d
+	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/pkg/errors v0.9.1
+	github.com/redis/go-redis/v9 v9.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/slack-go/slack v0.12.1
 	github.com/stretchr/testify v1.8.2
@@ -47,10 +50,12 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
+	golang.org/x/oauth2 v0.5.0
 	google.golang.org/api v0.111.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.48.0
 	gopkg.in/ezzarghili/recaptcha-go.v4 v4.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
+	gopkg.in/src-d/go-git.v4 v4.13.1
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.5
 )
@@ -89,6 +94,7 @@ require (
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
@@ -114,6 +120,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -140,6 +147,7 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
+	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
@@ -157,7 +165,6 @@ require (
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
-	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect

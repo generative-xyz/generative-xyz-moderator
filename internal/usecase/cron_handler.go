@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -432,7 +431,7 @@ func (u Usecase) UpdateProposalState() error {
 
 				if proposal.ProposalID == "35751750717610809166312996604681477486540366891662940411672289868284123500445" {
 					test := helpers.ParseBigToFloat(vote.ForVotes)
-					spew.Dump(proposal.Vote)
+					//spew.Dump(proposal.Vote)
 					_ = test
 				}
 			}
@@ -614,7 +613,7 @@ func (u Usecase) SyncProjectsStats() error {
 }
 
 func (u Usecase) JobSyncTokenInscribeIndex() error {
-	notSyncedTokens, err := u.Repo.GetAllNotSyncInscriptionIndexToken()
+	notSyncedTokens, err := u.Repo.GetNotSyncInscriptionIndexToken()
 	if err != nil {
 		return err
 	}
@@ -623,9 +622,10 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 		processed++
 		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
-			u.Logger.Error("FailedToGetInscribeInfo", zap.String("tokenID", token.TokenID), zap.Error(err))
+			u.Logger.ErrorAny("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
 			continue
 		}
+		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id",  token.TokenID))
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
 		if token.OwnerAddr != inscribeInfo.Address {

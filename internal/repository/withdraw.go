@@ -50,6 +50,10 @@ func (r Repository) AggregateWithDrawByUser(filter *entity.FilterWithdraw) ( []e
 		f = append(f, bson.M{"payType": *filter.PaymentType})
 	}
 	
+	if filter.WithdrawType != nil && *filter.WithdrawType != "" {
+		f = append(f, bson.M{"withdrawType": *filter.WithdrawType})
+	}
+	
 	if filter.WalletAddress != nil && *filter.WalletAddress != "" {
 		f = append(f, bson.M{"walletAddress": *filter.WalletAddress})
 	}

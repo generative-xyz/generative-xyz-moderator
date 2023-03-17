@@ -26,6 +26,8 @@ type MintingInscription struct {
 	ProjectImage  string     `json:"projectImage"`
 	ProjectID     string     `json:"projectID"`
 	ProjectName   string     `json:"projectName"`
+	ArtistName    string     `json:"artist_name"`
+	ArtistID      string     `json:"artist_id"`
 	InscriptionID string     `json:"inscriptionID"`
 
 	ReceiveAddress string `json:"receiveAddress"`

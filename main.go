@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
+	"rederinghub.io/utils/redisv9"
 
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
@@ -98,6 +99,7 @@ func main() {
 func startServer() {
 	log.Println("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
+	redisV9 := redisv9.NewClient(conf.Redis)
 	r := mux.NewRouter()
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
@@ -146,6 +148,7 @@ func startServer() {
 		OrdService:          ord,
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
+		RedisV9:             redisV9,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -172,9 +175,6 @@ func startServer() {
 		return
 	}
 
-	uc.MigrateFromCSV()
-	return
-
 	servers := make(map[string]delivery.AddedServer)
 
 	// api fixed run:
@@ -189,7 +189,6 @@ func startServer() {
 		Server:  ph,
 		Enabled: conf.StartPubsub,
 	}
-		
 
 	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
@@ -281,7 +280,6 @@ func startServer() {
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
 	signal.Notify(c, os.Interrupt)
-
 
 	// Run our server in a goroutine so that it doesn't block.
 	for name, server := range servers {
