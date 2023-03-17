@@ -628,7 +628,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
-							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
 							continue
 						}
 						if respondData.SplitTxRaw != "" {
@@ -638,7 +638,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 								log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 								continue
 							}
-							time.Sleep(1 * time.Second)
+							time.Sleep(5 * time.Second)
 						}
 						err = btc.SendTxBlockStream(respondData.TxHex)
 						if err != nil {
