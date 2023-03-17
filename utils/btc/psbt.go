@@ -888,6 +888,8 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("CreatePSBTToBuyInscriptionMultiViaAPI payload", string(json_data))
 	resp, err := http.Post(endpoint+"/api/createtxbuymulti", "application/json",
 		bytes.NewBuffer(json_data))
 
@@ -895,7 +897,6 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 		return nil, err
 	}
 
-	log.Println("CreatePSBTToBuyInscriptionMultiViaAPI payload", string(json_data))
 	var res CreatePSBTToBuyInscriptionRespond
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
