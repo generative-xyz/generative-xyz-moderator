@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -12,11 +11,11 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
@@ -936,7 +935,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 	}
 	u.Logger.Info("uploaded", uploaded)
 	thumb := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-	spew.Dump(thumb)
+	//spew.Dump(thumb)
 	token.Thumbnail = thumb
 
 	updated, err := u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, token.TokenID, token)
@@ -1010,9 +1009,21 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 		u.Logger.Error(err)
 		return nil, err
 	}
+
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
 	if err != nil {
 		return nil, err
+	}
+
+	// update project index and max supply
+	index := project.MintingInfo.Index + 1
+	maxSupply := project.MaxSupply
+	if index > maxSupply {
+		maxSupply = index
+	}
+	err = u.Repo.UpdateProjectIndexAndMaxSupply(project.TokenID, maxSupply, index)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return pTokenUri, nil
@@ -1042,7 +1053,7 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 	}
 
 	link := fmt.Sprintf("%s/%s/%s", "https://storage.googleapis.com", os.Getenv("GCS_BUCKET"), uploaded.Name)
-	spew.Dump(link)
+	//spew.Dump(link)
 	return &link, nil
 
 }
