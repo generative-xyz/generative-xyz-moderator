@@ -1560,9 +1560,9 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 		minedItems++
 	}
 
-	// if not enough need-to-refund item then wait or refund&fund ...
-	if !(needRefundItems == mintItem.Quantity-1) {
-		if minedItems+needRefundItems == mintItem.Quantity-1 {
+	// if !(needRefundItems == mintItem.Quantity-1)
+	{
+		if minedItems+needRefundItems == mintItem.Quantity {
 			// refund + fund now:
 			// code this function send+refund vs 1 tx.
 			if mintItem.PayType == utils.NETWORK_BTC {
