@@ -840,22 +840,30 @@ func (r Repository) UpdateTokenOnchainStatusByTokenId(tokenId string) error {
 	return err
 }
 
-func (r Repository) GetAllNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
+func (r Repository) GetNotSyncInscriptionIndexToken() ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}
 
-	f := bson.M{
-		"project_id_int":          bson.M{"$gt": 1000000},
-		"synced_inscription_info": bson.M{"$ne": true},
-	}
-	//f[utils.KEY_DELETED_AT] = nil
-	opts := options.Find().SetProjection(r.SelectedTokenFields()).SetLimit(100)
-	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f, opts)
-	if err != nil {
-		return nil, err
+	aggregates := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"project_id_int", bson.D{{"$gt", 1000000}}},
+					{"synced_inscription_info", bson.D{{"$ne", true}}},
+				},
+			},
+		},
+		bson.D{{"$sample", bson.D{{"size", 100}}}},
+		bson.D{{"$project", r.SelectedTokenFieldsNew()}},
+		
 	}
 
-	if err = cursor.All(context.TODO(), &tokens); err != nil {
-		return nil, err
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return tokens, nil
