@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"log"
 	"math/big"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
@@ -428,6 +429,33 @@ func (u Usecase) watchPendingDexBTCListing() error {
 
 // 	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
 // }
+
+// list address by:
+func (u Usecase) ListBuyAddress() interface{} {
+
+	type AddressObject struct {
+		Uuid, Address string
+	}
+
+	var listAddrssObject []AddressObject
+
+	ethClient := eth.NewClient(nil)
+
+	listItem, _ := u.Repo.ListAllDexBTCBuyETH()
+	for _, v := range listItem {
+
+		_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(v.ETHKey)
+		if err != nil {
+			continue
+		}
+
+		listAddrssObject = append(listAddrssObject, AddressObject{
+			Uuid:    v.UUID,
+			Address: ethAddress,
+		})
+	}
+	return listAddrssObject
+}
 
 func (u Usecase) watchPendingDexBTCBuyETH() error {
 	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding, entity.StatusDEXBuy_Bought, entity.StatusDEXBuy_SendingMaster})
@@ -983,13 +1011,13 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		}
 
 		var privKey, address string
-		if !isEstimate {
-			privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
-			if err != nil {
-				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
-				return "", "", "", 0, "", "", []string{}, false, err
-			}
+		// if !isEstimate {
+		privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
+		if err != nil {
+			u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
+			return "", "", "", 0, "", "", []string{}, false, err
 		}
+		// }
 
 		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
@@ -1016,6 +1044,8 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionID = order.InscriptionID
 		newOrder.AmountBTC = order.Amount
+
+		fmt.Println("newOrder UUID: ", newOrder.UUID)
 
 		expiredAt := time.Now().Add(1 * time.Hour).Unix()
 		if !isEstimate {
