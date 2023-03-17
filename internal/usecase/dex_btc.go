@@ -604,6 +604,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 
 				if newStatus != order.Status {
+					log.Println("watchPendingDexBTCBuyETH update buy multi-status", order.ID, newStatus, err)
 					if newStatus == entity.StatusDEXBuy_Buying {
 						address := u.Config.DexBTCWalletAddress
 
