@@ -539,7 +539,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 		case entity.StatusDEXBuy_ReceivedFund:
 			// send tx buy update status to StatusDEXBuy_Buying
 			//TODO: 2077 remove this in the future
-			if len(order.OrderList) == 0 {
+			if len(order.SellOrderList) == 0 {
 				listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
 				if err != nil {
 					log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
@@ -627,7 +627,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 
 				amountBTCFee := uint64(0)
 				amountBTC := uint64(0)
-				for _, listingOrderID := range order.OrderList {
+				for _, listingOrderID := range order.SellOrderList {
 					listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 					if err != nil {
 						log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, listingOrderID, err)
@@ -723,7 +723,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						if err != nil {
 							log.Println("watchPendingDexBTCBuyETH CheckTxfromQuickNode split", order.ID, order.SplitTx, err)
 							//TODO: 2077 remove this in the future
-							if len(order.OrderList) == 0 {
+							if len(order.SellOrderList) == 0 {
 								listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
 								if err != nil {
 									log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, order.OrderID, err)
@@ -748,7 +748,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 								}
 							} else {
 								newStatus := order.Status
-								for _, listingOrderID := range order.OrderList {
+								for _, listingOrderID := range order.SellOrderList {
 									listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 									if err != nil {
 										log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, listingOrderID, err)
@@ -804,7 +804,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 			} else {
 				//TODO: 2077 remove this in the future
-				if len(order.OrderList) == 0 {
+				if len(order.SellOrderList) == 0 {
 					listingOrder, err := u.Repo.GetDexBTCListingOrderByID(order.OrderID)
 					if err != nil {
 						log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, err)
@@ -847,7 +847,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					}
 				} else {
 					newStatus := order.Status
-					for _, listingOrderID := range order.OrderList {
+					for _, listingOrderID := range order.SellOrderList {
 						listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 						if err != nil {
 							log.Println("watchPendingDexBTCBuyETH GetDexBTCListingOrderByID", order.ID, listingOrderID, err)
@@ -1164,7 +1164,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ETHKey = privKey
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionList = inscriptionList
-		newOrder.OrderList = orderListFinal
+		newOrder.SellOrderList = orderListFinal
 
 		newOrder.AmountBTC = totalAmountBtcSum
 
