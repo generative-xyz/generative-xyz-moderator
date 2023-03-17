@@ -879,7 +879,7 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 	if err != nil {
 		return nil, err
 	}
-
+	//TODO: phuong/hiennguyen replace this api
 	resp, err := http.Post(endpoint+"/api/createtxbuy", "application/json",
 		bytes.NewBuffer(json_data))
 
