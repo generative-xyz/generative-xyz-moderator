@@ -760,7 +760,7 @@ type CreatePSBTToBuyInscriptionRequest struct {
 	UTXOs    []UTXOType `json:"utxos"`
 }
 type CreatePSBTToBuyInscriptionMultiRequest struct {
-	BuyReqInfos []BuyReqInfo `json:"buyReqInfo"`
+	BuyReqInfos []BuyReqInfo `json:"buyReqInfos"`
 	// Psbt     []string   `json:"sellerSignedPsbtB64"`
 	// Receiver string     `json:"receiverInscriptionAddress"`
 	// Price    uint64     `json:"price"`
