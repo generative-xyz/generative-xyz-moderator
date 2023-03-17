@@ -1019,13 +1019,13 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		}
 
 		var privKey, address string
-		// if !isEstimate {
-		privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
-		if err != nil {
-			u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
-			return "", "", "", 0, "", "", []string{}, false, err
+		if !isEstimate {
+			privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
+			if err != nil {
+				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
+				return "", "", "", 0, "", "", []string{}, false, err
+			}
 		}
-		// }
 
 		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
