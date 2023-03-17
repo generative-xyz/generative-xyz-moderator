@@ -759,6 +759,13 @@ type CreatePSBTToBuyInscriptionRequest struct {
 	FeeRate  uint64     `json:"feeRatePerByte"`
 	UTXOs    []UTXOType `json:"utxos"`
 }
+type CreatePSBTToBuyInscriptionMultiRequest struct {
+	Psbt     []string   `json:"sellerSignedPsbtB64"`
+	Receiver string     `json:"receiverInscriptionAddress"`
+	Price    uint64     `json:"price"`
+	FeeRate  uint64     `json:"feeRatePerByte"`
+	UTXOs    []UTXOType `json:"utxos"`
+}
 
 type CreatePSBTToBuyInscriptionRespond struct {
 	TxID          string     `json:"txID"`
@@ -842,4 +849,58 @@ func SendTxBlockStream(txraw string) error {
 		return errors.New(bodyStr)
 	}
 	return nil
+}
+
+func CreatePSBTToBuyInscriptionMultiViaAPI(
+	endpoint string,
+	address string,
+	sellerSignedPsbtB64 []string,
+	receiverInscriptionAddress string,
+	price uint64,
+	utxos []UTXOType,
+	feeRatePerByte uint64,
+	maxFee uint64,
+) (*CreatePSBTToBuyInscriptionRespond, error) {
+	_, spendableUTXOs, err := FilterPendingUTXOs(utxos, address)
+	if err != nil {
+		return nil, err
+	}
+
+	data := CreatePSBTToBuyInscriptionMultiRequest{
+		UTXOs:    spendableUTXOs,
+		Psbt:     sellerSignedPsbtB64,
+		Receiver: receiverInscriptionAddress,
+		Price:    price,
+		FeeRate:  feeRatePerByte,
+	}
+
+	json_data, err := json.Marshal(data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Post(endpoint+"/api/createtxbuy", "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		return nil, err
+	}
+
+	var res CreatePSBTToBuyInscriptionRespond
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+	if res.TxHex == "" {
+		var resErr struct {
+			Message string `json:"message"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&resErr)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(resErr.Message)
+	}
+	return &res, nil
 }
