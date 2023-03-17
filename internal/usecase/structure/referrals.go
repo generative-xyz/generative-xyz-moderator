@@ -15,7 +15,7 @@ type ReferalResp struct {
 	Referrer   *entity.Users 
 	Referree   *entity.Users  
 	Percent    int32 	
-	ReferreeVolume    ReferralVolumnResp	
+	ReferreeVolume    ReferralVolumnResp
 }
 
 type ReferralVolumnResp struct {
@@ -25,4 +25,5 @@ type ReferralVolumnResp struct {
 	Percent int 
 	Earn string 
 	GenEarn string 
+	Status int
 }

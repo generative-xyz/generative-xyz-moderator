@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -517,7 +516,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	} else if len(input.ProcessingImages) > 0 {
 		fileExt = input.ProcessingImages[0]
 	}
-	spew.Dump(fileExt)
+	//spew.Dump(fileExt)
 	//fileExt := strings.Split(".")
 
 	resp.FileExtension = helpers.FileExtension(fileExt)
