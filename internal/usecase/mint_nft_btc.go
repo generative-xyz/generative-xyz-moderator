@@ -644,7 +644,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// check if it is a child item but its parent does not have mint yet, then continue:
 		if len(item.BatchParentId) > 0 {
 			parentItem, _ := u.Repo.FindMintNftBtc(item.BatchParentId)
-			if !parentItem.IsMinted {
+			if !(parentItem.Status == entity.StatusMint_Minting || parentItem.Status == entity.StatusMint_Minted) {
 				continue
 			}
 		}
