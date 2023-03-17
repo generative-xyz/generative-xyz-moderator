@@ -70,6 +70,14 @@ type UserForDao struct {
 	DisplayName             string        `json:"display_name"`
 	Avatar                  string        `json:"avatar"`
 	ProfileSocial           ProfileSocial `json:"profile_social"`
+	Stats                   UserStats     `json:"stats"`
+}
+
+type UserStats struct {
+	CollectionCreated int32   `json:"collection_created"`
+	NftMinted         int32   `json:"nft_minted"`
+	OutputMinted      int32   `json:"output_minted"`
+	VolumeMinted      float64 `json:"volume_minted"`
 }
 
 type DaoProjectVoted struct {
