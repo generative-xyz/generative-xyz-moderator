@@ -338,7 +338,7 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	auth.Value = big.NewInt(0) // in wei
 	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 	auth.GasPrice = gasPrice
-	auth.GasLimit = gasLimit
+	// auth.GasLimit = gasLimit
 
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := NewMultisend(common.HexToAddress(contractAddress), c.GetClient())
