@@ -283,11 +283,11 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
 
-	query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
-	err := json.Unmarshal([]byte(query), &f)
-	if err != nil {
-		return nil, err
-	}
+	// query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
+	// err := json.Unmarshal([]byte(query), &f)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	var s []Sort
 	if filter.SortBy == "" {
@@ -363,11 +363,11 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
 
-	query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
-	err := json.Unmarshal([]byte(query), &f)
-	if err != nil {
-		return nil, err
-	}
+	// query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
+	// err := json.Unmarshal([]byte(query), &f)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	s := r.SortProjects()
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
