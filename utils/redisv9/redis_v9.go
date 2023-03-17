@@ -46,11 +46,11 @@ func NewClient(cfg config.RedisConfig) Client {
 	return &clientImpl{rdb}
 }
 
-func (s *clientImpl) Get(ctx context.Context, key string, result interface{}) error {
+func (s *clientImpl) Get(ctx context.Context, key string, result /*must have method MarshalBinary and UnmarshalBinary*/ interface{}) error {
 	return s.redisClient.Get(ctx, key).Scan(result)
 }
 
-func (s *clientImpl) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+func (s *clientImpl) Set(ctx context.Context, key string, value /*must have method MarshalBinary and UnmarshalBinary*/ interface{}, expiration time.Duration) error {
 	return s.redisClient.Set(ctx, key, value, expiration).Err()
 }
 
