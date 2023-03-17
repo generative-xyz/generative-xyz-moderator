@@ -222,7 +222,9 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				zap.Strings("ids", ids),
 			)
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true)
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true, ids[0])
+		}
 	}
 
 	return pe, nil
@@ -1667,7 +1669,9 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
 			return
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, owner, true)
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
+		}
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 

@@ -273,7 +273,7 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		if err != nil {
 			logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
 		}
-		go s.NotifyCreateNewProjectToDiscord(project, &project.CreatorProfile, false)
+		go s.NotifyCreateNewProjectToDiscord(project, &project.CreatorProfile, false, daoProject.UUID)
 	}
 	return nil
 }
