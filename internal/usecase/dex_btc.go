@@ -666,7 +666,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 								log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 								continue
 							}
-							time.Sleep(1 * time.Second)
+							time.Sleep(5 * time.Second)
 						}
 						err = btc.SendTxBlockStream(respondData.TxHex)
 						if err != nil {
