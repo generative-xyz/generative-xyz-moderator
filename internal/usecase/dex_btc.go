@@ -652,7 +652,8 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 
 						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
-						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v\n", order.ID.Hex(), order.ToJsonString())
+						dataBytes, _ := json.Marshal(buyReqInfos)
+						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
 							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
