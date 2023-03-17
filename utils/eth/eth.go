@@ -302,7 +302,7 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, stri
 	return signedTx.Hash().Hex(), value.String(), nil
 }
 
-func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int) (string, error) {
+func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int, gasPrice *big.Int, gasLimit uint64) (string, error) {
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
@@ -319,10 +319,10 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 		return "", err
 	}
 
-	gasPrice, err := c.SuggestGasPrice(context.Background())
-	if err != nil {
-		return "", err
-	}
+	// gasPrice, err := c.SuggestGasPrice(context.Background())
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	chainID, err := c.NetworkID(context.Background())
 	if err != nil {
@@ -336,8 +336,9 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0) // in wei
-	//auth.GasLimit = uint64(21000 * len(toInfo)) // in units
+	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 	auth.GasPrice = gasPrice
+	// auth.GasLimit = gasLimit
 
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := NewMultisend(common.HexToAddress(contractAddress), c.GetClient())

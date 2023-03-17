@@ -218,7 +218,6 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 				ContractAddress: tokenUri.ContractAddress,
 			}}
 
-			u.Logger.LogAny("GetToken.Thumbnail", zap.Any("payload", payload))
 			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 			if err != nil {
 				u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
@@ -251,7 +250,6 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	}()
 
 	///u.Logger.Info("tokenUri", tokenUri)
-	u.Logger.LogAny("GetToken", zap.Any("req", req), zap.Any("tokenUri", tokenUri))
 	return tokenUri, nil
 }
 

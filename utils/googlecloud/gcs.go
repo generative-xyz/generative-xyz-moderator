@@ -42,12 +42,12 @@ type IGcstorage interface {
 }
 
 type GcsUploadedObject struct {
-	Name     string
-	FullName string
-	Path     string
-	Minetype string
-	Size     int64
-	FullPath string
+	Name     string `json:"name"`
+	FullName string	`json:"-"`
+	Path     string `json:"-"`
+	Minetype string  `json:"minetype"`
+	Size     int64 `json:"size"`
+	FullPath string `json:"-"`
 }
 
 type GcsFile struct {
