@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
@@ -687,7 +686,7 @@ func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.Agg
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}
-	spew.Dump(results)
+	//spew.Dump(results)
 
 	for _, results := range results {
 		i := &entity.AggregateTokenUriTraits{}
