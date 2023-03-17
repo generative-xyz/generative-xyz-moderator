@@ -64,6 +64,10 @@ func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*r
 		return nil, 0, 0, nil
 	}
 
+	if filter.FromNumber > 0 && filter.ToNumber > 0 {
+		filter.FilterStr += fmt.Sprintf("number:%d TO %d", filter.FromNumber, filter.ToNumber)
+	}
+
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
 	resp, err := algoliaClient.Search("inscriptions", filter)
 	if err != nil {

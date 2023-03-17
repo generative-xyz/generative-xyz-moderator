@@ -6,11 +6,13 @@ import (
 )
 
 type AlgoliaFilter struct {
-	Page      int
-	Limit     int
-	SearchStr string
-	ObjType   string
-	FilterStr string
+	Page       int
+	Limit      int
+	SearchStr  string
+	ObjType    string
+	FilterStr  string
+	FromNumber int
+	ToNumber   int
 }
 
 type IAlgolia interface {
