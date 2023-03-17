@@ -282,6 +282,13 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
+
+	query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
+	err := json.Unmarshal([]byte(query), &f)
+	if err != nil {
+		return nil, err
+	}
+
 	var s []Sort
 	if filter.SortBy == "" {
 		s = r.SortProjects()
