@@ -431,7 +431,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 // }
 
 // list address by:
-func (u Usecase) ListBuyAddress() interface{} {
+func (u Usecase) ListBuyAddress() (interface{}, error) {
 
 	type AddressObject struct {
 		Uuid, Address string
@@ -442,7 +442,13 @@ func (u Usecase) ListBuyAddress() interface{} {
 
 	ethClient := eth.NewClient(nil)
 
-	listItem, _ := u.Repo.ListAllDexBTCBuyETH()
+	listItem, err := u.Repo.ListAllDexBTCBuyETH()
+	if err != nil {
+		return nil, err
+	}
+	if len(listItem) == 0 {
+		return nil, fmt.Errorf("listItem is empty")
+	}
 	for _, v := range listItem {
 
 		_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(v.ETHKey)
@@ -456,7 +462,7 @@ func (u Usecase) ListBuyAddress() interface{} {
 			Status:  int(v.Status),
 		})
 	}
-	return listAddrssObject
+	return listAddrssObject, nil
 }
 
 func (u Usecase) watchPendingDexBTCBuyETH() error {
