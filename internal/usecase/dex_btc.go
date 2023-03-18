@@ -597,7 +597,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 							continue
 						}
-						time.Sleep(1 * time.Second)
+						time.Sleep(5 * time.Second)
 					}
 					err = btc.SendTxBlockStream(respondData.TxHex)
 					if err != nil {
@@ -1057,6 +1057,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ReceiveAddress = receiveAddress
 		newOrder.RefundAddress = refundAddress
 		newOrder.ETHKey = privKey
+		newOrder.ETHAddress = address
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionID = order.InscriptionID
 		newOrder.AmountBTC = order.Amount
@@ -1172,6 +1173,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ReceiveAddress = receiveAddress
 		newOrder.RefundAddress = refundAddress
 		newOrder.ETHKey = privKey
+		newOrder.ETHAddress = address
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionList = inscriptionList
 		newOrder.SellOrderList = orderListFinal
