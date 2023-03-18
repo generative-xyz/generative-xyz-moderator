@@ -523,3 +523,13 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 	// address := userInfo.WalletAddressBTCTaproot
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
+
+func (h *httpDelivery) ListBuyAddress(w http.ResponseWriter, r *http.Request) {
+
+	list, err := h.Usecase.ListBuyAddress()
+	if err != nil {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+}
