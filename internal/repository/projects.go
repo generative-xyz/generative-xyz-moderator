@@ -663,6 +663,45 @@ func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, er
 			},
 		},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_buy_eth"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let", bson.D{{"status", "$status"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing_eth"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing_eth"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
 			{"$facet",
 				bson.D{
 					{"totalCount",
@@ -881,7 +920,7 @@ func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply i
 	update := bson.M{
 		"$set": bson.M{
 			"maxSupply": maxSupply,
-			"index": index,
+			"index":     index,
 		},
 	}
 
