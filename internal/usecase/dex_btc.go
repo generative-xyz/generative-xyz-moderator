@@ -430,6 +430,41 @@ func (u Usecase) watchPendingDexBTCListing() error {
 // 	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
 // }
 
+// list address by:
+func (u Usecase) ListBuyAddress() (interface{}, error) {
+
+	type AddressObject struct {
+		Uuid, Address string
+		Status        int
+	}
+
+	var listAddrssObject []AddressObject
+
+	ethClient := eth.NewClient(nil)
+
+	listItem, err := u.Repo.ListAllDexBTCBuyETH()
+	if err != nil {
+		return nil, err
+	}
+	if len(listItem) == 0 {
+		return nil, fmt.Errorf("listItem is empty")
+	}
+	for _, v := range listItem {
+
+		_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(v.ETHKey)
+		if err != nil {
+			continue
+		}
+
+		listAddrssObject = append(listAddrssObject, AddressObject{
+			Uuid:    v.UUID,
+			Address: ethAddress,
+			Status:  int(v.Status),
+		})
+	}
+	return listAddrssObject, nil
+}
+
 func (u Usecase) watchPendingDexBTCBuyETH() error {
 	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding, entity.StatusDEXBuy_Bought, entity.StatusDEXBuy_SendingMaster})
 	if err != nil {
@@ -1000,9 +1035,9 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
+			tempETHAddress = address
 		}
 
-		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
 		if err == nil {
 			projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
@@ -1027,6 +1062,8 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionID = order.InscriptionID
 		newOrder.AmountBTC = order.Amount
+
+		fmt.Println("newOrder UUID: ", newOrder.UUID)
 
 		expiredAt := time.Now().Add(1 * time.Hour).Unix()
 		if !isEstimate {

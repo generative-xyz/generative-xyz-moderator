@@ -51,7 +51,16 @@ func (bs *BlockcypherService) EstimateFeeTransactionWithPreferenceFromSegwitAddr
 
 	outAddrs := make(map[string]big.Int)
 
+	flag := -1
+	mintFee := 5000
+
 	for addr, amount := range destinations {
+
+		if flag == -1 && amount > mintFee {
+			amount = amount - mintFee
+			flag = 1
+		}
+
 		outAddrs[addr] = *big.NewInt(int64(amount))
 	}
 
