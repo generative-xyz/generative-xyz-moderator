@@ -1,14 +1,15 @@
 package usecase
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -261,99 +262,67 @@ type csvLine struct {
 	Status     string
 	BTC        string
 	ETH        string
+
+	TokenID  string
+	TraitValue     string
+	TraitName string
 }
 
+
+
 func (u Usecase) MigrateFromCSV() {
-	// f, err := os.Open("artist_balance_1.csv")
-	// if err != nil {
-	// 	return
+	f, err := os.Open("traits-1002270.csv")
+	if err != nil {
+		return
+	}
+
+	// remember to close the file at the end of the program
+	defer f.Close()
+
+	// read csv values using csv.Reader
+	csvReader := csv.NewReader(f)
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		return
+	}
+
+	// type entity.TokenTraits struct {
+	// 	ID         string           `bson:"id" json:"id"`
+	// 	Attributes []entity.TraitAttribute `bson:"attributes" json:"attributes"`
 	// }
 
-	// // remember to close the file at the end of the program
-	// defer f.Close()
-
-	// // read csv values using csv.Reader
-	// csvReader := csv.NewReader(f)
-	// data, err := csvReader.ReadAll()
-	// if err != nil {
-	// 	return
-	// }
+	parsedDatas := []entity.TokenTraits{}
+	
 
 	//csvData := []csvLine{}
-	// convert records to array of structs
-	// for i, _ := range data {
-	// 	if i > 1 { // omit header line
-	// 		tmp := csvLine{
-	// 			ProjectID:  "1001311",
-	// 			Artist:     "crashblossom",
-	// 			Collection: "RECALL",
-	// 			//Status:     line[3],
-	// 			BTC:        "0.045",
-	// 			ETH:        "43.40304",
-	// 		}
+	//convert records to array of structs
+	for i, line := range data {
+		if i > 0 {
+			indexInt, _ := strconv.Atoi(line[0])
+			token, err := u.Repo.FindTokenByTokenProjectIDORdIndex(indexInt, "1002270")
+			if err != nil {
+				return
+			}
 
-	// 		csvData = append(csvData, tmp)
-	// 	}
-	// }
-	//spew.Dump(len(csvData))
-	//processCsvData := []csvLine{}
-	// for _, csv := range csvData {
-	// 	// if strings.ToLower(csv.Status) == "scam" {
-	// 	// 	continue
-	// 	// }
-	// 	// if csv.BTC == "0.00000" && csv.ETH == "0.00000" {
-	// 	// 	continue
-	// 	// }
-	// 	processCsvData = append(processCsvData, csv)
-	// }
+			parsedData := entity.TokenTraits{}
+			parsedData.ID = token.TokenID
+		
+			attrs := []entity.TraitAttribute{}
+			attrs = append(attrs, entity.TraitAttribute{
+				TraitType: "Series",
+				Value: line[1],
+			})
+			attrs = append(attrs, entity.TraitAttribute{
+				TraitType: "Season",
+				Value: line[2],
+			})
 
-	tmp := csvLine{
-		ProjectID:  "1001311",
-		Artist:     "crashblossom",
-		Collection: "RECALL",
-		//Status:     line[3],
-		BTC:        "0.045",
-		ETH:        "43.40304",
+			parsedData.Attributes = attrs
+			parsedDatas = append(parsedDatas, parsedData)
+		}
 	}
-
-	//csvData = append(csvData, tmp)
-	processCsvData := []csvLine{}
-	processCsvData = append(processCsvData, tmp)
 	
-	wdsETH := []*entity.Withdraw{}
-	for _, csv := range processCsvData {
-		wd, _, err := u.CreateWD(csv, string(entity.ETH))
-		if err != nil {
-			continue
-		}
-		wdsETH = append(wdsETH, wd)
-		// if isDuplicated {
-		// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
-		// 	wds = append(wds, wd1)
-		// }
-		u.Repo.CreateWithDraw(wd)
-
-	}
-	spew.Dump(len(wdsETH))
-
-	wdsBTC := []*entity.Withdraw{}
-	for _, csv := range processCsvData {
-		wd, _, err := u.CreateWD(csv, string(entity.BIT))
-		if err != nil {
-			continue
-		}
-
-		wdsBTC = append(wdsBTC, wd)
-		u.Repo.CreateWithDraw(wd)
-		// if isDuplicated {
-		// 	wd1, _, _ := u.CreateWD(csv, string(entity.ETH))
-		// 	wds = append(wds, wd1)
-		// }
-	}
-	spew.Dump(len(wdsBTC))
-
-	// print the array
-	//fmt.Printf("%+v\n", shoppingList)
+	helpers.CreateFile("traits.json", parsedDatas)
 }
 
 func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bool, error) {

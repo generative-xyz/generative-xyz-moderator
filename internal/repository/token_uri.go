@@ -78,6 +78,12 @@ func (r Repository) FindTokenByTokenID(tokenID string) (*entity.TokenUri, error)
 	return r.FindTokenUriWithoutCache(f)
 }
 
+func (r Repository) FindTokenByTokenProjectIDORdIndex(index int, projectID string) (*entity.TokenUri, error) {
+	f := bson.D{{"order_inscription_index", index}, {"project_id", projectID}}
+
+	return r.FindTokenUriWithoutCache(f)
+}
+
 func (r Repository) FindTokenByTokenIDCustomField(tokenID string, fields []string) (*entity.TokenUri, error) {
 	projectField := bson.D{
 		{"_id", 1},
