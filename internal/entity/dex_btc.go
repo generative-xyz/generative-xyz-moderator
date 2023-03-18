@@ -77,6 +77,7 @@ type DexBTCBuyWithETH struct {
 	FeeRate         uint64             `bson:"fee_rate" json:"fee_rate"`
 	Status          DexBTCETHBuyStatus `bson:"status" json:"status"`
 	ETHKey          string             `bson:"eth_key" json:"eth_key"`
+	ETHAddress      string             `bson:"eth_address" json:"eth_address"`
 	IsMultiBuy      bool               `bson:"multi_buy" json:"multi_buy"`
 	InscriptionList []string           `bson:"inscription_list" json:"inscription_list"`
 	SellOrderList   []string           `bson:"sell_order_list" json:"order_list"`
