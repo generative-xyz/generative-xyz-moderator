@@ -27,6 +27,7 @@ import (
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error) {
@@ -343,9 +344,11 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.ProfileSocial.Web = *data.ProfileSocial.Web
 	}
 
-	if data.ProfileSocial.Twitter != nil {
+	needUpdateProposalForCreateNew := false
+	if data.ProfileSocial.Twitter != nil && user.ProfileSocial.Twitter != *data.ProfileSocial.Twitter {
 		user.ProfileSocial.Twitter = *data.ProfileSocial.Twitter
 		user.ProfileSocial.TwitterVerified = false
+		needUpdateProposalForCreateNew = true
 	}
 
 	if data.ProfileSocial.Medium != nil {
@@ -427,6 +430,11 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 				logger.AtLog.Logger.Error("Delete FirebaseRegistrationToken failed", zap.Error(err))
 			}
 		}()
+	}
+	if needUpdateProposalForCreateNew {
+		_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoArtist{}.TableName()).WithParams("list", user.WalletAddress).String())
+		_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list", user.WalletAddress).String())
+		go u.SetExpireYourProposalArtist(context.TODO(), user.WalletAddress)
 	}
 
 	u.Cache.SetData(helpers.GenerateUserWalletAddressKey(user.WalletAddress), user)

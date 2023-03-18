@@ -3,11 +3,13 @@ package repository
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/constants/dao_project"
 	"rederinghub.io/utils/constants/dao_project_voted"
 )
 
@@ -41,7 +43,6 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 		"$addFields": bson.M{
 			"project_name": "$project.name",
 			"user_name":    "$user.display_name",
-			// "user_wallet_address_btc_taproot": "$user.wallet_address_btc_taproot",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -58,6 +59,10 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	}
 	if request.PageSize > 0 && request.PageSize <= limit {
 		limit = request.PageSize
+	}
+	filters["$or"] = bson.A{
+		bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+		bson.M{"status": dao_project.Executed},
 	}
 	if request.Id != nil {
 		id, err := primitive.ObjectIDFromHex(*request.Id)
@@ -86,10 +91,6 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 				Pattern: *request.Keyword,
 				Options: "i",
 			}},
-			// bson.M{"user_wallet_address_btc_taproot": primitive.Regex{
-			// 	Pattern: *request.Keyword,
-			// 	Options: "i",
-			// }},
 		}
 		if seqId, err := strconv.Atoi(*request.Keyword); err == nil {
 			search = append(search, bson.M{"seq_id": seqId})
@@ -169,7 +170,33 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	}
 	return projects, total, nil
 }
-
+func (s Repository) CheckDAOProjectAvailableByProjectId(ctx context.Context, projectId primitive.ObjectID) bool {
+	daoProject := &entity.DaoProject{}
+	if err := s.FindOneBy(ctx, daoProject.TableName(), bson.M{
+		"project_id": projectId,
+		"$or": bson.A{
+			bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+			bson.M{"status": dao_project.Executed},
+		},
+	}, daoProject); err != nil {
+		return false
+	}
+	return true
+}
+func (s Repository) CheckDAOProjectAvailableByUser(ctx context.Context, userWallet string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
+	daoProject := &entity.DaoProject{}
+	if err := s.FindOneBy(ctx, daoProject.TableName(), bson.M{
+		"created_by": userWallet,
+		"project_id": projectId,
+		"$or": bson.A{
+			bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+			bson.M{"status": dao_project.Executed},
+		},
+	}, daoProject); err != nil {
+		return nil, false
+	}
+	return daoProject, true
+}
 func (s Repository) CountDAOProjectVoteByStatus(ctx context.Context, daoProjectId primitive.ObjectID, status dao_project_voted.Status) int {
 	match := bson.M{"$match": bson.M{
 		"dao_project_id": daoProjectId,

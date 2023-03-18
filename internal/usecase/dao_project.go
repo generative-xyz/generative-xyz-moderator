@@ -6,23 +6,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/constants/dao_project"
 	"rederinghub.io/utils/constants/dao_project_voted"
 	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/rediskey"
 )
 
 func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request *request.ListDaoProjectRequest) (*entity.Pagination, error) {
-	result := &entity.Pagination{
-		PageSize: request.PageSize,
-		Result:   make([]*response.DaoProject, 0),
+	result := &entity.Pagination{}
+	redisKey := rediskey.Beauty(entity.DaoProject{}.TableName()).
+		WithParams("list", userWallet).
+		WithStructHash(request, &hashstructure.HashOptions{IgnoreZeroValue: true}).
+		String()
+	if err := s.RedisV9.Get(ctx, redisKey, result); err == nil {
+		return result, nil
 	}
 	user := &entity.Users{}
 	if userWallet != "" {
@@ -60,6 +67,7 @@ func (s *Usecase) ListDAOProject(ctx context.Context, userWallet string, request
 	if len(projectsResp) > 0 {
 		result.Cursor = projectsResp[len(projectsResp)-1].ID
 	}
+	_ = s.RedisV9.Set(ctx, redisKey, result, time.Minute*5)
 	return result, nil
 }
 
@@ -68,7 +76,7 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": req.CreatedBy}, createdBy); err != nil {
 		return nil, err
 	}
-	objectIds, err := copierInternal.StringsToObjects(req.ProjectIds)
+	objectIds, err := utils.StringsToObjects(req.ProjectIds)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +92,9 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 		}
 		if !strings.EqualFold(project.CreatorAddrr, req.CreatedBy) {
 			return nil, errors.New("Haven't permission")
+		}
+		if s.Repo.CheckDAOProjectAvailableByProjectId(ctx, project.ID) {
+			return nil, errors.New("Proposal is exists")
 		}
 		daoProject := &entity.DaoProject{
 			CreatedBy: req.CreatedBy,
@@ -104,7 +115,10 @@ func (s *Usecase) CreateDAOProject(ctx context.Context, req *request.CreateDaoPr
 	if err != nil {
 		return nil, err
 	}
-	return copierInternal.ObjectsToHex(ids), nil
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
+	return utils.ObjectsToHex(ids), nil
 }
 
 func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*response.DaoProject, error) {
@@ -118,8 +132,11 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	if err != nil {
 		return nil, err
 	}
-	results := pag.Result.([]*response.DaoProject)
-	if len(results) < 0 {
+	if pag.Result == nil {
+		return nil, nil
+	}
+	results, ok := pag.Result.([]*response.DaoProject)
+	if !ok || len(results) <= 0 {
 		return nil, nil
 	}
 	daoProject := results[0]
@@ -145,30 +162,48 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 	return daoProject, nil
 }
 
-func (s *Usecase) GetDAOProjectByProjectId(ctx context.Context, projectId string) (*entity.DaoProject, error) {
-	objectId, err := primitive.ObjectIDFromHex(projectId)
-	if err != nil {
-		return nil, err
-	}
+func (s *Usecase) GetLastDAOProjectByProjectId(ctx context.Context, projectId primitive.ObjectID) (*entity.DaoProject, error) {
 	daoProject := &entity.DaoProject{}
-	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": objectId}, daoProject); err != nil {
+	opts := &options.FindOneOptions{}
+	opts.SetSort(bson.M{"created_at": -1})
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, &options.FindOneOptions{}, opts); err != nil {
 		return nil, err
 	}
 	return daoProject, nil
 }
 
+func (s *Usecase) ListDAOProjectsByProjectId(ctx context.Context, projectId string) ([]*entity.DaoProject, error) {
+	objectId, err := primitive.ObjectIDFromHex(projectId)
+	if err != nil {
+		return nil, err
+	}
+	daoProjects := []*entity.DaoProject{}
+	if err := s.Repo.Find(ctx, entity.DaoProject{}.TableName(), bson.M{"project_id": objectId}, &daoProjects); err != nil {
+		return nil, err
+	}
+	return daoProjects, nil
+}
+
 func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool {
-	daoProject, err := s.GetDAOProjectByProjectId(ctx, projectId)
+	daoProjects, err := s.ListDAOProjectsByProjectId(ctx, projectId)
 	if err != nil {
 		return false
 	}
-	if slices.Contains([]dao_project.Status{
-		dao_project.Voting,
-		dao_project.Defeated,
-	}, daoProject.Status) {
-		return true
+	if len(daoProjects) <= 0 {
+		return false
 	}
-	return false
+	isReviewing := true
+	for _, daoProject := range daoProjects {
+		if daoProject.Status == dao_project.Executed {
+			isReviewing = false
+			break
+		}
+	}
+	return isReviewing
+}
+
+func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
+	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
@@ -201,6 +236,9 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 	if err != nil {
 		return err
 	}
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
 	if req.Status != dao_project_voted.Voted {
 		return nil
 	}
@@ -223,23 +261,23 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		logger.AtLog.Logger.Error("Get project failed", zap.Error(err))
 		return err
 	}
-	if !project.IsHidden {
-		return nil
-	}
-	_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
-		bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "isHidden", Value: false},
-				{Key: "updated_at", Value: time.Now()},
-			}},
-		})
-	if err != nil {
-		logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
-		return err
+
+	if project.IsHidden {
+		_, err := s.Repo.UpdateByID(ctx, project.TableName(), project.ID,
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "isHidden", Value: false},
+					{Key: "updated_at", Value: time.Now()},
+				}},
+			})
+		if err != nil {
+			logger.AtLog.Logger.Error("Update project failed", zap.Error(err))
+			return err
+		}
 	}
 
 	if daoProject.Status != dao_project.Executed {
-		_, err = s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
+		_, err := s.Repo.UpdateByID(ctx, daoProject.TableName(), daoProject.ID,
 			bson.D{
 				{Key: "$set", Value: bson.D{
 					{Key: "status", Value: dao_project.Executed},
@@ -249,7 +287,7 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		if err != nil {
 			logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
 		}
-		go s.NotifyCreateNewProjectToDiscord(project, &project.CreatorProfile, false)
+		go s.NotifyCreateNewProjectToDiscord(project, &project.CreatorProfile, false, daoProject.UUID)
 	}
 	return nil
 }
@@ -291,12 +329,36 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 			filters["_id"] = bson.M{"$lt": id}
 		}
 	}
-	addCountDaoProject := bson.M{
-		"$addFields": bson.M{"count_dao_project": bson.M{"$size": "$dao_project"}},
+	addFieldsCount := bson.M{
+		"$addFields": bson.M{
+			"dao_project_not_expire": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project",
+					"cond": bson.M{
+						"$gt": []interface{}{"$$this.expire_at", time.Now()},
+					},
+				},
+			},
+			"dao_project_is_voted": bson.M{
+				"$filter": bson.M{
+					"input": "$dao_project",
+					"cond": bson.M{
+						"$eq": []interface{}{"$$this.status", dao_project.Executed},
+					},
+				},
+			},
+		},
+	}
+	addFieldsTotal := bson.M{
+		"$addFields": bson.M{
+			"total_dao_project_not_expire": bson.M{"$size": "$dao_project_not_expire"},
+			"total_dao_project_is_voted":   bson.M{"$size": "$dao_project_is_voted"},
+		},
 	}
 	matchCount := bson.M{
 		"$match": bson.M{
-			"count_dao_project": bson.M{"$lt": 1},
+			"total_dao_project_not_expire": bson.M{"$lt": 1},
+			"total_dao_project_is_voted":   bson.M{"$lt": 1},
 		},
 	}
 	projects := []*entity.Projects{}
@@ -307,7 +369,8 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 		&projects,
 		matchFilters,
 		lookupDaoProject,
-		addCountDaoProject,
+		addFieldsCount,
+		addFieldsTotal,
 		matchCount,
 		sorts)
 	if err != nil {

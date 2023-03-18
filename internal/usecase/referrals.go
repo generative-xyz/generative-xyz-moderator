@@ -3,7 +3,6 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -68,7 +67,7 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 		return nil, err
 	}
 
-	spew.Dump(referrals)
+	//spew.Dump(referrals)
 	data := referrals.Result.([]entity.Referral)
 
 	resp := []structure.ReferalResp{}
@@ -80,11 +79,32 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 			return nil, err
 		}
 
+		wdType := string(entity.WithDrawReferal)
+		latestWd, _ := u.Repo.GetLastWithdraw(entity.FilterWithdraw{
+			WalletAddress: &item.Referrer.WalletAddress,
+			WithdrawItemID: &item.ReferreeID,
+			PaymentType:    req.PayType,
+			WithdrawType: &wdType,
+		})
+
+		status := entity.StatusWithdraw_Available
+		if  latestWd != nil {
+			status = latestWd.Status
+			if status == entity.StatusWithdraw_Approve {
+				status = entity.StatusWithdraw_Available
+			}
+			
+			if status == entity.StatusWithdraw_Reject {
+				status = entity.StatusWithdraw_Available
+			}
+		}
+
 		tmp.ReferreeVolume = structure.ReferralVolumnResp{
 			Earn: item.ReferreeVolumn[*req.PayType].Earn,
 			Amount: item.ReferreeVolumn[*req.PayType].Amount,
 			GenEarn: item.ReferreeVolumn[*req.PayType].GenEarn,
 			AmountType: *req.PayType,
+			Status: status,
 		}
 		
 		resp = append(resp, *tmp)

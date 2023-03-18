@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
+	"rederinghub.io/utils/redisv9"
 
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
@@ -98,6 +99,7 @@ func main() {
 func startServer() {
 	log.Println("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
+	redisV9 := redisv9.NewClient(conf.Redis)
 	r := mux.NewRouter()
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
@@ -146,6 +148,7 @@ func startServer() {
 		OrdService:          ord,
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
+		RedisV9:             redisV9,
 	}
 
 	repo, err := repository.NewRepository(&g)

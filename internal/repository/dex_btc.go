@@ -123,6 +123,22 @@ func (r Repository) UpdateDexBTCListingOrderMatchTx(model *entity.DexBTCListing)
 	return result, err
 }
 
+func (r Repository) UpdateDexBTCListingTimeseriesData(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "uuid", Value: model.UUID}}
+	update := bson.M{
+		"$set": bson.M{
+			"is_time_series_data": model.IsTimeSeriesData,
+		},
+	}
+
+	result, err := r.DB.Collection(model.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 func (r Repository) UpdateDexBTCListingOrderConfirm(model *entity.DexBTCListing) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "uuid", Value: model.UUID}}
 
@@ -522,4 +538,22 @@ func (r Repository) UpdateListingCreatedMatchedActivity(id string) (*mongo.Updat
 	}
 
 	return result, err
+}
+
+func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
+	resp := []entity.DexBTCBuyWithETH{}
+	filter := bson.M{
+		"status": bson.M{"$gt": -1},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCBuyWithETH{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
