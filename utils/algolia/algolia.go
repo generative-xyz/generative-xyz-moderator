@@ -6,10 +6,13 @@ import (
 )
 
 type AlgoliaFilter struct {
-	Page      int
-	Limit     int
-	SearchStr string
-	ObjType   string
+	Page       int
+	Limit      int
+	SearchStr  string
+	ObjType    string
+	FilterStr  string
+	FromNumber int
+	ToNumber   int
 }
 
 type IAlgolia interface {
@@ -42,6 +45,13 @@ func (al *algolia) Search(indexName string, builder *AlgoliaFilter) (search.Quer
 		opt.Page(builder.Page - 1),
 		opt.HitsPerPage(builder.Limit),
 	}
+
+	if builder.FilterStr != "" {
+		opts = append(opts, opt.Filters(builder.FilterStr))
+		// opts = append(opts, opt.TypoTolerance(false))
+		// opts = append(opts, opt.RestrictSearchableAttributes(builder.SearchField))
+	}
+
 	res, err := index.Search(builder.SearchStr, opts...)
 	return res, err
 }

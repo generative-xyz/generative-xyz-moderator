@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -41,10 +42,13 @@ func (h *httpDelivery) profile(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			if !profile.ProfileSocial.TwitterVerified {
-				daoArtist, canCreateProposal := h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
-				resp.CanCreateProposal = canCreateProposal
-				if !resp.CanCreateProposal && daoArtist != nil {
-					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtist.ID.Hex(), resp.WalletAddress)
+				daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = !exists
+				if daoArtist != nil {
+					proposal := &response.DaoArtist{}
+					if err := copierInternal.Copy(proposal, daoArtist); err == nil {
+						resp.Proposal = proposal
+					}
 				}
 			}
 			return resp, nil
@@ -245,10 +249,13 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			if !profile.ProfileSocial.TwitterVerified {
-				daoArtist, canCreateProposal := h.Usecase.CanCreateProposal(ctx, profile.WalletAddress)
-				resp.CanCreateProposal = canCreateProposal
-				if !resp.CanCreateProposal && daoArtist != nil {
-					resp.Proposal, _ = h.Usecase.GetDAOArtist(ctx, daoArtist.ID.Hex(), resp.WalletAddress)
+				daoArtist, exists := h.Usecase.CheckDAOArtistAvailableByUser(ctx, profile.WalletAddress)
+				resp.CanCreateProposal = !exists && strings.EqualFold(profile.WalletAddress, vars[utils.SIGNED_WALLET_ADDRESS])
+				if daoArtist != nil {
+					proposal := &response.DaoArtist{}
+					if err := copierInternal.Copy(proposal, daoArtist); err == nil {
+						resp.Proposal = proposal
+					}
 				}
 			}
 			return resp, nil

@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/ethereum/go-ethereum/common"
@@ -331,6 +333,30 @@ func (u Usecase) watchPendingDexBTCListing() error {
 						log.Printf("JobWatchPendingDexBTCListing UpdateDexBTCListingOrderMatchTx err %v\n", err)
 						continue
 					}
+
+					// Insert time series data
+					go func(o entity.DexBTCListing, userCase Usecase) {
+						userCase.Logger.Info("DexVolumeInscription Insert to time series data %s", o.InscriptionID)
+						data := entity.DexVolumeInscription{
+							Amount:    o.Amount,
+							Timestamp: o.MatchAt,
+							Metadata: entity.DexVolumeInscriptionMetadata{
+								InscriptionId: o.InscriptionID,
+								MatchedTx:     o.MatchedTx,
+							},
+						}
+						err := userCase.Repo.InsertDexVolumeInscription(&data)
+						if err != nil {
+							userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+						} else {
+							order.IsTimeSeriesData = true
+							_, err = userCase.Repo.UpdateDexBTCListingTimeseriesData(&order)
+							if err != nil {
+								userCase.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+							}
+						}
+					}(order, u)
+
 					// Discord Notify NEW SALE
 					buyerAddress := order.Buyer
 					go u.NotifyNewSale(order, buyerAddress)
@@ -403,6 +429,41 @@ func (u Usecase) watchPendingDexBTCListing() error {
 
 // 	return u.Repo.CreateDexBTCBuyWithETH(&newListing)
 // }
+
+// list address by:
+func (u Usecase) ListBuyAddress() (interface{}, error) {
+
+	type AddressObject struct {
+		Uuid, Address string
+		Status        int
+	}
+
+	var listAddrssObject []AddressObject
+
+	ethClient := eth.NewClient(nil)
+
+	listItem, err := u.Repo.ListAllDexBTCBuyETH()
+	if err != nil {
+		return nil, err
+	}
+	if len(listItem) == 0 {
+		return nil, fmt.Errorf("listItem is empty")
+	}
+	for _, v := range listItem {
+
+		_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(v.ETHKey)
+		if err != nil {
+			continue
+		}
+
+		listAddrssObject = append(listAddrssObject, AddressObject{
+			Uuid:    v.UUID,
+			Address: ethAddress,
+			Status:  int(v.Status),
+		})
+	}
+	return listAddrssObject, nil
+}
 
 func (u Usecase) watchPendingDexBTCBuyETH() error {
 	pendingOrders, err := u.Repo.GetDexBTCBuyETHOrderByStatus([]entity.DexBTCETHBuyStatus{entity.StatusDEXBuy_Pending, entity.StatusDEXBuy_ReceivedFund, entity.StatusDEXBuy_Buying, entity.StatusDEXBuy_WaitingToRefund, entity.StatusDEXBuy_Refunding, entity.StatusDEXBuy_Bought, entity.StatusDEXBuy_SendingMaster})
@@ -972,9 +1033,9 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
+			tempETHAddress = address
 		}
 
-		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
 		if err == nil {
 			projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
@@ -999,6 +1060,8 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionID = order.InscriptionID
 		newOrder.AmountBTC = order.Amount
+
+		fmt.Println("newOrder UUID: ", newOrder.UUID)
 
 		expiredAt := time.Now().Add(1 * time.Hour).Unix()
 		if !isEstimate {

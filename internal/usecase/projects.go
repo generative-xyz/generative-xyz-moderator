@@ -22,7 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -223,7 +222,9 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				zap.Strings("ids", ids),
 			)
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true)
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true, ids[0])
+		}
 	}
 
 	return pe, nil
@@ -605,11 +606,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-	end := 10
-	if end > len(userAddr) {
-		end = len(userAddr)
+	start := len(userAddr) - 6
+	if start < 0 {
+		start = 0
 	}
-	return userAddr[:end]
+	return userAddr[start:]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -1574,11 +1575,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	images := []string{}
 	zipLink := zipPayload.ZipLink
 
-	spew.Dump(os.Getenv("GCS_DOMAIN"))
+	//spew.Dump(os.Getenv("GCS_DOMAIN"))
 	groupIndex := strings.Index(zipLink, "btc-projects/")
 	strLen := len(zipLink)
 	zipLink = zipLink[groupIndex:strLen]
-	spew.Dump(zipLink)
+	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
 		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
@@ -1668,7 +1669,9 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
 			return
 		}
-		u.NotifyCreateNewProjectToDiscord(pe, owner, true)
+		if len(ids) > 0 {
+			u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
+		}
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
@@ -1769,14 +1772,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 		maxSupply = 0
 	}
 	pe.MaxSupply = maxSupply
-	countIndex, err := u.Repo.CountCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
-	var index int64
-	if err != nil {
-		index = 0
-	} else {
-		index = *countIndex
-	}
-	pe.MintingInfo.Index = index
+	pe.MintingInfo.Index = 0
 
 	if pe.Categories == nil || len(pe.Categories) == 0 {
 		pe.Categories = []string{u.Config.UnverifiedCategoryID}
@@ -1887,9 +1883,14 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		wdraw = w[0].Amount
 	}
 
+	//the status show int FE, that allows user can click withdraw button
 	if latestWd != nil {
 		status = latestWd.Status
 		if status == entity.StatusWithdraw_Approve {
+			status = entity.StatusWithdraw_Available
+		}
+		
+		if status == entity.StatusWithdraw_Reject {
 			status = entity.StatusWithdraw_Available
 		}
 	}
@@ -2135,7 +2136,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
 
-		spew.Dump(token.TokenID, token.ParsedAttributes)
+		//spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
 		if err != nil {
 			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)

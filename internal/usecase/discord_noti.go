@@ -231,7 +231,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		Message: discordMsg,
 		NumRetried: 0,
 		Status: entity.PENDING,
-		Type: entity.NEW_MINT,
+		Type: entity.NEW_SALE,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 			InscriptionID: tokenUri.TokenID,
@@ -457,7 +457,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	}
 }
 
-func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users, proposed bool) {
+func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner *entity.Users, proposed bool, proposalID string) {
 	domain := os.Getenv("DOMAIN")
 
 	var category, description string
@@ -506,12 +506,19 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		content = "**NEW DROP APPROVED ✅**"
 	}
 
+	var url string
+	if proposed {
+		url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
+	} else {
+		url = fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr)
+	}
+
 	discordMsg := entity.DiscordMessage{
 		Username: "Satoshi 27",
 		Content:  content,
 		Embeds: []entity.Embed{{
 			Title:       fmt.Sprintf("%s\n***%s***", ownerName, collectionName),
-			Url:         fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr),
+			Url:         url,
 			Description: description,
 			//Author: discordclient.Author{
 			//	Name:    u.resolveShortName(owner.DisplayName, owner.WalletAddress),

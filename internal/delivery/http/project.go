@@ -1,12 +1,12 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -241,36 +242,46 @@ func (h *httpDelivery) deleteBTCProject(w http.ResponseWriter, r *http.Request) 
 // @Success 200 {object} response.JsonResponse{}
 // @Router /project/{contractAddress}/tokens/{projectID} [GET]
 func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
-	contractAddress := vars["contractAddress"]
-
-	projectID := vars["projectID"]
-
-	userAddress := r.URL.Query().Get("userAddress")
-
-	project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
-		ContractAddress:            contractAddress,
-		ProjectID:                  projectID,
-		UserAddressToCheckDiscount: userAddress,
-	})
-	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	resp, err := h.projectToResp(project)
-	if err != nil {
-		h.Logger.Error(" h.projectToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
-
-	go h.Usecase.CreateViewProjectActivity(project.TokenID)
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			contractAddress := vars["contractAddress"]
+			projectID := vars["projectID"]
+			userAddress := r.URL.Query().Get("userAddress")
+			project, err := h.Usecase.GetProjectDetailWithFeeInfo(structure.GetProjectDetailMessageReq{
+				ContractAddress:            contractAddress,
+				ProjectID:                  projectID,
+				UserAddressToCheckDiscount: userAddress,
+			})
+			if err != nil {
+				logger.AtLog.Logger.Error("GetProjectDetailWithFeeInfo failed", zap.Error(err))
+				return nil, err
+			}
+			resp, err := h.projectToResp(project)
+			if err != nil {
+				return nil, err
+			}
+			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
+			if project.CreatorAddrr != "" && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
+				_, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
+				resp.CanCreateProposal = !exists
+				// if daoProject != nil {
+				// 	proposal := &response.DaoProject{}
+				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
+				// 		resp.Proposal = proposal
+				// 	}
+				// }
+			} else {
+				// if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
+				// 	proposal := &response.DaoProject{}
+				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
+				// 		resp.Proposal = proposal
+				// 	}
+				// }
+			}
+			go h.Usecase.CreateViewProjectActivity(project.TokenID)
+			return resp, nil
+		},
+	).ServeHTTP(w, r)
 }
 
 func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Request) {
@@ -515,7 +526,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	} else if len(input.ProcessingImages) > 0 {
 		fileExt = input.ProcessingImages[0]
 	}
-	spew.Dump(fileExt)
+	//spew.Dump(fileExt)
 	//fileExt := strings.Split(".")
 
 	resp.FileExtension = helpers.FileExtension(fileExt)

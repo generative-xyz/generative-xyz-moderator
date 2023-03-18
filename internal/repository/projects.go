@@ -282,6 +282,13 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
+
+	// query := `{ "$where": "this.limitSupply > this.index + this.indexReverse " }`
+	// err := json.Unmarshal([]byte(query), &f)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	var s []Sort
 	if filter.SortBy == "" {
 		s = r.SortProjects()
@@ -356,11 +363,11 @@ func (r Repository) GetMintedOutProjects(filter entity.FilterProjects) (*entity.
 	resp := &entity.Pagination{}
 	f := r.FilterProjects(filter)
 
-	query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
-	err := json.Unmarshal([]byte(query), &f)
-	if err != nil {
-		return nil, err
-	}
+	// query := `{ "$where": "this.limitSupply == this.index + this.indexReverse " }`
+	// err := json.Unmarshal([]byte(query), &f)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	s := r.SortProjects()
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
@@ -864,4 +871,24 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 	}
 
 	return 0, nil
+}
+
+func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
+	f := bson.D{
+		{Key: "project_id", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"maxSupply": maxSupply,
+			"index": index,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

@@ -175,7 +175,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					}
 					tokenURI, err := u.Repo.FindTokenByTokenID(insc)
 					if err != nil {
-						fmt.Errorf("FindTokenByTokenID error", err)
+						// fmt.Errorf("FindTokenByTokenID error", err)
 					}
 					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 					if err != nil {

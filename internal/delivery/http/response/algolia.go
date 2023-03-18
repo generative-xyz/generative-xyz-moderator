@@ -15,6 +15,8 @@ type ProjectListing struct {
 	VolumeOneWeek          *VolumneObject          `json:"volumeOneWeek"`
 	ProjectMarketplaceData *ProjectMarketplaceData `json:"projectMarketplaceData"`
 	Owner                  *OwnerInfo              `json:"owner"`
+	IsHidden               bool                    `json:"isHidden"`
+	TotalVolume            uint64                  `json:"totalVolume"`
 }
 
 type OwnerInfo struct {
