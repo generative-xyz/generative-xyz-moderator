@@ -309,7 +309,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 							}
 						}
 					}
-					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts == len(psbtData.UnsignedTx.TxOut) {
+					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts >= len(psbtData.UnsignedTx.TxOut) {
 						isValidMatch = true
 					}
 				} else {
@@ -624,11 +624,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 			} else {
 				newStatus := order.Status
-				psbtList := []string{}
 				feeRate := order.FeeRate
 
 				amountBTCFee := uint64(0)
 				amountBTC := uint64(0)
+				var buyReqInfos []btc.BuyReqInfo
 				for _, listingOrderID := range order.SellOrderList {
 					listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 					if err != nil {
@@ -647,8 +647,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 						amountBTCFee += btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 						amountBTC += listingOrder.Amount
-						psbtList = append(psbtList, listingOrder.RawPSBT)
 						newStatus = entity.StatusDEXBuy_Buying
+
+						buyReqInfos = append(buyReqInfos, btc.BuyReqInfo{
+							Price:                      int(listingOrder.Amount),
+							ReceiverInscriptionAddress: order.ReceiveAddress,
+							SellerSignedPsbtB64:        listingOrder.RawPSBT,
+						})
+
 					} else {
 						// ?? order not exist
 						newStatus = entity.StatusDEXBuy_WaitingToRefund
@@ -657,6 +663,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 
 				if newStatus != order.Status {
+					log.Println("watchPendingDexBTCBuyETH update buy multi-status", order.ID, newStatus, err)
 					if newStatus == entity.StatusDEXBuy_Buying {
 						address := u.Config.DexBTCWalletAddress
 
@@ -677,9 +684,10 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							continue
 						}
 
-						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
-							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
 							continue
 						}
 						if respondData.SplitTxRaw != "" {
@@ -689,7 +697,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 								log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 								continue
 							}
-							time.Sleep(1 * time.Second)
+							time.Sleep(5 * time.Second)
 						}
 						err = btc.SendTxBlockStream(respondData.TxHex)
 						if err != nil {
