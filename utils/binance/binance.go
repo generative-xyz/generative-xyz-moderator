@@ -19,7 +19,9 @@ type BinanceService struct {
 	binanceClient *binance.Client
 }
 
-func (bs *BinanceService) SwapEth2Btc(ethAmount float64) (string, error) {
+// pair: "ETHBTC"
+
+func (bs *BinanceService) SwapEth2Btc(ethAmount float64, pair string) (string, error) {
 
 	// ethAmount: the amount of ETH you want to swap
 
@@ -27,7 +29,7 @@ func (bs *BinanceService) SwapEth2Btc(ethAmount float64) (string, error) {
 
 	// Get the current ETH/BTC exchange rate:
 	ticker, err := bs.binanceClient.NewListPriceChangeStatsService().
-		Symbol("ETHBTC").
+		Symbol(pair).
 		Do(context.Background())
 	if err != nil {
 		return orderStatus, err
@@ -43,7 +45,7 @@ func (bs *BinanceService) SwapEth2Btc(ethAmount float64) (string, error) {
 
 	// Place the order to swap ETH to BTC:
 	order, err := bs.binanceClient.NewCreateOrderService().
-		Symbol("ETHBTC").
+		Symbol(pair).
 		Side(binance.SideTypeSell).
 		Type(binance.OrderTypeMarket).
 		Quantity(fmt.Sprintf("%.8f", btcAmount)).
@@ -59,11 +61,11 @@ func (bs *BinanceService) SwapEth2Btc(ethAmount float64) (string, error) {
 
 }
 
-func (bs *BinanceService) GetSwapStatus(orderID int64) (string, error) {
+func (bs *BinanceService) GetOrderStatus(orderID int64, pair string) (string, error) {
 
 	// Check the status of your order:
 	order, err := bs.binanceClient.NewGetOrderService().
-		Symbol("ETHBTC").
+		Symbol(pair).
 		OrderID(orderID).
 		Do(context.Background())
 	if err != nil {
@@ -72,4 +74,20 @@ func (bs *BinanceService) GetSwapStatus(orderID int64) (string, error) {
 	}
 	fmt.Println("order status check: ", order.Status)
 	return string(order.Status), nil
+}
+
+func (bs *BinanceService) WithdrawAsset(amount, withdrawAddress, coin string) (string, error) {
+	withdrawOrder, err := bs.binanceClient.NewCreateWithdrawService().
+		Coin(coin).
+		Address(withdrawAddress).
+		Amount(amount).
+		Do(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	withdrawID := withdrawOrder.ID
+	fmt.Println("Withdraw ID:", withdrawID)
+
+	return withdrawOrder.ID, nil
 }
