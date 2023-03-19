@@ -2,8 +2,10 @@ package binance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/adshao/go-binance/v2"
 )
@@ -90,4 +92,21 @@ func (bs *BinanceService) WithdrawAsset(amount, withdrawAddress, coin string) (s
 	fmt.Println("Withdraw ID:", withdrawID)
 
 	return withdrawOrder.ID, nil
+}
+
+func (bs *BinanceService) GetWithdrawStatus(withdrawID string) (int, error) {
+
+	withdrawHistory, err := bs.binanceClient.NewListWithdrawsService().Do(context.Background())
+	if err != nil {
+		return 0, err
+	}
+
+	for _, withdraw := range withdrawHistory {
+		if strings.EqualFold(withdraw.ID, withdrawID) {
+			fmt.Println("Withdraw Status check: ", withdraw.Status)
+			return withdraw.Status, nil
+		}
+	}
+
+	return 0, errors.New("order not found")
 }
