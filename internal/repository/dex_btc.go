@@ -477,6 +477,34 @@ func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCB
 	return resp, nil
 }
 
+func (r Repository) GetDexBTCBuyETHBuyingByInscriptionID(inscriptionID string) (*entity.DexBTCBuyWithETH, error) {
+	f := bson.D{
+		{"status",
+			bson.D{
+				{"$in",
+					bson.A{
+						1,
+						2,
+					},
+				},
+			},
+		},
+		{"inscription_id", inscriptionID},
+	}
+
+	resp := &entity.DexBTCBuyWithETH{}
+	usr, err := r.FilterOne(utils.COLLECTION_DEX_BTC_BUY_ETH, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) GetNotCreatedActivitiesListing(page int64, limit int64) (*entity.Pagination, error) {
 	confs := []entity.DexBTCListing{}
 	resp := &entity.Pagination{}
