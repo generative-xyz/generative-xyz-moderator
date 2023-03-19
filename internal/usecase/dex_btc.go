@@ -512,21 +512,27 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if balance.Cmp(amountRequired) > -1 {
-				if order.Confirmation > 1 {
-					order.Status = entity.StatusDEXBuy_ReceivedFund
-					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
-					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
-					}
-					continue
-				} else {
-					order.Confirmation += 1
-					_, err := u.Repo.UpdateDexBTCBuyETHOrderConfirmation(&order)
-					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderConfirmation err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
-					}
-					continue
+				order.Status = entity.StatusDEXBuy_ReceivedFund
+				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				if err != nil {
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
+				continue
+				// if order.Confirmation >= 1 {
+				// 	order.Status = entity.StatusDEXBuy_ReceivedFund
+				// 	_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				// 	if err != nil {
+				// 		log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				// 	}
+				// 	continue
+				// } else {
+				// 	order.Confirmation += 1
+				// 	_, err := u.Repo.UpdateDexBTCBuyETHOrderConfirmation(&order)
+				// 	if err != nil {
+				// 		log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderConfirmation err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				// 	}
+				// 	continue
+				// }
 			} else {
 				// not enough funds
 				if time.Since(order.ExpiredAt) > 1*time.Second {
