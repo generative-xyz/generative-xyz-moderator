@@ -201,19 +201,11 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 func (u Usecase) JobWatchPendingDexBTCListing() {
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
 		err := u.watchPendingDexBTCListing()
-		if err != nil {
-			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
-		}
-	}(&wg)
-
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := u.watchPendingDexBTCBuyETH()
 		if err != nil {
 			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
 		}
