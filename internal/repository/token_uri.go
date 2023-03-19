@@ -190,6 +190,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	}
 
 	addNoneBuyItems := true
+	filterBuyETH := bson.D{{"$gte", 0}}
 	if filter.IsBuynow != nil {
 		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
@@ -213,6 +214,10 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		dexBtcMatchAnd := bson.E{"$and", priceFilter}
 		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
 		addNoneBuyItems = false
+	}
+	//buyable only
+	if !addNoneBuyItems {
+		filterBuyETH = bson.D{{"$eq", 0}}
 	}
 
 	f2 := bson.A{
@@ -367,17 +372,31 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 								bson.D{
 									{"if",
 										bson.D{
-											{"$eq",
+											{"$or",
 												bson.A{
 													bson.D{
-														{"$ifNull",
+														{"$eq",
 															bson.A{
-																"$listing",
+																bson.D{
+																	{"$ifNull",
+																		bson.A{
+																			"$listing",
+																			0,
+																		},
+																	},
+																},
 																0,
 															},
 														},
 													},
-													0,
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$listing_eth"}},
+																0,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -393,14 +412,6 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 				},
 			},
 		},
-		// bson.D{
-		// 	{"$unwind",
-		// 		bson.D{
-		// 			{"path", "$listing_eth"},
-		// 			{"preserveNullAndEmptyArrays", true},
-		// 		},
-		// 	},
-		// },
 		bson.D{
 			{"$project",
 				bson.D{
@@ -425,9 +436,11 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
 					{"owner_object.display_name", 1},
+					{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}},
 				},
 			},
 		},
+		bson.D{{"$match", bson.D{{"listing_eth_size", filterBuyETH}}}},
 		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
 		bson.D{
 			{"$facet",
