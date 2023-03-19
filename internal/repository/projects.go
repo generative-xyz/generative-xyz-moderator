@@ -693,14 +693,8 @@ func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, er
 				},
 			},
 		},
-		bson.D{
-			{"$unwind",
-				bson.D{
-					{"path", "$listing_eth"},
-					{"preserveNullAndEmptyArrays", false},
-				},
-			},
-		},
+		bson.D{{"$project", bson.D{{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}}}}},
+		bson.D{{"$match", bson.D{{"listing_eth_size", bson.D{{"$eq", 0}}}}}},
 		bson.D{
 			{"$facet",
 				bson.D{
