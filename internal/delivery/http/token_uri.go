@@ -186,7 +186,11 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
 		} else {
 			if listingInfo.CancelTx == "" {
+				buyEth, _ := h.Usecase.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listingInfo.InscriptionID)
 				resp.Buyable = true
+				if buyEth != nil {
+					resp.Buyable = false
+				}
 				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				resp.OrderID = listingInfo.UUID
 				resp.SellVerified = listingInfo.Verified
