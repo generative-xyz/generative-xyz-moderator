@@ -148,6 +148,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// New Marketplace
 	collection := api.PathPrefix("/collections").Subrouter()
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
+	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
