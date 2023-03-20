@@ -21,6 +21,6 @@ type ListingFee struct {
 
 type StatFirstSale struct {
 	Amount          string            `json:"amount"`
-	AmountByPaytype map[string]string `json:"amountByPaytype"`
 	ProjectID       string            `json:"projectID"`
+	PayType 		string 			  `json:"payType"`
 }
