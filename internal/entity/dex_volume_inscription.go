@@ -24,6 +24,23 @@ type DexVolumeInscriptionSumary struct {
 	InscriptionId        string                `json:"inscription_id" bson:"inscription_id"`
 }
 
+type AggerateChartForProject struct {
+	ProjectID *string `json:"projectID"`
+	FromDate *time.Time `json:"fromDate"`
+	ToDate *time.Time `json:"toDate"`
+}
+
+type AggragetedInscription struct {
+	ID AggragetedInscriptionID `bson:"_id"`
+	Amount int64 `bson:"amount"`
+}
+type AggragetedInscriptionID struct {
+	ProjectID string `bson:"projectID"` 
+	ProjectName string `bson:"projectName"` 
+	Timestamp string `bson:"timestamp"` 
+}
+
+
 type DexVolumeInscriptionMetadata struct {
 	InscriptionId string `bson:"inscription_id"`
 	MatchedTx     string `bson:"matched_tx"`

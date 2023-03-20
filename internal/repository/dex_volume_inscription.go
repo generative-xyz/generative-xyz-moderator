@@ -162,3 +162,96 @@ func (r Repository) InsertDexVolumeInscription(data *entity.DexVolumeInscription
 	}
 	return nil
 }
+
+func (r Repository) AggregateVolumeInscription(filter *entity.AggerateChartForProject) ([]entity.AggragetedInscription, error) {
+	f := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "metadata.inscription_id"},
+					{"foreignField", "token_id"},
+					{"as", "token_uri"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$token_uri"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "projects"},
+					{"localField", "token_uri.project_id"},
+					{"foreignField", "tokenid"},
+					{"as", "projects"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$projects"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$match",
+				bson.D{
+					{"token_uri.project_id", bson.D{{"$eq", filter.ProjectID}}},
+					{"timestamp", bson.D{{"$gte", filter.FromDate}}},
+					{"timestamp", bson.D{{"$lte", filter.ToDate}}},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"projectID", "$projects.tokenid"},
+							{"projectName", "$projects.name"},
+							{"timestamp",
+								bson.D{
+									{"$dateToString",
+										bson.D{
+											{"format", "%Y-%m-%d"},
+											{"date", "$timestamp"},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"amount", bson.D{{"$sum", "$amount"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort",
+				bson.D{
+					{"_id.timestamp", -1},
+					{"amount", -1},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexVolumeInscription{}.TableName()).Aggregate(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []entity.AggragetedInscription{}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
+}
