@@ -236,14 +236,14 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 				Priority: trendingScore,
 			}
 			
-			if _, err := u.Repo.UpsertTokenTx(tokenTx.InscriptionID, tokenTx.Tx, &tokenTx); err != nil {
+			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
 				u.Logger.ErrorAny(
-					"JobCreateTokenTxFromTokenURI.UpsertTokenTx", 
+					"JobCreateTokenTxFromTokenURI.InsertTokenTx", 
 					zap.Error(err), 
 					zap.String("token_id", token.TokenID),
 				)
 			} else {
-				u.Logger.Info("JobCreateTokenTxFromTokenURI.UpsertTokenTx", zap.Any("tokenTx", tokenTx))
+				u.Logger.Info("JobCreateTokenTxFromTokenURI.InsertTokenTx", zap.Any("tokenTx", tokenTx))
 				u.Repo.UpdateTokenCreatedTokenTx(token.TokenID)
 			}
 		}
