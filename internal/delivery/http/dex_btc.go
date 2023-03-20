@@ -49,6 +49,7 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 	if listing != nil {
 		go h.Usecase.NotifyNewListing(*listing)
 	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
 }
 
@@ -493,19 +494,21 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 	result := []response.DEXBuyEthHistory{}
 	for _, v := range list {
 		item := response.DEXBuyEthHistory{
-			CreatedAt:      v.CreatedAt.Unix(),
-			ID:             v.ID.Hex(),
-			OrderID:        v.OrderID,
-			AmountETH:      v.AmountETH,
-			UserID:         v.UserID,
-			ReceiveAddress: v.ReceiveAddress,
-			RefundAddress:  v.RefundAddress,
-			ExpiredAt:      v.ExpiredAt.Unix(),
-			BuyTx:          v.BuyTx,
-			RefundTx:       v.RefundTx,
-			FeeRate:        v.FeeRate,
-			InscriptionID:  v.InscriptionID,
-			AmountBTC:      v.AmountBTC,
+			CreatedAt:       v.CreatedAt.Unix(),
+			ID:              v.ID.Hex(),
+			OrderID:         v.OrderID,
+			AmountETH:       v.AmountETH,
+			UserID:          v.UserID,
+			ReceiveAddress:  v.ReceiveAddress,
+			RefundAddress:   v.RefundAddress,
+			ExpiredAt:       v.ExpiredAt.Unix(),
+			BuyTx:           v.BuyTx,
+			RefundTx:        v.RefundTx,
+			FeeRate:         v.FeeRate,
+			InscriptionID:   v.InscriptionID,
+			AmountBTC:       v.AmountBTC,
+			SellOrderList:   v.SellOrderList,
+			InscriptionList: v.InscriptionList,
 		}
 		switch v.Status {
 		case entity.StatusDEXBuy_SendingMaster, entity.StatusDEXBuy_SentMaster:
@@ -524,6 +527,10 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 
 func (h *httpDelivery) ListBuyAddress(w http.ResponseWriter, r *http.Request) {
 
-	list := h.Usecase.ListBuyAddress()
+	list, err := h.Usecase.ListBuyAddress()
+	if err != nil {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+		return
+	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
 }

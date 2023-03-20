@@ -663,6 +663,39 @@ func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, er
 			},
 		},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_buy_eth"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let", bson.D{{"status", "$status"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing_eth"},
+				},
+			},
+		},
+		bson.D{{"$project", bson.D{{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}}}}},
+		bson.D{{"$match", bson.D{{"listing_eth_size", bson.D{{"$eq", 0}}}}}},
+		bson.D{
 			{"$facet",
 				bson.D{
 					{"totalCount",
@@ -881,7 +914,7 @@ func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply i
 	update := bson.M{
 		"$set": bson.M{
 			"maxSupply": maxSupply,
-			"index": index,
+			"index":     index,
 		},
 	}
 
@@ -891,4 +924,23 @@ func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply i
 	}
 
 	return err
+}
+
+func (r Repository) GetProjectTrendingScore(projectID string) (int64, error) {
+	var trendingScore int64
+	resp := &entity.Projects{}
+	opts := options.FindOne().SetProjection(bson.D{
+		{Key: "stats.trending_score", Value: 1},
+	})
+	project, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "tokenid", Value: projectID}}, opts)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+
+	err = helpers.Transform(project, resp)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+	trendingScore = resp.Stats.TrendingScore
+	return trendingScore, nil
 }

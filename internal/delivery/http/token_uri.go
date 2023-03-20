@@ -186,7 +186,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
 		} else {
 			if listingInfo.CancelTx == "" {
+				buyEth, _ := h.Usecase.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listingInfo.InscriptionID)
 				resp.Buyable = true
+				if buyEth != nil {
+					resp.Buyable = false
+				} else {
+					relatedPendingTxs, _ := h.Usecase.Repo.GetPendingBTCSubmitTxByInscriptionID(listingInfo.InscriptionID)
+					if len(relatedPendingTxs) > 0 {
+						resp.Buyable = false
+					}
+				}
 				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				resp.OrderID = listingInfo.UUID
 				resp.SellVerified = listingInfo.Verified
@@ -195,18 +204,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 					if err != nil {
 						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 					}
-					// outLen := 0
-					// psbt, err := btc.ParsePSBTFromBase64(listingInfo.RawPSBT)
-					// if err != nil {
-					// 	h.Logger.Error("GenBuyETHOrder ParsePSBTFromBase64", listingInfo.ID, err)
-					// } else {
-					// 	outLen = len(psbt.UnsignedTx.TxOut)
-					// }
-					// amountBTCFee := btc.EstimateTxFee(uint(len(listingInfo.Inputs)+3), uint(outLen+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
 					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
-					// amountBTCRequired += amountBTCFee
-
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
 						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
@@ -432,7 +431,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		f.IsHidden = &hidden
 	}
 
-	uProjects, err := h.Usecase.GetProjects(f)
+	uProjects, err := h.Usecase.GetAllProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -1037,3 +1036,4 @@ func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
 }
+
