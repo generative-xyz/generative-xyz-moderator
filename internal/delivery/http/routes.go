@@ -12,7 +12,6 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 
-	"github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -137,6 +136,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 
+	adminTest := api.PathPrefix("/admin-test").Subrouter()
+	adminTest.HandleFunc("", h.adminTest).Methods("GET")
+
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
@@ -224,13 +226,15 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
-	wallet.Use(handlers.CompressHandler)
-	// wallet.Use(h.MiddleWare.AccessToken)
 	// wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
+
+	walletAuth := api.PathPrefix("/wallet").Subrouter()
+	walletAuth.Use(h.MiddleWare.AccessToken)
+	walletAuth.HandleFunc("/submit-tx", h.submitTx).Methods("POST")
 
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
 	inscriptionDex.Use(h.MiddleWare.AccessToken)
@@ -241,7 +245,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/retrieve-orders", h.retrieveBTCListingOrdersInfo).Methods("POST")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
-	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
+	// inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
 	//buy with eth
 	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
 	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")

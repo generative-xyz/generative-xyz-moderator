@@ -99,6 +99,7 @@ type TokenUri struct {
 	InscribedBy                    string        `bson:"inscribedBy"`
 	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 	CreatedMintActivity            bool          `bson:"created_mint_activity"`
+	CreatedTokenTx                 bool          `bson:"created_token_tx"`
 }
 
 type AggregateTokenUriTraits struct {
