@@ -134,10 +134,22 @@ func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error
 				},
 			},
 			"total_mint": bson.M{
-				"$sum": "$maxSupply",
+				"$sum": bson.M{
+					"$cond": []interface{}{
+						bson.M{"$eq": []interface{}{"$isHidden", false}},
+						"$maxSupply",
+						0,
+					},
+				},
 			},
 			"total_minted": bson.M{
-				"$sum": "$index",
+				"$sum": bson.M{
+					"$cond": []interface{}{
+						bson.M{"$eq": []interface{}{"$isHidden", false}},
+						"$index",
+						0,
+					},
+				},
 			},
 		},
 	}

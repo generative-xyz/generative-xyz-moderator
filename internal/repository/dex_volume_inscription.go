@@ -11,9 +11,71 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
+func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+	page := filter.Page
+	pageSize := filter.Limit
+	result := []entity.DexBTCListing{}
+	pipeline := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"as", "token_info"},
+				},
+			},
+		},
+		bson.D{{"$match", bson.D{{"token_info", bson.A{}}}}},
+		bson.M{"$skip": (page - 1) * pageSize},
+		bson.M{"$limit": pageSize},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	response := []*entity.ItemListing{}
+	addresses := []string{}
+	for _, r := range result {
+		data := &entity.ItemListing{
+			InscriptionId: r.InscriptionID,
+			Image:         fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionID),
+			SellerAddress: r.SellerAddress,
+		}
+
+		addresses = append(addresses, r.SellerAddress)
+		response = append(response, data)
+	}
+
+	users, err := r.FindUserByAddresses(addresses)
+	if err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[string]entity.Users)
+	for _, u := range users {
+		userMap[u.WalletAddressBTCTaproot] = u
+	}
+
+	for _, r := range response {
+		if u, ok := userMap[r.SellerAddress]; ok {
+			r.SellerDisplayName = u.DisplayName
+
+		}
+	}
+	return response, nil
+}
+
 func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
+	ignoreInscriptionIds := []string{"b7b65579e2dd556b83665d7a26ecb0259225dbec491a9888d4a9c1716a7f9733i0"}
 	pipeline := bson.A{
 		bson.M{
 			"$lookup": bson.M{
@@ -23,7 +85,10 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 				"as":           "token_info",
 			},
 		},
-		bson.M{"$match": bson.M{"token_info": bson.A{}}},
+		bson.M{"$match": bson.M{
+			"token_info":              bson.A{},
+			"metadata.inscription_id": bson.M{"$nin": ignoreInscriptionIds},
+		}},
 		bson.M{
 			"$group": bson.M{
 				"_id":          "$metadata.inscription_id",
@@ -252,6 +317,6 @@ func (r Repository) AggregateVolumeInscription(filter *entity.AggerateChartForPr
 	if err = cursor.All((context.TODO()), &result); err != nil {
 		return nil, err
 	}
-	
+
 	return result, nil
 }

@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
@@ -14,8 +16,58 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+	data, err := uc.Repo.ListItemListingOnSale(filter)
+	if err != nil {
+		return nil, err
+	}
+	client := resty.New()
+	waitG := &sync.WaitGroup{}
+	for _, d := range data {
+		waitG.Add(1)
+		go func(d *entity.ItemListing) {
+			defer waitG.Done()
+			resp := map[string]interface{}{}
+			_, err := client.R().
+				SetResult(&resp).
+				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, d.InscriptionId))
+
+			if err != nil {
+				uc.Logger.Error(err)
+			} else {
+				d.ContentType = resp["content_type"].(string)
+			}
+		}(d)
+	}
+	waitG.Wait()
+	return data, nil
+}
+
 func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
-	return uc.Repo.FindListItemListing(filter)
+	data, err := uc.Repo.FindListItemListing(filter)
+	if err != nil {
+		return nil, err
+	}
+	client := resty.New()
+	waitG := &sync.WaitGroup{}
+	for _, d := range data {
+		waitG.Add(1)
+		go func(d *entity.ItemListing) {
+			defer waitG.Done()
+			resp := map[string]interface{}{}
+			_, err := client.R().
+				SetResult(&resp).
+				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, d.InscriptionId))
+
+			if err != nil {
+				uc.Logger.Error(err)
+			} else {
+				d.ContentType = resp["content_type"].(string)
+			}
+		}(d)
+	}
+	waitG.Wait()
+	return data, nil
 }
 
 func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {

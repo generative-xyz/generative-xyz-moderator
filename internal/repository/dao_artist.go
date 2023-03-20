@@ -63,6 +63,9 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 		}
 		filters["_id"] = id
 	}
+	if request.SeqId != nil {
+		filters["seq_id"] = *request.SeqId
+	}
 	if request.Status != nil {
 		filters["status"] = *request.Status
 	}
