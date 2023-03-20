@@ -102,6 +102,10 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 	tx := structure.Tx{}
 	txId := tokenTx.Tx
+	u.Logger.LogAny(
+		"fetchDataFromTx.Start", 
+		zap.String("tx", txId),
+	)
 	resp, err := http.Get("https://api.blockchain.info/haskoin-store/btc/transaction/" + txId)
 	if err != nil {
 		return errors.WithStack(err)
@@ -119,6 +123,7 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 		}
 	}
 	if tradingTx { 
+		u.Logger.LogAny("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
 		if len(tx.Outputs) < 3 {
 			return errors.New("trading tx must havee at least 3 items")
 		} 
