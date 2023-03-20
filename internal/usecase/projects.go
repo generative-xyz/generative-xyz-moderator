@@ -606,11 +606,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-	start := len(userAddr) - 6
-	if start < 0 {
-		start = 0
+	end := 10
+	if end > len(userAddr) {
+		end = len(userAddr)
 	}
-	return userAddr[start:]
+	return userAddr[:end]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -1889,7 +1889,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		if status == entity.StatusWithdraw_Approve {
 			status = entity.StatusWithdraw_Available
 		}
-		
+
 		if status == entity.StatusWithdraw_Reject {
 			status = entity.StatusWithdraw_Available
 		}
