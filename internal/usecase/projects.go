@@ -901,6 +901,25 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 	return projects, nil
 }
 
+
+func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
 func (u Usecase) CheckExisted(s string, arr []string) bool {
 	for _, item := range arr {
 		if item == s {
@@ -2162,4 +2181,27 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	}
 
 	return h, nil
+}
+
+
+func (u Usecase) GetProjectFirstSale(genNFTAddr string) (string, map[string]string) {
+	paytypes := []string{
+		string(entity.ETH),
+		string(entity.BIT),
+	}
+
+	totalAmount := 0.0
+	amountByPaytype := make(map[string]string)
+	for _, paytype := range paytypes {
+		data, err := u.Repo.AggregateVolumn(genNFTAddr, paytype)
+		if err == nil && data != nil {
+			if len(data) > 0 {
+				totalAmount += data[0].Amount
+				amountByPaytype[paytype] = fmt.Sprintf("%d", int(data[0].Amount))
+			}
+		}			
+	}
+
+	return fmt.Sprintf("%d", int(totalAmount)), amountByPaytype
+	
 }

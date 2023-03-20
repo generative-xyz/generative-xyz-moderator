@@ -1,52 +1,5 @@
 basePath: /rederinghub.io/v1
 definitions:
-  dao_artist.Status:
-    enum:
-    - 0
-    - 1
-    type: integer
-    x-enum-varnames:
-    - Verifying
-    - Verified
-  dao_artist_voted.Status:
-    enum:
-    - 0
-    - 1
-    type: integer
-    x-enum-varnames:
-    - Report
-    - Verify
-  dao_project.Status:
-    enum:
-    - 0
-    - 1
-    - 2
-    type: integer
-    x-enum-varnames:
-    - Voting
-    - Executed
-    - Defeated
-  dao_project_voted.Status:
-    enum:
-    - 0
-    - 1
-    type: integer
-    x-enum-varnames:
-    - Against
-    - Voted
-  entity.BaseEntity:
-    properties:
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      id:
-        type: string
-      updated_at:
-        type: string
-      uuid:
-        type: string
-    type: object
   entity.DeveloperKey:
     properties:
       apiCompany:
@@ -76,15 +29,21 @@ definitions:
     type: object
   entity.FirebaseRegistrationToken:
     properties:
-      base_entity:
-        $ref: '#/definitions/entity.BaseEntity'
       created_at:
+        type: string
+      deleted_at:
         type: string
       device_type:
         type: string
+      id:
+        type: string
       registration_token:
         type: string
+      updated_at:
+        type: string
       user_wallet:
+        type: string
+      uuid:
         type: string
     type: object
   entity.InscribeBTCResp:
@@ -114,9 +73,8 @@ definitions:
       projectTokenId:
         type: string
       status:
-        allOf:
-        - $ref: '#/definitions/entity.StatusInscribe'
         description: status for record
+        type: integer
       tokenAddress:
         type: string
       tokenId:
@@ -233,6 +191,8 @@ definitions:
         type: integer
       contractAddress:
         type: string
+      created_at:
+        type: string
       created_by_collection_meta:
         type: boolean
       creatorAddrr:
@@ -243,6 +203,8 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/entity.Users'
+      deleted_at:
+        type: string
       description:
         type: string
       fromAuthentic:
@@ -252,6 +214,8 @@ definitions:
       hash:
         type: string
       htmlFile:
+        type: string
+      id:
         type: string
       images:
         description: if user uses links instead of animation URL
@@ -378,6 +342,10 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
+      updated_at:
+        type: string
+      uuid:
+        type: string
       whiteListEthContracts:
         description: if user uses links instead of animation URL
         items:
@@ -396,71 +364,8 @@ definitions:
       field:
         type: string
       type:
-        $ref: '#/definitions/entity.SortType'
+        type: integer
     type: object
-  entity.SortType:
-    enum:
-    - 1
-    - -1
-    type: integer
-    x-enum-varnames:
-    - SORT_ASC
-    - SORT_DESC
-  entity.StatusInscribe:
-    enum:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
-    - 8
-    - 9
-    - 10
-    - 11
-    - 12
-    type: integer
-    x-enum-comments:
-      StatusInscribe_Minted: '5: mint success'
-      StatusInscribe_Minting: '4: minting'
-      StatusInscribe_NeedToRefund: '12: Need to refund BTC'
-      StatusInscribe_NotEnoughBalance: '11: balance not enough'
-      StatusInscribe_Pending: '0: pending: waiting for fund'
-      StatusInscribe_ReceivedFund: '1: received fund from user (buyer)'
-      StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr: '2: sending btc from segwit
-        address to ord address'
-      StatusInscribe_SendingNFTToUser: '6: sending nft to user'
-      StatusInscribe_SentBTCFromSegwitAddrToOrdAdd: '3: send btc from segwit address
-        to ord address success, or ready to mint.'
-      StatusInscribe_SentNFTToUser: '7: send nft to user success: flow DONE'
-      StatusInscribe_TxMintFailed: '10: tx mint failed'
-      StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed: '8: send btc from segwit
-        address to ord address failed'
-      StatusInscribe_TxSendBTCToUserFailed: '9: send nft to user failed'
-    x-enum-varnames:
-    - StatusInscribe_Pending
-    - StatusInscribe_ReceivedFund
-    - StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr
-    - StatusInscribe_SentBTCFromSegwitAddrToOrdAdd
-    - StatusInscribe_Minting
-    - StatusInscribe_Minted
-    - StatusInscribe_SendingNFTToUser
-    - StatusInscribe_SentNFTToUser
-    - StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed
-    - StatusInscribe_TxSendBTCToUserFailed
-    - StatusInscribe_TxMintFailed
-    - StatusInscribe_NotEnoughBalance
-    - StatusInscribe_NeedToRefund
-  entity.TokenPaidType:
-    enum:
-    - eth
-    - btc
-    type: string
-    x-enum-varnames:
-    - ETH
-    - BIT
   entity.TokenStats:
     properties:
       price_int:
@@ -517,13 +422,12 @@ definitions:
       originalInscribedBy:
         type: string
       owner:
-        allOf:
-        - $ref: '#/definitions/entity.Users'
+        $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
       ownerAddr:
         type: string
       paidType:
-        $ref: '#/definitions/entity.TokenPaidType'
+        type: string
       parsed_attributes:
         items:
           $ref: '#/definitions/entity.TokenUriAttr'
@@ -613,10 +517,14 @@ definitions:
         type: string
       created_at:
         type: string
+      deleted_at:
+        type: string
       display_name:
         type: string
       enable_notification:
         type: boolean
+      id:
+        type: string
       is_updated_avatar:
         type: boolean
       isAdmin:
@@ -629,6 +537,10 @@ definitions:
         $ref: '#/definitions/entity.ProfileSocial'
       stats:
         $ref: '#/definitions/entity.UserStats'
+      updated_at:
+        type: string
+      uuid:
+        type: string
       verifiedAt:
         type: string
       wallet_address:
@@ -668,8 +580,7 @@ definitions:
       metadata:
         type: string
       metadata_obj:
-        allOf:
-        - $ref: '#/definitions/nfts.MoralisTokenMetadata'
+        $ref: '#/definitions/nfts.MoralisTokenMetadata'
         description: Custom
       name:
         type: string
@@ -1090,12 +1001,12 @@ definitions:
   request.VoteDaoArtistRequest:
     properties:
       status:
-        $ref: '#/definitions/dao_artist_voted.Status'
+        type: integer
     type: object
   request.VoteDaoProjectRequest:
     properties:
       status:
-        $ref: '#/definitions/dao_project_voted.Status'
+        type: integer
     type: object
   request.WithDrawItemRequest:
     properties:
@@ -1157,7 +1068,7 @@ definitions:
       seq_id:
         type: integer
       status:
-        $ref: '#/definitions/dao_artist.Status'
+        type: integer
       total_report:
         type: integer
       total_verify:
@@ -1178,7 +1089,7 @@ definitions:
       display_name:
         type: string
       status:
-        $ref: '#/definitions/dao_artist_voted.Status'
+        type: integer
     type: object
   response.DaoProject:
     properties:
@@ -1205,7 +1116,7 @@ definitions:
       seq_id:
         type: integer
       status:
-        $ref: '#/definitions/dao_project.Status'
+        type: integer
       total_against:
         type: integer
       total_vote:
@@ -1226,7 +1137,7 @@ definitions:
       display_name:
         type: string
       status:
-        $ref: '#/definitions/dao_project_voted.Status'
+        type: integer
     type: object
   response.FileRes:
     properties:
@@ -1749,12 +1660,10 @@ definitions:
     properties:
       collection_created:
         type: integer
-      nft_minted:
+      total_mint:
         type: integer
-      output_minted:
+      total_minted:
         type: integer
-      volume_minted:
-        type: number
     type: object
   response.VerifyResponse:
     properties:
@@ -2240,6 +2149,78 @@ paths:
       tags:
       - Categories
   /collections:
+    get:
+      consumes:
+      - application/json
+      description: get list tokens og a collection and respond data for chart
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Collection's chart
+      tags:
+      - CollectionListing
+  /collections/{projectID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
+  /collections/items:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
+  /collections/on-sale-items:
     get:
       consumes:
       - application/json
@@ -3376,6 +3357,27 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
+      tags:
+      - MarketPlace
+  /marketplace/stats/{genNFTAddr}/first-sale:
+    get:
+      consumes:
+      - application/json
+      description: get project's first-sale
+      parameters:
+      - description: Gen NFT Addr
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's first-sale
       tags:
       - MarketPlace
   /marketplace/wallet/{walletAddress}/listing:

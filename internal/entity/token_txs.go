@@ -19,6 +19,7 @@ type TokenTx struct {
 	Depth         int        `bson:"depth"`
 	NumFailed     int        `bson:"num_failed"`
 	Priority      int64      `bson:"pritority"`
+	Resolved      bool       `bson:"resolved"`
 }
 
 type UpdateTokenTxRequest struct {
