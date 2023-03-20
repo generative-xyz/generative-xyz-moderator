@@ -1,10 +1,12 @@
 package crontab
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -144,7 +146,7 @@ func (h ScronHandler) StartServer() {
 	c.AddFunc("@hourly", func() {
 		h.Usecase.JobAggregateVolumns()
 	})
-	
+
 	c.AddFunc("@hourly", func() {
 		h.Usecase.JobAggregateReferral()
 	})
@@ -152,7 +154,15 @@ func (h ScronHandler) StartServer() {
 	c.AddFunc("*/10 * * * *", func() {
 		err := h.Usecase.JobSyncTraitStats()
 		if err != nil {
-			h.Logger.Error("error when sync trait stats", err)
+			logger.AtLog.Logger.Error("error when sync trait stats", zap.Error(err))
+		}
+	})
+
+	// At 05:00. UTC
+	c.AddFunc("0 5 * * *", func() {
+		err := h.Usecase.CalUserStats(context.Background())
+		if err != nil {
+			logger.AtLog.Logger.Error("CalUserStats failed", zap.Error(err))
 		}
 	})
 

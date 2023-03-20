@@ -41,8 +41,9 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	unwindUser := bson.M{"$unwind": "$user"}
 	addFields := bson.M{
 		"$addFields": bson.M{
-			"project_name": "$project.name",
-			"user_name":    "$user.display_name",
+			"project_name":       "$project.name",
+			"user_name":          "$user.display_name",
+			"collection_created": "$user.stats.collection_created",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -70,6 +71,9 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 			return nil, 0, err
 		}
 		filters["_id"] = id
+	}
+	if request.SeqId != nil {
+		filters["seq_id"] = *request.SeqId
 	}
 	if request.Status != nil {
 		filters["status"] = *request.Status
