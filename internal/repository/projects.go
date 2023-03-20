@@ -925,3 +925,22 @@ func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply i
 
 	return err
 }
+
+func (r Repository) GetProjectTrendingScore(projectID string) (int64, error) {
+	var trendingScore int64
+	resp := &entity.Projects{}
+	opts := options.FindOne().SetProjection(bson.D{
+		{Key: "stats.trending_score", Value: 1},
+	})
+	project, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "tokenid", Value: projectID}}, opts)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+
+	err = helpers.Transform(project, resp)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+	trendingScore = resp.Stats.TrendingScore
+	return trendingScore, nil
+}
