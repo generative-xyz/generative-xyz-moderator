@@ -1889,7 +1889,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		if status == entity.StatusWithdraw_Approve {
 			status = entity.StatusWithdraw_Available
 		}
-		
+
 		if status == entity.StatusWithdraw_Reject {
 			status = entity.StatusWithdraw_Available
 		}
