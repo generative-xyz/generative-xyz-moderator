@@ -275,6 +275,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 				}
 			} else {
+				continue // temp pause for rate limit.
 				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
 				txStatus, err := bs.CheckTx(inscriptionTx[0])
 				if err != nil {
