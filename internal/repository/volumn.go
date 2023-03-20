@@ -312,7 +312,7 @@ func (r Repository) AggregateBTCVolumn(projectID string) ([]entity.AggregateProj
 	pipeLine := bson.A{
 		matchStage,
 		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
+			bson.M{ "projectID": "$projectID"}, 
 			"amount": calculate,
 			"minted": bson.M{"$sum": 1},
 		}},
