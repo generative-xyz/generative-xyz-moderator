@@ -205,7 +205,7 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 	startTime := time.Time{}
 	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobCreateTokenTxFromTokenURI.GetPagingTokenUri", zap.Any("page", page))
-		uTokens, err := u.Repo.GetNotCreatedTxToken(page, 1)
+		uTokens, err := u.Repo.GetNotCreatedTxToken(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -291,7 +291,7 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 	var processed int64
 	for page := int64(1); page < 2; page++ {
 		u.Logger.LogAny("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
-		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 1)
+		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
 		}
