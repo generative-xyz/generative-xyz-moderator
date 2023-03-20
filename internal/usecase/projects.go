@@ -2182,3 +2182,26 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 	return h, nil
 }
+
+
+func (u Usecase) GetProjectFirstSale(genNFTAddr string) (string, map[string]string) {
+	paytypes := []string{
+		string(entity.ETH),
+		string(entity.BIT),
+	}
+
+	totalAmount := 0.0
+	amountByPaytype := make(map[string]string)
+	for _, paytype := range paytypes {
+		data, err := u.Repo.AggregateVolumn(genNFTAddr, paytype)
+		if err == nil && data != nil {
+			if len(data) > 0 {
+				totalAmount += data[0].Amount
+				amountByPaytype[paytype] = fmt.Sprintf("%d", int(data[0].Amount))
+			}
+		}			
+	}
+
+	return fmt.Sprintf("%d", int(totalAmount)), amountByPaytype
+	
+}
