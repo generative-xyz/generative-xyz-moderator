@@ -901,6 +901,25 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 	return projects, nil
 }
 
+
+func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
 func (u Usecase) CheckExisted(s string, arr []string) bool {
 	for _, item := range arr {
 		if item == s {
