@@ -2594,6 +2594,38 @@ var doc = `{
                 }
             }
         },
+        "/marketplace/stats/{genNFTAddr}/first-sale": {
+            "get": {
+                "description": "get project's first-sale",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MarketPlace"
+                ],
+                "summary": "get project's first-sale",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gen NFT Addr",
+                        "name": "genNFTAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/marketplace/wallet/{walletAddress}/listing": {
             "get": {
                 "description": "User profile's selling nft",
