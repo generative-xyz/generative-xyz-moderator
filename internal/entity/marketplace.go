@@ -9,6 +9,7 @@ type ItemListing struct {
 	SellerDisplayName string         `json:"sellerDisplayName"`
 	Name              string         `json:"name"`
 	Image             string         `json:"image"`
+	ContentType       string         `json:"contentType"`
 }
 
 type VolumneObject struct {

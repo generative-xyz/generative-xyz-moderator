@@ -2220,6 +2220,30 @@ paths:
       summary: CollectionListing
       tags:
       - CollectionListing
+  /collections/on-sale-items:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
   /configs:
     get:
       consumes:
@@ -2366,7 +2390,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2387,7 +2411,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2413,7 +2437,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2468,7 +2492,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2517,7 +2541,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2889,7 +2913,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2911,7 +2935,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3208,7 +3232,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -3333,6 +3357,27 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
+      tags:
+      - MarketPlace
+  /marketplace/stats/{genNFTAddr}/first-sale:
+    get:
+      consumes:
+      - application/json
+      description: get project's first-sale
+      parameters:
+      - description: Gen NFT Addr
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's first-sale
       tags:
       - MarketPlace
   /marketplace/wallet/{walletAddress}/listing:
