@@ -16,8 +16,8 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (uc Usecase) ListItemListingNotMatched(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
-	data, err := uc.Repo.FindListItemListingNotMatched(filter)
+func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+	data, err := uc.Repo.ListItemListingOnSale(filter)
 	if err != nil {
 		return nil, err
 	}

@@ -12,21 +12,6 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (r Repository) GetDexBTCListingNotMatched(page int64, limit int64) ([]*entity.DexBTCListing, error) {
-	result := []*entity.DexBTCListing{}
-	f := bson.M{"$and": bson.A{
-		bson.M{"verified": true},
-		bson.M{"cancelled": false},
-		bson.M{"matched": false},
-	}}
-	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
-	_, err := r.Paginate(entity.DexBTCListing{}.TableName(), page, limit, f, bson.D{}, s, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
 func (r Repository) CreateDexBTCListing(listing *entity.DexBTCListing) error {
 	err := r.InsertOne(listing.TableName(), listing)
 	if err != nil {
@@ -619,7 +604,7 @@ func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
 func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
 	f := bson.M{
 		"matched_tx": matchedTx,
-		"matched": true,
+		"matched":    true,
 	}
 
 	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
