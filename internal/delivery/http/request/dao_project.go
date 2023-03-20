@@ -9,6 +9,7 @@ type ListDaoProjectRequest struct {
 	*entity.Pagination
 	Status  *int64  `query:"status"`
 	Keyword *string `query:"keyword"`
+	SeqId   *string `query:"seq_id"`
 	Id      *string `query:"id"`
 }
 type CreateDaoProjectRequest struct {
