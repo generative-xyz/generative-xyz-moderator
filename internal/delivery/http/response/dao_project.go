@@ -74,10 +74,9 @@ type UserForDao struct {
 }
 
 type UserStats struct {
-	CollectionCreated int32   `json:"collection_created"`
-	NftMinted         int32   `json:"nft_minted"`
-	OutputMinted      int32   `json:"output_minted"`
-	VolumeMinted      float64 `json:"volume_minted"`
+	CollectionCreated int64 `json:"collection_created"`
+	TotalMint         int64 `json:"total_mint"`
+	TotalMinted       int64 `json:"total_minted"`
 }
 
 type DaoProjectVoted struct {

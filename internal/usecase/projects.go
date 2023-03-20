@@ -657,12 +657,14 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if req.Thumbnail != nil && *req.Thumbnail != "" {
 		p.Thumbnail = *req.Thumbnail
 	}
-
+	needSetExpireAvailableDaoProject := false
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
 		if !*req.IsHidden {
 			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
 				return nil, errors.New("Collection is reviewing")
 			}
+		} else {
+			needSetExpireAvailableDaoProject = true
 		}
 		p.IsHidden = *req.IsHidden
 	}
@@ -743,7 +745,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.Error("updated", err.Error(), err)
 		return nil, err
 	}
-
+	if needSetExpireAvailableDaoProject {
+		go u.SetExpireAvailableDAOProject(context.TODO(), p.ID)
+	}
 	u.Logger.Info("updated", updated)
 	return p, nil
 }
@@ -1889,7 +1893,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		if status == entity.StatusWithdraw_Approve {
 			status = entity.StatusWithdraw_Available
 		}
-		
+
 		if status == entity.StatusWithdraw_Reject {
 			status = entity.StatusWithdraw_Available
 		}
