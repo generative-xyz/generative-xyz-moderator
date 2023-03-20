@@ -2083,13 +2083,13 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	totalImages := len(p.Images)
-	totalProcessingImages := len(p.ProcessingImages)
-	if totalImages == 0 && totalProcessingImages == 0 {
-		err = errors.New("Project doesn's have any files")
-		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
-		return nil, err
-	}
+	// totalImages := len(p.Images)
+	// totalProcessingImages := len(p.ProcessingImages)
+	// if totalImages == 0 && totalProcessingImages == 0 {
+	// 	err = errors.New("Project doesn's have any files")
+	// 	logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+	// 	return nil, err
+	// }
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -2184,24 +2184,14 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 }
 
 
-func (u Usecase) GetProjectFirstSale(genNFTAddr string) (string, map[string]string) {
-	paytypes := []string{
-		string(entity.ETH),
-		string(entity.BIT),
-	}
-
-	totalAmount := 0.0
-	amountByPaytype := make(map[string]string)
-	for _, paytype := range paytypes {
-		data, err := u.Repo.AggregateVolumn(genNFTAddr, paytype)
-		if err == nil && data != nil {
-			if len(data) > 0 {
-				totalAmount += data[0].Amount
-				amountByPaytype[paytype] = fmt.Sprintf("%d", int(data[0].Amount))
-			}
-		}			
-	}
-
-	return fmt.Sprintf("%d", int(totalAmount)), amountByPaytype
-	
+func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
+	totalAmount := "0"
+	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
+	if err == nil && data != nil {
+		if len(data) > 0 {
+			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
+			//amountByPaytype[paytype] = 
+		}
+	}		
+	return  totalAmount
 }

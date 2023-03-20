@@ -153,7 +153,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
 	collection.HandleFunc("/on-sale-items", h.getItemListingOnSale).Methods("GET")
-	collection.HandleFunc("/{projectID}/charts", h.getChartDataForCollection).Methods("GET")
+
+	charts := api.PathPrefix("/charts").Subrouter()
+	charts.HandleFunc("/collections/{projectID}", h.getChartDataForCollection).Methods("GET")
+	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()

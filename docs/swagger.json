@@ -669,6 +669,81 @@
                 }
             }
         },
+        "/charts/collections/{projectID}/charts": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/tokens/{tokenID}/charts": {
+            "get": {
+                "description": "TokenURI's chart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tokens"
+                ],
+                "summary": "TokenURI's chart",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "tokenID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/collections": {
             "get": {
                 "description": "get list tokens og a collection and respond data for chart",
@@ -767,43 +842,6 @@
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/collections/{projectID}/charts": {
-            "get": {
-                "description": "get list CollectionListing",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "CollectionListing"
-                ],
-                "summary": "CollectionListing",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "projectID",
-                        "name": "projectID",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "dateRange",
-                        "name": "dateRange",
                         "in": "query"
                     }
                 ],
@@ -1065,7 +1103,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1099,7 +1137,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             },
@@ -1140,7 +1178,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1228,7 +1266,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1354,7 +1392,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1891,7 +1929,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1927,7 +1965,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2429,7 +2467,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
