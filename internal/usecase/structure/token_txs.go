@@ -3,6 +3,7 @@ package structure
 type Tx struct {
 	Inputs  []Input  `json:"inputs"`
 	Outputs []Output `json:"outputs"`
+	Time    int64    `json:"time"`
 }
 
 type Input struct {

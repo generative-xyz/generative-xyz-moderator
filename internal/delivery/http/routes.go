@@ -152,6 +152,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
 	collection.HandleFunc("/not-matched-items", h.getItemListingNotMatched).Methods("GET")
+	collection.HandleFunc("/{projectID}/charts", h.getChartDataForCollection).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
