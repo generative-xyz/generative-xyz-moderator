@@ -886,8 +886,11 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 		return nil, err
 	}
 
-	pe.CustomQueries = make(map[string]primitive.M)
-	pe.CustomQueries["$expr"] = bson.M{"$lt": bson.A{"$index", "$maxSupply"}}
+	if !u.CheckExisted("6406e7abb90f7fc13f55490c", pe.CategoryIds) && !u.CheckExisted("63f8325a1460b1502544101b", pe.CategoryIds) {
+		pe.CustomQueries = make(map[string]primitive.M)
+		pe.CustomQueries["$expr"] = bson.M{"$lt": bson.A{"$index", "$maxSupply"}}
+	}
+
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
 		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
@@ -896,6 +899,16 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 
 	u.Logger.Info("projects", projects.Total)
 	return projects, nil
+}
+
+func (u Usecase) CheckExisted(s string, arr []string) bool {
+	for _, item := range arr {
+		if item == s {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (u Usecase) GetUpcommingProjects(req structure.FilterProjects) (*entity.Pagination, error) {
