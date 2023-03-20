@@ -3359,6 +3359,27 @@ paths:
       summary: get project's detail
       tags:
       - MarketPlace
+  /marketplace/stats/{genNFTAddr}/first-sale:
+    get:
+      consumes:
+      - application/json
+      description: get project's first-sale
+      parameters:
+      - description: Gen NFT Addr
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's first-sale
+      tags:
+      - MarketPlace
   /marketplace/wallet/{walletAddress}/listing:
     get:
       consumes:

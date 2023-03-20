@@ -388,6 +388,29 @@ func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
 
+// UserCredits godoc
+// @Summary get project's first-sale
+// @Description get project's first-sale
+// @Tags MarketPlace
+// @Accept  json
+// @Produce  json
+// @Param genNFTAddr path string true "Gen NFT Addr"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /marketplace/stats/{genNFTAddr}/first-sale [GET]
+func (h *httpDelivery) getCollectionStatsFirstSale(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	genNFTAddr := vars["genNFTAddr"]
+	
+	amount, amountByPaytype := h.Usecase.GetProjectFirstSale(genNFTAddr)
+	
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.StatFirstSale{
+		Amount: amount,
+		AmountByPaytype: amountByPaytype,
+		ProjectID:  genNFTAddr,
+	} , "")
+}
+
+
 func (h *httpDelivery) projectToStatResp(project *entity.Projects) (*response.MarketplaceStatResp, error) {
 	return &response.MarketplaceStatResp{
 		Stats: response.ProjectStatResp{
