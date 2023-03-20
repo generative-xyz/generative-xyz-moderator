@@ -483,17 +483,19 @@ func (u Usecase) JobMint_CheckBalance() error {
 				// get balance from quicknode:
 				balanceQuickNode, err := btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
 				if err == nil {
-					balance = big.NewInt(int64(balanceQuickNode.Balance))
-					// check confirm:
-					if len(balanceQuickNode.Txrefs) > 0 {
-						txInfo, err := btc.CheckTxfromQuickNode(balanceQuickNode.Txrefs[0].TxHash, u.Config.QuicknodeAPI)
-						if err == nil {
-							if txInfo != nil {
-								confirm = txInfo.Result.Confirmations
-							}
+					if balanceQuickNode != nil {
+						balance = big.NewInt(int64(balanceQuickNode.Balance))
+						// check confirm:
+						if len(balanceQuickNode.Txrefs) > 0 {
+							txInfo, err := btc.CheckTxfromQuickNode(balanceQuickNode.Txrefs[0].TxHash, u.Config.QuicknodeAPI)
+							if err == nil {
+								if txInfo != nil {
+									confirm = txInfo.Result.Confirmations
+								}
 
-						} else {
-							go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
+							} else {
+								go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
+							}
 						}
 					}
 
