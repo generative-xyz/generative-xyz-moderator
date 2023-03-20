@@ -260,6 +260,29 @@ func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*ent
 	return resp, nil
 }
 
+func (r Repository) GetDexBTCListingOrderPendingByInputs(inputs []string) ([]entity.DexBTCListing, error) {
+	resp := []entity.DexBTCListing{}
+
+	f := bson.M{
+		"inputs":    bson.M{"$in": inputs},
+		"matched":   bson.M{"$eq": false},
+		"cancelled": bson.M{"$eq": false},
+	}
+
+	err := r.Find(context.Background(), utils.COLLECTION_DEX_BTC_LISTING, f, &resp, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// err = helpers.Transform(orderInfo, resp)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	return resp, nil
+}
+
 func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, error) {
 	listings := []entity.DexBTCListing{}
 	f := bson.D{
@@ -614,6 +637,25 @@ func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
 	}
 
 	return resp, nil
+}
+
+func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTrackingInternalStatus) ([]entity.DexBTCTrackingInternal, error) {
+	listings := []entity.DexBTCTrackingInternal{}
+	f := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_TRACKING_INTERNAL).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
 }
 
 func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {

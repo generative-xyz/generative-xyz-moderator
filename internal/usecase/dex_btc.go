@@ -226,7 +226,7 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() {
 		defer wg.Done()
 		err := u.watchPendingDexBTCBuyETH()
 		if err != nil {
-			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCBuyETH err", err)
 		}
 	}(&wg)
 
