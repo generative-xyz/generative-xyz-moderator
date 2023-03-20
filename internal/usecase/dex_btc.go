@@ -288,25 +288,22 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		}
 		if order.CancelTx == "" {
 			spentTx := ""
-			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
-			if err == nil {
-				if txDetail.Data.Outputs != nil {
-					outputs := *txDetail.Data.Outputs
-					if outputs[idx].SpentByTx != "" {
-						spentTx = outputs[idx].SpentByTx
-					}
+
+			log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
+			txStatus, err := bs.CheckTx(inscriptionTx[0])
+			if err != nil {
+				log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
+				spentTx, err = btc.CheckOutcoinSpentBlockStream(inscriptionTx[0], uint(idx))
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
+					continue
+				}
+				if spentTx != "" {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
 				}
 			} else {
-				// continue // temp pause for rate limit.
-				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
-				txStatus, err := bs.CheckTx(inscriptionTx[0])
-				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
-					continue
-				} else {
-					if txStatus.Outputs[idx].SpentBy != "" {
-						spentTx = txStatus.Outputs[idx].SpentBy
-					}
+				if txStatus.Outputs[idx].SpentBy != "" {
+					spentTx = txStatus.Outputs[idx].SpentBy
 				}
 			}
 
@@ -992,11 +989,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			txhash := common.HexToHash(order.MasterTx)
 			receipt, err := ethClient.GetClient().TransactionReceipt(ctx, txhash)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt == nil {
-				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt.BlockNumber.Uint64()-currentBlockHeight < 15 {
