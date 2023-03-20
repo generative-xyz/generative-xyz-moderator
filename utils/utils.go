@@ -67,6 +67,7 @@ func HashStruct(val interface{}, opts *hashstructure.HashOptions) string {
 	}
 	return fmt.Sprintf("%v", hash)
 }
+
 func MD5Ext(val interface{}) string {
 	jsonBytes, _ := json.Marshal(val)
 	result := fmt.Sprintf("%x", md5.Sum(jsonBytes))

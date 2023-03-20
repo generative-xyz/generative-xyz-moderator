@@ -154,7 +154,7 @@ const (
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
 	PUBSUB_PROJECT_UNZIP                      string = "project_unzip"
 
-	BTCConfirmationThreshold = 6
+	BTCConfirmationThreshold = 1
 	FirstScannedBTCBlkHeight = 697200
 	BUY_NFT_CHARGE           = 0      // 0%
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
@@ -167,7 +167,7 @@ const (
 
 	DEVELOPER_INSCRIBE_MAX_REQUEST = 200
 
-	INSCRIBE_TIMEOUT = 6
+	INSCRIBE_TIMEOUT = 3
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 
