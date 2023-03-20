@@ -479,7 +479,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 			balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
 			fmt.Println("GetBalance btc response: ", balance, confirm, err)
 
-			if strings.Contains(err.Error(), "rate_limit") {
+			if err != nil && strings.Contains(err.Error(), "rate_limit") {
 				// get balance from quicknode:
 				balanceQuickNode, err := btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
 				if err == nil {
