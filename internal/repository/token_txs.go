@@ -60,10 +60,9 @@ func (r Repository) GetTailTokenTxs(page int64, limit int64) (*entity.Pagination
 func (r Repository) GetUnresolvedTokenTx(page int64, limit int64) (*entity.Pagination, error) {
 	confs := []entity.TokenTx{}
 	resp := &entity.Pagination{}
-	f := bson.M{"resolved": bson.M{"$ne": true}}
+	f := bson.M{"resolved": bson.M{"$ne": true}, "retried_resolve": bson.M{"$lte": 5}}
 	s := []Sort{
-		{SortBy: "last_time_check", Sort: entity.SORT_ASC},
-		{SortBy: "priority", Sort: entity.SORT_DESC},
+		{SortBy: "created_at", Sort: entity.SORT_ASC},
 	}
 	p, err := r.Paginate(entity.TokenTx{}.TableName(), page, limit, f, bson.D{}, s, &confs)
 	if err != nil {
@@ -84,6 +83,23 @@ func (r Repository) UpdateResolvedTx(inscriptionID string, tx string) (*mongo.Up
 	}
 	update := bson.M{
 		"$set": bson.M{"resolved": true},
+	}
+
+	result, err := r.DB.Collection(entity.TokenTx{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return result, errors.WithStack(err)
+}
+
+func (r Repository) AddTokenTxRetryResolve(inscriptionID string, tx string) (*mongo.UpdateResult, error) {
+	filter := bson.D{
+		{Key: "inscription_id", Value: inscriptionID},
+		{Key: "tx", Value: tx},
+	}
+	update := bson.M{
+		"$inc": bson.M{"retried_resolve": 1},
 	}
 
 	result, err := r.DB.Collection(entity.TokenTx{}.TableName()).UpdateOne(context.TODO(), filter, update)

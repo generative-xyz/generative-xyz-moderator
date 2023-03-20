@@ -18,3 +18,9 @@ type ListingFee struct {
 	ServiceAddress string `json:"serviceAddress"`
 	ProjectID      string `json:"projectID"`
 }
+
+type StatFirstSale struct {
+	Amount          string            `json:"amount"`
+	ProjectID       string            `json:"projectID"`
+	PayType 		string 			  `json:"payType"`
+}

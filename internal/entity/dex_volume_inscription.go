@@ -30,11 +30,18 @@ type AggerateChartForProject struct {
 	ToDate *time.Time `json:"toDate"`
 }
 
-type AggragetedInscription struct {
-	ID AggragetedInscriptionID `bson:"_id"`
+
+type AggerateChartForToken struct {
+	TokenID *string `json:"tokenID"`
+	FromDate *time.Time `json:"fromDate"`
+	ToDate *time.Time `json:"toDate"`
+}
+
+type AggragetedProject struct {
+	ID AggragetedProjectID `bson:"_id"`
 	Amount int64 `bson:"amount"`
 }
-type AggragetedInscriptionID struct {
+type AggragetedProjectID struct {
 	ProjectID string `bson:"projectID"` 
 	ProjectName string `bson:"projectName"` 
 	Timestamp string `bson:"timestamp"` 
@@ -52,4 +59,14 @@ func (u DexVolumeInscription) TableName() string {
 
 func (u DexVolumeInscription) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
+}
+
+type AggragetedToken struct {
+	ID AggragetedTokenID `bson:"_id"`
+	Amount int64 `bson:"amount"`
+}
+type AggragetedTokenID struct {
+	TokenID string `bson:"tokenID"` 
+	ProjectName string `bson:"projectName"` 
+	Timestamp string `bson:"timestamp"` 
 }

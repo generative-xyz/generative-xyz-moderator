@@ -2083,13 +2083,13 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	totalImages := len(p.Images)
-	totalProcessingImages := len(p.ProcessingImages)
-	if totalImages == 0 && totalProcessingImages == 0 {
-		err = errors.New("Project doesn's have any files")
-		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
-		return nil, err
-	}
+	// totalImages := len(p.Images)
+	// totalProcessingImages := len(p.ProcessingImages)
+	// if totalImages == 0 && totalProcessingImages == 0 {
+	// 	err = errors.New("Project doesn's have any files")
+	// 	logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+	// 	return nil, err
+	// }
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -2181,4 +2181,17 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	}
 
 	return h, nil
+}
+
+
+func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
+	totalAmount := "0"
+	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
+	if err == nil && data != nil {
+		if len(data) > 0 {
+			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
+			//amountByPaytype[paytype] = 
+		}
+	}		
+	return  totalAmount
 }

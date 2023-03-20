@@ -2148,6 +2148,55 @@ paths:
       summary: update Category
       tags:
       - Categories
+  /charts/collections/{projectID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
+  /charts/tokens/{tokenID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: TokenURI's chart
+      parameters:
+      - description: tokenID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: TokenURI's chart
+      tags:
+      - Tokens
   /collections:
     get:
       consumes:
@@ -2172,20 +2221,20 @@ paths:
       summary: Collection's chart
       tags:
       - CollectionListing
-  /collections/{projectID}/charts:
+  /collections/items:
     get:
       consumes:
       - application/json
       description: get list CollectionListing
       parameters:
-      - description: projectID
-        in: path
-        name: projectID
-        type: string
-      - description: dateRange
+      - description: page
         in: query
-        name: dateRange
+        name: page
         type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -2196,7 +2245,7 @@ paths:
       summary: CollectionListing
       tags:
       - CollectionListing
-  /collections/items:
+  /collections/on-sale-items:
     get:
       consumes:
       - application/json
@@ -3333,6 +3382,27 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: get project's detail
+      tags:
+      - MarketPlace
+  /marketplace/stats/{genNFTAddr}/first-sale:
+    get:
+      consumes:
+      - application/json
+      description: get project's first-sale
+      parameters:
+      - description: Gen NFT Addr
+        in: path
+        name: genNFTAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get project's first-sale
       tags:
       - MarketPlace
   /marketplace/wallet/{walletAddress}/listing:
