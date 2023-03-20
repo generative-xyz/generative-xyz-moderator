@@ -436,7 +436,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		f.IsHidden = &hidden
 	}
 
-	uProjects, err := h.Usecase.GetProjects(f)
+	uProjects, err := h.Usecase.GetAllProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

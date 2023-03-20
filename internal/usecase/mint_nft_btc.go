@@ -481,13 +481,15 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 			if err != nil && strings.Contains(err.Error(), "rate_limit") {
 				// get balance from quicknode:
-				balanceQuickNode, err := btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
+				var balanceQuickNode *structure.BlockCypherWalletInfo
+				balanceQuickNode, err = btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
 				if err == nil {
 					if balanceQuickNode != nil {
 						balance = big.NewInt(int64(balanceQuickNode.Balance))
 						// check confirm:
 						if len(balanceQuickNode.Txrefs) > 0 {
-							txInfo, err := btc.CheckTxfromQuickNode(balanceQuickNode.Txrefs[0].TxHash, u.Config.QuicknodeAPI)
+							var txInfo *btc.QuickNodeTx
+							txInfo, err = btc.CheckTxfromQuickNode(balanceQuickNode.Txrefs[0].TxHash, u.Config.QuicknodeAPI)
 							if err == nil {
 								if txInfo != nil {
 									confirm = txInfo.Result.Confirmations

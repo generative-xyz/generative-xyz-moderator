@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -98,6 +99,83 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 	return tokenTxs, nil
 }
 
+func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
+	tx := structure.Tx{}
+	txId := tokenTx.Tx
+	u.Logger.LogAny(
+		"fetchDataFromTx.Start", 
+		zap.String("tx", txId),
+	)
+	resp, err := http.Get("https://api.blockchain.info/haskoin-store/btc/transaction/" + txId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	tradingTx := false
+	for _, input := range tx.Inputs {
+		temp, _ := hex.DecodeString(input.Witness[0])
+		if temp[len(temp)-1] == 131 {
+			tradingTx = true
+			break
+		}
+	}
+	if tradingTx { 
+		u.Logger.LogAny("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
+		if len(tx.Outputs) < 3 {
+			return errors.New("trading tx must havee at least 3 items")
+		} 
+		buyer := tx.Outputs[0].Address
+		seller := tx.Outputs[1].Address
+		amount := tx.Outputs[1].Value
+		txTime := time.Unix(tx.Time, 0)
+		// Create listing
+		// check existed
+		existed, err := u.Repo.CheckMatchedTxExisted(tokenTx.Tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		
+		if existed {
+			u.Logger.LogAny("fetchDataFromTx.ListingExisted", zap.String("tx", tokenTx.Tx))
+			u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+			return nil
+		}
+
+		newDexBTCListing := entity.DexBTCListing{
+			InscriptionID: tokenTx.InscriptionID,
+			Amount: amount,
+			Matched: true,
+			MatchedTx: tokenTx.Tx,
+			MatchAt: &txTime,
+			Verified: true,
+			Cancelled: false,
+			FromOtherMkp: true,
+			SellerAddress: seller,
+			Buyer: buyer,
+		}
+		err = u.Repo.CreateDexBTCListing(&newDexBTCListing)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		listing, err := u.Repo.GetDexBTCListingByMatchedTx(tokenTx.Tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		u.InsertDexVolumnInscription(*listing)
+	}
+	return nil
+}
+
 func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
 	u.Logger.LogAny(
 		"GoFromTailTokenTx.Start",
@@ -123,6 +201,7 @@ func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
 }
 
 func (u Usecase) JobCreateTokenTxFromTokenURI() error {
+	u.Logger.LogAny("JobCreateTokenTxFromTokenURI.Start")
 	startTime := time.Time{}
 	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobCreateTokenTxFromTokenURI.GetPagingTokenUri", zap.Any("page", page))
@@ -172,6 +251,7 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 }
 
 func (u Usecase) JobContinueCrawlTxs() error {
+	u.Logger.LogAny("JobContinueCrawlTxs.Start")
 	var processed int64
 	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobContinueCrawlTxs.GetPagingTokenTx", zap.Any("page", page))
@@ -192,6 +272,43 @@ func (u Usecase) JobContinueCrawlTxs() error {
 			if err := u.GoFromTailTokenTx(tokenTx); err != nil {
 				u.Logger.ErrorAny(
 					"JobContinueCrawlTxs.GoFromTailTokenTx",
+					zap.Error(err),
+					zap.String("inscriptionID", tokenTx. InscriptionID),
+					zap.String("tx", tokenTx.Tx),
+				)
+			}
+			processed++
+			if processed % 5 == 0 {
+				time.Sleep(1 * time.Second)
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) JobFetchUnresolvedTokenTxs() error {
+	u.Logger.LogAny("JobFetchUnresolvedTokenTxs.Start")
+	var processed int64
+	for page := int64(1); page < 2; page++ {
+		u.Logger.LogAny("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
+		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 1)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		tokenTxs := uTokenTxs.Result.([]entity.TokenTx)
+		if len(tokenTxs) == 0 {
+			break
+		}
+		u.Logger.Info(
+			"JobFetchUnresolvedTokenTxs.DonePagingTokenTx", 
+			zap.Any("page", page), 
+			zap.Any("numItem", len(tokenTxs)),
+		)
+		for _, tokenTx := range tokenTxs {
+			tokenTx.Tx = "1d0b0a3560a92ea0ed075bac90fd2359cab6d0743e44c1b7640e3c4b9a40cc13"
+			if err := u.fetchDataFromTx(tokenTx); err != nil {
+				u.Logger.ErrorAny(
+					"JobFetchUnresolvedTokenTxs.fetchDataFromTx",
 					zap.Error(err),
 					zap.String("inscriptionID", tokenTx. InscriptionID),
 					zap.String("tx", tokenTx.Tx),
