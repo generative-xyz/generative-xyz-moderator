@@ -627,7 +627,7 @@ func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
 func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
 	f := bson.M{
 		"matched_tx": matchedTx,
-		"matched": true,
+		"matched":    true,
 	}
 
 	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
@@ -678,37 +678,37 @@ func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTr
 	return listings, nil
 }
 
-func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
-	f := bson.M{
-		"matched_tx": matchedTx,
-		"matched": true,
-	}
+// func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
+// 	f := bson.M{
+// 		"matched_tx": matchedTx,
+// 		"matched": true,
+// 	}
 
-	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
+// 	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
+// 	if err != nil {
+// 		return false, errors.WithStack(err)
+// 	}
 
-	return count > 0, nil
-}
+// 	return count > 0, nil
+// }
 
-func (r Repository) GetDexBTCListingByMatchedTx(matchedTx string) (*entity.DexBTCListing, error) {
-	resp := &entity.DexBTCListing{}
+// func (r Repository) GetDexBTCListingByMatchedTx(matchedTx string) (*entity.DexBTCListing, error) {
+// 	resp := &entity.DexBTCListing{}
 
-	f := bson.D{
-		{Key: "matched_tx", Value: matchedTx},
-	}
+// 	f := bson.D{
+// 		{Key: "matched_tx", Value: matchedTx},
+// 	}
 
-	orderInfo, err := r.FilterOne(entity.DexBTCListing{}.TableName(), f, &options.FindOneOptions{
-		Sort: bson.D{{Key: "created_at", Value: -1}},
-	})
-	if err != nil {
-		return nil, err
-	}
+// 	orderInfo, err := r.FilterOne(entity.DexBTCListing{}.TableName(), f, &options.FindOneOptions{
+// 		Sort: bson.D{{Key: "created_at", Value: -1}},
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	err = helpers.Transform(orderInfo, resp)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
+// 	err = helpers.Transform(orderInfo, resp)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return resp, nil
+// }
