@@ -144,3 +144,22 @@ func (h *httpDelivery) walletTrackedTx(w http.ResponseWriter, r *http.Request) {
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, txList, "")
 }
+
+func (h *httpDelivery) submitTx(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.SubmitTx
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.submitTx.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	err = h.Usecase.SubmitBTCTransaction(reqBody.Txs)
+	if err != nil {
+		h.Logger.Error("httpDelivery.submitTx.SubmitBTCTransaction", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
