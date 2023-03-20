@@ -32,13 +32,13 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 	f := utils.ParseAggregation(dateRange)
 	filter := &structure.AggerateChartForProject{
 		ProjectID: &projectID,
-		FromDate: &f.FromDate,
-		ToDate: &f.ToDate,
+		FromDate:  &f.FromDate,
+		ToDate:    &f.ToDate,
 	}
 	spew.Dump(filter)
 
 	logger.AtLog.Logger.Info("getChartDataForCollection.Filter", zap.Any("filter", filter))
-	result,  err := h.Usecase.GetChartDataOFTokens(*filter)
+	result, err := h.Usecase.GetChartDataOFTokens(*filter)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing", zap.String("err", err.Error()))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -47,7 +47,6 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
-
 
 // UserCredits godoc
 // @Summary Collection's chart
@@ -116,16 +115,16 @@ func (h *httpDelivery) getItemListing(w http.ResponseWriter, r *http.Request) {
 // @Param page query string false "page"
 // @Param limit query int false "limit"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /collections/not-matched-items [GET]
-func (h *httpDelivery) getItemListingNotMatched(w http.ResponseWriter, r *http.Request) {
+// @Router /collections/on-sale-items [GET]
+func (h *httpDelivery) getItemListingOnSale(w http.ResponseWriter, r *http.Request) {
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getItemListing.BaseFilters", err.Error(), err)
+		h.Logger.Error("h.Usecase.getItemListingOnSale.BaseFilters", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	dataResp, err := h.Usecase.ListItemListingNotMatched(bf)
+	dataResp, err := h.Usecase.ListItemListingOnSale(bf)
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(bf.Page)
