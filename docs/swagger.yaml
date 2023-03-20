@@ -2287,6 +2287,30 @@ paths:
       summary: CollectionListing
       tags:
       - CollectionListing
+  /collections/not-matched-items:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
   /configs:
     get:
       consumes:
