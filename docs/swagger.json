@@ -671,7 +671,7 @@
         },
         "/collections": {
             "get": {
-                "description": "get list CollectionListing",
+                "description": "get list tokens og a collection and respond data for chart",
                 "consumes": [
                     "application/json"
                 ],
@@ -681,7 +681,7 @@
                 "tags": [
                     "CollectionListing"
                 ],
-                "summary": "CollectionListing",
+                "summary": "Collection's chart",
                 "parameters": [
                     {
                         "type": "string",
@@ -707,6 +707,7 @@
             }
         },
         "/collections/items": {
+        "/collections/{projectID}/charts": {
             "get": {
                 "description": "get list CollectionListing",
                 "consumes": [
@@ -730,6 +731,14 @@
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
                         "in": "query"
                     }
                 ],
@@ -991,7 +1000,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1025,7 +1034,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             },
@@ -1066,7 +1075,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1154,7 +1163,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1280,7 +1289,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1817,7 +1826,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1853,7 +1862,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2355,7 +2364,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -7704,6 +7713,11 @@
                 },
                 "volume_minted": {
                     "type": "number"
+                "total_mint": {
+                    "type": "integer"
+                },
+                "total_minted": {
+                    "type": "integer"
                 }
             }
         },
