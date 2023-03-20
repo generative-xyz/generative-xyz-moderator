@@ -676,6 +676,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/collections/items": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/configs": {
             "get": {
                 "description": "Get configs",
@@ -7479,6 +7516,9 @@ const docTemplate = `{
                 "profile_social": {
                     "$ref": "#/definitions/response.ProfileSocial"
                 },
+                "stats": {
+                    "$ref": "#/definitions/response.UserStats"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -7496,6 +7536,23 @@ const docTemplate = `{
                 },
                 "wallet_address_payment": {
                     "type": "string"
+                }
+            }
+        },
+        "response.UserStats": {
+            "type": "object",
+            "properties": {
+                "collection_created": {
+                    "type": "integer"
+                },
+                "nft_minted": {
+                    "type": "integer"
+                },
+                "output_minted": {
+                    "type": "integer"
+                },
+                "volume_minted": {
+                    "type": "number"
                 }
             }
         },
