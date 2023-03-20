@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"log"
+	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -1027,6 +1028,30 @@ func (r Repository) GetNotCreatedActivitiesToken(page int64, limit int64) (*enti
 	return resp, nil
 }
 
+func (r Repository) GetNotCreatedTxToken(page int64, limit int64) (*entity.Pagination, error) {
+	confs := []entity.TokenUri{}
+	resp := &entity.Pagination{}
+	f := bson.M{"created_token_tx": bson.M{"$ne": true}}
+	// hardcode for product environment
+	if os.Getenv("ENVIRONMENT") == "production" {
+		f["project_id"] = bson.M{
+			"$in": []string{"1000466", "1002270"},
+		}
+	}
+	// f["token_id"] = {}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	p, err := r.Paginate(entity.TokenUri{}.TableName(), page, limit, f, r.SelectedTokenFieldsNew(), s, &confs)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
+}
+
 func (r Repository) UpdateTokenCreatedMintActivity(tokenID string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "token_id", Value: tokenID}}
 	update := bson.M{
@@ -1040,6 +1065,21 @@ func (r Repository) UpdateTokenCreatedMintActivity(tokenID string) (*mongo.Updat
 
 	return result, err
 }
+
+func (r Repository) UpdateTokenCreatedTokenTx(tokenID string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "token_id", Value: tokenID}}
+	update := bson.M{
+		"$set": bson.M{"created_token_tx": true},
+	}
+
+	result, err := r.DB.Collection(entity.TokenUri{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
 
 func (r Repository) FindTokenByTokenIds(tokenIDs []string) ([]entity.TokenUri, error) {
 	tokens := []entity.TokenUri{}

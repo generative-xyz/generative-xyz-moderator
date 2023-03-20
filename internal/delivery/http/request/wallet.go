@@ -13,3 +13,7 @@ type TrackTx struct {
 	Address           string `json:"address"`
 	Receiver          string `json:"receiver"`
 }
+
+type SubmitTx struct {
+	Txs map[string]string `json:"txs"`
+}

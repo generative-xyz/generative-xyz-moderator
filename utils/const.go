@@ -142,8 +142,10 @@ const (
 	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
 	COLLECTION_DISCORD_NOTI             string = "discord_notis"
 	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
+	COLLECTION_BTC_TX_SUBMIT            string = "btc_tx_submit"
 	COLLECTION_TOKEN_ACTIVITY           string = "token_activities"
 	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
+	COLLECTION_TOKEN_TX                 string = "token_txs"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
