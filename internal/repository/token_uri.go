@@ -441,7 +441,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 		bson.D{{"$match", bson.D{{"listing_eth_size", filterBuyETH}}}},
-		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}}}},
 		bson.D{
 			{"$facet",
 				bson.D{
