@@ -989,11 +989,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			txhash := common.HexToHash(order.MasterTx)
 			receipt, err := ethClient.GetClient().TransactionReceipt(ctx, txhash)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt == nil {
-				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt.BlockNumber.Uint64()-currentBlockHeight < 15 {
