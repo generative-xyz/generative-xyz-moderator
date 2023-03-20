@@ -1033,7 +1033,7 @@ func (r Repository) GetNotCreatedTxToken(page int64, limit int64) (*entity.Pagin
 	resp := &entity.Pagination{}
 	f := bson.M{"created_token_tx": bson.M{"$ne": true}}
 	// hardcode for product environment
-	if os.Getenv("ENV") == "production" {
+	if os.Getenv("ENVIRONMENT") == "production" {
 		f["project_id"] = bson.M{
 			"$in": []string{"1000466", "1002270"},
 		}
