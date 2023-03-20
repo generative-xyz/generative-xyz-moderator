@@ -125,3 +125,28 @@ var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
 	StatusDEXBuy_SentMaster:      "Sent to master",
 	StatusDEXBuy_Expired:         "Expired",
 }
+
+type DexBTCTrackingInternal struct {
+	BaseEntity `bson:",inline"`
+	// OrderID       string                       `bson:"order_id" json:"order_id"`
+	// BuyEthOrder   string                       `bson:"buy_eth_order" json:"buy_eth_order"`
+	InscriptionList []string                     `bson:"inscription_list" json:"inscription_list"`
+	Txhash          string                       `bson:"txhash" json:"txhash"`
+	Status          DexBTCTrackingInternalStatus `bson:"status" json:"status"`
+}
+
+func (u DexBTCTrackingInternal) TableName() string {
+	return utils.COLLECTION_DEX_BTC_TRACKING_INTERNAL
+}
+
+func (u DexBTCTrackingInternal) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
+
+type DexBTCTrackingInternalStatus int
+
+const (
+	StatusDEXBTCTracking_Pending DexBTCTrackingInternalStatus = iota // 0: pending
+	StatusDEXBTCTracking_Success                                     // 1: successful
+	StatusDEXBTCTracking_Failed                                      // 2: failed
+)

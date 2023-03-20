@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -11,22 +12,48 @@ import (
 )
 
 func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
-
 	submiTxs := []entity.BTCTransactionSubmit{}
 	for txhash, raw := range list {
-		err := btc.SendTxBlockStream(raw)
+		relatedInscription := make(map[string]struct{})
+		relatedInscriptionArray := []string{}
+		txDetail, err := btc.ParseTx(raw)
+		if err != nil {
+			return fmt.Errorf("can't parse transaction")
+		}
+		outPointList := []string{}
+		for _, txIn := range txDetail.TxIn {
+			outPoint := fmt.Sprintf("%v:%v", txIn.PreviousOutPoint.Hash.String(), txIn.PreviousOutPoint.Index)
+			outPointList = append(outPointList, outPoint)
+		}
+
+		listingOrder, err := u.Repo.GetDexBTCListingOrderPendingByInputs(outPointList)
+		if err != nil {
+			return fmt.Errorf("can't parse transaction")
+		}
+
+		for _, listing := range listingOrder {
+			relatedInscription[listing.InscriptionID] = struct{}{}
+		}
+
+		for v, _ := range relatedInscription {
+			relatedInscriptionArray = append(relatedInscriptionArray, v)
+		}
+
+		err = btc.SendTxBlockStream(raw)
 		if err != nil {
 			submiTxs = append(submiTxs, entity.BTCTransactionSubmit{
-				Txhash: txhash,
-				Raw:    raw,
-				Status: 0,
+				Txhash:              txhash,
+				Raw:                 raw,
+				RelatedInscriptions: relatedInscriptionArray,
+				Status:              0,
 			})
 			continue
 		}
 		submiTxs = append(submiTxs, entity.BTCTransactionSubmit{
-			Txhash: txhash,
-			Raw:    raw,
-			Status: 1,
+			Txhash:              txhash,
+			Raw:                 raw,
+			RelatedInscriptions: relatedInscriptionArray,
+			Status:              1,
 		})
 	}
 
@@ -52,31 +79,57 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 	}
 
 	for _, tx := range pendingTxs {
-		txDetail, err := btc.CheckTxfromQuickNode(tx.Txhash, u.Config.QuicknodeAPI)
-		if err != nil {
-			log.Printf("watchPendingBTCTxSubmit CheckTxfromQuickNode %v\n", err)
-		} else {
-			if txDetail.Result.Confirmations >= 0 {
-				tx.Status = 1
+		switch tx.Status {
+		case entity.StatusBTCTransactionSubmit_Waiting:
+			txDetail, err := btc.CheckTxfromQuickNode(tx.Txhash, u.Config.QuicknodeAPI)
+			if err != nil {
+				log.Printf("watchPendingBTCTxSubmit CheckTxfromQuickNode %v\n", err)
+			} else {
+				if txDetail.Result.Confirmations >= 0 {
+					tx.Status = 1
+					_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
+					if err != nil {
+						log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
+						continue
+					}
+					continue
+				}
+			}
+
+			err = btc.SendTxBlockStream(tx.Raw)
+			if err != nil {
+				log.Printf("watchPendingBTCTxSubmit SendTxBlockStream err %v\n", err)
+				continue
+			}
+			tx.Status = entity.StatusBTCTransactionSubmit_Pending
+			_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
+			if err != nil {
+				log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
+				continue
+			}
+			continue
+		case entity.StatusBTCTransactionSubmit_Pending:
+			txDetail, err := btc.CheckTxfromQuickNode(tx.Txhash, u.Config.QuicknodeAPI)
+			if err != nil {
+				log.Printf("watchPendingBTCTxSubmit CheckTxfromQuickNode %v\n", err)
+				tx.Status = entity.StatusBTCTransactionSubmit_Failed
 				_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
 				if err != nil {
 					log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
 					continue
 				}
 				continue
+			} else {
+				if txDetail.Result.Confirmations >= 1 {
+					tx.Status = entity.StatusBTCTransactionSubmit_Success
+					_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
+					if err != nil {
+						log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
+						continue
+					}
+					continue
+				}
 			}
-		}
-
-		err = btc.SendTxBlockStream(tx.Raw)
-		if err != nil {
-			log.Printf("watchPendingBTCTxSubmit SendTxBlockStream err %v\n", err)
-			continue
-		}
-		tx.Status = 1
-		_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
-		if err != nil {
-			log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
-			continue
 		}
 	}
 
