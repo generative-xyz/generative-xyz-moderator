@@ -137,6 +137,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 
+	adminTest := api.PathPrefix("/admin-test").Subrouter()
+	adminTest.HandleFunc("", h.adminTest).Methods("GET")
+
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
