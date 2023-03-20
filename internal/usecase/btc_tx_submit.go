@@ -39,6 +39,7 @@ func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
 
 	_, err := u.Repo.CreateMany(context.Background(), utils.COLLECTION_BTC_TX_SUBMIT, dbObjs)
 	if err != nil {
+		log.Printf("SubmitBTCTransaction CreateMany err %v\n", err)
 		return err
 	}
 	return nil
@@ -59,6 +60,7 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 				tx.Status = 1
 				_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
 				if err != nil {
+					log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
 					continue
 				}
 				continue
@@ -67,11 +69,13 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 
 		err = btc.SendTxBlockStream(tx.Raw)
 		if err != nil {
+			log.Printf("watchPendingBTCTxSubmit SendTxBlockStream err %v\n", err)
 			continue
 		}
 		tx.Status = 1
 		_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
 		if err != nil {
+			log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
 			continue
 		}
 	}
