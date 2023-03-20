@@ -75,6 +75,7 @@ func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*ent
 func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
+	ignoreInscriptionIds := []string{"b7b65579e2dd556b83665d7a26ecb0259225dbec491a9888d4a9c1716a7f9733i0"}
 	pipeline := bson.A{
 		bson.M{
 			"$lookup": bson.M{
@@ -84,7 +85,10 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 				"as":           "token_info",
 			},
 		},
-		bson.M{"$match": bson.M{"token_info": bson.A{}}},
+		bson.M{"$match": bson.M{
+			"token_info":              bson.A{},
+			"metadata.inscription_id": bson.M{"$nin": ignoreInscriptionIds},
+		}},
 		bson.M{
 			"$group": bson.M{
 				"_id":          "$metadata.inscription_id",
