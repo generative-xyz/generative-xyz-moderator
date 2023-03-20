@@ -39,6 +39,8 @@ type DexBTCListing struct {
 	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 
 	IsTimeSeriesData bool `json:"is_time_series_data"`
+	
+	FromOtherMkp bool `bson:"from_other_mkp"`
 }
 
 type DexBtcListingWithProjectInfo struct {

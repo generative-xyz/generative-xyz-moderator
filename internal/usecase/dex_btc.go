@@ -233,6 +233,28 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() {
 	wg.Wait()
 }
 
+func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
+	u.Logger.Info("DexVolumeInscription Insert to time series data %s", o.InscriptionID)
+	data := entity.DexVolumeInscription{
+		Amount:    o.Amount,
+		Timestamp: o.MatchAt,
+		Metadata: entity.DexVolumeInscriptionMetadata{
+			InscriptionId: o.InscriptionID,
+			MatchedTx:     o.MatchedTx,
+		},
+	}
+	err := u.Repo.InsertDexVolumeInscription(&data)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+	} else {
+		o.IsTimeSeriesData = true
+		_, err = u.Repo.UpdateDexBTCListingTimeseriesData(&o)
+		if err != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+		}
+	}
+}
+
 func (u Usecase) watchPendingDexBTCListing() error {
 	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
 	if err != nil {
@@ -275,6 +297,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 				}
 			} else {
+				continue // temp pause for rate limit.
 				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
 				txStatus, err := bs.CheckTx(inscriptionTx[0])
 				if err != nil {
