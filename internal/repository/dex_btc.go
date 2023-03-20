@@ -12,6 +12,21 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+func (r Repository) GetDexBTCListingNotMatched(page int64, limit int64) ([]*entity.DexBTCListing, error) {
+	result := []*entity.DexBTCListing{}
+	f := bson.M{"$and": bson.A{
+		bson.M{"verified": true},
+		bson.M{"cancelled": false},
+		bson.M{"matched": false},
+	}}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	_, err := r.Paginate(entity.DexBTCListing{}.TableName(), page, limit, f, bson.D{}, s, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r Repository) CreateDexBTCListing(listing *entity.DexBTCListing) error {
 	err := r.InsertOne(listing.TableName(), listing)
 	if err != nil {

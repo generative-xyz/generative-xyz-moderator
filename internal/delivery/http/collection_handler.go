@@ -106,3 +106,29 @@ func (h *httpDelivery) getItemListing(w http.ResponseWriter, r *http.Request) {
 	result.PageSize = int64(bf.Limit)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, dataResp), "")
 }
+
+// UserCredits godoc
+// @Summary CollectionListing
+// @Description get list CollectionListing
+// @Tags CollectionListing
+// @Accept  json
+// @Produce  json
+// @Param page query string false "page"
+// @Param limit query int false "limit"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /collections/not-matched-items [GET]
+func (h *httpDelivery) getItemListingNotMatched(w http.ResponseWriter, r *http.Request) {
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		h.Logger.Error("h.Usecase.getItemListing.BaseFilters", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	dataResp, err := h.Usecase.ListItemListingNotMatched(bf)
+	result := &entity.Pagination{}
+	result.Result = dataResp
+	result.Page = int64(bf.Page)
+	result.PageSize = int64(bf.Limit)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, dataResp), "")
+}
