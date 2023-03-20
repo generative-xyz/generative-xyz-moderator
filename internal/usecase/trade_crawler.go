@@ -289,7 +289,7 @@ func (u Usecase) JobContinueCrawlTxs() error {
 func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 	u.Logger.LogAny("JobFetchUnresolvedTokenTxs.Start")
 	var processed int64
-	for page := int64(1); page < 2; page++ {
+	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
 		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 100)
 		if err != nil {
