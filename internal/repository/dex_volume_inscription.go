@@ -11,7 +11,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
-func (r Repository) FindListItemListingNotMatched(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
 	result := []entity.DexBTCListing{}
@@ -313,6 +313,6 @@ func (r Repository) AggregateVolumeInscription(filter *entity.AggerateChartForPr
 	if err = cursor.All((context.TODO()), &result); err != nil {
 		return nil, err
 	}
-	
+
 	return result, nil
 }

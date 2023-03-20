@@ -751,7 +751,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/collections/not-matched-items": {
+        "/collections/on-sale-items": {
             "get": {
                 "description": "get list CollectionListing",
                 "consumes": [
