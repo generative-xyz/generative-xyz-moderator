@@ -190,6 +190,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	}
 
 	addNoneBuyItems := true
+	filterBuyETH := bson.D{{"$gte", 0}}
 	if filter.IsBuynow != nil {
 		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
@@ -213,6 +214,10 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		dexBtcMatchAnd := bson.E{"$and", priceFilter}
 		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
 		addNoneBuyItems = false
+	}
+	//buyable only
+	if !addNoneBuyItems {
+		filterBuyETH = bson.D{{"$eq", 0}}
 	}
 
 	f2 := bson.A{
@@ -253,8 +258,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 
-	
-		bson.D{	
+		bson.D{
 			{"$lookup",
 				bson.D{
 					{"from", "dex_btc_listing"},
@@ -288,6 +292,37 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_buy_eth"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let", bson.D{{"status", "$status"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing_eth"},
+				},
+			},
+		},
+		bson.D{
 			{"$addFields",
 				bson.D{
 					{"buyable",
@@ -296,17 +331,31 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 								bson.D{
 									{"if",
 										bson.D{
-											{"$eq",
+											{"$or",
 												bson.A{
 													bson.D{
-														{"$ifNull",
+														{"$eq",
 															bson.A{
-																"$listing",
+																bson.D{
+																	{"$ifNull",
+																		bson.A{
+																			"$listing",
+																			0,
+																		},
+																	},
+																},
 																0,
 															},
 														},
 													},
-													0,
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$listing_eth"}},
+																0,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -323,17 +372,31 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 								bson.D{
 									{"if",
 										bson.D{
-											{"$eq",
+											{"$or",
 												bson.A{
 													bson.D{
-														{"$ifNull",
+														{"$eq",
 															bson.A{
-																"$listing",
+																bson.D{
+																	{"$ifNull",
+																		bson.A{
+																			"$listing",
+																			0,
+																		},
+																	},
+																},
 																0,
 															},
 														},
 													},
-													0,
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$listing_eth"}},
+																0,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -373,10 +436,11 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
 					{"owner_object.display_name", 1},
-					
+					{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}},
 				},
 			},
 		},
+		bson.D{{"$match", bson.D{{"listing_eth_size", filterBuyETH}}}},
 		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
 		bson.D{
 			{"$facet",
@@ -853,7 +917,6 @@ func (r Repository) GetNotSyncInscriptionIndexToken() ([]entity.TokenUri, error)
 		},
 		bson.D{{"$sample", bson.D{{"size", 100}}}},
 		bson.D{{"$project", r.SelectedTokenFieldsNew()}},
-		
 	}
 
 	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
