@@ -42,6 +42,7 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 	addFields := bson.M{
 		"$addFields": bson.M{
 			"project_name":       "$project.name",
+			"project_is_synced":  "$project.isSynced",
 			"user_name":          "$user.display_name",
 			"collection_created": "$user.stats.collection_created",
 		},
@@ -84,6 +85,7 @@ func (s Repository) ListDAOProject(ctx context.Context, request *request.ListDao
 		}
 	}
 	filterSearch := make(bson.M)
+	filterSearch["project_is_synced"] = true
 	matchSearch := bson.M{"$match": filterSearch}
 	if request.Keyword != nil {
 		search := bson.A{

@@ -14,52 +14,54 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-func (u Usecase) ListToken( event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
+func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+	return uc.Repo.FindListItemListing(filter)
+}
 
+func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
 	listing := entity.MarketplaceListings{
-		OfferingId: strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
+		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
 		CollectionContract: strings.ToLower(event.Data.CollectionContract.String()),
-		TokenId : event.Data.TokenId.String(),
-		Seller: strings.ToLower(event.Data.Seller.String()),
-		Erc20Token: strings.ToLower(event.Data.Erc20Token.String()),
-		Price: event.Data.Price.String(),
-		Closed: event.Data.Closed,
-		BlockNumber: blocknumber,
-		Finished: false,
-		DurationTime: event.Data.DurationTime.String(),
+		TokenId:            event.Data.TokenId.String(),
+		Seller:             strings.ToLower(event.Data.Seller.String()),
+		Erc20Token:         strings.ToLower(event.Data.Erc20Token.String()),
+		Price:              event.Data.Price.String(),
+		Closed:             event.Data.Closed,
+		BlockNumber:        blocknumber,
+		Finished:           false,
+		DurationTime:       event.Data.DurationTime.String(),
 	}
 
-	sendMessage := func( listing entity.MarketplaceListings) {
+	sendMessage := func(listing entity.MarketplaceListings) {
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
-			return 
+			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
-			return 
+			return
 		}
 
 		preText := fmt.Sprintf("[ListingID %s] has been created by %s", listing.OfferingId, listing.Seller)
 		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-		title := fmt.Sprintf("User %s create listing with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), listing.Price)
+		title := fmt.Sprintf("User %s create listing with %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), listing.Price)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 		}
-}
+	}
 
-	
 	// check if listing is created or not
 	_, err := u.Repo.FindListingByOfferingID(listing.OfferingId)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// if error is no document -> create
 			err := u.Repo.CreateMarketplaceListing(&listing)
-		if err != nil {
+			if err != nil {
 				u.Logger.Error("error when create marketplace listing", "", err)
 				return err
 			}
@@ -79,11 +81,11 @@ func (u Usecase) ListToken( event *generative_marketplace_lib.GenerativeMarketpl
 	}
 }
 
-func (u Usecase) PurchaseToken( event *generative_marketplace_lib.GenerativeMarketplaceLibPurchaseToken) error {
+func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarketplaceLibPurchaseToken) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	u.Logger.Info("purchase token offeringId", offeringID)
-	
+
 	err := u.Repo.PurchaseTokenByOfferingID(offeringID)
 	if err != nil {
 		u.Logger.Error("u.PurchaseToken.AcceptOfferByOfferingID", err.Error(), err)
@@ -104,7 +106,7 @@ func (u Usecase) PurchaseToken( event *generative_marketplace_lib.GenerativeMark
 		return token, nil
 	}
 
-err = u.UpdateTokenOnwer("purchased", offeringID,  getToken, event.Buyer)
+	err = u.UpdateTokenOnwer("purchased", offeringID, getToken, event.Buyer)
 	if err != nil {
 		u.Logger.Error("u.PurchaseToken.UpdateTokenOnwer", err.Error(), err)
 		return err
@@ -113,52 +115,51 @@ err = u.UpdateTokenOnwer("purchased", offeringID,  getToken, event.Buyer)
 	return nil
 }
 
-func (u Usecase) MakeOffer( event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer, blocknumber uint64) error {
+func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer, blocknumber uint64) error {
 
 	offer := entity.MarketplaceOffers{
-		OfferingId: strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
+		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
 		CollectionContract: strings.ToLower(event.Data.CollectionContract.String()),
-		TokenId : event.Data.TokenId.String(),
-		Buyer: strings.ToLower(event.Data.Buyer.String()),
-		Erc20Token: strings.ToLower(event.Data.Erc20Token.String()),
-		Price: event.Data.Price.String(),
-		Closed: event.Data.Closed,
-		Finished: false,
-		DurationTime: event.Data.DurationTime.String(),
-		BlockNumber: blocknumber,
+		TokenId:            event.Data.TokenId.String(),
+		Buyer:              strings.ToLower(event.Data.Buyer.String()),
+		Erc20Token:         strings.ToLower(event.Data.Erc20Token.String()),
+		Price:              event.Data.Price.String(),
+		Closed:             event.Data.Closed,
+		Finished:           false,
+		DurationTime:       event.Data.DurationTime.String(),
+		BlockNumber:        blocknumber,
 	}
 
-	sendMessage := func( offer entity.MarketplaceOffers) {
+	sendMessage := func(offer entity.MarketplaceOffers) {
 
 		profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
-			return 
+			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
-			return 
+			return
 		}
 
 		preText := fmt.Sprintf("[OfferID %s] has been created by %s", offer.OfferingId, offer.Buyer)
 		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-		title := fmt.Sprintf("User %s made offer with %s",helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
+		title := fmt.Sprintf("User %s made offer with %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offer.Price)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
 		}
-}
+	}
 
-	
 	// check if listing is created or not
 	_, err := u.Repo.FindOfferByOfferingID(offer.OfferingId)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// if error is no document -> create
 			err := u.Repo.CreateMarketplaceOffer(&offer)
-		if err != nil {
+			if err != nil {
 				u.Logger.Error("makeOffer.Repo.CreateMarketplaceOffer", "", err)
 				return err
 			}
@@ -180,11 +181,11 @@ func (u Usecase) MakeOffer( event *generative_marketplace_lib.GenerativeMarketpl
 	return nil
 }
 
-func (u Usecase) AcceptMakeOffer( event *generative_marketplace_lib.GenerativeMarketplaceLibAcceptMakeOffer) error {
+func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibAcceptMakeOffer) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	u.Logger.Info("accept make offer offeringId", offeringID)
-	
+
 	err := u.Repo.AcceptOfferByOfferingID(offeringID)
 	if err != nil {
 		u.Logger.Error("u.AcceptMakeOffer.AcceptOfferByOfferingID", err.Error(), err)
@@ -204,7 +205,7 @@ func (u Usecase) AcceptMakeOffer( event *generative_marketplace_lib.GenerativeMa
 
 		return token, nil
 	}
-	err = u.UpdateTokenOnwer("accepted", offeringID, getToken,event.Buyer)
+	err = u.UpdateTokenOnwer("accepted", offeringID, getToken, event.Buyer)
 	if err != nil {
 		u.Logger.Error("u.UpdateTokenOnwer.UpdateTokenOnwer", err.Error(), err)
 		return err
@@ -214,58 +215,59 @@ func (u Usecase) AcceptMakeOffer( event *generative_marketplace_lib.GenerativeMa
 	return nil
 }
 
-func (u Usecase) CancelListing( event *generative_marketplace_lib.GenerativeMarketplaceLibCancelListing) error {
+func (u Usecase) CancelListing(event *generative_marketplace_lib.GenerativeMarketplaceLibCancelListing) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	u.Logger.Info("cancel listing offeringId", offeringID)
-	
+
 	err := u.Repo.CancelListingByOfferingID(offeringID)
 	if err != nil {
 		return err
 	}
 
 	done := make(chan bool)
-	go func ( done chan bool)  {
-		defer func ()  {
+	go func(done chan bool) {
+		defer func() {
 			done <- true
 		}()
 
 		listing, err := u.Repo.FindListingByOfferingID(offeringID)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindListingByOfferingID", err.Error(), err)
-			return 
+			return
 		}
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
-			return 
+			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
-			return 
+			return
 		}
 
 		preText := fmt.Sprintf("[Listing %s] has been cancelled by %s", listing.OfferingId, listing.Seller)
 		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName) , offeringID)
+		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offeringID)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
-		}}(done)
-	<- done
+		}
+	}(done)
+	<-done
 
 	// TODO: @dac add update collection stats here
 	return nil
 }
 
-func (u Usecase) CancelOffer( event *generative_marketplace_lib.GenerativeMarketplaceLibCancelMakeOffer) error {
+func (u Usecase) CancelOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibCancelMakeOffer) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	u.Logger.Info("cancel make offer offeringId", offeringID)
-	
+
 	err := u.Repo.CancelOfferByOfferingID(offeringID)
 	if err != nil {
 		u.Logger.Error("s.Repo.CancelOfferByOfferingID", err.Error(), err)
@@ -273,55 +275,53 @@ func (u Usecase) CancelOffer( event *generative_marketplace_lib.GenerativeMarket
 	}
 
 	done := make(chan bool)
-	go func ( done chan bool)  {
-		defer func ()  {
+	go func(done chan bool) {
+		defer func() {
 			done <- true
 		}()
 
 		offer, err := u.Repo.FindOfferByOfferingID(offeringID)
 		if err != nil {
 			u.Logger.Error("s.Repo.FindOfferByOfferingID", err.Error(), err)
-			return 
+			return
 		}
 
 		profile, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindUserByWalletAddress", err.Error(), err)
-			return 
+			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
 		if err != nil {
 			u.Logger.Error("cancelListing.FindTokenByGenNftAddr", err.Error(), err)
-			return 
+			return
 		}
 
 		preText := fmt.Sprintf("[Listing %s] has been cancelled by %s", offer.OfferingId, offer.Buyer)
-		content := fmt.Sprintf("TokenID: %s",  helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName) , offeringID)
+		content := fmt.Sprintf("TokenID: %s", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offeringID)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
-		}	
+		}
 
 	}(done)
-	<- done
-
-	
+	<-done
 
 	// TODO: @dac add update collection stats here
 	return nil
 }
 
-func (u Usecase) FilterMKListing( filter structure.FilterMkListing) (*entity.Pagination, error) {
+func (u Usecase) FilterMKListing(filter structure.FilterMkListing) (*entity.Pagination, error) {
 
-fm := &entity.FilterMarketplaceListings{}
+	fm := &entity.FilterMarketplaceListings{}
 	err := copier.Copy(fm, filter)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-ml, err := u.Repo.FilterMarketplaceListings(*fm)
+	ml, err := u.Repo.FilterMarketplaceListings(*fm)
 	if err != nil {
 		u.Logger.Error("u.Repo.FilterMarketplaceListings", err.Error(), err)
 		return nil, err
@@ -331,35 +331,35 @@ ml, err := u.Repo.FilterMarketplaceListings(*fm)
 
 	listingResp := []entity.MarketplaceListings{}
 	iListings := ml.Result
-	listing := iListings.([]entity.MarketplaceListings) 
+	listing := iListings.([]entity.MarketplaceListings)
 	for _, listingItem := range listing {
 		tok, err := u.Repo.FindTokenByGenNftAddr(listingItem.CollectionContract, listingItem.TokenId)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
-		}else{
+		} else {
 			listingItem.Token = *tok
 		}
 
-		p, err  := u.Repo.FindUserByWalletAddress(listingItem.Seller)
-		if err ==  nil {
-			listingItem.SellerInfo =  *p
+		p, err := u.Repo.FindUserByWalletAddress(listingItem.Seller)
+		if err == nil {
+			listingItem.SellerInfo = *p
 		}
 
-		listingResp =append(listingResp, listingItem)
+		listingResp = append(listingResp, listingItem)
 	}
-ml.Result = listingResp
+	ml.Result = listingResp
 	return ml, nil
 }
 
-func (u Usecase) FilterMKOffers( filter structure.FilterMkOffers) (*entity.Pagination, error) {
+func (u Usecase) FilterMKOffers(filter structure.FilterMkOffers) (*entity.Pagination, error) {
 
-fm := &entity.FilterMarketplaceOffers{}
+	fm := &entity.FilterMarketplaceOffers{}
 	err := copier.Copy(fm, filter)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-ml, err := u.Repo.FilterMarketplaceOffers(*fm)
+	ml, err := u.Repo.FilterMarketplaceOffers(*fm)
 	if err != nil {
 		u.Logger.Error("u.Repo.FilterMarketplaceOffers", err.Error(), err)
 		return nil, err
@@ -369,42 +369,41 @@ ml, err := u.Repo.FilterMarketplaceOffers(*fm)
 
 	offersResp := []entity.MarketplaceOffers{}
 	iOffers := ml.Result
-	offers := iOffers.([]entity.MarketplaceOffers) 
+	offers := iOffers.([]entity.MarketplaceOffers)
 	for _, offer := range offers {
 		tok, err := u.Repo.FindTokenByGenNftAddr(offer.CollectionContract, offer.TokenId)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("u.Repo.FindTokenByGenNftAddr", err.Error(), err)
 			//continue
-		}else{
+		} else {
 			offer.Token = *tok
 		}
 
-		p, err  := u.Repo.FindUserByWalletAddress(offer.Buyer)
-		if err ==  nil {
-			offer.BuyerInfo =  *p
+		p, err := u.Repo.FindUserByWalletAddress(offer.Buyer)
+		if err == nil {
+			offer.BuyerInfo = *p
 		}
-		offersResp =append(offersResp, offer)
+		offersResp = append(offersResp, offer)
 	}
 
 	ml.Result = offersResp
 	return ml, nil
 }
 
-func (u Usecase) GetListingBySeller( sellerAddress string) ([]entity.MarketplaceListings,[]string,[]string, error) {
+func (u Usecase) GetListingBySeller(sellerAddress string) ([]entity.MarketplaceListings, []string, []string, error) {
 
 	cachedKey, cachedContractIDsKey, cachedTokensIDsKey := helpers.ProfileSelingKey(sellerAddress)
-listings := []entity.MarketplaceListings{}
+	listings := []entity.MarketplaceListings{}
 	contractIDS := []string{}
 	tokenIDS := []string{}
 	var err error
 
-	
 	u.Logger.Info("cachedKey", cachedKey)
 	u.Logger.Info("cachedContractIDsKey", cachedContractIDsKey)
 	u.Logger.Info("cachedTokensIDsKey", cachedTokensIDsKey)
 
 	//always reloa data
-	liveReload := func ( sellerAddress string, cachedKey string, cachedContractIDsKey string, cachedTokensIDsKey string) ([]entity.MarketplaceListings, []string, []string, error)  {
+	liveReload := func(sellerAddress string, cachedKey string, cachedContractIDsKey string, cachedTokensIDsKey string) ([]entity.MarketplaceListings, []string, []string, error) {
 
 		listings, err = u.Repo.GetListingBySeller(sellerAddress)
 		if err != nil {
@@ -415,7 +414,7 @@ listings := []entity.MarketplaceListings{}
 		contractIDS := []string{}
 		tokenIDS := []string{}
 		for key, listing := range listings {
-			u.Logger.Info(fmt.Sprintf("listing.%d",key),listing)
+			u.Logger.Info(fmt.Sprintf("listing.%d", key), listing)
 			contractIDS = append(contractIDS, listing.CollectionContract)
 			tokenIDS = append(tokenIDS, listing.TokenId)
 		}
@@ -430,26 +429,26 @@ listings := []entity.MarketplaceListings{}
 	cached, err := u.Cache.GetData(cachedKey)
 	if err == nil && cached != nil {
 		err = helpers.ParseCache(cached, &listings)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("helpers.ParseCache.listings", err.Error(), err)
 			return nil, nil, nil, err
 		}
 		cached, err := u.Cache.GetData(cachedContractIDsKey)
 		err = helpers.ParseCache(cached, &contractIDS)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("helpers.ParseCache.cachedContractIDsKey", err.Error(), err)
 			return nil, nil, nil, err
 		}
 		cached, err = u.Cache.GetData(cachedTokensIDsKey)
 		err = helpers.ParseCache(cached, &tokenIDS)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("helpers.ParseCache.tokenIDS", err.Error(), err)
 			return nil, nil, nil, err
 		}
 
-	}else{
+	} else {
 		listings, contractIDS, tokenIDS, err = liveReload(sellerAddress, cachedKey, cachedContractIDsKey, cachedTokensIDsKey)
-		if err != nil  {
+		if err != nil {
 			u.Logger.Error("liveReload", err.Error(), err)
 			return nil, nil, nil, err
 		}
@@ -461,8 +460,7 @@ listings := []entity.MarketplaceListings{}
 	return listings, contractIDS, tokenIDS, nil
 }
 
-func (u Usecase) UpdateTokenOnwer(event string, offeringID string , fn func(offeringID string) (*entity.TokenUri, error), buyer common.Address) error {
-
+func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offeringID string) (*entity.TokenUri, error), buyer common.Address) error {
 
 	owner := strings.ToLower(buyer.String())
 	token, err := fn(offeringID)
@@ -472,8 +470,6 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string , fn func(offe
 	}
 
 	u.Logger.Info("tokenID", token.TokenID)
-	
-	
 
 	profile, err := u.Repo.FindUserByWalletAddress(owner)
 	if err != nil {
@@ -487,7 +483,7 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string , fn func(offe
 	}
 
 	u.Logger.Info("token.Owner", owner)
-	
+
 	token.Owner = profile
 	token.OwnerAddr = owner
 
@@ -497,11 +493,11 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string , fn func(offe
 		return err
 	}
 
-	u.Logger.Info("updated",updated)
+	u.Logger.Info("updated", updated)
 
 	//slack
 	preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
-	content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner,  profile.DisplayName),  helpers.CreateTokenLink( token.ProjectID, token.TokenID,  token.Name))
+	content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner, profile.DisplayName), helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
 	title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
@@ -509,7 +505,6 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string , fn func(offe
 	}
 
 	// TODO: @dac add update collection stats here
-	
 
 	return nil
 }

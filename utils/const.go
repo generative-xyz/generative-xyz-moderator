@@ -1,10 +1,32 @@
 package utils
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/now"
+)
 
 type QuerySort struct {
 	Sort   int
 	SortBy string
+}
+
+
+type AggregateDexBTCListing struct {
+	FromDate   time.Time
+	ToDate  time.Time
+}
+
+func ParseAggregation(key string) AggregateDexBTCListing {
+	sortParams := make(map[string]AggregateDexBTCListing)
+	to := time.Now().UTC()	
+	sortParams["week"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-7), ToDate: to}
+	sortParams["month"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-30), ToDate: to}
+	filter, ok := sortParams[key]
+	if !ok {
+		return sortParams["custom"]
+	}
+	return filter
 }
 
 func ParseSort(key string) QuerySort {
@@ -155,7 +177,7 @@ const (
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
 	PUBSUB_PROJECT_UNZIP                      string = "project_unzip"
 
-	BTCConfirmationThreshold = 6
+	BTCConfirmationThreshold = 1
 	FirstScannedBTCBlkHeight = 697200
 	BUY_NFT_CHARGE           = 0      // 0%
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
@@ -168,7 +190,7 @@ const (
 
 	DEVELOPER_INSCRIBE_MAX_REQUEST = 200
 
-	INSCRIBE_TIMEOUT = 6
+	INSCRIBE_TIMEOUT = 3
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 
