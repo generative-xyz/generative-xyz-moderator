@@ -11,6 +11,67 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
+func (r Repository) FindListItemListingNotMatched(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
+	page := filter.Page
+	pageSize := filter.Limit
+	result := []entity.DexBTCListing{}
+	pipeline := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"as", "token_info"},
+				},
+			},
+		},
+		bson.D{{"$match", bson.D{{"token_info", bson.A{}}}}},
+		bson.M{"$skip": (page - 1) * pageSize},
+		bson.M{"$limit": pageSize},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	response := []*entity.ItemListing{}
+	addresses := []string{}
+	for _, r := range result {
+		data := &entity.ItemListing{
+			InscriptionId: r.InscriptionID,
+			Image:         fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionID),
+			SellerAddress: r.SellerAddress,
+		}
+
+		addresses = append(addresses, r.SellerAddress)
+		response = append(response, data)
+	}
+
+	users, err := r.FindUserByAddresses(addresses)
+	if err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[string]entity.Users)
+	for _, u := range users {
+		userMap[u.WalletAddressBTCTaproot] = u
+	}
+
+	for _, r := range response {
+		if u, ok := userMap[r.SellerAddress]; ok {
+			r.SellerDisplayName = u.DisplayName
+
+		}
+	}
+	return response, nil
+}
+
 func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
