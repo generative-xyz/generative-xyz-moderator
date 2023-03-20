@@ -179,6 +179,8 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		if err = u.Repo.FindOneBy(context.Background(), inscribeBtc.TableName(), bson.M{"inscriptionID": tokenUri.TokenID}, inscribeBtc); err == nil {
 			tokenUri.Project.OrdinalsTx = inscribeBtc.OrdinalsTx
 			tokenUri.Project.OwnerOf = inscribeBtc.OwnerOf
+			tokenUri.Project.TokenAddress = inscribeBtc.TokenAddress
+			tokenUri.Project.TokenId = inscribeBtc.TokenId
 		}
 	}
 	client := resty.New()
