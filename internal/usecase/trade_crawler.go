@@ -305,7 +305,6 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 			zap.Any("numItem", len(tokenTxs)),
 		)
 		for _, tokenTx := range tokenTxs {
-			tokenTx.Tx = "1d0b0a3560a92ea0ed075bac90fd2359cab6d0743e44c1b7640e3c4b9a40cc13"
 			if err := u.fetchDataFromTx(tokenTx); err != nil {
 				u.Logger.ErrorAny(
 					"JobFetchUnresolvedTokenTxs.fetchDataFromTx",
