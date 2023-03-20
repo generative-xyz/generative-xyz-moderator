@@ -353,7 +353,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 				"$filter": bson.M{
 					"input": "$dao_project",
 					"cond": bson.M{
-						"$gt": []interface{}{"$$this.expire_at", time.Now()},
+						"$gt": []interface{}{"$$this.expired_at", time.Now()},
 					},
 				},
 			},
