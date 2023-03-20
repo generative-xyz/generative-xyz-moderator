@@ -648,7 +648,7 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 }
 
 func (u Usecase) CalUserStats(ctx context.Context) error {
-	checker := user_stats.NewChecker(u.Repo, 100)
+	checker := user_stats.NewChecker(u.Repo, 200)
 
 	start := time.Now()
 	checker.Start(ctx)
