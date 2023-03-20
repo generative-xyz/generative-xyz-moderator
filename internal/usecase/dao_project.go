@@ -206,6 +206,24 @@ func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddr
 	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
 }
 
+func (s *Usecase) SetExpireAvailableDAOProject(ctx context.Context, projectId primitive.ObjectID) error {
+	_, err := s.Repo.UpdateMany(ctx, entity.DaoProject{}.TableName(),
+		bson.M{
+			"project_id": projectId,
+			"$and": bson.A{
+				bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+				bson.M{"status": dao_project.Voting},
+			},
+		},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "expired_at", Value: time.Now()},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+	return err
+}
+
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
 	createdBy := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": userWallet}, createdBy); err != nil {
