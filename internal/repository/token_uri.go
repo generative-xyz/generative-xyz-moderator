@@ -190,6 +190,8 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	}
 
 	addNoneBuyItems := true
+	filterPendingBuyETH := bson.D{{"$gte", 0}}
+	filterPendingBuyBTC := bson.D{{"$gte", 0}}
 	if filter.IsBuynow != nil {
 		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
@@ -213,6 +215,11 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		dexBtcMatchAnd := bson.E{"$and", priceFilter}
 		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
 		addNoneBuyItems = false
+	}
+	//buyable only
+	if !addNoneBuyItems {
+		filterPendingBuyETH = bson.D{{"$eq", 0}}
+		filterPendingBuyBTC = bson.D{{"$eq", 0}}
 	}
 
 	f2 := bson.A{
@@ -253,8 +260,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 
-	
-		bson.D{	
+		bson.D{
 			{"$lookup",
 				bson.D{
 					{"from", "dex_btc_listing"},
@@ -288,6 +294,161 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 			},
 		},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_buy_eth"},
+					{"let", bson.D{{"token_id", "$token_id"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$addFields",
+									bson.D{
+										{"matched",
+											bson.D{
+												{"$eq",
+													bson.A{
+														"$inscription_id",
+														"$$token_id",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							bson.D{
+								{"$addFields",
+									bson.D{
+										{"matched_multi",
+											bson.D{
+												{"$reduce",
+													bson.D{
+														{"input", "$inscription_list"},
+														{"initialValue", false},
+														{"in",
+															bson.D{
+																{"$cond",
+																	bson.A{
+																		bson.D{
+																			{"$eq",
+																				bson.A{
+																					"$$this",
+																					"$$token_id",
+																				},
+																			},
+																		},
+																		true,
+																		"$$value",
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							bson.D{
+								{"$match",
+									bson.D{
+										{"$or",
+											bson.A{
+												bson.D{{"matched", true}},
+												bson.D{{"matched_multi", true}},
+											},
+										},
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							bson.D{{"$limit", 1}},
+						},
+					},
+					{"as", "listing_eth"},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "btc_tx_submit"},
+					{"let", bson.D{{"token_id", "$token_id"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$addFields",
+									bson.D{
+										{"matched_multi",
+											bson.D{
+												{"$reduce",
+													bson.D{
+														{"input", "$related_inscriptions"},
+														{"initialValue", false},
+														{"in",
+															bson.D{
+																{"$cond",
+																	bson.A{
+																		bson.D{
+																			{"$eq",
+																				bson.A{
+																					"$$this",
+																					"$$token_id",
+																				},
+																			},
+																		},
+																		true,
+																		"$$value",
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							bson.D{
+								{"$match",
+									bson.D{
+										{"$or",
+											bson.A{
+												bson.D{{"matched_multi", true}},
+											},
+										},
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							bson.D{{"$limit", 1}},
+						},
+					},
+					{"as", "buying_btc"},
+				},
+			},
+		},
+		bson.D{
 			{"$addFields",
 				bson.D{
 					{"buyable",
@@ -296,17 +457,39 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 								bson.D{
 									{"if",
 										bson.D{
-											{"$eq",
+											{"$or",
 												bson.A{
 													bson.D{
-														{"$ifNull",
+														{"$eq",
 															bson.A{
-																"$listing",
+																bson.D{
+																	{"$ifNull",
+																		bson.A{
+																			"$listing",
+																			0,
+																		},
+																	},
+																},
 																0,
 															},
 														},
 													},
-													0,
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$listing_eth"}},
+																0,
+															},
+														},
+													},
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$buying_btc"}},
+																0,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -323,17 +506,39 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 								bson.D{
 									{"if",
 										bson.D{
-											{"$eq",
+											{"$or",
 												bson.A{
 													bson.D{
-														{"$ifNull",
+														{"$eq",
 															bson.A{
-																"$listing",
+																bson.D{
+																	{"$ifNull",
+																		bson.A{
+																			"$listing",
+																			0,
+																		},
+																	},
+																},
 																0,
 															},
 														},
 													},
-													0,
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$listing_eth"}},
+																0,
+															},
+														},
+													},
+													bson.D{
+														{"$gt",
+															bson.A{
+																bson.D{{"$size", "$buying_btc"}},
+																0,
+															},
+														},
+													},
 												},
 											},
 										},
@@ -373,11 +578,24 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
 					{"owner_object.display_name", 1},
-					
+					{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}},
+					{"buying_btc_size", bson.D{{"$size", "$buying_btc"}}},
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}}}},
+		bson.D{
+			{"$match",
+				bson.D{
+					{"$and",
+						bson.A{
+							bson.D{{"listing_eth_size", filterPendingBuyETH}},
+							bson.D{{"buying_btc_size", filterPendingBuyBTC}},
+						},
+					},
+				},
+			},
+		},
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}}}},
 		bson.D{
 			{"$facet",
 				bson.D{
@@ -853,7 +1071,6 @@ func (r Repository) GetNotSyncInscriptionIndexToken() ([]entity.TokenUri, error)
 		},
 		bson.D{{"$sample", bson.D{{"size", 100}}}},
 		bson.D{{"$project", r.SelectedTokenFieldsNew()}},
-		
 	}
 
 	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), aggregates)
@@ -964,10 +1181,48 @@ func (r Repository) GetNotCreatedActivitiesToken(page int64, limit int64) (*enti
 	return resp, nil
 }
 
+func (r Repository) GetNotCreatedTxToken(page int64, limit int64) (*entity.Pagination, error) {
+	confs := []entity.TokenUri{}
+	resp := &entity.Pagination{}
+	f := bson.M{"created_token_tx": bson.M{"$ne": true}}
+	// hardcode for product environment
+	// if os.Getenv("ENVIRONMENT") == "production" {
+	// 	f["project_id"] = bson.M{
+	// 		"$in": []string{"1000466", "1002270"},
+	// 	}
+	// }
+	// f["token_id"] = {}
+	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
+	p, err := r.Paginate(entity.TokenUri{}.TableName(), page, limit, f, r.SelectedTokenFieldsNew(), s, &confs)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = limit
+	return resp, nil
+}
+
 func (r Repository) UpdateTokenCreatedMintActivity(tokenID string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: "token_id", Value: tokenID}}
 	update := bson.M{
 		"$set": bson.M{"created_mint_activity": true},
+	}
+
+	result, err := r.DB.Collection(entity.TokenUri{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (r Repository) UpdateTokenCreatedTokenTx(tokenID string) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: "token_id", Value: tokenID}}
+	update := bson.M{
+		"$set": bson.M{"created_token_tx": true},
 	}
 
 	result, err := r.DB.Collection(entity.TokenUri{}.TableName()).UpdateOne(context.TODO(), filter, update)

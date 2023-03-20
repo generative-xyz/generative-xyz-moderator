@@ -206,6 +206,24 @@ func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddr
 	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
 }
 
+func (s *Usecase) SetExpireAvailableDAOProject(ctx context.Context, projectId primitive.ObjectID) error {
+	_, err := s.Repo.UpdateMany(ctx, entity.DaoProject{}.TableName(),
+		bson.M{
+			"project_id": projectId,
+			"$and": bson.A{
+				bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+				bson.M{"status": dao_project.Voting},
+			},
+		},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "expired_at", Value: time.Now()},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+	return err
+}
+
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
 	createdBy := &entity.Users{}
 	if err := s.Repo.FindOneBy(ctx, createdBy.TableName(), bson.M{"wallet_address": userWallet}, createdBy); err != nil {
@@ -324,6 +342,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 	}
 	filters["creatorAddress"] = userWallet
 	filters["isHidden"] = true
+	filters["isSynced"] = true
 	if req.Cursor != "" {
 		if id, err := primitive.ObjectIDFromHex(req.Cursor); err == nil {
 			filters["_id"] = bson.M{"$lt": id}
@@ -335,7 +354,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 				"$filter": bson.M{
 					"input": "$dao_project",
 					"cond": bson.M{
-						"$gt": []interface{}{"$$this.expire_at", time.Now()},
+						"$gt": []interface{}{"$$this.expired_at", time.Now()},
 					},
 				},
 			},

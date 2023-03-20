@@ -38,6 +38,19 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 // @Tags Admin
 // @Accept  json
 // @Produce  json
+// @Success 200 {object} response.JsonResponse{data=[]response.RedisResponse}
+// @Router /admin-test [GET]
+func (h *httpDelivery) adminTest(w http.ResponseWriter, r *http.Request) {
+	h.Usecase.JobFetchUnresolvedTokenTxs()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
+}
+
+// UserCredits godoc
+// @Summary Get Redis
+// @Description Get Redis
+// @Tags Admin
+// @Accept  json
+// @Produce  json
 // @Param key path string true "Redis key"
 // @Success 200 {object} response.JsonResponse{data=response.RedisResponse}
 // @Router /admin/redis/{key} [GET]

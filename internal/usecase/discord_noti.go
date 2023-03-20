@@ -489,7 +489,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 

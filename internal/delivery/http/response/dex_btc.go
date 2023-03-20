@@ -50,6 +50,6 @@ type DEXBuyEthHistory struct {
 	FeeRate        uint64 `bson:"fee_rate" json:"fee_rate"`
 	Status         string `bson:"status" json:"status"`
 
-	OrderList       []string `bson:"order_list" json:"order_list"`
+	SellOrderList   []string `bson:"sell_order_list" json:"order_list"`
 	InscriptionList []string `bson:"inscription_list" json:"inscription_list"`
 }

@@ -253,6 +253,10 @@ func (bs *BlockcypherService) BTCGetAddrInfo(address string) (*AddrInfo, error) 
 	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
 	if res.StatusCode != http.StatusOK {
+
+		if res.StatusCode == 429 {
+			return result, errors.New("rate_limit")
+		}
 		return result, errors.New("GetUTXO Response status != 200")
 	}
 

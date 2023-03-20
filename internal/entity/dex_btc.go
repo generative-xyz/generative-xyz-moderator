@@ -39,6 +39,8 @@ type DexBTCListing struct {
 	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 
 	IsTimeSeriesData bool `json:"is_time_series_data"`
+	
+	FromOtherMkp bool `bson:"from_other_mkp"`
 }
 
 type DexBtcListingWithProjectInfo struct {
@@ -77,13 +79,14 @@ type DexBTCBuyWithETH struct {
 	FeeRate         uint64             `bson:"fee_rate" json:"fee_rate"`
 	Status          DexBTCETHBuyStatus `bson:"status" json:"status"`
 	ETHKey          string             `bson:"eth_key" json:"eth_key"`
+	ETHAddress      string             `bson:"eth_address" json:"eth_address"`
 	IsMultiBuy      bool               `bson:"multi_buy" json:"multi_buy"`
 	InscriptionList []string           `bson:"inscription_list" json:"inscription_list"`
-	OrderList       []string           `bson:"order_list" json:"order_list"`
+	SellOrderList   []string           `bson:"sell_order_list" json:"order_list"`
 }
 
 func (u DexBTCBuyWithETH) ToJsonString() string {
-	dataBytes, _ := json.MarshalIndent(u, "", " ")
+	dataBytes, _ := json.Marshal(u)
 	return string(dataBytes)
 }
 
@@ -122,3 +125,28 @@ var StatusDexBTCETHToText = map[DexBTCETHBuyStatus]string{
 	StatusDEXBuy_SentMaster:      "Sent to master",
 	StatusDEXBuy_Expired:         "Expired",
 }
+
+type DexBTCTrackingInternal struct {
+	BaseEntity `bson:",inline"`
+	// OrderID       string                       `bson:"order_id" json:"order_id"`
+	// BuyEthOrder   string                       `bson:"buy_eth_order" json:"buy_eth_order"`
+	InscriptionList []string                     `bson:"inscription_list" json:"inscription_list"`
+	Txhash          string                       `bson:"txhash" json:"txhash"`
+	Status          DexBTCTrackingInternalStatus `bson:"status" json:"status"`
+}
+
+func (u DexBTCTrackingInternal) TableName() string {
+	return utils.COLLECTION_DEX_BTC_TRACKING_INTERNAL
+}
+
+func (u DexBTCTrackingInternal) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
+
+type DexBTCTrackingInternalStatus int
+
+const (
+	StatusDEXBTCTracking_Pending DexBTCTrackingInternalStatus = iota // 0: pending
+	StatusDEXBTCTracking_Success                                     // 1: successful
+	StatusDEXBTCTracking_Failed                                      // 2: failed
+)

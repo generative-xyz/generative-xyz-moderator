@@ -606,11 +606,11 @@ func (u Usecase) resolveShortName(userName string, userAddr string) string {
 	if userName != "" {
 		return userName
 	}
-	start := len(userAddr) - 6
-	if start < 0 {
-		start = 0
+	end := 10
+	if end > len(userAddr) {
+		end = len(userAddr)
 	}
-	return userAddr[start:]
+	return userAddr[:end]
 }
 
 func (u Usecase) resolveShortDescription(description string) string {
@@ -657,12 +657,14 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if req.Thumbnail != nil && *req.Thumbnail != "" {
 		p.Thumbnail = *req.Thumbnail
 	}
-
+	needSetExpireAvailableDaoProject := false
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
 		if !*req.IsHidden {
 			if u.IsProjectReviewing(context.Background(), p.ID.Hex()) {
 				return nil, errors.New("Collection is reviewing")
 			}
+		} else {
+			needSetExpireAvailableDaoProject = true
 		}
 		p.IsHidden = *req.IsHidden
 	}
@@ -743,7 +745,9 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		u.Logger.Error("updated", err.Error(), err)
 		return nil, err
 	}
-
+	if needSetExpireAvailableDaoProject {
+		go u.SetExpireAvailableDAOProject(context.TODO(), p.ID)
+	}
 	u.Logger.Info("updated", updated)
 	return p, nil
 }
@@ -875,14 +879,16 @@ func (u Usecase) GetProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, er
 }
 
 func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, error) {
-
 	pe := &entity.FilterProjects{}
-	// pe.CustomQueries = make(map[string]primitive.M)
-	// pe.CustomQueries["openMintUnixTimestamp"] = bson.M{"$eq": 0}
 	err := copier.Copy(pe, req)
 	if err != nil {
 		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
+	}
+
+	if !u.CheckExisted("6406e7abb90f7fc13f55490c", pe.CategoryIds) && !u.CheckExisted("63f8325a1460b1502544101b", pe.CategoryIds) {
+		pe.CustomQueries = make(map[string]primitive.M)
+		pe.CustomQueries["$expr"] = bson.M{"$lt": bson.A{"$index", "$maxSupply"}}
 	}
 
 	projects, err := u.Repo.GetProjects(*pe)
@@ -893,6 +899,35 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 
 	u.Logger.Info("projects", projects.Total)
 	return projects, nil
+}
+
+
+func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Pagination, error) {
+	pe := &entity.FilterProjects{}
+	err := copier.Copy(pe, req)
+	if err != nil {
+		u.Logger.Error("copier.Copy", err.Error(), err)
+		return nil, err
+	}
+	
+	projects, err := u.Repo.GetProjects(*pe)
+	if err != nil {
+		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
+		return nil, err
+	}
+
+	u.Logger.Info("projects", projects.Total)
+	return projects, nil
+}
+
+func (u Usecase) CheckExisted(s string, arr []string) bool {
+	for _, item := range arr {
+		if item == s {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (u Usecase) GetUpcommingProjects(req structure.FilterProjects) (*entity.Pagination, error) {
@@ -1889,7 +1924,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		if status == entity.StatusWithdraw_Approve {
 			status = entity.StatusWithdraw_Available
 		}
-		
+
 		if status == entity.StatusWithdraw_Reject {
 			status = entity.StatusWithdraw_Available
 		}
@@ -2048,13 +2083,13 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	totalImages := len(p.Images)
-	totalProcessingImages := len(p.ProcessingImages)
-	if totalImages == 0 && totalProcessingImages == 0 {
-		err = errors.New("Project doesn's have any files")
-		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
-		return nil, err
-	}
+	// totalImages := len(p.Images)
+	// totalProcessingImages := len(p.ProcessingImages)
+	// if totalImages == 0 && totalProcessingImages == 0 {
+	// 	err = errors.New("Project doesn's have any files")
+	// 	logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+	// 	return nil, err
+	// }
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -2146,4 +2181,17 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	}
 
 	return h, nil
+}
+
+
+func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
+	totalAmount := "0"
+	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
+	if err == nil && data != nil {
+		if len(data) > 0 {
+			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
+			//amountByPaytype[paytype] = 
+		}
+	}		
+	return  totalAmount
 }
