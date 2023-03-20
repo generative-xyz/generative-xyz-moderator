@@ -2220,7 +2220,7 @@ paths:
       summary: CollectionListing
       tags:
       - CollectionListing
-  /collections/not-matched-items:
+  /collections/on-sale-items:
     get:
       consumes:
       - application/json
