@@ -16,6 +16,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
@@ -172,6 +173,13 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	}
 	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
 		tokenUri.Project.InscribedBy = tokenUri.InscribedBy
+	}
+	if tokenUri.NftTokenId != "" {
+		inscribeBtc := &entity.InscribeBTC{}
+		if err = u.Repo.FindOneBy(context.Background(), inscribeBtc.TableName(), bson.M{"inscriptionID": tokenUri.TokenID}, inscribeBtc); err == nil {
+			tokenUri.Project.OrdinalsTx = inscribeBtc.OrdinalsTx
+			tokenUri.Project.OwnerOf = inscribeBtc.OwnerOf
+		}
 	}
 	client := resty.New()
 	resp := &response.SearhcInscription{}
@@ -589,7 +597,6 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
-	
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
 	if filter.Rarity != nil && *filter.Rarity != "" {
@@ -604,23 +611,23 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		minInt, _ := strconv.Atoi(min)
 		maxInt, _ := strconv.Atoi(max)
 
-		groupTraits := make(map [string][]string)
+		groupTraits := make(map[string][]string)
 		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
 		if err == nil {
 			traits := p.TraitsStat
 			for _, trait := range traits {
 				values := trait.TraitValuesStat
-				
+
 				for _, value := range values {
-					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
-						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
-						
+					if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+						groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
+
 					}
 				}
 			}
 		}
 
-		for key, groupTrait := range  groupTraits {
+		for key, groupTrait := range groupTraits {
 			r := structure.TokenUriAttrReq{}
 			r.TraitType = key
 			r.Values = groupTrait
@@ -633,7 +640,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		u.Logger.Error(err)
 		return nil, err
 	}
-	
+
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
