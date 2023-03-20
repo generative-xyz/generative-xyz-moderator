@@ -2148,6 +2148,55 @@ paths:
       summary: update Category
       tags:
       - Categories
+  /charts/collections/{projectID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: CollectionListing
+      tags:
+      - CollectionListing
+  /charts/tokens/{tokenID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: TokenURI's chart
+      parameters:
+      - description: tokenID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: TokenURI's chart
+      tags:
+      - Tokens
   /collections:
     get:
       consumes:
@@ -2170,30 +2219,6 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: Collection's chart
-      tags:
-      - CollectionListing
-  /collections/{projectID}/charts:
-    get:
-      consumes:
-      - application/json
-      description: get list CollectionListing
-      parameters:
-      - description: projectID
-        in: path
-        name: projectID
-        type: string
-      - description: dateRange
-        in: query
-        name: dateRange
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: CollectionListing
       tags:
       - CollectionListing
   /collections/items:
@@ -2390,7 +2415,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2411,7 +2436,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2437,7 +2462,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2492,7 +2517,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2541,7 +2566,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2913,7 +2938,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2935,7 +2960,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3232,7 +3257,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
