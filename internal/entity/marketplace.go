@@ -7,8 +7,11 @@ type ItemListing struct {
 	VolumeOneWeek     *VolumneObject `json:"volumeOneWeek"`
 	SellerAddress     string         `json:"sellerAddress"`
 	SellerDisplayName string         `json:"sellerDisplayName"`
+	BuyerAddress      string         `json:"buyerAddress"`
+	BuyerDisplayName  string         `json:"buyerDisplayName"`
 	Name              string         `json:"name"`
 	Image             string         `json:"image"`
+	ContentType       string         `json:"contentType"`
 }
 
 type VolumneObject struct {

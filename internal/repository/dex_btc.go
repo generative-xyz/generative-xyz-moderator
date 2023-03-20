@@ -646,7 +646,7 @@ func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTr
 func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
 	f := bson.M{
 		"matched_tx": matchedTx,
-		"matched": true,
+		"matched":    true,
 	}
 
 	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)

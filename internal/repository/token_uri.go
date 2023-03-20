@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -1187,11 +1186,11 @@ func (r Repository) GetNotCreatedTxToken(page int64, limit int64) (*entity.Pagin
 	resp := &entity.Pagination{}
 	f := bson.M{"created_token_tx": bson.M{"$ne": true}}
 	// hardcode for product environment
-	if os.Getenv("ENVIRONMENT") == "production" {
-		f["project_id"] = bson.M{
-			"$in": []string{"1000466", "1002270"},
-		}
-	}
+	// if os.Getenv("ENVIRONMENT") == "production" {
+	// 	f["project_id"] = bson.M{
+	// 		"$in": []string{"1000466", "1002270"},
+	// 	}
+	// }
 	// f["token_id"] = {}
 	s := []Sort{{SortBy: "created_at", Sort: entity.SORT_ASC}}
 	p, err := r.Paginate(entity.TokenUri{}.TableName(), page, limit, f, r.SelectedTokenFieldsNew(), s, &confs)
