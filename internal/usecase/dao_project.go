@@ -342,6 +342,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 	}
 	filters["creatorAddress"] = userWallet
 	filters["isHidden"] = true
+	filters["isSynced"] = true
 	if req.Cursor != "" {
 		if id, err := primitive.ObjectIDFromHex(req.Cursor); err == nil {
 			filters["_id"] = bson.M{"$lt": id}
