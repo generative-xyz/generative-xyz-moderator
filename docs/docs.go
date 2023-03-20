@@ -5124,72 +5124,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "dao_artist.Status": {
-            "type": "integer",
-            "enum": [
-                0,
-                1
-            ],
-            "x-enum-varnames": [
-                "Verifying",
-                "Verified"
-            ]
-        },
-        "dao_artist_voted.Status": {
-            "type": "integer",
-            "enum": [
-                0,
-                1
-            ],
-            "x-enum-varnames": [
-                "Report",
-                "Verify"
-            ]
-        },
-        "dao_project.Status": {
-            "type": "integer",
-            "enum": [
-                0,
-                1,
-                2
-            ],
-            "x-enum-varnames": [
-                "Voting",
-                "Executed",
-                "Defeated"
-            ]
-        },
-        "dao_project_voted.Status": {
-            "type": "integer",
-            "enum": [
-                0,
-                1
-            ],
-            "x-enum-varnames": [
-                "Against",
-                "Voted"
-            ]
-        },
-        "entity.BaseEntity": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "entity.DeveloperKey": {
             "type": "object",
             "properties": {
@@ -5234,19 +5168,28 @@ var doc = `{
         "entity.FirebaseRegistrationToken": {
             "type": "object",
             "properties": {
-                "base_entity": {
-                    "$ref": "#/definitions/entity.BaseEntity"
-                },
                 "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
                     "type": "string"
                 },
                 "device_type": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "registration_token": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "user_wallet": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
@@ -5287,11 +5230,7 @@ var doc = `{
                 },
                 "status": {
                     "description": "status for record",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.StatusInscribe"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "tokenAddress": {
                     "type": "string"
@@ -5469,6 +5408,9 @@ var doc = `{
                 "contractAddress": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "created_by_collection_meta": {
                     "type": "boolean"
                 },
@@ -5484,6 +5426,9 @@ var doc = `{
                 "creatorProfile": {
                     "$ref": "#/definitions/entity.Users"
                 },
+                "deleted_at": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -5497,6 +5442,9 @@ var doc = `{
                     "type": "string"
                 },
                 "htmlFile": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 },
                 "images": {
@@ -5685,6 +5633,12 @@ var doc = `{
                         "$ref": "#/definitions/entity.TraitStat"
                     }
                 },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
                 "whiteListEthContracts": {
                     "description": "if user uses links instead of animation URL",
                     "type": "array",
@@ -5712,79 +5666,9 @@ var doc = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/entity.SortType"
+                    "type": "integer"
                 }
             }
-        },
-        "entity.SortType": {
-            "type": "integer",
-            "enum": [
-                1,
-                -1
-            ],
-            "x-enum-varnames": [
-                "SORT_ASC",
-                "SORT_DESC"
-            ]
-        },
-        "entity.StatusInscribe": {
-            "type": "integer",
-            "enum": [
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12
-            ],
-            "x-enum-comments": {
-                "StatusInscribe_Minted": "5: mint success",
-                "StatusInscribe_Minting": "4: minting",
-                "StatusInscribe_NeedToRefund": "12: Need to refund BTC",
-                "StatusInscribe_NotEnoughBalance": "11: balance not enough",
-                "StatusInscribe_Pending": "0: pending: waiting for fund",
-                "StatusInscribe_ReceivedFund": "1: received fund from user (buyer)",
-                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr": "2: sending btc from segwit address to ord address",
-                "StatusInscribe_SendingNFTToUser": "6: sending nft to user",
-                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd": "3: send btc from segwit address to ord address success, or ready to mint.",
-                "StatusInscribe_SentNFTToUser": "7: send nft to user success: flow DONE",
-                "StatusInscribe_TxMintFailed": "10: tx mint failed",
-                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed": "8: send btc from segwit address to ord address failed",
-                "StatusInscribe_TxSendBTCToUserFailed": "9: send nft to user failed"
-            },
-            "x-enum-varnames": [
-                "StatusInscribe_Pending",
-                "StatusInscribe_ReceivedFund",
-                "StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr",
-                "StatusInscribe_SentBTCFromSegwitAddrToOrdAdd",
-                "StatusInscribe_Minting",
-                "StatusInscribe_Minted",
-                "StatusInscribe_SendingNFTToUser",
-                "StatusInscribe_SentNFTToUser",
-                "StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed",
-                "StatusInscribe_TxSendBTCToUserFailed",
-                "StatusInscribe_TxMintFailed",
-                "StatusInscribe_NotEnoughBalance",
-                "StatusInscribe_NeedToRefund"
-            ]
-        },
-        "entity.TokenPaidType": {
-            "type": "string",
-            "enum": [
-                "eth",
-                "btc"
-            ],
-            "x-enum-varnames": [
-                "ETH",
-                "BIT"
-            ]
         },
         "entity.TokenStats": {
             "type": "object",
@@ -5871,17 +5755,13 @@ var doc = `{
                 },
                 "owner": {
                     "description": "accept duplicated data to query more faster",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.Users"
-                        }
-                    ]
+                    "$ref": "#/definitions/entity.Users"
                 },
                 "ownerAddr": {
                     "type": "string"
                 },
                 "paidType": {
-                    "$ref": "#/definitions/entity.TokenPaidType"
+                    "type": "string"
                 },
                 "parsed_attributes": {
                     "type": "array",
@@ -6019,11 +5899,17 @@ var doc = `{
                 "created_at": {
                     "type": "string"
                 },
+                "deleted_at": {
+                    "type": "string"
+                },
                 "display_name": {
                     "type": "string"
                 },
                 "enable_notification": {
                     "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
                 },
                 "isAdmin": {
                     "type": "boolean"
@@ -6042,6 +5928,12 @@ var doc = `{
                 },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 },
                 "verifiedAt": {
                     "type": "string"
@@ -6101,11 +5993,7 @@ var doc = `{
                 },
                 "metadata_obj": {
                     "description": "Custom",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/nfts.MoralisTokenMetadata"
-                        }
-                    ]
+                    "$ref": "#/definitions/nfts.MoralisTokenMetadata"
                 },
                 "name": {
                     "type": "string"
@@ -6749,7 +6637,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "$ref": "#/definitions/dao_artist_voted.Status"
+                    "type": "integer"
                 }
             }
         },
@@ -6757,7 +6645,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "$ref": "#/definitions/dao_project_voted.Status"
+                    "type": "integer"
                 }
             }
         },
@@ -6852,7 +6740,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/dao_artist.Status"
+                    "type": "integer"
                 },
                 "total_report": {
                     "type": "integer"
@@ -6884,7 +6772,7 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/dao_artist_voted.Status"
+                    "type": "integer"
                 }
             }
         },
@@ -6925,7 +6813,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/dao_project.Status"
+                    "type": "integer"
                 },
                 "total_against": {
                     "type": "integer"
@@ -6957,7 +6845,7 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/dao_project_voted.Status"
+                    "type": "integer"
                 }
             }
         },
@@ -7739,6 +7627,20 @@ var doc = `{
                 },
                 "wallet_address_payment": {
                     "type": "string"
+                }
+            }
+        },
+        "response.UserStats": {
+            "type": "object",
+            "properties": {
+                "collection_created": {
+                    "type": "integer"
+                },
+                "total_mint": {
+                    "type": "integer"
+                },
+                "total_minted": {
+                    "type": "integer"
                 }
             }
         },
