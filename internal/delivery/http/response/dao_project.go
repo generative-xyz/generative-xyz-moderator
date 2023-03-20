@@ -74,9 +74,9 @@ type UserForDao struct {
 }
 
 type UserStats struct {
-	CollectionCreated int32 `json:"collection_created"`
-	TotalMint         int64 `bson:"total_mint" json:"total_mint"`
-	TotalMinted       int64 `bson:"total_minted" json:"total_minted"`
+	CollectionCreated int64 `json:"collection_created"`
+	TotalMint         int64 `json:"total_mint"`
+	TotalMinted       int64 `json:"total_minted"`
 }
 
 type DaoProjectVoted struct {

@@ -132,14 +132,14 @@ type TokenUriListingFilter struct {
 	Buyable               bool               `bson:"buyable" json:"buyable"`
 	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
 	OwnerAddr             bool               `bson:"ownerAddr" json:"ownerAddr"`
-	OwnerAddress          string        `bson:"owner_addrress" json:"owner_addrress"`  
-	Owner               struct { 
-		WalletAddress           string        `bson:"wallet_address" json:"walletAddress"`                         // eth wallet define user in platform by connect wallet and sign     // btc wallet artist receive royalty
-		WalletAddressBTCTaproot string        `bson:"wallet_address_btc_taproot" json:"walletAddressBtcTaproot"` // btc wallet receive minted nft
-		DisplayName             string        `bson:"display_name" json:"displayName"`
-		Avatar                  string        `bson:"avatar" json:"avatar"`
+	OwnerAddress          string             `bson:"owner_addrress" json:"owner_addrress"`
+	Owner                 struct {
+		WalletAddress           string `bson:"wallet_address" json:"walletAddress"`                       // eth wallet define user in platform by connect wallet and sign     // btc wallet artist receive royalty
+		WalletAddressBTCTaproot string `bson:"wallet_address_btc_taproot" json:"walletAddressBtcTaproot"` // btc wallet receive minted nft
+		DisplayName             string `bson:"display_name" json:"displayName"`
+		Avatar                  string `bson:"avatar" json:"avatar"`
 	} `bson:"owner_object" json:"owner"`
-	Project               struct {
+	Project struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
