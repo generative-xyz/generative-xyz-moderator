@@ -1755,6 +1755,10 @@ definitions:
         type: integer
       volume_minted:
         type: number
+      total_mint:
+        type: integer
+      total_minted:
+        type: integer
     type: object
   response.VerifyResponse:
     properties:
@@ -2243,7 +2247,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: get list CollectionListing
+      description: get list tokens og a collection and respond data for chart
       parameters:
       - description: page
         in: query
@@ -2253,6 +2257,30 @@ paths:
         in: query
         name: limit
         type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Collection's chart
+      tags:
+      - CollectionListing
+  /collections/{projectID}/charts:
+    get:
+      consumes:
+      - application/json
+      description: get list CollectionListing
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
       produces:
       - application/json
       responses:
@@ -2433,7 +2461,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2454,7 +2482,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2480,7 +2508,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2535,7 +2563,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2584,7 +2612,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2956,7 +2984,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2978,7 +3006,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3275,7 +3303,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe

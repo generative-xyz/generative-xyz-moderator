@@ -3,14 +3,55 @@ package http
 import (
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
 	"rederinghub.io/utils/algolia"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
 // @Summary CollectionListing
 // @Description get list CollectionListing
+// @Tags CollectionListing
+// @Accept  json
+// @Produce  json
+// @Param projectID path string  false "projectID"
+// @Param dateRange query string false "dateRange"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /collections/{projectID}/charts [GET]
+func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	// contractAddress := vars["contractAddress"]
+	projectID := vars["projectID"]
+	dateRange := r.URL.Query().Get("dateRange")
+	f := utils.ParseAggregation(dateRange)
+	filter := &structure.AggerateChartForProject{
+		ProjectID: &projectID,
+		FromDate: &f.FromDate,
+		ToDate: &f.ToDate,
+	}
+	spew.Dump(filter)
+
+	logger.AtLog.Logger.Info("getChartDataForCollection.Filter", zap.Any("filter", filter))
+	result,  err := h.Usecase.GetChartDataOFTokens(*filter)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+
+// UserCredits godoc
+// @Summary Collection's chart
+// @Description get list tokens og a collection and respond data for chart
 // @Tags CollectionListing
 // @Accept  json
 // @Produce  json

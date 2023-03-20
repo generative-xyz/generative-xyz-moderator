@@ -1,10 +1,32 @@
 package utils
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/now"
+)
 
 type QuerySort struct {
 	Sort   int
 	SortBy string
+}
+
+
+type AggregateDexBTCListing struct {
+	FromDate   time.Time
+	ToDate  time.Time
+}
+
+func ParseAggregation(key string) AggregateDexBTCListing {
+	sortParams := make(map[string]AggregateDexBTCListing)
+	to := time.Now().UTC()	
+	sortParams["week"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-7), ToDate: to}
+	sortParams["month"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-30), ToDate: to}
+	filter, ok := sortParams[key]
+	if !ok {
+		return sortParams["custom"]
+	}
+	return filter
 }
 
 func ParseSort(key string) QuerySort {
