@@ -166,13 +166,14 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 			return errors.WithStack(err)
 		}
 
-		_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
 		u.InsertDexVolumnInscription(*listing)
 	}
+
+	_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
