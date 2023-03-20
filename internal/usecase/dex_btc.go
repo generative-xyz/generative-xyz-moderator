@@ -260,7 +260,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 	if err != nil {
 		return err
 	}
-	_, bs, err := u.buildBTCClient()
+	_, bs, err := u.buildBTCClientCustomToken(u.Config.DEXBTCBlockcypherToken)
 	if err != nil {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 		return err
@@ -297,7 +297,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 				}
 			} else {
-				continue // temp pause for rate limit.
+				// continue // temp pause for rate limit.
 				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
 				txStatus, err := bs.CheckTx(inscriptionTx[0])
 				if err != nil {
