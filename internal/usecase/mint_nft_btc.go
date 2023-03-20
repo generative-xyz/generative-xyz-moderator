@@ -886,6 +886,8 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 
 	for _, item := range listTxToCheck {
 
+		time.Sleep(1 * time.Second)
+
 		var txToCheck string
 		var confirm int64 = -1
 
@@ -923,10 +925,22 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			if err != nil {
 				fmt.Printf("Could not bs - with err: %v", err)
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
-				continue
-			}
 
-			confirm = int64(txInfo.Confirmations)
+				// check via quick node:
+				if strings.Contains(err.Error(), "429 Too Many Requests") {
+					txInfoQn, err := btc.CheckTxfromQuickNode(txToCheck, u.Config.QuicknodeAPI)
+					if err == nil {
+						if txInfoQn != nil {
+							confirm = int64(txInfoQn.Result.Confirmations)
+						}
+
+					} else {
+						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
+					}
+				}
+			} else {
+				confirm = int64(txInfo.Confirmations)
+			}
 
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, txInfo.Confirmations, false)
 
