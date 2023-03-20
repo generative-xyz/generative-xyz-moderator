@@ -62,8 +62,7 @@ func (r Repository) GetUnresolvedTokenTx(page int64, limit int64) (*entity.Pagin
 	resp := &entity.Pagination{}
 	f := bson.M{"resolved": bson.M{"$ne": true}}
 	s := []Sort{
-		{SortBy: "last_time_check", Sort: entity.SORT_ASC},
-		{SortBy: "priority", Sort: entity.SORT_DESC},
+		{SortBy: "created_at", Sort: entity.SORT_ASC},
 	}
 	p, err := r.Paginate(entity.TokenTx{}.TableName(), page, limit, f, bson.D{}, s, &confs)
 	if err != nil {
