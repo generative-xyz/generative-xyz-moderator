@@ -41,7 +41,7 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=[]response.RedisResponse}
 // @Router /admin-test [GET]
 func (h *httpDelivery) adminTest(w http.ResponseWriter, r *http.Request) {
-	h.Usecase.JobContinueCrawlTxs()
+	h.Usecase.JobFetchUnresolvedTokenTxs()
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
 }
 
