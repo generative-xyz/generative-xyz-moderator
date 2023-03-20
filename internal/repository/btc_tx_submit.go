@@ -13,7 +13,27 @@ import (
 func (r Repository) GetPendingBTCSubmitTx() ([]entity.BTCTransactionSubmit, error) {
 	listings := []entity.BTCTransactionSubmit{}
 	f := bson.M{
-		"status": bson.M{"$in": []int{0}},
+		"status": bson.M{"$in": []entity.BTCTransactionSubmitStatus{entity.StatusBTCTransactionSubmit_Waiting, entity.StatusBTCTransactionSubmit_Pending}},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_TX_SUBMIT).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+func (r Repository) GetPendingBTCSubmitTxByInscriptionID(inscriptionID string) ([]entity.BTCTransactionSubmit, error) {
+	listings := []entity.BTCTransactionSubmit{}
+	f := bson.M{
+		"related_inscriptions": bson.M{"$in": []string{inscriptionID}},
+		"status":               bson.M{"$in": []entity.BTCTransactionSubmitStatus{entity.StatusBTCTransactionSubmit_Waiting, entity.StatusBTCTransactionSubmit_Pending}},
 	}
 	cursor, err := r.DB.Collection(utils.COLLECTION_BTC_TX_SUBMIT).Find(context.TODO(), f, &options.FindOptions{
 		Sort: bson.D{{Key: "created_at", Value: -1}},
