@@ -489,7 +489,22 @@ func (r Repository) GetDexBTCBuyETHBuyingByInscriptionID(inscriptionID string) (
 				},
 			},
 		},
-		{"inscription_id", inscriptionID},
+		{"$or",
+			bson.A{
+				bson.D{
+					{"inscription_list",
+						bson.D{
+							{"$in",
+								bson.A{
+									inscriptionID,
+								},
+							},
+						},
+					},
+				},
+				bson.D{{"inscription_id", inscriptionID}},
+			},
+		},
 	}
 
 	resp := &entity.DexBTCBuyWithETH{}
