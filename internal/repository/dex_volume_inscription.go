@@ -105,6 +105,7 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 	}
 
 	response := []*entity.ItemListing{}
+	addresses := []string{}
 	for _, r := range result {
 		data := &entity.ItemListing{
 			InscriptionId: r.InscriptionId,
@@ -122,11 +123,28 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 		for _, d := range r.DexBTCListings {
 			if d.Matched && d.SellerAddress != "" {
 				data.SellerAddress = d.SellerAddress
+				addresses = append(addresses, d.SellerAddress)
 			}
 		}
 		response = append(response, data)
 	}
 
+	users, err := r.FindUserByAddresses(addresses)
+	if err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[string]entity.Users)
+	for _, u := range users {
+		userMap[u.WalletAddressBTCTaproot] = u
+	}
+
+	for _, r := range response {
+		if u, ok := userMap[r.SellerAddress]; ok {
+			r.SellerDisplayName = u.DisplayName
+
+		}
+	}
 	return response, nil
 }
 
