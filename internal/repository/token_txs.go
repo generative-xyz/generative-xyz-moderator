@@ -57,6 +57,42 @@ func (r Repository) GetTailTokenTxs(page int64, limit int64) (*entity.Pagination
 	return resp, nil
 }
 
+// func (r Repository) GetUnresolvedTokenTx(page int64, limit int64) (*entity.Pagination, error) {
+// 	confs := []entity.TokenTx{}
+// 	resp := &entity.Pagination{}
+// 	f := bson.M{"resolved": bson.M{"$ne": true}}
+// 	s := []Sort{
+// 		{SortBy: "created_at", Sort: entity.SORT_ASC},
+// 	}
+// 	p, err := r.Paginate(entity.TokenTx{}.TableName(), page, limit, f, bson.D{}, s, &confs)
+// 	if err != nil {
+// 		return nil, errors.WithStack(err)
+// 	}
+
+// 	resp.Result = confs
+// 	resp.Page = p.Pagination.Page
+// 	resp.Total = p.Pagination.Total
+// 	resp.PageSize = limit
+// 	return resp, nil
+// }
+
+// func (r Repository) UpdateResolvedTx(inscriptionID string, tx string) (*mongo.UpdateResult, error) {
+// 	filter := bson.D{
+// 		{Key: "inscription_id", Value: inscriptionID},
+// 		{Key: "tx", Value: tx},
+// 	}
+// 	update := bson.M{
+// 		"$set": bson.M{"resolved": true},
+// 	}
+
+// 	result, err := r.DB.Collection(entity.TokenTx{}.TableName()).UpdateOne(context.TODO(), filter, update)
+// 	if err != nil {
+// 		return nil, errors.WithStack(err)
+// 	}
+
+// 	return result, errors.WithStack(err)
+// }
+
 func (r Repository) GetUnresolvedTokenTx(page int64, limit int64) (*entity.Pagination, error) {
 	confs := []entity.TokenTx{}
 	resp := &entity.Pagination{}

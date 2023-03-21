@@ -889,7 +889,6 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 	}
 
 	log.Println("CreatePSBTToBuyInscriptionMultiViaAPI payload", string(json_data))
-
 	resp, err := http.Post(endpoint+"/api/createtxbuymulti", "application/json",
 		bytes.NewBuffer(json_data))
 
