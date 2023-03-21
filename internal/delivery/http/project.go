@@ -395,13 +395,25 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	pResp := []response.ProjectResp{}
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
+	projectToGetFloorPrice := []string{}
 	for _, project := range projects {
+		projectToGetFloorPrice = append(projectToGetFloorPrice, project.TokenID)
+	}
 
+	projectFloorPriceMap, err := h.Usecase.GetProjectsFloorPrice(projectToGetFloorPrice)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjectsFloorPrice", err.Error(), err)
+	}
+	for _, project := range projects {
 		p, err := h.projectToResp(&project)
 		if err != nil {
 			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
+		}
+		floorPrice, ok := projectFloorPriceMap[p.TokenID]
+		if ok {
+			p.BtcFloorPrice = floorPrice
 		}
 
 		pResp = append(pResp, *p)
