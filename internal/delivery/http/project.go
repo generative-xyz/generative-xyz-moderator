@@ -15,7 +15,6 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
-	copierInternal "rederinghub.io/utils/copier"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 )
@@ -266,17 +265,11 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 				daoProject, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
 				resp.CanCreateProposal = !exists
 				if daoProject != nil {
-					proposal := &response.DaoProject{}
-					if err := copierInternal.Copy(proposal, daoProject); err == nil {
-						resp.Proposal = proposal
-					}
+					resp.ProposalSeqId = &daoProject.SeqId
 				}
 			} else {
 				if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
-					proposal := &response.DaoProject{}
-					if err := copierInternal.Copy(proposal, daoProject); err == nil {
-						resp.Proposal = proposal
-					}
+					resp.ProposalSeqId = &daoProject.SeqId
 				}
 			}
 			go h.Usecase.CreateViewProjectActivity(project.TokenID)
