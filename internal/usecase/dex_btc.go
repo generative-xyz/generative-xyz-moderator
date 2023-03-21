@@ -255,6 +255,18 @@ func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
 	}
 }
 
+func (u Usecase) preCheckPendingDexBTCListingTx(pendingOrders []entity.DexBTCListing) (map[string]*btc.GoBCYMultiTx, error) {
+	result := make(map[string]*btc.GoBCYMultiTx)
+	txNeedToCheck := []string{}
+	for _, order := range pendingOrders {
+		_ = order
+	}
+
+	btc.CheckTxMultiBlockcypher(txNeedToCheck, u.Config.DEXBTCBlockcypherToken)
+
+	return result, nil
+}
+
 func (u Usecase) watchPendingDexBTCListing() error {
 	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
 	if err != nil {
@@ -423,7 +435,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				}
 			}
 		} else {
-			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
+			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, nil, u.Config.QuicknodeAPI)
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing btc.GetBTCTxStatusExtensive err %v\n", err)
 				continue

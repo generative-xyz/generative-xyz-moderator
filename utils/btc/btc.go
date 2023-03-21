@@ -375,27 +375,96 @@ type GoBCYMultiTx struct {
 	Error string `json:"error"`
 }
 
-func CheckTxMultiBlockcypher(txs []string, token string) ([]GoBCYMultiTx, error) {
-	var result []GoBCYMultiTx
-	query := strings.Join(txs, ";")
-	url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+func batchStrings(values <-chan string, maxItems int) chan []string {
+	batches := make(chan []string)
 
-	req, _ := http.NewRequest("GET", url, nil)
+	go func() {
+		defer close(batches)
 
-	res, _ := http.DefaultClient.Do(req)
+		for keepGoing := true; keepGoing; {
+			var batch []string
+			for {
+				select {
+				case value, ok := <-values:
+					if !ok {
+						keepGoing = false
+						goto done
+					}
 
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
+					batch = append(batch, value)
+					if len(batch) == maxItems {
+						goto done
+					}
+				}
+			}
+
+		done:
+			if len(batch) > 0 {
+				batches <- batch
+			}
+		}
+	}()
+
+	return batches
+}
+
+func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMultiTx, []string, error) {
+	result := make(map[string]*GoBCYMultiTx)
+	var checkFailedTxs []string
+	checkFailedTxsMap := make(map[string]struct{})
+	var respond []GoBCYMultiTx
+
+	var lock sync.Mutex
+	txChan := make(chan string)
+	go func() {
+		for _, tx := range txs {
+			txChan <- tx
+		}
+		close(txChan)
+	}()
+
+	txsBatch := batchStrings(txChan, 100)
+	txsBatchIdx := 0
+	for txList := range txsBatch {
+		txsBatchIdx++
+		query := strings.Join(txList, ";")
+		url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+
+		req, _ := http.NewRequest("GET", url, nil)
+
+		res, _ := http.DefaultClient.Do(req)
+
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = json.Unmarshal(body, &respond)
+		if err != nil {
+			err = fmt.Errorf("Unmarshal response error: %v", err)
+			return nil, nil, err
+		}
+		lock.Lock()
+		for _, txdetail := range respond {
+			if txdetail.Hash != "" {
+				result[txdetail.Hash] = &txdetail
+			}
+		}
+		lock.Unlock()
 	}
 
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		err = fmt.Errorf("Unmarshal response error: %v", err)
-		return nil, err
+	for _, tx := range txs {
+		if _, exist := result[tx]; !exist {
+			checkFailedTxsMap[tx] = struct{}{}
+		}
 	}
-	return result, nil
+
+	for tx, _ := range checkFailedTxsMap {
+		checkFailedTxs = append(checkFailedTxs, tx)
+	}
+
+	return result, checkFailedTxs, nil
 }
 
 func ValidateAddress(crypto, address string) (bool, error) {
