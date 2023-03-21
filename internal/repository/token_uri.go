@@ -588,8 +588,8 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 				bson.D{
 					{"$and",
 						bson.A{
-							filterPendingBuyETH,
-							filterPendingBuyBTC,
+							bson.D{{"listing_eth_size", filterPendingBuyETH}},
+							bson.D{{"buying_btc_size", filterPendingBuyBTC}},
 						},
 					},
 				},
