@@ -124,6 +124,9 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.ReceiveAddress = receiveAddress
 	walletAddress.RefundUserAdress = input.RefundUserAddress
 
+	walletAddress.EstMintFeeInfoFe = input.EstMintFeeInfo
+	walletAddress.IsCustomFeeRate = input.IsCustomFeeRate
+
 	mintPrice, ok := big.NewInt(0).SetString(p.MintPrice, 10)
 	if !ok {
 		mintPrice = big.NewInt(0)

@@ -144,6 +144,10 @@ type MintNftBtc struct {
 	BatchParentId string `bson:"patch_parent_id"`
 
 	IsDiscount bool `bson:"isDiscount"`
+
+	// for tracking:
+	IsCustomFeeRate  bool        `bson:"isCustomFeeRate"`
+	EstMintFeeInfoFe interface{} `bson:"estMintFeeInfoFe"`
 }
 
 func (u MintNftBtc) TableName() string {
