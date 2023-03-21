@@ -355,7 +355,7 @@ func (r Repository) AggregateVolumnCollection(filter *entity.AggerateChartForPro
 		bson.D{
 			{"$sort",
 				bson.D{
-					{"_id.timestamp", -1},
+					{"_id.timestamp", 1},
 					{"amount", -1},
 				},
 			},
@@ -430,7 +430,7 @@ func (r Repository) AggregateVolumnToken(filter *entity.AggerateChartForToken) (
 		bson.D{
 			{"$sort",
 				bson.D{
-					{"_id.timestamp", -1},
+					{"_id.timestamp", 1},
 					{"amount", -1},
 				},
 			},

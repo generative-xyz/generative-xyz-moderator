@@ -255,15 +255,36 @@ func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
 	}
 }
 
+func (u Usecase) preCheckPendingDexBTCListingTx(pendingOrders []entity.DexBTCListing) (map[string]*btc.GoBCYMultiTx, error) {
+	txNeedToCheck := []string{}
+	for _, order := range pendingOrders {
+		if order.CancelTx == "" {
+			inscriptionTx := strings.Split(order.Inputs[0], ":")
+			txNeedToCheck = append(txNeedToCheck, inscriptionTx[0])
+		}
+	}
+	log.Println("preCheckPendingDexBTCListingTx len(txNeedToCheck)", len(txNeedToCheck))
+	result, _, err := btc.CheckTxMultiBlockcypher(txNeedToCheck, u.Config.DEXBTCBlockcypherToken)
+	if err != nil {
+		log.Println("preCheckPendingDexBTCListingTx CheckTxMultiBlockcypher", err.Error())
+		return nil, err
+	}
+	if len(result) == 0 {
+		result = make(map[string]*btc.GoBCYMultiTx)
+	}
+	log.Println("preCheckPendingDexBTCListingTx len(result)", len(result))
+	return result, nil
+}
+
 func (u Usecase) watchPendingDexBTCListing() error {
 	pendingOrders, err := u.Repo.GetDexBTCListingOrderPending()
 	if err != nil {
 		return err
 	}
-	_, bs, err := u.buildBTCClientCustomToken(u.Config.DEXBTCBlockcypherToken)
+
+	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
 	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		return err
+		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err)
 	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
@@ -290,8 +311,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			spentTx := ""
 
 			log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
-			txStatus, err := bs.CheckTx(inscriptionTx[0])
-			if err != nil {
+			// txStatus, err := bs.CheckTx(inscriptionTx[0])
+			txStatus, exist := preCheckTxs[inscriptionTx[0]]
+			if !exist {
 				log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
 				spentTx, err = btc.CheckOutcoinSpentBlockStream(inscriptionTx[0], uint(idx))
 				if err != nil {
@@ -422,7 +444,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				}
 			}
 		} else {
-			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
+			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, nil, u.Config.QuicknodeAPI)
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing btc.GetBTCTxStatusExtensive err %v\n", err)
 				continue
@@ -721,6 +743,8 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 
 						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						dataBytes, _ := json.Marshal(buyReqInfos)
+						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
 							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)

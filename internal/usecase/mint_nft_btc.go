@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.mongodb.org/mongo-driver/bson"
@@ -461,6 +460,20 @@ func (u Usecase) JobMint_CheckBalance() error {
 		return nil
 	}
 
+	// get list btc to check a Batch
+	var batchBTCBalance []string
+	for _, item := range listPending {
+		if item.PayType == utils.NETWORK_BTC {
+			batchBTCBalance = append(batchBTCBalance, item.ReceiveAddress)
+		}
+	}
+
+	isRateLimitErr := false
+	balanceMaps, err := bs.BTCGetAddrInfoMulti(batchBTCBalance)
+	if err != nil && strings.Contains(err.Error(), "rate_limit") {
+		isRateLimitErr = true
+	}
+
 	for _, item := range listPending {
 
 		if len(item.ReceiveAddress) == 0 {
@@ -468,18 +481,26 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 
-		time.Sleep(1 * time.Second)
-
 		// check balance:
 		balance := big.NewInt(0)
 		confirm := -1
 
 		if item.PayType == utils.NETWORK_BTC {
 
-			balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
-			fmt.Println("GetBalance btc response: ", balance, confirm, err)
+			// remove this:
+			// balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
+			// fmt.Println("GetBalance btc response: ", balance, confirm, err)
 
-			if err != nil && strings.Contains(err.Error(), "rate_limit") {
+			if !isRateLimitErr {
+				balanceInfo, ok := balanceMaps[item.ReceiveAddress]
+				// If the key exists
+				if ok {
+					balance = big.NewInt(0).SetUint64(balanceInfo.Balance)
+					if len(balanceInfo.TxRefs) > 0 {
+						confirm = balanceInfo.TxRefs[0].Confirmations
+					}
+				}
+			} else if isRateLimitErr {
 				// get balance from quicknode:
 				var balanceQuickNode *structure.BlockCypherWalletInfo
 				balanceQuickNode, err = btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
@@ -508,6 +529,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 		} else if item.PayType == utils.NETWORK_ETH {
 			// check eth balance:
+
+			time.Sleep(1 * time.Second)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -563,6 +586,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 		if confirm == 0 {
 			item.Status = entity.StatusMint_WaitingForConfirms
+			u.Repo.UpdateMintNftBtc(&item)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_WaitingForConfirms", "0", true)
 		}
 		if confirm >= 1 {
@@ -867,129 +891,101 @@ func (u Usecase) JobMint_MintNftBtc() error {
 	return nil
 }
 
-// job check 3 tx mint/send nft
+// job check 3 tx mint:
 func (u Usecase) JobMint_CheckTxMintSend() error {
 
-	btcClient, bs, err := u.buildBTCClient()
-
-	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
-		return err
-	}
-
 	// get list pending tx:
-	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Minting, entity.StatusMint_SendingNFTToUser})
+	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Minting})
 	if len(listTxToCheck) == 0 {
 		return nil
 	}
 
+	// get list btc to check a Batch
+	var batchBTCTx []string
+	for _, item := range listTxToCheck {
+		if item.PayType == utils.NETWORK_BTC {
+			batchBTCTx = append(batchBTCTx, item.TxMintNft)
+		}
+	}
+
+	var err error
+	isRateLimitErr := false
+	txInfoMaps, _, errFromCheckBatch := btc.CheckTxMultiBlockcypher(batchBTCTx, u.Config.BlockcypherToken)
+	if errFromCheckBatch != nil {
+		if strings.Contains(errFromCheckBatch.Error(), "rate_limit") {
+			isRateLimitErr = true
+		}
+	}
+
 	for _, item := range listTxToCheck {
 
-		time.Sleep(1 * time.Second)
-
-		var txToCheck string
+		txToCheck := item.TxMintNft
 		var confirm int64 = -1
 
-		if item.Status == entity.StatusMint_Minting {
-			txToCheck = item.TxMintNft
-		} else if item.Status == entity.StatusMint_SendingNFTToUser {
-			txToCheck = item.TxSendNft
-		}
-
-		txHash, err := chainhash.NewHashFromStr(txToCheck)
-		if err != nil {
-			fmt.Printf("Could not NewHashFromStr Bitcoin RPCClient - with err: %v", err)
-			continue
-		}
-
-		txResponse, err := btcClient.GetTransaction(txHash)
-
-		if err == nil {
-			confirm = txResponse.Confirmations
-
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txToCheck, confirm, false)
-
-			if confirm <= 0 {
-				continue
-			}
-
-		} else {
-			fmt.Printf("Could not GetTransaction Bitcoin RPCClient - with err: %v", err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txToCheck, err.Error(), false)
-
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, "Begin check tx via api.", false)
-
-			// check with api:
-			txInfo, err := bs.CheckTx(txToCheck)
-			if err != nil {
-				fmt.Printf("Could not bs - with err: %v", err)
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
-
-				// check via quick node:
-				if strings.Contains(err.Error(), "429 Too Many Requests") {
-					txInfoQn, err := btc.CheckTxfromQuickNode(txToCheck, u.Config.QuicknodeAPI)
-					if err == nil {
-						if txInfoQn != nil {
-							confirm = int64(txInfoQn.Result.Confirmations)
-						}
-
-					} else {
-						go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
-					}
-				}
-			} else {
+		if !isRateLimitErr {
+			txInfo, ok := txInfoMaps[txToCheck]
+			// If the key exists
+			if ok {
 				confirm = int64(txInfo.Confirmations)
+			} else {
+				err = errors.New("tx invalid")
+				if errFromCheckBatch != nil {
+					err = errors.New(errFromCheckBatch.Error())
+				}
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
 			}
+		} else {
+			txInfoQn, err := btc.CheckTxfromQuickNode(txToCheck, u.Config.QuicknodeAPI)
+			if err == nil {
+				if txInfoQn != nil {
+					confirm = int64(txInfoQn.Result.Confirmations)
+				}
 
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, txInfo.Confirmations, false)
-
-			if confirm <= 0 {
-				continue
+			} else {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
 			}
 		}
 
-		// just check 1 confirm:
+		// check confirm >= 1
 		if confirm >= 1 {
+
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, confirm, true)
 			// tx ok now:
 
-			if item.Status == entity.StatusMint_Minting {
-				// update for ord5
-				item.Status = entity.StatusMint_Minted
-				item.IsMinted = true
-			} else if item.Status == entity.StatusMint_SendingNFTToUser {
-				item.Status = entity.StatusMint_SentNFTToUser
-				item.IsSentUser = true
-			}
+			// update for ord5
+			item.Status = entity.StatusMint_Minted
+			item.IsMinted = true
 
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				continue
 			}
-			if item.Status == entity.StatusMint_Minted {
-				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
-				if err != nil {
-					u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
-					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
-				}
-				// update inscription_index for token uri
-				go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
-				go u.CreateMintActivity(item.InscriptionID, item.Amount)
-				go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
-				if item.ProjectMintPrice >= 100000 {
-					go func(u Usecase, item entity.MintNftBtc) {
-						owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
-						if err != nil || owner == nil {
-							return
-						}
-						u.AirdropCollector(item.ProjectID, item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
-					}(u, item)
-				}
+
+			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
+			}
+			// update inscription_index for token uri
+			go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
+			go u.CreateMintActivity(item.InscriptionID, item.Amount)
+			go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
+			if item.ProjectMintPrice >= 100000 {
+				go func(u Usecase, item entity.MintNftBtc) {
+					owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
+					if err != nil || owner == nil {
+						return
+					}
+					u.AirdropCollector(item.ProjectID, item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
+				}(u, item)
 			}
 
+		} else {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "check tx confirm", 0, false)
+			continue
 		}
+
 	}
 
 	return nil
@@ -1963,6 +1959,8 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	mintPrice = mintPrice.SetUint64(uint64(mintBtcPrice))
 
 	if fileSize > 0 {
+
+		fileSize += utils.MIN_FILE_SIZE // auto add 4kb
 
 		// auto fee if feeRate <= 0:
 		if feeRate <= 0 {
