@@ -276,7 +276,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
 
-	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
+	ownerName := u.resolveShortName(project.CreatorProfile.DisplayName, project.CreatorProfile.WalletAddress)
 	collectionName := project.Name
 	mintedCount := tokenUri.OrderInscriptionIndex
 
