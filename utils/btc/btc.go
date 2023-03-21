@@ -606,3 +606,92 @@ func ConvertToUTXOType(utxos []structure.TxRef) ([]UTXOType, error) {
 	}
 	return result, nil
 }
+
+func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[string]*AddrInfo, error) {
+
+	balanceMap := make(map[string]*AddrInfo)
+
+	var i int = 0
+	var maxItem int = 100
+	var toCount int = len(addresses)
+
+	toCount = 301
+
+	for i = 0; i < toCount; i++ {
+
+		max := toCount - i
+		if max > (maxItem) {
+			max = (maxItem)
+		}
+		fromTemp := i
+		toTemp := fromTemp + max
+
+		i = toTemp
+
+		log.Println("from, to", fromTemp, ":", toTemp)
+
+	}
+
+	if true {
+		return balanceMap, nil
+	}
+
+	addressesStr := strings.Join(addresses[:], ";")
+
+	fmt.Println("get address: ", addressesStr)
+
+	url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, addressesStr, bs.bcyToken)
+	fmt.Println("url BTCGetAddrInfoMulti", url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	var (
+		result []*AddrInfo
+	)
+
+	if err != nil {
+		fmt.Println("BTC get UTXO failed", addressesStr, err.Error())
+		return balanceMap, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		fmt.Println("Call BTC get UTXO failed", err.Error())
+		return balanceMap, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+
+	if res.StatusCode != http.StatusOK {
+
+		if res.StatusCode == 429 {
+			return balanceMap, errors.New("rate_limit")
+		}
+		return balanceMap, errors.New("GetUTXO Response status != 200")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+
+	json.Unmarshal(body, &result)
+	if err != nil {
+		fmt.Println("Read body failed", err.Error())
+		return balanceMap, errors.New("Read body failed")
+	}
+
+	// convert to map:
+	for _, v := range result {
+		if len(v.Address) > 0 {
+			balanceMap[v.Address] = v
+		}
+	}
+
+	return balanceMap, nil
+}
