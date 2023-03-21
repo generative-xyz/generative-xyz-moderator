@@ -2197,3 +2197,15 @@ func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	}
 	return totalAmount
 }
+
+func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, error) {
+	result := make(map[string]uint64)
+	data, err := u.Repo.AggregateProjectsFloorPrice(projects)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range data {
+		result[v.ID] = v.Floor
+	}
+	return result, nil
+}

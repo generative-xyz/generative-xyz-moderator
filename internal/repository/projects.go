@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
@@ -908,7 +909,7 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 
 func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
 	f := bson.D{
-		{Key: "project_id", Value: projectID},
+		{Key: "tokenid", Value: projectID},
 	}
 
 	update := bson.M{
@@ -943,4 +944,80 @@ func (r Repository) GetProjectTrendingScore(projectID string) (int64, error) {
 	}
 	trendingScore = resp.Stats.TrendingScore
 	return trendingScore, nil
+}
+
+func (r Repository) AggregateProjectsFloorPrice(projectIDs []string) ([]structure.ProjectFloorPrice, error) {
+
+	result := []structure.ProjectFloorPrice{}
+
+	projectsBsonA := bson.A{}
+	for _, v := range projectIDs {
+		projectsBsonA = append(projectsBsonA, v)
+	}
+
+	pipeLine := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"matched", false},
+					{"cancelled", false},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"let", bson.D{}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"$expr",
+											bson.D{
+												{"$in",
+													projectsBsonA,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "collection_id"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$collection_id"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$collection_id.project_id"},
+					{"floor", bson.D{{"$min", "$amount"}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
