@@ -434,7 +434,21 @@ func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMulti
 
 		res, _ := http.DefaultClient.Do(req)
 
-		defer res.Body.Close()
+		defer func(r *http.Response) {
+			err := r.Body.Close()
+			if err != nil {
+				fmt.Println("Close body failed", err.Error())
+			}
+		}(res)
+
+		if res.StatusCode != http.StatusOK {
+
+			if res.StatusCode == 429 {
+				return nil, nil, errors.New("rate_limit") // do not remove/update
+			}
+			return nil, nil, errors.New("CheckTxMultiBlockcypher Response status != 200")
+		}
+
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
 			return nil, nil, err
@@ -708,85 +722,77 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 
 	balanceMap := make(map[string]*AddrInfo)
 
-	var i int = 0
-	var maxItem int = 100
-	var toCount int = len(addresses)
-
-	toCount = 301
-
-	for i = 0; i < toCount; i++ {
-
-		max := toCount - i
-		if max > (maxItem) {
-			max = (maxItem)
-		}
-		fromTemp := i
-		toTemp := fromTemp + max
-
-		i = toTemp
-
-		log.Println("from, to", fromTemp, ":", toTemp)
-
-	}
-
-	if true {
+	if len(addresses) == 0 {
 		return balanceMap, nil
 	}
 
-	addressesStr := strings.Join(addresses[:], ";")
+	addressChan := make(chan string)
+	go func() {
+		for _, address := range addresses {
+			addressChan <- address
+		}
+		close(addressChan)
+	}()
 
-	fmt.Println("get address: ", addressesStr)
+	addressBatch := batchStrings(addressChan, 100)
 
-	url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, addressesStr, bs.bcyToken)
-	fmt.Println("url BTCGetAddrInfoMulti", url)
+	for addressList := range addressBatch {
 
-	req, err := http.NewRequest("GET", url, nil)
-	var (
-		result []*AddrInfo
-	)
+		addressesStr := strings.Join(addressList[:], ";")
 
-	if err != nil {
-		fmt.Println("BTC get UTXO failed", addressesStr, err.Error())
-		return balanceMap, err
-	}
+		fmt.Println("get address: ", addressesStr)
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+		url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, addressesStr, bs.bcyToken)
+		fmt.Println("url BTCGetAddrInfoMulti", url)
 
-	if err != nil {
-		fmt.Println("Call BTC get UTXO failed", err.Error())
-		return balanceMap, err
-	}
+		req, err := http.NewRequest("GET", url, nil)
+		var (
+			result []*AddrInfo
+		)
 
-	defer func(r *http.Response) {
-		err := r.Body.Close()
 		if err != nil {
-			fmt.Println("Close body failed", err.Error())
+			fmt.Println("BTC get UTXO failed", addressesStr, err.Error())
+			return balanceMap, err
 		}
-	}(res)
 
-	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+		client := &http.Client{}
+		res, err := client.Do(req)
 
-	if res.StatusCode != http.StatusOK {
-
-		if res.StatusCode == 429 {
-			return balanceMap, errors.New("rate_limit")
+		if err != nil {
+			fmt.Println("Call BTC get UTXO failed", err.Error())
+			return balanceMap, err
 		}
-		return balanceMap, errors.New("GetUTXO Response status != 200")
-	}
 
-	body, err := ioutil.ReadAll(res.Body)
+		defer func(r *http.Response) {
+			err := r.Body.Close()
+			if err != nil {
+				fmt.Println("Close body failed", err.Error())
+			}
+		}(res)
 
-	json.Unmarshal(body, &result)
-	if err != nil {
-		fmt.Println("Read body failed", err.Error())
-		return balanceMap, errors.New("Read body failed")
-	}
+		fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
-	// convert to map:
-	for _, v := range result {
-		if len(v.Address) > 0 {
-			balanceMap[v.Address] = v
+		if res.StatusCode != http.StatusOK {
+
+			if res.StatusCode == 429 {
+				return balanceMap, errors.New("rate_limit")
+			}
+			return balanceMap, errors.New("GetUTXO Response status != 200")
+		}
+
+		body, err := ioutil.ReadAll(res.Body)
+
+		json.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Println("Read body failed", err.Error())
+			return balanceMap, errors.New("Read body failed")
+		}
+
+		// convert to map:
+		for _, v := range result {
+			if len(v.Address) > 0 {
+				balanceMap[v.Address] = v
+			}
 		}
 	}
 
