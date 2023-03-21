@@ -901,7 +901,6 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 	return projects, nil
 }
 
-
 func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
@@ -909,7 +908,7 @@ func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Paginatio
 		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-	
+
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
 		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
@@ -2183,15 +2182,26 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	return h, nil
 }
 
-
 func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	totalAmount := "0"
 	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
 	if err == nil && data != nil {
 		if len(data) > 0 {
 			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
-			//amountByPaytype[paytype] = 
+			//amountByPaytype[paytype] =
 		}
-	}		
-	return  totalAmount
+	}
+	return totalAmount
+}
+
+func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, error) {
+	result := make(map[string]uint64)
+	data, err := u.Repo.AggregateProjectsFloorPrice(projects)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range data {
+		result[v.ID] = v.Floor
+	}
+	return result, nil
 }
