@@ -259,6 +259,12 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
 	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
+	// dex offer
+	inscriptionDex.HandleFunc("/offering", h.dexBTCOffering).Methods("POST")
+	inscriptionDex.HandleFunc("/offering-fee", h.dexBTCListingFee).Methods("POST")
+	inscriptionDex.HandleFunc("/cancel-offer", h.cancelBTCOffer).Methods("POST")
+	inscriptionDex.HandleFunc("/offer-history", h.dexBTCOffering).Methods("GET")
+
 	dex := api.PathPrefix("/dex-buy").Subrouter()
 	dex.HandleFunc("/list-buy-address", h.ListBuyAddress).Methods("GET")
 

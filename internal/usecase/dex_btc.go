@@ -15,7 +15,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -182,25 +181,6 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
 }
 
-func retrievePreviousTxFromPSBT(psbtData *psbt.Packet) ([]string, error) {
-	result := []string{}
-	for _, input := range psbtData.UnsignedTx.TxIn {
-		result = append(result, input.PreviousOutPoint.Hash.String())
-	}
-	return result, nil
-}
-
-func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, error) {
-	result := make(map[string][]*wire.TxOut)
-	for _, output := range psbtData.UnsignedTx.TxOut {
-		address, err := btc.GetAddressFromPKScript(output.PkScript)
-		if err != nil {
-			return nil, err
-		}
-		result[address] = append(result[address], output)
-	}
-	return result, nil
-}
 func (u Usecase) JobWatchPendingDexBTCListing() {
 	var wg sync.WaitGroup
 
@@ -310,7 +290,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			if spentTx != "" {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
 				}
 
 				isValidMatch := false

@@ -403,36 +403,36 @@ func ValidateAddress(crypto, address string) (bool, error) {
 
 func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (string, error) {
 	var status string
-	txStatus, err := bs.CheckTx(txhash)
+	// txStatus, err := bs.CheckTx(txhash)
+	// if err != nil {
+	// 	txInfo, err := CheckTxFromBTC(txhash)
+	// 	if err != nil {
+	// fmt.Printf("checkTxFromBTC err: %v", err)
+	txInfo2, err := CheckTxfromQuickNode(txhash, qn)
 	if err != nil {
-		txInfo, err := CheckTxFromBTC(txhash)
-		if err != nil {
-			// fmt.Printf("checkTxFromBTC err: %v", err)
-			txInfo2, err := CheckTxfromQuickNode(txhash, qn)
-			if err != nil {
-				// fmt.Printf("checkTxFromBTC err: %v", err)
-				status = "Failed"
-			} else {
-				if txInfo2.Result.Confirmations > 0 {
-					status = "Success"
-				} else {
-					status = "Pending"
-				}
-			}
-		} else {
-			if txInfo.Data.Confirmations > 0 {
-				status = "Success"
-			} else {
-				status = "Pending"
-			}
-		}
+		// fmt.Printf("checkTxFromBTC err: %v", err)
+		status = "Failed"
 	} else {
-		if txStatus.Confirmations > 0 {
+		if txInfo2.Result.Confirmations > 0 {
 			status = "Success"
 		} else {
 			status = "Pending"
 		}
 	}
+	// 	} else {
+	// 		if txInfo.Data.Confirmations > 0 {
+	// 			status = "Success"
+	// 		} else {
+	// 			status = "Pending"
+	// 		}
+	// 	}
+	// } else {
+	// 	if txStatus.Confirmations > 0 {
+	// 		status = "Success"
+	// 	} else {
+	// 		status = "Pending"
+	// 	}
+	// }
 	return status, nil
 }
 
