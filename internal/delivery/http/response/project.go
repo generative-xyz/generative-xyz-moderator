@@ -73,7 +73,7 @@ type ProjectResp struct {
 	ReserveMintLimit          int              `json:"reserveMintLimit"`
 	IsReviewing               bool             `json:"isReviewing"`
 	CanCreateProposal         bool             `json:"canCreateProposal"`
-	Proposal                  *DaoProject      `json:"proposal"`
+	ProposalSeqId             *uint            `json:"proposalSeqId"`
 }
 
 type ReportProject struct {
