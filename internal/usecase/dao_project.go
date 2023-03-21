@@ -221,6 +221,9 @@ func (s *Usecase) SetExpireAvailableDAOProject(ctx context.Context, projectId pr
 				{Key: "updated_at", Value: time.Now()},
 			}},
 		})
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
 	return err
 }
 

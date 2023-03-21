@@ -38,6 +38,7 @@ import (
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/rediskey"
 )
 
 type uploadFileChan struct {
@@ -772,7 +773,10 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
+
 	}
+
+	_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	u.Logger.Info("updated", updated)
 	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
