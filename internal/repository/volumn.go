@@ -11,7 +11,6 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
-
 func (r Repository) AggregateVolumn(projectID string, payType string) ([]entity.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateProjectItemResp{}
@@ -21,32 +20,31 @@ func (r Repository) AggregateVolumn(projectID string, payType string) ([]entity.
 		calculate = bson.M{"$sum": bson.M{
 			"$multiply": bson.A{
 				"$project_mint_price",
-				 bson.M{ "$divide": bson.A{
+				bson.M{"$divide": bson.A{
 					"$btc_rate",
 					"$eth_rate",
-				 }},
+				}},
 			},
 		}}
 	}
-		
+
 	// PayType *string
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"isMinted": true},
-		bson.M{"payType": payType},		
-		bson.M{"projectID": projectID},		
+		bson.M{"payType": payType},
+		bson.M{"projectID": projectID},
 	}}}
 
 	pipeLine := bson.A{
 		matchStage,
-		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
+		bson.M{"$group": bson.M{"_id": bson.M{"projectID": "$projectID", "payType": "$payType"},
 			"amount": calculate,
 			"minted": bson.M{"$sum": 1},
 		}},
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
-	
+
 	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err
@@ -66,19 +64,18 @@ func (r Repository) AggregateVolumn(projectID string, payType string) ([]entity.
 		}
 		tmp := entity.AggregateProjectItemResp{
 			ProjectID: res.ID.ProjectID,
-			Paytype: res.ID.Paytype,
-			BtcRate: res.ID.BtcRate,
-			EthRate: res.ID.EthRate,
+			Paytype:   res.ID.Paytype,
+			BtcRate:   res.ID.BtcRate,
+			EthRate:   res.ID.EthRate,
 			MintPrice: res.ID.MintPrice,
-			Amount: res.Amount,
-			Minted: res.Minted,
+			Amount:    res.Amount,
+			Minted:    res.Minted,
 		}
 		confs = append(confs, tmp)
 	}
-	
+
 	return confs, nil
 }
-
 
 func (r Repository) AggregateProjectMintPrice(projectID string, payType string) ([]entity.AggregateProjectItemResp, error) {
 	//resp := &entity.AggregateWalletAddres{}
@@ -89,10 +86,10 @@ func (r Repository) AggregateProjectMintPrice(projectID string, payType string) 
 		calculate = bson.M{"$sum": bson.M{
 			"$multiply": bson.A{
 				"$project_mint_price",
-				 bson.M{ "$divide": bson.A{
+				bson.M{"$divide": bson.A{
 					"$btc_rate",
 					"$eth_rate",
-				 }},
+				}},
 			},
 		}}
 	}
@@ -103,19 +100,17 @@ func (r Repository) AggregateProjectMintPrice(projectID string, payType string) 
 		bson.M{"status": entity.StatusMint_SentFundToMaster},
 		bson.M{"payType": payType},
 		bson.M{"projectID": projectID},
-		
 	}}}
 
 	pipeLine := bson.A{
 		matchStage,
-		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID", "payType": "$payType" }, 
+		bson.M{"$group": bson.M{"_id": bson.M{"projectID": "$projectID", "payType": "$payType"},
 			"amount": calculate,
 			"minted": bson.M{"$sum": 1},
 		}},
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
-	
+
 	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err
@@ -135,16 +130,16 @@ func (r Repository) AggregateProjectMintPrice(projectID string, payType string) 
 		}
 		tmp := entity.AggregateProjectItemResp{
 			ProjectID: res.ID.ProjectID,
-			Paytype: res.ID.Paytype,
-			BtcRate: res.ID.BtcRate,
-			EthRate: res.ID.EthRate,
+			Paytype:   res.ID.Paytype,
+			BtcRate:   res.ID.BtcRate,
+			EthRate:   res.ID.EthRate,
 			MintPrice: res.ID.MintPrice,
-			Amount: res.Amount,
-			Minted: res.Minted,
+			Amount:    res.Amount,
+			Minted:    res.Minted,
 		}
 		confs = append(confs, tmp)
 	}
-	
+
 	return confs, nil
 }
 
@@ -152,22 +147,22 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateAmount{}
 
-	f :=  bson.A{}
-	
+	f := bson.A{}
+
 	if filter.AmountType != nil && *filter.AmountType != "" {
 		f = append(f, bson.M{"payType": *filter.AmountType})
 	}
-	
+
 	if filter.CreatorAddress != nil && *filter.CreatorAddress != "" {
 		f = append(f, bson.M{"creatorAddress": *filter.CreatorAddress})
 	}
-	
+
 	if filter.ProjectID != nil && *filter.ProjectID != "" {
 		f = append(f, bson.M{"projectID": *filter.ProjectID})
 	}
-	
+
 	if len(filter.ProjectIDs) > 0 {
-		f = append(f, bson.M{"$in": bson.M{"projectID": filter.ProjectIDs } })
+		f = append(f, bson.M{"$in": bson.M{"projectID": filter.ProjectIDs}})
 	}
 
 	// PayType *string
@@ -179,7 +174,7 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.
 		groupStage,
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
-	
+
 	cursor, err := r.DB.Collection(entity.UserVolumn{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err
@@ -192,15 +187,14 @@ func (r Repository) AggregateAmount(filter entity.FilterVolume, groupStage bson.
 	}
 
 	for _, item := range results {
-		
+
 		tmp := &entity.AggregateAmount{}
 		err = helpers.Transform(item, tmp)
 		confs = append(confs, *tmp)
 	}
-	
+
 	return confs, nil
 }
-
 
 func (r Repository) FindVolumn(projectID string, amountType string) (*entity.UserVolumn, error) {
 	projectID = strings.ToLower(projectID)
@@ -251,14 +245,13 @@ func (r Repository) UpdateVolumn(ID string, data *entity.UserVolumn) (*mongo.Upd
 	return result, nil
 }
 
-
-func (r Repository) UpdateVolumnAmount(projectID string, payType string, amount string,  earning string, gearning string) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateVolumnAmount(projectID string, payType string, amount string, earning string, gearning string) (*mongo.UpdateResult, error) {
 	filter := bson.D{
 		{Key: "projectID", Value: projectID},
 		{Key: "payType", Value: payType},
 	}
 
-	update := bson.M{"$set": bson.M{"amount": amount, "earning": earning, "genEarning":  gearning}}
+	update := bson.M{"$set": bson.M{"amount": amount, "earning": earning, "genEarning": gearning}}
 	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
@@ -281,13 +274,11 @@ func (r Repository) UpdateVolumnMinted(projectID string, payType string, minted 
 	return result, nil
 }
 
-
 func (r Repository) UpdateVolumMintPrice(projectID string, payType string, mintPrice int64) (*mongo.UpdateResult, error) {
 	filter := bson.D{
 		{Key: "projectID", Value: projectID},
 		{Key: "payType", Value: payType},
 	}
-
 
 	update := bson.M{"$set": bson.M{"mintPrice": mintPrice}}
 	result, err := r.DB.Collection(entity.UserVolumn{}.TableName()).UpdateOne(context.TODO(), filter, update)
@@ -301,24 +292,23 @@ func (r Repository) AggregateBTCVolumn(projectID string) ([]entity.AggregateProj
 	//resp := &entity.AggregateWalletAddres{}
 	confs := []entity.AggregateProjectItemResp{}
 
-	calculate := bson.M{"$sum": "$project_mint_price"}	
+	calculate := bson.M{"$sum": "$project_mint_price"}
 	// PayType *string
 	// ReferreeIDs []string
 	matchStage := bson.M{"$match": bson.M{"$and": bson.A{
 		bson.M{"isMinted": true},
-		bson.M{"projectID": projectID},		
+		bson.M{"projectID": projectID},
 	}}}
 
 	pipeLine := bson.A{
 		matchStage,
-		bson.M{"$group": bson.M{"_id": 
-			bson.M{ "projectID": "$projectID"}, 
+		bson.M{"$group": bson.M{"_id": bson.M{"projectID": "$projectID"},
 			"amount": calculate,
 			"minted": bson.M{"$sum": 1},
 		}},
 		bson.M{"$sort": bson.M{"_id": -1}},
 	}
-	
+
 	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
 	if err != nil {
 		return nil, err
@@ -338,15 +328,15 @@ func (r Repository) AggregateBTCVolumn(projectID string) ([]entity.AggregateProj
 		}
 		tmp := entity.AggregateProjectItemResp{
 			ProjectID: res.ID.ProjectID,
-			Paytype: res.ID.Paytype,
-			BtcRate: res.ID.BtcRate,
-			EthRate: res.ID.EthRate,
+			Paytype:   res.ID.Paytype,
+			BtcRate:   res.ID.BtcRate,
+			EthRate:   res.ID.EthRate,
 			MintPrice: res.ID.MintPrice,
-			Amount: res.Amount,
-			Minted: res.Minted,
+			Amount:    res.Amount,
+			Minted:    res.Minted,
 		}
 		confs = append(confs, tmp)
 	}
-	
+
 	return confs, nil
 }
