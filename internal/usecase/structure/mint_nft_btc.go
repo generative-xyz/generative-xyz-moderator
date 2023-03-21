@@ -1,6 +1,8 @@
 package structure
 
-import "time"
+import (
+	"time"
+)
 
 type MintNftBtcData struct {
 	UserAddress       string `json:"userAddress"`
@@ -14,6 +16,9 @@ type MintNftBtcData struct {
 	Quantity int `json:"quantity"`
 
 	FeeRate int32 `json:"feeRate"`
+
+	IsCustomFeeRate bool        `json:"isCustomFeeRate"`
+	EstMintFeeInfo  interface{} `json:"estMintFeeInfo"`
 }
 
 type MintingInscription struct {
