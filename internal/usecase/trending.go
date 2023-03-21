@@ -63,6 +63,9 @@ func (u Usecase) JobSyncProjectTrending() error {
 		}
 		for _, listing := range listings {
 			u.Logger.LogAny("SyncProjectTrending.Listing", zap.Any("listing", listing))
+			if listing.FromOtherMkp {
+				continue
+			}
 			if len(listing.ProjectInfo) == 0 {
 				continue
 			}
