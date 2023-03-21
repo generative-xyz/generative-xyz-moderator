@@ -165,8 +165,8 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 func (s *Usecase) GetLastDAOProjectByProjectId(ctx context.Context, projectId primitive.ObjectID) (*entity.DaoProject, error) {
 	daoProject := &entity.DaoProject{}
 	opts := &options.FindOneOptions{}
-	opts.SetSort(bson.M{"created_at": -1})
-	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, &options.FindOneOptions{}, opts); err != nil {
+	opts = opts.SetSort(bson.M{"created_at": -1})
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, opts); err != nil {
 		return nil, err
 	}
 	return daoProject, nil
