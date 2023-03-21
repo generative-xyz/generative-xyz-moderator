@@ -256,14 +256,23 @@ func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
 }
 
 func (u Usecase) preCheckPendingDexBTCListingTx(pendingOrders []entity.DexBTCListing) (map[string]*btc.GoBCYMultiTx, error) {
-	result := make(map[string]*btc.GoBCYMultiTx)
 	txNeedToCheck := []string{}
 	for _, order := range pendingOrders {
-		_ = order
+		if order.CancelTx == "" {
+			inscriptionTx := strings.Split(order.Inputs[0], ":")
+			txNeedToCheck = append(txNeedToCheck, inscriptionTx[0])
+		}
 	}
-
-	btc.CheckTxMultiBlockcypher(txNeedToCheck, u.Config.DEXBTCBlockcypherToken)
-
+	log.Println("preCheckPendingDexBTCListingTx len(txNeedToCheck)", len(txNeedToCheck))
+	result, _, err := btc.CheckTxMultiBlockcypher(txNeedToCheck, u.Config.DEXBTCBlockcypherToken)
+	if err != nil {
+		log.Println("preCheckPendingDexBTCListingTx CheckTxMultiBlockcypher", err.Error())
+		return nil, err
+	}
+	if len(result) == 0 {
+		result = make(map[string]*btc.GoBCYMultiTx)
+	}
+	log.Println("preCheckPendingDexBTCListingTx len(result)", len(result))
 	return result, nil
 }
 
@@ -272,12 +281,11 @@ func (u Usecase) watchPendingDexBTCListing() error {
 	if err != nil {
 		return err
 	}
-	_, bs, err := u.buildBTCClientCustomToken(u.Config.DEXBTCBlockcypherToken)
-	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		return err
-	}
 
+	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
+	if err != nil {
+		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err)
+	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
 		idx, err := strconv.Atoi(inscriptionTx[1])
@@ -303,8 +311,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			spentTx := ""
 
 			log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
-			txStatus, err := bs.CheckTx(inscriptionTx[0])
-			if err != nil {
+			// txStatus, err := bs.CheckTx(inscriptionTx[0])
+			txStatus, exist := preCheckTxs[inscriptionTx[0]]
+			if !exist {
 				log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
 				spentTx, err = btc.CheckOutcoinSpentBlockStream(inscriptionTx[0], uint(idx))
 				if err != nil {
