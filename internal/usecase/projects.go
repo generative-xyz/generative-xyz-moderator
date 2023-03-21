@@ -38,6 +38,7 @@ import (
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"rederinghub.io/utils/rediskey"
 )
 
 type uploadFileChan struct {
@@ -772,7 +773,10 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	if err != nil {
 		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
+
 	}
+
+	_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	u.Logger.Info("updated", updated)
 	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
@@ -901,7 +905,6 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 	return projects, nil
 }
 
-
 func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Pagination, error) {
 	pe := &entity.FilterProjects{}
 	err := copier.Copy(pe, req)
@@ -909,7 +912,7 @@ func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Paginatio
 		u.Logger.Error("copier.Copy", err.Error(), err)
 		return nil, err
 	}
-	
+
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
 		u.Logger.Error("u.Repo.GetProjects", err.Error(), err)
@@ -2183,15 +2186,14 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 	return h, nil
 }
 
-
 func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	totalAmount := "0"
 	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
 	if err == nil && data != nil {
 		if len(data) > 0 {
 			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
-			//amountByPaytype[paytype] = 
+			//amountByPaytype[paytype] =
 		}
-	}		
-	return  totalAmount
+	}
+	return totalAmount
 }
