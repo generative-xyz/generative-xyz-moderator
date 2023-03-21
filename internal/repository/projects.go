@@ -908,7 +908,7 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 
 func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
 	f := bson.D{
-		{Key: "project_id", Value: projectID},
+		{Key: "tokenid", Value: projectID},
 	}
 
 	update := bson.M{
