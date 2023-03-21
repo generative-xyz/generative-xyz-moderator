@@ -265,6 +265,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
 		return err
 	}
+
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
 		idx, err := strconv.Atoi(inscriptionTx[1])
