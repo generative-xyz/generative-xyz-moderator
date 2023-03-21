@@ -383,12 +383,14 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if reqBody.ReceiveAddress == "" {
-		user, err := h.Usecase.Repo.FindUserByID(userID)
-		if err != nil {
-			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
-			return
-		}
-		reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
+		return
+		// user, err := h.Usecase.Repo.FindUserByID(userID)
+		// if err != nil {
+		// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("receive_address cannot be empty"))
+		// 	return
+		// }
+		// reqBody.ReceiveAddress = user.WalletAddressBTCTaproot
 	}
 	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, orderListInvalid, hasRoyalty, err := h.Usecase.GenBuyETHOrder(reqBody.IsEstimate, userID, reqBody.OrderID, reqBody.OrderIDList, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
 	if err != nil {

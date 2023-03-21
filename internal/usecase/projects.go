@@ -2173,6 +2173,9 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 		token.ParsedAttributes = attrs
 		token.ParsedAttributesStr = attrStrs
+		if len(strings.TrimSpace(item.Name)) > 0 && item.Name != token.Name {
+			token.Name = item.Name
+		}
 
 		//spew.Dump(token.TokenID, token.ParsedAttributes)
 		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
