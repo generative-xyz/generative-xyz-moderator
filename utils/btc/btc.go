@@ -370,6 +370,34 @@ func (bs *BlockcypherService) CheckTx(tx string) (gobcy.TX, error) {
 	return bs.chain.GetTX(tx, nil)
 }
 
+type GoBCYMultiTx struct {
+	gobcy.TX
+	Error string `json:"error"`
+}
+
+func CheckTxMultiBlockcypher(txs []string, token string) ([]GoBCYMultiTx, error) {
+	var result []GoBCYMultiTx
+	query := strings.Join(txs, ";")
+	url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		err = fmt.Errorf("Unmarshal response error: %v", err)
+		return nil, err
+	}
+	return result, nil
+}
+
 func ValidateAddress(crypto, address string) (bool, error) {
 	crypto = strings.ToLower(crypto)
 
