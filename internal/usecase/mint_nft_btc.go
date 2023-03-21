@@ -481,8 +481,6 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 
-		time.Sleep(1 * time.Second)
-
 		// check balance:
 		balance := big.NewInt(0)
 		confirm := -1
@@ -531,6 +529,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 		} else if item.PayType == utils.NETWORK_ETH {
 			// check eth balance:
+
+			time.Sleep(1 * time.Second)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -586,6 +586,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 		if confirm == 0 {
 			item.Status = entity.StatusMint_WaitingForConfirms
+			u.Repo.UpdateMintNftBtc(&item)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_WaitingForConfirms", "0", true)
 		}
 		if confirm >= 1 {

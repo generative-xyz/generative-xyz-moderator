@@ -466,6 +466,7 @@ func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMulti
 			}
 		}
 		lock.Unlock()
+		time.Sleep(1 * time.Second)
 	}
 
 	for _, tx := range txs {
@@ -794,6 +795,7 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 				balanceMap[v.Address] = v
 			}
 		}
+		time.Sleep(1 * time.Second)
 	}
 
 	return balanceMap, nil
