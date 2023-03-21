@@ -33,7 +33,7 @@ type TokenTraits struct {
 
 type TraitAttribute struct {
 	TraitType string `bson:"trait_type" json:"trait_type"`
-	Value     string `bson:"value"  json:"value"`
+	Value     interface{} `bson:"value"  json:"value"`
 }
 
 func (u TokenUriMetadata) TableName() string {

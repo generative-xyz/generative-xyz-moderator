@@ -2138,48 +2138,58 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	for _, item := range data {
-		tokenID := item.ID
-		token, err := u.Repo.FindTokenByTokenID(tokenID)
-		if err != nil {
-			err = fmt.Errorf("token %s was not found: %v", tokenID, err)
-			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
-			return nil, err
-		}
+	for i, item := range data {
 
-		if token.ProjectID != p.TokenID {
-			err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
-			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
-			return nil, err
-		}
-
-		attrs := []entity.TokenUriAttr{}
-		attrStrs := []entity.TokenUriAttrStr{}
-
-		for _, itemAttr := range item.Attributes {
-			attr := entity.TokenUriAttr{
-				TraitType: itemAttr.TraitType,
-				Value:     itemAttr.Value,
+		go func(i int, item entity.TokenTraits) {
+			tokenID := item.ID
+			token, err := u.Repo.FindTokenByTokenID(tokenID)
+			if err != nil {
+				err = fmt.Errorf("token %s was not found: %v", tokenID, err)
+				logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
+				return 
 			}
 
-			attrStr := entity.TokenUriAttrStr{
-				TraitType: itemAttr.TraitType,
-				Value:     itemAttr.Value,
+			if token.ProjectID != p.TokenID {
+				err = fmt.Errorf("token %s is not belong to this project %s", tokenID, projectID)
+				logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
+				return 
 			}
 
-			attrs = append(attrs, attr)
-			attrStrs = append(attrStrs, attrStr)
-		}
+			attrs := []entity.TokenUriAttr{}
+			attrStrs := []entity.TokenUriAttrStr{}
 
-		token.ParsedAttributes = attrs
-		token.ParsedAttributesStr = attrStrs
+			for _, itemAttr := range item.Attributes {
+				attr := entity.TokenUriAttr{
+					TraitType: itemAttr.TraitType,
+					Value:     itemAttr.Value,
+				}
 
-		//spew.Dump(token.TokenID, token.ParsedAttributes)
-		_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
-		if err != nil {
-			err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
-			logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
-			return nil, err
+			
+				attrStr := entity.TokenUriAttrStr{
+					TraitType: itemAttr.TraitType,
+					Value:     fmt.Sprintf("%v", itemAttr.Value),
+				}
+
+				attrs = append(attrs, attr)
+				attrStrs = append(attrStrs, attrStr)
+			}
+
+			token.ParsedAttributes = attrs
+			token.ParsedAttributesStr = attrStrs
+
+			//spew.Dump(token.TokenID, token.ParsedAttributes)
+			_, err = u.Repo.UpdateOrInsertTokenUri(token.ContractAddress, tokenID, token)
+			if err != nil {
+				err = fmt.Errorf("Cannot update token %s - %v", tokenID, err)
+				logger.AtLog.Error("UploadTokenTraits", zap.String("projectID", projectID), err.Error())
+				return 
+			}
+
+			logger.AtLog.Infof("proccess: %s - %d / %d ", tokenID, i+1, len(data))
+		}(i, item)
+
+		if i >0 && i%100 == 0 {
+			time.Sleep(time.Second * 1)
 		}
 	}
 
