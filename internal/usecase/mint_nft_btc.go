@@ -894,16 +894,8 @@ func (u Usecase) JobMint_MintNftBtc() error {
 // job check 3 tx mint:
 func (u Usecase) JobMint_CheckTxMintSend() error {
 
-	// btcClient, bs, err := u.buildBTCClient()
-
-	// if err != nil {
-	// 	fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-	// 	go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", "", "", "Could not initialize Bitcoin RPCClient - with err", err.Error(), true)
-	// 	return err
-	// }
-
 	// get list pending tx:
-	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Minting, entity.StatusMint_SendingNFTToUser})
+	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint_Minting})
 	if len(listTxToCheck) == 0 {
 		return nil
 	}
@@ -960,14 +952,9 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txToCheck, confirm, true)
 			// tx ok now:
 
-			if item.Status == entity.StatusMint_Minting {
-				// update for ord5
-				item.Status = entity.StatusMint_Minted
-				item.IsMinted = true
-			} else if item.Status == entity.StatusMint_SendingNFTToUser {
-				item.Status = entity.StatusMint_SentNFTToUser
-				item.IsSentUser = true
-			}
+			// update for ord5
+			item.Status = entity.StatusMint_Minted
+			item.IsMinted = true
 
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
