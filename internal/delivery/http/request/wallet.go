@@ -5,13 +5,15 @@ type InscriptionByOutput struct {
 }
 
 type TrackTx struct {
-	Txhash            string `json:"txhash"`
-	Type              string `json:"type"`
-	InscriptionID     string `json:"inscription_id"`
-	InscriptionNumber uint64 `json:"inscription_number"`
-	Amount            uint64 `json:"send_amount"`
-	Address           string `json:"address"`
-	Receiver          string `json:"receiver"`
+	Txhash                string   `json:"txhash"`
+	Type                  string   `json:"type"`
+	InscriptionID         string   `json:"inscription_id"`
+	InscriptionNumber     uint64   `json:"inscription_number"`
+	InscriptionList       []string `json:"inscription_list"`
+	InscriptionNumberList []uint64 `json:"inscription_number_list"`
+	Amount                uint64   `json:"send_amount"`
+	Address               string   `json:"address"`
+	Receiver              string   `json:"receiver"`
 }
 
 type SubmitTx struct {

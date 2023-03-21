@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -98,6 +99,84 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 	return tokenTxs, nil
 }
 
+func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
+	u.Repo.AddTokenTxRetryResolve(tokenTx.InscriptionID, tokenTx.Tx)
+	tx := structure.Tx{}
+	txId := tokenTx.Tx
+	u.Logger.LogAny(
+		"fetchDataFromTx.Start", 
+		zap.String("tx", txId),
+	)
+	resp, err := http.Get("https://api.blockchain.info/haskoin-store/btc/transaction/" + txId)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	tradingTx := false
+	for _, input := range tx.Inputs {
+		if len(input.Witness) > 0 {
+			temp, _ := hex.DecodeString(input.Witness[0])
+			if len(temp) > 0 &&  temp[len(temp)-1] == 131 {
+				tradingTx = true
+				break
+			}
+		}
+	}
+	if tradingTx && len(tx.Outputs) >= 3 { 
+		u.Logger.LogAny("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
+		buyer := tx.Outputs[0].Address
+		seller := tx.Outputs[1].Address
+		amount := tx.Outputs[1].Value
+		txTime := time.Unix(tx.Time, 0)
+		// Create listing
+		// check existed
+		existed, err := u.Repo.CheckMatchedTxExisted(tokenTx.Tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		
+		if existed {
+			u.Logger.LogAny("fetchDataFromTx.ListingExisted", zap.String("tx", tokenTx.Tx))
+			u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+			return nil
+		}
+
+		newDexBTCListing := entity.DexBTCListing{
+			InscriptionID: tokenTx.InscriptionID,
+			Amount: amount,
+			Matched: true,
+			MatchedTx: tokenTx.Tx,
+			MatchAt: &txTime,
+			Verified: true,
+			Cancelled: false,
+			FromOtherMkp: true,
+			SellerAddress: seller,
+			Buyer: buyer,
+		}
+		err = u.Repo.CreateDexBTCListing(&newDexBTCListing)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		listing, err := u.Repo.GetDexBTCListingByMatchedTx(tokenTx.Tx)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		u.InsertDexVolumnInscription(*listing)
+	}
+
+	_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
 func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
 	u.Logger.LogAny(
 		"GoFromTailTokenTx.Start",
@@ -123,10 +202,11 @@ func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
 }
 
 func (u Usecase) JobCreateTokenTxFromTokenURI() error {
+	u.Logger.LogAny("JobCreateTokenTxFromTokenURI.Start")
 	startTime := time.Time{}
 	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobCreateTokenTxFromTokenURI.GetPagingTokenUri", zap.Any("page", page))
-		uTokens, err := u.Repo.GetNotCreatedTxToken(page, 1)
+		uTokens, err := u.Repo.GetNotCreatedTxToken(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -156,14 +236,14 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 				Priority: trendingScore,
 			}
 			
-			if _, err := u.Repo.UpsertTokenTx(tokenTx.InscriptionID, tokenTx.Tx, &tokenTx); err != nil {
+			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
 				u.Logger.ErrorAny(
-					"JobCreateTokenTxFromTokenURI.UpsertTokenTx", 
+					"JobCreateTokenTxFromTokenURI.InsertTokenTx", 
 					zap.Error(err), 
 					zap.String("token_id", token.TokenID),
 				)
 			} else {
-				u.Logger.Info("JobCreateTokenTxFromTokenURI.UpsertTokenTx", zap.Any("tokenTx", tokenTx))
+				u.Logger.Info("JobCreateTokenTxFromTokenURI.InsertTokenTx", zap.Any("tokenTx", tokenTx))
 				u.Repo.UpdateTokenCreatedTokenTx(token.TokenID)
 			}
 		}
@@ -172,6 +252,7 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 }
 
 func (u Usecase) JobContinueCrawlTxs() error {
+	u.Logger.LogAny("JobContinueCrawlTxs.Start")
 	var processed int64
 	for page := int64(1);; page++ {
 		u.Logger.LogAny("JobContinueCrawlTxs.GetPagingTokenTx", zap.Any("page", page))
@@ -194,6 +275,42 @@ func (u Usecase) JobContinueCrawlTxs() error {
 					"JobContinueCrawlTxs.GoFromTailTokenTx",
 					zap.Error(err),
 					zap.String("inscriptionID", tokenTx. InscriptionID),
+					zap.String("tx", tokenTx.Tx),
+				)
+			}
+			processed++
+			if processed % 5 == 0 {
+				time.Sleep(1 * time.Second)
+			}
+		}
+	}
+	return nil
+}
+
+func (u Usecase) JobFetchUnresolvedTokenTxs() error {
+	u.Logger.LogAny("JobFetchUnresolvedTokenTxs.Start")
+	var processed int64
+	for page := int64(1);; page++ {
+		u.Logger.LogAny("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
+		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 100)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		tokenTxs := uTokenTxs.Result.([]entity.TokenTx)
+		if len(tokenTxs) == 0 {
+			break
+		}
+		u.Logger.LogAny(
+			"JobFetchUnresolvedTokenTxs.DonePagingTokenTx", 
+			zap.Any("page", page), 
+			zap.Any("numItem", len(tokenTxs)),
+		)
+		for _, tokenTx := range tokenTxs {
+			if err := u.fetchDataFromTx(tokenTx); err != nil {
+				u.Logger.ErrorAny(
+					"JobFetchUnresolvedTokenTxs.fetchDataFromTx",
+					zap.Error(err),
+					zap.String("inscriptionID", tokenTx.InscriptionID),
 					zap.String("tx", tokenTx.Tx),
 				)
 			}

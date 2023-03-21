@@ -125,13 +125,31 @@ func (c *checkerUser) calUsers(ctx context.Context, users []*entity.Users) error
 		"$group": bson.M{
 			"_id": "$creatorAddress",
 			"total_collection": bson.M{
-				"$sum": 1,
+				"$sum": bson.M{
+					"$cond": []interface{}{
+						bson.M{"$eq": []interface{}{"$isHidden", false}},
+						1,
+						0,
+					},
+				},
 			},
 			"total_mint": bson.M{
-				"$sum": "$maxSupply",
+				"$sum": bson.M{
+					"$cond": []interface{}{
+						bson.M{"$eq": []interface{}{"$isHidden", false}},
+						"$maxSupply",
+						0,
+					},
+				},
 			},
 			"total_minted": bson.M{
-				"$sum": "$index",
+				"$sum": bson.M{
+					"$cond": []interface{}{
+						bson.M{"$eq": []interface{}{"$isHidden", false}},
+						"$index",
+						0,
+					},
+				},
 			},
 		},
 	}
