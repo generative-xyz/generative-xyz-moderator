@@ -12,6 +12,8 @@ type ItemListing struct {
 	Name              string         `json:"name"`
 	Image             string         `json:"image"`
 	ContentType       string         `json:"contentType"`
+	FloorPrice        uint64         `json:"floorPrice"`
+	FloorPriceStr     string         `json:"floorPriceStr"`
 }
 
 type VolumneObject struct {

@@ -14,7 +14,7 @@ import (
 func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
-	result := []entity.DexBTCListing{}
+	result := []entity.DexVolumeInscriptionSumary{}
 	pipeline := bson.A{
 		bson.D{
 			{"$lookup",
@@ -27,6 +27,29 @@ func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*ent
 			},
 		},
 		bson.D{{"$match", bson.D{{"token_info", bson.A{}}}}},
+		bson.M{
+			"$group": bson.M{
+				"_id":          "$inscription_id",
+				"total_volume": bson.M{"$sum": "$amount"},
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "dex_btc_listing",
+				"localField":   "_id",
+				"foreignField": "inscription_id",
+				"as":           "dex_btc_listings",
+			},
+		},
+		bson.M{
+			"$project": bson.M{
+				"inscription_id":   "$_id",
+				"total_volume":     1,
+				"dex_btc_listings": 1,
+				"_id":              0,
+			},
+		},
+		bson.M{"$sort": bson.M{"total_volume": -1}},
 		bson.M{"$skip": (page - 1) * pageSize},
 		bson.M{"$limit": pageSize},
 	}
@@ -44,13 +67,21 @@ func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*ent
 	addresses := []string{}
 	for _, r := range result {
 		data := &entity.ItemListing{
-			InscriptionId: r.InscriptionID,
-			Image:         fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionID),
-			SellerAddress: r.SellerAddress,
+			InscriptionId: r.InscriptionId,
+			Image:         fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionId),
 		}
 
-		addresses = append(addresses, r.SellerAddress)
-		response = append(response, data)
+		if len(r.DexBTCListings) > 0 {
+			data.FloorPrice = r.DexBTCListings[0].Amount
+		}
+		for _, d := range r.DexBTCListings {
+			if d.Amount < data.FloorPrice {
+				data.FloorPrice = d.Amount
+			}
+			data.SellerAddress = d.SellerAddress
+			addresses = append(addresses, d.SellerAddress)
+			response = append(response, data)
+		}
 	}
 
 	users, err := r.FindUserByAddresses(addresses)
@@ -143,15 +174,23 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 				"_id": 0,
 			},
 		},
+		// bson.M{
+		// 	"$lookup": bson.M{
+		// 		"from": "dex_btc_listing",
+		// 		"let":  bson.M{"inscription_id": "$inscription_id"},
+		// 		"pipeline": bson.A{
+		// 			bson.M{"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$inscription_id", "$$inscription_id"}}}},
+		// 			bson.M{"$match": bson.M{"matched": true}},
+		// 		},
+		// 		"as": "dex_btc_listings",
+		// 	},
+		// },
 		bson.M{
 			"$lookup": bson.M{
-				"from": "dex_btc_listing",
-				"let":  bson.M{"inscription_id": "$inscription_id"},
-				"pipeline": bson.A{
-					bson.M{"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$inscription_id", "$$inscription_id"}}}},
-					bson.M{"$match": bson.M{"matched": true}},
-				},
-				"as": "dex_btc_listings",
+				"from":         "dex_btc_listing",
+				"localField":   "inscription_id",
+				"foreignField": "inscription_id",
+				"as":           "dex_btc_listings",
 			},
 		},
 		bson.M{"$sort": bson.M{"volume_7d": -1}},
@@ -185,13 +224,24 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 				Amount: fmt.Sprintf("%d", r.Volume7d),
 			},
 		}
+
+		if len(r.DexBTCListings) > 0 {
+			data.FloorPrice = r.DexBTCListings[0].Amount
+		}
+
 		for _, d := range r.DexBTCListings {
-			if d.Matched && d.SellerAddress != "" {
+			if d.Amount < data.FloorPrice {
+				data.FloorPrice = d.Amount
+			}
+
+			if d.Matched {
 				data.SellerAddress = d.SellerAddress
 				data.BuyerAddress = d.Buyer
 				addresses = append(addresses, d.SellerAddress, d.Buyer)
 			}
 		}
+
+		data.FloorPriceStr = fmt.Sprintf("%d", data.FloorPrice)
 		response = append(response, data)
 	}
 
