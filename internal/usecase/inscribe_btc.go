@@ -80,6 +80,8 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	}
 	fmt.Println("new fileSize===>", fileSize)
 
+	fileSize += utils.MIN_FILE_SIZE // add 4kb
+
 	mintFee := int32(fileSize) / 4 * input.FeeRate
 
 	fmt.Println("mintFee===>", mintFee)

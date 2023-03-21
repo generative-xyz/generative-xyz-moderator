@@ -1972,6 +1972,8 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 
 	if fileSize > 0 {
 
+		fileSize += utils.MIN_FILE_SIZE // auto add 4kb
+
 		// auto fee if feeRate <= 0:
 		if feeRate <= 0 {
 			calNetworkFee := u.networkFeeBySize(int64(fileSize / 4))
