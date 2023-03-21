@@ -29,6 +29,7 @@ type TokenUriMetadata struct {
 type TokenTraits struct {
 	ID         string           `bson:"id" json:"id"`
 	Attributes []TraitAttribute `bson:"attributes" json:"attributes"`
+	Name       string           `bson:"name" json:"name"`
 }
 
 type TraitAttribute struct {
