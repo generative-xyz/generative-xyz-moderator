@@ -979,8 +979,10 @@ func (r Repository) AggregateProjectsFloorPrice(projectIDs []string) ([]structur
 										{"$expr",
 											bson.D{
 												{"$in",
-													projectsBsonA,
-												},
+													bson.A{
+														"$project_id",
+														projectsBsonA,
+													}},
 											},
 										},
 									},
