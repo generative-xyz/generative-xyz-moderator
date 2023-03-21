@@ -47,7 +47,7 @@ require (
 	github.com/test-go/testify v1.1.4
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/xakep666/mongo-migrate v0.2.1
-	go.mongodb.org/mongo-driver v1.11.2
+	go.mongodb.org/mongo-driver v1.11.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
