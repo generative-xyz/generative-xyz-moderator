@@ -401,12 +401,11 @@ func (h *httpDelivery) getCollectionStatsFirstSale(w http.ResponseWriter, r *htt
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	
-	amount, amountByPaytype := h.Usecase.GetProjectFirstSale(genNFTAddr)
-	
+	amount := h.Usecase.GetProjectFirstSale(genNFTAddr)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.StatFirstSale{
 		Amount: amount,
-		AmountByPaytype: amountByPaytype,
 		ProjectID:  genNFTAddr,
+		PayType: "btc",
 	} , "")
 }
 

@@ -100,6 +100,7 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 }
 
 func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
+	u.Repo.AddTokenTxRetryResolve(tokenTx.InscriptionID, tokenTx.Tx)
 	tx := structure.Tx{}
 	txId := tokenTx.Tx
 	u.Logger.LogAny(
@@ -116,17 +117,16 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 	}
 	tradingTx := false
 	for _, input := range tx.Inputs {
-		temp, _ := hex.DecodeString(input.Witness[0])
-		if temp[len(temp)-1] == 131 {
-			tradingTx = true
-			break
+		if len(input.Witness) > 0 {
+			temp, _ := hex.DecodeString(input.Witness[0])
+			if len(temp) > 0 &&  temp[len(temp)-1] == 131 {
+				tradingTx = true
+				break
+			}
 		}
 	}
-	if tradingTx { 
+	if tradingTx && len(tx.Outputs) >= 3 { 
 		u.Logger.LogAny("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
-		if len(tx.Outputs) < 3 {
-			return errors.New("trading tx must havee at least 3 items")
-		} 
 		buyer := tx.Outputs[0].Address
 		seller := tx.Outputs[1].Address
 		amount := tx.Outputs[1].Value
@@ -166,13 +166,14 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 			return errors.WithStack(err)
 		}
 
-		_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
 		u.InsertDexVolumnInscription(*listing)
 	}
+
+	_, err = u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
@@ -235,14 +236,14 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 				Priority: trendingScore,
 			}
 			
-			if _, err := u.Repo.UpsertTokenTx(tokenTx.InscriptionID, tokenTx.Tx, &tokenTx); err != nil {
+			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
 				u.Logger.ErrorAny(
-					"JobCreateTokenTxFromTokenURI.UpsertTokenTx", 
+					"JobCreateTokenTxFromTokenURI.InsertTokenTx", 
 					zap.Error(err), 
 					zap.String("token_id", token.TokenID),
 				)
 			} else {
-				u.Logger.Info("JobCreateTokenTxFromTokenURI.UpsertTokenTx", zap.Any("tokenTx", tokenTx))
+				u.Logger.Info("JobCreateTokenTxFromTokenURI.InsertTokenTx", zap.Any("tokenTx", tokenTx))
 				u.Repo.UpdateTokenCreatedTokenTx(token.TokenID)
 			}
 		}
@@ -299,7 +300,7 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 		if len(tokenTxs) == 0 {
 			break
 		}
-		u.Logger.Info(
+		u.Logger.LogAny(
 			"JobFetchUnresolvedTokenTxs.DonePagingTokenTx", 
 			zap.Any("page", page), 
 			zap.Any("numItem", len(tokenTxs)),
@@ -309,7 +310,7 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 				u.Logger.ErrorAny(
 					"JobFetchUnresolvedTokenTxs.fetchDataFromTx",
 					zap.Error(err),
-					zap.String("inscriptionID", tokenTx. InscriptionID),
+					zap.String("inscriptionID", tokenTx.InscriptionID),
 					zap.String("tx", tokenTx.Tx),
 				)
 			}

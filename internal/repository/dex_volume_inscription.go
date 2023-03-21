@@ -282,7 +282,7 @@ func (r Repository) InsertDexVolumeInscription(data *entity.DexVolumeInscription
 	return nil
 }
 
-func (r Repository) AggregateVolumeInscription(filter *entity.AggerateChartForProject) ([]entity.AggragetedInscription, error) {
+func (r Repository) AggregateVolumnCollection(filter *entity.AggerateChartForProject) ([]entity.AggragetedProject, error) {
 	f := bson.A{
 		bson.D{
 			{"$lookup",
@@ -367,7 +367,82 @@ func (r Repository) AggregateVolumeInscription(filter *entity.AggerateChartForPr
 		return nil, err
 	}
 
-	result := []entity.AggragetedInscription{}
+	result := []entity.AggragetedProject{}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+
+func (r Repository) AggregateVolumnToken(filter *entity.AggerateChartForToken) ([]entity.AggragetedToken, error) {
+	f := bson.A{
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "metadata.inscription_id"},
+					{"foreignField", "token_id"},
+					{"as", "token_uri"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$token_uri"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$match",
+				bson.D{
+					{"token_uri.token_id", filter.TokenID},
+					{"timestamp", bson.D{{"$gte", filter.FromDate}}},
+					{"timestamp", bson.D{{"$lte", filter.ToDate}}},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"tokenID", "$token_uri.token_id"},
+							{"timestamp",
+								bson.D{
+									{"$dateToString",
+										bson.D{
+											{"format", "%Y-%m-%d"},
+											{"date", "$timestamp"},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"amount", bson.D{{"$sum", "$amount"}}},
+				},
+			},
+		},
+		bson.D{
+			{"$sort",
+				bson.D{
+					{"_id.timestamp", -1},
+					{"amount", -1},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexVolumeInscription{}.TableName()).Aggregate(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []entity.AggragetedToken{}
 	if err = cursor.All((context.TODO()), &result); err != nil {
 		return nil, err
 	}
