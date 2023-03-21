@@ -407,14 +407,17 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 
 func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error {
 	trackTx := entity.WalletTrackTx{
-		Address:           address,
-		Txhash:            tx.Txhash,
-		Type:              tx.Type,
-		Amount:            tx.Amount,
-		InscriptionID:     tx.InscriptionID,
-		InscriptionNumber: tx.InscriptionNumber,
-		Receiver:          tx.Receiver,
+		Address:               address,
+		Txhash:                tx.Txhash,
+		Type:                  tx.Type,
+		Amount:                tx.Amount,
+		InscriptionID:         tx.InscriptionID,
+		InscriptionNumber:     tx.InscriptionNumber,
+		InscriptionList:       tx.InscriptionList,
+		InscriptionNumberList: tx.InscriptionNumberList,
+		Receiver:              tx.Receiver,
 	}
+
 	return u.Repo.CreateTrackTx(&trackTx)
 }
 

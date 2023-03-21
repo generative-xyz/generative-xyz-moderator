@@ -34,7 +34,8 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 	unwindUser := bson.M{"$unwind": "$user"}
 	addFieldUserName := bson.M{
 		"$addFields": bson.M{
-			"user_name": "$user.display_name",
+			"user_name":          "$user.display_name",
+			"collection_created": "$user.stats.collection_created",
 		},
 	}
 	if len(request.Sorts) > 0 {
@@ -62,6 +63,9 @@ func (s Repository) ListDAOArtist(ctx context.Context, request *request.ListDaoA
 			return nil, 0, err
 		}
 		filters["_id"] = id
+	}
+	if request.SeqId != nil {
+		filters["seq_id"] = *request.SeqId
 	}
 	if request.Status != nil {
 		filters["status"] = *request.Status

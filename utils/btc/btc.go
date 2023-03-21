@@ -370,6 +370,103 @@ func (bs *BlockcypherService) CheckTx(tx string) (gobcy.TX, error) {
 	return bs.chain.GetTX(tx, nil)
 }
 
+type GoBCYMultiTx struct {
+	gobcy.TX
+	Error string `json:"error"`
+}
+
+func batchStrings(values <-chan string, maxItems int) chan []string {
+	batches := make(chan []string)
+
+	go func() {
+		defer close(batches)
+
+		for keepGoing := true; keepGoing; {
+			var batch []string
+			for {
+				select {
+				case value, ok := <-values:
+					if !ok {
+						keepGoing = false
+						goto done
+					}
+
+					batch = append(batch, value)
+					if len(batch) == maxItems {
+						goto done
+					}
+				}
+			}
+
+		done:
+			if len(batch) > 0 {
+				batches <- batch
+			}
+		}
+	}()
+
+	return batches
+}
+
+func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMultiTx, []string, error) {
+	result := make(map[string]*GoBCYMultiTx)
+	var checkFailedTxs []string
+	checkFailedTxsMap := make(map[string]struct{})
+	var respond []GoBCYMultiTx
+
+	var lock sync.Mutex
+	txChan := make(chan string)
+	go func() {
+		for _, tx := range txs {
+			txChan <- tx
+		}
+		close(txChan)
+	}()
+
+	txsBatch := batchStrings(txChan, 100)
+	txsBatchIdx := 0
+	for txList := range txsBatch {
+		txsBatchIdx++
+		query := strings.Join(txList, ";")
+		url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+
+		req, _ := http.NewRequest("GET", url, nil)
+
+		res, _ := http.DefaultClient.Do(req)
+
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = json.Unmarshal(body, &respond)
+		if err != nil {
+			err = fmt.Errorf("Unmarshal response error: %v", err)
+			return nil, nil, err
+		}
+		lock.Lock()
+		for _, txdetail := range respond {
+			if txdetail.Hash != "" {
+				result[txdetail.Hash] = &txdetail
+			}
+		}
+		lock.Unlock()
+	}
+
+	for _, tx := range txs {
+		if _, exist := result[tx]; !exist {
+			checkFailedTxsMap[tx] = struct{}{}
+		}
+	}
+
+	for tx, _ := range checkFailedTxsMap {
+		checkFailedTxs = append(checkFailedTxs, tx)
+	}
+
+	return result, checkFailedTxs, nil
+}
+
 func ValidateAddress(crypto, address string) (bool, error) {
 	crypto = strings.ToLower(crypto)
 
