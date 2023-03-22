@@ -432,8 +432,8 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 											bson.D{
 												{"$in",
 													bson.A{
+														0,
 														1,
-														2,
 													},
 												},
 											},
