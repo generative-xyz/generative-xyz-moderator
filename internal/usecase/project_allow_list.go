@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -45,11 +44,41 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	pe.AllowedBy = allowedBy
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
-		err := fmt.Errorf("Error while create allow list: %v", err.Error())
+		err := errors.New("Error while create allow list")
 		return nil, err
 	}
 
 	return pe, nil
+}
+
+func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
+	userAddress := strings.ToLower(*req.UserWalletAddress)
+	projectID := strings.ToLower(*req.ProjectID)
+	
+	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
+	if err != nil {
+		err := errors.New("Error while create allow list")
+		return nil, err
+	}
+
+	return allowed, nil
+}
+
+
+func (u Usecase) CheckExistedProjectAllowList(req structure.CreateProjectAllowListReq) bool {
+	userAddress := strings.ToLower(*req.UserWalletAddress)
+	projectID := strings.ToLower(*req.ProjectID)
+	
+	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
+	if err != nil {
+		return false
+	}
+
+	if allowed == nil {
+		return false
+	}
+
+	return true
 }
 
 func (u Usecase) ProjectWhitelistERC721(user entity.Users) (bool, error) {
