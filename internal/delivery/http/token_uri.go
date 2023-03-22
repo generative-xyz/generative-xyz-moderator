@@ -606,7 +606,6 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 
 		amountBTCRequired := uint64(item.Price) + 1000
 		amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
-		// amountBTCRequired += btc.EstimateTxFee(4, 3, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 
 		amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 		if err != nil {
@@ -645,6 +644,10 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 		// }
 		if strings.Index(item.Image, "glb") == -1 {
 			item.Image = item.Thumbnail
+		}
+		if item.NftTokenID != "" {
+			nftNumber, _ := strconv.ParseInt(item.NftTokenID, 10, 64)
+			item.OrderInscriptionIndex = int(nftNumber)
 		}
 		newList = append(newList, item)
 	}
@@ -1036,4 +1039,3 @@ func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
 }
-

@@ -144,6 +144,7 @@ type TokenUriListingFilter struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
+	NftTokenID string `bson:"nftTokenId" json:"nftTokenId"`
 }
 
 type TokenUriAttr struct {
