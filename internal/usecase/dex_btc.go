@@ -284,7 +284,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 
 	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
 	if err != nil {
-		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err)
+		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err.Error())
 	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
@@ -309,8 +309,6 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		}
 		if order.CancelTx == "" {
 			spentTx := ""
-
-			log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
 			// txStatus, err := bs.CheckTx(inscriptionTx[0])
 			txStatus, exist := preCheckTxs[inscriptionTx[0]]
 			if !exist {
@@ -323,6 +321,28 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				if spentTx != "" {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
 				}
+				if spentTx == "" {
+					log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)
+					inscriptionInfo, err := u.GetInscriptionByIDFromOrd(order.InscriptionID)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.Inputs)
+						continue
+					}
+					if inscriptionInfo != nil {
+						found := false
+						curInscTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
+						for _, vIn := range order.Inputs {
+							vInTx := strings.Split(vIn, ":")[0]
+							if curInscTx == vInTx {
+								found = true
+								break
+							}
+						}
+						if !found {
+							spentTx = curInscTx
+						}
+					}
+				}
 			} else {
 				if txStatus.Outputs[idx].SpentBy != "" {
 					spentTx = txStatus.Outputs[idx].SpentBy
@@ -332,7 +352,17 @@ func (u Usecase) watchPendingDexBTCListing() error {
 			if spentTx != "" {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+				}
+
+				inputTxDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+				}
+
+				if spentTxDetail.Result.Blocktime <= inputTxDetail.Result.Blocktime {
+					log.Printf("JobWatchPendingDexBTCListing blocktime not valid %v %v\n", spentTx, inscriptionTx[0])
+					continue
 				}
 
 				isValidMatch := false
