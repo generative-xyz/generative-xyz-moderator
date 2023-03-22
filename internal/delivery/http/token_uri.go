@@ -645,10 +645,6 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 		if strings.Index(item.Image, "glb") == -1 {
 			item.Image = item.Thumbnail
 		}
-		if item.NftTokenID != "" {
-			nftNumber, _ := strconv.ParseInt(item.NftTokenID, 10, 64)
-			item.OrderInscriptionIndex = int(nftNumber)
-		}
 		newList = append(newList, item)
 	}
 	pag.Result = newList

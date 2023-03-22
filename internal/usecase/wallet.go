@@ -188,12 +188,8 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						Offset:        offset,
 					}
 					if tokenURI != nil {
-						if tokenURI.NftTokenId != "" {
-							nftNumber, _ := strconv.ParseInt(tokenURI.NftTokenId, 10, 64)
-							inscWalletInfo.TokenNumber = int(nftNumber)
-						} else {
-							inscWalletInfo.TokenNumber = tokenURI.OrderInscriptionIndex
-						}
+						inscWalletInfo.NftTokenID = tokenURI.NftTokenId
+						inscWalletInfo.TokenNumber = tokenURI.OrderInscriptionIndex
 					}
 					inscWalletByOutput := structure.WalletInscriptionByOutput{
 						InscriptionID: data.InscriptionID,
