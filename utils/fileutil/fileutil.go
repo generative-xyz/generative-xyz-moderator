@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+	"rederinghub.io/utils/thumbor"
 )
 
 const (
@@ -62,4 +63,16 @@ func scaleDown(src image.Image) image.Image {
 	default:
 		return imaging.Resize(src, 0, MaxImagePx, imaging.MitchellNetravali)
 	}
+}
+
+func ImageCompress(imageUrl string, quality int, key string) (string, error) {
+
+	tb := thumbor.ProvideThumbor(thumbor.Config{
+		ServerUrl: "https://thumbor.generative.xyz",
+		SecretKey: key,
+	})
+
+	// imageUrl := "https://soulgenesis.art/api/images/1104/11cTdjUhh4h477-stage1.jpg"
+	return tb.SetImagePath(imageUrl).Compress(10).BuildUrl()
+
 }
