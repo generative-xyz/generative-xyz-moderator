@@ -70,7 +70,10 @@ func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *htt
 	result.Result = dataResp
 	result.Page = int64(bf.Page)
 	result.PageSize = int64(bf.Limit)
-	h.Cache.SetDataWithExpireTime(key, dataResp, 15*60)
+	if len(dataResp) > 0 {
+		h.Cache.SetDataWithExpireTime(key, dataResp, 15*60)
+	}
+
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, dataResp), "")
 }
 
