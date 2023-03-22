@@ -20,60 +20,81 @@ import (
 
 func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numberTo int) ([]*entity.ItemListing, error) {
 	filter := &algolia.AlgoliaFilter{
-		ObjType: "inscription", Page: 0, Limit: numberTo - numberTo,
+		ObjType: "inscription", Page: int(bf.Page), Limit: int(bf.Limit),
 		FromNumber: numberFrom, ToNumber: numberTo,
-	}
-	inscriptions, err := uc.AlgoliaSearchInscriptionFromTo(filter)
-	if err != nil {
-		return nil, err
 	}
 
 	inscriptionIds := []string{}
 	ids := []string{}
+	inscriptions, err := uc.AlgoliaSearchInscriptionFromTo(filter)
+	if err != nil {
+		return nil, err
+	}
 	for _, i := range inscriptions {
 		inscriptionIds = append(inscriptionIds, i.InscriptionId)
 		ids = append(ids, i.ObjectId)
 	}
 
-	pe := &entity.FilterTokenUris{Ids: ids}
-	pe.Page = 1
-	pe.Limit = int64(len(ids))
-	tokens, err := uc.Repo.FilterTokenUri(*pe)
-	if err != nil {
-		return nil, err
-	}
-
-	iTokens := tokens.Result
-	rTokens := iTokens.([]entity.TokenUri)
+	wG := &sync.WaitGroup{}
 	mapTokenUri := make(map[string]entity.TokenUri)
-	for _, t := range rTokens {
-		mapTokenUri[t.TokenID] = t
-	}
 
-	bf.Page = 1
-	bf.Limit = int64(len(inscriptionIds))
-	data, err := uc.Repo.ListSubClollectionItem(bf, inscriptionIds)
-	if err != nil {
-		return nil, err
-	}
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		pe := &entity.FilterTokenUris{Ids: ids}
+		pe.Page = 1
+		pe.Limit = int64(len(ids))
+		tokens, _ := uc.Repo.FilterTokenUri(*pe)
+
+		iTokens := tokens.Result
+		rTokens := iTokens.([]entity.TokenUri)
+
+		for _, t := range rTokens {
+			mapTokenUri[t.TokenID] = t
+		}
+	}()
+
 	mapVolume := make(map[string]*entity.ItemListing)
-	for _, d := range data {
-		mapVolume[d.InscriptionId] = d
-	}
-
-	listings, err := uc.Repo.GetDexBTCTrackingByInscriptionIds(inscriptionIds)
-	if err != nil {
-		return nil, err
-	}
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		bf.Page = 1
+		bf.Limit = int64(len(inscriptionIds))
+		data, _ := uc.Repo.ListSubClollectionItem(bf, inscriptionIds)
+		for _, d := range data {
+			mapVolume[d.InscriptionId] = d
+		}
+	}()
 
 	mapListing := make(map[string][]*entity.DexBTCListing)
-	for _, d := range listings {
-		if _, ok := mapListing[d.InscriptionID]; !ok {
-			mapListing[d.InscriptionID] = []*entity.DexBTCListing{}
-		}
-		mapListing[d.InscriptionID] = append(mapListing[d.InscriptionID], d)
+	mapUser := make(map[string]entity.Users)
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
 
-	}
+		addresses := []string{}
+		listings, _ := uc.Repo.GetDexBTCTrackingByInscriptionIds(inscriptionIds)
+		for _, d := range listings {
+			if d.SellerAddress != "" {
+				addresses = append(addresses, d.SellerAddress)
+			}
+			if d.Buyer != "" {
+				addresses = append(addresses, d.Buyer)
+			}
+
+			if _, ok := mapListing[d.InscriptionID]; !ok {
+				mapListing[d.InscriptionID] = []*entity.DexBTCListing{}
+			}
+			mapListing[d.InscriptionID] = append(mapListing[d.InscriptionID], d)
+		}
+
+		users, _ := uc.Repo.FindUserByAddresses(addresses)
+		for _, u := range users {
+			mapUser[u.WalletAddressBTCTaproot] = u
+		}
+	}()
+
+	wG.Wait()
 
 	result := []*entity.ItemListing{}
 	waitG := &sync.WaitGroup{}
@@ -110,6 +131,14 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 				}
 			}
 
+			if u, ok := mapUser[r.BuyerAddress]; ok {
+				r.BuyerDisplayName = u.DisplayName
+			}
+
+			if u, ok := mapUser[r.SellerAddress]; ok {
+				r.SellerDisplayName = u.DisplayName
+			}
+
 			resp := map[string]interface{}{}
 			_, err := client.R().
 				SetResult(&resp).
@@ -125,7 +154,16 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 		}(i)
 	}
 	waitG.Wait()
-	return result, nil
+
+	resultMap := map[string]*entity.ItemListing{}
+	for _, r := range result {
+		resultMap[r.InscriptionId] = r
+	}
+	response := []*entity.ItemListing{}
+	for _, id := range inscriptionIds {
+		response = append(response, resultMap[id])
+	}
+	return response, nil
 }
 
 func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
