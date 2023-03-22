@@ -11,6 +11,87 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
+func (r Repository) ListSubClollectionItem(filter *structure.BaseFilters, inscriptionIds []string) ([]*entity.ItemListing, error) {
+	page := filter.Page
+	pageSize := filter.Limit
+	result := []entity.DexVolumeInscriptionSumary{}
+	pipeline := bson.A{
+		bson.M{"$match": bson.M{
+			"metadata.inscription_id": bson.M{"$in": inscriptionIds},
+		}},
+		bson.M{
+			"$group": bson.M{
+				"_id":          "$metadata.inscription_id",
+				"total_volume": bson.M{"$sum": "$amount"},
+				"volume_1h": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_1d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_7d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -7)}},
+							"$amount", 0,
+						},
+					},
+				},
+			},
+		},
+		bson.M{
+			"$project": bson.M{
+				"inscription_id": "$_id",
+				"total_volume":   1,
+				"volume_1h":      1,
+				"volume_1d":      1,
+				"volume_7d":      1,
+				"_id":            0,
+			},
+		},
+		bson.M{"$skip": (page - 1) * pageSize},
+		bson.M{"$limit": pageSize},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexVolumeInscription{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	response := []*entity.ItemListing{}
+	for _, r := range result {
+		data := &entity.ItemListing{
+			InscriptionId: r.InscriptionId,
+			Image:         fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionId),
+			VolumeOneHour: &entity.VolumneObject{
+				Amount: fmt.Sprintf("%d", r.Volume1h),
+			},
+			VolumeOneDay: &entity.VolumneObject{
+				Amount: fmt.Sprintf("%d", r.Volume1d),
+			},
+			VolumeOneWeek: &entity.VolumneObject{
+				Amount: fmt.Sprintf("%d", r.Volume7d),
+			},
+		}
+		response = append(response, data)
+	}
+	return response, nil
+}
+
 func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
@@ -324,7 +405,6 @@ func (r Repository) AggregateVolumnCollection(filter *entity.AggerateChartForPro
 
 	return result, nil
 }
-
 
 func (r Repository) AggregateVolumnToken(filter *entity.AggerateChartForToken) ([]entity.AggragetedToken, error) {
 	f := bson.A{
