@@ -7,7 +7,8 @@ import (
 )
 
 type GenerateMessage struct {
-	Address string
+	Address    string
+	WalletType string
 }
 
 type VerifyMessage struct {
@@ -17,6 +18,7 @@ type VerifyMessage struct {
 	AddressBTC       *string // taproot address
 	AddressBTCSegwit *string
 	MessagePrefix    *string
+	AddressPayment   string
 }
 
 type VerifyResponse struct {

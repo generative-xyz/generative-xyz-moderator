@@ -59,6 +59,7 @@ type Users struct {
 	Stats                   UserStats     `bson:"stats" json:"stats"`
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
+	WalletType              string        `bson:"wallet_type" json:"wallet_type"`
 }
 
 type ProfileSocial struct {
