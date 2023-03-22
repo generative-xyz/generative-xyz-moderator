@@ -2196,7 +2196,7 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       summary: TokenURI's chart
       tags:
-      - Tokens
+      - Charts
   /collections:
     get:
       consumes:
@@ -4031,6 +4031,34 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: Update project
+      tags:
+      - Project
+  /project/{contractAddress}/{projectID}/allow-list:
+    post:
+      consumes:
+      - application/json
+      description: Create project's allow list
+      parameters:
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Create project's allow list
       tags:
       - Project
   /project/{contractAddress}/{projectID}/categories:

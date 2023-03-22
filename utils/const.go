@@ -140,6 +140,7 @@ const (
 	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
+	COLLECTION_PROJECT_ALLOW_LIST                 string = "project_allow_list"
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
 	COLLECTION_ACTIVITIES               string = "activities"
