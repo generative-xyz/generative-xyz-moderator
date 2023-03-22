@@ -85,7 +85,7 @@ func (r Repository) UpdateResolvedTx(inscriptionID string, tx string) (*mongo.Up
 		"$set": bson.M{"resolved": true},
 	}
 
-	result, err := r.DB.Collection(entity.TokenTx{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	result, err := r.DB.Collection(entity.TokenTx{}.TableName()).UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
