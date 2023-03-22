@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"strconv"
 	"time"
 
@@ -50,7 +49,8 @@ func NewRedisCache(cfg config.RedisConfig) (*redisCache, *redis.Client) {
 }
 
 func (r *redisCache) SetStringData(key string, value string) error {
-	err := r.client.Set(key, value, 0).Err()
+	timeD := time.Duration(int32(utils.DB_CACHE_EXPIRED_TIME)) * time.Second
+	err := r.client.Set(key, value, timeD).Err()
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (r *redisCache) SetStringData(key string, value string) error {
 }
 
 func (r *redisCache) SetStringDataWithExpTime(key string, value string, exipredIn int) error {
-	timeD := time.Duration(rand.Int31n(int32(exipredIn))) * time.Second
+	timeD := time.Duration(int32(exipredIn)) * time.Second
 	err := r.client.Set(key, value, timeD).Err()
 	if err != nil {
 		return err
