@@ -1,12 +1,15 @@
 package http
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
+	"rederinghub.io/utils/helpers"
 )
 
 // UserCredits godoc
@@ -41,11 +44,28 @@ func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *htt
 		numberTo, _ = strconv.Atoi(numberToStr)
 	}
 
-	dataResp, err := h.Usecase.SubCollectionItem(bf, numberFrom, numberTo)
+	keyByte, _ := json.Marshal(bf)
+	key := fmt.Sprintf("%s_%d_%d", helpers.GenerateMd5String(string(keyByte)), numberFrom, numberTo)
+	str, err := h.Cache.GetData(key)
+	if err == nil {
+		data := []*entity.ItemListing{}
+		if err := json.Unmarshal([]byte(*str), &data); err == nil {
+			result := &entity.Pagination{}
+			result.Result = data
+			result.Page = int64(bf.Page)
+			result.PageSize = int64(bf.Limit)
+			h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, data), "")
+			return
+		}
+
+	}
+
+	dataResp, _ := h.Usecase.SubCollectionItem(bf, numberFrom, numberTo)
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(bf.Page)
 	result.PageSize = int64(bf.Limit)
+	h.Cache.SetDataWithExpireTime(key, dataResp, 30*60)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, dataResp), "")
 }
 
