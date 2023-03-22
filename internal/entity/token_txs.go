@@ -21,6 +21,7 @@ type TokenTx struct {
 	Priority      int64      `bson:"pritority"`
 	Resolved      bool       `bson:"resolved"`
 	RetriedResolve int       `bson:"retried_resolve"`
+	Source        string     `bson:"source"`
 }
 
 type UpdateTokenTxRequest struct {

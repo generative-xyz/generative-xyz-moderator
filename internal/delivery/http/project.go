@@ -1002,3 +1002,52 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
+
+// UserCredits godoc
+// @Summary Create project's allow list
+// @Description Create project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/allow-list [POST]
+func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	var err error
+	var walletAddress *string
+	var resp *entity.ProjectAllowList
+
+	defer func ()  {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID),  zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}	
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID),  zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
+	}()
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	wa, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("walletAddress is incorect")
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress = &wa
+	
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID: &projectID,
+		UserWalletAddress: walletAddress,
+	}
+	
+	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}

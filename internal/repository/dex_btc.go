@@ -291,6 +291,7 @@ func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, erro
 
 func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWithProjectInfoReq) ([]entity.DexBtcListingWithProjectInfo, error) {
 	aggregates := bson.A{
+		bson.D{{"$match", bson.D{{"from_other_mkp", bson.D{{"$ne", true}}}}}},
 		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
 		bson.D{{"$skip", (req.Page - 1) * req.Limit}},
 		bson.D{{"$limit", req.Limit}},
