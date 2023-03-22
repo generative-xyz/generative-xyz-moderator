@@ -61,7 +61,7 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 
 func (uc *Usecase) AlgoliaSearchInscriptionFromTo(filter *algolia.AlgoliaFilter) ([]*response.SearhcInscription, error) {
 	if filter.FromNumber >= 0 && filter.ToNumber > 0 {
-		filter.FilterStr += fmt.Sprintf("number:%d TO %d", filter.FromNumber, filter.ToNumber)
+		filter.FilterStr += fmt.Sprintf("number:%d TO %d AND sat > 0", filter.FromNumber, filter.ToNumber)
 	}
 
 	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
