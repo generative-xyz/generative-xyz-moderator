@@ -329,15 +329,15 @@ const LAST_CRAWL_INSCRIPTION_INDEX_KEY string = "last_crawl_inscription_index"
 func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
 	startTime := time.Time{}
 	var limit int64 = 50
-	pLastCrawled, err := u.Repo.GetVariableInt(LAST_CRAWL_INSCRIPTION_INDEX_KEY)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if pLastCrawled == nil {
-		return errors.New("ErrGetVariableInt")
-	}
-	lastCrawled := *pLastCrawled
 	for {
+		pLastCrawled, err := u.Repo.GetVariableInt(LAST_CRAWL_INSCRIPTION_INDEX_KEY)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if pLastCrawled == nil {
+			return errors.New("ErrGetVariableInt")
+		}
+		lastCrawled := *pLastCrawled
 		fr := lastCrawled + 1
 		to := fr + limit - 1
 		u.Logger.LogAny(
