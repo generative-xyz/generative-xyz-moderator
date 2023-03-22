@@ -325,7 +325,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)
 					inscriptionInfo, err := u.GetInscriptionByIDFromOrd(order.InscriptionID)
 					if err != nil {
-						log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
+						log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.Inputs)
 						continue
 					}
 					if inscriptionInfo != nil {
