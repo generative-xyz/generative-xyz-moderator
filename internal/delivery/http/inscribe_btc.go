@@ -85,7 +85,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 				)
 				return nil, err
 			}
-			logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
+			// logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
 			return h.inscribeBtcCreatedRespResp(btcWallet)
 		},
 	).ServeHTTP(w, r)
@@ -144,6 +144,7 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	resp.Balance = input.Balance
 	resp.TimeoutAt = fmt.Sprintf("%d", time.Now().Add(time.Hour*1).Unix()) // return FE in 1h. //TODO: need update
 	resp.SegwitAddress = input.SegwitAddress
+	resp.EstFeeInfo = input.EstFeeInfo
 	return resp, nil
 }
 

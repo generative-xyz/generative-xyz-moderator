@@ -19,8 +19,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -74,6 +72,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	fileSize := len([]byte(fileDecode))
 
 	fmt.Println("fileSize===>", fileSize)
+	fmt.Println("input.FeeRate===>", input.FeeRate)
 
 	if fileSize < utils.MIN_FILE_SIZE {
 		fileSize = utils.MIN_FILE_SIZE
@@ -151,11 +150,21 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	}
 
 	mfTotal = big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt).String()
+
+	fmt.Println("mfTotal eth 0==>", mfTotal)
+
 	mfMintFee = feeInfos[input.PayType].MintFee
 	mfSentTokenFee = feeInfos[input.PayType].SendNftFee
 
 	if input.PayType == utils.NETWORK_ETH {
+
+		mfTotal = feeInfos[input.PayType].NetworkFee
+		fmt.Println("mfTotal eth 1===>", mfTotal)
+
 		mfTotal = big.NewInt(0).Add(big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt), feeInfos[input.PayType].SendFundFeeBigInt).String()
+
+		fmt.Println("mfTotal eth 2===>", mfTotal)
+
 		mfMintFee = feeInfos[input.PayType].MintFee
 		mfSentTokenFee = big.NewInt(0).Add(feeInfos[input.PayType].SendNftFeeBigInt, feeInfos[input.PayType].SendFundFeeBigInt).String()
 	}
@@ -283,32 +292,35 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.UserWalletAddress = input.UserWallerAddress
 	walletAddress.BTCRate = feeInfos[payType].BtcPrice
 	walletAddress.ETHRate = feeInfos[payType].EthPrice
+	walletAddress.EstFeeInfo = feeInfos
+
 	if input.NeedVerifyAuthentic() {
-		inscribeBtc := &entity.InscribeBTC{}
-		opt := &options.FindOneOptions{}
-		opt.SetSort(bson.M{"_id": -1})
-		err := u.Repo.FindOneBy(ctx,
-			inscribeBtc.TableName(),
-			bson.M{
-				"user_uuid":     input.UserUuid,
-				"token_address": input.TokenAddress,
-				"token_id":      input.TokenId,
-			},
-			inscribeBtc,
-			opt)
-		if err != nil {
-			if !errors.Is(err, mongo.ErrNoDocuments) {
-				return nil, err
-			}
-		} else {
-			if inscribeBtc.Status == entity.StatusInscribe_Pending {
-				if !inscribeBtc.Expired() {
-					return inscribeBtc, nil
-				}
-			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
-				return inscribeBtc, nil
-			}
-		}
+		// inscribeBtc := &entity.InscribeBTC{}
+		// opt := &options.FindOneOptions{}
+		// opt.SetSort(bson.M{"_id": -1})
+		// err := u.Repo.FindOneBy(ctx,
+		// 	inscribeBtc.TableName(),
+		// 	bson.M{
+		// 		"user_uuid":     input.UserUuid,
+		// 		"token_address": input.TokenAddress,
+		// 		"token_id":      input.TokenId,
+		// 	},
+		// 	inscribeBtc,
+		// 	opt)
+		// if err != nil {
+		// 	if !errors.Is(err, mongo.ErrNoDocuments) {
+		// 		return nil, err
+		// 	}
+		// } else {
+		// 	if inscribeBtc.Status == entity.StatusInscribe_Pending {
+		// 		if !inscribeBtc.Expired() {
+
+		// 			return inscribeBtc, nil
+		// 		}
+		// 	} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
+		// 		return inscribeBtc, nil
+		// 	}
+		// }
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
 				zap.Any("raw_data", nft))
@@ -318,6 +330,8 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			walletAddress.OwnerOf = nft.Owner
 		}
 	}
+
+	fmt.Println("walletAddress.Amount===>", walletAddress.Amount)
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -1173,6 +1187,7 @@ func (u Usecase) CompressNftImageFromMoralis(ctx context.Context, urlStr string,
 				if err != nil {
 					return nil, err
 				}
+
 				rsp, err := client.Get(linkImage)
 				if err != nil {
 					return nil, err
