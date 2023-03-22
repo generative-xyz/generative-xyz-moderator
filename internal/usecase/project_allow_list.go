@@ -41,6 +41,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	pe := &entity.ProjectAllowList{}
 	pe.ProjectID = p.TokenID
 	pe.UserWalletAddress = userAddress
+	pe.UserWalletAddressBTCTaproot = user.WalletAddressBTCTaproot
 	pe.AllowedBy = allowedBy
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
@@ -82,7 +83,7 @@ func (u Usecase) ProjectWhitelistERC20(user entity.Users) (bool, error) {
 		return false, err
 	}
 
-	erc20WhiteList := make(map[string]uint64)
+	erc20WhiteList := make(map[string]structure.Erc20Config)
 	err = json.Unmarshal(bytes, &erc20WhiteList)
 	if err != nil {
 		return false, err

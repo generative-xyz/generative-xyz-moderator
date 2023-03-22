@@ -52,6 +52,7 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			//insert
 			user := &entity.Users{}
+			user.WalletType = data.WalletType
 			user.WalletAddress = addrr
 			user.Message = message
 			user.CreatedAt = &now
@@ -150,8 +151,15 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	}
 
 	if user.WalletAddressPayment == "" {
-		user.WalletAddressPayment = user.WalletAddress
-		u.Logger.Info("user.WalletAddressPayment.Updated", true)
+		if data.AddressPayment == "" {
+			if user.WalletType != entity.WalletType_BTC_PRVKEY {
+				user.WalletAddressPayment = user.WalletAddress
+				u.Logger.Info("user.WalletAddressPayment.Updated", true)
+			}
+		} else {
+			user.WalletAddressPayment = data.AddressPayment
+			u.Logger.Info("user.WalletAddressPayment.Updated", true)
+		}
 	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)

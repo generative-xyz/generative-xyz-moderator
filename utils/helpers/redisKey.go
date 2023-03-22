@@ -29,6 +29,10 @@ func GenerateCachedProfileKey(accessToken string) string {
 	return fmt.Sprintf("profile.%s.%s", utils.REDIS_PROFILE, GenerateMd5String(accessToken))
 }
 
+func GenerateCachedInscriptionOnweKey(inscriptionID string) string {
+	return fmt.Sprintf("%s.%s.owner", utils.REDIS_INSCRIPTION,inscriptionID)
+}
+
 func GenerateUserKey(accessToken string) string {
 	return fmt.Sprintf("userKey.%s.s%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
 }
