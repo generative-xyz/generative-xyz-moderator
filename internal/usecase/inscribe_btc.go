@@ -161,10 +161,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		mfTotal = feeInfos[input.PayType].NetworkFee
 		fmt.Println("mfTotal eth 1===>", mfTotal)
 
-		mfTotal = big.NewInt(0).Add(big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt), feeInfos[input.PayType].SendFundFeeBigInt).String()
-
-		fmt.Println("mfTotal eth 2===>", mfTotal)
-
 		mfMintFee = feeInfos[input.PayType].MintFee
 		mfSentTokenFee = big.NewInt(0).Add(feeInfos[input.PayType].SendNftFeeBigInt, feeInfos[input.PayType].SendFundFeeBigInt).String()
 	}
