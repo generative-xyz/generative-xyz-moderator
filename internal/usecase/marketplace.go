@@ -10,11 +10,56 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
 	"rederinghub.io/utils/helpers"
 )
+
+func (uc Usecase) ListCollectionListing(filter *structure.BaseFilters) ([]*response.ProjectListing, error) {
+	data, err := uc.Repo.ListCollectionListing(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	listings := []*response.ProjectListing{}
+	for _, d := range data {
+		l := &response.ProjectListing{
+			ContractAddress: d.Project.ContractAddress,
+			Project: &response.ProjectInfo{
+				Name:            d.Project.Name,
+				TokenId:         d.Project.TokenID,
+				Thumbnail:       d.Project.Thumbnail,
+				ContractAddress: d.Project.ContractAddress,
+				CreatorAddress:  d.Project.CreatorAddrr,
+				MaxSupply:       d.Project.MaxSupply,
+				MintingInfo: response.ProjectMintingInfo{
+					Index:        d.Project.MintingInfo.Index,
+					IndexReverse: d.Project.MintingInfo.IndexReverse,
+				},
+			},
+			TotalSupply: d.Project.MaxSupply,
+			VolumeFifteenMinutes: &response.VolumneObject{
+				Amount: fmt.Sprintf("%d", d.Volume1h),
+			},
+			VolumeOneDay: &response.VolumneObject{
+				Amount: fmt.Sprintf("%d", d.Volume1d),
+			},
+			VolumeOneWeek: &response.VolumneObject{
+				Amount: fmt.Sprintf("%d", d.Volume7d),
+			},
+			TotalVolume: d.TotalVolume,
+		}
+		floorPrice, err := uc.Repo.RetrieveFloorPriceOfCollection(d.Project.TokenID)
+		if err != nil {
+			return nil, err
+		}
+		l.FloorPrice = fmt.Sprintf("%d", floorPrice)
+		listings = append(listings, l)
+	}
+	return listings, nil
+}
 
 func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	data, err := uc.Repo.ListItemListingOnSale(filter)

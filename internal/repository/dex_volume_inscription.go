@@ -11,6 +11,110 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 )
 
+func (r Repository) ListCollectionListing(filter *structure.BaseFilters) ([]*entity.DexVolumeInscriptionSumary, error) {
+	page := filter.Page
+	pageSize := filter.Limit
+	pipeline := bson.A{
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "token_uri",
+				"localField":   "metadata.inscription_id",
+				"foreignField": "token_id",
+				"as":           "token_info",
+			},
+		},
+		bson.M{"$unwind": "$token_info"},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_listing"},
+					{"localField", "metadata.inscription_id"},
+					{"foreignField", "inscription_id"},
+					{"as", "dex_btc_listings"},
+				},
+			},
+		},
+		bson.M{
+			"$group": bson.M{
+				"_id":          "$token_info.project_id",
+				"total_volume": bson.M{"$sum": "$amount"},
+				"volume_1h": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_1d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_7d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -7)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"dex_btc_listings": bson.M{"$push": "$dex_btc_listings"},
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "projects",
+				"localField":   "_id",
+				"foreignField": "tokenid",
+				"as":           "project",
+			},
+		},
+		bson.M{"$unwind": "$project"},
+		bson.M{
+			"$project": bson.M{
+				"project_id":   "$_id",
+				"total_volume": 1,
+				"volume_1h":    1,
+				"volume_1d":    1,
+				"volume_7d":    1,
+				"project":      1,
+				"buyable": bson.D{
+					{"$and",
+						bson.A{
+							bson.M{
+								"$eq": bson.M{"$dex_btc_listings.cancelled": false},
+							},
+							bson.M{
+								"$eq": bson.M{"$dex_btc_listings.matched": false},
+							},
+						},
+					},
+				},
+				"_id": 0,
+			},
+		},
+		bson.M{"$sort": bson.M{"buyable": -1, "total_volume": -1}},
+		bson.M{"$skip": (page - 1) * pageSize},
+		bson.M{"$limit": pageSize},
+	}
+
+	result := []*entity.DexVolumeInscriptionSumary{}
+	cursor, err := r.DB.Collection(entity.DexVolumeInscription{}.TableName()).Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	page := filter.Page
 	pageSize := filter.Limit
@@ -374,7 +478,6 @@ func (r Repository) AggregateVolumnCollection(filter *entity.AggerateChartForPro
 
 	return result, nil
 }
-
 
 func (r Repository) AggregateVolumnToken(filter *entity.AggerateChartForToken) ([]entity.AggragetedToken, error) {
 	f := bson.A{
