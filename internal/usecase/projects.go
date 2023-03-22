@@ -22,6 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -656,7 +657,22 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	}
 
 	if req.Thumbnail != nil && *req.Thumbnail != "" {
+		bas64Data := strings.ReplaceAll(p.NftTokenUri, "data:application/json;base64,", "")
+		bytes, err := helpers.Base64Decode(bas64Data)
+
+		nftTokenURI := make(map[string]interface{})
+		err = json.Unmarshal(bytes, &nftTokenURI)
+		if err == nil {
+			nftTokenURI["image"] = *req.Thumbnail
+			bytes, err := json.Marshal(nftTokenURI) 
+			if err == nil {
+				nftToken := helpers.Base64Encode(bytes)
+				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
+				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
+			}	
+		}
 		p.Thumbnail = *req.Thumbnail
+		
 	}
 	needSetExpireAvailableDaoProject := false
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {
