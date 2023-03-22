@@ -118,6 +118,12 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		return nil, err
 	}
 
+	if user.WalletAddressBTCTaproot != "" {
+		if *data.AddressBTC != user.WalletAddressBTCTaproot {
+			return nil, errors.New("invalid wallet address")
+		}
+	}
+
 	now := time.Now()
 	user.IsVerified = isVeried
 	user.VerifiedAt = &now
