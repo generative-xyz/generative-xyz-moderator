@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 
 	"github.com/gorilla/mux"
 	"rederinghub.io/internal/delivery/http/request"
@@ -594,7 +596,7 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.PaginationResponse, error) {
 	pag, err := h.Usecase.FilterTokensNew(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", zap.Error(err))
 		return nil, err
 	}
 	newList := []entity.TokenUriListingFilter{}
@@ -609,7 +611,7 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 
 		amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 		if err != nil {
-			h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.ConvertBTCToETHWithPriceEthBtc", zap.Error(err))
 		}
 
 		item.PriceETH = amountETH
@@ -634,6 +636,7 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 			item.AnimationURL = "data:text/html;base64," + base64
 		}
 		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.HasSuffix", zap.Error(err))
 			return nil, err
 		}
 		// resp.Attributes = input.ParsedAttributes

@@ -49,6 +49,10 @@ func ProposalDetailKey(proposalID string) string {
 	return fmt.Sprintf("proposal.detail.%s",proposalID)
 }
 
+func ProjectFirstSaleKey(projectID string) string {
+	return fmt.Sprintf("project.firstsale.%s",projectID)
+}
+
 func ProjectDetailgenNftAddrrKey(genNftAddrr string) string {
 	return fmt.Sprintf("project.detail.GenNFTAddrKey.%s",genNftAddrr)
 }
