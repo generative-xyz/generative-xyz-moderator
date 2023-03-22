@@ -147,8 +147,14 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 			if err != nil {
 				uc.Logger.Error(err)
 			} else {
-				r.ContentType = resp["content_type"].(string)
-				r.InscriptionIndex = resp["number"].(float64)
+				if resp["content_type"] != nil {
+					r.ContentType = resp["content_type"].(string)
+				}
+
+				if resp["number"] != nil {
+					r.InscriptionIndex = resp["number"].(float64)
+				}
+
 			}
 			result = append(result, r)
 		}(i)
