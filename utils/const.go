@@ -169,6 +169,7 @@ const (
 	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
 	COLLECTION_TOKEN_TX                 string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
+	COLLECTION_GLOBAL_VARIABLE          string = "global_variables"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
