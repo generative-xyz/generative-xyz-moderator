@@ -606,7 +606,7 @@ func containsIgnoreCase(strSlice []string, item string) bool {
 	return false
 }
 
-func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string, erc20WhiteList map[string]uint64) (bool, error) {
+func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string, erc20WhiteList map[string]structure.Erc20Config) (bool, error) {
 	client, err  := helpers.EthDialer()
 	if err != nil {
 		return false, err
@@ -623,9 +623,15 @@ func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string,
 			continue
 		}
 
+		pow := new(big.Int)
+		pow = pow.Exp(big.NewInt(1), big.NewInt(whitelistedThres.Decimal), nil)
+		confValue := big.NewInt(whitelistedThres.Value)
+
+		confValue = confValue.Mul(confValue, pow)
+
 		//bigInt64 := big.
-		tmp := blance.Uint64()
-		if tmp > whitelistedThres {
+		tmp := blance.Cmp(confValue)
+		if tmp >= 0 {
 			return true, nil
 		}
 	}
