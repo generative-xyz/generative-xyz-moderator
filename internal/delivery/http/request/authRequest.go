@@ -1,6 +1,10 @@
 package request
 
-import "errors"
+import (
+	"errors"
+
+	"rederinghub.io/internal/entity"
+)
 
 type RefreshTokenData struct {
 	RefreshToken string `json:"refreshToken"`
@@ -8,7 +12,8 @@ type RefreshTokenData struct {
 }
 
 type GenerateMessageRequest struct {
-	Address *string `json:"address"`
+	Address    *string `json:"address"`
+	WalletType string  `json:"walletType"`
 }
 
 type VerifyMessageRequest struct {
@@ -18,6 +23,7 @@ type VerifyMessageRequest struct {
 	AddressBTC       *string `json:"addressBtc"`
 	AddressBTCSegwit *string `json:"addressBtcSegwit"`
 	MessagePrefix    *string `json:"messagePrefix"`
+	AddressPayment   string  `json:"addressPayment"`
 }
 
 type UpdateProfileRequest struct {
@@ -46,6 +52,13 @@ func (g GenerateMessageRequest) SelfValidate() error {
 
 	if *g.Address == "" {
 		return errors.New("Address is not empty")
+	}
+
+	switch g.WalletType {
+	case "", entity.WalletType_BTC_PRVKEY:
+		break
+	default:
+		return errors.New("invalid wallet type")
 	}
 
 	return nil

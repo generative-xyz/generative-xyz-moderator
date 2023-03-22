@@ -27,3 +27,7 @@ func (u WalletTrackTx) TableName() string {
 func (u WalletTrackTx) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+const (
+	WalletType_BTC_PRVKEY = "btc_prvkey"
+)
