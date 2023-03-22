@@ -60,7 +60,7 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 }
 
 func (uc *Usecase) AlgoliaSearchInscriptionFromTo(filter *algolia.AlgoliaFilter) ([]*response.SearhcInscription, error) {
-	if filter.FromNumber > 0 && filter.ToNumber > 0 {
+	if filter.FromNumber >= 0 && filter.ToNumber > 0 {
 		filter.FilterStr += fmt.Sprintf("number:%d TO %d", filter.FromNumber, filter.ToNumber)
 	}
 
