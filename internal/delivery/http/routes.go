@@ -185,6 +185,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribeAuth := inscribe.PathPrefix("/auth").Subrouter()
 	inscribeAuth.Use(h.MiddleWare.AccessToken)
 	inscribeAuth.HandleFunc("/receive-address", h.btcCreateInscribeBTC).Methods("POST")
+	inscribeAuth.HandleFunc("/compress-image", h.compressImage).Methods("POST")
 
 	tokenMoralis := api.PathPrefix("/token-moralis").Subrouter()
 	tokenMoralis.Use(h.MiddleWare.AccessToken)

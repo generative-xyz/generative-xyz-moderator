@@ -1119,6 +1119,105 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 	return resp, nil
 }
 
+func (u Usecase) CompressNftImageFromMoralis(ctx context.Context, urlStr string, compressPercents []int) (interface{}, error) {
+
+	type CompressInfo struct {
+		ImageUrl        string `json:"imageUrl"`
+		CompressPercent int    `json:"compressPercent"`
+		FileSize        int    `json:"fileSize"`
+	}
+
+	var compressInfoArray []*CompressInfo
+
+	if strings.HasPrefix(urlStr, "http") {
+
+		compressAndUploadImage := func(urlStr string, quality int) (*CompressInfo, error) {
+			client := http.Client{}
+			r, err := client.Get(urlStr)
+			if err != nil {
+				return nil, err
+			}
+			if r.StatusCode > http.StatusNoContent {
+				return nil, err
+			}
+			defer r.Body.Close()
+			imgByte, err := io.ReadAll(r.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			byteSize := len(imgByte)
+			if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+
+				// ext, err := utils.GetFileExtensionFromUrl(urlStr)
+				// if err != nil {
+				// 	contentType := r.Header.Get("content-type")
+				// 	arr := strings.Split(contentType, "/")
+				// 	if len(arr) <= 1 {
+				// 		return "", err
+				// 	}
+				// 	ext = arr[1]
+				// }
+
+				// newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
+				// if err == nil {
+				// 	imgByte = newImgByte
+				// }
+				linkImage, err := fileutil.ImageCompress(urlStr, quality, u.Config.THUMBOR_SECRET_KEY)
+				if err != nil {
+					return nil, err
+				}
+				rsp, err := client.Get(linkImage)
+				if err != nil {
+					return nil, err
+				}
+				if rsp.StatusCode > http.StatusNoContent {
+					return nil, err
+				}
+				defer rsp.Body.Close()
+				imgNewByte, err := io.ReadAll(rsp.Body)
+				if err != nil {
+					return nil, err
+				}
+
+				byteSizeNew := len(imgNewByte)
+
+				return &CompressInfo{
+					ImageUrl:        linkImage,
+					CompressPercent: quality,
+					FileSize:        byteSizeNew,
+				}, nil
+
+				// name := fmt.Sprintf("authentic/%v.%s", uuid.New().String(), ext)
+				// _, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(newImgByte), name)
+				// if err != nil {
+				// 	return "", err
+				// }
+
+				// return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name), nil
+			}
+			return &CompressInfo{
+				ImageUrl:        urlStr,
+				CompressPercent: quality,
+				FileSize:        byteSize,
+			}, nil
+		}
+		for _, compressPercent := range compressPercents {
+
+			compressInfo, err := compressAndUploadImage(urlStr, compressPercent)
+			if err != nil {
+				return nil, err
+			}
+			compressInfoArray = append(compressInfoArray, compressInfo)
+
+		}
+
+	} else {
+		return nil, errors.New("url invalid")
+	}
+	return compressInfoArray, nil
+}
+
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
 	if err != nil {
@@ -1159,18 +1258,21 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 				}
 				ext = arr[1]
 			}
-			newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
-			if err == nil {
-				imgByte = newImgByte
-			}
+			// maybe use for thumb?
+			// newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
+			// if err == nil {
+			// 	imgByte = newImgByte
+			// }
 			name := fmt.Sprintf("authentic/%v.%s", uuid.New().String(), ext)
 			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(imgByte), name)
 			if err != nil {
 				return urlStr
 			}
+
 			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
 		nft.Metadata.Image = resizeAndUploadImage(urlStr)
+
 	} else if strings.HasPrefix(urlStr, ";base64,") {
 		resizeImage := func(imageStr string) string {
 			coI := strings.Index(imageStr, ",")
@@ -1182,10 +1284,7 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			if len(exts) < 2 {
 				return imageStr
 			}
-			imgByte, err := fileutil.ResizeImage(dec, exts[1], fileutil.MaxImageByteSize)
-			if err != nil {
-				return imageStr
-			}
+			imgByte := dec
 			return imageStr[:coI+1] + base64.StdEncoding.EncodeToString(imgByte)
 		}
 		nft.Metadata.Image = resizeImage(urlStr)
