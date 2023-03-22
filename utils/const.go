@@ -81,6 +81,7 @@ const (
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
 	REDIS_VERIFIED_TOKEN      string = "verified_token"
 	REDIS_PROFILE             string = "profile"
+	REDIS_INSCRIPTION            string = "inscription"
 	REDIS_NFT_METADATA_KEY    string = "nfts_metadata_%s_%s"
 	REDIS_PAGINATION_KEY      string = "pagination_%s"
 	REDIS_PAGINATION_DATA_KEY string = "pagination_data_%s"
@@ -140,6 +141,7 @@ const (
 	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
+	COLLECTION_PROJECT_ALLOW_LIST                 string = "project_allow_list"
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
 	COLLECTION_ACTIVITIES               string = "activities"
@@ -169,6 +171,7 @@ const (
 	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
 	COLLECTION_TOKEN_TX                 string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
+	COLLECTION_GLOBAL_VARIABLE          string = "global_variables"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 

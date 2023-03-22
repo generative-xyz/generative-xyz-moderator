@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
 
@@ -18,6 +19,7 @@ import (
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/contracts/erc20"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/helpers"
 )
@@ -602,4 +604,38 @@ func containsIgnoreCase(strSlice []string, item string) bool {
 	}
 
 	return false
+}
+
+func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string, erc20WhiteList map[string]structure.Erc20Config) (bool, error) {
+	client, err  := helpers.EthDialer()
+	if err != nil {
+		return false, err
+	}
+
+	for addr, whitelistedThres := range erc20WhiteList {
+		erc20Client, err := erc20.NewErc20(common.HexToAddress(addr), client)
+		if err != nil {
+			continue
+		}
+
+		blance, err := erc20Client.BalanceOf(nil,  common.HexToAddress(userAddr))
+		if err != nil {
+			continue
+		}
+
+		pow := new(big.Int)
+		pow = pow.Exp(big.NewInt(1), big.NewInt(whitelistedThres.Decimal), nil)
+		confValue := big.NewInt(whitelistedThres.Value)
+
+		confValue = confValue.Mul(confValue, pow)
+
+		//bigInt64 := big.
+		tmp := blance.Cmp(confValue)
+		if tmp >= 0 {
+			return true, nil
+		}
+	}
+	 
+	
+	return false, nil
 }
