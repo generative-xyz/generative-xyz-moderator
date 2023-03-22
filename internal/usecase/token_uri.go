@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
+	"rederinghub.io/external/generativeexplorer"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -639,7 +640,6 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 
 	err := copier.Copy(pe, filter)
 	if err != nil {
-		u.Logger.Error(err)
 		return nil, err
 	}
 
@@ -649,7 +649,29 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		return nil, err
 	}
 
-	u.Logger.Info("tokens", tokens.Total)
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+
+	resp := []entity.TokenUriListingFilter{}
+	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
+		iResp, err := genService.Inscription(item.TokenID)
+		if err  == nil && iResp != nil {
+			item.OwnerAddress = iResp.Address
+		}
+
+		if iResp.Address != item.Owner.WalletAddressBTCTaproot {
+			item.Owner = entity.TokenURIListingOwner{
+				WalletAddressBTCTaproot:  iResp.Address ,
+				WalletAddress:   "" ,
+				DisplayName:   "" ,
+				Avatar:   "" ,
+			}
+		}
+		
+		//spew.Dump(iResp)
+		resp = append(resp, item)
+	}
+	
+	tokens.Result = resp
 	return tokens, nil
 }
 

@@ -716,7 +716,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Tokens"
+                    "Charts"
                 ],
                 "summary": "TokenURI's chart",
                 "parameters": [
@@ -4166,6 +4166,50 @@
                     {
                         "type": "string",
                         "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/{projectID}/allow-list": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
                         "name": "projectID",
                         "in": "path",
                         "required": true

@@ -3,6 +3,7 @@ package usecase
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -319,6 +320,72 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 				time.Sleep(1 * time.Second)
 			}
 		}
+	}
+	return nil
+}
+
+const LAST_CRAWL_INSCRIPTION_INDEX_KEY string = "last_crawl_inscription_index"
+
+func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
+	startTime := time.Time{}
+	var limit int64 = 50
+	for {
+		pLastCrawled, err := u.Repo.GetVariableInt(LAST_CRAWL_INSCRIPTION_INDEX_KEY)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if pLastCrawled == nil {
+			return errors.New("ErrGetVariableInt")
+		}
+		lastCrawled := *pLastCrawled
+		fr := lastCrawled + 1
+		to := fr + limit - 1
+		u.Logger.LogAny(
+			"JobCrawlTokenTxNotFromTokenUri.CrawlFromSearcher",
+			zap.Int64("fr", fr),
+			zap.Int64("to", to),
+		)
+		url := fmt.Sprintf("https://generative.xyz/generative/api/search?limit=%v&page=1&search=&type=inscription&fromNumber=%v&toNumber=%v", limit, fr, to)
+		resp, err := http.Get(url)
+		if err != nil {
+			u.Logger.ErrorAny(
+				"JobCrawlTokenTxNotFromTokenUri.ErrorCrawlFromSearcher", 
+				zap.Error(err),
+				zap.Int64("fr", fr),
+				zap.Int64("to", to),
+			)
+			break
+		}
+		tx := structure.SearchInscriptionResult{}
+		err = json.NewDecoder(resp.Body).Decode(&tx)
+		if len(tx.Data.Result) == 0 {
+			break
+		}
+		for _, inscription := range tx.Data.Result {
+			if inscription.Inscription.ProjectTokenID != "" {
+				continue
+			}
+			inscriptionID := inscription.Inscription.InscriptionID
+			tokenTx := entity.TokenTx{
+				InscriptionID: inscriptionID,
+				Tx: inscriptionID[:len(inscriptionID) - 2],
+				LastTimeCheck: &startTime,
+				Priority: 0,
+				Source: "NOT_GEN_TOKEN",
+			}
+			
+			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
+				u.Logger.ErrorAny(
+					"JobCrawlTokenTxNotFromTokenUri.InsertTokenTx", 
+					zap.Error(err), 
+					zap.String("token_id", inscriptionID),
+				)
+			} else {
+				u.Logger.Info("JobCrawlTokenTxNotFromTokenUri.InsertTokenTx", zap.Any("tokenTx", tokenTx))
+			}
+		}
+		u.Repo.UpdateGlobalActivity(LAST_CRAWL_INSCRIPTION_INDEX_KEY, to)
+		time.Sleep(time.Second)
 	}
 	return nil
 }
