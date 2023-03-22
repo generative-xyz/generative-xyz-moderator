@@ -45,7 +45,7 @@ func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *htt
 	}
 
 	keyByte, _ := json.Marshal(bf)
-	key := fmt.Sprintf("%s_%d_%d", helpers.GenerateMd5String(string(keyByte)), numberFrom, numberTo)
+	key := fmt.Sprintf("sub_collection_%s_%d_%d", helpers.GenerateMd5String(string(keyByte)), numberFrom, numberTo)
 	str, err := h.Cache.GetData(key)
 	if err == nil {
 		data := []*entity.ItemListing{}
@@ -60,12 +60,17 @@ func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *htt
 
 	}
 
-	dataResp, _ := h.Usecase.SubCollectionItem(bf, numberFrom, numberTo)
+	dataResp, err := h.Usecase.SubCollectionItem(bf, numberFrom, numberTo)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
 	result := &entity.Pagination{}
 	result.Result = dataResp
 	result.Page = int64(bf.Page)
 	result.PageSize = int64(bf.Limit)
-	h.Cache.SetDataWithExpireTime(key, dataResp, 30*60)
+	h.Cache.SetDataWithExpireTime(key, dataResp, 15*60)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(result, dataResp), "")
 }
 
