@@ -40,7 +40,8 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 
 	h.Logger.LogAny("generateMessage", zap.Any("reqBody", reqBody))
 	message, err := h.Usecase.GenerateMessage(structure.GenerateMessage{
-		Address: *reqBody.Address,
+		Address:    *reqBody.Address,
+		WalletType: reqBody.WalletType,
 	})
 
 	if err != nil {
@@ -88,6 +89,7 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 		AddressBTC:       reqBody.AddressBTC,       //btc taproot addree -> use for transfer nft
 		AddressBTCSegwit: reqBody.AddressBTCSegwit, //btc segwit address -> use for verify signature
 		MessagePrefix:    reqBody.MessagePrefix,    //btc prefix message
+		AddressPayment:   reqBody.AddressPayment,   //,
 	}
 	verified, err := h.Usecase.VerifyMessage(verifyMessage)
 
