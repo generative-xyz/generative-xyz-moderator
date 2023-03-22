@@ -278,31 +278,32 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.BTCRate = feeInfos[payType].BtcPrice
 	walletAddress.ETHRate = feeInfos[payType].EthPrice
 	if input.NeedVerifyAuthentic() {
-		inscribeBtc := &entity.InscribeBTC{}
-		opt := &options.FindOneOptions{}
-		opt.SetSort(bson.M{"_id": -1})
-		err := u.Repo.FindOneBy(ctx,
-			inscribeBtc.TableName(),
-			bson.M{
-				"user_uuid":     input.UserUuid,
-				"token_address": input.TokenAddress,
-				"token_id":      input.TokenId,
-			},
-			inscribeBtc,
-			opt)
-		if err != nil {
-			if !errors.Is(err, mongo.ErrNoDocuments) {
-				return nil, err
-			}
-		} else {
-			if inscribeBtc.Status == entity.StatusInscribe_Pending {
-				if !inscribeBtc.Expired() {
-					return inscribeBtc, nil
-				}
-			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
-				return inscribeBtc, nil
-			}
-		}
+		// inscribeBtc := &entity.InscribeBTC{}
+		// opt := &options.FindOneOptions{}
+		// opt.SetSort(bson.M{"_id": -1})
+		// err := u.Repo.FindOneBy(ctx,
+		// 	inscribeBtc.TableName(),
+		// 	bson.M{
+		// 		"user_uuid":     input.UserUuid,
+		// 		"token_address": input.TokenAddress,
+		// 		"token_id":      input.TokenId,
+		// 	},
+		// 	inscribeBtc,
+		// 	opt)
+		// if err != nil {
+		// 	if !errors.Is(err, mongo.ErrNoDocuments) {
+		// 		return nil, err
+		// 	}
+		// } else {
+		// 	if inscribeBtc.Status == entity.StatusInscribe_Pending {
+		// 		if !inscribeBtc.Expired() {
+
+		// 			return inscribeBtc, nil
+		// 		}
+		// 	} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
+		// 		return inscribeBtc, nil
+		// 	}
+		// }
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
 				zap.Any("raw_data", nft))
