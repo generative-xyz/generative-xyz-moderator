@@ -121,6 +121,12 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	// end remove
 
+	if input.FeeRate <= 3 {
+		err := errors.New("fee rate must be > 3")
+		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		return nil, err
+	}
+
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
