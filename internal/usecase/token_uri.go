@@ -656,17 +656,16 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		iResp, err := genService.Inscription(item.TokenID)
 		if err  == nil && iResp != nil {
 			item.OwnerAddress = iResp.Address
-		}
-
-		if iResp.Address != item.Owner.WalletAddressBTCTaproot {
-			item.Owner = entity.TokenURIListingOwner{
-				WalletAddressBTCTaproot:  iResp.Address ,
-				WalletAddress:   "" ,
-				DisplayName:   "" ,
-				Avatar:   "" ,
+			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
+				item.Owner = entity.TokenURIListingOwner{
+					WalletAddressBTCTaproot:  iResp.Address ,
+					WalletAddress:   "" ,
+					DisplayName:   "" ,
+					Avatar:   "" ,
+				}
 			}
 		}
-		
+
 		//spew.Dump(iResp)
 		resp = append(resp, item)
 	}
