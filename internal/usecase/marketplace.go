@@ -10,11 +10,123 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
 	"rederinghub.io/utils/helpers"
 )
+
+func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numberTo int) ([]*entity.ItemListing, error) {
+	filter := &algolia.AlgoliaFilter{
+		ObjType: "inscription", Page: 0, Limit: numberTo - numberTo,
+		FromNumber: numberFrom, ToNumber: numberTo,
+	}
+	inscriptions, err := uc.AlgoliaSearchInscriptionFromTo(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	inscriptionIds := []string{}
+	ids := []string{}
+	for _, i := range inscriptions {
+		inscriptionIds = append(inscriptionIds, i.InscriptionId)
+		ids = append(ids, i.ObjectId)
+	}
+
+	pe := &entity.FilterTokenUris{Ids: ids}
+	pe.Page = 1
+	pe.Limit = int64(len(ids))
+	tokens, err := uc.Repo.FilterTokenUri(*pe)
+	if err != nil {
+		return nil, err
+	}
+
+	iTokens := tokens.Result
+	rTokens := iTokens.([]entity.TokenUri)
+	mapTokenUri := make(map[string]entity.TokenUri)
+	for _, t := range rTokens {
+		mapTokenUri[t.TokenID] = t
+	}
+
+	bf.Page = 1
+	bf.Limit = int64(len(inscriptionIds))
+	data, err := uc.Repo.ListSubClollectionItem(bf, inscriptionIds)
+	if err != nil {
+		return nil, err
+	}
+	mapVolume := make(map[string]*entity.ItemListing)
+	for _, d := range data {
+		mapVolume[d.InscriptionId] = d
+	}
+
+	listings, err := uc.Repo.GetDexBTCTrackingByInscriptionIds(inscriptionIds)
+	if err != nil {
+		return nil, err
+	}
+
+	mapListing := make(map[string][]*entity.DexBTCListing)
+	for _, d := range listings {
+		if _, ok := mapListing[d.InscriptionID]; !ok {
+			mapListing[d.InscriptionID] = []*entity.DexBTCListing{}
+		}
+		mapListing[d.InscriptionID] = append(mapListing[d.InscriptionID], d)
+
+	}
+
+	result := []*entity.ItemListing{}
+	waitG := &sync.WaitGroup{}
+	client := resty.New()
+	for _, i := range inscriptions {
+		waitG.Add(1)
+		go func(i *response.SearhcInscription) {
+			defer waitG.Done()
+			r := &entity.ItemListing{}
+			if v, ok := mapVolume[i.InscriptionId]; ok {
+				r.VolumeOneWeek = v.VolumeOneWeek
+				r.VolumeOneDay = v.VolumeOneDay
+				r.VolumeOneHour = v.VolumeOneHour
+				r.InscriptionId = v.InscriptionId
+				r.Image = v.Image
+			} else {
+				r.InscriptionId = i.InscriptionId
+				r.Image = fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionId)
+			}
+
+			if t, ok := mapTokenUri[r.InscriptionId]; ok {
+				r.OrderInscriptionIndex = float64(t.OrderInscriptionIndex)
+			}
+
+			if btcs, ok := mapListing[r.InscriptionId]; ok {
+				for _, btc := range btcs {
+					if r.SellerAddress == "" {
+						r.SellerAddress = btc.SellerAddress
+					}
+
+					if r.BuyerAddress == "" {
+						r.BuyerAddress = btc.Buyer
+					}
+				}
+			}
+
+			resp := map[string]interface{}{}
+			_, err := client.R().
+				SetResult(&resp).
+				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, r.InscriptionId))
+
+			if err != nil {
+				uc.Logger.Error(err)
+			} else {
+				r.ContentType = resp["content_type"].(string)
+				r.InscriptionIndex = resp["number"].(float64)
+			}
+			result = append(result, r)
+		}(i)
+	}
+	waitG.Wait()
+	return result, nil
+}
 
 func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	data, err := uc.Repo.ListItemListingOnSale(filter)
