@@ -73,6 +73,6 @@ func ImageCompress(imageUrl string, quality int, key string) (string, error) {
 	})
 
 	// imageUrl := "https://soulgenesis.art/api/images/1104/11cTdjUhh4h477-stage1.jpg"
-	return tb.SetImagePath(imageUrl).Compress(10).BuildUrl()
+	return tb.SetImagePath(imageUrl).Compress(quality).BuildUrl()
 
 }
