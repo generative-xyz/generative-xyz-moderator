@@ -36,6 +36,7 @@ func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entit
 				uc.Logger.Error(err)
 			} else {
 				d.ContentType = resp["content_type"].(string)
+				d.InscriptionIndex = resp["number"].(float64)
 			}
 		}(d)
 	}
@@ -63,6 +64,7 @@ func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.Item
 				uc.Logger.Error(err)
 			} else {
 				d.ContentType = resp["content_type"].(string)
+				d.InscriptionIndex = resp["number"].(float64)
 			}
 		}(d)
 	}

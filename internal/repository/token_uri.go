@@ -432,8 +432,8 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 											bson.D{
 												{"$in",
 													bson.A{
+														0,
 														1,
-														2,
 													},
 												},
 											},
@@ -571,6 +571,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"buyable", 1},
 					{"priceBTC", 1},
 					{"orderID", 1},
+					{"nftTokenId", 1},
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
 					{"owner_addrress", 1},

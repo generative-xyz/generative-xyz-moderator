@@ -73,6 +73,7 @@ type WalletInscriptionInfo struct {
 	Offset        int64  `json:"offset"`
 	Number        int    `json:"number"`
 	TokenNumber   int    `json:"token_number"`
+	NftTokenID    string `json:"nft_token_id"`
 	ContentType   string `json:"content_type"`
 	ProjectID     string `json:"project_id"`
 	ProjectName   string `json:"project_name"`
