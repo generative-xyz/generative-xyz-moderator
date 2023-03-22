@@ -14,10 +14,11 @@ const (
 )
 
 type ProjectAllowList struct {
-	BaseEntity        `bson:",inline" json:"-"`
-	ProjectID         string        `bson:"projectID" json:"projectID"`
-	UserWalletAddress string        `bson:"userWalletAddress" json:"userWalletAddress"`
-	AllowedBy         AllowedByType `bson:"allowedBy" json:"allowedBy"` //to capture that the type allowed this user
+	BaseEntity                  `bson:",inline" json:"-"`
+	ProjectID                   string        `bson:"projectID" json:"projectID"`
+	UserWalletAddress           string        `bson:"userWalletAddress" json:"userWalletAddress"`
+	UserWalletAddressBTCTaproot string        `bson:"userWalletAddressBTCTaproot" json:"userWalletAddressBTCTaproot"`
+	AllowedBy                   AllowedByType `bson:"allowedBy" json:"allowedBy"` //to capture that the type allowed this user
 }
 
 func (u ProjectAllowList) TableName() string {

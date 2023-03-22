@@ -81,6 +81,7 @@ const (
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
 	REDIS_VERIFIED_TOKEN      string = "verified_token"
 	REDIS_PROFILE             string = "profile"
+	REDIS_INSCRIPTION            string = "inscription"
 	REDIS_NFT_METADATA_KEY    string = "nfts_metadata_%s_%s"
 	REDIS_PAGINATION_KEY      string = "pagination_%s"
 	REDIS_PAGINATION_DATA_KEY string = "pagination_data_%s"
