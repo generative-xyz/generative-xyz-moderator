@@ -4,22 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
-	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
+	userAddress := strings.ToLower(*req.UserWalletAddress)
+	projectID := strings.ToLower(*req.ProjectID)
+	allowedBy := entity.ERC721
+	
+	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
 		return nil, err
 	}
 	
-	user, err := u.Repo.FindUserByAddress(*req.UserWalletAddress)
+	user, err := u.Repo.FindUserByAddress(userAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -30,19 +34,17 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 		if ! isWhitelist {
 			return nil, errors.New("User is not existed in whitelist")
 		}
+		allowedBy = entity.ERC20
 	}
 
 	_ = isWhitelist
 	pe := &entity.ProjectAllowList{}
-	err = copier.Copy(pe, req)
-	if err != nil {
-		return nil, err
-	}
-
 	pe.ProjectID = p.TokenID
-	pe.UserWalletAddress = user.WalletAddress
+	pe.UserWalletAddress = userAddress
+	pe.AllowedBy = allowedBy
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
+		err := fmt.Errorf("Error while create allow list: %v", err.Error())
 		return nil, err
 	}
 
