@@ -153,6 +153,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	collection := api.PathPrefix("/collections").Subrouter()
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
+	collection.HandleFunc("/sub-collection-items", h.getSubCollectionItemListing).Methods("GET")
 	collection.HandleFunc("/on-sale-items", h.getItemListingOnSale).Methods("GET")
 
 	charts := api.PathPrefix("/charts").Subrouter()
