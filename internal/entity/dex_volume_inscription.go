@@ -21,32 +21,31 @@ type DexVolumeInscriptionSumary struct {
 	Volume1h             uint64                `json:"volume_1h" bson:"volume_1h"`
 	Volume1d             uint64                `json:"volume_1d" bson:"volume_1d"`
 	Volume7d             uint64                `json:"volume_7d" bson:"volume_7d"`
+	Volume30d            uint64                `json:"volume_30d" bson:"volume_30d"`
 	InscriptionId        string                `json:"inscription_id" bson:"inscription_id"`
 }
 
 type AggerateChartForProject struct {
-	ProjectID *string `json:"projectID"`
-	FromDate *time.Time `json:"fromDate"`
-	ToDate *time.Time `json:"toDate"`
+	ProjectID *string    `json:"projectID"`
+	FromDate  *time.Time `json:"fromDate"`
+	ToDate    *time.Time `json:"toDate"`
 }
 
-
 type AggerateChartForToken struct {
-	TokenID *string `json:"tokenID"`
+	TokenID  *string    `json:"tokenID"`
 	FromDate *time.Time `json:"fromDate"`
-	ToDate *time.Time `json:"toDate"`
+	ToDate   *time.Time `json:"toDate"`
 }
 
 type AggragetedProject struct {
-	ID AggragetedProjectID `bson:"_id"`
-	Amount int64 `bson:"amount"`
+	ID     AggragetedProjectID `bson:"_id"`
+	Amount int64               `bson:"amount"`
 }
 type AggragetedProjectID struct {
-	ProjectID string `bson:"projectID"` 
-	ProjectName string `bson:"projectName"` 
-	Timestamp string `bson:"timestamp"` 
+	ProjectID   string `bson:"projectID"`
+	ProjectName string `bson:"projectName"`
+	Timestamp   string `bson:"timestamp"`
 }
-
 
 type DexVolumeInscriptionMetadata struct {
 	InscriptionId string `bson:"inscription_id"`
@@ -62,11 +61,11 @@ func (u DexVolumeInscription) ToBson() (*bson.D, error) {
 }
 
 type AggragetedToken struct {
-	ID AggragetedTokenID `bson:"_id"`
-	Amount int64 `bson:"amount"`
+	ID     AggragetedTokenID `bson:"_id"`
+	Amount int64             `bson:"amount"`
 }
 type AggragetedTokenID struct {
-	TokenID string `bson:"tokenID"` 
-	ProjectName string `bson:"projectName"` 
-	Timestamp string `bson:"timestamp"` 
+	TokenID     string `bson:"tokenID"`
+	ProjectName string `bson:"projectName"`
+	Timestamp   string `bson:"timestamp"`
 }
