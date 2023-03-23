@@ -184,6 +184,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
+	inscribe.HandleFunc("/compress-image", h.compressImage).Methods("POST")
 
 	inscribeAuth := inscribe.PathPrefix("/auth").Subrouter()
 	inscribeAuth.Use(h.MiddleWare.AccessToken)

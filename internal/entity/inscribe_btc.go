@@ -51,6 +51,8 @@ type InscribeBTC struct {
 	ETHRate           float64     `bson:"eth_rate"`
 
 	IsMergeMint bool `bson:"isMergeMint"`
+
+	EstFeeInfo map[string]MintFeeInfo `bson:"mintFeeInfo"` // 1 item
 }
 
 func (u InscribeBTC) TableName() string {

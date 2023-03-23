@@ -85,8 +85,48 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 				)
 				return nil, err
 			}
-			logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
+			// logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
 			return h.inscribeBtcCreatedRespResp(btcWallet)
+		},
+	).ServeHTTP(w, r)
+}
+
+// @Summary compress-image
+// @Description compress-image
+// @Tags compress-image
+// @Accept json
+// @Produce json
+// @Param request body request.CompressImageReq true "compress images"
+// @Success 200 {object} response.CompressInfo{}
+// @Router /inscribe/compress-image [POST]
+// @Security ApiKeyAuth
+func (h *httpDelivery) compressImage(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			var reqBody request.CompressImageReq
+			err := json.NewDecoder(r.Body).Decode(&reqBody)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(reqBody.ImageUrl) == 0 {
+				return nil, errors.New("imageUrl is required")
+			}
+
+			if len(reqBody.CompressPercents) == 0 || len(reqBody.CompressPercents) > 3 {
+				return nil, errors.New("compressPercents invalid")
+			}
+
+			response, err := h.Usecase.CompressNftImageFromMoralis(ctx, reqBody.ImageUrl, reqBody.CompressPercents)
+			if err != nil {
+				logger.AtLog.Logger.Error("CompressNftImageFromMoralis failed",
+					zap.Any("payload", reqBody),
+					zap.Error(err),
+				)
+				return nil, err
+			}
+			logger.AtLog.Logger.Info("CompressNftImageFromMoralis successfully", zap.Any("response", response))
+			return response, nil
 		},
 	).ServeHTTP(w, r)
 }
@@ -104,6 +144,7 @@ func (h *httpDelivery) inscribeBtcCreatedRespResp(input *entity.InscribeBTC) (*r
 	resp.Balance = input.Balance
 	resp.TimeoutAt = fmt.Sprintf("%d", time.Now().Add(time.Hour*1).Unix()) // return FE in 1h. //TODO: need update
 	resp.SegwitAddress = input.SegwitAddress
+	resp.EstFeeInfo = input.EstFeeInfo
 	return resp, nil
 }
 
