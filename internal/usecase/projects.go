@@ -2208,7 +2208,7 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	totalAmount := "0"
 
-	//u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
+	u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
 	cached, err := u.Cache.GetData(helpers.ProjectFirstSaleKey(genNFTAddr))
 	if err != nil || cached == nil {
 		

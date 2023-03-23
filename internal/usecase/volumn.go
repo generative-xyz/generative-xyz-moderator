@@ -586,3 +586,53 @@ func (u Usecase) AggregateMintPrice(project entity.ProjectsHaveMinted, payType s
 	}
 	return int(mintPrice)
 }
+
+func (u Usecase) FindOldData() {
+	projectID := "1000001"
+
+	newData, err := u.Repo.GetMintedTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+	
+	oldBtcData, err := u.Repo.GetOldMintedTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+	
+	oldETHData, err := u.Repo.GetOldMintedETHTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+
+	inscriptionIDs := make(map[string]string)
+	for _, item := range newData {
+		inscriptionIDs[item.InscriptionID]= item.InscriptionID
+	}
+	
+	for _, item := range oldBtcData {
+		
+		inscriptionIDs[item.MintResponse.Inscription]= item.MintResponse.Inscription
+	}
+	
+	for _, item := range oldETHData {
+		inscriptionIDs[item.MintResponse.Inscription]= item.MintResponse.Inscription
+	}
+
+	count := 0
+
+	inArrays := []string{}
+	tokenIDs, err  := u.Repo.GetTokenNotIN(projectID, []string{})
+	// for _, tokenID := range tokenIDs {
+	// 	if tokenID.TokenID == "" {
+	// 		spew.Dump(tokenID.TokenID)
+	// 	}
+		
+	// 	if helpers.SliceStringContains(inscriptionIDs, tokenID.TokenID) {
+	// 		inArrays = append(inArrays, tokenID.TokenID)
+	// 		continue
+	// 	}
+	// 	count  ++
+	// }
+	spew.Dump(len(tokenIDs), len(inscriptionIDs), len(inArrays) , count )
+}

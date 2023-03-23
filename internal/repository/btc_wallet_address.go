@@ -374,3 +374,84 @@ func (r Repository) FindDataMissingRate() ([]entity.MintNftBtc, error ) {
 
 	return resp, nil
 }
+
+
+func (r Repository) GetMintedTokenByProjectID(projectID string) ([]entity.MintNftBtc, error ) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"projectID":  projectID,
+		"isMinted":  true,
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+
+func (r Repository) GetOldMintedTokenByProjectID(projectID string) ([]entity.BTCWalletAddress, error ) {
+	resp := []entity.BTCWalletAddress{}
+	filter := bson.M{
+		"projectID":  projectID,
+		"mintResponse.issent":  true,
+	}
+
+	cursor, err := r.DB.Collection(entity.BTCWalletAddress{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r Repository) GetOldMintedETHTokenByProjectID(projectID string) ([]entity.ETHWalletAddress, error ) {
+	resp := []entity.ETHWalletAddress{}
+	filter := bson.M{
+		"projectID":  projectID,
+		"mintResponse.issent":  true,
+	}
+
+	cursor, err := r.DB.Collection(entity.ETHWalletAddress{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+
+func (r Repository) GetTokenNotIN(projectID string, tokenIDs []string) ([]entity.TokenUri, error ) {
+	resp := []entity.TokenUri{}
+	filter := bson.M{
+		"project_id":  projectID,
+		//"token_id":  bson.M{"$nin": tokenIDs },
+	}
+
+	opts := options.Find()
+	opts.Projection = bson.D{{"token_id", 1}}
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
