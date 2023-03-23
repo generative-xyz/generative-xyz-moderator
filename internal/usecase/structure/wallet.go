@@ -81,12 +81,14 @@ type WalletInscriptionInfo struct {
 	ArtistID      string `json:"artist_id"`
 	Thumbnail     string `json:"thumbnail"`
 
-	SellVerified bool   `json:"sell_verified"`
-	Buyable      bool   `json:"buyable"`
-	PriceBTC     string `json:"price_btc"`
-	PriceETH     string `json:"price_eth"`
-	OrderID      string `json:"order_id"`
-	Cancelling   bool   `json:"cancelling"`
+	SellVerified     bool   `json:"sell_verified"`
+	Buyable          bool   `json:"buyable"`
+	CurrentBuyTx     string `json:"current_buy_tx"`
+	CurrentBuyTxTime int64  `json:"current_buy_tx_time"`
+	PriceBTC         string `json:"price_btc"`
+	PriceETH         string `json:"price_eth"`
+	OrderID          string `json:"order_id"`
+	Cancelling       bool   `json:"cancelling"`
 }
 
 type WalletInscriptionByOutput struct {
