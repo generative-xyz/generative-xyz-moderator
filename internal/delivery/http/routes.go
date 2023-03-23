@@ -92,6 +92,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
+	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
@@ -153,6 +154,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	collection := api.PathPrefix("/collections").Subrouter()
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
 	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
+	collection.HandleFunc("/sub-collection-items", h.getSubCollectionItemListing).Methods("GET")
 	collection.HandleFunc("/on-sale-items", h.getItemListingOnSale).Methods("GET")
 
 	charts := api.PathPrefix("/charts").Subrouter()

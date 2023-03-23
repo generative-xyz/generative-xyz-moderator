@@ -10,11 +10,168 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/mongo"
+	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
 	"rederinghub.io/utils/helpers"
 )
+
+func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numberTo int) ([]*entity.ItemListing, error) {
+	filter := &algolia.AlgoliaFilter{
+		ObjType: "inscription", Page: int(bf.Page), Limit: int(bf.Limit),
+		FromNumber: numberFrom, ToNumber: numberTo,
+	}
+
+	inscriptionIds := []string{}
+	ids := []string{}
+	inscriptions, err := uc.AlgoliaSearchInscriptionFromTo(filter)
+	if err != nil {
+		return nil, err
+	}
+	for _, i := range inscriptions {
+		inscriptionIds = append(inscriptionIds, i.InscriptionId)
+		ids = append(ids, i.ObjectId)
+	}
+
+	wG := &sync.WaitGroup{}
+	mapTokenUri := make(map[string]entity.TokenUri)
+
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		pe := &entity.FilterTokenUris{Ids: ids}
+		pe.Page = 1
+		pe.Limit = int64(len(ids))
+		tokens, _ := uc.Repo.FilterTokenUri(*pe)
+
+		iTokens := tokens.Result
+		rTokens := iTokens.([]entity.TokenUri)
+
+		for _, t := range rTokens {
+			mapTokenUri[t.TokenID] = t
+		}
+	}()
+
+	mapVolume := make(map[string]*entity.ItemListing)
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+		bf.Page = 1
+		bf.Limit = int64(len(inscriptionIds))
+		data, _ := uc.Repo.ListSubClollectionItem(bf, inscriptionIds)
+		for _, d := range data {
+			mapVolume[d.InscriptionId] = d
+		}
+	}()
+
+	mapListing := make(map[string][]*entity.DexBTCListing)
+	mapUser := make(map[string]entity.Users)
+	wG.Add(1)
+	go func() {
+		defer wG.Done()
+
+		addresses := []string{}
+		listings, _ := uc.Repo.GetDexBTCTrackingByInscriptionIds(inscriptionIds)
+		for _, d := range listings {
+			if d.SellerAddress != "" {
+				addresses = append(addresses, d.SellerAddress)
+			}
+			if d.Buyer != "" {
+				addresses = append(addresses, d.Buyer)
+			}
+
+			if _, ok := mapListing[d.InscriptionID]; !ok {
+				mapListing[d.InscriptionID] = []*entity.DexBTCListing{}
+			}
+			mapListing[d.InscriptionID] = append(mapListing[d.InscriptionID], d)
+		}
+
+		users, _ := uc.Repo.FindUserByAddresses(addresses)
+		for _, u := range users {
+			mapUser[u.WalletAddressBTCTaproot] = u
+		}
+	}()
+
+	wG.Wait()
+
+	result := []*entity.ItemListing{}
+	waitG := &sync.WaitGroup{}
+	client := resty.New()
+	for _, i := range inscriptions {
+		waitG.Add(1)
+		go func(i *response.SearhcInscription) {
+			defer waitG.Done()
+			r := &entity.ItemListing{}
+			if v, ok := mapVolume[i.InscriptionId]; ok {
+				r.VolumeOneWeek = v.VolumeOneWeek
+				r.VolumeOneDay = v.VolumeOneDay
+				r.VolumeOneHour = v.VolumeOneHour
+				r.VolumeOneMonth = v.VolumeOneMonth
+				r.InscriptionId = v.InscriptionId
+				r.Image = v.Image
+			} else {
+				r.InscriptionId = i.InscriptionId
+				r.Image = fmt.Sprintf("https://generativeexplorer.com/preview/%s", r.InscriptionId)
+			}
+
+			if t, ok := mapTokenUri[r.InscriptionId]; ok {
+				r.OrderInscriptionIndex = float64(t.OrderInscriptionIndex)
+			}
+
+			if btcs, ok := mapListing[r.InscriptionId]; ok {
+				for _, btc := range btcs {
+					if r.SellerAddress == "" {
+						r.SellerAddress = btc.SellerAddress
+					}
+
+					if r.BuyerAddress == "" {
+						r.BuyerAddress = btc.Buyer
+					}
+				}
+			}
+
+			if u, ok := mapUser[r.BuyerAddress]; ok {
+				r.BuyerDisplayName = u.DisplayName
+			}
+
+			if u, ok := mapUser[r.SellerAddress]; ok {
+				r.SellerDisplayName = u.DisplayName
+			}
+
+			resp := map[string]interface{}{}
+			_, err := client.R().
+				SetResult(&resp).
+				Get(fmt.Sprintf("%s/inscription/%s", uc.Config.GenerativeExplorerApi, r.InscriptionId))
+
+			if err != nil {
+				uc.Logger.Error(err)
+			} else {
+				if resp["content_type"] != nil {
+					r.ContentType = resp["content_type"].(string)
+				}
+
+				if resp["number"] != nil {
+					r.InscriptionIndex = resp["number"].(float64)
+				}
+
+			}
+			result = append(result, r)
+		}(i)
+	}
+	waitG.Wait()
+
+	resultMap := map[string]*entity.ItemListing{}
+	for _, r := range result {
+		resultMap[r.InscriptionId] = r
+	}
+	response := []*entity.ItemListing{}
+	for _, id := range inscriptionIds {
+		response = append(response, resultMap[id])
+	}
+	return response, nil
+}
 
 func (uc Usecase) ListItemListingOnSale(filter *structure.BaseFilters) ([]*entity.ItemListing, error) {
 	data, err := uc.Repo.ListItemListingOnSale(filter)

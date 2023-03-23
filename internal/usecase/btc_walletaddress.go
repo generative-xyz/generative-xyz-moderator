@@ -711,7 +711,7 @@ func (u Usecase) Notify(title string, userAddress string, content string) {
 
 func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress string, content string) {
 	//slack
-	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), "", userAddress)
+	preText := fmt.Sprintf("[App: %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), userAddress)
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {

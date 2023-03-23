@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -127,9 +128,24 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whit
 
 	u.Logger.Info("delegations", delegations)
 	for _, delegation := range delegations {
-		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
-			return true, nil
+		
+		if delegation.Type == 2 || delegation.Type == 3 {
+			if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
+				return true, nil
+			}
+		}else if ( delegation.Type == 1) {
+			resp, err := u.MoralisNft.GetNftByWalletAddress(delegation.Vault.Hex(), filter)
+			if err != nil {
+				u.Logger.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+				continue
+			}
+
+			u.Logger.Info("resp", resp)
+			if len(resp.Result) > 0 {
+				return true, nil
+			}
 		}
+		
 	}
 	return false, nil
 }
@@ -631,6 +647,10 @@ func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string,
 
 		//bigInt64 := big.
 		tmp := blance.Cmp(confValue)
+
+		spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
+		spew.Dump(confValue.String())
+		spew.Dump(blance.String())
 		if tmp >= 0 {
 			return true, nil
 		}
