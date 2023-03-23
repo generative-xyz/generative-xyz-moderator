@@ -223,6 +223,23 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 							} else {
 								inscWalletInfo.Cancelling = true
 							}
+							if inscWalletInfo.Buyable {
+								buyEth, _ := u.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listing.InscriptionID)
+								if buyEth != nil {
+									if buyEth.BuyTx != "" {
+										inscWalletInfo.CurrentBuyTx = buyEth.BuyTx
+										inscWalletInfo.CurrentBuyTxTime = buyEth.CreatedAt.Unix()
+									}
+									inscWalletInfo.Buyable = false
+								} else {
+									relatedPendingTxs, _ := u.Repo.GetPendingBTCSubmitTxByInscriptionID(listing.InscriptionID)
+									if len(relatedPendingTxs) > 0 {
+										inscWalletInfo.Buyable = false
+										inscWalletInfo.CurrentBuyTx = buyEth.BuyTx
+										inscWalletInfo.CurrentBuyTxTime = relatedPendingTxs[0].CreatedAt.Unix()
+									}
+								}
+							}
 							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
 							inscWalletInfo.PriceBTC = fmt.Sprintf("%v", listing.Amount)

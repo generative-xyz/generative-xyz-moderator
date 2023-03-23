@@ -11,6 +11,7 @@ type AllowedByType string
 const (
 	ERC20  AllowedByType = "erc20"
 	ERC721 AllowedByType = "erc721"
+	PUBLIC AllowedByType = "public"
 )
 
 type ProjectAllowList struct {

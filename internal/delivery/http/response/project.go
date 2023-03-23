@@ -12,6 +12,10 @@ type TraitStat struct {
 	TraitValuesStat []TraitValueStat `json:"traitValuesStat"`
 }
 
+type ExistedInAllowList struct {
+	Existed       bool           `json:"existed"`
+}
+
 type ProjectResp struct {
 	BaseResponse
 	ContractAddress           string           `json:"contractAddress"`

@@ -855,6 +855,55 @@
                 }
             }
         },
+        "/collections/sub-collection-items": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number_from",
+                        "name": "number_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number_to",
+                        "name": "number_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/configs": {
             "get": {
                 "description": "Get configs",
@@ -1103,7 +1152,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1137,7 +1186,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             },
@@ -1178,7 +1227,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1266,7 +1315,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1392,7 +1441,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1929,7 +1978,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1965,7 +2014,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -2467,7 +2516,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -7543,8 +7592,8 @@
                 "projectURI": {
                     "type": "string"
                 },
-                "proposal": {
-                    "$ref": "#/definitions/response.DaoProject"
+                "proposalSeqId": {
+                    "type": "integer"
                 },
                 "reportUsers": {
                     "type": "array",

@@ -22,6 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/external/ord_service"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/copier"
@@ -663,8 +664,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		err = json.Unmarshal(bytes, &nftTokenURI)
 		if err == nil {
 			nftTokenURI["image"] = *req.Thumbnail
-			nftToken := helpers.Base64Encode(bytes)
-			p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
+			bytes, err := json.Marshal(nftTokenURI) 
+			if err == nil {
+				nftToken := helpers.Base64Encode(bytes)
+				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
+				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
+			}	
 		}
 		p.Thumbnail = *req.Thumbnail
 
