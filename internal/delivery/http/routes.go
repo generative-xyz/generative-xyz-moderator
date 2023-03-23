@@ -90,6 +90,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/random-images", h.projectRandomImages).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
+	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-thumbnail", h.triggerPubsubTokenThumbnail).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")

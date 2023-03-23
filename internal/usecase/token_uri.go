@@ -654,14 +654,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
 		iResp, err := genService.Inscription(item.TokenID)
-		if err  == nil && iResp != nil {
+		if err == nil && iResp != nil {
 			item.OwnerAddress = iResp.Address
 			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
 				item.Owner = entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot:  iResp.Address ,
-					WalletAddress:   "" ,
-					DisplayName:   "" ,
-					Avatar:   "" ,
+					WalletAddressBTCTaproot: iResp.Address,
+					WalletAddress:           "",
+					DisplayName:             "",
+					Avatar:                  "",
 				}
 			}
 		}
@@ -669,7 +669,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		//spew.Dump(iResp)
 		resp = append(resp, item)
 	}
-	
+
 	tokens.Result = resp
 	return tokens, nil
 }
@@ -824,6 +824,26 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		return nil, err
 	}
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	//capture image
+	payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+		TokenID:         pTokenUri.TokenID,
+		ContractAddress: pTokenUri.ContractAddress,
+	}}
+
+	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+	if err != nil {
+		u.Logger.Error(err)
+	}
+
+	return pTokenUri, nil
+}
+
+func (u Usecase) TriggerPubsubTokenThumbnail(tokenId string) (*entity.TokenUri, error) {
+	pTokenUri, err := u.Repo.FindTokenByTokenID(tokenId)
 	if err != nil {
 		return nil, err
 	}
