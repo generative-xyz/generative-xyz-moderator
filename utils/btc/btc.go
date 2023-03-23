@@ -446,7 +446,7 @@ func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMulti
 			if res.StatusCode == 429 {
 				return nil, nil, errors.New("rate_limit") // do not remove/update
 			}
-			return nil, nil, errors.New("CheckTxMultiBlockcypher Response status != 200")
+			return nil, nil, errors.Errorf("CheckTxMultiBlockcypher Response status %d", res.StatusCode)
 		}
 
 		body, err := ioutil.ReadAll(res.Body)

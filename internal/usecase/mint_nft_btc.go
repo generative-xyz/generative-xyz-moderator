@@ -1946,6 +1946,8 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 // please donate P some money:
 func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, ethRate float64) (map[string]entity.MintFeeInfo, error) {
 
+	fmt.Println("fileSize, feeRate: ", fileSize, feeRate)
+
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
 	mintPrice := big.NewInt(0)
@@ -1986,6 +1988,8 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	if feeMintNft.Uint64() == 0 {
 		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
+
+	fmt.Println("feeMintNft: ", feeMintNft)
 
 	if btcRate <= 0 {
 		btcRate, err = helpers.GetExternalPrice("BTC")
@@ -2080,7 +2084,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 
 	// total amount by ETH:
 	netWorkFeeEth := big.NewInt(0).Add(feeMintNftEth, feeSendNftEth) // + feeMintNft	+ feeSendNft
-	netWorkFeeEth = netWorkFeeEth.Add(netWorkFeeEth, feeSendFundEth) // + feeSendFund
+	netWorkFeeEth = big.NewInt(0).Add(netWorkFeeEth, feeSendFundEth) // + feeSendFund
 
 	totalAmountToMintEth := big.NewInt(0).Add(mintPriceEth, netWorkFeeEth) // mintPrice, netWorkFee
 
