@@ -47,7 +47,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 	resp := &structure.TokenAnimationURI{}
 	u.Logger.LogAny("RunAndCap", zap.Any("token", token))
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
+	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
 			Thumbnail:   token.Thumbnail,
