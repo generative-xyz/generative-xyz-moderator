@@ -1008,7 +1008,7 @@ func (h *httpDelivery) triggerPubsubTokenThumbnail(w http.ResponseWriter, r *htt
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
 	userWalletAddr, ok := iWalletAddress.(string)
-	if !ok || userWalletAddr != "0x668ea0470396138acd0B9cCf6FBdb8a845B717B0" {
+	if !ok || strings.ToLower(userWalletAddr) != strings.ToLower("0x668ea0470396138acd0B9cCf6FBdb8a845B717B0") {
 		err := errors.New("wallet address is incorect")
 		h.Logger.Error("ctx.Value.Token", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
