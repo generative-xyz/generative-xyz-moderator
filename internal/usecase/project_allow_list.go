@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"os"
 	"strings"
 
@@ -17,24 +18,26 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)
 	allowedBy := entity.ERC721
-	
+
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	user, err := u.Repo.FindUserByAddress(userAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	isWhitelist, _ := u.ProjectWhitelistERC721(*user)
-	if ! isWhitelist  {
+	if !isWhitelist {
 		isWhitelist, _ = u.ProjectWhitelistERC20(*user)
-		if ! isWhitelist {
-			return nil, errors.New("User is not existed in whitelist")
+		if !isWhitelist {
+			//return nil, errors.New("User is not existed in allowlist")
+			allowedBy = entity.PUBLIC
+		} else {
+			allowedBy = entity.ERC20
 		}
-		allowedBy = entity.ERC20
 	}
 
 	_ = isWhitelist
@@ -45,11 +48,46 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	pe.AllowedBy = allowedBy
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
-		err := fmt.Errorf("Error while create allow list: %v", err.Error())
+		//err := errors.New("Error while create allow list")
+		u.Logger.ErrorAny("Error while create allow list", zap.Any("error", err))
+		return pe, nil
+	}
+
+	//SLACK_ALLOW_LIST_CHANNEL
+	go func(u Usecase, user entity.Users, p entity.Projects, allowBy entity.AllowedByType) {
+		count, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
+		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"), fmt.Sprintf("[Allowlist][User %s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName)), user.WalletAddressBTCTaproot, fmt.Sprintf("%s registered to  %s's allowlist allowBy: %s TOTAL: %d", helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), helpers.CreateProjectLink(p.TokenID, p.Name), allowedBy, count))
+	}(u, *user, *p, allowedBy)
+	return pe, nil
+}
+
+func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
+	userAddress := strings.ToLower(*req.UserWalletAddress)
+	projectID := strings.ToLower(*req.ProjectID)
+
+	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
+	if err != nil {
+		err := errors.New("Error while create allow list")
 		return nil, err
 	}
 
-	return pe, nil
+	return allowed, nil
+}
+
+func (u Usecase) CheckExistedProjectAllowList(req structure.CreateProjectAllowListReq) bool {
+	userAddress := strings.ToLower(*req.UserWalletAddress)
+	projectID := strings.ToLower(*req.ProjectID)
+
+	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
+	if err != nil {
+		return false
+	}
+
+	if allowed == nil {
+		return false
+	}
+
+	return true
 }
 
 func (u Usecase) ProjectWhitelistERC721(user entity.Users) (bool, error) {
@@ -63,12 +101,12 @@ func (u Usecase) ProjectWhitelistERC721(user entity.Users) (bool, error) {
 	}
 
 	whitelistArreses := strings.Split(whitelist, ",")
-	
+
 	isWhiteList, err := u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whitelistArreses)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return isWhiteList, nil
 }
 
@@ -93,6 +131,6 @@ func (u Usecase) ProjectWhitelistERC20(user entity.Users) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	
+
 	return isWhiteList, nil
 }

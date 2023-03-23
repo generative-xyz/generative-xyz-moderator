@@ -1,5 +1,6 @@
 package usecase
 
+
 // import (
 // 	"encoding/json"
 // 	"errors"
@@ -158,6 +159,23 @@ package usecase
 // 	}
 
 // 	return walletAddress, nil
+// }
+
+// func (u Usecase) CheckBalanceWalletAddress(input structure.CheckBalance) (*entity.BTCWalletAddress, error) {
+
+// 	btc, err := u.Repo.FindBtcWalletAddressByOrd(input.Address)
+// 	if err != nil {
+// 		u.Logger.Error(err)
+// 		return nil, err
+// 	}
+
+// 	balance, err := u.CheckBalance(*btc)
+// 	if err != nil {
+// 		u.Logger.Error(err)
+// 		return nil, err
+// 	}
+
+// 	return balance, nil
 // }
 
 // func (u Usecase) BTCMint(input structure.BctMintData) (*ord_service.MintStdoputRespose, *string, error) {
@@ -681,6 +699,27 @@ package usecase
 
 // }
 
+// func (u Usecase) Notify(title string, userAddress string, content string) {
+
+// 	//slack
+// 	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), "", userAddress)
+// 	c := fmt.Sprintf("%s", content)
+
+// 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {
+// 		u.Logger.Error(err)
+// 	}
+// }
+
+// func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress string, content string) {
+// 	//slack
+// 	preText := fmt.Sprintf("[App: %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), userAddress)
+// 	c := fmt.Sprintf("%s", content)
+
+// 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
+// 		u.Logger.Error(err)
+// 	}
+// }
+
 // // phuong:
 // // send btc from segwit address to master address - it does not call our ORD server
 // func (u Usecase) JobBtcSendBtcToMaster() error {
@@ -720,3 +759,4 @@ package usecase
 
 // 	return nil
 // }
+

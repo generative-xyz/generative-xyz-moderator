@@ -1003,6 +1003,29 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
 }
 
+func (h *httpDelivery) triggerPubsubTokenThumbnail(w http.ResponseWriter, r *http.Request) {
+	tokenId := r.URL.Query().Get("tokenId")
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok || strings.ToLower(userWalletAddr) != strings.ToLower("0x668ea0470396138acd0B9cCf6FBdb8a845B717B0") {
+		err := errors.New("wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if len(tokenId) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("token empty"))
+		return
+	}
+	token, err := h.Usecase.TriggerPubsubTokenThumbnail(tokenId)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("token empty"))
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, token.TokenID, "")
+}
+
 // UserCredits godoc
 // @Summary Create project's allow list
 // @Description Create project's allow list
@@ -1021,11 +1044,11 @@ func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Req
 	var walletAddress *string
 	var resp *entity.ProjectAllowList
 
-	defer func ()  {
+	defer func() {
 		if err != nil {
-			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID),  zap.Any("walletAddress", walletAddress), zap.Error(err))
-		}	
-		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID),  zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
 	}()
 
 	ctx := r.Context()
@@ -1037,12 +1060,12 @@ func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Req
 		return
 	}
 	walletAddress = &wa
-	
+
 	reqUsecase := &structure.CreateProjectAllowListReq{
-		ProjectID: &projectID,
+		ProjectID:         &projectID,
 		UserWalletAddress: walletAddress,
 	}
-	
+
 	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -1050,4 +1073,50 @@ func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Req
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Check project's allow list
+// @Description Check project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/allow-list [GET]
+func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	var err error
+	var walletAddress *string
+	var resp *entity.ProjectAllowList
+
+	defer func() {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
+	}()
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	wa, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("walletAddress is incorect")
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress = &wa
+
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID:         &projectID,
+		UserWalletAddress: walletAddress,
+	}
+
+	existed := h.Usecase.CheckExistedProjectAllowList(*reqUsecase)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.ExistedInAllowList{
+		Existed: existed,
+	}, "")
 }
