@@ -654,14 +654,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
 		iResp, err := genService.Inscription(item.TokenID)
-		if err  == nil && iResp != nil {
+		if err == nil && iResp != nil {
 			item.OwnerAddress = iResp.Address
 			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
 				item.Owner = entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot:  iResp.Address ,
-					WalletAddress:   "" ,
-					DisplayName:   "" ,
-					Avatar:   "" ,
+					WalletAddressBTCTaproot: iResp.Address,
+					WalletAddress:           "",
+					DisplayName:             "",
+					Avatar:                  "",
 				}
 			}
 		}
@@ -669,7 +669,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		//spew.Dump(iResp)
 		resp = append(resp, item)
 	}
-	
+
 	tokens.Result = resp
 	return tokens, nil
 }
@@ -1026,7 +1026,20 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 
 	now := time.Now().UTC()
 	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
-	tokenUri.AnimationURL = ""
+
+	resp := &entity.InscriptionDetail{}
+	_, err = resty.New().R().
+		SetResult(&resp).
+		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, inscription.ID))
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	if strings.Contains(resp.ContentType, "text/html") {
+		tokenUri.AnimationURL = imageURI
+	}
+
 	tokenUri.Thumbnail = imageURI
 	tokenUri.Image = imageURI
 	tokenUri.ParsedImage = &imageURI

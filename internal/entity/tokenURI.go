@@ -16,6 +16,22 @@ const (
 	BIT TokenPaidType = "btc"
 )
 
+type InscriptionDetail struct {
+	Chain         string                 `json:"chain"`
+	GenesisFee    int64                  `json:"genesis_fee"`
+	GenesisHeight int64                  `json:"genesis_height"`
+	Address       string                 `json:"address"`
+	ContentType   string                 `json:"content_type"`
+	InscriptionId string                 `json:"inscription_id"`
+	Next          string                 `json:"next"`
+	Number        int64                  `json:"number"`
+	Output        map[string]interface{} `json:"output"`
+	Previous      string                 `json:"previous"`
+	Sat           int64                  `json:"sat"`
+	Satpoint      string                 `json:"satpoint"`
+	Timestamp     string                 `json:"timestamp"`
+}
+
 type TokenUriAttrFilter struct {
 	TraitType string
 	Values    []string
@@ -114,35 +130,35 @@ type AggregateTokenUriTraitsID struct {
 }
 
 type TokenUriListingFilter struct {
-	ID                    primitive.ObjectID `bson:"_id" json:"_id"`
-	TokenID               string             `bson:"token_id" json:"tokenID"`
-	Name                  string             `bson:"name" json:"name"`
-	Image                 string             `bson:"image" json:"image"`
-	ContractAddress       string             `bson:"contract_address" json:"contract_address"`
-	AnimationURL          string             `bson:"animation_url" json:"animation_url"`
-	AnimationHtml         *string            `bson:"animation_html"`
-	ProjectID             string             `bson:"project_id" json:"projectID"`
-	MintedTime            *time.Time         `bson:"minted_time" json:"minted_time"`
-	GenNFTAddr            string             `bson:"gen_nft_addrress" json:"genNFTAddr"`
-	Thumbnail             string             `bson:"thumbnail" json:"thumbnail"`
-	InscriptionIndex      string             `bson:"inscription_index" json:"inscriptionIndex"`
-	OrderInscriptionIndex int                `bson:"order_inscription_index" json:"orderInscriptionIndex"`
-	OrderID               primitive.ObjectID `bson:"orderID" json:"orderID"`
-	Price                 int64              `bson:"priceBTC" json:"priceBTC"`
-	PriceETH              string             `bson:"priceETH" json:"priceETH"`
-	Buyable               bool               `bson:"buyable" json:"buyable"`
-	SellVerified          bool               `bson:"sell_verified" json:"sell_verified"`
-	OwnerAddr             bool               `bson:"ownerAddr" json:"ownerAddr"`
-	OwnerAddress          string             `bson:"owner_addrress" json:"owner_addrress"`
+	ID                    primitive.ObjectID   `bson:"_id" json:"_id"`
+	TokenID               string               `bson:"token_id" json:"tokenID"`
+	Name                  string               `bson:"name" json:"name"`
+	Image                 string               `bson:"image" json:"image"`
+	ContractAddress       string               `bson:"contract_address" json:"contract_address"`
+	AnimationURL          string               `bson:"animation_url" json:"animation_url"`
+	AnimationHtml         *string              `bson:"animation_html"`
+	ProjectID             string               `bson:"project_id" json:"projectID"`
+	MintedTime            *time.Time           `bson:"minted_time" json:"minted_time"`
+	GenNFTAddr            string               `bson:"gen_nft_addrress" json:"genNFTAddr"`
+	Thumbnail             string               `bson:"thumbnail" json:"thumbnail"`
+	InscriptionIndex      string               `bson:"inscription_index" json:"inscriptionIndex"`
+	OrderInscriptionIndex int                  `bson:"order_inscription_index" json:"orderInscriptionIndex"`
+	OrderID               primitive.ObjectID   `bson:"orderID" json:"orderID"`
+	Price                 int64                `bson:"priceBTC" json:"priceBTC"`
+	PriceETH              string               `bson:"priceETH" json:"priceETH"`
+	Buyable               bool                 `bson:"buyable" json:"buyable"`
+	SellVerified          bool                 `bson:"sell_verified" json:"sell_verified"`
+	OwnerAddr             bool                 `bson:"ownerAddr" json:"ownerAddr"`
+	OwnerAddress          string               `bson:"owner_addrress" json:"owner_addrress"`
 	Owner                 TokenURIListingOwner `bson:"owner_object" json:"owner"`
-	Project struct {
+	Project               struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
 	NftTokenID string `bson:"nftTokenId" json:"nftTokenId"`
 }
 
-type TokenURIListingOwner  struct {
+type TokenURIListingOwner struct {
 	WalletAddress           string `bson:"wallet_address" json:"walletAddress"`                       // eth wallet define user in platform by connect wallet and sign     // btc wallet artist receive royalty
 	WalletAddressBTCTaproot string `bson:"wallet_address_btc_taproot" json:"walletAddressBtcTaproot"` // btc wallet receive minted nft
 	DisplayName             string `bson:"display_name" json:"displayName"`
