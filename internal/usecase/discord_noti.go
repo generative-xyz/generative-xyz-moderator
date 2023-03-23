@@ -409,6 +409,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	if v, ok := mintNftBtc.EstFeeInfo["btc"]; ok {
 		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(v.MintPrice), true)
+	} else {
+		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	}
 
 	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
