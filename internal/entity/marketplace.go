@@ -5,6 +5,7 @@ type ItemListing struct {
 	VolumeOneHour         *VolumneObject `json:"volumeOneHour"`
 	VolumeOneDay          *VolumneObject `json:"volumeOneDay"`
 	VolumeOneWeek         *VolumneObject `json:"volumeOneWeek"`
+	VolumeOneMonth        *VolumneObject `json:"volumeOneMonth"`
 	SellerAddress         string         `json:"sellerAddress"`
 	SellerDisplayName     string         `json:"sellerDisplayName"`
 	BuyerAddress          string         `json:"buyerAddress"`

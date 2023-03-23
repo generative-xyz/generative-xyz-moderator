@@ -21,28 +21,36 @@ func (r Repository) ListSubClollectionItem(filter *structure.BaseFilters, inscri
 		}},
 		bson.M{
 			"$group": bson.M{
-				"_id":          "$metadata.inscription_id",
-				"total_volume": bson.M{"$sum": "$amount"},
-				"volume_1h": bson.M{
-					"$sum": bson.M{
-						"$cond": bson.A{
-							bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
-							"$amount", 0,
-						},
-					},
-				},
-				"volume_1d": bson.M{
-					"$sum": bson.M{
-						"$cond": bson.A{
-							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
-							"$amount", 0,
-						},
-					},
-				},
+				"_id": "$metadata.inscription_id",
+				// "total_volume": bson.M{"$sum": "$amount"},
+				// "volume_1h": bson.M{
+				// 	"$sum": bson.M{
+				// 		"$cond": bson.A{
+				// 			bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
+				// 			"$amount", 0,
+				// 		},
+				// 	},
+				// },
+				// "volume_1d": bson.M{
+				// 	"$sum": bson.M{
+				// 		"$cond": bson.A{
+				// 			bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
+				// 			"$amount", 0,
+				// 		},
+				// 	},
+				// },
 				"volume_7d": bson.M{
 					"$sum": bson.M{
 						"$cond": bson.A{
 							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -7)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_30d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -30)}},
 							"$amount", 0,
 						},
 					},
@@ -52,11 +60,12 @@ func (r Repository) ListSubClollectionItem(filter *structure.BaseFilters, inscri
 		bson.M{
 			"$project": bson.M{
 				"inscription_id": "$_id",
-				"total_volume":   1,
-				"volume_1h":      1,
-				"volume_1d":      1,
-				"volume_7d":      1,
-				"_id":            0,
+				// "total_volume":   1,
+				// "volume_1h":      1,
+				// "volume_1d":      1,
+				"volume_7d":  1,
+				"volume_30d": 1,
+				"_id":        0,
 			},
 		},
 		bson.M{"$skip": (page - 1) * pageSize},
@@ -85,6 +94,9 @@ func (r Repository) ListSubClollectionItem(filter *structure.BaseFilters, inscri
 			},
 			VolumeOneWeek: &entity.VolumneObject{
 				Amount: fmt.Sprintf("%d", r.Volume7d),
+			},
+			VolumeOneMonth: &entity.VolumneObject{
+				Amount: fmt.Sprintf("%d", r.Volume30d),
 			},
 		}
 		response = append(response, data)
@@ -172,28 +184,36 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 		}},
 		bson.M{
 			"$group": bson.M{
-				"_id":          "$metadata.inscription_id",
-				"total_volume": bson.M{"$sum": "$amount"},
-				"volume_1h": bson.M{
-					"$sum": bson.M{
-						"$cond": bson.A{
-							bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
-							"$amount", 0,
-						},
-					},
-				},
-				"volume_1d": bson.M{
-					"$sum": bson.M{
-						"$cond": bson.A{
-							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
-							"$amount", 0,
-						},
-					},
-				},
+				"_id": "$metadata.inscription_id",
+				// "total_volume": bson.M{"$sum": "$amount"},
+				// "volume_1h": bson.M{
+				// 	"$sum": bson.M{
+				// 		"$cond": bson.A{
+				// 			bson.M{"$gte": bson.A{"$timestamp", time.Now().Add(-1 * time.Hour)}},
+				// 			"$amount", 0,
+				// 		},
+				// 	},
+				// },
+				// "volume_1d": bson.M{
+				// 	"$sum": bson.M{
+				// 		"$cond": bson.A{
+				// 			bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -1)}},
+				// 			"$amount", 0,
+				// 		},
+				// 	},
+				// },
 				"volume_7d": bson.M{
 					"$sum": bson.M{
 						"$cond": bson.A{
 							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -7)}},
+							"$amount", 0,
+						},
+					},
+				},
+				"volume_30d": bson.M{
+					"$sum": bson.M{
+						"$cond": bson.A{
+							bson.M{"$gte": bson.A{"$timestamp", time.Now().AddDate(0, 0, -30)}},
 							"$amount", 0,
 						},
 					},
@@ -211,10 +231,11 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 		bson.M{
 			"$project": bson.M{
 				"inscription_id": "$_id",
-				"total_volume":   1,
-				"volume_1h":      1,
-				"volume_1d":      1,
-				"volume_7d":      1,
+				// "total_volume":   1,
+				// "volume_1h":      1,
+				// "volume_1d":      1,
+				"volume_7d":  1,
+				"volume_30d": 1,
 				"dex_volume_inscription": bson.M{
 					"$arrayElemAt": bson.A{
 						"$inscription_info",
@@ -235,7 +256,7 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 				"as": "dex_btc_listings",
 			},
 		},
-		bson.M{"$sort": bson.M{"volume_7d": -1}},
+		bson.M{"$sort": bson.M{"volume_30d": -1}},
 		bson.M{"$skip": (page - 1) * pageSize},
 		bson.M{"$limit": pageSize},
 	}
@@ -264,6 +285,9 @@ func (r Repository) FindListItemListing(filter *structure.BaseFilters) ([]*entit
 			},
 			VolumeOneWeek: &entity.VolumneObject{
 				Amount: fmt.Sprintf("%d", r.Volume7d),
+			},
+			VolumeOneMonth: &entity.VolumneObject{
+				Amount: fmt.Sprintf("%d", r.Volume30d),
 			},
 		}
 		for _, d := range r.DexBTCListings {
