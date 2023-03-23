@@ -1076,6 +1076,8 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 		return nil, errors.WithStack(err)
 	}
 
+	go u.TriggerPubsubTokenThumbnail(pTokenUri.TokenID)
+
 	return pTokenUri, nil
 }
 

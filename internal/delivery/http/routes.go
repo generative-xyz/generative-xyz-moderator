@@ -90,7 +90,6 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/random-images", h.projectRandomImages).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
-	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-thumbnail", h.triggerPubsubTokenThumbnail).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
@@ -106,6 +105,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
 	projectAuth.HandleFunc("/{contractAddress}/{projectID}", h.deleteBTCProject).Methods("DELETE")
+	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}/token-thumbnail", h.triggerPubsubTokenThumbnail).Methods("GET")
 
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
