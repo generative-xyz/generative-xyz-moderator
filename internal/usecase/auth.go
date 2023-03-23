@@ -118,10 +118,10 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		return nil, err
 	}
 
-	if user.WalletAddressBTCTaproot != "" {
-		user2, _ := u.Repo.FindUserByAddress(user.WalletAddressBTCTaproot)
+	if *data.AddressBTC != "" {
+		user2, _ := u.Repo.FindUserByAddress(*data.AddressBTC)
 		if user2 != nil {
-			if *&data.Address != user2.WalletAddress {
+			if data.Address != user2.WalletAddress {
 				return nil, errors.New("invalid wallet address")
 			}
 		}
