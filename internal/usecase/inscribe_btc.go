@@ -702,7 +702,6 @@ func (u Usecase) JobInscribeMintNft() error {
 			zap.String("id", item.ID.Hex()),
 			zap.String("file_name", item.FileName),
 		}
-
 		logger.AtLog.Logger.With(fields...).Info("Mint nft now...")
 
 		// - Upload the Animation URL to GCS

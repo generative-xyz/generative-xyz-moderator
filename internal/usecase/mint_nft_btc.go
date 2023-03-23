@@ -396,15 +396,17 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 	} else {
 
 		statusMap["3"] = statusprogressStruct{
-			Title:  entity.StatusMintToText[entity.StatusMint_Minting],
-			Status: mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
-			Tx:     mintItem.TxMintNft,
+			Title:   entity.StatusMintToText[entity.StatusMint_Minting],
+			Status:  mintItem.IsMinted || mintItem.Status == entity.StatusMint_Minting,
+			Tx:      mintItem.TxMintNft,
+			Message: mintItem.MintMessage,
 		}
 
 		statusMap["4"] = statusprogressStruct{
-			Title:  entity.StatusMintToText[entity.StatusMint_Minted],
-			Status: mintItem.IsMinted,
-			Tx:     mintItem.TxMintNft,
+			Title:   entity.StatusMintToText[entity.StatusMint_Minted],
+			Status:  mintItem.IsMinted,
+			Tx:      mintItem.TxMintNft,
+			Message: "Waiting for minting confirmation.",
 		}
 
 	}
@@ -693,6 +695,8 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		return nil
 	}
 
+	feeRateCurrent, _ := u.getFeeRateFromChain()
+
 	for _, item := range listToMint {
 
 		// check if it is a child item but its parent does not have mint yet, then continue:
@@ -736,6 +740,18 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			u.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", err.Error(), err)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
 			continue
+		}
+
+		// "smart fee": check fee rate with current fee:
+		if feeRateCurrent != nil {
+			mintNetworkFeeRate := int64(feeRateCurrent.EconomyFee) //safe to thr
+			if int64(item.FeeRate) < mintNetworkFeeRate {
+				message := fmt.Sprintf("Your transaction will be processed once the network fee is reduced to %d sat/vB. The current minimum network rate is %d sat/vB. Check the current rate here <a href='https://mempool.space/'>https://mempool.space</a>", item.FeeRate, mintNetworkFeeRate)
+				item.MintMessage = message
+				u.Repo.UpdateMintNftBtc(&item)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "SmartFee.Wait", message, true)
+				continue
+			}
 		}
 
 		// - Upload the Animation URL to GCS
@@ -826,6 +842,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		//TODO: handle log err: Database already open. Cannot acquire lock
 
 		item.Status = entity.StatusMint_Minting
+		item.MintMessage = ""
 		item.IsMerged = true // new key for ord v5.1, support mint + send in 1 tx.
 
 		// item.ErrCount = 0 // reset error count!
@@ -918,14 +935,17 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 		if strings.Contains(errFromCheckBatch.Error(), "rate_limit") {
 			isRateLimitErr = true
 		}
+		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", entity.MintNftBtc{}.TableName(), 0, "check Batch txs err", errFromCheckBatch.Error(), true)
 	}
+
+	go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", entity.MintNftBtc{}.TableName(), 0, "check Batch txs ok", len(batchBTCTx), true)
 
 	for _, item := range listTxToCheck {
 
 		txToCheck := item.TxMintNft
 		var confirm int64 = -1
 
-		if !isRateLimitErr {
+		if !isRateLimitErr && txInfoMaps != nil {
 			txInfo, ok := txInfoMaps[txToCheck]
 			// If the key exists
 			if ok {
