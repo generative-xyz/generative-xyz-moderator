@@ -161,10 +161,6 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		mfTotal = feeInfos[input.PayType].NetworkFee
 		fmt.Println("mfTotal eth 1===>", mfTotal)
 
-		mfTotal = big.NewInt(0).Add(big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt), feeInfos[input.PayType].SendFundFeeBigInt).String()
-
-		fmt.Println("mfTotal eth 2===>", mfTotal)
-
 		mfMintFee = feeInfos[input.PayType].MintFee
 		mfSentTokenFee = big.NewInt(0).Add(feeInfos[input.PayType].SendNftFeeBigInt, feeInfos[input.PayType].SendFundFeeBigInt).String()
 	}
@@ -1167,7 +1163,8 @@ func (u Usecase) CompressNftImageFromMoralis(ctx context.Context, urlStr string,
 			}
 
 			byteSize := len(imgByte)
-			if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+			// if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+			if quality != -1 {
 
 				// ext, err := utils.GetFileExtensionFromUrl(urlStr)
 				// if err != nil {
