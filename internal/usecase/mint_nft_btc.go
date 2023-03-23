@@ -402,11 +402,15 @@ func (u Usecase) GetDetalMintNftBtc(uuid string) (*structure.MintingInscription,
 			Message: mintItem.MintMessage,
 		}
 
+		message := ""
+		if mintItem.Status == entity.StatusMint_Minting {
+			message = "Waiting for minting confirmation."
+		}
 		statusMap["4"] = statusprogressStruct{
 			Title:   entity.StatusMintToText[entity.StatusMint_Minted],
 			Status:  mintItem.IsMinted,
 			Tx:      mintItem.TxMintNft,
-			Message: "Waiting for minting confirmation.",
+			Message: message,
 		}
 
 	}
