@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -31,7 +32,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	if ! isWhitelist  {
 		isWhitelist, _ = u.ProjectWhitelistERC20(*user)
 		if ! isWhitelist {
-			return nil, errors.New("User is not existed in whitelist")
+			return nil, errors.New("User is not existed in allowlist")
 		}
 		allowedBy = entity.ERC20
 	}
@@ -48,6 +49,8 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 		return nil, err
 	}
 
+	//SLACK_ALLOW_LIST_CHANNEL
+	u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"), fmt.Sprintf("[Allowlist][User %s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName)), userAddress, fmt.Sprintf("%s registered to  %s's allowlist", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), helpers.CreateProjectLink(p.TokenID, p.Name)))
 	return pe, nil
 }
 
