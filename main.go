@@ -176,11 +176,6 @@ func startServer() {
 	}
 
 	servers := make(map[string]delivery.AddedServer)
-
-	uc.JobAggregateReferral()
-	return
-
-	
 	// api fixed run:
 	h, _ := httpHandler.NewHandler(&g, *uc)
 	servers["http"] = delivery.AddedServer{
