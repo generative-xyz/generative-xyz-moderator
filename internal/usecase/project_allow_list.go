@@ -17,24 +17,26 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)
 	allowedBy := entity.ERC721
-	
+
 	p, err := u.Repo.FindProjectByTokenID(projectID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	user, err := u.Repo.FindUserByAddress(userAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	isWhitelist, _ := u.ProjectWhitelistERC721(*user)
-	if ! isWhitelist  {
+	if !isWhitelist {
 		isWhitelist, _ = u.ProjectWhitelistERC20(*user)
-		if ! isWhitelist {
-			return nil, errors.New("User is not existed in allowlist")
+		if !isWhitelist {
+			//return nil, errors.New("User is not existed in allowlist")
+			allowedBy = entity.PUBLIC
+		} else {
+			allowedBy = entity.ERC20
 		}
-		allowedBy = entity.ERC20
 	}
 
 	_ = isWhitelist
@@ -57,7 +59,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)
-	
+
 	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
 	if err != nil {
 		err := errors.New("Error while create allow list")
@@ -67,11 +69,10 @@ func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*
 	return allowed, nil
 }
 
-
 func (u Usecase) CheckExistedProjectAllowList(req structure.CreateProjectAllowListReq) bool {
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)
-	
+
 	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
 	if err != nil {
 		return false
@@ -95,12 +96,12 @@ func (u Usecase) ProjectWhitelistERC721(user entity.Users) (bool, error) {
 	}
 
 	whitelistArreses := strings.Split(whitelist, ",")
-	
+
 	isWhiteList, err := u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whitelistArreses)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return isWhiteList, nil
 }
 
@@ -125,6 +126,6 @@ func (u Usecase) ProjectWhitelistERC20(user entity.Users) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	
+
 	return isWhiteList, nil
 }
