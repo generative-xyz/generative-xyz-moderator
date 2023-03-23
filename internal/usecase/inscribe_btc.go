@@ -1163,7 +1163,8 @@ func (u Usecase) CompressNftImageFromMoralis(ctx context.Context, urlStr string,
 			}
 
 			byteSize := len(imgByte)
-			if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+			// if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+			if quality != -1 {
 
 				// ext, err := utils.GetFileExtensionFromUrl(urlStr)
 				// if err != nil {
