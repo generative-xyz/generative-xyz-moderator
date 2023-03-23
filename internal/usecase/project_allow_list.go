@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"os"
 	"strings"
 
@@ -47,8 +48,9 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	pe.AllowedBy = allowedBy
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
-		err := errors.New("Error while create allow list")
-		return nil, err
+		//err := errors.New("Error while create allow list")
+		u.Logger.ErrorAny("Error while create allow list", zap.Any("error", err))
+		return pe, nil
 	}
 
 	//SLACK_ALLOW_LIST_CHANNEL
