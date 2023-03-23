@@ -936,9 +936,9 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			isRateLimitErr = true
 		}
 		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", entity.MintNftBtc{}.TableName(), 0, "check Batch txs err", errFromCheckBatch.Error(), true)
+	} else {
+		go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", entity.MintNftBtc{}.TableName(), 0, "check Batch txs ok", len(batchBTCTx), true)
 	}
-
-	go u.trackMintNftBtcHistory("", "JobMint_CheckTxMintSend", entity.MintNftBtc{}.TableName(), 0, "check Batch txs ok", len(batchBTCTx), true)
 
 	for _, item := range listTxToCheck {
 
