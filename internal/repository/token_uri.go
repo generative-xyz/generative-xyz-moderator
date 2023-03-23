@@ -559,6 +559,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 				bson.D{
 					{"_id", 1},
 					{"token_id", 1},
+					{"name", 1},
 					{"gen_nft_addrress", 1},
 					{"contract_address", 1},
 					{"project_id", 1},
