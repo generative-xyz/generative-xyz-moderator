@@ -24,21 +24,28 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	var ok bool
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
+	address := reqBody.Address
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddressBTCTaproot
+	}
+	if address == "" {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	userInfo, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	address := userInfo.WalletAddressBTCTaproot
+
 	listing, err := h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID, reqBody.SplitTx)
 	if err != nil {
 		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
@@ -63,21 +70,28 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var ok bool
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
+	address := reqBody.Address
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddressBTCTaproot
+	}
+	if address == "" {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	userInfo, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	address := userInfo.WalletAddressBTCTaproot
+
 	//find order by inscription_id and user_address
 	err = h.Usecase.CancelDexBTCListing(reqBody.Txhash, address, reqBody.InscriptionID, reqBody.OrderID)
 	if err != nil {
@@ -189,21 +203,28 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		offset = 0
 	}
-	var ok bool
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddressBTCTaproot
+	}
+	if address == "" {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	userInfo, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	address := userInfo.WalletAddressBTCTaproot
+
 	listingList, err := h.Usecase.Repo.GetDexBTCListingOrderUser(address, int64(limit), int64(offset))
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("get order info failed"))
@@ -330,40 +351,40 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
-func (h *httpDelivery) submitDexBTCBuy(w http.ResponseWriter, r *http.Request) {
-	var reqBody request.SubmitDexBTCBuy
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+// func (h *httpDelivery) submitDexBTCBuy(w http.ResponseWriter, r *http.Request) {
+// 	var reqBody request.SubmitDexBTCBuy
+// 	decoder := json.NewDecoder(r.Body)
+// 	err := decoder.Decode(&reqBody)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
 
-	var ok bool
-	ctx := r.Context()
-	iUserID := ctx.Value(utils.SIGNED_USER_ID)
-	userID, ok := iUserID.(string)
-	if !ok {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
-		return
-	}
-	userInfo, err := h.Usecase.UserProfile(userID)
-	if err != nil {
-		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	address := userInfo.WalletAddressBTCTaproot
-	//find order by inscription_id and user_address
-	err = h.Usecase.CancelDexBTCListing(reqBody.Txhash, address, reqBody.InscriptionID, reqBody.OrderID)
-	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
-}
+// 	var ok bool
+// 	ctx := r.Context()
+// 	iUserID := ctx.Value(utils.SIGNED_USER_ID)
+// 	userID, ok := iUserID.(string)
+// 	if !ok {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+// 		return
+// 	}
+// 	userInfo, err := h.Usecase.UserProfile(userID)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	address := userInfo.WalletAddressBTCTaproot
+// 	//find order by inscription_id and user_address
+// 	err = h.Usecase.CancelDexBTCListing(reqBody.Txhash, address, reqBody.InscriptionID, reqBody.OrderID)
+// 	if err != nil {
+// 		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+// }
 
 func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Request) {
 	var reqBody request.GenDexBTCBuyETH

@@ -33,6 +33,22 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 	if orderInfo.InscriptionID != inscription_id {
 		return errors.New("invalid cancelling request")
 	}
+
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+
+	inscriptionInfo, err := getInscriptionByID(ordServer, inscription_id)
+	if err != nil {
+		fmt.Printf("Could not get inscription info - with err: %v", err)
+		return err
+	}
+
+	if !strings.EqualFold(inscriptionInfo.Address, seller_address) {
+		return fmt.Errorf("seller address not match inscription owner")
+	}
+
 	if !orderInfo.Cancelled && orderInfo.CancelTx == "" {
 		currentTime := time.Now()
 		orderInfo.CancelTx = txhash
@@ -151,6 +167,10 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return nil, err
 	}
 
+	if !strings.EqualFold(inscriptionInfo.Address, seller_address) {
+		return nil, fmt.Errorf("seller address not match inscription owner")
+	}
+
 	inscriptionTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
 
 	if inscriptionTx != previousTxs[0] {
@@ -171,9 +191,16 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 	}
 
 	if split_tx != "" {
-		_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		// _, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		// if err != nil {
+		// 	fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+		// 	return nil, err
+		// }
+		txMap := make(map[string]string)
+		txMap[splitTxData.TxHash().String()] = split_tx
+		err = u.SubmitBTCTransaction(txMap)
 		if err != nil {
-			fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+			log.Println("httpDelivery.submitTx.SubmitBTCTransaction", err.Error())
 			return nil, err
 		}
 		newListing.Verified = false
