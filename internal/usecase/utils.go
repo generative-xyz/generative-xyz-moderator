@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
@@ -157,7 +158,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 
 func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress string, content string) {
 	//slack
-	preText := fmt.Sprintf("[App: %s][traceID %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), "", userAddress)
+	preText := fmt.Sprintf("[App: %s] - User address: %s, ", os.Getenv("JAEGER_SERVICE_NAME"), userAddress)
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
@@ -241,6 +242,10 @@ func (u Usecase) IsWhitelistedAddressERC20(ctx context.Context, userAddr string,
 
 		//bigInt64 := big.
 		tmp := blance.Cmp(confValue)
+
+		spew.Dump(whitelistedThres.Value, whitelistedThres.Decimal)
+		spew.Dump(confValue.String())
+		spew.Dump(blance.String())
 		if tmp >= 0 {
 			return true, nil
 		}
