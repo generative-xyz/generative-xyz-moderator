@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -33,11 +34,11 @@ func (u Usecase) JobAggregateVolumns() {
 	}
 
 	pLogs := []structure.VolumnLogs{}
-	pLogsChannel := make(chan structure.VolumnLogs , len(projects) * 2)
+	pLogsChannel := make(chan structure.VolumnLogs, len(projects)*2)
 	for _, project := range projects {
 		for _, paytype := range payTypes {
 			go func(project entity.ProjectsHaveMinted, paytype string, pLogsChannel chan structure.VolumnLogs) {
-				logger.AtLog.Logger.Info("Calculating ...", zap.Any("project",project),  zap.Any("paytype",paytype))
+				logger.AtLog.Logger.Info("Calculating ...", zap.Any("project", project), zap.Any("paytype", paytype))
 				minted := 0
 				amount := 0.0
 				data, err := u.Repo.AggregateVolumn(project.TokenID, paytype)
@@ -62,32 +63,30 @@ func (u Usecase) JobAggregateVolumns() {
 
 				wd := 0.0
 				widthDraw, err := u.Repo.AggregateWithDrawByProject(project.TokenID, paytype)
-				if err == nil && len(widthDraw) >0 {
+				if err == nil && len(widthDraw) > 0 {
 					for _, wdItem := range widthDraw {
 						wd += wdItem.Amount
 					}
 				}
 
 				pLog := structure.VolumnLogs{
-					ProjectID:     project.TokenID,
-					Paytype:       paytype,
-					OldMinted:     oldMinted,
-					NewMinted:     minted,
-					TotalMinted:   oldMinted + minted,
-					OldAmount:     fmt.Sprintf("%d", int(oldAmount)),
-					NewAmount:     fmt.Sprintf("%d", int(amount)),
-					TotalAmount:   fmt.Sprintf("%d", int(totalAmout)),
-					TotalEarnings: earning,
+					ProjectID:        project.TokenID,
+					Paytype:          paytype,
+					OldMinted:        oldMinted,
+					NewMinted:        minted,
+					TotalMinted:      oldMinted + minted,
+					OldAmount:        fmt.Sprintf("%d", int(oldAmount)),
+					NewAmount:        fmt.Sprintf("%d", int(amount)),
+					TotalAmount:      fmt.Sprintf("%d", int(totalAmout)),
+					TotalEarnings:    earning,
 					ApprovedWithdraw: fmt.Sprintf("%d", int(wd)),
-					Available: fmt.Sprintf("%d", int(earningF - wd)),
-					GenEarnings:   gearning,
-					SeparateRate:  fmt.Sprintf("%d", utils.PERCENT_EARNING),
-					MintPrice: u.AggregateMintPrice(project, paytype),
+					Available:        fmt.Sprintf("%d", int(earningF-wd)),
+					GenEarnings:      gearning,
+					SeparateRate:     fmt.Sprintf("%d", utils.PERCENT_EARNING),
+					MintPrice:        u.AggregateMintPrice(project, paytype),
 				}
-				
-				
+
 				pLogsChannel <- pLog
-				
 
 			}(project, paytype, pLogsChannel)
 		}
@@ -133,6 +132,7 @@ func (u Usecase) JobAggregateVolumns() {
 
 func (u Usecase) JobAggregateReferral() {
 	logger.AtLog.Logger.Info("JobAggregateReferral")
+	//ref := "63ed059beb293700db300282"
 	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
 	if err != nil {
 		u.Logger.ErrorAny("JobAggregateReferral", zap.Any("err", err))
@@ -144,43 +144,56 @@ func (u Usecase) JobAggregateReferral() {
 		string(entity.ETH),
 	}
 
-	for _, referral := range referrals {
-		vol := make(map[string]entity.ReferreeVolumn)
-		for _, paytype := range paytypes {
+	for i, referral := range referrals {
+	   	go func(i int, referral entity.Referral, paytypes []string) {
+			logger.AtLog.Logger.Info(fmt.Sprintf("JobAggregateReferral.Proccessing %d/%d", i+1, len(referrals)), zap.String("ReferrerID", referral.ReferrerID), zap.String("ReferreeID", referral.ReferreeID), zap.Any("ReferreeVolumn", referral.ReferreeVolumn))
+			vol := make(map[string]entity.ReferreeVolumn)
+			for _, paytype := range paytypes {
 
-			volume, err := u.GetVolumeOfUser(referral.Referree.WalletAddress, &paytype)
-			if err != nil {
-				vol[paytype] = entity.ReferreeVolumn{
-					Amount:        "0",
-					AmountType:    paytype,
-					Earn:          "0",
-					GenEarn:       "0",
-					RemainingEarn: "0",
-				}
-			} else {
-				refEarning, genEarning := helpers.CalculateRefEarning(volume.Amount, referral.Percent)
-				remaining := referral.ReferreeVolumn[paytype].RemainingEarn
-				if remaining == "" {
-					remaining = "0"
-				}
+				volume, err := u.GetVolumeOfUser(referral.Referree.WalletAddress, &paytype)
+				if err != nil {
+					vol[paytype] = entity.ReferreeVolumn{
+						Amount:        "0",
+						AmountType:    paytype,
+						Earn:          "0",
+						GenEarn:       "0",
+						RemainingEarn: "0",
+					}
+				} else {
+					refEarning, genEarning := helpers.CalculateRefEarning(volume.Amount, referral.Percent)
+					remaining := referral.ReferreeVolumn[paytype].RemainingEarn
+					if remaining == "" {
+						remaining = "0"
+					}
 
-				vol[paytype] = entity.ReferreeVolumn{
-					Amount:        fmt.Sprintf("%d", int(volume.Amount)),
-					AmountType:    paytype,
-					Earn:          refEarning,
-					GenEarn:       genEarning,
-					RemainingEarn: remaining,
+					vol[paytype] = entity.ReferreeVolumn{
+						Amount:        fmt.Sprintf("%d", int(volume.Amount)),
+						AmountType:    paytype,
+						Earn:          refEarning,
+						GenEarn:       genEarning,
+						RemainingEarn: remaining,
+					}
 				}
 			}
-		}
-		referral.ReferreeVolumn = vol
-		_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
-		if err != nil {
-			u.Logger.ErrorAny("JobAggregateReferral", zap.Error(err))
-			return
+			referral.ReferreeVolumn = vol
+
+			if referral.ReferrerID == "63ed059beb293700db300282" {
+				spew.Dump(referral)
+			}
+
+			_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
+			if err != nil {
+				u.Logger.ErrorAny("JobAggregateReferral", zap.Error(err))
+				return
+			}
+
+		}(i, referral, paytypes)
+
+		if i > 0 && i % 50 == 0 {
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
-	
+
 	now := time.Now().UTC()
 	fileName := fmt.Sprintf("aggregated-refferals/%s.json", now)
 	fileName = strings.ReplaceAll(fileName, " ", "-")
@@ -190,10 +203,10 @@ func (u Usecase) JobAggregateReferral() {
 	bytes, err := json.Marshal(referrals)
 	if err == nil {
 		base64String := helpers.Base64Encode(bytes)
-		_, err := u.GCS.UploadBaseToBucket(base64String, fileName)
+		uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
 		if err == nil {
 			//spew.Dump(uploaded)
-			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+			u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Referral is created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
 	}
 }
@@ -312,14 +325,14 @@ func (u Usecase) MigrateFromCSV() {
 		Artist:     "crashblossom",
 		Collection: "RECALL",
 		//Status:     line[3],
-		BTC:        "0.045",
-		ETH:        "43.40304",
+		BTC: "0.045",
+		ETH: "43.40304",
 	}
 
 	//csvData = append(csvData, tmp)
 	processCsvData := []csvLine{}
 	processCsvData = append(processCsvData, tmp)
-	
+
 	wdsETH := []*entity.Withdraw{}
 	for _, csv := range processCsvData {
 		wd, _, err := u.CreateWD(csv, string(entity.ETH))
@@ -380,18 +393,18 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	}
 
 	arrge, err := u.Repo.FindVolumnByWalletAddress(p.CreatorProfile.WalletAddress, paymentType)
-	if err == nil &&  arrge !=nil {
+	if err == nil && arrge != nil {
 		wd.EarningVolume = *arrge.Earning
 		wd.TotalEarnings = *arrge.Earning
-		
+
 		wdf := 0.0
 		wds, err := u.Repo.AggregateWithDrawByProject(csv.ProjectID, paymentType)
 		if err == nil && len(wds) > 0 {
 			for _, wdt := range wds {
 				wdf += wdt.Amount
 			}
-			earningF, _  := strconv.ParseFloat(*arrge.Earning, 10)
-			wd.AvailableBalance = fmt.Sprintf("%d", int(earningF - wdf))
+			earningF, _ := strconv.ParseFloat(*arrge.Earning, 10)
+			wd.AvailableBalance = fmt.Sprintf("%d", int(earningF-wdf))
 		}
 	}
 
@@ -425,7 +438,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		if btcFloat == 0 {
 			return nil, false, errors.New("Witdraw with zero")
 		}
-		btcFloat = btcFloat  * 1e8
+		btcFloat = btcFloat * 1e8
 		amount = fmt.Sprintf("%d", int(btcFloat))
 	}
 
@@ -448,7 +461,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 }
 
 func (u Usecase) CreateVolumn(item structure.VolumnLogs) {
-	logger.AtLog.Logger.Info("CreateVolumn...", zap.Any("item",item))
+	logger.AtLog.Logger.Info("CreateVolumn...", zap.Any("item", item))
 	pID := strings.ToLower(item.ProjectID)
 	p, err := u.Repo.FindProjectByTokenID(pID)
 	if err != nil {
@@ -504,7 +517,7 @@ func (u Usecase) CreateVolumn(item structure.VolumnLogs) {
 				return
 			}
 		}
-		
+
 		_, err := u.Repo.UpdateVolumnMinted(*ev.ProjectID, *ev.PayType, item.TotalMinted)
 		if err != nil {
 			u.Logger.ErrorAny("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
@@ -579,7 +592,7 @@ func (u Usecase) AggregateMintPrice(project entity.ProjectsHaveMinted, payType s
 
 			pFl, _ := strconv.ParseFloat(project.MintPriceEth, 10)
 			mintPrice = pFl / 1e10
-		}else{
+		} else {
 			pFl, _ := strconv.ParseFloat(project.MintPrice, 10)
 			mintPrice = pFl
 		}
@@ -605,34 +618,49 @@ func (u Usecase) FindOldData() {
 		return 
 	}
 
-	inscriptionIDs := make(map[string]string)
+	inscriptionIDs := []string{}
 	for _, item := range newData {
-		inscriptionIDs[item.InscriptionID]= item.InscriptionID
+		inscriptionIDs = append(inscriptionIDs, item.InscriptionID)
 	}
 	
 	for _, item := range oldBtcData {
 		
-		inscriptionIDs[item.MintResponse.Inscription]= item.MintResponse.Inscription
+		inscriptionIDs = append(inscriptionIDs,item.MintResponse.Inscription)
 	}
 	
 	for _, item := range oldETHData {
-		inscriptionIDs[item.MintResponse.Inscription]= item.MintResponse.Inscription
+		inscriptionIDs = append(inscriptionIDs,item.MintResponse.Inscription)
 	}
 
 	count := 0
 
 	inArrays := []string{}
+	notInAddrays := []string{}
 	tokenIDs, err  := u.Repo.GetTokenNotIN(projectID, []string{})
-	// for _, tokenID := range tokenIDs {
-	// 	if tokenID.TokenID == "" {
-	// 		spew.Dump(tokenID.TokenID)
-	// 	}
+	for _, tokenID := range tokenIDs {
+		if tokenID.TokenID == "" {
+			spew.Dump(tokenID.TokenID)
+		}
 		
-	// 	if helpers.SliceStringContains(inscriptionIDs, tokenID.TokenID) {
-	// 		inArrays = append(inArrays, tokenID.TokenID)
-	// 		continue
-	// 	}
-	// 	count  ++
-	// }
-	spew.Dump(len(tokenIDs), len(inscriptionIDs), len(inArrays) , count )
+		if helpers.SliceStringContains(inscriptionIDs, tokenID.TokenID) {
+			inArrays = append(inArrays, tokenID.TokenID)
+			continue
+		}else{
+			notInAddrays = append(notInAddrays, tokenID.TokenID)
+		}
+		
+
+		count  ++
+	}
+
+	detect := []string{}
+	for _, insc := range  inscriptionIDs {
+		if helpers.SliceStringContains(inArrays, insc) {
+			
+			continue
+		}
+
+		detect = append(detect, insc)
+	}
+	spew.Dump(len(tokenIDs), len(inscriptionIDs), len(inArrays) , count, detect )
 }
