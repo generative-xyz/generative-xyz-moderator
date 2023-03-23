@@ -831,10 +831,11 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		u.Logger.Info("mintData", mintData)
 		// execute mint:
-		resp, err := u.OrdService.Mint(mintData)
+		resp, respStr, err := u.OrdService.Mint(mintData)
 		if err != nil {
 			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, err.Error(), true)
+			messageError := respStr + "|" + err.Error()
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, messageError, true)
 			continue
 		}
 		u.Logger.Info("mint.resp", resp)
