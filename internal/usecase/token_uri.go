@@ -76,6 +76,17 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	defer cancel()
 
 	imageURL := token.AnimationURL
+	if len(imageURL) == 0 {
+		resp = &structure.TokenAnimationURI{
+			ParsedImage: *token.ParsedImage,
+			Thumbnail:   token.Thumbnail,
+			Traits:      token.ParsedAttributes,
+			TraitsStr:   token.ParsedAttributesStr,
+			CapturedAt:  token.ThumbnailCapturedAt,
+			IsUpdated:   false,
+		}
+		return resp, nil
+	}
 	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
 		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
 		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
