@@ -108,6 +108,7 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 				r.VolumeOneWeek = v.VolumeOneWeek
 				r.VolumeOneDay = v.VolumeOneDay
 				r.VolumeOneHour = v.VolumeOneHour
+				r.VolumeOneMonth = v.VolumeOneMonth
 				r.InscriptionId = v.InscriptionId
 				r.Image = v.Image
 			} else {
