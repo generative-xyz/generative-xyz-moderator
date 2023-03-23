@@ -322,9 +322,9 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 	}
 	u.Logger.LogAny(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
 
-	resp, err := u.OrdService.Mint(mintReq)
+	resp, respStr, err := u.OrdService.Mint(mintReq)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, resp), zap.Any("Error", err))
+		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, respStr), zap.Any("Error", err))
 		return nil, err
 	}
 	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
@@ -672,7 +672,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 			}	
 		}
 		p.Thumbnail = *req.Thumbnail
-		
+
 	}
 	needSetExpireAvailableDaoProject := false
 	if req.IsHidden != nil && *req.IsHidden != p.IsHidden {

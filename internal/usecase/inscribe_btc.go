@@ -702,7 +702,6 @@ func (u Usecase) JobInscribeMintNft() error {
 			zap.String("id", item.ID.Hex()),
 			zap.String("file_name", item.FileName),
 		}
-
 		logger.AtLog.Logger.With(fields...).Info("Mint nft now...")
 
 		// - Upload the Animation URL to GCS
@@ -766,11 +765,11 @@ func (u Usecase) JobInscribeMintNft() error {
 			// new key for ord v5.1, support mint + send in 1 tx:
 			DestinationAddress: item.OriginUserAddress, // the address mint to.
 		}
-		resp, err := u.OrdService.Mint(mintData)
+		resp, respStr, err := u.OrdService.Mint(mintData)
 
 		if err != nil {
 			u.Logger.Error("OrdService.Mint", err.Error(), err)
-			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, mintData, err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, mintData, respStr)
 			continue
 		}
 		// if not err => update status ok now:
