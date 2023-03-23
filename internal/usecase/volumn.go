@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -131,6 +132,7 @@ func (u Usecase) JobAggregateVolumns() {
 
 func (u Usecase) JobAggregateReferral() {
 	logger.AtLog.Logger.Info("JobAggregateReferral")
+	//ref := "63ed059beb293700db300282"
 	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
 	if err != nil {
 		u.Logger.ErrorAny("JobAggregateReferral", zap.Any("err", err))
@@ -201,10 +203,10 @@ func (u Usecase) JobAggregateReferral() {
 	bytes, err := json.Marshal(referrals)
 	if err == nil {
 		base64String := helpers.Base64Encode(bytes)
-		_, err := u.GCS.UploadBaseToBucket(base64String, fileName)
+		uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
 		if err == nil {
 			//spew.Dump(uploaded)
-			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Volumns have been created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+			u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Referral is created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
 	}
 }
