@@ -55,8 +55,9 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 
 	//SLACK_ALLOW_LIST_CHANNEL
 	go func(u Usecase, user entity.Users, p entity.Projects, allowBy entity.AllowedByType) {
-		count, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
-		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"), fmt.Sprintf("[Allowlist][User %s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName)), user.WalletAddressBTCTaproot, fmt.Sprintf("%s registered to  %s's allowlist allowBy: %s TOTAL: %d", helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), helpers.CreateProjectLink(p.TokenID, p.Name), allowedBy, count))
+		totalCount, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
+		publicCount, _ := u.Repo.GetProjectAllowListTotalByTyppe(p.TokenID, "public")
+		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"), fmt.Sprintf("[Allowlist][User %s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName)), user.WalletAddressBTCTaproot, fmt.Sprintf("%s registered to  %s's allowlist allowBy: %s PUBLIC: %d AL: %d", helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), helpers.CreateProjectLink(p.TokenID, p.Name), allowedBy, publicCount, totalCount-publicCount))
 	}(u, *user, *p, allowedBy)
 	return pe, nil
 }
