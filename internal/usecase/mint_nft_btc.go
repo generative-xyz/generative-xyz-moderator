@@ -895,7 +895,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		fmt.Println("update project, token info when minting ...")
 
 		// create entity.TokenURI
-		_, err = u.CreateBTCTokenURI(item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
+		_, err = u.CreateBTCTokenURI(item.OriginUserAddress, item.ProjectID, item.InscriptionID, item.FileURI, entity.TokenPaidType(item.PayType))
 		if err != nil {
 			fmt.Printf("Could CreateBTCTokenURI - with err: %v", err)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "u.CreateBTCTokenURI()", err.Error(), true)
@@ -907,7 +907,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
 		}
 
-		go u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", item.PayType, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
+		go u.NotifyWithChannel(os.Getenv("SLACK_MINT_CREATED_NFT_CHANNEL_ID"), fmt.Sprintf("[MintWith][%s][uuid: %s][projectID %s]", item.PayType, item.UUID, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
 
 		// try to update inscription_index
 		// go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
