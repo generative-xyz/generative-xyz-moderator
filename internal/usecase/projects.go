@@ -664,12 +664,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		err = json.Unmarshal(bytes, &nftTokenURI)
 		if err == nil {
 			nftTokenURI["image"] = *req.Thumbnail
-			bytes, err := json.Marshal(nftTokenURI) 
+			bytes, err := json.Marshal(nftTokenURI)
 			if err == nil {
 				nftToken := helpers.Base64Encode(bytes)
 				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
 				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
-			}	
+			}
 		}
 		p.Thumbnail = *req.Thumbnail
 
@@ -2102,13 +2102,38 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	// totalImages := len(p.Images)
-	// totalProcessingImages := len(p.ProcessingImages)
-	// if totalImages == 0 && totalProcessingImages == 0 {
-	// 	err = errors.New("Project doesn's have any files")
-	// 	logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
-	// 	return nil, err
-	// }
+	/*totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+	if totalImages == 0 && totalProcessingImages == 0 {
+		err = errors.New("Project doesn's have any files")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
+	}*/
+	isGenerative := true
+	if p.Source == "" {
+		if len(p.Images)+len(p.ProcessingImages) > 0 {
+			// -> from generative.xyz
+			if len(p.Images) > 0 {
+				if !strings.HasSuffix(p.Images[0], ".html") {
+					isGenerative = false
+				}
+			}
+
+			if isGenerative && len(p.ProcessingImages) > 0 {
+				if !strings.HasSuffix(p.ProcessingImages[0], ".html") {
+					isGenerative = false
+				}
+			}
+		}
+	} else {
+		// crawler
+		isGenerative = false
+	}
+	if isGenerative {
+		err = errors.New("Project is generative")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
+	}
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {

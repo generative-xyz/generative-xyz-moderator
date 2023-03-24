@@ -619,10 +619,14 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 		// -> from generative.xyz
 		if resp.TotalImages != 0 {
 			if len(input.Images) > 0 {
-				resp.IsGenerative = strings.HasSuffix(input.Images[0], ".html")
+				if !strings.HasSuffix(input.Images[0], ".html") {
+					resp.IsGenerative = false
+				}
 			}
-			if len(input.ProcessingImages) > 0 {
-				resp.IsGenerative = strings.HasSuffix(input.ProcessingImages[0], ".html")
+			if resp.IsGenerative && len(input.ProcessingImages) > 0 {
+				if !strings.HasSuffix(input.ProcessingImages[0], ".html") {
+					resp.IsGenerative = false
+				}
 			}
 		}
 	} else {
