@@ -112,7 +112,8 @@ type MintNftBtc struct {
 	OutputMintNFT interface{} `bson:"output_mint_nft"` // output from mint nft execute
 	OutputSendNFT interface{} `bson:"output_send_nft"` // output from send nft execute
 
-	ReasonRefund string `bson:"reason_refund"` // the rason of refund
+	ReasonRefund string `bson:"reason_refund"` // the reason of refund
+	MintMessage  string `bson:"mint_message"`  // the mint message delay
 
 	AmountSentMaster string `bson:"amount_sent_master"` // amount withdrawn to the master wallet
 	AmountRefundUser string `bson:"amount_refund_user"` // amount refund eth/btc user
@@ -144,6 +145,10 @@ type MintNftBtc struct {
 	BatchParentId string `bson:"patch_parent_id"`
 
 	IsDiscount bool `bson:"isDiscount"`
+
+	// for tracking:
+	IsCustomFeeRate  bool        `bson:"isCustomFeeRate"`
+	EstMintFeeInfoFe interface{} `bson:"estMintFeeInfoFe"`
 }
 
 func (u MintNftBtc) TableName() string {

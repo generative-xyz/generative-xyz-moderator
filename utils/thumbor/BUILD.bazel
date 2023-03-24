@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "thumbor",
+    srcs = [
+        "config.go",
+        "thumbor.go",
+        "wire.go",
+    ],
+    importpath = "go.generative.xyz/lib/thumbor",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_google_wire//:wire"],
+)
+
+go_test(
+    name = "thumbor_test",
+    srcs = ["thumbor_test.go"],
+    embed = [":thumbor"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

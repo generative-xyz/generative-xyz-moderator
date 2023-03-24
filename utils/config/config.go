@@ -73,6 +73,8 @@ type Config struct {
 	DexBTCWalletAddress    string
 	DexBTCBuyService       string
 	DexBTCMasterETHAddress string
+	DEXBTCBlockcypherToken string
+	THUMBOR_SECRET_KEY     string
 }
 
 type Ordinals struct {
@@ -395,6 +397,9 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		DexBTCWalletAddress:    os.Getenv("DEX_BTC_WALLET_ADDRESS"),
 		DexBTCBuyService:       os.Getenv("DEX_BTC_BUY_SERVICE"),
 		DexBTCMasterETHAddress: os.Getenv("DEX_BTC_MASTER_ETH_ADDRESS"),
+		DEXBTCBlockcypherToken: os.Getenv("DEX_BTC_BLOCK_CYPHER_TOKEN"),
+
+		THUMBOR_SECRET_KEY: os.Getenv("THUMBOR_SECRET_KEY"),
 	}
 
 	return conf, nil

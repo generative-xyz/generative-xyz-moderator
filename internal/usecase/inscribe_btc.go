@@ -19,8 +19,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"rederinghub.io/external/nfts"
@@ -74,11 +72,14 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 	fileSize := len([]byte(fileDecode))
 
 	fmt.Println("fileSize===>", fileSize)
+	fmt.Println("input.FeeRate===>", input.FeeRate)
 
 	if fileSize < utils.MIN_FILE_SIZE {
 		fileSize = utils.MIN_FILE_SIZE
 	}
 	fmt.Println("new fileSize===>", fileSize)
+
+	fileSize += utils.MIN_FILE_SIZE // add 4kb
 
 	mintFee := int32(fileSize) / 4 * input.FeeRate
 
@@ -119,6 +120,12 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	// end remove
 
+	if input.FeeRate <= 3 {
+		err := errors.New("fee rate must be > 3")
+		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		return nil, err
+	}
+
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
@@ -143,11 +150,17 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	}
 
 	mfTotal = big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt).String()
+
+	fmt.Println("mfTotal eth 0==>", mfTotal)
+
 	mfMintFee = feeInfos[input.PayType].MintFee
 	mfSentTokenFee = feeInfos[input.PayType].SendNftFee
 
 	if input.PayType == utils.NETWORK_ETH {
-		mfTotal = big.NewInt(0).Add(big.NewInt(0).Add(feeInfos[input.PayType].MintFeeBigInt, feeInfos[input.PayType].SendNftFeeBigInt), feeInfos[input.PayType].SendFundFeeBigInt).String()
+
+		mfTotal = feeInfos[input.PayType].NetworkFee
+		fmt.Println("mfTotal eth 1===>", mfTotal)
+
 		mfMintFee = feeInfos[input.PayType].MintFee
 		mfSentTokenFee = big.NewInt(0).Add(feeInfos[input.PayType].SendNftFeeBigInt, feeInfos[input.PayType].SendFundFeeBigInt).String()
 	}
@@ -275,32 +288,35 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	walletAddress.UserWalletAddress = input.UserWallerAddress
 	walletAddress.BTCRate = feeInfos[payType].BtcPrice
 	walletAddress.ETHRate = feeInfos[payType].EthPrice
+	walletAddress.EstFeeInfo = feeInfos
+
 	if input.NeedVerifyAuthentic() {
-		inscribeBtc := &entity.InscribeBTC{}
-		opt := &options.FindOneOptions{}
-		opt.SetSort(bson.M{"_id": -1})
-		err := u.Repo.FindOneBy(ctx,
-			inscribeBtc.TableName(),
-			bson.M{
-				"user_uuid":     input.UserUuid,
-				"token_address": input.TokenAddress,
-				"token_id":      input.TokenId,
-			},
-			inscribeBtc,
-			opt)
-		if err != nil {
-			if !errors.Is(err, mongo.ErrNoDocuments) {
-				return nil, err
-			}
-		} else {
-			if inscribeBtc.Status == entity.StatusInscribe_Pending {
-				if !inscribeBtc.Expired() {
-					return inscribeBtc, nil
-				}
-			} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
-				return inscribeBtc, nil
-			}
-		}
+		// inscribeBtc := &entity.InscribeBTC{}
+		// opt := &options.FindOneOptions{}
+		// opt.SetSort(bson.M{"_id": -1})
+		// err := u.Repo.FindOneBy(ctx,
+		// 	inscribeBtc.TableName(),
+		// 	bson.M{
+		// 		"user_uuid":     input.UserUuid,
+		// 		"token_address": input.TokenAddress,
+		// 		"token_id":      input.TokenId,
+		// 	},
+		// 	inscribeBtc,
+		// 	opt)
+		// if err != nil {
+		// 	if !errors.Is(err, mongo.ErrNoDocuments) {
+		// 		return nil, err
+		// 	}
+		// } else {
+		// 	if inscribeBtc.Status == entity.StatusInscribe_Pending {
+		// 		if !inscribeBtc.Expired() {
+
+		// 			return inscribeBtc, nil
+		// 		}
+		// 	} else if inscribeBtc.Status != entity.StatusInscribe_TxMintFailed {
+		// 		return inscribeBtc, nil
+		// 	}
+		// }
 		if nft, err := u.MoralisNft.GetNftByContractAndTokenID(input.TokenAddress, input.TokenId); err == nil {
 			logger.AtLog.Logger.Info("MoralisNft.GetNftByContractAndTokenID",
 				zap.Any("raw_data", nft))
@@ -310,6 +326,8 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 			walletAddress.OwnerOf = nft.Owner
 		}
 	}
+
+	fmt.Println("walletAddress.Amount===>", walletAddress.Amount)
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
@@ -360,10 +378,24 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 	}
 	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
 	if err != nil {
-		go u.trackMintNftBtcHistory("", "JobMint_CheckBalance", "", "", "Could not initialize Ether RPCClient - with err", err.Error(), true)
+		go u.trackInscribeHistory("", "JobInscribeWaitingBalance", "", "", "Could not initialize Ether RPCClient - with err", err.Error())
 		return err
 	}
 	ethClient := eth.NewClient(ethClientWrap)
+
+	// get list btc to check a Batch
+	var batchBTCBalance []string
+	for _, item := range listPending {
+		if item.PayType == utils.NETWORK_BTC {
+			batchBTCBalance = append(batchBTCBalance, item.SegwitAddress)
+		}
+	}
+
+	isRateLimitErr := false
+	balanceMaps, err := bs.BTCGetAddrInfoMulti(batchBTCBalance)
+	if err != nil && strings.Contains(err.Error(), "rate_limit") {
+		isRateLimitErr = true
+	}
 
 	for _, item := range listPending {
 
@@ -374,10 +406,46 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 		if item.PayType == utils.NETWORK_BTC {
 
 			// check balance:
-			balance, confirm, err = bs.GetBalance(item.SegwitAddress)
-			fmt.Println("GetBalance response: ", balance, confirm, err)
+			// balance, confirm, err = bs.GetBalance(item.SegwitAddress)
+			// fmt.Println("GetBalance response: ", balance, confirm, err)
+			if !isRateLimitErr {
+				balanceInfo, ok := balanceMaps[item.SegwitAddress]
+				// If the key exists
+				if ok {
+					balance = big.NewInt(0).SetUint64(balanceInfo.Balance)
+					if len(balanceInfo.TxRefs) > 0 {
+						confirm = balanceInfo.TxRefs[0].Confirmations
+					}
+				}
+			} else if isRateLimitErr {
+				// get balance from quicknode:
+				var balanceQuickNode *structure.BlockCypherWalletInfo
+				balanceQuickNode, err = btc.GetBalanceFromQuickNode(item.SegwitAddress, u.Config.QuicknodeAPI)
+				if err == nil {
+					if balanceQuickNode != nil {
+						balance = big.NewInt(int64(balanceQuickNode.Balance))
+						// check confirm:
+						if len(balanceQuickNode.Txrefs) > 0 {
+							var txInfo *btc.QuickNodeTx
+							txInfo, err = btc.CheckTxfromQuickNode(balanceQuickNode.Txrefs[0].TxHash, u.Config.QuicknodeAPI)
+							if err == nil {
+								if txInfo != nil {
+									confirm = txInfo.Result.Confirmations
+								}
+
+							} else {
+								go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error())
+							}
+						}
+					}
+
+				} else {
+					go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance from quicknode - with err", err.Error())
+				}
+			}
 
 		} else if item.PayType == utils.NETWORK_ETH {
+
 			// check eth balance:
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -391,17 +459,17 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 
 		if err != nil {
 			fmt.Printf("Could not GetBalance Bitcoin - with err: %v", err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance - with err", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance - with err", err.Error())
 			continue
 		}
 		if balance == nil {
 			err = errors.New("balance is nil")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", err.Error())
 			continue
 		}
 
 		if balance.Uint64() == 0 {
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", "0")
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "GetBalance", "0")
 			continue
 		}
 
@@ -409,22 +477,27 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 		amount, ok := big.NewInt(0).SetString(item.Amount, 10)
 		if !ok {
 			err := errors.New("cannot parse amount")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "SetString(amount) err", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "SetString(amount) err", err.Error())
 			continue
 		}
 
 		if amount.Uint64() == 0 {
 			err := errors.New("balance is zero")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "amount.Uint64() err", err.Error())
 			continue
 		}
 
 		if balance.Uint64() < amount.Uint64() {
 			err := fmt.Errorf("Not enough amount %d < %d ", balance.Uint64(), amount.Uint64())
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "compare balance err", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "compare balance err", err.Error())
 
 			item.Status = entity.StatusInscribe_NotEnoughBalance
 			u.Repo.UpdateBtcInscribe(&item)
+			continue
+		}
+
+		if confirm <= 0 {
+			go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusMint_WaitingForConfirms", confirm)
 			continue
 		}
 
@@ -443,7 +516,7 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 			continue
 		}
 
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
+		go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
 		u.Logger.Info(fmt.Sprintf("JobInscribeWaitingBalance.CheckReceiveBTC.%s", item.SegwitAddress), item)
 		u.Notify("JobInscribeWaitingBalance", item.SegwitAddress, fmt.Sprintf("%s received BTC %d from [InscriptionID] %s", item.SegwitAddress, item.Status, item.InscriptionID))
 
@@ -487,7 +560,7 @@ func (u Usecase) JobInscribeSendBTCToOrdWallet() error {
 				btc.PreferenceHigh,
 			)
 			if err != nil {
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
+				go u.trackInscribeHistory(item.UUID, "JobInscribeSendBTCToOrdWallet", item.TableName(), item.Status, "SendTransactionWithPreferenceFromSegwitAddress err", err.Error())
 				continue
 			}
 
@@ -554,7 +627,7 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 		txConfirmation := false
 		txResponse, err := btcClient.GetTransaction(txHash)
 		if err == nil {
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
+			go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.txResponse.Confirmations: "+txHashDb, txResponse.Confirmations)
 			if txResponse.Confirmations >= 1 {
 				txConfirmation = true
 				// send btc ok now:
@@ -566,21 +639,21 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 			}
 		} else {
 			logger.AtLog.Logger.With(fields...).Error("Could not GetTransaction Bitcoin RPCClient")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "btcClient.GetTransaction: "+txHashDb, err.Error())
 
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
+			go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, "Begin check tx via api.")
 
 			// check with api:
 			txInfo, err := bs.CheckTx(txHashDb)
 			if err != nil {
 				fields = append(fields, zap.Error(err))
 				logger.AtLog.Logger.With(fields...).Error("Could not CheckTx")
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
+				go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx: "+txHashDb, err.Error())
 			}
 
 			if txInfo.Confirmations >= 1 {
 				txConfirmation = true
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
+				go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "bs.CheckTx.txInfo.Confirmations: "+txHashDb, txInfo.Confirmations)
 				// send nft ok now:
 				item.Status = statusSuccess
 				item.IsSuccess = statusSuccess == entity.StatusInscribe_SentNFTToUser
@@ -606,7 +679,7 @@ func (u Usecase) JobInscribeCheckTxSend() error {
 		if ordinalsSrv != nil && txConfirmation && item.NeedAddContractToOrdinalsContract() {
 			err = u.AddContractToOrdinalsContract(context.Background(), ordinalsSrv, item)
 			if err != nil {
-				go u.trackInscribeHistory(item.ID.String(), "JobInscribeCheckTxSend", item.TableName(), item.Status, "JobInscribeCheckTxSend.AddContractToOrdinalsContract", err.Error())
+				go u.trackInscribeHistory(item.UUID, "JobInscribeCheckTxSend", item.TableName(), item.Status, "JobInscribeCheckTxSend.AddContractToOrdinalsContract", err.Error())
 				fields = append(fields, zap.Error(err))
 				logger.AtLog.Logger.With(fields...).Error("AddContractToOrdinalsContract failed")
 				continue
@@ -629,7 +702,6 @@ func (u Usecase) JobInscribeMintNft() error {
 			zap.String("id", item.ID.Hex()),
 			zap.String("file_name", item.FileName),
 		}
-
 		logger.AtLog.Logger.With(fields...).Info("Mint nft now...")
 
 		// - Upload the Animation URL to GCS
@@ -638,7 +710,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		if len(item.FileName) == 0 {
 			err := errors.New("File name invalid")
 			u.Logger.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
 
@@ -646,7 +718,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		if len(typeFiles) < 2 {
 			err := errors.New("File name invalid")
 			u.Logger.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
 
@@ -658,7 +730,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		_, base64Str, err := decodeFileBase64(item.FileURI)
 		if err != nil {
 			u.Logger.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.decodeFileBase64", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "helpers.decodeFileBase64", err.Error())
 			continue
 		}
 
@@ -666,7 +738,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.SegwitAddress, now, typeFile))
 		if err != nil {
 			u.Logger.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
 			continue
 		}
 		item.LocalLink = uploaded.FullPath
@@ -693,11 +765,11 @@ func (u Usecase) JobInscribeMintNft() error {
 			// new key for ord v5.1, support mint + send in 1 tx:
 			DestinationAddress: item.OriginUserAddress, // the address mint to.
 		}
-		resp, err := u.OrdService.Mint(mintData)
+		resp, respStr, err := u.OrdService.Mint(mintData)
 
 		if err != nil {
 			u.Logger.Error("OrdService.Mint", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, mintData, err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, mintData, respStr)
 			continue
 		}
 		// if not err => update status ok now:
@@ -711,7 +783,7 @@ func (u Usecase) JobInscribeMintNft() error {
 
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
 			continue
 		}
 
@@ -725,7 +797,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
 		if err != nil {
 			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
 			continue
 		}
 
@@ -735,7 +807,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		if err != nil {
 			fields = append(fields, zap.Error(err))
 			logger.AtLog.Logger.With(fields...).Error("Could not UpdateBtcInscribe")
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.UpdateBtcInscribe", err.Error())
 		}
 	}
 
@@ -767,11 +839,11 @@ func (u Usecase) JobInscribeSendNft() error {
 		// check nft in master wallet or not:
 		listNFTsRep, err := u.GetNftsOwnerOf(item.UserAddress)
 		if err != nil {
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Error", err.Error())
 			continue
 		}
 
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
+		go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.listNFTsRep", listNFTsRep)
 
 		// parse nft data:
 		var resp []struct {
@@ -782,7 +854,7 @@ func (u Usecase) JobInscribeSendNft() error {
 
 		err = json.Unmarshal([]byte(listNFTsRep.Stdout), &resp)
 		if err != nil {
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.Unmarshal(listNFTsRep)", err.Error())
 			continue
 		}
 		owner := false
@@ -793,7 +865,7 @@ func (u Usecase) JobInscribeSendNft() error {
 			}
 
 		}
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner)
+		go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "GetNftsOwnerOf.CheckNFTOwner", owner)
 		if !owner {
 			continue
 		}
@@ -801,11 +873,11 @@ func (u Usecase) JobInscribeSendNft() error {
 		// transfer now:
 		sentTokenResp, err := u.SendTokenByWallet(item.OriginUserAddress, item.InscriptionID, item.UserAddress, int(item.FeeRate))
 
-		go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.sentTokenResp", sentTokenResp)
+		go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.sentTokenResp", sentTokenResp)
 
 		if err != nil {
 			u.Logger.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
-			go u.trackInscribeHistory(item.ID.String(), "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error())
+			go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error())
 			continue
 		}
 
@@ -821,7 +893,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err.Error())
 			u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
-			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
+			go u.trackInscribeHistory(item.UUID, "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
 			continue
 		}
 
@@ -836,7 +908,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
 			u.Logger.Error("UpdateBtcInscribe.UpdateBtcInscribe", errPack.Error(), errPack)
-			go u.trackInscribeHistory(item.ID.String(), "UpdateBtcInscribe", item.TableName(), item.Status, "u.UpdateBtcInscribe.UpdateBTCNFTBuyOrder", err.Error())
+			go u.trackInscribeHistory(item.UUID, "UpdateBtcInscribe", item.TableName(), item.Status, "u.UpdateBtcInscribe.UpdateBTCNFTBuyOrder", err.Error())
 		}
 		// save log:
 		u.Logger.Info(fmt.Sprintf("UpdateBtcInscribe.execResp.%s", item.OrdAddress), sentTokenResp)
@@ -1062,6 +1134,107 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 	return resp, nil
 }
 
+func (u Usecase) CompressNftImageFromMoralis(ctx context.Context, urlStr string, compressPercents []int) (interface{}, error) {
+
+	type CompressInfo struct {
+		ImageUrl        string `json:"imageUrl"`
+		CompressPercent int    `json:"compressPercent"`
+		FileSize        int    `json:"fileSize"`
+	}
+
+	var compressInfoArray []*CompressInfo
+
+	if strings.HasPrefix(urlStr, "http") {
+
+		compressAndUploadImage := func(urlStr string, quality int) (*CompressInfo, error) {
+			client := http.Client{}
+			r, err := client.Get(urlStr)
+			if err != nil {
+				return nil, err
+			}
+			if r.StatusCode > http.StatusNoContent {
+				return nil, err
+			}
+			defer r.Body.Close()
+			imgByte, err := io.ReadAll(r.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			byteSize := len(imgByte)
+			// if byteSize > fileutil.MaxImageByteSize || quality != -1 {
+			if quality != -1 {
+
+				// ext, err := utils.GetFileExtensionFromUrl(urlStr)
+				// if err != nil {
+				// 	contentType := r.Header.Get("content-type")
+				// 	arr := strings.Split(contentType, "/")
+				// 	if len(arr) <= 1 {
+				// 		return "", err
+				// 	}
+				// 	ext = arr[1]
+				// }
+
+				// newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
+				// if err == nil {
+				// 	imgByte = newImgByte
+				// }
+				linkImage, err := fileutil.ImageCompress(urlStr, quality, u.Config.THUMBOR_SECRET_KEY)
+				if err != nil {
+					return nil, err
+				}
+
+				rsp, err := client.Get(linkImage)
+				if err != nil {
+					return nil, err
+				}
+				if rsp.StatusCode > http.StatusNoContent {
+					return nil, err
+				}
+				defer rsp.Body.Close()
+				imgNewByte, err := io.ReadAll(rsp.Body)
+				if err != nil {
+					return nil, err
+				}
+
+				byteSizeNew := len(imgNewByte)
+
+				return &CompressInfo{
+					ImageUrl:        linkImage,
+					CompressPercent: quality,
+					FileSize:        byteSizeNew,
+				}, nil
+
+				// name := fmt.Sprintf("authentic/%v.%s", uuid.New().String(), ext)
+				// _, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(newImgByte), name)
+				// if err != nil {
+				// 	return "", err
+				// }
+
+				// return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name), nil
+			}
+			return &CompressInfo{
+				ImageUrl:        urlStr,
+				CompressPercent: quality,
+				FileSize:        byteSize,
+			}, nil
+		}
+		for _, compressPercent := range compressPercents {
+
+			compressInfo, err := compressAndUploadImage(urlStr, compressPercent)
+			if err != nil {
+				return nil, err
+			}
+			compressInfoArray = append(compressInfoArray, compressInfo)
+
+		}
+
+	} else {
+		return nil, errors.New("url invalid")
+	}
+	return compressInfoArray, nil
+}
+
 func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId string) (*nfts.MoralisToken, error) {
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(tokenAddress, tokenId)
 	if err != nil {
@@ -1102,18 +1275,21 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 				}
 				ext = arr[1]
 			}
-			newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
-			if err == nil {
-				imgByte = newImgByte
-			}
+			// maybe use for thumb?
+			// newImgByte, err := fileutil.ResizeImage(imgByte, ext, fileutil.MaxImageByteSize)
+			// if err == nil {
+			// 	imgByte = newImgByte
+			// }
 			name := fmt.Sprintf("authentic/%v.%s", uuid.New().String(), ext)
 			_, err = u.GCS.UploadBaseToBucket(helpers.Base64Encode(imgByte), name)
 			if err != nil {
 				return urlStr
 			}
+
 			return fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
 		nft.Metadata.Image = resizeAndUploadImage(urlStr)
+
 	} else if strings.HasPrefix(urlStr, ";base64,") {
 		resizeImage := func(imageStr string) string {
 			coI := strings.Index(imageStr, ",")
@@ -1125,10 +1301,7 @@ func (u Usecase) NftFromMoralis(ctx context.Context, tokenAddress, tokenId strin
 			if len(exts) < 2 {
 				return imageStr
 			}
-			imgByte, err := fileutil.ResizeImage(dec, exts[1], fileutil.MaxImageByteSize)
-			if err != nil {
-				return imageStr
-			}
+			imgByte := dec
 			return imageStr[:coI+1] + base64.StdEncoding.EncodeToString(imgByte)
 		}
 		nft.Metadata.Image = resizeImage(urlStr)

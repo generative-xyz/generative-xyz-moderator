@@ -165,8 +165,8 @@ func (s *Usecase) GetDAOProject(ctx context.Context, id, userWallet string) (*re
 func (s *Usecase) GetLastDAOProjectByProjectId(ctx context.Context, projectId primitive.ObjectID) (*entity.DaoProject, error) {
 	daoProject := &entity.DaoProject{}
 	opts := &options.FindOneOptions{}
-	opts.SetSort(bson.M{"created_at": -1})
-	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, &options.FindOneOptions{}, opts); err != nil {
+	opts = opts.SetSort(bson.M{"created_at": -1})
+	if err := s.Repo.FindOneBy(ctx, daoProject.TableName(), bson.M{"project_id": projectId}, daoProject, opts); err != nil {
 		return nil, err
 	}
 	return daoProject, nil
@@ -204,6 +204,27 @@ func (s *Usecase) IsProjectReviewing(ctx context.Context, projectId string) bool
 
 func (s *Usecase) CheckDAOProjectAvailableByUser(ctx context.Context, walletAddress string, projectId primitive.ObjectID) (*entity.DaoProject, bool) {
 	return s.Repo.CheckDAOProjectAvailableByUser(ctx, walletAddress, projectId)
+}
+
+func (s *Usecase) SetExpireAvailableDAOProject(ctx context.Context, projectId primitive.ObjectID) error {
+	_, err := s.Repo.UpdateMany(ctx, entity.DaoProject{}.TableName(),
+		bson.M{
+			"project_id": projectId,
+			"$and": bson.A{
+				bson.M{"expired_at": bson.M{"$gt": time.Now()}},
+				bson.M{"status": dao_project.Voting},
+			},
+		},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "expired_at", Value: time.Now()},
+				{Key: "updated_at", Value: time.Now()},
+			}},
+		})
+
+	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
+
+	return err
 }
 
 func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req *request.VoteDaoProjectRequest) error {
@@ -324,6 +345,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 	}
 	filters["creatorAddress"] = userWallet
 	filters["isHidden"] = true
+	filters["isSynced"] = true
 	if req.Cursor != "" {
 		if id, err := primitive.ObjectIDFromHex(req.Cursor); err == nil {
 			filters["_id"] = bson.M{"$lt": id}
@@ -335,7 +357,7 @@ func (s *Usecase) ListYourProjectsIsHidden(ctx context.Context, userWallet strin
 				"$filter": bson.M{
 					"input": "$dao_project",
 					"cond": bson.M{
-						"$gt": []interface{}{"$$this.expire_at", time.Now()},
+						"$gt": []interface{}{"$$this.expired_at", time.Now()},
 					},
 				},
 			},

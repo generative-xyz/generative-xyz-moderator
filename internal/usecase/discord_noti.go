@@ -276,7 +276,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
 
-	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
+	ownerName := u.resolveShortName(project.CreatorProfile.DisplayName, project.CreatorProfile.WalletAddress)
 	collectionName := project.Name
 	mintedCount := tokenUri.OrderInscriptionIndex
 
@@ -400,8 +400,21 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 			Inline: inline,
 		})
 	}
+
+	mintNftBtc, err := u.Repo.FindMintNftBtcByInscriptionID(inscriptionID)
+	if err != nil {
+		u.Logger.ErrorAny("NotifyNFTMinted.FindMintNftBtcByInscriptionID failed", zap.Any("err", err))
+		return
+	}
+
+	if v, ok := mintNftBtc.EstFeeInfo["btc"]; ok {
+		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(v.MintPrice), true)
+	} else {
+		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+	}
+
 	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
-	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
 		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
@@ -489,7 +502,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 			Inline: inline,
 		})
 	}
-	fields = addFields(fields, "", project.Description, false)
+	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
 	fields = addFields(fields, "Max Supply", fmt.Sprintf("%d", project.MaxSupply), true)
 

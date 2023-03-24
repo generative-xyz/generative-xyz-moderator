@@ -253,6 +253,10 @@ func (bs *BlockcypherService) BTCGetAddrInfo(address string) (*AddrInfo, error) 
 	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
 
 	if res.StatusCode != http.StatusOK {
+
+		if res.StatusCode == 429 {
+			return result, errors.New("rate_limit")
+		}
 		return result, errors.New("GetUTXO Response status != 200")
 	}
 
@@ -366,6 +370,118 @@ func (bs *BlockcypherService) CheckTx(tx string) (gobcy.TX, error) {
 	return bs.chain.GetTX(tx, nil)
 }
 
+type GoBCYMultiTx struct {
+	gobcy.TX
+	Error string `json:"error"`
+}
+
+func batchStrings(values <-chan string, maxItems int) chan []string {
+	batches := make(chan []string)
+
+	go func() {
+		defer close(batches)
+
+		for keepGoing := true; keepGoing; {
+			var batch []string
+			for {
+				select {
+				case value, ok := <-values:
+					if !ok {
+						keepGoing = false
+						goto done
+					}
+
+					batch = append(batch, value)
+					if len(batch) == maxItems {
+						goto done
+					}
+				}
+			}
+
+		done:
+			if len(batch) > 0 {
+				batches <- batch
+			}
+		}
+	}()
+
+	return batches
+}
+
+func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMultiTx, []string, error) {
+	result := make(map[string]*GoBCYMultiTx)
+	var checkFailedTxs []string
+	checkFailedTxsMap := make(map[string]struct{})
+	var respond []GoBCYMultiTx
+
+	var lock sync.Mutex
+	txChan := make(chan string)
+	go func() {
+		for _, tx := range txs {
+			txChan <- tx
+		}
+		close(txChan)
+	}()
+
+	txsBatch := batchStrings(txChan, 100)
+	txsBatchIdx := 0
+	for txList := range txsBatch {
+		txsBatchIdx++
+		query := strings.Join(txList, ";")
+		url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+
+		req, _ := http.NewRequest("GET", url, nil)
+
+		res, _ := http.DefaultClient.Do(req)
+
+		defer func(r *http.Response) {
+			err := r.Body.Close()
+			if err != nil {
+				fmt.Println("Close body failed", err.Error())
+			}
+		}(res)
+
+		if res.StatusCode != http.StatusOK {
+
+			if res.StatusCode == 429 {
+				return nil, nil, errors.New("rate_limit") // do not remove/update
+			}
+			return nil, nil, errors.Errorf("CheckTxMultiBlockcypher Response status %d", res.StatusCode)
+		}
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = json.Unmarshal(body, &respond)
+		if err != nil {
+			err = fmt.Errorf("Unmarshal response error: %v", err)
+			return nil, nil, err
+		}
+		lock.Lock()
+		for _, txdetail := range respond {
+			if txdetail.Hash != "" {
+				result[txdetail.Hash] = &txdetail
+			}
+		}
+		lock.Unlock()
+		time.Sleep(1 * time.Second)
+	}
+
+	for _, tx := range txs {
+		if _, exist := result[tx]; !exist {
+			checkFailedTxsMap[tx] = struct{}{}
+		}
+	}
+
+	for tx, _ := range checkFailedTxsMap {
+		checkFailedTxs = append(checkFailedTxs, tx)
+	}
+
+	return result, checkFailedTxs, nil
+}
+
 func ValidateAddress(crypto, address string) (bool, error) {
 	crypto = strings.ToLower(crypto)
 
@@ -399,36 +515,36 @@ func ValidateAddress(crypto, address string) (bool, error) {
 
 func GetBTCTxStatusExtensive(txhash string, bs *BlockcypherService, qn string) (string, error) {
 	var status string
-	txStatus, err := bs.CheckTx(txhash)
+	// txStatus, err := bs.CheckTx(txhash)
+	// if err != nil {
+	// 	txInfo, err := CheckTxFromBTC(txhash)
+	// 	if err != nil {
+	// fmt.Printf("checkTxFromBTC err: %v", err)
+	txInfo2, err := CheckTxfromQuickNode(txhash, qn)
 	if err != nil {
-		txInfo, err := CheckTxFromBTC(txhash)
-		if err != nil {
-			// fmt.Printf("checkTxFromBTC err: %v", err)
-			txInfo2, err := CheckTxfromQuickNode(txhash, qn)
-			if err != nil {
-				// fmt.Printf("checkTxFromBTC err: %v", err)
-				status = "Failed"
-			} else {
-				if txInfo2.Result.Confirmations > 0 {
-					status = "Success"
-				} else {
-					status = "Pending"
-				}
-			}
-		} else {
-			if txInfo.Data.Confirmations > 0 {
-				status = "Success"
-			} else {
-				status = "Pending"
-			}
-		}
+		// fmt.Printf("checkTxFromBTC err: %v", err)
+		status = "Failed"
 	} else {
-		if txStatus.Confirmations > 0 {
+		if txInfo2.Result.Confirmations > 0 {
 			status = "Success"
 		} else {
 			status = "Pending"
 		}
 	}
+	// 	} else {
+	// 		if txInfo.Data.Confirmations > 0 {
+	// 			status = "Success"
+	// 		} else {
+	// 			status = "Pending"
+	// 		}
+	// 	}
+	// } else {
+	// 	if txStatus.Confirmations > 0 {
+	// 		status = "Success"
+	// 	} else {
+	// 		status = "Pending"
+	// 	}
+	// }
 	return status, nil
 }
 
@@ -601,4 +717,86 @@ func ConvertToUTXOType(utxos []structure.TxRef) ([]UTXOType, error) {
 		result = append(result, newUTXO)
 	}
 	return result, nil
+}
+
+func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[string]*AddrInfo, error) {
+
+	balanceMap := make(map[string]*AddrInfo)
+
+	if len(addresses) == 0 {
+		return balanceMap, nil
+	}
+
+	addressChan := make(chan string)
+	go func() {
+		for _, address := range addresses {
+			addressChan <- address
+		}
+		close(addressChan)
+	}()
+
+	addressBatch := batchStrings(addressChan, 100)
+
+	for addressList := range addressBatch {
+
+		addressesStr := strings.Join(addressList[:], ";")
+
+		fmt.Println("get address: ", addressesStr)
+
+		url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, addressesStr, bs.bcyToken)
+		fmt.Println("url BTCGetAddrInfoMulti", url)
+
+		req, err := http.NewRequest("GET", url, nil)
+		var (
+			result []*AddrInfo
+		)
+
+		if err != nil {
+			fmt.Println("BTC get UTXO failed", addressesStr, err.Error())
+			return balanceMap, err
+		}
+
+		client := &http.Client{}
+		res, err := client.Do(req)
+
+		if err != nil {
+			fmt.Println("Call BTC get UTXO failed", err.Error())
+			return balanceMap, err
+		}
+
+		defer func(r *http.Response) {
+			err := r.Body.Close()
+			if err != nil {
+				fmt.Println("Close body failed", err.Error())
+			}
+		}(res)
+
+		fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+
+		if res.StatusCode != http.StatusOK {
+
+			if res.StatusCode == 429 {
+				return balanceMap, errors.New("rate_limit")
+			}
+			return balanceMap, errors.New("GetUTXO Response status != 200")
+		}
+
+		body, err := ioutil.ReadAll(res.Body)
+
+		json.Unmarshal(body, &result)
+		if err != nil {
+			fmt.Println("Read body failed", err.Error())
+			return balanceMap, errors.New("Read body failed")
+		}
+
+		// convert to map:
+		for _, v := range result {
+			if len(v.Address) > 0 {
+				balanceMap[v.Address] = v
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return balanceMap, nil
 }

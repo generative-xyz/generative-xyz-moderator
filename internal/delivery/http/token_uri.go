@@ -186,7 +186,16 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
 		} else {
 			if listingInfo.CancelTx == "" {
+				buyEth, _ := h.Usecase.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listingInfo.InscriptionID)
 				resp.Buyable = true
+				if buyEth != nil {
+					resp.Buyable = false
+				} else {
+					relatedPendingTxs, _ := h.Usecase.Repo.GetPendingBTCSubmitTxByInscriptionID(listingInfo.InscriptionID)
+					if len(relatedPendingTxs) > 0 {
+						resp.Buyable = false
+					}
+				}
 				resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
 				resp.OrderID = listingInfo.UUID
 				resp.SellVerified = listingInfo.Verified
@@ -195,18 +204,8 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 					if err != nil {
 						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 					}
-					// outLen := 0
-					// psbt, err := btc.ParsePSBTFromBase64(listingInfo.RawPSBT)
-					// if err != nil {
-					// 	h.Logger.Error("GenBuyETHOrder ParsePSBTFromBase64", listingInfo.ID, err)
-					// } else {
-					// 	outLen = len(psbt.UnsignedTx.TxOut)
-					// }
-					// amountBTCFee := btc.EstimateTxFee(uint(len(listingInfo.Inputs)+3), uint(outLen+2), uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
 					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
-					// amountBTCRequired += amountBTCFee
-
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
 						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
@@ -432,7 +431,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		f.IsHidden = &hidden
 	}
 
-	uProjects, err := h.Usecase.GetProjects(f)
+	uProjects, err := h.Usecase.GetAllProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -607,7 +606,6 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 
 		amountBTCRequired := uint64(item.Price) + 1000
 		amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
-		// amountBTCRequired += btc.EstimateTxFee(4, 3, uint(15)) + btc.EstimateTxFee(1, 2, uint(15))
 
 		amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 		if err != nil {
@@ -650,86 +648,6 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 		newList = append(newList, item)
 	}
 	pag.Result = newList
-
-	// respItems := []response.InternalTokenURIResp{}
-	// tokens := []entity.TokenUri{}
-	// iTokensData := pag.Result
-
-	// bytes, err := json.Marshal(iTokensData)
-	// if err != nil {
-	// 	err := errors.New("Cannot parse respItems")
-	// 	h.Logger.Error("respItems", err.Error(), err)
-	// 	return nil, err
-	// }
-
-	// err = json.Unmarshal(bytes, &tokens)
-	// if err != nil {
-	// 	err := errors.New("Cannot Unmarshal")
-	// 	h.Logger.Error("Unmarshal", err.Error(), err)
-	// 	return nil, err
-	// }
-
-	// get nft listing from marketplace to show button buy or not (ask Phuong if you need):
-	// nftListing, _ := h.Usecase.GetAllListListingWithRule()
-
-	// get btc, btc rate:
-	// btcPrice, err := helpers.GetExternalPrice("BTC")
-	// if err != nil {
-	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
-	// 	return nil, err
-	// }
-
-	// h.Logger.Info("btcPrice", btcPrice)
-	// ethPrice, err := helpers.GetExternalPrice("ETH")
-	// if err != nil {
-	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
-	// 	return nil, err
-	// }
-	// h.Logger.Info("btcPrice", btcPrice)
-
-	// for _, token := range tokens {
-	// 	resp, err := h.tokenToResp(&token)
-	// 	if err != nil {
-	// 		err := errors.New("Cannot parse products")
-	// 		h.Logger.Error("tokenToResp", err.Error(), err)
-	// 		return nil, err
-	// 	}
-
-	// listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
-	// if err != nil {
-	// 	h.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
-	// } else {
-	// 	if listingInfo.CancelTx == "" {
-	// 		resp.Buyable = true
-	// 		resp.PriceBTC = fmt.Sprintf("%v", listingInfo.Amount)
-	// 		resp.OrderID = listingInfo.UUID
-	// 	}
-	// }
-	// for _, v := range nftListing {
-	// 	if resp != nil {
-	// 		if strings.EqualFold(v.InscriptionID, resp.TokenID) {
-	// 			resp.Buyable = v.Buyable
-	// 			resp.PriceBTC = v.Price
-	// 			resp.OrderID = v.OrderID
-	// resp.IsCompleted = v.IsCompleted
-
-	// listPaymentInfo, err := h.Usecase.GetListingPaymentInfoWithEthBtcPrice(v.PayType, v.Price, btcPrice, ethPrice)
-
-	// if err != nil {
-	// 	continue
-	// }
-	// v.PaymentListingInfo = listPaymentInfo
-
-	// resp.ListingDetail = &v
-
-	// 			break
-	// 		}
-	// 	}
-	// }
-
-	// 	respItems = append(respItems, *resp)
-	// }
-
 	resp := h.PaginationResp(pag, pag.Result)
 	return &resp, nil
 }

@@ -85,7 +85,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				projectID = token.ProjectID
 			}
 
-			if listing.Verified && !listing.CreatedVerifiedActivity {
+			if listing.Verified && !listing.CreatedVerifiedActivity && !listing.FromOtherMkp {
 				activity := entity.TokenActivity{
 					Type: entity.TokenListing,
 					Title: "Listing",

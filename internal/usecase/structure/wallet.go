@@ -73,6 +73,7 @@ type WalletInscriptionInfo struct {
 	Offset        int64  `json:"offset"`
 	Number        int    `json:"number"`
 	TokenNumber   int    `json:"token_number"`
+	NftTokenID    string `json:"nft_token_id"`
 	ContentType   string `json:"content_type"`
 	ProjectID     string `json:"project_id"`
 	ProjectName   string `json:"project_name"`
@@ -80,12 +81,14 @@ type WalletInscriptionInfo struct {
 	ArtistID      string `json:"artist_id"`
 	Thumbnail     string `json:"thumbnail"`
 
-	SellVerified bool   `json:"sell_verified"`
-	Buyable      bool   `json:"buyable"`
-	PriceBTC     string `json:"price_btc"`
-	PriceETH     string `json:"price_eth"`
-	OrderID      string `json:"order_id"`
-	Cancelling   bool   `json:"cancelling"`
+	SellVerified     bool   `json:"sell_verified"`
+	Buyable          bool   `json:"buyable"`
+	CurrentBuyTx     string `json:"current_buy_tx"`
+	CurrentBuyTxTime int64  `json:"current_buy_tx_time"`
+	PriceBTC         string `json:"price_btc"`
+	PriceETH         string `json:"price_eth"`
+	OrderID          string `json:"order_id"`
+	Cancelling       bool   `json:"cancelling"`
 }
 
 type WalletInscriptionByOutput struct {
@@ -95,12 +98,14 @@ type WalletInscriptionByOutput struct {
 }
 
 type WalletTrackTx struct {
-	Txhash            string `json:"txhash"`
-	Type              string `json:"type"`
-	InscriptionID     string `json:"inscription_id"`
-	InscriptionNumber uint64 `json:"inscription_number"`
-	Amount            uint64 `json:"send_amount"`
-	Status            string `json:"status"`
-	Receiver          string `json:"receiver"`
-	CreatedAt         uint64 `json:"created_at"`
+	Txhash                string   `json:"txhash"`
+	Type                  string   `json:"type"`
+	InscriptionID         string   `json:"inscription_id"`
+	InscriptionNumber     uint64   `json:"inscription_number"`
+	InscriptionList       []string `json:"inscription_list"`
+	InscriptionNumberList []uint64 `json:"inscription_number_list"`
+	Amount                uint64   `json:"send_amount"`
+	Status                string   `json:"status"`
+	Receiver              string   `json:"receiver"`
+	CreatedAt             uint64   `json:"created_at"`
 }

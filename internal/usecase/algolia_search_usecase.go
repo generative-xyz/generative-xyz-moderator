@@ -59,6 +59,36 @@ func (uc *Usecase) AlgoliaSearchProject(filter *algolia.AlgoliaFilter) ([]entity
 	return eProjects, resp.NbHits, resp.NbPages, nil
 }
 
+func (uc *Usecase) AlgoliaSearchInscriptionFromTo(filter *algolia.AlgoliaFilter) ([]*response.SearhcInscription, error) {
+	if filter.FromNumber >= 0 && filter.ToNumber > 0 {
+		filter.FilterStr += fmt.Sprintf("number:%d TO %d AND sat > 0", filter.FromNumber, filter.ToNumber)
+	}
+
+	algoliaClient := algolia.NewAlgoliaClient(uc.Config.AlgoliaApplicationId, uc.Config.AlgoliaApiKey)
+	resp, err := algoliaClient.Search("inscriptions", filter)
+	if err != nil {
+		uc.Logger.Error(err)
+		return nil, err
+	}
+
+	inscriptions := []*response.SearhcInscription{}
+	for _, h := range resp.Hits {
+		i := &response.SearhcInscription{
+			ObjectId:      h["objectID"].(string),
+			InscriptionId: h["inscription_id"].(string),
+			Number:        int64(h["number"].(float64)),
+			Sat:           h["sat"].(float64),
+			Chain:         h["chain"].(string),
+			GenesisFee:    int64(h["genesis_fee"].(float64)),
+			GenesisHeight: int64(h["genesis_height"].(float64)),
+			Timestamp:     h["timestamp"].(string),
+			ContentType:   h["content_type"].(string),
+		}
+		inscriptions = append(inscriptions, i)
+	}
+	return inscriptions, nil
+}
+
 func (uc *Usecase) AlgoliaSearchInscription(filter *algolia.AlgoliaFilter) ([]*response.SearchResponse, int, int, error) {
 	if filter.ObjType != "" && filter.ObjType != "inscription" {
 		return nil, 0, 0, nil

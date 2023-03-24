@@ -140,3 +140,8 @@ type VolumnLogs struct {
 	GenEarnings      string `json:"genEarnings"`
 	MintPrice        int    `json:"mintPrice"`
 }
+
+type ProjectFloorPrice struct {
+	ID    string `bson:"_id" json:"id"`
+	Floor uint64 `bson:"floor" json:"floor"`
+}

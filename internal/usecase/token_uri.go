@@ -16,9 +16,11 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 
+	"rederinghub.io/external/generativeexplorer"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -45,7 +47,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 	resp := &structure.TokenAnimationURI{}
 	u.Logger.LogAny("RunAndCap", zap.Any("token", token))
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil {
+	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
 			Thumbnail:   token.Thumbnail,
@@ -74,6 +76,17 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	defer cancel()
 
 	imageURL := token.AnimationURL
+	if len(imageURL) == 0 {
+		resp = &structure.TokenAnimationURI{
+			ParsedImage: *token.ParsedImage,
+			Thumbnail:   token.Thumbnail,
+			Traits:      token.ParsedAttributes,
+			TraitsStr:   token.ParsedAttributesStr,
+			CapturedAt:  token.ThumbnailCapturedAt,
+			IsUpdated:   false,
+		}
+		return resp, nil
+	}
 	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
 		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
 		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
@@ -172,6 +185,15 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	}
 	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
 		tokenUri.Project.InscribedBy = tokenUri.InscribedBy
+	}
+	if tokenUri.NftTokenId != "" {
+		inscribeBtc := &entity.InscribeBTC{}
+		if err = u.Repo.FindOneBy(context.Background(), inscribeBtc.TableName(), bson.M{"inscriptionID": tokenUri.TokenID}, inscribeBtc); err == nil {
+			tokenUri.Project.OrdinalsTx = inscribeBtc.OrdinalsTx
+			tokenUri.Project.OwnerOf = inscribeBtc.OwnerOf
+			tokenUri.Project.TokenAddress = inscribeBtc.TokenAddress
+			tokenUri.Project.TokenId = inscribeBtc.TokenId
+		}
 	}
 	client := resty.New()
 	resp := &response.SearhcInscription{}
@@ -589,7 +611,6 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
-	
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
 	if filter.Rarity != nil && *filter.Rarity != "" {
@@ -604,23 +625,23 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		minInt, _ := strconv.Atoi(min)
 		maxInt, _ := strconv.Atoi(max)
 
-		groupTraits := make(map [string][]string)
+		groupTraits := make(map[string][]string)
 		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
 		if err == nil {
 			traits := p.TraitsStat
 			for _, trait := range traits {
 				values := trait.TraitValuesStat
-				
+
 				for _, value := range values {
-					if  value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
-						groupTraits[trait.TraitName] =   append(groupTraits[trait.TraitName], value.Value)
-						
+					if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+						groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
+
 					}
 				}
 			}
 		}
 
-		for key, groupTrait := range  groupTraits {
+		for key, groupTrait := range groupTraits {
 			r := structure.TokenUriAttrReq{}
 			r.TraitType = key
 			r.Values = groupTrait
@@ -630,17 +651,37 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 
 	err := copier.Copy(pe, filter)
 	if err != nil {
-		u.Logger.Error(err)
 		return nil, err
 	}
-	
+
 	tokens, err := u.Repo.FilterTokenUriNew(*pe)
 	if err != nil {
 		u.Logger.Error(err)
 		return nil, err
 	}
 
-	u.Logger.Info("tokens", tokens.Total)
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+
+	resp := []entity.TokenUriListingFilter{}
+	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
+		iResp, err := genService.Inscription(item.TokenID)
+		if err == nil && iResp != nil {
+			item.OwnerAddress = iResp.Address
+			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
+				item.Owner = entity.TokenURIListingOwner{
+					WalletAddressBTCTaproot: iResp.Address,
+					WalletAddress:           "",
+					DisplayName:             "",
+					Avatar:                  "",
+				}
+			}
+		}
+
+		//spew.Dump(iResp)
+		resp = append(resp, item)
+	}
+
+	tokens.Result = resp
 	return tokens, nil
 }
 
@@ -794,6 +835,26 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 		return nil, err
 	}
 	pTokenUri, err := u.Repo.FindTokenBy(tokenUri.ContractAddress, tokenUri.TokenID)
+	if err != nil {
+		return nil, err
+	}
+
+	//capture image
+	payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+		TokenID:         pTokenUri.TokenID,
+		ContractAddress: pTokenUri.ContractAddress,
+	}}
+
+	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+	if err != nil {
+		u.Logger.Error(err)
+	}
+
+	return pTokenUri, nil
+}
+
+func (u Usecase) TriggerPubsubTokenThumbnail(tokenId string) (*entity.TokenUri, error) {
+	pTokenUri, err := u.Repo.FindTokenByTokenID(tokenId)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,6 +1086,8 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	go u.TriggerPubsubTokenThumbnail(pTokenUri.TokenID)
 
 	return pTokenUri, nil
 }

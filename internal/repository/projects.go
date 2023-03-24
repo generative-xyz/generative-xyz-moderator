@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 
@@ -663,6 +664,39 @@ func (r Repository) ProjectGetCurrentListingNumber(projectID string) (uint64, er
 			},
 		},
 		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "dex_btc_buy_eth"},
+					{"localField", "token_id"},
+					{"foreignField", "inscription_id"},
+					{"let", bson.D{{"status", "$status"}}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"status",
+											bson.D{
+												{"$in",
+													bson.A{
+														1,
+														2,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "listing_eth"},
+				},
+			},
+		},
+		bson.D{{"$project", bson.D{{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}}}}},
+		bson.D{{"$match", bson.D{{"listing_eth_size", bson.D{{"$eq", 0}}}}}},
+		bson.D{
 			{"$facet",
 				bson.D{
 					{"totalCount",
@@ -875,13 +909,13 @@ func (r Repository) ProjectGetCEXVolume(projectID string) (uint64, error) {
 
 func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply int64, index int64) error {
 	f := bson.D{
-		{Key: "project_id", Value: projectID},
+		{Key: "tokenid", Value: projectID},
 	}
 
 	update := bson.M{
 		"$set": bson.M{
 			"maxSupply": maxSupply,
-			"index": index,
+			"index":     index,
 		},
 	}
 
@@ -891,4 +925,101 @@ func (r Repository) UpdateProjectIndexAndMaxSupply(projectID string, maxSupply i
 	}
 
 	return err
+}
+
+func (r Repository) GetProjectTrendingScore(projectID string) (int64, error) {
+	var trendingScore int64
+	resp := &entity.Projects{}
+	opts := options.FindOne().SetProjection(bson.D{
+		{Key: "stats.trending_score", Value: 1},
+	})
+	project, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{Key: "tokenid", Value: projectID}}, opts)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+
+	err = helpers.Transform(project, resp)
+	if err != nil {
+		return trendingScore, errors.WithStack(err)
+	}
+	trendingScore = resp.Stats.TrendingScore
+	return trendingScore, nil
+}
+
+func (r Repository) AggregateProjectsFloorPrice(projectIDs []string) ([]structure.ProjectFloorPrice, error) {
+
+	result := []structure.ProjectFloorPrice{}
+
+	projectsBsonA := bson.A{}
+	for _, v := range projectIDs {
+		projectsBsonA = append(projectsBsonA, v)
+	}
+
+	pipeLine := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"matched", false},
+					{"cancelled", false},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"let", bson.D{}},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"$expr",
+											bson.D{
+												{"$in",
+													bson.A{
+														"$project_id",
+														projectsBsonA,
+													}},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"as", "collection_id"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$collection_id"},
+					{"preserveNullAndEmptyArrays", false},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", "$collection_id.project_id"},
+					{"floor", bson.D{{"$min", "$amount"}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).Aggregate(context.TODO(), pipeLine, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

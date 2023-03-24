@@ -176,7 +176,6 @@ func startServer() {
 	}
 
 	servers := make(map[string]delivery.AddedServer)
-
 	// api fixed run:
 	h, _ := httpHandler.NewHandler(&g, *uc)
 	servers["http"] = delivery.AddedServer{

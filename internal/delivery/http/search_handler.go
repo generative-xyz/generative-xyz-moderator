@@ -30,12 +30,14 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 	toNumberStr := r.URL.Query().Get("toNumber")
 	fromNumber := 0
 	toNumber := 0
+
 	if len(fromNumberStr) > 0 {
 		fromNumber, _ = strconv.Atoi(fromNumberStr)
 	}
 	if len(toNumberStr) > 0 {
 		toNumber, _ = strconv.Atoi(toNumberStr)
 	}
+
 	result := &entity.Pagination{}
 	dataResp := []*response.SearchResponse{}
 	if search != "" && len(search) < 3 {

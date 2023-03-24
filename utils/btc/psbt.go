@@ -760,21 +760,21 @@ type CreatePSBTToBuyInscriptionRequest struct {
 	UTXOs    []UTXOType `json:"utxos"`
 }
 type CreatePSBTToBuyInscriptionMultiRequest struct {
-	Psbt     []string   `json:"sellerSignedPsbtB64"`
-	Receiver string     `json:"receiverInscriptionAddress"`
-	Price    uint64     `json:"price"`
-	FeeRate  uint64     `json:"feeRatePerByte"`
-	UTXOs    []UTXOType `json:"utxos"`
+	BuyReqInfos []BuyReqInfo `json:"buyReqInfos"`
+	// Psbt     []string   `json:"sellerSignedPsbtB64"`
+	// Receiver string     `json:"receiverInscriptionAddress"`
+	// Price    uint64     `json:"price"`
+	FeeRate uint64     `json:"feeRatePerByte"`
+	UTXOs   []UTXOType `json:"utxos"`
 }
-
 type CreatePSBTToBuyInscriptionRespond struct {
-	TxID          string     `json:"txID"`
-	TxHex         string     `json:"txHex"`
-	Fee           int        `json:"fee"`
-	SelectedUTXOs []UTXOType `json:"selectedUTXOs"`
-	SplitTxID     string     `json:"splitTxID"`
-	SplitUTXOs    []UTXOType `json:"splitUTXOs"`
-	SplitTxRaw    string     `json:"splitTxRaw"`
+	TxID          string      `json:"txID"`
+	TxHex         string      `json:"txHex"`
+	Fee           interface{} `json:"fee"`
+	SelectedUTXOs interface{} `json:"selectedUTXOs"`
+	SplitTxID     string      `json:"splitTxID"`
+	SplitUTXOs    interface{} `json:"splitUTXOs"`
+	SplitTxRaw    string      `json:"splitTxRaw"`
 }
 
 func CreatePSBTToBuyInscriptionViaAPI(
@@ -851,15 +851,22 @@ func SendTxBlockStream(txraw string) error {
 	return nil
 }
 
+type BuyReqInfo struct {
+	SellerSignedPsbtB64        string `json:"sellerSignedPsbtB64"`
+	ReceiverInscriptionAddress string `json:"receiverInscriptionAddress"`
+	Price                      int    `json:"price"`
+}
+
 func CreatePSBTToBuyInscriptionMultiViaAPI(
 	endpoint string,
 	address string,
-	sellerSignedPsbtB64 []string,
-	receiverInscriptionAddress string,
-	price uint64,
+	// sellerSignedPsbtB64 []string,
+	// receiverInscriptionAddress string,
+	// price uint64,
+	buyReqInfos []BuyReqInfo,
 	utxos []UTXOType,
 	feeRatePerByte uint64,
-	maxFee uint64,
+	// maxFee uint64,
 ) (*CreatePSBTToBuyInscriptionRespond, error) {
 	_, spendableUTXOs, err := FilterPendingUTXOs(utxos, address)
 	if err != nil {
@@ -867,11 +874,12 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 	}
 
 	data := CreatePSBTToBuyInscriptionMultiRequest{
-		UTXOs:    spendableUTXOs,
-		Psbt:     sellerSignedPsbtB64,
-		Receiver: receiverInscriptionAddress,
-		Price:    price,
-		FeeRate:  feeRatePerByte,
+		BuyReqInfos: buyReqInfos,
+		UTXOs:       spendableUTXOs,
+		// Psbt:     sellerSignedPsbtB64,
+		// Receiver: receiverInscriptionAddress,
+		// Price:    price,
+		FeeRate: feeRatePerByte,
 	}
 
 	json_data, err := json.Marshal(data)
@@ -880,7 +888,8 @@ func CreatePSBTToBuyInscriptionMultiViaAPI(
 		return nil, err
 	}
 
-	resp, err := http.Post(endpoint+"/api/createtxbuy", "application/json",
+	log.Println("CreatePSBTToBuyInscriptionMultiViaAPI payload", string(json_data))
+	resp, err := http.Post(endpoint+"/api/createtxbuymulti", "application/json",
 		bytes.NewBuffer(json_data))
 
 	if err != nil {

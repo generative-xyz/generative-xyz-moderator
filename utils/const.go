@@ -1,10 +1,32 @@
 package utils
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/now"
+)
 
 type QuerySort struct {
 	Sort   int
 	SortBy string
+}
+
+
+type AggregateDexBTCListing struct {
+	FromDate   time.Time
+	ToDate  time.Time
+}
+
+func ParseAggregation(key string) AggregateDexBTCListing {
+	sortParams := make(map[string]AggregateDexBTCListing)
+	to := time.Now().UTC()	
+	sortParams["week"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-7), ToDate: to}
+	sortParams["month"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-30), ToDate: to}
+	filter, ok := sortParams[key]
+	if !ok {
+		return sortParams["custom"]
+	}
+	return filter
 }
 
 func ParseSort(key string) QuerySort {
@@ -59,6 +81,7 @@ const (
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
 	REDIS_VERIFIED_TOKEN      string = "verified_token"
 	REDIS_PROFILE             string = "profile"
+	REDIS_INSCRIPTION            string = "inscription"
 	REDIS_NFT_METADATA_KEY    string = "nfts_metadata_%s_%s"
 	REDIS_PAGINATION_KEY      string = "pagination_%s"
 	REDIS_PAGINATION_DATA_KEY string = "pagination_data_%s"
@@ -118,6 +141,7 @@ const (
 	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
 	COLLECTION_FILES                    string = "files"
 	COLLECTION_PROJECTS                 string = "projects"
+	COLLECTION_PROJECT_ALLOW_LIST                 string = "project_allow_list"
 	COLLECTION_CONFIGS                  string = "configs"
 	COLLECTION_CATEGORIES               string = "categories"
 	COLLECTION_ACTIVITIES               string = "activities"
@@ -142,8 +166,12 @@ const (
 	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
 	COLLECTION_DISCORD_NOTI             string = "discord_notis"
 	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
+	COLLECTION_BTC_TX_SUBMIT            string = "btc_tx_submit"
 	COLLECTION_TOKEN_ACTIVITY           string = "token_activities"
 	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
+	COLLECTION_TOKEN_TX                 string = "token_txs"
+	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
+	COLLECTION_GLOBAL_VARIABLE          string = "global_variables"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
@@ -152,7 +180,7 @@ const (
 	PUBSUB_TOKEN_THUMBNAIL                    string = "token_thumbnail"
 	PUBSUB_PROJECT_UNZIP                      string = "project_unzip"
 
-	BTCConfirmationThreshold = 6
+	BTCConfirmationThreshold = 1
 	FirstScannedBTCBlkHeight = 697200
 	BUY_NFT_CHARGE           = 0      // 0%
 	MIN_BTC_TO_LIST_BTC      = 500000 // 0.005 btc
@@ -165,7 +193,7 @@ const (
 
 	DEVELOPER_INSCRIBE_MAX_REQUEST = 200
 
-	INSCRIBE_TIMEOUT = 6
+	INSCRIBE_TIMEOUT = 3
 
 	MASTER_ADDRESS = "bc1p8ts7h86jgduat5v98cwlurngeyasqrd5c6ch2my8qwen3ykpagyswv2sy8"
 
