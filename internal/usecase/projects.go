@@ -2232,14 +2232,42 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	totalAmount := "0"
-	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
-	if err == nil && data != nil {
-		if len(data) > 0 {
-			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
-			//amountByPaytype[paytype] =
+
+	u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
+	cached, err := u.Cache.GetData(helpers.ProjectFirstSaleKey(genNFTAddr))
+	if err != nil || cached == nil {
+		
+		newAmount := 0.0
+		data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
+		if err == nil && data != nil {
+			if len(data) > 0 {
+				newAmount = data[0].Amount
+			}
 		}
+
+		oldAmount := 0.0
+		paytypes := []string{string(entity.BIT), string(entity.ETH)}
+		for _, paytype := range paytypes {
+			oldBTCData, err := u.AggregateOldData(genNFTAddr, paytype)
+			if err != nil {
+				continue
+			}
+
+			amount := oldBTCData.Amount
+			if paytype == string(entity.ETH) {
+				amount = amount / float64(oldBTCData.BtcRate / oldBTCData.EthRate) 
+			}
+
+			oldAmount += amount
+		}
+
+		total := newAmount + oldAmount
+		totalAmount = fmt.Sprintf("%d", int(total))
+		u.Cache.SetStringData(helpers.ProjectFirstSaleKey(genNFTAddr), totalAmount)
+		return totalAmount
 	}
-	return totalAmount
+	return *cached
+	
 }
 
 func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, error) {
