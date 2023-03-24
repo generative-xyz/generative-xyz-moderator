@@ -9,6 +9,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/wire"
 )
 
 func TestCreateZeroValueOutputs(t *testing.T) {
@@ -97,6 +98,71 @@ func TestParsePSBTFromBase64(t *testing.T) {
 			log.Println("got", string(gotBytes))
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParsePSBTFromBase64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseTx(t *testing.T) {
+	type args struct {
+		data string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *wire.MsgTx
+		wantErr bool
+	}{
+		{name: "asdasd", args: args{data: "010000000001038bd0d0c54e8543f718c1ee6ee7db26ae3ce22fd6be1deec57c66d37b6c97b4db0200000000fdffffff9be83d568d617ea931857f0f90065137f6a7e67a20cd0c80f3957484762e16810000000000fdffffffe07074e1bd2cc630886cf71eaf1f5977b030d32cd953919be2bd33a6d12184340000000000fdffffff03f84d000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af9525000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af5344000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af01406edcb25b1b166731d294a6a26074640271758d20ee9e1aeea86820816102445e79855458c4f4142c7cd01297a78bb6f03a0d62cd8a7a5f4a7845f1363244282d0140e78694fab5996c184b62d481cef8b0fc2bb730c052d7cae860e90219f6610ffd93cf321dd9ad76c7304d3f70e15a5dbaf6f29f44928d941889e48b124cfee16a01408193373f41253fa5d37ffd0c592c9394ffc7f8fc49bff39317e1e829900d240bb496644d0fc05aa884e40093cfb28ebfb54b6d09733a474e3a0ebd179d64f69e00000000"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTx(tt.args.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseTx() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			result, err := json.MarshalIndent(got, "", " ")
+			log.Println("result", string(result))
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseTx() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParsePSBTFromHex(t *testing.T) {
+	type args struct {
+		data string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *psbt.Packet
+		wantErr bool
+	}{
+		{name: "sdfsdf", args: args{data: "70736274ff0100fd060101000000038bd0d0c54e8543f718c1ee6ee7db26ae3ce22fd6be1deec57c66d37b6c97b4db0200000000fdffffff9be83d568d617ea931857f0f90065137f6a7e67a20cd0c80f3957484762e16810000000000fdffffffe07074e1bd2cc630886cf71eaf1f5977b030d32cd953919be2bd33a6d12184340000000000fdffffff03f84d000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af9525000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af5344000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af000000000001012bfa11000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af2116c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c011720c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee0001012bf401000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af2116c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c011720c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee0001012b50c3000000000000225120c920e06060005c98739fa4ea58e9fd1859e6affef1b3edbef65257175fa780af2116c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c011720c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee00010520c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee2107c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c00010520c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee2107c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c00010520c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee2107c6b1f8a432d0bf501bce5d9ec28767ab9f60c4a0de1abcd1c8bbaeba4269d9ee05007ad34a0c00"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParsePSBTFromHex(tt.args.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParsePSBTFromHex() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// b64, _ := got.B64Encode()
+			// log.Printf("result %v\n", b64)
+			// got2, err := ParsePSBTFromBase64(b64)
+			// if (err != nil) != tt.wantErr {
+			// 	t.Errorf("ParsePSBTFromHex() error = %v, wantErr %v", err, tt.wantErr)
+			// 	return
+			// }
+
+			result, err := json.MarshalIndent(got, "", " ")
+			log.Println("result", string(result))
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParsePSBTFromHex() = %v, want %v", got, tt.want)
 			}
 		})
 	}

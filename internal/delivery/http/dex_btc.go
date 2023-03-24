@@ -10,6 +10,7 @@ import (
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/internal/usecase"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
@@ -535,4 +536,101 @@ func (h *httpDelivery) ListBuyAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+}
+
+func (h *httpDelivery) genOWPurchaseTx(w http.ResponseWriter, r *http.Request) {
+	inscriptionID := r.URL.Query().Get("inscription_id")
+	taprootAddress := r.URL.Query().Get("address")
+	pubkey := r.URL.Query().Get("pubkey")
+
+	if inscriptionID == "" || pubkey == "" || taprootAddress == "" {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, errors.New("invalid request"), "")
+		return
+	}
+	listingRaw, err := usecase.GetOWListingRaw(inscriptionID, taprootAddress, pubkey)
+	if err != nil {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+		return
+	}
+	if listingRaw.Error {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, listingRaw.Message, "")
+		return
+	}
+	txSetupHash := ""
+	if listingRaw.Setup != "" {
+		txSetup, err := btc.ParsePSBTFromHex(listingRaw.Setup)
+		if err != nil {
+			h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+			return
+		}
+		txSetupHash = txSetup.UnsignedTx.TxHash().String()
+	}
+
+	inputToSign := []string{}
+
+	if listingRaw.Setup == "" {
+		inputList, err := btc.GetInputOfPSBT(listingRaw.Purchase)
+		if err != nil {
+			h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+			return
+		}
+		for txhash, indices := range inputList {
+			if txhash == txSetupHash {
+				inputToSign = append(inputToSign, fmt.Sprintf("%v:%v", txhash, indices))
+				continue
+			}
+			txDetail, _ := btc.CheckTxfromQuickNode(txhash, h.Usecase.Config.QuicknodeAPI)
+			if txDetail != nil {
+				for _, vout := range txDetail.Result.Vout {
+					if taprootAddress == vout.ScriptPubKey.Address {
+						inputToSign = append(inputToSign, fmt.Sprintf("%v:%v", txhash, indices))
+						continue
+					}
+				}
+			}
+
+		}
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.GenOWPurchaseTxRespond{
+		PurchaseRaw:    listingRaw.Purchase,
+		SetupRaw:       listingRaw.Setup,
+		NeedToSignVins: inputToSign,
+	}, "")
+}
+
+func (h *httpDelivery) submitOWPurchaseTx(w http.ResponseWriter, r *http.Request) {
+	var reqBody request.SubmitOWPurchaseTx
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	address := reqBody.Address
+	if address == "" {
+		var ok bool
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddressBTCTaproot
+	}
+
+	err = h.Usecase.DEXSubmitOWPurchaseRawTx(address, reqBody.InscriptionID, reqBody.SetupSigned, reqBody.PurchaseSigned)
+	if err != nil {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Error, err.Error(), "")
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
 }

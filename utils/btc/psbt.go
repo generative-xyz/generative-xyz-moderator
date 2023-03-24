@@ -35,6 +35,20 @@ func ParsePSBTFromBase64(data string) (*psbt.Packet, error) {
 	return psbtTx, nil
 }
 
+func ParsePSBTFromHex(data string) (*psbt.Packet, error) {
+	bytes, err := hex.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	psbtTx, err := psbt.NewFromRawBytes(
+		strings.NewReader(string(bytes)), false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return psbtTx, nil
+}
+
 func ParseTx(data string) (*wire.MsgTx, error) {
 	dataBytes, err := hex.DecodeString(data)
 	if err != nil {
@@ -46,6 +60,22 @@ func ParseTx(data string) (*wire.MsgTx, error) {
 		return nil, err
 	}
 	return &tx, nil
+}
+
+func GetInputOfPSBT(data string) (map[string][]uint32, error) {
+	result := make(map[string][]uint32)
+	psbt, err := ParsePSBTFromHex(data)
+	if err != nil {
+		return nil, err
+	}
+	for _, vin := range psbt.UnsignedTx.TxIn {
+		if _, exist := result[vin.PreviousOutPoint.Hash.String()]; exist {
+			result[vin.PreviousOutPoint.Hash.String()] = append(result[vin.PreviousOutPoint.Hash.String()], vin.PreviousOutPoint.Index)
+		} else {
+			result[vin.PreviousOutPoint.Hash.String()] = []uint32{vin.PreviousOutPoint.Index}
+		}
+	}
+	return result, nil
 }
 
 func GetAddressFromPKScript(script []byte) (string, error) {

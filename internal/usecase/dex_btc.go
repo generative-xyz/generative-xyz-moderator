@@ -284,7 +284,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 
 	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
 	if err != nil {
-		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err.Error())
+		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err %v\n", err.Error())
 	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")

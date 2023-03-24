@@ -41,3 +41,10 @@ type UpdateDexBTCBuyETHTx struct {
 type RetrieveBTCListingOrdersInfo struct {
 	OrderList []string `json:"order_list"`
 }
+
+type SubmitOWPurchaseTx struct {
+	Address        string `json:"address"`
+	InscriptionID  string `json:"inscription_id"`
+	PurchaseSigned string `json:"purchase_raw`
+	SetupSigned    string `json:"setup_raw`
+}

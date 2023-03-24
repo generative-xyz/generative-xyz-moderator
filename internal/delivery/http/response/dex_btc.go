@@ -53,3 +53,9 @@ type DEXBuyEthHistory struct {
 	SellOrderList   []string `bson:"sell_order_list" json:"order_list"`
 	InscriptionList []string `bson:"inscription_list" json:"inscription_list"`
 }
+
+type GenOWPurchaseTxRespond struct {
+	PurchaseRaw    string   `json:"purchase_raw"`
+	SetupRaw       string   `json:"setup_raw"`
+	NeedToSignVins []string `json:"need_to_sign_vins"`
+}

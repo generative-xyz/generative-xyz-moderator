@@ -257,6 +257,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/retrieve-orders", h.retrieveBTCListingOrdersInfo).Methods("POST")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
+	inscriptionDex.HandleFunc("/gen-ow-purchase-tx", h.genOWPurchaseTx).Methods("GET")
+	inscriptionDex.HandleFunc("/submit-ow-purchase-tx", h.submitOWPurchaseTx).Methods("POST")
 	// inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
 	//buy with eth
 	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")

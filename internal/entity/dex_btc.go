@@ -39,7 +39,7 @@ type DexBTCListing struct {
 	CreatedMatchedActivity   bool `bson:"created_matched_activity"`
 
 	IsTimeSeriesData bool `json:"is_time_series_data"`
-	
+
 	FromOtherMkp bool `bson:"from_other_mkp"`
 }
 
@@ -150,3 +150,20 @@ const (
 	StatusDEXBTCTracking_Success                                     // 1: successful
 	StatusDEXBTCTracking_Failed                                      // 2: failed
 )
+
+type DexBTCOWSubmitTx struct {
+	BaseEntity  `bson:",inline"`
+	OrderID     string `bson:"order_id" json:"order_id"`
+	PurchaseRaw string `bson:"purchase_raw" json:"purchase_raw"`
+	SetupRaw    string `bson:"setup_raw" json:"setup_raw"`
+	PurchaseTx  string `bson:"purchase_tx" json:"purchase_tx"`
+	SetupTx     string `bson:"setup_tx" json:"setup_tx"`
+}
+
+func (u DexBTCOWSubmitTx) TableName() string {
+	return utils.COLLECTION_DEX_BTC_OW_SUBMIT
+}
+
+func (u DexBTCOWSubmitTx) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
