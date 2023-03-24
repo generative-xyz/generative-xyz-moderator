@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"os"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -75,20 +76,20 @@ func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*
 	return allowed, nil
 }
 
-func (u Usecase) CheckExistedProjectAllowList(req structure.CreateProjectAllowListReq) bool {
+func (u Usecase) CheckExistedProjectAllowList(req structure.CreateProjectAllowListReq) (bool, string) {
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)
 
 	allowed, err := u.Repo.GetProjectAllowList(projectID, userAddress)
 	if err != nil {
-		return false
+		return false, ""
 	}
 
 	if allowed == nil {
-		return false
+		return false, ""
 	}
 
-	return true
+	return true, string(allowed.AllowedBy)
 }
 
 func (u Usecase) ProjectWhitelistERC721(user entity.Users) (bool, error) {

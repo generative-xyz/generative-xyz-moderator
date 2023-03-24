@@ -1136,8 +1136,9 @@ func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Reques
 		UserWalletAddress: walletAddress,
 	}
 
-	existed := h.Usecase.CheckExistedProjectAllowList(*reqUsecase)
+	existed, allowedBy := h.Usecase.CheckExistedProjectAllowList(*reqUsecase)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.ExistedInAllowList{
 		Existed: existed,
+		AllowedBy: allowedBy,
 	}, "")
 }
