@@ -439,7 +439,7 @@ func (r Repository) GetTokenNotIN(projectID string, tokenIDs []string) ([]entity
 	resp := []entity.TokenUri{}
 	filter := bson.M{
 		"project_id":  projectID,
-		//"token_id":  bson.M{"$nin": tokenIDs },
+		"token_id":  bson.M{"$nin": tokenIDs },
 	}
 
 	opts := options.Find()
