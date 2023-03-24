@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/adshao/go-binance/v2"
@@ -23,43 +22,41 @@ type BinanceService struct {
 
 // pair: "ETHBTC"
 
-func (bs *BinanceService) SwapEth2Btc(ethAmount float64, pair string) (string, error) {
+func (bs *BinanceService) SwapEth2Btc(ethAmount string, pair string) (*binance.CreateOrderResponse, error) {
 
 	// ethAmount: the amount of ETH you want to swap
 
-	orderStatus := ""
-
 	// Get the current ETH/BTC exchange rate:
-	ticker, err := bs.binanceClient.NewListPriceChangeStatsService().
-		Symbol(pair).
-		Do(context.Background())
-	if err != nil {
-		return orderStatus, err
-	}
-	lastPrice, err := strconv.ParseFloat(ticker[0].LastPrice, 64)
-	if err != nil {
-		// handle error
-	}
-	ethPrice := lastPrice
+	// ticker, err := bs.binanceClient.NewListPriceChangeStatsService().
+	// 	Symbol(pair).
+	// 	Do(context.Background())
+	// if err != nil {
+	// 	return orderStatus, err
+	// }
+	// lastPrice, err := strconv.ParseFloat(ticker[0].LastPrice, 64)
+	// if err != nil {
+	// 	return orderStatus, err
+	// }
+	// ethPrice := lastPrice
 
-	// Calculate the amount of BTC you will receive based on the amount of ETH you want to swap:
-	btcAmount := ethAmount * ethPrice
+	// // Calculate the amount of BTC you will receive based on the amount of ETH you want to swap:
+	// _ = ethAmount * ethPrice
 
 	// Place the order to swap ETH to BTC:
 	order, err := bs.binanceClient.NewCreateOrderService().
 		Symbol(pair).
 		Side(binance.SideTypeSell).
 		Type(binance.OrderTypeMarket).
-		Quantity(fmt.Sprintf("%.8f", btcAmount)).
+		Quantity(ethAmount).
 		Do(context.Background())
 	if err != nil {
-		return orderStatus, err
+		return order, err
 
 	}
 
 	fmt.Println("order status new: ", order.Status)
 
-	return string(order.Status), nil
+	return nil, nil
 
 }
 

@@ -17,6 +17,28 @@ func (t *BinanceTestSuite) SetupTest() {
 
 }
 
+func TestBinanceSwap(t *testing.T) {
+
+	secret := os.Getenv("BNB_SECRET")
+	apiKey := os.Getenv("BNB_API_KEY")
+
+	bs := NewBinanceService(apiKey, secret)
+
+	pair := "ETHBTC"
+
+	order, err := bs.SwapEth2Btc("0.007", pair)
+
+	if err != nil {
+		fmt.Println("bs.SwapEth2Btc => err: ", err.Error())
+	} else {
+		fmt.Println("bs.order => order: ", order.OrderID)
+		fmt.Println("bs.Status => order: ", order.Status)
+	}
+
+	assert.Equal(t, false, true)
+
+}
+
 func TestBinanceService(t *testing.T) {
 
 	secret := os.Getenv("BNB_SECRET")
