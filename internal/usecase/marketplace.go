@@ -71,7 +71,6 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 	wG.Add(1)
 	go func() {
 		defer wG.Done()
-
 		addresses := []string{}
 		listings, _ := uc.Repo.GetDexBTCTrackingByInscriptionIds(inscriptionIds)
 		for _, d := range listings {
@@ -98,6 +97,7 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 
 	result := []*entity.ItemListing{}
 	waitG := &sync.WaitGroup{}
+	mu := sync.Mutex{}
 	client := resty.New()
 	for _, i := range inscriptions {
 		waitG.Add(1)
@@ -157,7 +157,9 @@ func (uc Usecase) SubCollectionItem(bf *structure.BaseFilters, numberFrom, numbe
 				}
 
 			}
+			mu.Lock()
 			result = append(result, r)
+			mu.Unlock()
 		}(i)
 	}
 	waitG.Wait()

@@ -43,3 +43,17 @@ func (r Repository) GetProjectAllowListTotal(projectID string) (int64, error) {
 	}
 	return count, nil
 }
+
+func (r Repository) GetProjectAllowListTotalByTyppe(projectID string, allowType string) (int64, error) {
+	coll := r.DB.Collection(entity.ProjectAllowList{}.TableName())
+	estCount, err := coll.EstimatedDocumentCount(context.TODO())
+	if err != nil {
+		return 0, err
+	}
+	_ = estCount
+	count, err := coll.CountDocuments(context.TODO(), bson.D{{"projectID", projectID}, {"allowedBy", allowType}})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

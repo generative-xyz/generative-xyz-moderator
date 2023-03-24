@@ -664,12 +664,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		err = json.Unmarshal(bytes, &nftTokenURI)
 		if err == nil {
 			nftTokenURI["image"] = *req.Thumbnail
-			bytes, err := json.Marshal(nftTokenURI) 
+			bytes, err := json.Marshal(nftTokenURI)
 			if err == nil {
 				nftToken := helpers.Base64Encode(bytes)
 				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
 				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
-			}	
+			}
 		}
 		p.Thumbnail = *req.Thumbnail
 
@@ -1649,6 +1649,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
 	for _, f := range files {
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
@@ -2102,13 +2104,38 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 		return nil, err
 	}
 
-	// totalImages := len(p.Images)
-	// totalProcessingImages := len(p.ProcessingImages)
-	// if totalImages == 0 && totalProcessingImages == 0 {
-	// 	err = errors.New("Project doesn's have any files")
-	// 	logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
-	// 	return nil, err
-	// }
+	/*totalImages := len(p.Images)
+	totalProcessingImages := len(p.ProcessingImages)
+	if totalImages == 0 && totalProcessingImages == 0 {
+		err = errors.New("Project doesn's have any files")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
+	}*/
+	isGenerative := true
+	if p.Source == "" {
+		if len(p.Images)+len(p.ProcessingImages) > 0 {
+			// -> from generative.xyz
+			if len(p.Images) > 0 {
+				if !strings.HasSuffix(p.Images[0], ".html") {
+					isGenerative = false
+				}
+			}
+
+			if isGenerative && len(p.ProcessingImages) > 0 {
+				if !strings.HasSuffix(p.ProcessingImages[0], ".html") {
+					isGenerative = false
+				}
+			}
+		}
+	} else {
+		// crawler
+		isGenerative = false
+	}
+	if isGenerative {
+		err = errors.New("Project is generative")
+		logger.AtLog.Error(zap.String("projectID", projectID), err.Error())
+		return nil, err
+	}
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
@@ -2207,14 +2234,42 @@ func (u Usecase) UploadTokenTraits(projectID string, r *http.Request) (*entity.T
 
 func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	totalAmount := "0"
-	data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
-	if err == nil && data != nil {
-		if len(data) > 0 {
-			totalAmount = fmt.Sprintf("%d", int(data[0].Amount))
-			//amountByPaytype[paytype] =
+
+	//u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
+	cached, err := u.Cache.GetData(helpers.ProjectFirstSaleKey(genNFTAddr))
+	if err != nil || cached == nil {
+
+		newAmount := 0.0
+		data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
+		if err == nil && data != nil {
+			if len(data) > 0 {
+				newAmount = data[0].Amount
+			}
 		}
+
+		oldAmount := 0.0
+		paytypes := []string{string(entity.BIT), string(entity.ETH)}
+		for _, paytype := range paytypes {
+			oldBTCData, err := u.AggregateOldData(genNFTAddr, paytype)
+			if err != nil {
+				continue
+			}
+
+			amount := oldBTCData.Amount
+			if paytype == string(entity.ETH) {
+				amount = amount / float64(oldBTCData.BtcRate/oldBTCData.EthRate)
+			}
+
+			oldAmount += amount
+		}
+
+		total := newAmount + oldAmount
+		totalAmount = fmt.Sprintf("%d", int(total))
+		u.Cache.SetStringData(helpers.ProjectFirstSaleKey(genNFTAddr), totalAmount)
+		return totalAmount
 	}
-	return totalAmount
+	return *cached
+
 }
 
 func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, error) {
