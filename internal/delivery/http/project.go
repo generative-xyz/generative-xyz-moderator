@@ -613,6 +613,23 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 
 	resp.EditableIsHidden = len(input.ReportUsers) >= h.Config.MaxReportCount
 
+	// check is generative code
+	resp.IsGenerative = true
+	if input.Source == "" {
+		// -> from generative.xyz
+		if resp.TotalImages != 0 {
+			if len(input.Images) > 0 {
+				resp.IsGenerative = strings.HasSuffix(input.Images[0], ".html")
+			}
+			if len(input.ProcessingImages) > 0 {
+				resp.IsGenerative = strings.HasSuffix(input.ProcessingImages[0], ".html")
+			}
+		}
+	} else {
+		// crawler
+		resp.IsGenerative = false
+	}
+
 	return resp, nil
 }
 

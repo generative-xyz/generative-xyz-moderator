@@ -13,7 +13,7 @@ type TraitStat struct {
 }
 
 type ExistedInAllowList struct {
-	Existed       bool           `json:"existed"`
+	Existed bool `json:"existed"`
 }
 
 type ProjectResp struct {
@@ -78,6 +78,7 @@ type ProjectResp struct {
 	IsReviewing               bool             `json:"isReviewing"`
 	CanCreateProposal         bool             `json:"canCreateProposal"`
 	ProposalSeqId             *uint            `json:"proposalSeqId"`
+	IsGenerative              bool             `json:"isGenerative"` // art by generative code or html file
 }
 
 type ReportProject struct {
