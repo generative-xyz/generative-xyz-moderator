@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) FindProjectByInscriptionIcon(inscriptionIcon string) (*entity.Projects, error) {
@@ -87,7 +88,7 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		}
 
 		if project == nil {
-			u.Logger.ErrorAny("CreateProjectsFromMetas.NilProject")
+			logger.AtLog.Logger.Error("CreateProjectsFromMetas.NilProject")
 			continue
 		}
 		
@@ -121,18 +122,18 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		_, err = u.Repo.FindTokenByTokenID(inscription.ID)
 		if err != nil {
 			if !errors.Is(err, mongo.ErrNoDocuments) {
-				u.Logger.ErrorAny("u.Repo.FindTokenByTokenID " + inscription.ID, zap.Error(err))
+				logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID " + inscription.ID, zap.Error(err))
 				continue
 			} else {
 				meta, err := u.Repo.FindCollectionMetaByInscriptionIcon(inscription.CollectionInscriptionIcon)
 				if err != nil {
-					u.Logger.ErrorAny("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
+					logger.AtLog.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
 					continue
 				}
 				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 				if err != nil {
 					if !errors.Is(err, repository.ErrNoProjectsFound) {
-						u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+						logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
 						continue
 					}
 				} else {
@@ -145,7 +146,7 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		u.Logger.Info(fmt.Sprintf("Done set token created %s", inscription.ID))
 
 		if err != nil {
-			u.Logger.ErrorAny("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+			logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
 			continue
 		}
 		

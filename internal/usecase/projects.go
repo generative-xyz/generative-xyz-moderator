@@ -52,27 +52,27 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
+		logger.AtLog.Logger.Error("CreateProject", zap.Any("err", err))
 		return nil, err
 	}
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
+		logger.AtLog.Logger.Error("CreateProject", zap.Any("err", err))
 		return nil, err
 	}
 
-	u.Logger.ErrorAny("CreateProject", zap.Any("project", pe))
+	logger.AtLog.Logger.Error("CreateProject", zap.Any("project", pe))
 	return pe, nil
 }
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
-	u.Logger.LogAny("CreateBTCProject", zap.Any("CreateBtcProjectReq", req))
+	logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("CreateBtcProjectReq", req))
 
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		u.Logger.ErrorAny("CreateBTCProject", zap.Any("copier.Copy", err))
+		logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("copier.Copy", err))
 		return nil, err
 	}
 
@@ -81,7 +81,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	mPrice := helpers.StringToBTCAmount(req.MintPrice)
 	maxID, err := u.Repo.GetMaxBtcProjectID()
 	if err != nil {
-		u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.GetMaxBtcProjectID", err))
+		logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("err.GetMaxBtcProjectID", err))
 		return nil, err
 	}
 	maxID = maxID + 1
@@ -105,7 +105,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	nftTokenURI["attributes"] = []string{}
 	creatorAddrr, err := u.Repo.FindUserByWalletAddress(req.CreatorAddrr)
 	if err != nil {
-		u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.FindUserByWalletAddress", err))
+		logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("err.FindUserByWalletAddress", err))
 		return nil, err
 	}
 
@@ -113,7 +113,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		creatorAddrr.WalletAddressBTC = req.CreatorAddrrBTC
 		updated, err := u.Repo.UpdateUserByID(creatorAddrr.UUID, creatorAddrr)
 		if err != nil {
-			u.Logger.ErrorAny("CreateBTCProject", zap.Any("err.UpdateUserByID", err))
+			logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("err.UpdateUserByID", err))
 
 		} else {
 			u.Logger.Info("updated.creatorAddrr", creatorAddrr)
@@ -140,12 +140,12 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				isFullChain, err := helpers.IsFullChain(string(htmlContent))
 				if err == nil {
 					pe.IsFullChain = isFullChain
-					u.Logger.LogAny("CreateBTCProject", zap.Any("isFullChain", isFullChain))
+					logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("isFullChain", isFullChain))
 				} else {
-					u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
+					logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("isFullChain", err))
 				}
 			} else {
-				u.Logger.ErrorAny("CreateBTCProject", zap.Any("isFullChain", err))
+				logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("isFullChain", err))
 			}
 			nftTokenURI["animation_url"] = animationURL
 
@@ -161,7 +161,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	bytes, err := json.Marshal(nftTokenURI)
 	if err != nil {
-		u.Logger.ErrorAny("CreateBTCProject", zap.Any("marshal", err))
+		logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("marshal", err))
 		return nil, err
 	}
 	nftToken := helpers.Base64Encode(bytes)
@@ -192,10 +192,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
-	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
+	logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("project", pe))
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
-		u.Logger.ErrorAny("CreateBTCProject", zap.Any("CreateProject", err))
+		logger.AtLog.Logger.Error("CreateBTCProject", zap.Any("CreateProject", err))
 		return nil, err
 	}
 
@@ -288,20 +288,20 @@ func (u Usecase) JobCheckAirdropInit() error {
 			projectId := airdrop.ProjectId
 			project, err := u.Repo.FindProjectByTokenID(projectId)
 			if err != nil {
-				u.Logger.ErrorAny("JobCheckAirdropInit project not found", zap.Any("projectID", projectId))
+				logger.AtLog.Logger.Error("JobCheckAirdropInit project not found", zap.Any("projectID", projectId))
 				continue
 			}
 			if project.MintingInfo.Index == 0 {
-				u.Logger.ErrorAny("JobCheckAirdropInit project still not mint", zap.Any("project", project))
+				logger.AtLog.Logger.Error("JobCheckAirdropInit project still not mint", zap.Any("project", project))
 				continue
 			}
 			mintPrice, e := strconv.Atoi(project.MintPrice)
 			if e != nil {
-				u.Logger.ErrorAny("JobCheckAirdropInit project get mint price", zap.Any("project", project))
+				logger.AtLog.Logger.Error("JobCheckAirdropInit project get mint price", zap.Any("project", project))
 				continue
 			}
 			if project.MintingInfo.Index*int64(mintPrice) < 430000 {
-				u.Logger.ErrorAny("JobCheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
+				logger.AtLog.Logger.Error("JobCheckAirdropInit project still not mint volum reach ~100usd", zap.Any("project", project))
 				continue
 			}
 		}
@@ -320,18 +320,18 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 		FileUrl:            airDrop.File,
 		DestinationAddress: airDrop.ReceiverBtcAddressTaproot,
 	}
-	u.Logger.LogAny(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
 
 	resp, respStr, err := u.OrdService.Mint(mintReq)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, respStr), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, respStr), zap.Any("Error", err))
 		return nil, err
 	}
-	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
+	logger.AtLog.Logger.Info("OrdService.Mint resp", zap.Any("Resp", resp))
 
 	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("UpdateAirdropMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -342,12 +342,12 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 	bytes := []byte(jsonStr)
 	err = json.Unmarshal(bytes, btcMintResp)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdropMintInfo Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("UpdateAirdropMintInfo Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 	_, err = u.Repo.UpdateAirdropInscriptionByUUid(airDrop.UUID, btcMintResp.Reveal, btcMintResp.Inscription)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("UpdateAirdrop Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("UpdateAirdrop Unmarshal airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 	return airDrop, nil
@@ -381,7 +381,7 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 	}
 	err := u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -422,7 +422,7 @@ func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, 
 	}
 	err := u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -440,11 +440,11 @@ func (u Usecase) IsTokenGatedNewUserAirdrop(user *entity.Users, whiteListEthCont
 	}
 	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("ERROR AirdropTokenGatedNewUser"), zap.Any("error", err))
 		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
 	} else {
 		if airdrop != nil {
-			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
+			logger.AtLog.Logger.Error(fmt.Sprintf("ERROR Exist AirdropTokenGatedNewUser"), zap.Any("airdrop", airdrop))
 			return false, err
 		}
 		return u.IsWhitelistedAddress(context.Background(), user.WalletAddress, whiteListEthContracts)
@@ -456,11 +456,11 @@ func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
 	airdrop, err := u.Repo.FindAirdropByTokenGatedNewUser(user.UUID)
 	flag := false
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("ERROR IsArtistABNewUserAirdrop"), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("ERROR IsArtistABNewUserAirdrop"), zap.Any("error", err))
 		flag = true
 	} else {
 		if airdrop != nil {
-			u.Logger.ErrorAny(fmt.Sprintf("ERROR Exist IsArtistABNewUserAirdrop"), zap.Any("airdrop", airdrop))
+			logger.AtLog.Logger.Error(fmt.Sprintf("ERROR Exist IsArtistABNewUserAirdrop"), zap.Any("airdrop", airdrop))
 			return false, err
 		}
 		flag = true
@@ -469,15 +469,15 @@ func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
 		artblockService := artblock.NewArtBlockService(nil, "https://artblocks-mainnet.hasura.app")
 		data, err := artblockService.GetArtist(strings.ToLower(user.WalletAddress))
 		if err != nil {
-			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("error", err))
+			logger.AtLog.Logger.Error(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("error", err))
 			return false, err
 		}
 		if len(data.Data.Artists) != 1 {
-			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			logger.AtLog.Logger.Error(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
 			return false, nil
 		}
 		if strings.ToLower(data.Data.Artists[0].PublicAddress) != strings.ToLower(user.WalletAddress) {
-			u.Logger.ErrorAny(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
+			logger.AtLog.Logger.Error(fmt.Sprintf("Error IsArtistABNewUserAirdrop"), zap.Any("data.Data.Artists", data.Data.Artists))
 			return false, nil
 		}
 		return true, nil
@@ -495,7 +495,7 @@ func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feer
 
 	isArtistABNewUserAirdrop, err := u.IsArtistABNewUserAirdrop(&receiver)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("Error AirdropArtistABNewUser"), zap.Any("error", err))
 	}
 	if !isArtistABNewUserAirdrop {
 		return nil, nil
@@ -524,13 +524,13 @@ func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feer
 	}
 	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("AirdropArtistABNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
 	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("AirdropArtistABNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("AirdropArtistABNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -552,7 +552,7 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 	whitelistArr := strings.Split(whitelist, ",")
 	isTokenGated, err := u.IsTokenGatedNewUserAirdrop(&receiver, whitelistArr)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("Error AirdropTokenGatedNewUser"), zap.Any("error", err))
 	}
 	if !isTokenGated {
 		return nil, nil
@@ -582,13 +582,13 @@ func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, fe
 	}
 	err = u.Repo.InsertAirdrop(airDrop)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("AirdropTokenGatedNewUser InsertAirdrop airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
 	airDrop, err = u.AirdropUpdateMintInfo(airDrop, from, feerate)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("AirdropTokenGatedNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("AirdropTokenGatedNewUser AirdropUpdateMintInfo airdrop %v %v", err, airDrop), zap.Any("Error", err))
 		return nil, err
 	}
 
@@ -773,11 +773,11 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 	p, err := u.Repo.FindProjectByTokenID(*req.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("DeleteProject", zap.Any("err.FindProjectBy", err))
+		logger.AtLog.Logger.Error("DeleteProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
 	if strings.ToLower(p.CreatorAddrr) != strings.ToLower(*req.CreatetorAddress) {
-		u.Logger.ErrorAny("DeleteProject", zap.Any("err.CreatorAddrr", err))
+		logger.AtLog.Logger.Error("DeleteProject", zap.Any("err.CreatorAddrr", err))
 		return nil, err
 	}
 
@@ -787,7 +787,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
+		logger.AtLog.Logger.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
 
 	}
@@ -795,7 +795,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	u.Logger.Info("updated", updated)
-	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p))
 	return p, nil
 }
 
@@ -830,7 +830,7 @@ func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (
 func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects, error) {
 	p, err := u.Repo.FindProjectBy(req.ContracAddress, req.TokenID)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateProject", zap.Any("err.FindProjectBy", err))
+		logger.AtLog.Logger.Error("UpdateProject", zap.Any("err.FindProjectBy", err))
 		return nil, err
 	}
 
@@ -844,12 +844,12 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	}
 	updated, err := u.Repo.UpdateProject(p.UUID, p)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateProject", zap.Any("err.UpdateProject", err))
+		logger.AtLog.Logger.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
 	}
 
 	u.Logger.Info("updated", updated)
-	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p))
 	return p, nil
 }
 
@@ -1054,19 +1054,19 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 }
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		return nil, errors.New("project is not found")
 	}
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
 // only using for project detail api, support est fee:
 func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, err := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if err != nil {
@@ -1155,19 +1155,19 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 	}()
 
-	// u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	// logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
 func (u Usecase) GetProjectVolumn(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectVolumn", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectVolumn", zap.Any("req", req))
 	c, err := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("GetProjectVolumn", zap.Error(err))
+		logger.AtLog.Logger.Error("GetProjectVolumn", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", c))
 	return c, nil
 }
 
@@ -1624,7 +1624,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe))
 
 	images := []string{}
 	zipLink := zipPayload.ZipLink
@@ -1636,18 +1636,18 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
-		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
+		logger.AtLog.Logger.Error("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
 		return nil, err
 	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
 	if err != nil {
-		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
+		logger.AtLog.Logger.Error("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1667,7 +1667,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 	}
 	//
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1698,7 +1698,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
-		u.Logger.ErrorAny("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
+		logger.AtLog.Logger.Error("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
 		return nil, err
 	}
 
@@ -1715,14 +1715,14 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		)
 	}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 
 	u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 
 	go func() {
 		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 		if err != nil {
-			u.Logger.ErrorAny("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
+			logger.AtLog.Logger.Error("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
 			return
 		}
 		if len(ids) > 0 {
@@ -1731,7 +1731,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
 	return pe, nil
 }
 
@@ -1889,7 +1889,7 @@ type Volume struct {
 func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume, error) {
 	data, err := u.GetVolumeOfUser(creatoreAddress, &paytype)
 	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		logger.AtLog.Logger.Error("CollectorVolume", zap.Any("err", err))
 		return nil, err
 	}
 
@@ -1905,7 +1905,7 @@ func (u Usecase) CreatorVolume(creatoreAddress string, paytype string) (*Volume,
 func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error) {
 	data, err := u.GetVolumeOfProject(projectID, &paytype)
 	if err != nil {
-		u.Logger.ErrorAny("CollectorVolume", zap.Any("err", err))
+		logger.AtLog.Logger.Error("CollectorVolume", zap.Any("err", err))
 		tmp := Volume{
 			ProjectID: projectID,
 			PayType:   paytype,

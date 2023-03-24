@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/logger"
 )
 
 type addUserDiscordFieldReq struct {
@@ -58,7 +59,7 @@ func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []entity.Field 
 			fmt.Sprintf("%s/profile/%s", req.Domain, address),
 		)
 	} else {
-		u.Logger.ErrorAny("NotifyNewSale.FindUserByAddress")
+		logger.AtLog.Logger.Error("NotifyNewSale.FindUserByAddress")
 		userStr = fmt.Sprintf("[%s](%s)",
 			u.resolveShortName("", req.Address),
 			fmt.Sprintf("%s/profile/%s", req.Domain, req.Address),
@@ -107,7 +108,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	
 	parsedThumbnailUrl, err := url.Parse(file)
 	if err != nil {
-		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
@@ -141,7 +142,7 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	// create discord message
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNewAirdrop.CreateDiscordNoti", zap.Error(err))
+		logger.AtLog.Logger.Error("NotifyNewAirdrop.CreateDiscordNoti", zap.Error(err))
 		return err
 	}
 	return nil
@@ -153,13 +154,13 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
 		return err
 	}
 
 	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
 		return err
 	}
 
@@ -168,7 +169,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		// we assume that there are only one category
 		categoryEntity, err := u.GetCategory(project.Categories[0])
 		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			logger.AtLog.Logger.Error("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
 			return err
 		}
 		category = categoryEntity.Name
@@ -205,7 +206,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	parsedThumbnailUrl, err := url.Parse(tokenUri.Thumbnail)
 	if err != nil {
-		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
@@ -241,7 +242,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 	// create discord message
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
+		logger.AtLog.Logger.Error("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
 		return err
 	}
 	return nil
@@ -254,13 +255,13 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(order.InscriptionID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
 		return err
 	}
 
 	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
 		return err
 	}
 
@@ -269,7 +270,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 		// we assume that there are only one category
 		categoryEntity, err := u.GetCategory(project.Categories[0])
 		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			logger.AtLog.Logger.Error("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
 			return err
 		}
 		category = categoryEntity.Name
@@ -296,7 +297,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 
 	parsedThumbnailUrl, err := url.Parse(tokenUri.Thumbnail)
 	if err != nil {
-		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
@@ -330,7 +331,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	// create discord message
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNewListing.CreateDiscordNoti", zap.Error(err))
+		logger.AtLog.Logger.Error("NotifyNewListing.CreateDiscordNoti", zap.Error(err))
 		return err
 	}
 	return nil
@@ -347,7 +348,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.FindTokenByTokenID failed", zap.Any("err", err.Error()))
 		return
 	}
 
@@ -358,18 +359,18 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		if err == nil {
 			minterDisplayName = minter.DisplayName
 		} else {
-			u.Logger.ErrorAny("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
+			logger.AtLog.Logger.Error("NotifyNFTMinted.FindUserByBtcAddress for minter failed", zap.Any("err", err.Error()))
 		}
 	}
 
 	if tokenUri.Creator == nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.tokenUri.CreatorIsEmpty", zap.Any("tokenID", tokenUri.TokenID))
 		return
 	}
 
 	project, err := u.GetProjectByGenNFTAddr(tokenUri.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.GetProjectByGenNFTAddr failed", zap.Any("err", err))
 		return
 	}
 	var category, description string
@@ -377,7 +378,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 		// we assume that there are only one category
 		categoryEntity, err := u.GetCategory(project.Categories[0])
 		if err != nil {
-			u.Logger.ErrorAny("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
+			logger.AtLog.Logger.Error("NotifyNFTMinted.GetCategory failed", zap.Any("err", err))
 			return
 		}
 		category = categoryEntity.Name
@@ -403,7 +404,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	mintNftBtc, err := u.Repo.FindMintNftBtcByInscriptionID(inscriptionID)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.FindMintNftBtcByInscriptionID failed", zap.Any("err", err))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.FindMintNftBtcByInscriptionID failed", zap.Any("err", err))
 		return
 	}
 
@@ -425,7 +426,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 
 	parsedThumbnailUrl, err := url.Parse(tokenUri.Thumbnail)
 	if err != nil {
-		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
@@ -466,7 +467,7 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	// create discord message
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
+		logger.AtLog.Logger.Error("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
 	}
 }
 
@@ -478,7 +479,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 		// we assume that there are only one category
 		categoryEntity, err := u.GetCategory(project.Categories[0])
 		if err != nil {
-			u.Logger.ErrorAny("NotifyCreateNewProjectToDiscord.GetCategory failed", zap.Any("err", err))
+			logger.AtLog.Logger.Error("NotifyCreateNewProjectToDiscord.GetCategory failed", zap.Any("err", err))
 			return
 		}
 		category = categoryEntity.Name
@@ -508,7 +509,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 
 	parsedThumbnailUrl, err := url.Parse(project.Thumbnail)
 	if err != nil {
-		u.Logger.ErrorAny("ErrorParseProjectThumbnailURL", zap.Error(err))
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
 	}
 	parsedThumbnail := parsedThumbnailUrl.String()
 
@@ -566,7 +567,7 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 	// create discord message
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
-		u.Logger.ErrorAny("NotifyCreateNewProjectToDiscord.CreateDiscordNoti", zap.Error(err))
+		logger.AtLog.Logger.Error("NotifyCreateNewProjectToDiscord.CreateDiscordNoti", zap.Error(err))
 	}
 }
 
@@ -583,7 +584,7 @@ func (u Usecase) JobSendDiscordNoti() error {
 			Status: &status,
 		})
 		if err != nil {
-			u.Logger.ErrorAny("JobSendDiscordNoti.ErrorWhenGetPendingNoties", zap.Any("page", page))
+			logger.AtLog.Logger.Error("JobSendDiscordNoti.ErrorWhenGetPendingNoties", zap.Any("page", page))
 			return errors.WithStack(err)
 		}
 		uNoties := resp.Result
@@ -602,7 +603,7 @@ func (u Usecase) JobSendDiscordNoti() error {
 			u.Logger.Info("sending new airdrop message to discord", discordMsg)
 
 			if err := u.DiscordClient.SendMessage(context.TODO(), noti.Webhook, *discordMsg); err != nil {
-				u.Logger.ErrorAny("JobSendDiscordNoti.errorSendingMessageToDiscord", zap.Error(err))
+				logger.AtLog.Logger.Error("JobSendDiscordNoti.errorSendingMessageToDiscord", zap.Error(err))
 				u.Repo.UpdateDiscordNotiAddRetry(noti.UUID)
 				if noti.NumRetried + 1 == MAX_SEND_DISCORD_RETRY_TIMES {
 					u.Repo.UpdateDiscordStatus(noti.UUID, entity.FAILED)
@@ -641,7 +642,7 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 			copier.Copy(tmpNoti, noti)
 			tmpNoti.Webhook = webhook
 			tmpNoti.Meta.SentTo = partner.Name
-			u.Logger.LogAny("CreateDiscordNoti.SendToPartner", zap.Any("tmpNoti", tmpNoti))
+			logger.AtLog.Logger.Info("CreateDiscordNoti.SendToPartner", zap.Any("tmpNoti", tmpNoti))
 			u.Repo.CreateDiscordNoti(*tmpNoti)
 		}
 	}

@@ -135,7 +135,7 @@ func (u Usecase) JobAggregateReferral() {
 	//ref := "63ed059beb293700db300282"
 	referrals, err := u.Repo.GetAllReferrals(entity.FilterReferrals{})
 	if err != nil {
-		u.Logger.ErrorAny("JobAggregateReferral", zap.Any("err", err))
+		logger.AtLog.Logger.Error("JobAggregateReferral", zap.Any("err", err))
 		return
 	}
 
@@ -183,7 +183,7 @@ func (u Usecase) JobAggregateReferral() {
 
 			_, err = u.Repo.UpdateReferral(referral.UUID, &referral)
 			if err != nil {
-				u.Logger.ErrorAny("JobAggregateReferral", zap.Error(err))
+				logger.AtLog.Logger.Error("JobAggregateReferral", zap.Error(err))
 				return
 			}
 
@@ -374,7 +374,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	dateString := "2023-03-10T04:05:26.385+00:00"
 	date, _ := time.Parse("2023-02-28T00:00:00.000+00:00", dateString)
 	if err != nil {
-		u.Logger.ErrorAny("CreateWD.FindProjectByTokenID", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType))
+		logger.AtLog.Logger.Error("CreateWD.FindProjectByTokenID", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType))
 		return nil, false, err
 	}
 	isDuplicated := false
@@ -413,7 +413,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		eth := csv.ETH
 		ethFloat, err := strconv.ParseFloat(eth, 10)
 		if err != nil {
-			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("eth", eth))
+			logger.AtLog.Logger.Error("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("eth", eth))
 			return nil, false, err
 		}
 		// if ethFloat > 0 {
@@ -429,7 +429,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 		btc := csv.BTC
 		btcFloat, err := strconv.ParseFloat(btc, 10)
 		if err != nil {
-			u.Logger.ErrorAny("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("btc", btc))
+			logger.AtLog.Logger.Error("CreateWD.ParseFloat", zap.Error(err), zap.String("csv", csv.ProjectID), zap.String("paymentType", paymentType), zap.String("btc", btc))
 			return nil, false, err
 		}
 		// if btcFloat > 0 {
@@ -454,7 +454,7 @@ func (u Usecase) CreateWD(csv csvLine, paymentType string) (*entity.Withdraw, bo
 	wd.Amount = amount
 	wd.CreatedAt = &date
 	wd.Note = "Add the paid artist on Mar 2023"
-	u.Logger.LogAny("CreateWD.wd", zap.String("paymentType", paymentType), zap.Any("wd", wd))
+	logger.AtLog.Logger.Info("CreateWD.wd", zap.String("paymentType", paymentType), zap.Any("wd", wd))
 	wd.User = usr
 
 	return wd, isDuplicated, nil
@@ -465,14 +465,14 @@ func (u Usecase) CreateVolumn(item structure.VolumnLogs) {
 	pID := strings.ToLower(item.ProjectID)
 	p, err := u.Repo.FindProjectByTokenID(pID)
 	if err != nil {
-		u.Logger.ErrorAny("FindProjectByTokenID", zap.String("item.ProjectID", item.ProjectID), zap.Any("err", err))
+		logger.AtLog.Logger.Error("FindProjectByTokenID", zap.String("item.ProjectID", item.ProjectID), zap.Any("err", err))
 		return
 	}
 
 	creatorID := strings.ToLower(p.CreatorAddrr)
 	usr, err := u.Repo.FindUserByWalletAddress(creatorID)
 	if err != nil {
-		u.Logger.ErrorAny("FindUserByWalletAddress", zap.String("p.CreatorAddrr", creatorID), zap.Any("err", err))
+		logger.AtLog.Logger.Error("FindUserByWalletAddress", zap.String("p.CreatorAddrr", creatorID), zap.Any("err", err))
 		return
 	}
 
@@ -504,7 +504,7 @@ func (u Usecase) CreateVolumn(item structure.VolumnLogs) {
 
 			err = u.Repo.CreateVolumn(ev)
 			if err != nil {
-				u.Logger.ErrorAny("CreateVolumn", zap.Any("ev", ev), zap.Any("err", err))
+				logger.AtLog.Logger.Error("CreateVolumn", zap.Any("ev", ev), zap.Any("err", err))
 				return
 			}
 		}
@@ -513,21 +513,21 @@ func (u Usecase) CreateVolumn(item structure.VolumnLogs) {
 		if item.TotalAmount != *ev.Amount {
 			_, err := u.Repo.UpdateVolumnAmount(*ev.ProjectID, *ev.PayType, item.TotalAmount, item.TotalEarnings, item.GenEarnings)
 			if err != nil {
-				u.Logger.ErrorAny("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+				logger.AtLog.Logger.Error("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
 				return
 			}
 		}
 
 		_, err := u.Repo.UpdateVolumnMinted(*ev.ProjectID, *ev.PayType, item.TotalMinted)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+			logger.AtLog.Logger.Error("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
 			return
 		}
 
 		if item.MintPrice != int(ev.MintPrice) {
 			_, err := u.Repo.UpdateVolumMintPrice(*ev.ProjectID, *ev.PayType, int64(item.MintPrice))
 			if err != nil {
-				u.Logger.ErrorAny("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
+				logger.AtLog.Logger.Error("UpdateVolumnAmount", zap.String("p.CreatorAddrr", p.CreatorAddrr), zap.Any("err", err))
 				return
 			}
 		}
@@ -538,7 +538,7 @@ func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProj
 
 	data, err := u.Repo.AggregationBTCWalletAddress(projectID)
 	if err != nil {
-		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
+		logger.AtLog.Logger.Error("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
 	if len(data) > 0 {
@@ -555,7 +555,7 @@ func (u Usecase) AggregateOldBtcAddress(projectID string) (*entity.AggregateProj
 func (u Usecase) AggregateOldETHAddress(projectID string) (*entity.AggregateProjectItemResp, error) {
 	dataETH, err := u.Repo.AggregationETHWalletAddress(projectID)
 	if err != nil {
-		u.Logger.ErrorAny("AggregationBTCWalletAddress", zap.Error(err))
+		logger.AtLog.Logger.Error("AggregationBTCWalletAddress", zap.Error(err))
 	}
 
 	if len(dataETH) > 0 {

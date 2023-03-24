@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscription_id string, order_id string) error {
@@ -272,12 +273,12 @@ func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
 	}
 	err := u.Repo.InsertDexVolumeInscription(&data)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
 	} else {
 		o.IsTimeSeriesData = true
 		_, err = u.Repo.UpdateDexBTCListingTimeseriesData(&o)
 		if err != nil {
-			u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+			logger.AtLog.Logger.Error(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
 		}
 	}
 }

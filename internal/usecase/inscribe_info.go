@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/logger"
 )
 
 
@@ -102,13 +103,13 @@ func (u Usecase) crawlInscribeWebsite(id string) (inscriptionInfo *entity.Inscri
 }
 
 func (u Usecase) GetInscribeInfo(id string) (*entity.InscribeInfo, error) {
-	u.Logger.LogAny("GetInscribeInfo.Start", zap.String("id", id))
+	logger.AtLog.Logger.Info("GetInscribeInfo.Start", zap.String("id", id))
 	inscribeInfo, err := u.Repo.GetInscribeInfo(id);
 	if err != nil {
 		// Failed to find inscribe info in database, try to crawl it from website
 		inscribeInfo, err = u.crawlInscribeWebsite(id)
 		if err != nil {
-			u.Logger.ErrorAny("GetInscribeInfo.ErrorCrawlInscribeWebsite", zap.Error(err))
+			logger.AtLog.Logger.Error("GetInscribeInfo.ErrorCrawlInscribeWebsite", zap.Error(err))
 			return nil, errors.WithStack(err)
 		} else {
 			// If crawl successfully, create the inscribe info
@@ -119,7 +120,7 @@ func (u Usecase) GetInscribeInfo(id string) (*entity.InscribeInfo, error) {
 		}
 	}
 
-	u.Logger.LogAny("GetInscribeInfo.Success", zap.String("id", id))
+	logger.AtLog.Logger.Info("GetInscribeInfo.Success", zap.String("id", id))
 
 	return inscribeInfo, nil
 }

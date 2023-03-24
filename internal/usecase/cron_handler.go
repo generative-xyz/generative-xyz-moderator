@@ -626,10 +626,10 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 		processed++
 		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
-			u.Logger.ErrorAny("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
+			logger.AtLog.Logger.Error("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
 			continue
 		}
-		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id", token.TokenID))
+		logger.AtLog.Logger.Info("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id", token.TokenID))
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
 		if token.OwnerAddr != inscribeInfo.Address {

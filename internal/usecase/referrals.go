@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 const (
@@ -17,21 +18,21 @@ func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
 	// check if referree is referred
 	count, err := u.Repo.CountReferralOfReferee(referreeID)
 	if err != nil {
-		u.Logger.ErrorAny("u.Repo.CountReferralOfReferee", zap.Any("FindUserByID", err))
+		logger.AtLog.Logger.Error("u.Repo.CountReferralOfReferee", zap.Any("FindUserByID", err))
 		return err
 	}
 	if count > 0 {
 		return fmt.Errorf("user is referred")
 	}
-	u.Logger.LogAny("CreateReferral", zap.Any("referrerID", referrerID), zap.Any("referreeID", referreeID))
+	logger.AtLog.Logger.Info("CreateReferral", zap.Any("referrerID", referrerID), zap.Any("referreeID", referreeID))
 	referrer, err := u.Repo.FindUserByID(referrerID)
 	if err != nil {
-		u.Logger.ErrorAny("CreateReferral", zap.Any("FindUserByID", err))
+		logger.AtLog.Logger.Error("CreateReferral", zap.Any("FindUserByID", err))
 		return err
 	}
 	referree, err := u.Repo.FindUserByID(referreeID)
 	if err != nil {
-		u.Logger.ErrorAny("CreateReferral", zap.Any("FindUserByID", err))
+		logger.AtLog.Logger.Error("CreateReferral", zap.Any("FindUserByID", err))
 		return err
 	}
 
@@ -43,10 +44,10 @@ func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
 		Referree: referree,
 	}
 
-	u.Logger.LogAny("CreateReferral", zap.Any("InsertReferral", inserted))
+	logger.AtLog.Logger.Info("CreateReferral", zap.Any("InsertReferral", inserted))
 	err = u.Repo.InsertReferral(inserted)
 	if err != nil {
-		u.Logger.ErrorAny("CreateReferral", zap.Any("InsertReferral", err))
+		logger.AtLog.Logger.Error("CreateReferral", zap.Any("InsertReferral", err))
 		return err
 	}
 
@@ -54,11 +55,11 @@ func (u Usecase) CreateReferral( referrerID string, referreeID string) error {
 }
 
 func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Pagination, error) {
-	u.Logger.LogAny("GetReferrals", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetReferrals", zap.Any("req", req))
 	pe := &entity.FilterReferrals{}
 	err := copier.Copy(pe, req)
 	if err != nil {
-		u.Logger.ErrorAny("GetReferrals",zap.Any("copier.Copy", err))
+		logger.AtLog.Logger.Error("GetReferrals",zap.Any("copier.Copy", err))
 		return nil, err
 	}
 	referrals, err := u.Repo.GetReferrals(*pe)
@@ -111,6 +112,6 @@ func (u Usecase) GetReferrals( req structure.FilterReferrals) (*entity.Paginatio
 	}
 	
 	referrals.Result = resp
-	u.Logger.LogAny("GetReferrals", zap.Any("req", req), zap.Any("referrals",referrals), zap.Any("referrals", referrals.Total))
+	logger.AtLog.Logger.Info("GetReferrals", zap.Any("req", req), zap.Any("referrals",referrals), zap.Any("referrals", referrals.Total))
 	return referrals, nil
 }

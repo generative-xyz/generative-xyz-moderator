@@ -320,7 +320,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 	oldAdressPayment := ""
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+		logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		return nil, err
 	}
 
@@ -332,7 +332,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.Avatar = *data.Avatar
 		uploaded, err := u.UploadUserAvatar(*user)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		} else {
 			user.Avatar = *uploaded
 		}
@@ -407,9 +407,9 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 			WalletAddress: &user.WalletAddress,
 		})
 
-		u.Logger.LogAny("UpdateUserProfile", zap.Any("projects", projects))
+		logger.AtLog.Logger.Info("UpdateUserProfile", zap.Any("projects", projects))
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 			return
 		}
 
@@ -421,7 +421,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 			_, err := u.Repo.UpdateProject(p.UUID, &p)
 			if err != nil {
-				u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+				logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 				continue
 			}
 
@@ -429,7 +429,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	}(*user)
 
-	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
+	logger.AtLog.Logger.Info("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
 	if isUpdateWalletAddress {
 		if user.Stats.CollectionCreated > 0 {
 			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
@@ -475,12 +475,12 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedDetails, error) {
 
 	//tokenMd5 := helpers.GenerateMd5String(accessToken)
-	//u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
+	//logger.AtLog.Logger.Info("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
 
 	// userID, err := u.Cache.GetData(tokenMd5)
 	// if err != nil {
 	// 	err = errors.New("Access token is invaild")
-	// 	u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
+	// 	logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
 	// 	return nil, err
 
 	// }
@@ -488,14 +488,14 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
 	if err != nil {
-		u.Logger.ErrorAny("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
+		logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
 		return nil, err
 	}
 
 	userID := &claim.Uid
 	if userID == nil {
 		err := errors.New("Cannot find userID")
-		u.Logger.ErrorAny("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
+		logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
 		return nil, err
 	}
 

@@ -19,6 +19,7 @@ import (
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 // api listing....
@@ -107,14 +108,14 @@ func (u Usecase) BTCMarketplaceListNFT(filter *entity.FilterString, buyableOnly 
 	// get btc, btc rate:
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return nil, err
 	}
 
 	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return nil, err
 	}
 	u.Logger.Info("btcPrice", btcPrice)

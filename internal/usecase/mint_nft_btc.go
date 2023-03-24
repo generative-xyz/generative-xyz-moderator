@@ -1902,14 +1902,14 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	_ = amountMintBTC
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
 	u.Logger.Info("btcPrice", btcPrice)
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
@@ -1928,7 +1928,7 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	result := new(big.Int)
 	amountMintBTC.Int(result)
 
-	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
+	logger.AtLog.Logger.Info("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
 	return result.String(), btcPrice, ethPrice, nil
 }
 

@@ -11,10 +11,11 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, error) {
-	u.Logger.LogAny(
+	logger.AtLog.Logger.Info(
 		"crawlTokenTxFrom.Start", 
 		zap.String("inscriptionID", tokenTx.InscriptionID), 
 		zap.String("startTx", tokenTx.Tx),
@@ -28,14 +29,14 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 	txs := []string{}
 	currentTx := tokenTx.Tx
 	for {
-		u.Logger.LogAny(
+		logger.AtLog.Logger.Info(
 			"crawlTokenTxFrom.StartGetTransactionInfo",
 			zap.String("inscriptionID", tokenTx.InscriptionID),
 			zap.String("startTx", tokenTx.Tx),
 		)
 		resp, err := http.Get("https://api.blockchain.info/haskoin-store/btc/transaction/" + currentTx)
 		if err != nil {
-			u.Logger.ErrorAny(
+			logger.AtLog.Logger.Error(
 				"crawlTokenTxFrom.ErrorWhenGetTransaction", 
 				zap.Error(err),
 				zap.String("currentTx", currentTx),
@@ -53,7 +54,7 @@ func (u Usecase) crawlTokenTxFrom(tokenTx entity.TokenTx) ([]entity.TokenTx, err
 		}
 		currentTx = tx.Outputs[0].Spender.TxId
 		txs = append(txs, currentTx)
-		u.Logger.LogAny(
+		logger.AtLog.Logger.Info(
 			"crawlTokenTxFrom.FindNewTx",
 			zap.String("inscriptionID", tokenTx.InscriptionID), 
 			zap.String("startTx", tokenTx.Tx),
@@ -104,7 +105,7 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 	u.Repo.AddTokenTxRetryResolve(tokenTx.InscriptionID, tokenTx.Tx)
 	tx := structure.Tx{}
 	txId := tokenTx.Tx
-	u.Logger.LogAny(
+	logger.AtLog.Logger.Info(
 		"fetchDataFromTx.Start", 
 		zap.String("tx", txId),
 	)
@@ -127,7 +128,7 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 		}
 	}
 	if tradingTx && len(tx.Outputs) >= 3 { 
-		u.Logger.LogAny("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
+		logger.AtLog.Logger.Info("fetchDataFromTx.MeetTradingTx", zap.String("tx", txId))
 		buyer := tx.Outputs[0].Address
 		seller := tx.Outputs[1].Address
 		amount := tx.Outputs[1].Value
@@ -140,7 +141,7 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 		}
 		
 		if existed {
-			u.Logger.LogAny("fetchDataFromTx.ListingExisted", zap.String("tx", tokenTx.Tx))
+			logger.AtLog.Logger.Info("fetchDataFromTx.ListingExisted", zap.String("tx", tokenTx.Tx))
 			u.Repo.UpdateResolvedTx(tokenTx.InscriptionID, tokenTx.Tx)
 			return nil
 		}
@@ -179,23 +180,23 @@ func (u Usecase) fetchDataFromTx(tokenTx entity.TokenTx) error {
 }
 
 func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
-	u.Logger.LogAny(
+	logger.AtLog.Logger.Info(
 		"GoFromTailTokenTx.Start",
 		zap.String("inscriptionID", tail.InscriptionID),
 		zap.String("tx", tail.Tx),
 	)
 	tokenTxs, err := u.crawlTokenTxFrom(tail)
 	if err != nil {
-		u.Logger.ErrorAny("GoFromTailTokenTx.crawlTokenTxFrom", zap.Error(err))
+		logger.AtLog.Logger.Error("GoFromTailTokenTx.crawlTokenTxFrom", zap.Error(err))
 		return errors.WithStack(err)
 	}
 
 	for i := len(tokenTxs) - 1; i >= 0; i-- {
 		tokenTx := tokenTxs[i]
-		u.Logger.LogAny("GoFromTailTokenTx.UpsertTokenTx", zap.Any("tokenTx", tokenTx))
+		logger.AtLog.Logger.Info("GoFromTailTokenTx.UpsertTokenTx", zap.Any("tokenTx", tokenTx))
 		_, err = u.Repo.UpsertTokenTx(tokenTx.InscriptionID, tokenTx.Tx, &tokenTx)
 		if err != nil {
-			u.Logger.ErrorAny("GoFromTailTokenTx.UpsertTokenTxFailed", zap.Error(err), zap.Any("tokenTx", tokenTx))
+			logger.AtLog.Logger.Error("GoFromTailTokenTx.UpsertTokenTxFailed", zap.Error(err), zap.Any("tokenTx", tokenTx))
 			return errors.WithStack(err)
 		}
 	}
@@ -203,10 +204,10 @@ func (u Usecase) GoFromTailTokenTx(tail entity.TokenTx) error {
 }
 
 func (u Usecase) JobCreateTokenTxFromTokenURI() error {
-	u.Logger.LogAny("JobCreateTokenTxFromTokenURI.Start")
+	logger.AtLog.Logger.Info("JobCreateTokenTxFromTokenURI.Start")
 	startTime := time.Time{}
 	for page := int64(1);; page++ {
-		u.Logger.LogAny("JobCreateTokenTxFromTokenURI.GetPagingTokenUri", zap.Any("page", page))
+		logger.AtLog.Logger.Info("JobCreateTokenTxFromTokenURI.GetPagingTokenUri", zap.Any("page", page))
 		uTokens, err := u.Repo.GetNotCreatedTxToken(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
@@ -223,7 +224,7 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 		for _, token := range tokens {
 			trendingScore, err := u.Repo.GetProjectTrendingScore(token.ProjectID) 
 			if err != nil {
-				u.Logger.ErrorAny(
+				logger.AtLog.Logger.Error(
 					"JobCreateTokenTxFromTokenURI.ErrorGetProjectTrendingScore", 
 					zap.Error(err), 
 					zap.String("inscriptionID", token.TokenID),
@@ -238,7 +239,7 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 			}
 			
 			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
-				u.Logger.ErrorAny(
+				logger.AtLog.Logger.Error(
 					"JobCreateTokenTxFromTokenURI.InsertTokenTx", 
 					zap.Error(err), 
 					zap.String("token_id", token.TokenID),
@@ -253,10 +254,10 @@ func (u Usecase) JobCreateTokenTxFromTokenURI() error {
 }
 
 func (u Usecase) JobContinueCrawlTxs() error {
-	u.Logger.LogAny("JobContinueCrawlTxs.Start")
+	logger.AtLog.Logger.Info("JobContinueCrawlTxs.Start")
 	var processed int64
 	for page := int64(1);; page++ {
-		u.Logger.LogAny("JobContinueCrawlTxs.GetPagingTokenTx", zap.Any("page", page))
+		logger.AtLog.Logger.Info("JobContinueCrawlTxs.GetPagingTokenTx", zap.Any("page", page))
 		uTokenTxs, err := u.Repo.GetTailTokenTxs(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
@@ -272,7 +273,7 @@ func (u Usecase) JobContinueCrawlTxs() error {
 		)
 		for _, tokenTx := range tokenTxs {
 			if err := u.GoFromTailTokenTx(tokenTx); err != nil {
-				u.Logger.ErrorAny(
+				logger.AtLog.Logger.Error(
 					"JobContinueCrawlTxs.GoFromTailTokenTx",
 					zap.Error(err),
 					zap.String("inscriptionID", tokenTx. InscriptionID),
@@ -289,10 +290,10 @@ func (u Usecase) JobContinueCrawlTxs() error {
 }
 
 func (u Usecase) JobFetchUnresolvedTokenTxs() error {
-	u.Logger.LogAny("JobFetchUnresolvedTokenTxs.Start")
+	logger.AtLog.Logger.Info("JobFetchUnresolvedTokenTxs.Start")
 	var processed int64
 	for page := int64(1);; page++ {
-		u.Logger.LogAny("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
+		logger.AtLog.Logger.Info("JobFetchUnresolvedTokenTxs.GetPagingTokenTx", zap.Any("page", page))
 		uTokenTxs, err := u.Repo.GetUnresolvedTokenTx(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
@@ -301,14 +302,14 @@ func (u Usecase) JobFetchUnresolvedTokenTxs() error {
 		if len(tokenTxs) == 0 {
 			break
 		}
-		u.Logger.LogAny(
+		logger.AtLog.Logger.Info(
 			"JobFetchUnresolvedTokenTxs.DonePagingTokenTx", 
 			zap.Any("page", page), 
 			zap.Any("numItem", len(tokenTxs)),
 		)
 		for _, tokenTx := range tokenTxs {
 			if err := u.fetchDataFromTx(tokenTx); err != nil {
-				u.Logger.ErrorAny(
+				logger.AtLog.Logger.Error(
 					"JobFetchUnresolvedTokenTxs.fetchDataFromTx",
 					zap.Error(err),
 					zap.String("inscriptionID", tokenTx.InscriptionID),
@@ -340,7 +341,7 @@ func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
 		lastCrawled := *pLastCrawled
 		fr := lastCrawled + 1
 		to := fr + limit - 1
-		u.Logger.LogAny(
+		logger.AtLog.Logger.Info(
 			"JobCrawlTokenTxNotFromTokenUri.CrawlFromSearcher",
 			zap.Int64("fr", fr),
 			zap.Int64("to", to),
@@ -348,7 +349,7 @@ func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
 		url := fmt.Sprintf("https://generative.xyz/generative/api/search?limit=%v&page=1&search=&type=inscription&fromNumber=%v&toNumber=%v", limit, fr, to)
 		resp, err := http.Get(url)
 		if err != nil {
-			u.Logger.ErrorAny(
+			logger.AtLog.Logger.Error(
 				"JobCrawlTokenTxNotFromTokenUri.ErrorCrawlFromSearcher", 
 				zap.Error(err),
 				zap.Int64("fr", fr),
@@ -375,7 +376,7 @@ func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
 			}
 			
 			if err := u.Repo.InsertTokenTx(&tokenTx); err != nil {
-				u.Logger.ErrorAny(
+				logger.AtLog.Logger.Error(
 					"JobCrawlTokenTxNotFromTokenUri.InsertTokenTx", 
 					zap.Error(err), 
 					zap.String("token_id", inscriptionID),

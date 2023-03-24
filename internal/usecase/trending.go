@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/logger"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 )
 
 func (u Usecase) JobSyncProjectTrending() error {
-	u.Logger.LogAny("JobSyncProjectTrending.StartJobSyncProjectTrending")
+	logger.AtLog.Logger.Info("JobSyncProjectTrending.StartJobSyncProjectTrending")
 	// All btc activities, which include Mint and Buy activity
 	// Mapping from projectID to latest two week's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
@@ -24,7 +25,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 		u.Logger.Info("JobSyncProjectTrending.StartGetpagingBtcActivities", zap.Any("page", page))
 		resp, err := u.Repo.GetRecentBTCActivity(page, 100)
 		if err != nil {
-			u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetPagingActitvities", zap.Error(err))
+			logger.AtLog.Logger.Error("JobSyncProjectTrending.ErrorWhenGetPagingActitvities", zap.Error(err))
 			return errors.WithStack(err)
 		}
 		uActivities := resp.Result
@@ -48,21 +49,21 @@ func (u Usecase) JobSyncProjectTrending() error {
 	fromProjectIDToListingVolumn := map[string]int64{}
 
 	for page := int64(1); ; page++ {
-		u.Logger.LogAny("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
+		logger.AtLog.Logger.Info("SyncProjectTrending.StartGetpagingListings", zap.Any("page", page))
 		listings, err := u.Repo.GetDexBtcsAlongWithProjectInfo(entity.GetDexBtcListingWithProjectInfoReq{
 			Page:  page,
 			Limit: 100,
 		})
 		if err != nil {
-			u.Logger.ErrorAny("SyncProjectTrending.ErrorWhenGetListings", zap.Any("page", page), zap.Error(err))
+			logger.AtLog.Logger.Error("SyncProjectTrending.ErrorWhenGetListings", zap.Any("page", page), zap.Error(err))
 			break
 		}
-		u.Logger.LogAny("SyncProjectTrending.DoneGetpagingListings", zap.Any("page", page), zap.Any("listing_count", len(listings)))
+		logger.AtLog.Logger.Info("SyncProjectTrending.DoneGetpagingListings", zap.Any("page", page), zap.Any("listing_count", len(listings)))
 		if len(listings) == 0 {
 			break
 		}
 		for _, listing := range listings {
-			u.Logger.LogAny("SyncProjectTrending.Listing", zap.Any("listing", listing))
+			logger.AtLog.Logger.Info("SyncProjectTrending.Listing", zap.Any("listing", listing))
 			if listing.FromOtherMkp {
 				continue
 			}
@@ -89,15 +90,15 @@ func (u Usecase) JobSyncProjectTrending() error {
 		}
 		f := entity.FilterProjects{}
 		f.BaseFilters = baseFilter
-		u.Logger.LogAny("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
+		logger.AtLog.Logger.Info("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", page))
 		resp, err := u.Repo.GetProjects(f)
 		if err != nil {
-			u.Logger.ErrorAny("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
+			logger.AtLog.Logger.Error("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
 		uProjects := resp.Result
 		projects := uProjects.([]entity.Projects)
-		u.Logger.LogAny("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
+		logger.AtLog.Logger.Info("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", len(projects)))
 		if len(projects) == 0 {
 			break
 		}
@@ -112,7 +113,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 				countView = *_countView
 			}
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID] + fromProjectIDToListingVolumn[project.TokenID]
-			u.Logger.LogAny(
+			logger.AtLog.Logger.Info(
 				"JobSyncProjectTrending.Volumn", 
 				zap.String("project", project.TokenID), 
 				zap.Any("mintVolumn", fromProjectIDToRecentVolumn[project.TokenID]),
@@ -173,9 +174,9 @@ func (u Usecase) JobSyncProjectTrending() error {
 			}
 
 			u.Repo.UpdateTrendingScoreForProject(project.TokenID, trendingScore)
-			u.Logger.LogAny("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("volumnInBtc", volumnInBtc))
+			logger.AtLog.Logger.Info("SyncProjectTrending.UpdateTrendingScoreForProject", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("volumnInBtc", volumnInBtc))
 			if numListings != 0 {
-				u.Logger.LogAny("SyncProjectTrending.ProjectHasListing", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("numListings", numListings))
+				logger.AtLog.Logger.Info("SyncProjectTrending.ProjectHasListing", zap.Any("projectID", project.TokenID), zap.Any("trendingScore", trendingScore), zap.Any("numListings", numListings))
 			}
 		}
 	}
@@ -184,7 +185,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 }
 
 func (u Usecase) JobDeleteOldActivities() error {
-	u.Logger.LogAny("JobDeleteOldActivities.Start")
+	logger.AtLog.Logger.Info("JobDeleteOldActivities.Start")
 	err := u.Repo.JobDeleteOldActivities()
 	if err != nil {
 		return errors.Wrap(err, "u.Repo.JobDeleteOldActivities")

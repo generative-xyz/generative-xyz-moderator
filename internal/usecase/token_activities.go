@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*entity.Pagination, error) {
@@ -97,7 +98,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
 					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
 					u.Repo.UpdateListingCreatedVerifiedActivity(listing.UUID)
@@ -115,7 +116,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
 					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
 					u.Repo.UpdateListingCreatedCancelledActivity(listing.UUID)
@@ -134,7 +135,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
 					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
 					u.Repo.UpdateListingCreatedMatchedActivity(listing.UUID)
@@ -186,7 +187,7 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 			}
 			err = u.Repo.InsertTokenActivity(&activity)
 			if err != nil {
-				u.Logger.ErrorAny("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Error(err))
+				logger.AtLog.Logger.Error("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Error(err))
 			} else {
 				u.Logger.Info("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Any("activity", activity))
 				u.Repo.UpdateTokenCreatedMintActivity(token.TokenID)

@@ -29,6 +29,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
 )
 
@@ -46,7 +47,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, errors.New("Token is empty")
 	}
 	resp := &structure.TokenAnimationURI{}
-	u.Logger.LogAny("RunAndCap", zap.Any("token", token))
+	logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -61,7 +62,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
-		u.Logger.ErrorAny("RunAndCap", zap.Error(err))
+		logger.AtLog.Logger.Error("RunAndCap", zap.Error(err))
 		return nil, err
 	}
 
@@ -94,7 +95,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 			imageURL = fileURI
 		}
-		u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
+		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	}
 
 	traits := make(map[string]interface{})
@@ -137,9 +138,9 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				u.Logger.ErrorAny("RunAndCap", zap.Any("UploadBaseToBucket", zap.Error(err)))
+				logger.AtLog.Logger.Error("RunAndCap", zap.Any("UploadBaseToBucket", zap.Error(err)))
 			} else {
-				u.Logger.LogAny("RunAndCap", zap.Any("uploaded", uploaded))
+				logger.AtLog.Logger.Info("RunAndCap", zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
@@ -154,7 +155,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	u.Logger.LogAny("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("resp", resp))
+	logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("resp", resp))
 	return resp, nil
 }
 
@@ -174,13 +175,13 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 }
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-	u.Logger.LogAny("GetToken", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetToken", zap.Any("req", req))
 	//contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
-		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
 	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
@@ -203,7 +204,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
 	u.Logger.Info("incriptionData", zap.Any("data", resp))
 	if err != nil {
-		u.Logger.ErrorAny("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
+		logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
 		// return nil, err
 	}
 
@@ -218,16 +219,16 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 	//this was used for ETH (old flow)
 	// if err != nil {
-	// 	u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+	// 	logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 	// 	if errors.Is(err, mongo.ErrNoDocuments) {
 	// 		token, err := u.getTokenInfo(req)
 	// 		if err != nil {
-	// 			u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
+	// 			logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
 	// 			return nil, err
 	// 		}
 	// 		return token, nil
 	// 	} else {
-	// 		u.Logger.ErrorAny("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+	// 		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 	// 		return nil, err
 	// 	}
 	// }
@@ -241,7 +242,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 			if err != nil {
-				u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
 			}
 		}
 	}()
@@ -283,12 +284,12 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	dataObject, err := u.Repo.FindTokenByTokenID(req.TokenID)
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "FindTokenByTokenID"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "FindTokenByTokenID"), zap.Error(err))
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			dataObject = &entity.TokenUri{}
 			isUpdated = true
 		} else {
-			u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "FindTokenByTokenID"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "FindTokenByTokenID"), zap.Error(err))
 			return nil, err
 		}
 	}
@@ -300,7 +301,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	// call to contract to get emotion
 	client, err := helpers.EthDialer()
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
 		return nil, err
 	}
 
@@ -308,7 +309,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	tokenID, ok := tokenID.SetString(req.TokenID, 10)
 	if !ok {
 		err := errors.New("cannot convert tokenID")
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "tokenID.SetString"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "tokenID.SetString"), zap.Error(err))
 		return nil, err
 	}
 	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
@@ -317,7 +318,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		ProjectID:       projectID.String(),
 	})
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
 		return nil, err
 	}
 
@@ -338,14 +339,14 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 		tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
 		if err != nil {
-			u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "getNftProjectTokenUri"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "getNftProjectTokenUri"), zap.Error(err))
 			return
 		}
 
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 		data, err := helpers.Base64Decode(base64Str)
 		if err != nil {
-			u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "helpers.Base64Decode"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "helpers.Base64Decode"), zap.Error(err))
 			return
 		}
 
@@ -358,7 +359,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 		err = json.Unmarshal([]byte(stringData), tok)
 		if err != nil {
-			u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
 
@@ -399,14 +400,14 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
 		return nil, err
 	}
 
 	dataObject.Project = project
 	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "FindUserByWalletAddress"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "FindUserByWalletAddress"), zap.Error(err))
 		creator = &entity.Users{}
 	}
 	dataObject.Creator = creator
@@ -481,10 +482,10 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	if isUpdated {
 		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
 		if err != nil {
-			u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "UpdateOrInsertTokenUri"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "UpdateOrInsertTokenUri"), zap.Error(err))
 			return nil, err
 		}
-		u.Logger.LogAny("getTokenInfo", zap.Any("req", req), zap.Any("updated", updated), zap.String("action", "UpdateOrInsertTokenUri"))
+		logger.AtLog.Logger.Info("getTokenInfo", zap.Any("req", req), zap.Any("updated", updated), zap.String("action", "UpdateOrInsertTokenUri"))
 	}
 
 	//capture image
@@ -495,7 +496,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 	if err != nil {
-		u.Logger.ErrorAny("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
 	}
 
 	return dataObject, nil
@@ -1016,7 +1017,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			u.Logger.ErrorAny("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
+			logger.AtLog.Logger.Error("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
 			return nil, repository.ErrNoProjectsFound
 		} else {
 			return nil, err

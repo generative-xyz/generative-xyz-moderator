@@ -100,7 +100,7 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 
 func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
-	u.Logger.LogAny("CreateInscribeBTC", zap.Any("input", input))
+	logger.AtLog.Logger.Info("CreateInscribeBTC", zap.Any("input", input))
 
 	// todo remove:
 	// _, base64Str, err := decodeFileBase64(input.File)
@@ -122,21 +122,21 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	if input.FeeRate <= 3 {
 		err := errors.New("fee rate must be > 3")
-		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.Copy", zap.Error(err))
 		return nil, err
 	}
 
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.Copy", zap.Error(err))
 		return nil, err
 	}
 
 	// need function get size only:
 	mintFee, err := calculateMintPrice(input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
 		return nil, err
 	}
 
@@ -182,7 +182,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		// create segwit address
 		privKey, _, addressSegwit, err = ethClient.GenerateAddress()
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
 
@@ -205,7 +205,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		})
 
 		if err != nil {
-			u.Logger.ErrorAny("u.OrdService.Exec.create.Wallet", zap.Error(err))
+			logger.AtLog.Logger.Error("u.OrdService.Exec.create.Wallet", zap.Error(err))
 			return nil, err
 		}
 		walletAddress.Mnemonic = resp.Stdout
@@ -221,7 +221,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		})
 
 		if err != nil {
-			u.Logger.ErrorAny("u.OrdService.Exec.create.receive", zap.Error(err))
+			logger.AtLog.Logger.Error("u.OrdService.Exec.create.receive", zap.Error(err))
 			return nil, err
 		}
 		u.Logger.Info("CreateInscribeBTC.calculateMintPrice", resp)
@@ -236,7 +236,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 		err = json.Unmarshal([]byte(jsonStr), &receiveResp)
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.Unmarshal", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.Unmarshal", zap.Error(err))
 			return nil, err
 		}
 
@@ -246,7 +246,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		// create segwit address
 		privKey, _, addressSegwit, err = btc.GenerateAddressSegwit()
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
 
@@ -254,13 +254,13 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	if privKey == "" {
 		err := errors.New("Cannot create privKey")
-		u.Logger.ErrorAny("CreateInscribeBTC.privKey", zap.Error(err))
+		logger.AtLog.Logger.Error("CreateInscribeBTC.privKey", zap.Error(err))
 		return nil, err
 	}
 
 	if addressSegwit == "" {
 		err := errors.New("Cannot create addressSegwit")
-		u.Logger.ErrorAny("CreateInscribeBTC.addressSegwit", zap.Error(err))
+		logger.AtLog.Logger.Error("CreateInscribeBTC.addressSegwit", zap.Error(err))
 		return nil, err
 	}
 
@@ -331,7 +331,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateInscribeBTC.InsertInscribeBTC", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.InsertInscribeBTC", zap.Error(err))
 		return nil, err
 	}
 
