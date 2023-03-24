@@ -1,17 +1,12 @@
 package http
 
 import (
-	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/jinzhu/copier"
 
-	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils"
 )
 
 // UserCredits godoc
@@ -24,41 +19,41 @@ import (
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/receive-address [POST]
 func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http.Request) {
-	
 
-	var reqBody request.CreateEthWalletAddressReq
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// var reqBody request.CreateEthWalletAddressReq
+	// decoder := json.NewDecoder(r.Body)
+	// err := decoder.Decode(&reqBody)
+	// if err != nil {
+	// 	h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	reqUsecase := &structure.EthWalletAddressData{}
-	err = copier.Copy(reqUsecase, reqBody)
-	if err != nil {
-		h.Logger.Error("copier.Copy", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// reqUsecase := &structure.EthWalletAddressData{}
+	// err = copier.Copy(reqUsecase, reqBody)
+	// if err != nil {
+	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	ethWallet, err := h.Usecase.CreateETHWalletAddress(*reqUsecase)
-	if err != nil {
-		h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// ethWallet, err := h.Usecase.CreateETHWalletAddress(*reqUsecase)
+	// if err != nil {
+	// 	h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	h.Logger.Info("ethWallet", ethWallet)
-	resp, err := h.EthWalletAddressToResp(ethWallet)
-	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// h.Logger.Info("ethWallet", ethWallet)
+	// resp, err := h.EthWalletAddressToResp(ethWallet)
+	// if err != nil {
+	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
 
 // UserCredits godoc
@@ -73,50 +68,49 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 // @Router /eth/receive-address/whitelist [POST]
 func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWriter, r *http.Request) {
 
-	ctx := r.Context()
-	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
-	userWalletAddr, ok := iWalletAddress.(string)
-	if !ok {
-		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// ctx := r.Context()
+	// iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	// userWalletAddr, ok := iWalletAddress.(string)
+	// if !ok {
+	// 	err := errors.New("Wallet address is incorect")
+	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	
+	// var reqBody request.CreateWhitelistedEthWalletAddressReq
+	// decoder := json.NewDecoder(r.Body)
+	// err := decoder.Decode(&reqBody)
+	// if err != nil {
+	// 	h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	var reqBody request.CreateWhitelistedEthWalletAddressReq
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// reqUsecase := &structure.EthWalletAddressData{}
+	// err = copier.Copy(reqUsecase, reqBody)
+	// if err != nil {
+	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
+	// ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, userWalletAddr, *reqUsecase)
+	// if err != nil {
+	// 	h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	reqUsecase := &structure.EthWalletAddressData{}
-	err = copier.Copy(reqUsecase, reqBody)
-	if err != nil {
-		h.Logger.Error("copier.Copy", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, userWalletAddr, *reqUsecase)
-	if err != nil {
-		h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	// h.Logger.Info("ethWallet", ethWallet)
+	// resp, err := h.EthWalletAddressToResp(ethWallet)
+	// if err != nil {
+	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
-	h.Logger.Info("ethWallet", ethWallet)
-	resp, err := h.EthWalletAddressToResp(ethWallet)
-	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
 
 // UserCredits godoc
@@ -129,9 +123,9 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // @Success 200 {object} response.JsonResponse{}
 // @Router /eth/mint [POST]
 // func (h *httpDelivery) mintETH(w http.ResponseWriter, r *http.Request) {
-// 	
-// 	
-// 	
+//
+//
+//
 
 // 	var reqBody request.CreateMintReq
 // 	decoder := json.NewDecoder(r.Body)

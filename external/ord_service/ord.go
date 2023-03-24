@@ -53,7 +53,7 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error) {
 		return nil, err
 	}
 
-	data, err := m.request(fullUrl, "POST", nil, &buf)
+	data, _, err := m.request(fullUrl, "POST", nil, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -71,38 +71,52 @@ func (m BtcOrd) Exec(f ExecRequest) (*ExecRespose, error) {
 	return resp, nil
 }
 
-func (m BtcOrd) Mint(f MintRequest) (*MintRespose, error) {
+func (m BtcOrd) Mint(f MintRequest) (*MintRespose, string, error) {
+
+	responseString := ""
+
 	url := fmt.Sprintf("%s", Inscribe)
 	fullUrl := m.generateUrl(url)
 
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(f)
 	if err != nil {
-		return nil, err
+		return nil, responseString, err
 	}
 
-	data, err := m.request(fullUrl, "POST", nil, &buf)
+	data, statusCode, err := m.request(fullUrl, "POST", nil, &buf)
 	if err != nil {
-		return nil, err
+		return nil, responseString, err
 	}
+
+	if data != nil {
+		responseString = string(data)
+	}
+
+	if statusCode != http.StatusOK {
+		err = errors.New(fmt.Sprintf("Response with status %d", statusCode))
+		return nil, responseString, err
+	}
+
 	resp := &MintRespose{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
-		return nil, err
+		return nil, responseString, err
 	}
 
 	if resp.Error != "" {
 		err = errors.New(resp.Error)
-		return nil, err
+		return nil, responseString, err
 	}
 
-	return resp, nil
+	return resp, responseString, nil
 }
 
-func (m BtcOrd) request(fullUrl string, method string, headers map[string]string, reqBody io.Reader) ([]byte, error) {
+func (m BtcOrd) request(fullUrl string, method string, headers map[string]string, reqBody io.Reader) ([]byte, int, error) {
+
 	req, err := http.NewRequest(method, fullUrl, reqBody)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if len(headers) > 0 {
@@ -115,19 +129,20 @@ func (m BtcOrd) request(fullUrl string, method string, headers map[string]string
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		err = errors.New(fmt.Sprintf("Response with status %d", res.StatusCode))
-		return nil, err
-	}
+	// remove this for error response:
+	// if res.StatusCode != http.StatusOK {
+	// 	err = errors.New(fmt.Sprintf("Response with status %d", res.StatusCode))
+	// 	return nil, statusCode, err
+	// }
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, res.StatusCode, err
 	}
 
-	return body, nil
+	return body, res.StatusCode, nil
 }

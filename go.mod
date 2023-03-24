@@ -27,11 +27,13 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.3.0
+	github.com/google/wire v0.5.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jinzhu/copier v0.3.5
+	github.com/jinzhu/now v1.1.5
 	github.com/joho/godotenv v1.5.1
 	github.com/llgcode/draw2d v0.0.0-20210904075650-80aa0a2a901d
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -46,7 +48,7 @@ require (
 	github.com/test-go/testify v1.1.4
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/xakep666/mongo-migrate v0.2.1
-	go.mongodb.org/mongo-driver v1.11.2
+	go.mongodb.org/mongo-driver v1.11.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
@@ -58,6 +60,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.5
+	gotest.tools v2.2.0+incompatible
 )
 
 require (
@@ -132,7 +135,6 @@ require (
 	github.com/jackc/pgx/v5 v5.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

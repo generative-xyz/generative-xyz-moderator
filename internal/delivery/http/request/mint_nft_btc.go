@@ -7,4 +7,7 @@ type CreateMintReceiveAddressReq struct {
 	RefundUserAddress string `json:"refundUserAddress"`
 	Quantity          int    `json:"quantity"`
 	FeeRate           int32  `json:"feeRate"`
+
+	IsCustomFeeRate bool        `json:"isCustomFeeRate"`
+	EstMintFeeInfo  interface{} `json:"estMintFeeInfo"`
 }

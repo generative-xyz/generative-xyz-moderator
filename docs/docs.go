@@ -16,6 +16,44 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin-test": {
+            "get": {
+                "description": "Get Redis",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Redis",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.RedisResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/auto-listing": {
             "post": {
                 "description": "Auto listing",
@@ -639,7 +677,119 @@ const docTemplate = `{
                 }
             }
         },
+        "/charts/collections/{projectID}/charts": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/tokens/{tokenID}/charts": {
+            "get": {
+                "description": "TokenURI's chart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
+                ],
+                "summary": "TokenURI's chart",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "tokenID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/collections": {
+            "get": {
+                "description": "get list tokens og a collection and respond data for chart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "Collection's chart",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/collections/items": {
             "get": {
                 "description": "get list CollectionListing",
                 "consumes": [
@@ -663,6 +813,92 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/collections/on-sale-items": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/collections/sub-collection-items": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CollectionListing"
+                ],
+                "summary": "CollectionListing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number_from",
+                        "name": "number_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "number_to",
+                        "name": "number_to",
                         "in": "query"
                     }
                 ],
@@ -2475,6 +2711,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/marketplace/stats/{genNFTAddr}/first-sale": {
+            "get": {
+                "description": "get project's first-sale",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MarketPlace"
+                ],
+                "summary": "get project's first-sale",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Gen NFT Addr",
+                        "name": "genNFTAddr",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/marketplace/wallet/{walletAddress}/listing": {
             "get": {
                 "description": "User profile's selling nft",
@@ -3955,6 +4223,50 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "projectID adress",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/{projectID}/allow-list": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
                         "name": "projectID",
                         "in": "path",
                         "required": true
@@ -5583,6 +5895,9 @@ const docTemplate = `{
                 "createdMintActivity": {
                     "type": "boolean"
                 },
+                "createdTokenTx": {
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5752,6 +6067,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "output_minted": {
+                    "type": "integer"
+                },
+                "total_mint": {
+                    "type": "integer"
+                },
+                "total_minted": {
                     "type": "integer"
                 },
                 "volume_minted": {
@@ -7279,8 +7600,8 @@ const docTemplate = `{
                 "projectURI": {
                     "type": "string"
                 },
-                "proposal": {
-                    "$ref": "#/definitions/response.DaoProject"
+                "proposalSeqId": {
+                    "type": "integer"
                 },
                 "reportUsers": {
                     "type": "array",
@@ -7479,6 +7800,9 @@ const docTemplate = `{
                 "profile_social": {
                     "$ref": "#/definitions/response.ProfileSocial"
                 },
+                "stats": {
+                    "$ref": "#/definitions/response.UserStats"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -7496,6 +7820,20 @@ const docTemplate = `{
                 },
                 "wallet_address_payment": {
                     "type": "string"
+                }
+            }
+        },
+        "response.UserStats": {
+            "type": "object",
+            "properties": {
+                "collection_created": {
+                    "type": "integer"
+                },
+                "total_mint": {
+                    "type": "integer"
+                },
+                "total_minted": {
+                    "type": "integer"
                 }
             }
         },

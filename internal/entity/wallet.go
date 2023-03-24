@@ -7,15 +7,17 @@ import (
 )
 
 type WalletTrackTx struct {
-	BaseEntity        `bson:",inline"`
-	Txhash            string `bson:"txhash"`
-	Address           string `bson:"address"`
-	Status            string `bson:"status"`
-	Type              string `bson:"type"`
-	InscriptionID     string `bson:"inscription_id"`
-	InscriptionNumber uint64 `bson:"inscription_number"`
-	Amount            uint64 `bson:"amount"`
-	Receiver          string `bson:"receiver"`
+	BaseEntity            `bson:",inline"`
+	Txhash                string   `bson:"txhash"`
+	Address               string   `bson:"address"`
+	Status                string   `bson:"status"`
+	Type                  string   `bson:"type"`
+	InscriptionID         string   `bson:"inscription_id"`
+	InscriptionNumber     uint64   `bson:"inscription_number"`
+	InscriptionList       []string `json:"inscription_list"`
+	InscriptionNumberList []uint64 `json:"inscription_number_list"`
+	Amount                uint64   `bson:"amount"`
+	Receiver              string   `bson:"receiver"`
 }
 
 func (u WalletTrackTx) TableName() string {
@@ -25,3 +27,7 @@ func (u WalletTrackTx) TableName() string {
 func (u WalletTrackTx) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+const (
+	WalletType_BTC_PRVKEY = "btc_prvkey"
+)

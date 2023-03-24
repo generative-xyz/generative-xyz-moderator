@@ -33,6 +33,22 @@ func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscr
 	if orderInfo.InscriptionID != inscription_id {
 		return errors.New("invalid cancelling request")
 	}
+
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+
+	inscriptionInfo, err := getInscriptionByID(ordServer, inscription_id)
+	if err != nil {
+		fmt.Printf("Could not get inscription info - with err: %v", err)
+		return err
+	}
+
+	if !strings.EqualFold(inscriptionInfo.Address, seller_address) {
+		return fmt.Errorf("seller address not match inscription owner")
+	}
+
 	if !orderInfo.Cancelled && orderInfo.CancelTx == "" {
 		currentTime := time.Now()
 		orderInfo.CancelTx = txhash
@@ -151,6 +167,10 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		return nil, err
 	}
 
+	if !strings.EqualFold(inscriptionInfo.Address, seller_address) {
+		return nil, fmt.Errorf("seller address not match inscription owner")
+	}
+
 	inscriptionTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
 
 	if inscriptionTx != previousTxs[0] {
@@ -166,14 +186,24 @@ func (u Usecase) DexBTCListing(seller_address string, raw_psbt string, inscripti
 		if !found {
 			return nil, errors.New("can't found inscription in split tx")
 		}
+	} else {
+		newListing.Verified = true
 	}
+
 	if split_tx != "" {
-		_, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		// _, err = btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI)
+		// if err != nil {
+		// 	fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+		// 	return nil, err
+		// }
+		txMap := make(map[string]string)
+		txMap[splitTxData.TxHash().String()] = split_tx
+		err = u.SubmitBTCTransaction(txMap)
 		if err != nil {
-			fmt.Printf("btc.SendRawTxfromQuickNode(split_tx, u.Config.QuicknodeAPI) - with err: %v %v\n", err, split_tx)
+			log.Println("httpDelivery.submitTx.SubmitBTCTransaction", err.Error())
 			return nil, err
 		}
-
+		newListing.Verified = false
 	}
 
 	return &newListing, u.Repo.CreateDexBTCListing(&newListing)
@@ -201,7 +231,7 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 func (u Usecase) JobWatchPendingDexBTCListing() {
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
@@ -211,16 +241,66 @@ func (u Usecase) JobWatchPendingDexBTCListing() {
 		}
 	}(&wg)
 
+	wg.Wait()
+}
+
+func (u Usecase) JobWatchPendingDexBTCBuyETH() {
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
 		err := u.watchPendingDexBTCBuyETH()
 		if err != nil {
-			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCListing err", err)
+			log.Println("JobWatchPendingDexBTCListing watchPendingDexBTCBuyETH err", err)
 		}
 	}(&wg)
 
 	wg.Wait()
+}
 
+func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
+	u.Logger.Info("DexVolumeInscription Insert to time series data %s", o.InscriptionID)
+	data := entity.DexVolumeInscription{
+		Amount:    o.Amount,
+		Timestamp: o.MatchAt,
+		Metadata: entity.DexVolumeInscriptionMetadata{
+			InscriptionId: o.InscriptionID,
+			MatchedTx:     o.MatchedTx,
+		},
+	}
+	err := u.Repo.InsertDexVolumeInscription(&data)
+	if err != nil {
+		u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+	} else {
+		o.IsTimeSeriesData = true
+		_, err = u.Repo.UpdateDexBTCListingTimeseriesData(&o)
+		if err != nil {
+			u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+		}
+	}
+}
+
+func (u Usecase) preCheckPendingDexBTCListingTx(pendingOrders []entity.DexBTCListing) (map[string]*btc.GoBCYMultiTx, error) {
+	txNeedToCheck := []string{}
+	for _, order := range pendingOrders {
+		if order.CancelTx == "" {
+			inscriptionTx := strings.Split(order.Inputs[0], ":")
+			txNeedToCheck = append(txNeedToCheck, inscriptionTx[0])
+		}
+	}
+	log.Println("preCheckPendingDexBTCListingTx len(txNeedToCheck)", len(txNeedToCheck))
+	result, _, err := btc.CheckTxMultiBlockcypher(txNeedToCheck, u.Config.DEXBTCBlockcypherToken)
+	if err != nil {
+		log.Println("preCheckPendingDexBTCListingTx CheckTxMultiBlockcypher", err.Error())
+		return nil, err
+	}
+	if len(result) == 0 {
+		result = make(map[string]*btc.GoBCYMultiTx)
+	}
+	log.Println("preCheckPendingDexBTCListingTx len(result)", len(result))
+	return result, nil
 }
 
 func (u Usecase) watchPendingDexBTCListing() error {
@@ -228,10 +308,10 @@ func (u Usecase) watchPendingDexBTCListing() error {
 	if err != nil {
 		return err
 	}
-	_, bs, err := u.buildBTCClient()
+
+	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
 	if err != nil {
-		fmt.Printf("Could not initialize Bitcoin RPCClient - with err: %v", err)
-		return err
+		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err.Error())
 	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
@@ -256,31 +336,60 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		}
 		if order.CancelTx == "" {
 			spentTx := ""
-			txDetail, err := btc.CheckTxFromBTC(inscriptionTx[0])
-			if err == nil {
-				if txDetail.Data.Outputs != nil {
-					outputs := *txDetail.Data.Outputs
-					if outputs[idx].SpentByTx != "" {
-						spentTx = outputs[idx].SpentByTx
+			// txStatus, err := bs.CheckTx(inscriptionTx[0])
+			txStatus, exist := preCheckTxs[inscriptionTx[0]]
+			if !exist {
+				log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
+				spentTx, err = btc.CheckOutcoinSpentBlockStream(inscriptionTx[0], uint(idx))
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
+					continue
+				}
+				if spentTx != "" {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success\n")
+				}
+				if spentTx == "" {
+					log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.InscriptionID)
+					inscriptionInfo, err := u.GetInscriptionByIDFromOrd(order.InscriptionID)
+					if err != nil {
+						log.Printf("JobWatchPendingDexBTCListing GetInscriptionByIDFromOrd %v\n", order.Inputs)
+						continue
+					}
+					if inscriptionInfo != nil {
+						found := false
+						curInscTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
+						for _, vIn := range order.Inputs {
+							vInTx := strings.Split(vIn, ":")[0]
+							if curInscTx == vInTx {
+								found = true
+								break
+							}
+						}
+						if !found {
+							spentTx = curInscTx
+						}
 					}
 				}
 			} else {
-				log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC %v\n", inscriptionTx[0])
-				txStatus, err := bs.CheckTx(inscriptionTx[0])
-				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing bs.CheckTx(txhash) %v\n", order.Inputs)
-					continue
-				} else {
-					if txStatus.Outputs[idx].SpentBy != "" {
-						spentTx = txStatus.Outputs[idx].SpentBy
-					}
+				if txStatus.Outputs[idx].SpentBy != "" {
+					spentTx = txStatus.Outputs[idx].SpentBy
 				}
 			}
 
 			if spentTx != "" {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
-					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxFromBTC(spentTx) %v %v\n", order.Inputs, err)
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+				}
+
+				inputTxDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
+				if err != nil {
+					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+				}
+
+				if spentTxDetail.Result.Blocktime <= inputTxDetail.Result.Blocktime {
+					log.Printf("JobWatchPendingDexBTCListing blocktime not valid %v %v\n", spentTx, inscriptionTx[0])
+					continue
 				}
 
 				isValidMatch := false
@@ -309,7 +418,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 							}
 						}
 					}
-					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts == len(psbtData.UnsignedTx.TxOut) {
+					if totalOutvalue >= order.Amount && matchIns == len(order.Inputs) && matchOuts >= len(psbtData.UnsignedTx.TxOut) {
 						isValidMatch = true
 					}
 				} else {
@@ -392,7 +501,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				}
 			}
 		} else {
-			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, bs, u.Config.QuicknodeAPI)
+			status, err := btc.GetBTCTxStatusExtensive(order.CancelTx, nil, u.Config.QuicknodeAPI)
 			if err != nil {
 				log.Printf("JobWatchPendingDexBTCListing btc.GetBTCTxStatusExtensive err %v\n", err)
 				continue
@@ -512,21 +621,27 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				continue
 			}
 			if balance.Cmp(amountRequired) > -1 {
-				if order.Confirmation > 1 {
-					order.Status = entity.StatusDEXBuy_ReceivedFund
-					_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
-					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
-					}
-					continue
-				} else {
-					order.Confirmation += 1
-					_, err := u.Repo.UpdateDexBTCBuyETHOrderConfirmation(&order)
-					if err != nil {
-						log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderConfirmation err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
-					}
-					continue
+				order.Status = entity.StatusDEXBuy_ReceivedFund
+				_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				if err != nil {
+					log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
 				}
+				continue
+				// if order.Confirmation >= 1 {
+				// 	order.Status = entity.StatusDEXBuy_ReceivedFund
+				// 	_, err := u.Repo.UpdateDexBTCBuyETHOrderStatus(&order)
+				// 	if err != nil {
+				// 		log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderStatus err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				// 	}
+				// 	continue
+				// } else {
+				// 	order.Confirmation += 1
+				// 	_, err := u.Repo.UpdateDexBTCBuyETHOrderConfirmation(&order)
+				// 	if err != nil {
+				// 		log.Printf("watchPendingDexBTCBuyETH UpdateDexBTCBuyETHOrderConfirmation err %v %v %v\n", order.ID.Hex(), order.ToJsonString(), err)
+				// 	}
+				// 	continue
+				// }
 			} else {
 				// not enough funds
 				if time.Since(order.ExpiredAt) > 1*time.Second {
@@ -597,7 +712,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 							continue
 						}
-						time.Sleep(1 * time.Second)
+						time.Sleep(5 * time.Second)
 					}
 					err = btc.SendTxBlockStream(respondData.TxHex)
 					if err != nil {
@@ -624,11 +739,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 			} else {
 				newStatus := order.Status
-				psbtList := []string{}
 				feeRate := order.FeeRate
 
 				amountBTCFee := uint64(0)
 				amountBTC := uint64(0)
+				var buyReqInfos []btc.BuyReqInfo
 				for _, listingOrderID := range order.SellOrderList {
 					listingOrder, err := u.Repo.GetDexBTCListingOrderByID(listingOrderID)
 					if err != nil {
@@ -647,8 +762,14 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 						amountBTCFee += btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 						amountBTC += listingOrder.Amount
-						psbtList = append(psbtList, listingOrder.RawPSBT)
 						newStatus = entity.StatusDEXBuy_Buying
+
+						buyReqInfos = append(buyReqInfos, btc.BuyReqInfo{
+							Price:                      int(listingOrder.Amount),
+							ReceiverInscriptionAddress: order.ReceiveAddress,
+							SellerSignedPsbtB64:        listingOrder.RawPSBT,
+						})
+
 					} else {
 						// ?? order not exist
 						newStatus = entity.StatusDEXBuy_WaitingToRefund
@@ -657,6 +778,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				}
 
 				if newStatus != order.Status {
+					log.Println("watchPendingDexBTCBuyETH update buy multi-status", order.ID, newStatus, err)
 					if newStatus == entity.StatusDEXBuy_Buying {
 						address := u.Config.DexBTCWalletAddress
 
@@ -677,9 +799,12 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							continue
 						}
 
-						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
+						dataBytes, _ := json.Marshal(buyReqInfos)
+						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
+						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
-							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
 							continue
 						}
 						if respondData.SplitTxRaw != "" {
@@ -689,7 +814,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 								log.Println("watchPendingDexBTCBuyETH SendTxBlockStream SplitTxHex", order.ID, string(dataBytes), err)
 								continue
 							}
-							time.Sleep(1 * time.Second)
+							time.Sleep(5 * time.Second)
 						}
 						err = btc.SendTxBlockStream(respondData.TxHex)
 						if err != nil {
@@ -945,11 +1070,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			txhash := common.HexToHash(order.MasterTx)
 			receipt, err := ethClient.GetClient().TransactionReceipt(ctx, txhash)
 			if err != nil {
-				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt == nil {
-				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.RefundTx, err)
+				log.Println("watchPendingDexBTCBuyETH receipt is empty", order.ID, order.MasterTx, err)
 				continue
 			}
 			if receipt.BlockNumber.Uint64()-currentBlockHeight < 15 {
@@ -1025,9 +1150,9 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
+			tempETHAddress = address
 		}
 
-		tempETHAddress = address
 		tokenUri, err := u.GetTokenByTokenID(order.InscriptionID, 0)
 		if err == nil {
 			projectDetail, err := u.GetProjectDetail(structure.GetProjectDetailMessageReq{
@@ -1049,6 +1174,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ReceiveAddress = receiveAddress
 		newOrder.RefundAddress = refundAddress
 		newOrder.ETHKey = privKey
+		newOrder.ETHAddress = address
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionID = order.InscriptionID
 		newOrder.AmountBTC = order.Amount
@@ -1164,6 +1290,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		newOrder.ReceiveAddress = receiveAddress
 		newOrder.RefundAddress = refundAddress
 		newOrder.ETHKey = privKey
+		newOrder.ETHAddress = address
 		newOrder.ExpiredAt = time.Now().Add(2 * time.Hour)
 		newOrder.InscriptionList = inscriptionList
 		newOrder.SellOrderList = orderListFinal

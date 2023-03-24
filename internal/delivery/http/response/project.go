@@ -12,6 +12,10 @@ type TraitStat struct {
 	TraitValuesStat []TraitValueStat `json:"traitValuesStat"`
 }
 
+type ExistedInAllowList struct {
+	Existed       bool           `json:"existed"`
+}
+
 type ProjectResp struct {
 	BaseResponse
 	ContractAddress           string           `json:"contractAddress"`
@@ -73,7 +77,7 @@ type ProjectResp struct {
 	ReserveMintLimit          int              `json:"reserveMintLimit"`
 	IsReviewing               bool             `json:"isReviewing"`
 	CanCreateProposal         bool             `json:"canCreateProposal"`
-	Proposal                  *DaoProject      `json:"proposal"`
+	ProposalSeqId             *uint            `json:"proposalSeqId"`
 }
 
 type ReportProject struct {
@@ -95,9 +99,10 @@ type NftMintingDetail struct {
 }
 
 type ProjectMarketplaceData struct {
-	Listed      uint64 `json:"listed"`
-	FloorPrice  uint64 `json:"floor_price"`
-	TotalVolume uint64 `json:"volume"`
-	MintVolume  uint64 `json:"mint_volume"`
-	CEXVolume   uint64 `json:"cex_volume"`
+	Listed          uint64  `json:"listed"`
+	FloorPrice      uint64  `json:"floor_price"`
+	TotalVolume     uint64  `json:"volume"`
+	MintVolume      uint64  `json:"mint_volume"`
+	CEXVolume       uint64  `json:"cex_volume"`
+	FirstSaleVolume float64 `json:"first_sale_volume"`
 }

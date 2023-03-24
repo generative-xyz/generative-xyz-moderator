@@ -31,10 +31,13 @@ type FilteArtist struct {
 }
 
 type UserStats struct {
-	CollectionCreated int32   `bson:"collection_created" json:"collection_created"`
-	NftMinted         int32   `bson:"nft_minted" json:"nft_minted"`
-	OutputMinted      int32   `bson:"output_minted" json:"output_minted"`
-	VolumeMinted      float64 `bson:"volume_minted" json:"volume_minted"`
+	CollectionCreated int64 `bson:"collection_created" json:"collection_created"`
+	TotalMint         int64 `bson:"total_mint" json:"total_mint"`
+	TotalMinted       int64 `bson:"total_minted" json:"total_minted"`
+
+	NftMinted    int64   `bson:"nft_minted" json:"nft_minted"`
+	OutputMinted int64   `bson:"output_minted" json:"output_minted"`
+	VolumeMinted float64 `bson:"volume_minted" json:"volume_minted"`
 }
 
 type Users struct {
@@ -56,6 +59,7 @@ type Users struct {
 	Stats                   UserStats     `bson:"stats" json:"stats"`
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
+	WalletType              string        `bson:"wallet_type" json:"wallet_type"`
 }
 
 type ProfileSocial struct {

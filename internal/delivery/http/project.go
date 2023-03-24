@@ -262,21 +262,19 @@ func (h *httpDelivery) projectDetail(w http.ResponseWriter, r *http.Request) {
 			}
 			resp.IsReviewing = h.Usecase.IsProjectReviewing(ctx, project.ID.Hex())
 			if project.CreatorAddrr != "" && strings.EqualFold(vars[utils.SIGNED_WALLET_ADDRESS], project.CreatorAddrr) {
-				_, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
-				resp.CanCreateProposal = !exists
-				// if daoProject != nil {
-				// 	proposal := &response.DaoProject{}
-				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
-				// 		resp.Proposal = proposal
-				// 	}
-				// }
+				if resp.IsHidden {
+					daoProject, exists := h.Usecase.CheckDAOProjectAvailableByUser(ctx, project.CreatorAddrr, project.ID)
+					resp.CanCreateProposal = !exists
+					if daoProject != nil {
+						resp.ProposalSeqId = &daoProject.SeqId
+					}
+				}
 			} else {
-				// if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
-				// 	proposal := &response.DaoProject{}
-				// 	if err := copierInternal.Copy(proposal, daoProject); err == nil {
-				// 		resp.Proposal = proposal
-				// 	}
-				// }
+				if resp.IsHidden {
+					if daoProject, err := h.Usecase.GetLastDAOProjectByProjectId(ctx, project.ID); err == nil {
+						resp.ProposalSeqId = &daoProject.SeqId
+					}
+				}
 			}
 			go h.Usecase.CreateViewProjectActivity(project.TokenID)
 			return resp, nil
@@ -385,7 +383,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	hidden := false
 	f.IsHidden = &hidden
-	uProjects, err := h.Usecase.GetProjects(f)
+	uProjects, err := h.Usecase.GetAllProjects(f)
 	if err != nil {
 		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -395,13 +393,25 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	pResp := []response.ProjectResp{}
 	iProjects := uProjects.Result
 	projects := iProjects.([]entity.Projects)
+	projectToGetFloorPrice := []string{}
 	for _, project := range projects {
+		projectToGetFloorPrice = append(projectToGetFloorPrice, project.TokenID)
+	}
 
+	projectFloorPriceMap, err := h.Usecase.GetProjectsFloorPrice(projectToGetFloorPrice)
+	if err != nil {
+		h.Logger.Error("h.Usecase.GetProjectsFloorPrice", err.Error(), err)
+	}
+	for _, project := range projects {
 		p, err := h.projectToResp(&project)
 		if err != nil {
 			h.Logger.Error("copier.Copy", err.Error(), err)
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
+		}
+		floorPrice, ok := projectFloorPriceMap[p.TokenID]
+		if ok {
+			p.BtcFloorPrice = floorPrice
 		}
 
 		pResp = append(pResp, *p)
@@ -991,4 +1001,122 @@ func (h *httpDelivery) uploadTokenTraits(w http.ResponseWriter, r *http.Request)
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, v, "")
+}
+
+func (h *httpDelivery) triggerPubsubTokenThumbnail(w http.ResponseWriter, r *http.Request) {
+	tokenId := r.URL.Query().Get("tokenId")
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok || strings.ToLower(userWalletAddr) != strings.ToLower("0x668ea0470396138acd0B9cCf6FBdb8a845B717B0") {
+		err := errors.New("wallet address is incorect")
+		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if len(tokenId) == 0 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("token empty"))
+		return
+	}
+	token, err := h.Usecase.TriggerPubsubTokenThumbnail(tokenId)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("token empty"))
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, token.TokenID, "")
+}
+
+// UserCredits godoc
+// @Summary Create project's allow list
+// @Description Create project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/allow-list [POST]
+func (h *httpDelivery) createProjectAllowList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	var err error
+	var walletAddress *string
+	var resp *entity.ProjectAllowList
+
+	defer func() {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
+	}()
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	wa, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("walletAddress is incorect")
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress = &wa
+
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID:         &projectID,
+		UserWalletAddress: walletAddress,
+	}
+
+	resp, err = h.Usecase.CreateProjectAllowList(*reqUsecase)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
+
+// UserCredits godoc
+// @Summary Check project's allow list
+// @Description Check project's allow list
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Security Authorization
+// @Param contractAddress path string true "contractAddress request"
+// @Param projectID path string true "projectID request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/allow-list [GET]
+func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	var err error
+	var walletAddress *string
+	var resp *entity.ProjectAllowList
+
+	defer func() {
+		if err != nil {
+			logger.AtLog.Logger.Error("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Error(err))
+		}
+		logger.AtLog.Logger.Info("createProjectAllowList", zap.String("projectID", projectID), zap.Any("walletAddress", walletAddress), zap.Any("resp", resp))
+	}()
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	wa, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("walletAddress is incorect")
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	walletAddress = &wa
+
+	reqUsecase := &structure.CreateProjectAllowListReq{
+		ProjectID:         &projectID,
+		UserWalletAddress: walletAddress,
+	}
+
+	existed := h.Usecase.CheckExistedProjectAllowList(*reqUsecase)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.ExistedInAllowList{
+		Existed: existed,
+	}, "")
 }

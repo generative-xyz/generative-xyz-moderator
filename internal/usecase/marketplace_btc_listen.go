@@ -47,6 +47,28 @@ func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, e
 
 	return rpcclient, bs, nil
 }
+func (u Usecase) buildBTCClientCustomToken(token string) (*rpcclient.Client, *btc.BlockcypherService, error) {
+	host := u.Config.BTC_FULLNODE
+	user := u.Config.BTC_RPCUSER
+	pass := u.Config.BTC_RPCPASSWORD
+
+	connCfg := &rpcclient.ConnConfig{
+		Host:         host,
+		User:         user,
+		Pass:         pass,
+		HTTPPostMode: true,  // Bitcoin core only supports HTTP POST mode
+		DisableTLS:   false, //!(os.Getenv("BTC_NODE_HTTPS") == "true"), // Bitcoin core does not provide TLS by default
+	}
+
+	rpcclient, err := rpcclient.New(connCfg, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bs := btc.NewBlockcypherService(u.Config.BlockcypherAPI, "", token, &chaincfg.MainNetParams)
+
+	return rpcclient, bs, nil
+}
 
 func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.MarketplaceBTCListing) (string, bool, error) {
 
@@ -79,7 +101,7 @@ func (u Usecase) loopGetTx(btcClient *rpcclient.Client, tx string, item *entity.
 	return txOut, false, nil
 }
 
-//JOBS:
+// JOBS:
 // job1:  check receive the nft from seller:
 func (u Usecase) JobMKP_CheckReceivedNftFromSeller() error {
 

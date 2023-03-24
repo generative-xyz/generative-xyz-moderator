@@ -179,6 +179,25 @@ func (r Repository) GetDexBTCListingOrderUserPending(user_address string) ([]ent
 	return listings, nil
 }
 
+func (r Repository) GetDexBTCTrackingByInscriptionIds(inscriptionIds []string) ([]*entity.DexBTCListing, error) {
+	listings := []*entity.DexBTCListing{}
+	f := bson.M{
+		"inscription_id": bson.M{"$in": inscriptionIds},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_LISTING).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
 func (r Repository) GetAllDexBTCListingByInscriptionID(inscriptionID string) ([]entity.DexBTCListing, error) {
 	listings := []entity.DexBTCListing{}
 	f := bson.D{
@@ -245,6 +264,29 @@ func (r Repository) GetDexBTCListingOrderPendingByInscriptionID(id string) (*ent
 	return resp, nil
 }
 
+func (r Repository) GetDexBTCListingOrderPendingByInputs(inputs []string) ([]entity.DexBTCListing, error) {
+	resp := []entity.DexBTCListing{}
+
+	f := bson.M{
+		"inputs":    bson.M{"$in": inputs},
+		"matched":   bson.M{"$eq": false},
+		"cancelled": bson.M{"$eq": false},
+	}
+
+	err := r.Find(context.Background(), utils.COLLECTION_DEX_BTC_LISTING, f, &resp, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// err = helpers.Transform(orderInfo, resp)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	return resp, nil
+}
+
 func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, error) {
 	listings := []entity.DexBTCListing{}
 	f := bson.D{
@@ -268,6 +310,7 @@ func (r Repository) GetDexBTCListingOrderPending() ([]entity.DexBTCListing, erro
 
 func (r Repository) GetDexBtcsAlongWithProjectInfo(req entity.GetDexBtcListingWithProjectInfoReq) ([]entity.DexBtcListingWithProjectInfo, error) {
 	aggregates := bson.A{
+		bson.D{{"$match", bson.D{{"from_other_mkp", bson.D{{"$ne", true}}}}}},
 		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
 		bson.D{{"$skip", (req.Page - 1) * req.Limit}},
 		bson.D{{"$limit", req.Limit}},
@@ -477,6 +520,49 @@ func (r Repository) GetDexBTCBuyETHOrderByID(buyOrderID string) (*entity.DexBTCB
 	return resp, nil
 }
 
+func (r Repository) GetDexBTCBuyETHBuyingByInscriptionID(inscriptionID string) (*entity.DexBTCBuyWithETH, error) {
+	f := bson.D{
+		{"status",
+			bson.D{
+				{"$in",
+					bson.A{
+						1,
+						2,
+					},
+				},
+			},
+		},
+		{"$or",
+			bson.A{
+				bson.D{
+					{"inscription_list",
+						bson.D{
+							{"$in",
+								bson.A{
+									inscriptionID,
+								},
+							},
+						},
+					},
+				},
+				bson.D{{"inscription_id", inscriptionID}},
+			},
+		},
+	}
+
+	resp := &entity.DexBTCBuyWithETH{}
+	usr, err := r.FilterOne(utils.COLLECTION_DEX_BTC_BUY_ETH, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) GetNotCreatedActivitiesListing(page int64, limit int64) (*entity.Pagination, error) {
 	confs := []entity.DexBTCListing{}
 	resp := &entity.Pagination{}
@@ -557,3 +643,92 @@ func (r Repository) ListAllDexBTCBuyETH() ([]entity.DexBTCBuyWithETH, error) {
 
 	return resp, nil
 }
+
+func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
+	f := bson.M{
+		"matched_tx": matchedTx,
+		"matched":    true,
+	}
+
+	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return count > 0, nil
+}
+
+func (r Repository) GetDexBTCListingByMatchedTx(matchedTx string) (*entity.DexBTCListing, error) {
+	resp := &entity.DexBTCListing{}
+
+	f := bson.D{
+		{Key: "matched_tx", Value: matchedTx},
+	}
+
+	orderInfo, err := r.FilterOne(entity.DexBTCListing{}.TableName(), f, &options.FindOneOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(orderInfo, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTrackingInternalStatus) ([]entity.DexBTCTrackingInternal, error) {
+	listings := []entity.DexBTCTrackingInternal{}
+	f := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+	cursor, err := r.DB.Collection(utils.COLLECTION_DEX_BTC_TRACKING_INTERNAL).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{Key: "created_at", Value: -1}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All((context.TODO()), &listings); err != nil {
+		return nil, err
+	}
+
+	return listings, nil
+}
+
+// func (r Repository) CheckMatchedTxExisted(matchedTx string) (bool, error) {
+// 	f := bson.M{
+// 		"matched_tx": matchedTx,
+// 		"matched": true,
+// 	}
+
+// 	count, err := r.DB.Collection(entity.DexBTCListing{}.TableName()).CountDocuments(context.TODO(), f)
+// 	if err != nil {
+// 		return false, errors.WithStack(err)
+// 	}
+
+// 	return count > 0, nil
+// }
+
+// func (r Repository) GetDexBTCListingByMatchedTx(matchedTx string) (*entity.DexBTCListing, error) {
+// 	resp := &entity.DexBTCListing{}
+
+// 	f := bson.D{
+// 		{Key: "matched_tx", Value: matchedTx},
+// 	}
+
+// 	orderInfo, err := r.FilterOne(entity.DexBTCListing{}.TableName(), f, &options.FindOneOptions{
+// 		Sort: bson.D{{Key: "created_at", Value: -1}},
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	err = helpers.Transform(orderInfo, resp)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return resp, nil
+// }

@@ -188,6 +188,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 						Offset:        offset,
 					}
 					if tokenURI != nil {
+						inscWalletInfo.NftTokenID = tokenURI.NftTokenId
 						inscWalletInfo.TokenNumber = tokenURI.OrderInscriptionIndex
 					}
 					inscWalletByOutput := structure.WalletInscriptionByOutput{
@@ -221,6 +222,23 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 								inscWalletInfo.Buyable = true
 							} else {
 								inscWalletInfo.Cancelling = true
+							}
+							if inscWalletInfo.Buyable {
+								buyEth, _ := u.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listing.InscriptionID)
+								if buyEth != nil {
+									if buyEth.BuyTx != "" {
+										inscWalletInfo.CurrentBuyTx = buyEth.BuyTx
+										inscWalletInfo.CurrentBuyTxTime = buyEth.CreatedAt.Unix()
+									}
+									inscWalletInfo.Buyable = false
+								} else {
+									relatedPendingTxs, _ := u.Repo.GetPendingBTCSubmitTxByInscriptionID(listing.InscriptionID)
+									if len(relatedPendingTxs) > 0 {
+										inscWalletInfo.Buyable = false
+										inscWalletInfo.CurrentBuyTx = buyEth.BuyTx
+										inscWalletInfo.CurrentBuyTxTime = relatedPendingTxs[0].CreatedAt.Unix()
+									}
+								}
 							}
 							inscWalletInfo.SellVerified = listing.Verified
 							inscWalletInfo.OrderID = listing.UUID
@@ -407,14 +425,17 @@ func getWalletInfo(address string, apiToken string, logger logger.Ilogger) (*str
 
 func (u Usecase) TrackWalletTx(address string, tx structure.WalletTrackTx) error {
 	trackTx := entity.WalletTrackTx{
-		Address:           address,
-		Txhash:            tx.Txhash,
-		Type:              tx.Type,
-		Amount:            tx.Amount,
-		InscriptionID:     tx.InscriptionID,
-		InscriptionNumber: tx.InscriptionNumber,
-		Receiver:          tx.Receiver,
+		Address:               address,
+		Txhash:                tx.Txhash,
+		Type:                  tx.Type,
+		Amount:                tx.Amount,
+		InscriptionID:         tx.InscriptionID,
+		InscriptionNumber:     tx.InscriptionNumber,
+		InscriptionList:       tx.InscriptionList,
+		InscriptionNumberList: tx.InscriptionNumberList,
+		Receiver:              tx.Receiver,
 	}
+
 	return u.Repo.CreateTrackTx(&trackTx)
 }
 

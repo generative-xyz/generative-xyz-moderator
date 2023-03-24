@@ -12,7 +12,6 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 
-	"github.com/gorilla/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -92,6 +91,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
+	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
+	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
@@ -104,6 +105,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	projectAuth.HandleFunc("/btc/files", h.UploadProjectFiles).Methods("POST")
 	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}", h.updateBTCProject).Methods("PUT")
 	projectAuth.HandleFunc("/{contractAddress}/{projectID}", h.deleteBTCProject).Methods("DELETE")
+	projectAuth.HandleFunc("/{contractAddress}/tokens/{projectID}/token-thumbnail", h.triggerPubsubTokenThumbnail).Methods("GET")
 
 	//configs
 	config := api.PathPrefix("/configs").Subrouter()
@@ -137,6 +139,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 
+	adminTest := api.PathPrefix("/admin-test").Subrouter()
+	adminTest.HandleFunc("", h.adminTest).Methods("GET")
+
 	//Marketplace
 	marketplace := api.PathPrefix("/marketplace").Subrouter()
 	marketplace.HandleFunc("/listing/{genNFTAddr}/token/{tokenID}", h.getListingViaGenAddressTokenID).Methods("GET")
@@ -144,10 +149,18 @@ func (h *httpDelivery) RegisterV1Routes() {
 	marketplace.HandleFunc("/wallet/{walletAddress}/listing", h.ListingOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/wallet/{walletAddress}/offer", h.OfferOfAProfile).Methods("GET")
 	marketplace.HandleFunc("/stats/{genNFTAddr}", h.getCollectionStats).Methods("GET")
+	marketplace.HandleFunc("/stats/{genNFTAddr}/first-sale", h.getCollectionStatsFirstSale).Methods("GET")
 
 	// New Marketplace
 	collection := api.PathPrefix("/collections").Subrouter()
 	collection.HandleFunc("", h.getCollectionListing).Methods("GET")
+	collection.HandleFunc("/items", h.getItemListing).Methods("GET")
+	collection.HandleFunc("/sub-collection-items", h.getSubCollectionItemListing).Methods("GET")
+	collection.HandleFunc("/on-sale-items", h.getItemListingOnSale).Methods("GET")
+
+	charts := api.PathPrefix("/charts").Subrouter()
+	charts.HandleFunc("/collections/{projectID}", h.getChartDataForCollection).Methods("GET")
+	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
 
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
@@ -172,6 +185,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	inscribe.HandleFunc("/nft-detail/{ID}", h.btcDetailInscribeBTC).Methods("GET")
 	inscribe.HandleFunc("/retry/{ID}", h.btcRetryInscribeBTC).Methods("POST")
 	inscribe.HandleFunc("/info/{ID}", h.getInscribeInfo).Methods("GET")
+	inscribe.HandleFunc("/compress-image", h.compressImage).Methods("POST")
 
 	inscribeAuth := inscribe.PathPrefix("/auth").Subrouter()
 	inscribeAuth.Use(h.MiddleWare.AccessToken)
@@ -201,13 +215,13 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
-	marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
-	marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
-	marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
-	marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
-	marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
-	marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
-	marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
+	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
+	// marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
+	// marketplaceBTC.HandleFunc("/nft-detail/{ID}", h.btcMarketplaceNFTDetail).Methods("GET")
+	// marketplaceBTC.HandleFunc("/nft-gen-order", h.btcMarketplaceCreateBuyOrder).Methods("POST")
+	// marketplaceBTC.HandleFunc("/listing-fee", h.btcMarketplaceListingFee).Methods("POST")
+	// marketplaceBTC.HandleFunc("/filter-info", h.btcMarketplaceFilterInfo).Methods("GET")
+	// marketplaceBTC.HandleFunc("/run-filter-info", h.btcMarketplaceRunFilterInfo).Methods("GET")
 	marketplaceBTC.HandleFunc("/collection-stats", h.btcMarketplaceCollectionStats).Methods("GET")
 
 	referral := api.PathPrefix("/referrals").Subrouter()
@@ -224,32 +238,31 @@ func (h *httpDelivery) RegisterV1Routes() {
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
-	wallet.Use(handlers.CompressHandler)
-	// wallet.Use(h.MiddleWare.AccessToken)
 	// wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
+	wallet.HandleFunc("/submit-tx", h.submitTx).Methods("POST")
 
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
-	inscriptionDex.Use(h.MiddleWare.AccessToken)
-	// inscriptionDex.HandleFunc("/forsale", h.btcMarketplaceListing).Methods("GET")
 	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/retrieve-order", h.retrieveBTCListingOrderInfo).Methods("GET")
 	inscriptionDex.HandleFunc("/retrieve-orders", h.retrieveBTCListingOrdersInfo).Methods("POST")
 	inscriptionDex.HandleFunc("/history", h.historyBTCListing).Methods("GET")
-	inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
+	// inscriptionDex.HandleFunc("/submit-buy", h.submitDexBTCBuy).Methods("GET")
 	//buy with eth
-	inscriptionDex.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
+	inscriptionDexAuth := api.PathPrefix("/dex").Subrouter()
+	inscriptionDexAuth.Use(h.MiddleWare.AccessToken)
+	inscriptionDexAuth.HandleFunc("/gen-eth-order", h.genDexBTCBuyETHOrder).Methods("POST")
+	inscriptionDexAuth.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 	// inscriptionDex.HandleFunc("/update-eth-order-tx", h.updateDexBTCBuyETHOrderTx).Methods("POST")
 	// inscriptionDex.HandleFunc("/submit-buy-eth", h.submitDexBTCBuyETHTx).Methods("POST")
-	inscriptionDex.HandleFunc("/buy-eth-history", h.dexBTCBuyETHHistory).Methods("GET")
 
-	dex := api.PathPrefix("/dex-buy").Subrouter()
-	dex.HandleFunc("/list-buy-address", h.ListBuyAddress).Methods("GET")
+	// dex := api.PathPrefix("/dex-buy").Subrouter()
+	// dex.HandleFunc("/list-buy-address", h.ListBuyAddress).Methods("GET")
 
 	user := api.PathPrefix("/user").Subrouter()
 	user.HandleFunc("", h.getUsers).Methods("GET")

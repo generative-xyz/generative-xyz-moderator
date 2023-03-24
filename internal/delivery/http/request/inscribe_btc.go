@@ -10,3 +10,8 @@ type CreateInscribeBtcReq struct {
 	TokenId       string `json:"tokenId"`
 	PayType       string `json:"payType"`
 }
+
+type CompressImageReq struct {
+	ImageUrl         string `json:"imageUrl"`
+	CompressPercents []int  `json:"compressPercents"`
+}

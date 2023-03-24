@@ -412,11 +412,11 @@ func (u Usecase) JobDeveloperInscribe_MintNft() error {
 			DestinationAddress: item.OriginUserAddress,
 		}
 
-		resp, err := u.OrdServiceDeveloper.Mint(mintData)
+		resp, respStr, err := u.OrdServiceDeveloper.Mint(mintData)
 
 		if err != nil {
 			u.Logger.Error("OrdService.Mint", err.Error(), err)
-			go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_MintNft", item.TableName(), item.Status, mintData, err.Error())
+			go u.trackDeveloperInscribeHistory(item.ID.String(), "JobDeveloperInscribe_MintNft", item.TableName(), item.Status, mintData, respStr)
 			continue
 		}
 		// if not err => update status ok now:
