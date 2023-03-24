@@ -337,7 +337,7 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 
 	result.FloorPrice = floorPrice
 	result.Listed = currentListing
-	result.TotalVolume = volume + mintVolume + volumeCEX
+	result.TotalVolume = volume + volumeCEX
 	result.MintVolume = mintVolume
 	result.CEXVolume = volumeCEX
 
@@ -1138,7 +1138,7 @@ func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Reques
 
 	existed, allowedBy := h.Usecase.CheckExistedProjectAllowList(*reqUsecase)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.ExistedInAllowList{
-		Existed: existed,
+		Existed:   existed,
 		AllowedBy: allowedBy,
 	}, "")
 }
