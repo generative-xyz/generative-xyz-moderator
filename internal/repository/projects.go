@@ -830,6 +830,14 @@ func (r Repository) ProjectGetMintVolume(projectID string) (uint64, error) {
 				},
 			},
 		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 0},
+					{"totalAmount", "$Amount"},
+				},
+			},
+		},
 	}
 
 	cursor, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).Aggregate(context.TODO(), pipeline)
