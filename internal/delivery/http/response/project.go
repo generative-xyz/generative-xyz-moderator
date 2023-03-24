@@ -14,6 +14,7 @@ type TraitStat struct {
 
 type ExistedInAllowList struct {
 	Existed bool `json:"existed"`
+	AllowedBy string `json:"allowedBy"`
 }
 
 type ProjectResp struct {
