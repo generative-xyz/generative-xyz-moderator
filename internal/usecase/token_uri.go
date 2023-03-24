@@ -1057,7 +1057,20 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 
 	now := time.Now().UTC()
 	imageURI := fmt.Sprintf("https://generativeexplorer.com/content/%s", inscription.ID)
-	tokenUri.AnimationURL = ""
+
+	resp := &entity.InscriptionDetail{}
+	_, err = resty.New().R().
+		SetResult(&resp).
+		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, inscription.ID))
+	if err != nil {
+		u.Logger.Error(err)
+		return nil, err
+	}
+
+	if strings.Contains(resp.ContentType, "text/html") {
+		tokenUri.AnimationURL = imageURI
+	}
+
 	tokenUri.Thumbnail = imageURI
 	tokenUri.Image = imageURI
 	tokenUri.ParsedImage = &imageURI

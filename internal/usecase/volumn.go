@@ -599,3 +599,115 @@ func (u Usecase) AggregateMintPrice(project entity.ProjectsHaveMinted, payType s
 	}
 	return int(mintPrice)
 }
+
+func (u Usecase) FindOldData() {
+	projectID := "1000001"
+
+	newData, err := u.Repo.GetMintedTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+	
+	oldBtcData, err := u.Repo.GetOldMintedTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+	
+	oldETHData, err := u.Repo.GetOldMintedETHTokenByProjectID(projectID)
+	if err != nil {
+		return 
+	}
+
+	mintedIDs := []string{}
+	for _, item := range newData {
+		mintedIDs = append(mintedIDs, item.InscriptionID)
+	}
+	
+	for _, item := range oldBtcData {
+		
+		mintedIDs = append(mintedIDs,item.MintResponse.Inscription)
+	}
+	
+	for _, item := range oldETHData {
+		mintedIDs = append(mintedIDs,item.MintResponse.Inscription)
+	}
+
+	helpers.CreateFile("mintedIDs.json",mintedIDs)
+
+	// count := 0
+	// nonInsertedArrays := []string{}
+	insertedButNotmintedArray := []string{}
+	insertedButNotminted, err  := u.Repo.GetTokenNotIN(projectID, mintedIDs)
+	for _, tokenID := range insertedButNotminted {
+		insertedButNotmintedArray = append(insertedButNotmintedArray, tokenID.TokenID)
+	}
+	helpers.CreateFile("insertedButNotmintedArray.json",insertedButNotmintedArray)
+	// detect := []string{}
+	// for _, insc := range  mintedIDs {
+	// 	if helpers.SliceStringContains(nonInsertedArrays, insc) {
+	// 		continue
+	// 	}
+
+	// 	detect = append(detect, insc)
+	// }
+	// spew.Dump(len(tokenIDs), len(mintedIDs), len(notInAddrays) )
+
+	// willBeprocessing := []string{}
+	// for _, inscription := range  notInAddrays {
+	// 	if helpers.SliceStringContains(detect, inscription) {
+	// 		continue
+	// 	}
+	// 	willBeprocessing = append(willBeprocessing, inscription)
+	// }
+	// helpers.CreateFile("log.json",willBeprocessing)
+	// //processs
+	// //tokenIDs, err  := u.Repo.GetTokenNotIN(projectID, []string{},)
+	// spew.Dump(willBeprocessing, detect)
+	// helpers.CreateFile("log-1.json",detect)
+	
+	
+	// doneChan := make(chan bool, len(insertedButNotmintedArray))
+
+	// for i, item := range insertedButNotmintedArray {
+	// 	go func(item string, helpers chan bool) {
+	// 		defer func  ()  {
+	// 			helpers <- true	
+	// 		}()
+
+	// 		btcWalletAddress := &entity.BTCWalletAddress{
+	// 			ProjectID: projectID,
+	// 			Amount: "10000000",
+	// 			IsConfirm: true,
+	// 			IsMinted: true,
+	// 			Balance: "0",
+	// 			UserAddress: "",
+	// 			BalanceCheckTime: 1,
+	// 			Mnemonic: "fix-1st-sale",
+	// 			MintResponse: entity.MintStdoputResponse{
+	// 				Inscription: item,
+	// 				IsSent: true,
+	// 				Fees: 398955,
+	// 				Commit: "fix-1st-sale",
+	// 				Reveal: "fix-1st-sale",
+	// 			},
+	// 		}
+
+	// 		err := u.Repo.InsertBtcWalletAddress(btcWalletAddress)
+	// 		if err != nil {
+	// 			logger.AtLog.Logger.Error("InsertBtcWalletAddress", zap.Error(err))
+	// 		}
+	// 		logger.AtLog.Logger.Info("Insert: ", zap.String("inscription", item), zap.String("UUID", btcWalletAddress.UUID))
+
+	// 	}(item, doneChan)
+
+	// 	if i > 0 && i % 50 == 0 {
+	// 		time.Sleep(time.Microsecond * 500)
+	// 	}
+
+	// }
+
+	// for i,_ := range insertedButNotmintedArray { 
+	// 	done := <- doneChan
+	// 	logger.AtLog.Logger.Info("insertedButNotmintedArray", zap.Int("i", i), zap.Bool("done", done))
+	// }
+}
