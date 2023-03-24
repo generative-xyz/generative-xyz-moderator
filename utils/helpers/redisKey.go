@@ -37,6 +37,10 @@ func GenerateUserKey(accessToken string) string {
 	return fmt.Sprintf("userKey.%s.s%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
 }
 
+func GenerateMKPDataKey(accessToken string) string {
+	return fmt.Sprintf("mkp.data.%s", accessToken)
+}
+
 func GenerateUserWalletAddressKey(walletAddress string) string {
 	return fmt.Sprintf("userKey.walletAddress.%s", walletAddress)
 }
