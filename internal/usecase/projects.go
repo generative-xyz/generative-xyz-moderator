@@ -664,12 +664,12 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		err = json.Unmarshal(bytes, &nftTokenURI)
 		if err == nil {
 			nftTokenURI["image"] = *req.Thumbnail
-			bytes, err := json.Marshal(nftTokenURI) 
+			bytes, err := json.Marshal(nftTokenURI)
 			if err == nil {
 				nftToken := helpers.Base64Encode(bytes)
 				spew.Dump(fmt.Sprintf("data:application/json;base64,%s", nftToken))
 				p.NftTokenUri = fmt.Sprintf("data:application/json;base64,%s", nftToken)
-			}	
+			}
 		}
 		p.Thumbnail = *req.Thumbnail
 
@@ -2028,7 +2028,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
+	_, err = u.CreateBTCTokenURI(item.OriginUserAddress, project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
