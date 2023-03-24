@@ -175,9 +175,6 @@ func startServer() {
 		return
 	}
 
-	uc.FindOldData()
-	return
-
 	servers := make(map[string]delivery.AddedServer)
 
 	// api fixed run:
