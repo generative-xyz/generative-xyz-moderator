@@ -732,11 +732,3 @@ func (r Repository) GetDexBTCTrackingInternalByStatus(statuses []entity.DexBTCTr
 // 	}
 // 	return resp, nil
 // }
-
-func (r Repository) CreateDexBTCOWSubmit(listing *entity.DexBTCOWSubmitTx) error {
-	err := r.InsertOne(listing.TableName(), listing)
-	if err != nil {
-		return err
-	}
-	return nil
-}

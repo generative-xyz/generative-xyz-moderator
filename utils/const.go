@@ -171,6 +171,7 @@ const (
 	COLLECTION_TOKEN_TX                  string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
 	COLLECTION_DEX_BTC_OW_SUBMIT         string = "dex_btc_ow_submit"
+	COLLECTION_DEX_BTC_OW_INSCRIPTION    string = "dex_btc_ow_inscription"
 	COLLECTION_GLOBAL_VARIABLE           string = "global_variables"
 
 	MINT_NFT_BTC string = "mint_nft_btc"

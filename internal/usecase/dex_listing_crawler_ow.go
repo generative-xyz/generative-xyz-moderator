@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/itchyny/timefmt-go"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 )
 
@@ -60,7 +62,31 @@ func (u Usecase) crawlOWListing() error {
 				continue
 			}
 			log.Printf("collection %v has %v items\n", collection.Slug, len(collectionItems))
-
+			totalCollectionValue := 0
+			itemsToSave := []entity.DexBTCOWInscription{}
+			err = u.Repo.ClearDexBTCOWCollectionListing(collection.Slug)
+			if err != nil {
+				log.Println("crawlOrdinalsWalletCollection ClearDexBTCOWCollectionListing err", err)
+				continue
+			}
+			for _, v := range collectionItems {
+				if v.Escrow.BoughtAt != "" {
+					log.Println("collection", collection.Slug, "item", v.ID, "is already bought")
+				}
+				totalCollectionValue += v.Escrow.SatoshiPrice
+				itemsToSave = append(itemsToSave, entity.DexBTCOWInscription{
+					CollectionSlug: collection.Slug,
+					InscriptionID:  v.ID,
+					Price:          v.Escrow.SatoshiPrice,
+					SellerAddress:  strings.ToLower(v.Escrow.SellerAddress),
+				})
+			}
+			err = u.Repo.CreateDexBTCOWInscriptions(itemsToSave)
+			if err != nil {
+				log.Println("crawlOrdinalsWalletCollection CreateDexBTCOWInscriptions err", err)
+				continue
+			}
+			log.Println("collection", collection.Slug, "total value", totalCollectionValue)
 		}
 		log.Printf("got %v collections in total %v\n", offset, collections.Total)
 
@@ -96,12 +122,12 @@ func getOWCollections(offset int) (*structure.DexListingOWCollections, error) {
 	return &result, nil
 }
 
-func getOWCollectionItems(collectionSlug string) ([]string, error) {
+func getOWCollectionItems(collectionSlug string) ([]structure.DexListingOWCollectionItem, error) {
 	skip := isExcludeCollection(collectionSlug)
 	if skip {
 		return nil, nil
 	}
-	var result []string
+	var result []structure.DexListingOWCollectionItem
 	offset := 0
 	for {
 		url := fmt.Sprintf("https://turbo.ordinalswallet.com/collection/%v/inscriptions?offset=%v&order=PriceAsc&listed=true", collectionSlug, offset)
@@ -127,9 +153,7 @@ func getOWCollectionItems(collectionSlug string) ([]string, error) {
 		if len(respond) == 0 {
 			break
 		}
-		for _, item := range respond {
-			result = append(result, item.ID)
-		}
+		result = append(result, respond...)
 		offset = len(result)
 	}
 
@@ -205,7 +229,6 @@ func isExcludeCollection(collectionSlug string) bool {
 }
 
 func (u *Usecase) DEXSubmitOWPurchaseRawTx(address string, inscriptionID string, setupTx string, purchaseTx string) error {
-
 	purchaseHash, setupHash, err := submitOWPurchaseRawTx(setupTx, purchaseTx)
 	if err != nil {
 		return err
@@ -226,4 +249,63 @@ func (u *Usecase) DEXSubmitOWPurchaseRawTx(address string, inscriptionID string,
 	}
 
 	return nil
+}
+
+func crawlOWActivities(before time.Time) error {
+	offset := 0
+	stop := false
+	newActivity := []structure.DexListingOWCollectionItem{}
+	for {
+		activities, err := getOWActivities(offset)
+		if err != nil {
+			return err
+		}
+		if len(activities) == 0 {
+			break
+		}
+		for _, activity := range activities {
+			if activity.Escrow.BoughtAt != "" {
+				boughtAt, err := timefmt.Parse(activity.Escrow.BoughtAt, "%Y-%m-%d %H:%M:%S.%f%z")
+				if err != nil {
+					log.Fatal(err)
+				}
+				if boughtAt.Before(before) {
+					stop = true
+					break
+				}
+			}
+			newActivity = append(newActivity, activity)
+		}
+		if stop {
+			break
+		}
+		offset += len(activities)
+	}
+
+	log.Println("newActivity", len(newActivity))
+	return nil
+}
+
+func getOWActivities(offset int) ([]structure.DexListingOWCollectionItem, error) {
+	url := fmt.Sprintf("https://turbo.ordinalswallet.com/inscriptions/activity?offset=%v&order=BoughtAtDesc", offset)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	var result []structure.DexListingOWCollectionItem
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
