@@ -239,6 +239,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	wallet := api.PathPrefix("/wallet").Subrouter()
 	// wallet.HandleFunc("/inscription-by-output", h.inscriptionByOutput).Methods("POST")
+	wallet.Use(h.MiddleWare.AccessTokenPassThrough)
 	wallet.HandleFunc("/wallet-info", h.walletInfo).Methods("GET")
 	wallet.HandleFunc("/mint-status", h.mintStatus).Methods("GET")
 	wallet.HandleFunc("/track-tx", h.trackTx).Methods("POST")
@@ -246,6 +247,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/submit-tx", h.submitTx).Methods("POST")
 
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
+	wallet.Use(h.MiddleWare.AccessTokenPassThrough)
 	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
 	inscriptionDex.HandleFunc("/listing-fee", h.dexBTCListingFee).Methods("POST")
 	inscriptionDex.HandleFunc("/cancel", h.cancelBTCListing).Methods("POST")
