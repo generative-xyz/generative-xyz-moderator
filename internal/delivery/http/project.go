@@ -289,57 +289,73 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 
 	projectID := vars["projectID"]
 
-	currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
-	if err != nil {
-		h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+	cached, err := h.Cache.GetData(helpers.GenerateMKPDataKey(projectID))
+	if err != nil || cached == nil {
+		currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
+		if err != nil {
+			h.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 
-	floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
-	if err != nil {
-		h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+		floorPrice, err := h.Usecase.Repo.RetrieveFloorPriceOfCollection(projectID)
+		if err != nil {
+			h.Logger.Error(" h.Usecase.Repo.RetrieveFloorPriceOfCollection", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 
-	volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
-	if err != nil {
-		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
+		volume, err := h.Usecase.Repo.ProjectGetListingVolume(projectID)
+		if err != nil {
+			h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 
-	volumeCEX, err := h.Usecase.Repo.ProjectGetCEXVolume(projectID)
-	if err != nil {
-		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	// projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
-	// if err != nil {
-	// 	h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
-	// minted := projectInfo.MintingInfo.Index
-	// mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
-	// // mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
-	// mintVolume := uint64(minted) * uint64(mintPrice)
+		volumeCEX, err := h.Usecase.Repo.ProjectGetCEXVolume(projectID)
+		if err != nil {
+			h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		// projectInfo, err := h.Usecase.Repo.FindProjectByTokenID(projectID)
+		// if err != nil {
+		// 	h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		// 	return
+		// }
+		// minted := projectInfo.MintingInfo.Index
+		// mintPrice, _ := strconv.Atoi(projectInfo.MintPrice)
+		// // mintFee, _ := strconv.Atoi(projectInfo.NetworkFee)
+		// mintVolume := uint64(minted) * uint64(mintPrice)
 
-	mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
-	if err != nil {
-		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		mintVolume, err := h.Usecase.Repo.ProjectGetMintVolume(projectID)
+		if err != nil {
+			h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		var result response.ProjectMarketplaceData
+
+		result.FloorPrice = floorPrice
+		result.Listed = currentListing
+		result.TotalVolume = volume + volumeCEX
+		result.MintVolume = mintVolume
+		result.CEXVolume = volumeCEX
+
+		h.Cache.SetData(helpers.GenerateMKPDataKey(projectID), result)
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 		return
 	}
 	var result response.ProjectMarketplaceData
+	bytes := []byte(*cached)
 
-	result.FloorPrice = floorPrice
-	result.Listed = currentListing
-	result.TotalVolume = volume + volumeCEX
-	result.MintVolume = mintVolume
-	result.CEXVolume = volumeCEX
+	err = json.Unmarshal(bytes, &result)
+	if err != nil {
+		h.Logger.Error(" h.Usecase.Repo.ProjectGetListingVolume", err.Error(), err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
