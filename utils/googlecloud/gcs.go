@@ -94,7 +94,7 @@ func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket strin
 	buffer := make([]byte, 32*1024)
 	r, err := f.Open()
 	if err != nil {
-		fmt.Println(baseDir, outputBucket, err)
+		logger.AtLog.Logger.Error("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.Error(err))
 		return fmt.Errorf("Open: %v", err)
 	}
 	defer r.Close()
@@ -105,7 +105,7 @@ func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket strin
 
 	_, err = io.CopyBuffer(w, r, buffer)
 	if err != nil {
-		fmt.Println(baseDir, outputBucket, err)
+		logger.AtLog.Logger.Error("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.Error(err))
 		return fmt.Errorf("io.Copy: %v", err)
 	}
 
@@ -115,16 +115,19 @@ func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket strin
 func (g gcstorage) UnzipFile(object string) error {
 	r, err := g.client.Bucket(os.Getenv("GCS_BUCKET")).Object(object).NewReader(g.ctx)
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 	br := bytes.NewReader(b)
 
 	zr, err := zip.NewReader(br, int64(len(b)))
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 
@@ -152,7 +155,8 @@ func (g gcstorage) UnzipFile(object string) error {
 				go g.processUnzip(fileData, baseDir, outputBucket, &wg)
 			}
 			wg.Wait()
-			fmt.Println("process", len(groups), " files for ", outputBucket)
+			
+			logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)),  zap.String("outputBucket", outputBucket))
 			groups = make(map[string]*zip.File)
 		}
 	}
