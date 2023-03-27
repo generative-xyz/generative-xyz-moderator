@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/redis"
 )
 
 func (u Usecase) JobAggregateVolumns() {
@@ -206,8 +206,10 @@ func (u Usecase) JobAggregateReferral() {
 		uploaded, err := u.GCS.UploadBaseToBucket(base64String, fileName)
 		if err == nil {
 			//spew.Dump(uploaded)
-			u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Referral is created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
+			//u.NotifyWithChannel(os.Getenv("SLACK_WITHDRAW_CHANNEL"), "[Referral is created]", "Please refer to the following URL", helpers.CreateURLLink(fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name), uploaded.Name))
 		}
+
+		_ = uploaded
 	}
 }
 
@@ -710,4 +712,28 @@ func (u Usecase) FindOldData() {
 	// 	done := <- doneChan
 	// 	logger.AtLog.Logger.Info("insertedButNotmintedArray", zap.Int("i", i), zap.Bool("done", zap.Any("done)", done)))
 	// }
+}
+
+func (u Usecase) JobRetryUnzip() {
+	projectZipLinks, err := u.Repo.GetProjectUnzips()
+	if err != nil {
+		logger.AtLog.Logger.Error("JobRetryUnzip", zap.Error(err))
+		return
+	}
+
+	logger.AtLog.Logger.Info("JobRetryUnzip", zap.Int("projects", len(projectZipLinks)))
+	for _, zipLink := range  projectZipLinks {
+		logger.AtLog.Logger.Info("JobRetryUnzip", zap.Any("zipLink", zipLink))
+		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{
+			Data: structure.ProjectUnzipPayload{
+				ProjectID: zipLink.ProjectID, 
+				ZipLink: zipLink.ZipLink,
+			},
+		})
+
+		if err != nil {
+			logger.AtLog.Logger.Error("JobRetryUnzip",  zap.Error(err))
+			continue
+		}
+	}
 }

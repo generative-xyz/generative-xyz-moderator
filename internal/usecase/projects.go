@@ -125,10 +125,36 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	animationURL := ""
 	zipLink := req.ZipLink
 	if zipLink != nil && *zipLink != "" {
+		now := time.Now().UTC()
 		pe.IsHidden = true
 		isPubsub = true
 		pe.Status = false
 		pe.IsSynced = false
+
+		//create unzip's log here
+		unzipLog := &entity.ProjectZipLinks{
+			ProjectID: pe.TokenID,
+			ZipLink: *zipLink,
+			Status: entity.UzipStatusFail,
+			Message: "Create project",
+			ReTries: 0,
+		}
+
+		unzipLog.Logs = []entity.ProjectZipLinkLog{}
+		unzipLog.Logs = append(unzipLog.Logs, entity.ProjectZipLinkLog{
+			Message: "Create project",
+			Status: entity.UzipStatusFail,
+			CreatedTime: &now,
+			
+		})
+
+		unzipLog.UpdatedAt = &now
+		unzipLog.CreatedAt = &now
+		err = u.Repo.CreateProjectUnzip(unzipLog) 
+		if err != nil {
+			logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID",  pe.TokenID), zap.Error(err))
+		}
+
 	} else {
 		if req.AnimationURL != nil {
 			animationURL = *req.AnimationURL
@@ -200,11 +226,13 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 
 	if isPubsub {
+
 		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
-			logger.AtLog.Error("u.Repo.CreateProject", err.Error(), err)
+			logger.AtLog.Logger.Error("u.Repo.CreateProject",  zap.Error(err))
 			//return nil, err
 		}
+
 	} else {
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}
@@ -1616,10 +1644,54 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	zipLink := zipPayload.ZipLink
 
 	defer func  ()  {
-		if err != nil {
+		now := time.Now().UTC()
+		status := entity.UzipStatusSuccess
+		message := ""
+		if err == nil {
 			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
 		}else{
+			status = entity.UzipStatusFail
+			message = err.Error()
 			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Error while unzip][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
+		}
+
+		up, err := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
+		if err == nil && up != nil {
+			
+			up.Logs = append(up.Logs, entity.ProjectZipLinkLog{
+				Message: message,
+				Status: status,
+				CreatedTime: &now,
+			})
+
+			up.Status = status
+			up.Message = message
+			up.ReTries = up.ReTries + 1
+			_, err = u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, up)
+			if err != nil {
+				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
+			}
+
+		}else{
+			unzipLog := &entity.ProjectZipLinks{
+				ProjectID: zipPayload.ProjectID,
+				ZipLink: zipPayload.ZipLink,
+				Status: status,
+				Message: message,
+				ReTries: 1,
+			}
+
+			unzipLog.Logs = []entity.ProjectZipLinkLog{}
+			unzipLog.Logs = append(unzipLog.Logs, entity.ProjectZipLinkLog{
+				Message: message,
+				Status: status,
+				CreatedTime: &now,
+			})
+
+			err = u.Repo.CreateProjectUnzip(unzipLog) 
+			if err != nil {
+				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
+			}
 		}
 	}()
 
@@ -1658,7 +1730,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1678,7 +1749,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 	}
 	//
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
+
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)), zap.Int("files", len(files)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1713,12 +1785,12 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+	ids, err1 := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
 		ProjectIds: []string{pe.ID.Hex()},
 		CreatedBy:  pe.CreatorAddrr,
 	})
-	if err != nil {
-		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	if err1 != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err1))
 	} else {
 		logger.AtLog.Logger.Info("CreateDAOProject success",
 			zap.String("project_id", pe.ID.Hex()),
@@ -1726,7 +1798,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		)
 	}
 
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("projectID", pe.TokenID), zap.Int("images", len(images)))
 	go func() {
 		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 		if err != nil {

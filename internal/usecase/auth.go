@@ -500,7 +500,7 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 
 func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error) {
 
-	logger.AtLog.Info("input.walletAddress", walletAddress)
+	//logger.AtLog.Info("input.walletAddress", walletAddress)
 	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
 	if err != nil {
 		logger.AtLog.Error(err)
