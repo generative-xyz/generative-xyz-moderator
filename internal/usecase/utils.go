@@ -164,7 +164,7 @@ func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress s
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err))
+		logger.AtLog.Logger.Error("err", zap.Error(err), zap.String("channelID", channelID), zap.String("title",title), zap.String("userAddress", userAddress))
 	}
 }
 
