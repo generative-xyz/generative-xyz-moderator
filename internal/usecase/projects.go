@@ -1699,7 +1699,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	pe, err = u.Repo.FindProjectByTokenID(zipPayload.ProjectID)
 	if err != nil {
-		logger.AtLog.Error("http.Get", err.Error(), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), err.Error(), zap.Error(err), zap.String("projectID", pe.TokenID))
 		return nil, err
 	}
 
@@ -1709,8 +1709,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", zap.Any("pe)", pe)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.String("projectID", pe.TokenID))
 
 	images := []string{}
 
@@ -1721,17 +1720,18 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
-		logger.AtLog.Error("UnzipProjectFile", zap.Any("UnzipFile", zipLink), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("UnzipFile", zipLink), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
 	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
 	if err != nil {
-		logger.AtLog.Error("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
 	}
 
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1752,7 +1752,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 	//
 
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)), zap.Int("files", len(files)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1783,7 +1783,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
 	if err != nil {
-		logger.AtLog.Error("UnzipProjectFile", zap.Any("ReadFolder", unzipFoler), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
 	}
 
@@ -1792,7 +1792,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		CreatedBy:  pe.CreatorAddrr,
 	})
 	if err1 != nil {
-		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err1))
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.String("projectID", pe.TokenID), zap.Error(err1))
 	} else {
 		logger.AtLog.Logger.Info("CreateDAOProject success",
 			zap.String("project_id", pe.ID.Hex()),
@@ -1800,7 +1800,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		)
 	}
 
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("projectID", pe.TokenID), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("projectID", pe.TokenID), zap.Int("images", len(images)))
 	go func() {
 		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 		if err != nil {
@@ -1813,7 +1813,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
-	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", zap.Any("pe)", pe)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("updated", updated), zap.String("projectID", pe.TokenID))
 	return pe, nil
 }
 
