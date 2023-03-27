@@ -907,6 +907,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateMintNftBtc", err.Error(), true)
 		}
 
+		go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID)
 		go u.Notify(fmt.Sprintf("[MintFor][%s][projectID %s]", item.PayType, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
 
 		// try to update inscription_index
@@ -999,7 +1000,6 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 			// update inscription_index for token uri
 			go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
 			go u.CreateMintActivity(item.InscriptionID, item.Amount)
-			go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID, item.MintFee)
 			if item.ProjectMintPrice >= 100000 {
 				go func(u Usecase, item entity.MintNftBtc) {
 					owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
