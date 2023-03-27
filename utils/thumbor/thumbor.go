@@ -152,6 +152,11 @@ func (t *Thumbor) Resize(width int, height int) *Thumbor {
 	return t
 }
 
+func (t *Thumbor) Format(format string) *Thumbor {
+	t.Filter(fmt.Sprintf("format(%s)", format))
+	return t
+}
+
 func (t *Thumbor) Compress(quality int) *Thumbor {
 	t.Filter(fmt.Sprintf("quality(%d)", quality))
 	return t
