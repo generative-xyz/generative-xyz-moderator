@@ -608,7 +608,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	}
 
 	profile, err := h.Usecase.UserProfileByWalletWithCache(input.CreatorAddrr)
-	if err == nil && profile != nil && profile.ProfileSocial.TwitterVerified {
+	if err == nil && profile != nil  {
 		profileResp, err := h.profileToResp(profile)
 		if err == nil {
 			resp.CreatorProfile = *profileResp
