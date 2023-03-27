@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
@@ -128,14 +129,14 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 		source := "https://github.com/ordinals-wallet/ordinals-collections.git"
 		err := h.crawlOrdinalCollection(source)
 		if err != nil {
-			h.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", err.Error(), err)
+			logger.AtLog.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", zap.Error(err))
 		}
 	})
 	c.AddFunc("*/15 * * * *", func() {
 		source := "https://github.com/generative-xyz/ordinals-collections.git"
 		err := h.crawlOrdinalCollection(source)
 		if err != nil {
-			h.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", err.Error(), err)
+			logger.AtLog.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", zap.Error(err))
 		}
 	})
 	c.Start()
@@ -144,12 +145,12 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 		for {
 			err := h.Usecase.CreateProjectsFromMetas()
 			if err != nil {
-				h.Logger.Error("error at cronjob create projects from metas", err.Error(), err)
+				logger.AtLog.Logger.Error("error at cronjob create projects from metas", zap.Error(err))
 				return
 			}
 			err = h.Usecase.CreateTokensFromCollectionInscriptions()
 			if err != nil {
-				h.Logger.Error("error at cronjob create tokens from collection inscription", err.Error(), err)
+				logger.AtLog.Logger.Error("error at cronjob create tokens from collection inscription", zap.Error(err))
 				return
 			}
 			// Sleep 5 minutes after recreate again

@@ -9,11 +9,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -36,7 +38,7 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -44,7 +46,7 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -53,14 +55,14 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.MintNftBtc.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.MintNftBtc.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	// if !strings.EqualFold(profile.WalletAddressBTCTaproot, reqBody.WalletAddress) {
 	// 	err = errors.New("permission dined")
-	// 	h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.createMintReceiveAddress", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -68,7 +70,7 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 	reqUsecase := &structure.MintNftBtcData{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		h.Logger.Error("copier.Copy", err.Error(), err)
+		logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -78,7 +80,7 @@ func (h *httpDelivery) createMintReceiveAddress(w http.ResponseWriter, r *http.R
 
 	mintNftBtcWallet, err := h.Usecase.CreateMintReceiveAddress(*reqUsecase)
 	if err != nil {
-		h.Logger.Error("h.Usecase.createMintReceiveAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.createMintReceiveAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -107,7 +109,7 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -115,7 +117,7 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -125,7 +127,7 @@ func (h *httpDelivery) cancelMintNftBt(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Usecase.CancelMintNftBtc(profile.WalletAddressBTCTaproot, uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.CancelMintNftBt", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CancelMintNftBt", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -144,7 +146,7 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -152,7 +154,7 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -162,19 +164,19 @@ func (h *httpDelivery) getDetailMintNftBtc(w http.ResponseWriter, r *http.Reques
 
 	item, err := h.Usecase.GetDetalMintNftBtc(uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.CancelMintNftBt", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CancelMintNftBt", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	// if !strings.EqualFold(item.OriginUserAddress, profile.WalletAddressBTCTaproot) {
 	// 	err := errors.New("permission dined")
-	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 	if item.UserID != profile.UUID {
 		err := errors.New("permission dined")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -213,7 +215,7 @@ func (h *httpDelivery) getMintFeeRateInfos(w http.ResponseWriter, r *http.Reques
 
 	fileSizeInt, err := strconv.Atoi(fileSize)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetLevelFeeInfo", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetLevelFeeInfo", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -229,7 +231,7 @@ func (h *httpDelivery) getMintFeeRateInfos(w http.ResponseWriter, r *http.Reques
 
 	item, err := h.Usecase.GetLevelFeeInfo(int64(fileSizeInt), int64(customRateInt), int64(mintPriceInt))
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetLevelFeeInfo", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetLevelFeeInfo", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

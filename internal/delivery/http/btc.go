@@ -22,7 +22,7 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	// decoder := json.NewDecoder(r.Body)
 	// err := decoder.Decode(&reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -30,22 +30,22 @@ func (h *httpDelivery) btcGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	// reqUsecase := &structure.BctWalletAddressData{}
 	// err = copier.Copy(reqUsecase, reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
 	// btcWallet, err := h.Usecase.CreateSegwitBTCWalletAddress(*reqUsecase)
 	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.CreateSegwitBTCWalletAddress", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.CreateSegwitBTCWalletAddress", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
-	// h.Logger.Info("btcWallet", btcWallet)
+	// logger.AtLog.Logger.Info("btcWallet", zap.Any("btcWallet", btcWallet))
 	// resp, err := h.BtcWalletAddressToResp(btcWallet)
 	// if err != nil {
-	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -69,7 +69,7 @@ func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
 	// decoder := json.NewDecoder(r.Body)
 	// err := decoder.Decode(&reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.checkBalance.Decode", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.checkBalance.Decode", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -77,22 +77,22 @@ func (h *httpDelivery) checkBalance(w http.ResponseWriter, r *http.Request) {
 	// reqUsecase := &structure.CheckBalance{}
 	// err = copier.Copy(reqUsecase, reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
 	// btcWallet, err := h.Usecase.CheckBalanceWalletAddress(*reqUsecase)
 	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.CheckBalanceWalletAddress", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.CheckBalanceWalletAddress", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
-	// h.Logger.Info("btcWallet", btcWallet)
+	// logger.AtLog.Logger.Info("btcWallet", zap.Any("btcWallet", btcWallet))
 	// resp, err := h.BtcToResp(btcWallet)
 	// if err != nil {
-	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }

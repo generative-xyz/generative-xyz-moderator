@@ -43,7 +43,7 @@ func (s *serviceImpl) SendMessagesToSpecificDevices(ctx context.Context, registr
 	if err != nil {
 		return err
 	}
-	logger.AtLog.Logger.Info("Successfully sent message", zap.String("response", response))
+	logger.AtLog.Logger.Info("Successfully sent message", zap.String("response",response))
 	return nil
 }
 func (s *serviceImpl) SendMessagesToMultipleDevices(ctx context.Context, registrationTokens []string, msg map[string]string) error {
@@ -59,7 +59,7 @@ func (s *serviceImpl) SendMessagesToMultipleDevices(ctx context.Context, registr
 	if err != nil {
 		return err
 	}
-	logger.AtLog.Logger.Info("Successfully sent message", zap.Any("response", br))
+	logger.AtLog.Logger.Info("Successfully sent message", zap.Any("response", zap.Any("br)", br)))
 	return nil
 }
 func (s *serviceImpl) SendMessageToTopic(ctx context.Context, topic string, msg map[string]string) error {

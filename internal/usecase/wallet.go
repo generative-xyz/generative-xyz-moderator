@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
@@ -36,14 +37,14 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	// 	if err == nil && data != nil {
 	// 		err := json.Unmarshal([]byte(*data), &result)
 	// 		if err != nil {
-	// 			u.Logger.Error("GetBTCWalletInfo json.Unmarshal", address, err)
+	// 			logger.AtLog.Logger.Error("GetBTCWalletInfo json.Unmarshal", address, err)
 	// 		}
 	// 		return &result, nil
 	// 	}
 	// }
 	t := time.Now()
 	apiToken := u.Config.BlockcypherToken
-	u.Logger.Info("GetBTCWalletInfo apiToken debug", apiToken)
+	logger.AtLog.Logger.Info("GetBTCWalletInfo apiToken debug", zap.Any("apiToken", apiToken))
 	quickNode := u.Config.QuicknodeAPI
 
 	walletBasicInfo, err := btc.GetBalanceFromQuickNode(address, quickNode)
@@ -51,7 +52,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 		var err2 error
 		walletBasicInfo, err2 = getWalletInfo(address, apiToken, u.Logger)
 		if err != nil {
-			u.Logger.Info("GetBTCWalletInfo apiToken debug err", err2, err)
+			logger.AtLog.Logger.Error("GetBTCWalletInfo apiToken debug err", zap.Error(err2))
 			return nil, err2
 		}
 	}
@@ -65,7 +66,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 	currentListing, err := u.Repo.GetDexBTCListingOrderUserPending(address)
 	if err != nil {
-		u.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", address, err)
+		logger.AtLog.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending",  zap.Error(err))
 	}
 	trackT2 := time.Since(t)
 
@@ -126,7 +127,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 
 	// err = u.Repo.Cache.SetDataWithExpireTime(cacheKey, result, 10)
 	// if err != nil {
-	// 	u.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
+	// 	logger.AtLog.Logger.Error("GetBTCWalletInfo CreateCache", address, err)
 	// }
 	// }
 

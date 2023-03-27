@@ -41,7 +41,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	tokenID := vars["tokenID"]
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
-	h.Logger.Info("captureTimeout", captureTimeout)
+	logger.AtLog.Logger.Info("captureTimeout", zap.Any("captureTimeout", captureTimeout))
 	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
 	if errT != nil {
 		captureTimeoutInt = 5
@@ -53,7 +53,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 	}, captureTimeoutInt)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -66,7 +66,7 @@ func (h *httpDelivery) tokenURI(w http.ResponseWriter, r *http.Request) {
 		Attributes:   message.ParsedAttributes,
 	}
 
-	h.Logger.Info("resp.message", message.TokenID)
+	logger.AtLog.Logger.Info("resp.message", zap.Any("message.TokenID", message.TokenID))
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
@@ -93,14 +93,14 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 	}, 5)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.TokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
-	h.Logger.Info("resp.message", message)
+	logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
 }
 
@@ -123,7 +123,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	tokenID := vars["tokenID"]
 
 	captureTimeout := r.URL.Query().Get("captureTimeout")
-	h.Logger.Info("captureTimeout", captureTimeout)
+	logger.AtLog.Logger.Info("captureTimeout", zap.Any("captureTimeout", captureTimeout))
 	captureTimeoutInt, errT := strconv.Atoi(captureTimeout)
 	if errT != nil {
 		captureTimeoutInt = 5
@@ -134,7 +134,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		TokenID:         tokenID,
 	}, captureTimeoutInt)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -142,12 +142,12 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 	aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 	if err != nil {
-		h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("h.Usecase.GetToken", token.TokenID)
+	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
 	for _, i := range aresp {
@@ -164,7 +164,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		err := errors.New("Cannot parse products")
-		h.Logger.Error("tokenToResp", err.Error(), err)
+		logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -185,7 +185,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		// }
 		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
 		if err != nil {
-			h.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
+			logger.AtLog.Logger.Error("tokenURIWithResp.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
 		} else {
 			if listingInfo.CancelTx == "" {
 				buyEth, _ := h.Usecase.Repo.GetDexBTCBuyETHBuyingByInscriptionID(listingInfo.InscriptionID)
@@ -204,13 +204,13 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 				if resp.SellVerified {
 					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
 					if err != nil {
-						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+						logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
 					}
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
 					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
-						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+						logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 					}
 					resp.PriceETH = amountETH
 				}
@@ -243,14 +243,14 @@ func (h *httpDelivery) tokenTraitWithResp(w http.ResponseWriter, r *http.Request
 	}, 5)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := response.InternalTokenTraitsResp{}
 	resp.Attributes = message.ParsedAttributes
-	h.Logger.Info("resp.message", message)
+	logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -280,19 +280,19 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	h.Logger.Info("genNFTAddr", genNFTAddr)
+	logger.AtLog.Logger.Info("genNFTAddr", zap.Any("genNFTAddr", genNFTAddr))
 
 	f := structure.FilterTokens{}
 	err := f.CreateFilter(r)
 	if err != nil {
-		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		logger.AtLog.Logger.Error("f.CreateFilter", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.GenNFTAddr = &genNFTAddr
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -300,7 +300,7 @@ func (h *httpDelivery) TokensOfAProject(w http.ResponseWriter, r *http.Request) 
 	f.BaseFilters = *bf
 	resp, err := h.getTokens(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -313,19 +313,19 @@ func (h *httpDelivery) TokensOfAProjectNew(w http.ResponseWriter, r *http.Reques
 
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	h.Logger.Info("genNFTAddr", genNFTAddr)
+	logger.AtLog.Logger.Info("genNFTAddr", zap.Any("genNFTAddr", genNFTAddr))
 
 	f := structure.FilterTokens{}
 	err := f.CreateFilter(r)
 	if err != nil {
-		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		logger.AtLog.Logger.Error("f.CreateFilter", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.GenNFTAddr = &genNFTAddr
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -333,7 +333,7 @@ func (h *httpDelivery) TokensOfAProjectNew(w http.ResponseWriter, r *http.Reques
 	f.BaseFilters = *bf
 	resp, err := h.getTokensNew(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -362,7 +362,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-	h.Logger.Info("walletAddress", walletAddress)
+	logger.AtLog.Logger.Info("walletAddress", zap.Any("walletAddress", walletAddress))
 
 	f := structure.FilterTokens{}
 	f.CreateFilter(r)
@@ -370,7 +370,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -383,7 +383,7 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 
 	resp, err := h.getTokens(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -413,7 +413,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	hidden := false
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -435,7 +435,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 	uProjects, err := h.Usecase.GetAllProjects(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -447,7 +447,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 
 		p, err := h.projectToResp(&project)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -474,7 +474,7 @@ func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
 	f := structure.FilterTokens{}
 	err := f.CreateFilter(r)
 	if err != nil {
-		h.Logger.Error("f.CreateFilter", err.Error(), err)
+		logger.AtLog.Logger.Error("f.CreateFilter", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -485,7 +485,7 @@ func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -493,7 +493,7 @@ func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters = *bf
 	resp, err := h.getTokensForSearch(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -506,7 +506,7 @@ func (h *httpDelivery) getTokenUris(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.PaginationResponse, error) {
 	pag, err := h.Usecase.FilterTokens(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", zap.Error(err))
 		return nil, err
 	}
 
@@ -517,14 +517,14 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	bytes, err := json.Marshal(iTokensData)
 	if err != nil {
 		err := errors.New("Cannot parse respItems")
-		h.Logger.Error("respItems", err.Error(), err)
+		logger.AtLog.Logger.Error("respItems", zap.Error(err))
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &tokens)
 	if err != nil {
 		err := errors.New("Cannot Unmarshal")
-		h.Logger.Error("Unmarshal", err.Error(), err)
+		logger.AtLog.Logger.Error("Unmarshal", zap.Error(err))
 		return nil, err
 	}
 
@@ -534,29 +534,29 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 	// get btc, btc rate:
 	// btcPrice, err := helpers.GetExternalPrice("BTC")
 	// if err != nil {
-	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 	// 	return nil, err
 	// }
 
-	// h.Logger.Info("btcPrice", btcPrice)
+	// logger.AtLog.Logger.Info("btcPrice", zap.Any("btcPrice", btcPrice))
 	// ethPrice, err := helpers.GetExternalPrice("ETH")
 	// if err != nil {
-	// 	h.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+	// 	logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 	// 	return nil, err
 	// }
-	// h.Logger.Info("btcPrice", btcPrice)
+	// logger.AtLog.Logger.Info("btcPrice", zap.Any("btcPrice", btcPrice))
 
 	for _, token := range tokens {
 		resp, err := h.tokenToResp(&token)
 		if err != nil {
 			err := errors.New("Cannot parse products")
-			h.Logger.Error("tokenToResp", err.Error(), err)
+			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
 
 		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
 		if err != nil {
-			h.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", resp.TokenID, err.Error(), err)
+			logger.AtLog.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID",zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
 		} else {
 			if listingInfo.CancelTx == "" {
 				resp.Buyable = true
@@ -602,7 +602,7 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 	newList := []entity.TokenUriListingFilter{}
 	btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
 	if err != nil {
-		h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+		logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
 	}
 	for _, item := range pag.Result.([]entity.TokenUriListingFilter) {
 
@@ -658,7 +658,7 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.PaginationResponse, error) {
 	pag, err := h.Usecase.FilterTokens(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", zap.Error(err))
 		return nil, err
 	}
 
@@ -669,14 +669,14 @@ func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.P
 	bytes, err := json.Marshal(iTokensData)
 	if err != nil {
 		err := errors.New("Cannot parse respItems")
-		h.Logger.Error("respItems", err.Error(), err)
+		logger.AtLog.Logger.Error("respItems", zap.Error(err))
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &tokens)
 	if err != nil {
 		err := errors.New("Cannot Unmarshal")
-		h.Logger.Error("Unmarshal", err.Error(), err)
+		logger.AtLog.Logger.Error("Unmarshal", zap.Error(err))
 		return nil, err
 	}
 
@@ -684,7 +684,7 @@ func (h *httpDelivery) getTokensForSearch(f structure.FilterTokens) (*response.P
 		resp, err := h.tokenExternalToResp(&token)
 		if err != nil {
 			err := errors.New("Cannot parse products")
-			h.Logger.Error("tokenToResp", err.Error(), err)
+			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
 		respItems = append(respItems, *resp)
@@ -813,14 +813,14 @@ func (h *httpDelivery) Tokens(w http.ResponseWriter, r *http.Request) {
 
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Tokens.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Tokens.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.BaseFilters = *bf
 	resp, err := h.getTokens(f)
 	if err != nil {
-		h.Logger.Error("h.Tokens.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Tokens.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -851,7 +851,7 @@ func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Req
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -863,21 +863,21 @@ func (h *httpDelivery) updatetokenURIWithResp(w http.ResponseWriter, r *http.Req
 	})
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("h.Usecase.GetToken", token)
+	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token", token))
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New("Cannot parse products")
-		h.Logger.Error("tokenToResp", err.Error(), err)
+		logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("resp.token", token)
+	logger.AtLog.Logger.Info("resp.token", zap.Any("token", token))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -901,7 +901,7 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -912,21 +912,21 @@ func (h *httpDelivery) updateTokenThumbnail(w http.ResponseWriter, r *http.Reque
 	})
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetToken", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("h.Usecase.GetToken", token)
+	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token", token))
 	resp, err := h.tokenToResp(token)
 	if err != nil {
 		err := errors.New("Cannot parse products")
-		h.Logger.Error("tokenToResp", err.Error(), err)
+		logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("resp.token", token)
+	logger.AtLog.Logger.Info("resp.token", zap.Any("token", token))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -951,7 +951,7 @@ func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request)
 	paytype := r.URL.Query().Get("payType")
 	uProjects, err := h.Usecase.CreatorVolume(walletAddress, paytype)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"net/http"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -27,7 +29,7 @@ func (h *httpDelivery) apiDeveloper_GenApiKey(w http.ResponseWriter, r *http.Req
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -37,13 +39,13 @@ func (h *httpDelivery) apiDeveloper_GenApiKey(w http.ResponseWriter, r *http.Req
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
 	if err != nil {
-		h.Logger.Error("httpDelivery.getDeveloperApiKey.NewDecoder", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.getDeveloperApiKey.NewDecoder", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	resp, err := h.Usecase.ApiDevelop_GenApiKey(userWalletAddr, &req)
 	if err != nil {
-		h.Logger.Error("h.Usecase.ApiDevelop_GenApiKey", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.ApiDevelop_GenApiKey", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -67,13 +69,13 @@ func (h *httpDelivery) apiDeveloper_GetApiKey(w http.ResponseWriter, r *http.Req
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	resp, err := h.Usecase.ApiDevelop_GetApiKey(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.ApiDevelop_GetApiKey", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.ApiDevelop_GetApiKey", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
