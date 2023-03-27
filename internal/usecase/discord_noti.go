@@ -175,7 +175,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		description = fmt.Sprintf("Category: %s\n", category)
 	}
 
-	ownerName := u.resolveShortName(tokenUri.Creator.DisplayName, tokenUri.Creator.WalletAddress)
+	ownerName := u.resolveShortName(project.CreatorProfile.DisplayName, project.CreatorProfile.WalletAddress)
 	collectionName := project.Name
 	mintedCount := tokenUri.OrderInscriptionIndex
 
@@ -336,13 +336,12 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 	return nil
 }
 
-func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, networkFee int) {
+func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 	domain := os.Getenv("DOMAIN")
 	u.Logger.Info(
 		"NotifyNFTMinted",
 		zap.String("btcUserAddr", btcUserAddr),
 		zap.String("inscriptionID", inscriptionID),
-		zap.Int("networkFee", networkFee),
 	)
 
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
@@ -421,7 +420,6 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string, netwo
 	), true)
 
 	// fields = addFields(fields, "Minted", fmt.Sprintf("%d/%d", mintedCount, itemCount), true)
-	//fields = addFields(fields, "Network Fee", strconv.FormatFloat(float64(networkFee)/1e8, 'f', -1, 64)+" BTC")
 
 	parsedThumbnailUrl, err := url.Parse(tokenUri.Thumbnail)
 	if err != nil {

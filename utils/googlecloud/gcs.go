@@ -19,8 +19,10 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
@@ -88,7 +90,7 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 
 func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket string, waitgroup *sync.WaitGroup) error {
 	defer waitgroup.Done()
-	fmt.Printf("processing unzip for file %s %s to %s", baseDir, f.Name, outputBucket)
+	logger.AtLog.Logger.Info("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.String("name", f.Name))
 	buffer := make([]byte, 32*1024)
 	r, err := f.Open()
 	if err != nil {
