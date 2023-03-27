@@ -1865,7 +1865,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	pe.CreatedByCollectionMeta = true
 	blockNumberMinted := "0"
 	pe.BlockNumberMinted = &blockNumberMinted
-	pe.Source = meta.Source
+	pe.Source = meta.Source + "$$" + meta.From
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
