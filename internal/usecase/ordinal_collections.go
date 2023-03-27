@@ -72,13 +72,16 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			continue
 		}
 
+		existed := true
+
 		if project == nil {
 			project, err = u.CreateProjectFromCollectionMeta(meta)
 			if err != nil {
 				logger.AtLog.Logger.Error("u.CreateProjectFromCollectionMeta", zap.Error(err))
 				return err
 			}
-			logger.AtLog.Logger.Info(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+			u.Logger.LogAny(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+			existed = false
 		}
 
 		err = u.Repo.SetProjectCreatedMeta(meta)
@@ -97,8 +100,16 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			logger.AtLog.Logger.Error("CreateProjectsFromMetas.SetMetaMappedProjectID", zap.Error(err))
 			continue
 		}
-		logger.AtLog.Logger.Info("SetMetaMappedProjectID", zap.Any("projectID", zap.Any("project.TokenID)", project.TokenID)))
-		
+
+		u.Logger.LogAny("SetMetaMappedProjectID", zap.Any("projectID", project.TokenID))
+
+		err = u.Repo.SetMetaProjectExisted(meta, existed)
+		if err != nil {
+			u.Logger.Error("CreateProjectsFromMetas.SetMetaProjectExisted", zap.Error(err))
+			continue
+		}
+		u.Logger.LogAny("SetMetaProjectExisted", zap.Any("projectID", project.TokenID))
+				
 		if processed % 20 == 0 {
 			time.Sleep(1 * time.Second)
 		}
@@ -130,6 +141,12 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 					logger.AtLog.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
 					continue
 				}
+
+				if meta.ProjectExisted {
+					u.Logger.LogAny("MetaProjectIsAlreadyExisted", zap.Any("meta", meta))
+					continue
+				}
+
 				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 				if err != nil {
 					if !errors.Is(err, repository.ErrNoProjectsFound) {
