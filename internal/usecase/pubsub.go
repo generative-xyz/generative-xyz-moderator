@@ -25,7 +25,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 
-	u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("tokenURI", tokenURI))
+	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
 	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
 		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("FindTokenByWithoutCache", zap.Error(err)))
@@ -38,7 +38,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 
-	u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("RunAndCap.resp", resp))
+	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("RunAndCap.resp", zap.Any("resp)", resp)))
 	if resp.IsUpdated {
 		token.ParsedImage = &resp.ParsedImage
 		token.Thumbnail = resp.Thumbnail
@@ -50,7 +50,7 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		if err != nil {
 			logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
 		}
-		u.Logger.LogAny("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
+		logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
 		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
 
 	}

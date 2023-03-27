@@ -31,23 +31,23 @@ func (h ScronHandler) StartServer() {
 	c := cron.New()
 
 	disPatchOn := os.Getenv("CRONTAB_SCHEDULE")
-	h.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Cron is listerning: %s", disPatchOn))
 
 	//check device's statues each 1 hours
 	c.AddFunc(disPatchOn, func() {
 
-		// h.Logger.Info("dispatch", disPatchOn)
-		// h.Logger.Info("time", time.Now().UTC())
+		// logger.AtLog.Logger.Info("dispatch", zap.Any("disPatchOn", disPatchOn))
+		// logger.AtLog.Logger.Info("time", zap.Any("time.Now().UTC()", time.Now().UTC()))
 
 		// err := h.Usecase.PrepareData()
 		// if err != nil {
-		// 	h.Logger.Error(err)
+		// 	logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	return
 		// }
 
 		// err = h.Usecase.SyncUserStats()
 		// if err != nil {
-		// 	h.Logger.Error(err)
+		// 	logger.AtLog.Logger.Error("err", zap.Error(err))
 		// }
 
 		// chanDone := make(chan bool, 1)
@@ -59,7 +59,7 @@ func (h ScronHandler) StartServer() {
 
 		// 	projects, err :=  h.Usecase.Repo.GetAllProjects(entity.FilterProjects{})
 		// 	if err != nil {
-		// 		h.Logger.Error(err)
+		// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	}
 
 		// 	processed := 0
@@ -72,7 +72,7 @@ func (h ScronHandler) StartServer() {
 		// 			//TO DO: this function will be improved
 		// 			err := h.Usecase.GetTokensOfAProjectFromChain(project)
 		// 			if err != nil {
-		// 				h.Logger.Error(err)
+		// 				logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 			}
 		// 		}(project)
 		// 		processed ++
@@ -85,7 +85,7 @@ func (h ScronHandler) StartServer() {
 
 		// 	err := h.Usecase.GetProjectsFromChain()
 		// 	if err != nil {
-		// 		h.Logger.Error(err)
+		// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	}
 		// }(chanDone)
 		// go func (chanDone chan bool)  {
@@ -101,7 +101,7 @@ func (h ScronHandler) StartServer() {
 		// 	}()
 		// 		err := h.Usecase.SyncTokenAndMarketplaceData()
 		// 	if err != nil {
-		// 		h.Logger.Error(err)
+		// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	}
 		// }(chanDone)
 
@@ -118,7 +118,7 @@ func (h ScronHandler) StartServer() {
 		// 	}()
 		// 		err := h.Usecase.SyncLeaderboard()
 		// 	if err != nil {
-		// 		h.Logger.Error(err)
+		// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	}
 		// }(chanDone)
 
@@ -128,7 +128,7 @@ func (h ScronHandler) StartServer() {
 		// 	}()
 		// 		err := h.Usecase.SyncProjectsStats()
 		// 	if err != nil {
-		// 		h.Logger.Error(err)
+		// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		// 	}
 		// }(chanDone)
 
@@ -138,7 +138,7 @@ func (h ScronHandler) StartServer() {
 	// c.AddFunc("*/1 * * * *", func() {
 	// 	err := h.Usecase.UpdateProposalState()
 	// 	if err != nil {
-	// 		h.Logger.Error(err)
+	// 		logger.AtLog.Logger.Error("err", zap.Error(err))
 	// 	}
 	// })
 

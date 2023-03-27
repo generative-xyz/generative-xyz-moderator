@@ -67,7 +67,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 }
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
-	u.Logger.LogAny("CreateBTCProject", zap.Any("CreateBtcProjectReq", req))
+	logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("CreateBtcProjectReq", zap.Any("req)", req)))
 
 	pe := &entity.Projects{}
 	err := copier.Copy(pe, req)
@@ -140,7 +140,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 				isFullChain, err := helpers.IsFullChain(string(htmlContent))
 				if err == nil {
 					pe.IsFullChain = isFullChain
-					u.Logger.LogAny("CreateBTCProject", zap.Any("isFullChain", isFullChain))
+					logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("isFullChain", zap.Any("isFullChain)", isFullChain)))
 				} else {
 					logger.AtLog.Error("CreateBTCProject", zap.Any("isFullChain", err))
 				}
@@ -192,7 +192,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 	pe.OpenMintUnixTimestamp = int(time.Now().Add(time.Hour * entity.DEFAULT_DELAY_OPEN_MINT_TIME_IN_HOUR).Unix())
 
-	u.Logger.LogAny("CreateBTCProject", zap.Any("project", pe))
+	logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("project", zap.Any("pe)", pe)))
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		logger.AtLog.Error("CreateBTCProject", zap.Any("CreateProject", err))
@@ -320,14 +320,14 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 		FileUrl:            airDrop.File,
 		DestinationAddress: airDrop.ReceiverBtcAddressTaproot,
 	}
-	u.Logger.LogAny(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Mint airdrop request %v", mintReq), zap.Any("mintReq", mintReq))
 
 	resp, respStr, err := u.OrdService.Mint(mintReq)
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("OrdService.Mint airdrop %v %v", err, respStr), zap.Any("Error", err))
 		return nil, err
 	}
-	u.Logger.LogAny("OrdService.Mint resp", zap.Any("Resp", resp))
+	logger.AtLog.Logger.Info("OrdService.Mint resp", zap.Any("Resp", zap.Any("resp)", resp)))
 
 	_, err = u.Repo.UpdateAirdropMintInfoByUUid(airDrop.UUID, resp)
 	if err != nil {
@@ -795,7 +795,7 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	_ = u.RedisV9.DelPrefix(context.TODO(), rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	logger.AtLog.Info("updated", updated)
-	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", zap.Any("p)", p)))
 	return p, nil
 }
 
@@ -849,7 +849,7 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	}
 
 	logger.AtLog.Info("updated", updated)
-	u.Logger.LogAny("UpdateProject", zap.Any("project", p))
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", zap.Any("p)", p)))
 	return p, nil
 }
 
@@ -1054,19 +1054,19 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 }
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
 		return nil, errors.New("project is not found")
 	}
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", zap.Any("c)", c)))
 	return c, nil
 }
 
 // only using for project detail api, support est fee:
 func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectDetail", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, err := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if err != nil {
@@ -1155,19 +1155,19 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 	}()
 
-	// u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	// logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", zap.Any("c)", c)))
 	return c, nil
 }
 
 func (u Usecase) GetProjectVolumn(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	u.Logger.LogAny("GetProjectVolumn", zap.Any("req", req))
+	logger.AtLog.Logger.Info("GetProjectVolumn", zap.Any("req", zap.Any("req)", req)))
 	c, err := u.Repo.FindProjectWithoutCache(req.ContractAddress, req.ProjectID)
 	if err != nil {
 		logger.AtLog.Error("GetProjectVolumn", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.LogAny("GetProjectDetail", zap.Any("project", c))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", zap.Any("c)", c)))
 	return c, nil
 }
 
@@ -1636,7 +1636,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", zap.Any("pe)", pe)))
 
 	images := []string{}
 
@@ -1658,7 +1658,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1678,7 +1678,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 	}
 	//
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("images", len(images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1726,7 +1726,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		)
 	}
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("project", pe), zap.Int("images", len(images)))
 	go func() {
 		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
 		if err != nil {
@@ -1739,7 +1739,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
 
-	u.Logger.LogAny("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", pe))
+	logger.AtLog.Logger.Info("UnzipProjectFile", zap.Any("updated", updated), zap.Any("project", zap.Any("pe)", pe)))
 	return pe, nil
 }
 
@@ -1973,7 +1973,7 @@ func (u Usecase) ProjectVolume(projectID string, paytype string) (*Volume, error
 		Status:    status,
 	}
 
-	logger.AtLog.Logger.Info("ProjectVolume ...", zap.String("projectID", projectID), zap.Any("volume", tmp), zap.Any("AggregateWithDrawByUser", w), zap.Any("latestWd", latestWd))
+	logger.AtLog.Logger.Info("ProjectVolume ...", zap.String("projectID", projectID), zap.Any("volume", tmp), zap.Any("AggregateWithDrawByUser", w), zap.Any("latestWd", zap.Any("latestWd)", latestWd)))
 	return &tmp, nil
 }
 

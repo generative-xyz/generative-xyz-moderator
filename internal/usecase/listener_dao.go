@@ -5,24 +5,26 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/contracts/generative_dao"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) DAOCastVote( chainLog types.Log) error {
 
-	u.Logger.Info("chainLog", chainLog.Data)
+	logger.AtLog.Logger.Info("chainLog", zap.Any("chainLog.Data", chainLog.Data))
 
 	daoContract, err := generative_dao.NewGenerativeDao(chainLog.Address, u.Blockchain.GetClient())
 	if err != nil {
-		u.Logger.Error("cannot init DAO contract", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot init DAO contract", zap.Error(err))
 		return err
 	}
 
 	parsedCastVote, err := daoContract.ParseVoteCast(chainLog)
 	if err != nil {
-		u.Logger.Error("cannot parse parsedCastVote", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot parse parsedCastVote", zap.Error(err))
 		return err
 	}
 
@@ -35,10 +37,10 @@ func (u Usecase) DAOCastVote( chainLog types.Log) error {
 		Reason:     parsedCastVote.Reason,
 	}
 
-	u.Logger.Info("parsed.parsedCastVote", obj)
+	logger.AtLog.Logger.Info("parsed.parsedCastVote", zap.Any("obj", obj))
 	err = u.Repo.CreateProposalVotes(obj)
 	if err != nil {
-		u.Logger.Error("cannot create CreateProposalVotes", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot create CreateProposalVotes", zap.Error(err))
 		return err
 	}
 
@@ -48,37 +50,37 @@ func (u Usecase) DAOCastVote( chainLog types.Log) error {
 
 func (u Usecase) DAOProposalCreated( chainLog types.Log) error {
 
-	u.Logger.Info("chainLog", chainLog.Data)
+	logger.AtLog.Logger.Info("chainLog", zap.Any("chainLog.Data", chainLog.Data))
 
 	daoContract, err := generative_dao.NewGenerativeDao(chainLog.Address, u.Blockchain.GetClient())
 	if err != nil {
-		u.Logger.Error("cannot init DAO contract", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot init DAO contract", zap.Error(err))
 		return err
 	}
 
 	parsedProposal, err := daoContract.ParseProposalCreated(chainLog)
 	if err != nil {
-		u.Logger.Error("cannot parse createdProposal", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot parse createdProposal", zap.Error(err))
 		return err
 	}
-	u.Logger.Info("parsed.Data", parsedProposal)
+	logger.AtLog.Logger.Info("parsed.Data", zap.Any("parsedProposal", parsedProposal))
 	createdProposal := u.ParseProposal(parsedProposal)
 
 	state, err := daoContract.State(nil, parsedProposal.ProposalId)
 	if err != nil {
-		u.Logger.Error("daoContract.State", err.Error(), err)
+		logger.AtLog.Logger.Error("daoContract.State", zap.Error(err))
 	} else {
 		createdProposal.State = state
 	}
 
 	err = u.Repo.CreateProposal(createdProposal)
 	if err != nil {
-		u.Logger.Error("cannot create CreateProposal", err.Error(), err)
+		logger.AtLog.Logger.Error("cannot create CreateProposal", zap.Error(err))
 		return err
 	}
 
 	u.SendMessageProposal(*createdProposal)
-	u.Logger.Info("createdProposal", createdProposal)
+	logger.AtLog.Logger.Info("createdProposal", zap.Any("createdProposal", createdProposal))
 	return nil
 }
 
@@ -136,7 +138,7 @@ func (u Usecase) SendMessageProposal( createdProposal entity.Proposal) {
 	//title := fmt.Sprintf("Proposal:  %s is %s", createdProposal.ProposalID, event)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
 	}
 }
 
@@ -150,6 +152,6 @@ func (u Usecase) SendMessageProposalVote( createdProposalVote entity.ProposalVot
 	//title := ""
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		u.Logger.Error("s.Slack.SendMessageToSlack err", err.Error(), err)
+		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
 	}
 }

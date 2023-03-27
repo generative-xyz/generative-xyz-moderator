@@ -5,8 +5,10 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -31,14 +33,14 @@ func (h *httpDelivery) getNftTransactions(w http.ResponseWriter, r *http.Request
 	})
 
 	if err != nil {
-		h.Logger.Error("getNftTransactions", err.Error(), err)
+		logger.AtLog.Logger.Error("getNftTransactions", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp := covalentResp.Data
 
-	h.Logger.Info("resp", resp);
+	logger.AtLog.Logger.Info("resp", zap.Any("resp", resp));
 	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")	
 }
@@ -62,7 +64,7 @@ func (h *httpDelivery) getTokenHolder(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		h.Logger.Error("parse page param to int", err.Error(), err)
+		logger.AtLog.Logger.Error("parse page param to int", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -70,7 +72,7 @@ func (h *httpDelivery) getTokenHolder(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		h.Logger.Error("parse limit param to int", err.Error(), err)
+		logger.AtLog.Logger.Error("parse limit param to int", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -82,7 +84,7 @@ func (h *httpDelivery) getTokenHolder(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		h.Logger.Error("parse limit param to int", err.Error(), err)
+		logger.AtLog.Logger.Error("parse limit param to int", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
