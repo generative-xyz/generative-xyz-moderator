@@ -67,9 +67,11 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		processed++
 		project, err := u.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 		if err != nil {
-			u.Logger.Error("u.FindProjectByInscriptionIcon", err.Error(), err)
+			u.Logger.ErrorAny("u.FindProjectByInscriptionIcon", zap.Error(err))
 			continue
 		}
+
+		existed := true
 
 		if project == nil {
 			project, err = u.CreateProjectFromCollectionMeta(meta)
@@ -77,7 +79,8 @@ func (u Usecase) CreateProjectsFromMetas() error {
 				u.Logger.Error("u.CreateProjectFromCollectionMeta", err.Error(), err)
 				return err
 			}
-			u.Logger.Info(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+			u.Logger.LogAny(fmt.Sprintf("Created project from collection meta %s %s", meta.Name, meta.InscriptionIcon))
+			existed = false
 		}
 
 		err = u.Repo.SetProjectCreatedMeta(meta)
@@ -96,7 +99,15 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			u.Logger.Error("CreateProjectsFromMetas.SetMetaMappedProjectID", zap.Error(err))
 			continue
 		}
-		u.Logger.Info("SetMetaMappedProjectID", zap.Any("projectID", project.TokenID))
+		u.Logger.LogAny("SetMetaMappedProjectID", zap.Any("projectID", project.TokenID))
+
+		err = u.Repo.SetMetaProjectExisted(meta, existed)
+		if err != nil {
+			u.Logger.Error("CreateProjectsFromMetas.SetMetaProjectExisted", zap.Error(err))
+			continue
+		}
+		u.Logger.LogAny("SetMetaProjectExisted", zap.Any("projectID", project.TokenID))
+		
 		
 		if processed % 20 == 0 {
 			time.Sleep(1 * time.Second)
@@ -129,6 +140,12 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 					u.Logger.ErrorAny("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
 					continue
 				}
+
+				if meta.ProjectExisted {
+					u.Logger.LogAny("MetaProjectIsAlreadyExisted", zap.Any("meta", meta))
+					continue
+				}
+
 				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 				if err != nil {
 					if !errors.Is(err, repository.ErrNoProjectsFound) {
