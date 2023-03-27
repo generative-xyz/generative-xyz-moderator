@@ -1199,28 +1199,21 @@ func (u Usecase) JobMint_RefundBtc() error {
 						needRefundItems++
 					}
 				}
-			}
-			// if not enough need-to-refund item then wait or refund&fund ...
-			if !(needRefundItems == item.Quantity-1) {
-				if minedItems+needRefundItems == item.Quantity-1 {
-					// refund + fund now:
-					// this function send+refund vs 1 tx.
-					err := u.SendMasterAndRefund(item.UUID, bs, ethClient)
-					if err != nil {
-						go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "u.SendMasterAndRefund", err.Error(), true)
-					}
+				// if not enough need-to-refund item then wait or refund&fund ...
+				if !(needRefundItems == item.Quantity-1) {
+					if minedItems+needRefundItems == item.Quantity-1 {
+						// refund + fund now:
+						// this function send+refund vs 1 tx.
+						err := u.SendMasterAndRefund(item.UUID, bs, ethClient)
+						if err != nil {
+							go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "u.SendMasterAndRefund", err.Error(), true)
+						}
 
-				}
-				continue
-			} else {
-				// check test first:
-				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
-				if testCronTab == nil || testCronTab.Enabled {
-					go u.trackMintNftBtcHistory("", "JobMint_RefundBtc", "", "", "pause for test: ", item.UUID, true)
+					}
 					continue
-				}
+				} // all subitem need to refund (no sub item minted) => refund max...
 			}
-			// refund all.
+			// no sub item => refund max...
 
 		} else if item.IsSubItem {
 			continue
