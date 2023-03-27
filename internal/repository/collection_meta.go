@@ -84,3 +84,21 @@ func (r Repository) SetMetaMappedProjectID(meta entity.CollectionMeta, projectID
 
 	return err
 }
+
+func (r Repository) SetMetaProjectExisted(meta entity.CollectionMeta, existed bool) error {
+	f := bson.D{
+		{Key: "uuid", Value: meta.UUID,},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"project_existed": existed,
+		},
+	}
+
+	_, err := r.DB.Collection(meta.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
