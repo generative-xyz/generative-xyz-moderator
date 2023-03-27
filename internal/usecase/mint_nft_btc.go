@@ -834,8 +834,15 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// execute mint:
 		resp, respStr, err := u.OrdService.Mint(mintData)
 		if err != nil {
+
+			tagMention := ""
+			// check fee:
+			if item.ProjectNetworkFee > 500000 {
+				tagMention = "<@phuong> <@yen> please check: "
+			}
+
 			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
-			messageError := respStr + "|" + err.Error()
+			messageError := tagMention + respStr + "|" + err.Error() + fmt.Sprintf("| network fe: %d", item.ProjectNetworkFee)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, messageError, true)
 			continue
 		}
