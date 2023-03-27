@@ -12,11 +12,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/erc20"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 type FeeRates struct {
@@ -52,7 +54,7 @@ func (u Usecase) networkFeeBySize(size int64) int64 {
 
 		err = json.Unmarshal(responseData, &feeRateObj)
 		if err != nil {
-			u.Logger.Error(err)
+			logger.AtLog.Logger.Error("err", zap.Error(err))
 			return size * feeRateValue
 		}
 		if feeRateObj.FastestFee > 0 {
@@ -84,7 +86,7 @@ func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 
 	err = json.Unmarshal(responseData, &feeRateObj)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return nil, err
 	}
 	return feeRateObj, nil
@@ -162,7 +164,7 @@ func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress s
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 	}
 }
 
@@ -173,15 +175,15 @@ func (u Usecase) Notify(title string, userAddress string, content string) {
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlack(preText, title, c); err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 	}
 }
 
 func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whitelistedAddrs []string) (bool, error) {
 
-	u.Logger.Info("whitelistedAddrs", whitelistedAddrs)
+	logger.AtLog.Logger.Info("whitelistedAddrs", zap.Any("whitelistedAddrs", whitelistedAddrs))
 	if len(whitelistedAddrs) == 0 {
-		u.Logger.Info("whitelistedAddrs.Total", len(whitelistedAddrs))
+		logger.AtLog.Logger.Info("whitelistedAddrs.Total", zap.Any("len(whitelistedAddrs)", len(whitelistedAddrs)))
 		return false, nil
 	}
 	filter := nfts.MoralisFilter{}
@@ -190,25 +192,25 @@ func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whit
 	filter.TokenAddresses = new([]string)
 	*filter.TokenAddresses = whitelistedAddrs
 
-	u.Logger.Info("filter.GetNftByWalletAddress", filter)
+	logger.AtLog.Logger.Info("filter.GetNftByWalletAddress", zap.Any("filter", filter))
 	resp, err := u.MoralisNft.GetNftByWalletAddress(userAddr, filter)
 	if err != nil {
-		u.Logger.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("u.MoralisNft.GetNftByWalletAddress", zap.Error(err))
 		return false, err
 	}
 
-	u.Logger.Info("resp", resp)
+	logger.AtLog.Logger.Info("resp", zap.Any("resp", resp))
 	if len(resp.Result) > 0 {
 		return true, nil
 	}
 
 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
 	if err != nil {
-		u.Logger.Error("u.DelegateService.GetDelegationsByDelegate", err.Error(), err)
+		logger.AtLog.Logger.Error("u.DelegateService.GetDelegationsByDelegate", zap.Error(err))
 		return false, err
 	}
 
-	u.Logger.Info("delegations", delegations)
+	logger.AtLog.Logger.Info("delegations", zap.Any("delegations", delegations))
 	for _, delegation := range delegations {
 		if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
 			return true, nil

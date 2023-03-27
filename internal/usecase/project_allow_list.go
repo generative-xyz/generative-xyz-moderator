@@ -13,6 +13,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
@@ -50,7 +51,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
 		//err := errors.New("Error while create allow list")
-		u.Logger.ErrorAny("Error while create allow list", zap.Any("error", err))
+		logger.AtLog.Logger.Error("Error while create allow list", zap.Any("error", err))
 		return pe, nil
 	}
 

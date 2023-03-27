@@ -10,12 +10,14 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"rederinghub.io/internal/delivery/http/request"
 
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/fileutil"
+	"rederinghub.io/utils/logger"
 )
 
 // UploadFile godoc
@@ -31,7 +33,7 @@ import (
 func (h *httpDelivery) UploadFile(w http.ResponseWriter, r *http.Request) {
 	file, err := h.Usecase.UploadFile(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.UploadFile", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.UploadFile", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -39,7 +41,7 @@ func (h *httpDelivery) UploadFile(w http.ResponseWriter, r *http.Request) {
 	resp := &response.FileRes{}
 	err = response.CopyEntityToRes(resp, file)
 	if err != nil {
-		h.Logger.Error("response.CopyEntityToRes", err.Error(), err)
+		logger.AtLog.Logger.Error("response.CopyEntityToRes", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -65,14 +67,14 @@ func (h *httpDelivery) CreateMultipartUpload(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	h.Logger.Info("request.decoder", decoder)
+	logger.AtLog.Logger.Info("request.decoder", zap.Any("decoder", decoder))
 
 	if err = reqBody.SelfValidate(); err != nil {
-		h.Logger.Error("SelfValidate", err.Error(), err)
+		logger.AtLog.Logger.Error("SelfValidate", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -80,12 +82,12 @@ func (h *httpDelivery) CreateMultipartUpload(w http.ResponseWriter, r *http.Requ
 	uploadID, err := h.Usecase.CreateMultipartUpload(ctx, reqBody.Group, reqBody.FileName)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.CreateMultipartUpload", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CreateMultipartUpload", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("resp.uploadID", uploadID)
+	logger.AtLog.Logger.Info("resp.uploadID", zap.Any("uploadID", uploadID))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.FileResponse{UploadID: *uploadID}, "")
 }
@@ -109,7 +111,7 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 	_, handler, err := r.FormFile("file")
 	if err != nil {
 		err = errors.Wrap(err, "error getting file from part")
-		h.Logger.Error("h.Usecase.UploadFile", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.UploadFile", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -126,7 +128,7 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		err = errors.Wrap(err, "error getting partNumber from reqeust")
-		h.Logger.Error("h.Usecase.UploadFile", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.UploadFile", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -134,14 +136,14 @@ func (h *httpDelivery) UploadPart(w http.ResponseWriter, r *http.Request) {
 	data, err := handler.Open()
 	if err != nil {
 		err = errors.Wrap(err, "error open file from handler")
-		h.Logger.Error("FileHandlerError", err.Error(), err)
+		logger.AtLog.Logger.Error("FileHandlerError", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = h.Usecase.UploadPart(ctx, uploadID, data, handler.Size, partNumber)
 	if err != nil {
-		h.Logger.Error("h.Usecase.UploadPart", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.UploadPart", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnprocessableEntity, response.Error, err)
 		return
 	}
@@ -169,12 +171,12 @@ func (h *httpDelivery) CompleteMultipartUpload(w http.ResponseWriter, r *http.Re
 	fileURL, err := h.Usecase.CompleteMultipartUpload(ctx, uploadID)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.CompleteMultipartUpload", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CompleteMultipartUpload", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnprocessableEntity, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("resp.fileURL", fileURL)
+	logger.AtLog.Logger.Info("resp.fileURL", zap.Any("fileURL", fileURL))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.MultipartUploadResponse{FileURL: *fileURL}, "")
 
@@ -195,14 +197,14 @@ func (h *httpDelivery) minifyFiles(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	data, err := h.Usecase.MinifyFiles(reqBody)
 	if err != nil {
-		h.Logger.Error("h.Usecase.MinifyFiles", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.MinifyFiles", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -224,13 +226,13 @@ func (h *httpDelivery) deflate(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	err = h.Usecase.DeflateString(reqBody)
 	if err != nil {
-		h.Logger.Error(" h.Usecase.DeflateString", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.Usecase.DeflateString", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

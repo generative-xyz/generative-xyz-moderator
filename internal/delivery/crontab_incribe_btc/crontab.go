@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -69,7 +70,7 @@ func (h ScronBTCHandler) StartServer() {
 
 		}(&wg)
 
-		h.Logger.Info("wait", "wait")
+		logger.AtLog.Logger.Info("wait", zap.Any("wait", "wait"))
 		wg.Wait()
 		time.Sleep(5 * time.Minute)
 	}
