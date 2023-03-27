@@ -1652,7 +1652,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}else{
 			status = entity.UzipStatusFail
 			message = err.Error()
-			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Error while unzip][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
+			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Error while unzip][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s, error: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink), message))
 		}
 
 		up, err := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
@@ -1667,10 +1667,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			up.Status = status
 			up.Message = message
 			up.ReTries = up.ReTries + 1
-			_, err = u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, up)
+			updated, err := u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, up)
 			if err != nil {
 				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
 			}
+			logger.AtLog.Logger.Info("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Any("updated", updated))
 
 		}else{
 			unzipLog := &entity.ProjectZipLinks{
@@ -1692,6 +1693,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			if err != nil {
 				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
 			}
+			logger.AtLog.Logger.Info("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Bool("created", true))
 		}
 	}()
 
