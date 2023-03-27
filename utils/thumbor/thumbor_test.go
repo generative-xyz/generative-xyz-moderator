@@ -14,7 +14,7 @@ func TestThumbor_BuildUrl(t *testing.T) {
 	})
 
 	imageUrl := "https://soulgenesis.art/api/images/1104/11cTdjUhh4h477-stage1.jpg"
-	thumborUrl, err := tb.SetImagePath(imageUrl).Compress(10).BuildUrl()
+	thumborUrl, err := tb.SetImagePath(imageUrl).SmartCrop(true).Format("jpg").Compress(90).BuildUrl()
 
 	log.Println("thumborUrl", thumborUrl)
 
