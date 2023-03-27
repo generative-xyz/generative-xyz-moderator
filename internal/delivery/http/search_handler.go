@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -53,7 +55,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 
 	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -69,7 +71,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		var uProjects []entity.Projects
 		uProjects, t, tp, err = h.Usecase.AlgoliaSearchProject(filter)
 		if err != nil {
-			h.Logger.Error("h.Usecase.AlgoliaSearchProject", err.Error(), err)
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchProject", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -78,7 +80,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 			r, err := h.projectToResp(&p)
 			r.BtcFloorPrice = result.FloorPrice
 			if err != nil {
-				h.Logger.Error("copier.Copy", err.Error(), err)
+				logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
 			}
@@ -92,7 +94,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		}
 		dataResp, t, tp, err = h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {
-			h.Logger.Error("h.Usecase.AlgoliaSearchInscription", err.Error(), err)
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -100,7 +102,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		var users []*response.ArtistResponse
 		users, t, tp, err = h.Usecase.AlgoliaSearchArtist(filter)
 		if err != nil {
-			h.Logger.Error("h.Usecase.AlgoliaSearchArtist", err.Error(), err)
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchArtist", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -111,14 +113,14 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 		var uTokens []entity.TokenUri
 		uTokens, t, tp, err = h.Usecase.AlgoliaSearchTokenUri(filter)
 		if err != nil {
-			h.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", err.Error(), err)
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchTokenUri", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		for _, token := range uTokens {
 			r, err := h.tokenToResp(&token)
 			if err != nil {
-				h.Logger.Error("copier.Copy", err.Error(), err)
+				logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
 			}
@@ -132,7 +134,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 				if r.SellVerified {
 					btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
 					if err != nil {
-						h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+						logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
 					}
 					amountBTCRequired := uint64(listingInfo.Amount) + 1000
 					amountBTCRequired += (amountBTCRequired / 10000) * 15 // + 0,15%
@@ -140,7 +142,7 @@ func (h *httpDelivery) search(w http.ResponseWriter, r *http.Request) {
 
 					amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 					if err != nil {
-						h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+						logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 					}
 					r.PriceETH = amountETH
 				}

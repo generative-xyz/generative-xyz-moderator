@@ -15,6 +15,7 @@ import (
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
@@ -23,6 +24,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) buildBTCClient() (*rpcclient.Client, *btc.BlockcypherService, error) {
@@ -288,7 +290,7 @@ func (u Usecase) JobMKP_WaitForBalanceFromBuyer() error {
 
 			// update StatusBuy_NeedToRefund now for listing:
 			item.Status = entity.StatusBuy_NeedToRefund
-			u.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), item)
+			logger.AtLog.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), zap.Any("item", item))
 			u.Notify("WaitingForBTCBalancingOfBuyOrder", item.ReceiveAddress, fmt.Sprintf("%s Need to refund BTC %s from [InscriptionID] %s", item.ReceiveAddress, item.ReceivedBalance, item.InscriptionID))
 
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
@@ -339,7 +341,7 @@ func (u Usecase) JobMKP_WaitForBalanceFromBuyer() error {
 		}
 
 		go u.trackHistory(item.UUID, "JobMKP_WaitForBalanceFromBuyer", item.TableName(), item.Status, "Updated StatusBuy_ReceivedFund", "ok")
-		u.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), item)
+		logger.AtLog.Logger.Info(fmt.Sprintf("JobMKP_WaitForBalanceFromBuyer.CheckReceiveNFT.%s", item.ReceiveAddress), zap.Any("item", item))
 		u.Notify("JobMKP_WaitForBalanceFromBuyer", item.ReceiveAddress, fmt.Sprintf("%s received BTC %s from [InscriptionID] %s", item.ReceiveAddress, item.ReceivedBalance, item.InscriptionID))
 
 	}
@@ -460,7 +462,7 @@ func (u Usecase) JobMKP_Payment() error {
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
-					u.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), err.Error(), err)
+					logger.AtLog.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), zap.Error(err))
 					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
 					continue
 				}
@@ -594,7 +596,7 @@ func (u Usecase) JobMKP_Payment() error {
 				// start send now:
 				privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
-					u.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), err.Error(), err)
+					logger.AtLog.Logger.Error(fmt.Sprintf("JobMKP_Payment.Decrypt.%s.Error", item.ReceiveAddress), zap.Error(err))
 					go u.trackMintNftBtcHistory(item.UUID, "JobMKP_Payment", item.TableName(), item.Status, "JobMKP_Payment.DecryptToString", err.Error(), true)
 					continue
 				}
@@ -777,7 +779,7 @@ func (u Usecase) JobMKP_SendNftToBuyer() error {
 			go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "SendTokenMKP.sentTokenResp", sentTokenResp)
 
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMKP_SendNftToBuyer.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMKP_SendNftToBuyer.SendTokenMKP.%s.Error", item.OrdAddress), zap.Error(err))
 				continue
 			}
 
@@ -792,7 +794,7 @@ func (u Usecase) JobMKP_SendNftToBuyer() error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err.Error())
-				u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
+				logger.AtLog.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform",  zap.Error(errPack))
 				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "SendTokenMKP.UpdateBTCNFTBuyOrder", err.Error())
 				continue
 			}
@@ -807,11 +809,11 @@ func (u Usecase) JobMKP_SendNftToBuyer() error {
 			_, err = u.Repo.UpdateBTCNFTBuyOrder(&item)
 			if err != nil {
 				errPack := fmt.Errorf("Could not UpdateBTCNFTBuyOrder id %s - with err: %v", item.ID, err)
-				u.Logger.Error("JobMKP_SendNftToBuyer.Repo.UpdateBTCNFTBuyOrder", errPack.Error(), errPack)
+				logger.AtLog.Logger.Error("JobMKP_SendNftToBuyer.Repo.UpdateBTCNFTBuyOrder", zap.Error(errPack))
 				go u.trackHistory(item.UUID, "JobMKP_SendNftToBuyer", item.TableName(), item.Status, "u.Repo.UpdateBTCNFTBuyOrder", err.Error())
 			}
 			// save log:
-			u.Logger.Info(fmt.Sprintf("JobMKP_SendNftToBuyer.execResp.%s", item.OrdAddress), sentTokenResp)
+			logger.AtLog.Logger.Info(fmt.Sprintf("JobMKP_SendNftToBuyer.execResp.%s", item.OrdAddress), zap.Any("sentTokenResp",sentTokenResp))
 		}
 	}
 	return nil
@@ -929,15 +931,15 @@ func (u Usecase) GetMasterNfts() (*ord_service.ExecRespose, error) {
 			"inscriptions",
 		}}
 
-	u.Logger.Info("listNFTsReq", listNFTsReq)
+	logger.AtLog.Logger.Info("listNFTsReq", zap.Any("listNFTsReq", listNFTsReq))
 	resp, err := u.OrdService.Exec(listNFTsReq)
 	defer u.Notify("GetMasterNfts", "ord_marketplace_master", "inscriptions")
 	if err != nil {
-		u.Logger.Info("u.OrdService.Exec.Error", err.Error())
-		u.Logger.Error("u.OrdService.Exec", err.Error(), err)
+		logger.AtLog.Logger.Info("u.OrdService.Exec.Error", zap.Any("err.Error()", err.Error()))
+		logger.AtLog.Logger.Error("u.OrdService.Exec", zap.Error(err))
 		return nil, err
 	}
-	u.Logger.Info("listNFTsRep", resp)
+	logger.AtLog.Logger.Info("listNFTsRep", zap.Any("resp", resp))
 	return resp, err
 }
 
@@ -974,7 +976,7 @@ func (u Usecase) SendTokenMKPTest(walletName, receiveAddr, inscriptionID string)
 			"15",
 		}}
 
-	u.Logger.Info("sendTokenReq", sendTokenReq)
+	logger.AtLog.Logger.Info("sendTokenReq", zap.Any("sendTokenReq", sendTokenReq))
 
 	resp, err := u.OrdService.Exec(sendTokenReq)
 
@@ -983,11 +985,11 @@ func (u Usecase) SendTokenMKPTest(walletName, receiveAddr, inscriptionID string)
 
 	defer u.Notify("SendTokenMKPTest", receiveAddr, inscriptionID)
 	if err != nil {
-		u.Logger.Info("u.OrdService.Exec.Error", err.Error())
-		u.Logger.Error("u.OrdService.Exec", err.Error(), err)
+		logger.AtLog.Logger.Info("u.OrdService.Exec.Error", zap.Any("err.Error()", err.Error()))
+		logger.AtLog.Logger.Error("u.OrdService.Exec", zap.Error(err))
 		return nil, err
 	}
-	u.Logger.Info("sendTokenRes", resp)
+	logger.AtLog.Logger.Info("sendTokenRes", zap.Any("resp", resp))
 
 	go u.trackHistory("test_send_nft", "SendTokenMKPTest", "", 0, "", "return now...")
 
@@ -1020,14 +1022,15 @@ func (u Usecase) AutoListing(reqs *request.ListNftIdsReq) interface{} {
 			// get first:
 			nftList, _ := u.Repo.FindBtcNFTListingByNFTID(v)
 			if nftList != nil && nftList.IsConfirm && !nftList.IsSold {
-				u.Logger.Error("AutoListing.Repo.FindBtcNFTListingByNFTID", "", errors.New("item exist"))
+				err :=  errors.New("item exist")
+				logger.AtLog.Logger.Error("AutoListing.Repo.FindBtcNFTListingByNFTID", zap.Error(err))
 				continue
 			}
 
 			// check if listing is created or not
 			err := u.Repo.CreateMarketplaceListingBTC(&listing)
 			if err != nil {
-				u.Logger.Error("AutoListing.Repo.CreateMarketplaceBTCListing", "", err)
+				logger.AtLog.Logger.Error("AutoListing.Repo.CreateMarketplaceBTCListing", zap.Error(err))
 				continue
 			}
 			listIdSuccess = append(listIdSuccess, v)

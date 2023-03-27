@@ -66,7 +66,7 @@ func (u Usecase) UploadFile(r *http.Request) (*entity.Files, error) {
 
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		u.Logger.Error("r.FormFile.File", err.Error(), err)
+		logger.AtLog.Logger.Error("r.FormFile.File", zap.Error(err))
 		return nil, err
 	}
 
@@ -76,11 +76,11 @@ func (u Usecase) UploadFile(r *http.Request) (*entity.Files, error) {
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		u.Logger.Error("u.GCS.FileUploadToBucke", err.Error(), err)
+		logger.AtLog.Logger.Error("u.GCS.FileUploadToBucke", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.Info("uploaded", uploaded)
+	logger.AtLog.Logger.Info("uploaded", zap.Any("uploaded", uploaded))
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
@@ -92,11 +92,11 @@ func (u Usecase) UploadFile(r *http.Request) (*entity.Files, error) {
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
 	if err != nil {
-		u.Logger.Error("u.Repo.InsertOne", err.Error(), err)
+		logger.AtLog.Logger.Error("u.Repo.InsertOne", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.Info("inserted.FileModel", fileModel)
+	logger.AtLog.Logger.Info("inserted.FileModel", zap.Any("fileModel", fileModel))
 	return fileModel, nil
 }
 
@@ -139,27 +139,27 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 
 	client, err := helpers.EthDialer()
 	if err != nil {
-		u.Logger.Error("ethclient.Dial", err.Error(), err)
+		logger.AtLog.Logger.Error("ethclient.Dial", zap.Error(err))
 		return nil, err
 	}
 
 	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
 	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
 	if err != nil {
-		u.Logger.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		logger.AtLog.Logger.Error("generative_project_data.NewGenerativeProjectData", zap.Error(err))
 		return nil, err
 	}
 
 	for fileName, fileInfo := range input.Files {
 		bytes, err := helpers.Base64Decode(fileInfo.Content)
 		if err != nil {
-			u.Logger.Error("helpers.Base64Decode.fileInfo.Content", err.Error(), err)
+			logger.AtLog.Logger.Error("helpers.Base64Decode.fileInfo.Content", zap.Error(err))
 			return nil, err
 		}
 
 		out, err := m.String(fileInfo.MediaType, string(bytes))
 		if err != nil {
-			u.Logger.Error("m.String", err.Error(), err)
+			logger.AtLog.Logger.Error("m.String", zap.Error(err))
 			return nil, err
 		}
 		deflate := u.Deflate([]byte(out))
@@ -170,7 +170,7 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 			script = ""
 		}
 
-		u.Logger.Info("inflate", inflate)
+		logger.AtLog.Logger.Info("inflate", zap.Any("inflate", inflate))
 		resp[fileName] = structure.FileContentReq{MediaType: fileInfo.MediaType, Content: out, Deflate: script}
 	}
 
@@ -183,32 +183,32 @@ func (u Usecase) DeflateString(input *structure.DeflateDataResp) error {
 
 	client, err := helpers.EthDialer()
 	if err != nil {
-		u.Logger.Error("ethclient.Dial", err.Error(), err)
+		logger.AtLog.Logger.Error("ethclient.Dial", zap.Error(err))
 		return err
 	}
 
 	addr := common.HexToAddress(os.Getenv("GENERATIVE_PROJECT_DATA"))
 	gDataNft, err := generative_project_data.NewGenerativeProjectData(addr, client)
 	if err != nil {
-		u.Logger.Error("generative_project_data.NewGenerativeProjectData", err.Error(), err)
+		logger.AtLog.Logger.Error("generative_project_data.NewGenerativeProjectData", zap.Error(err))
 		return err
 	}
 	inputByte := []byte(input.Data)
 	deflate := u.Deflate(inputByte)
 	script := helpers.Base64Encode(deflate)
-	u.Logger.Info("len(deflate)", len(deflate))
-	u.Logger.Info("len(inputByte)", len(inputByte))
+	logger.AtLog.Logger.Info("len(deflate)", zap.Any("len(deflate)", len(deflate)))
+	logger.AtLog.Logger.Info("len(inputByte)", zap.Any("len(inputByte)", len(inputByte)))
 	if len(deflate) > len(inputByte) {
 		input.Data = ""
 		return nil
 	}
 	inflate, _ := gDataNft.InflateString(nil, script)
 	if inflate.Err != 0 || inflate.Result != input.Data {
-		u.Logger.Info("inflate.Err", inflate.Err)
+		logger.AtLog.Logger.Info("inflate.Err", zap.Any("inflate.Err", inflate.Err))
 		input.Data = ""
 		return nil
 	}
-	u.Logger.Info("inflate", inflate)
+	logger.AtLog.Logger.Info("inflate", zap.Any("inflate", inflate))
 	input.Data = script
 	return nil
 }

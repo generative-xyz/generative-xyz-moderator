@@ -37,14 +37,14 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 	message := fmt.Sprintf("%x-%x-%x-%x-%x",
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 
 	message = fmt.Sprintf(utils.NONCE_MESSAGE_FORMAT, message)
-	u.Logger.Info("message", message)
+	logger.AtLog.Info("message", message)
 
 	now := time.Now().UTC()
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
@@ -57,22 +57,22 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 			user.Message = message
 			user.CreatedAt = &now
 
-			u.Logger.Info("inserted.User", user)
+			logger.AtLog.Info("inserted.User", user)
 			err = u.Repo.CreateUser(user)
 			if err != nil {
-				u.Logger.Error(err)
+				logger.AtLog.Error(err)
 				return nil, err
 			}
 
 			return &message, nil
 
 		} else {
-			u.Logger.Error(err)
+			logger.AtLog.Error(err)
 			return nil, err
 		}
 	}
 
-	u.Logger.Info("user", user)
+	logger.AtLog.Info("user", user)
 	user.Message = message
 	user.UpdatedAt = &now
 	user.IsVerified = false
@@ -81,13 +81,13 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		return nil, err
 	}
 
-	u.Logger.Info("updated", updated)
-	u.Logger.Info("updated.User", message)
+	logger.AtLog.Info("updated", updated)
+	logger.AtLog.Info("updated.User", message)
 	return &message, nil
 }
 
 func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
-	u.Logger.Info("input", data)
+	logger.AtLog.Info("input", data)
 
 	// validate data
 	if data.ETHSignature == "" || data.Signature == "" ||
@@ -97,24 +97,24 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	}
 
 	addrr := strings.ToLower(data.Address)
-	u.Logger.Info("wallet_address", addrr)
+	logger.AtLog.Info("wallet_address", addrr)
 
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
-	u.Logger.Info("user", user)
+	logger.AtLog.Info("user", user)
 
 	isVeried, err := u.verifyBTCSegwit(user.Message, data)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
-	u.Logger.Info("isVeried", isVeried)
+	logger.AtLog.Info("isVeried", isVeried)
 	if !isVeried {
 		err := errors.New("Cannot verify wallet address")
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -137,27 +137,27 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 	userID := user.UUID
 	token, refreshToken, err := u.Auth2.GenerateAllTokens(user.WalletAddress, "", "", "", userID)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
-	u.Logger.Info("token", token)
+	logger.AtLog.Info("token", token)
 	tokenMd5 := helpers.GenerateMd5String(token)
-	u.Logger.Info("tokenMd5", tokenMd5)
+	logger.AtLog.Info("tokenMd5", tokenMd5)
 	err = u.Cache.SetDataWithExpireTime(tokenMd5, userID, int(utils.TOKEN_CACHE_EXPIRED_TIME))
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
 	if data.AddressBTC != nil && *data.AddressBTC != "" {
 		if user.WalletAddressBTCTaproot == "" {
 			user.WalletAddressBTCTaproot = *data.AddressBTC
-			u.Logger.Info("user.WalletAddressBTCTaproot.Updated", true)
+			logger.AtLog.Info("user.WalletAddressBTCTaproot.Updated", true)
 		}
 		if user.WalletAddressBTC == "" {
 			user.WalletAddressBTC = *data.AddressBTC
-			u.Logger.Info("user.WalletAddressBTC.Updated", true)
+			logger.AtLog.Info("user.WalletAddressBTC.Updated", true)
 		}
 	}
 
@@ -165,23 +165,23 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		if data.AddressPayment == "" {
 			if user.WalletType != entity.WalletType_BTC_PRVKEY {
 				user.WalletAddressPayment = user.WalletAddress
-				u.Logger.Info("user.WalletAddressPayment.Updated", true)
+				logger.AtLog.Info("user.WalletAddressPayment.Updated", true)
 			}
 		} else {
 			user.WalletAddressPayment = data.AddressPayment
-			u.Logger.Info("user.WalletAddressPayment.Updated", true)
+			logger.AtLog.Info("user.WalletAddressPayment.Updated", true)
 		}
 	}
 
 	updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, user)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
-	u.Logger.Info("updated.Info", updated)
-	u.Logger.Info("generated.Token", token)
-	u.Logger.Info("generated.refreshToken", refreshToken)
+	logger.AtLog.Info("updated.Info", updated)
+	logger.AtLog.Info("generated.Token", token)
+	logger.AtLog.Info("generated.refreshToken", refreshToken)
 
 	verified := structure.VerifyResponse{
 		Token:        token,
@@ -235,9 +235,9 @@ func (u Usecase) verifyBTCSegwit(msgStr string, data structure.VerifyMessage) (b
 }
 
 func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool, error) {
-	u.Logger.Info("input.signatureHex", signatureHex)
-	u.Logger.Info("input.signer", signer)
-	u.Logger.Info("input.msgStr", msgStr)
+	logger.AtLog.Info("input.signatureHex", signatureHex)
+	logger.AtLog.Info("input.signer", signer)
+	logger.AtLog.Info("input.msgStr", msgStr)
 
 	sig := hexutil.MustDecode(signatureHex)
 
@@ -250,7 +250,7 @@ func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool
 
 	recovered, err := crypto.SigToPub(msgHash, sig)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return false, err
 	}
 
@@ -258,18 +258,18 @@ func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool
 	signerHex := recoveredAddr.Hex()
 	isVerified := strings.ToLower(signer) == strings.ToLower(signerHex)
 
-	u.Logger.Info("recoveredAddr", recoveredAddr)
-	u.Logger.Info("signerHex", signerHex)
-	u.Logger.Info("isVerified", isVerified)
+	logger.AtLog.Info("recoveredAddr", recoveredAddr)
+	logger.AtLog.Info("signerHex", signerHex)
+	logger.AtLog.Info("isVerified", isVerified)
 	return isVerified, nil
 }
 
 func (u Usecase) UserProfile(userID string) (*entity.Users, error) {
 
-	u.Logger.Info("input.userID", userID)
+	logger.AtLog.Info("input.userID", userID)
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -278,10 +278,10 @@ func (u Usecase) UserProfile(userID string) (*entity.Users, error) {
 
 func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, error) {
 
-	u.Logger.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("input.userAddr", userAddr)
 	user, err := u.Repo.FindUserByWalletAddress(userAddr)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -290,10 +290,10 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 
 func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Users, error) {
 
-	u.Logger.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("input.userAddr", userAddr)
 	user, err := u.Repo.FindUserByBtcAddressTaproot(userAddr)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -302,10 +302,10 @@ func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Use
 
 func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
 
-	u.Logger.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("input.userAddr", userAddr)
 	user, err := u.Repo.FindUserByBtcAddress(userAddr)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -320,7 +320,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 	oldAdressPayment := ""
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
-		u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+		logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "FindUserByID"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		return nil, err
 	}
 
@@ -332,7 +332,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 		user.Avatar = *data.Avatar
 		uploaded, err := u.UploadUserAvatar(*user)
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "UploadUserAvatar"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 		} else {
 			user.Avatar = *uploaded
 		}
@@ -396,7 +396,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	_, err = u.Repo.UpdateUserByID(userID, user)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -407,9 +407,9 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 			WalletAddress: &user.WalletAddress,
 		})
 
-		u.Logger.LogAny("UpdateUserProfile", zap.Any("projects", projects))
+		logger.AtLog.Logger.Info("UpdateUserProfile", zap.Any("projects", zap.Any("projects)", projects)))
 		if err != nil {
-			u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+			logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 			return
 		}
 
@@ -421,7 +421,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 			_, err := u.Repo.UpdateProject(p.UUID, &p)
 			if err != nil {
-				u.Logger.ErrorAny("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
+				logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 				continue
 			}
 
@@ -429,7 +429,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	}(*user)
 
-	u.Logger.LogAny("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", user))
+	logger.AtLog.Logger.Info("UpdateUserProfile", zap.String("userID", userID), zap.Any("input", data), zap.Any("user", zap.Any("user)", user)))
 	if isUpdateWalletAddress {
 		if user.Stats.CollectionCreated > 0 {
 			go u.NotifyWithChannel(os.Getenv("SLACK_USER_CHANNEL"), fmt.Sprintf("[User BTC wallet address payment has been updated][User %s][%s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName), user.WalletAddress), "", fmt.Sprintf("BTC wallet address payment was changed from %s to %s", oldBtcAdress, *data.WalletAddressBTC))
@@ -465,7 +465,7 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 	tokenMd5 := helpers.GenerateMd5String(accessToken)
 	err := u.Cache.Delete(tokenMd5)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return false, err
 	}
 
@@ -475,12 +475,12 @@ func (u Usecase) Logout(accessToken string) (bool, error) {
 func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedDetails, error) {
 
 	//tokenMd5 := helpers.GenerateMd5String(accessToken)
-	//u.Logger.LogAny("ValidateAccessToken", zap.String("ValidateAccessToken", accessToken))
+	//logger.AtLog.Logger.Info("ValidateAccessToken", zap.String("ValidateAccessToken", zap.Any("accessToken)", accessToken)))
 
 	// userID, err := u.Cache.GetData(tokenMd5)
 	// if err != nil {
 	// 	err = errors.New("Access token is invaild")
-	// 	u.Logger.ErrorAny("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
+	// 	logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("GetData", accessToken), zap.Error(err))
 	// 	return nil, err
 
 	// }
@@ -488,14 +488,14 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 	//Claim wallet Address
 	claim, err := u.Auth2.ValidateToken(accessToken)
 	if err != nil {
-		u.Logger.ErrorAny("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
+		logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("ValidateToken", accessToken), zap.Error(err))
 		return nil, err
 	}
 
 	userID := &claim.Uid
 	if userID == nil {
 		err := errors.New("Cannot find userID")
-		u.Logger.ErrorAny("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
+		logger.AtLog.Logger.Error("ValidateAccessToken", zap.String("userID", accessToken), zap.Error(err))
 		return nil, err
 	}
 
@@ -505,10 +505,10 @@ func (u Usecase) ValidateAccessToken(accessToken string) (*oauth2service.SignedD
 
 func (u Usecase) UserProfileByWallet(walletAddress string) (*entity.Users, error) {
 
-	u.Logger.Info("input.walletAddress", walletAddress)
+	logger.AtLog.Info("input.walletAddress", walletAddress)
 	user, err := u.Repo.FindUserByWalletAddress(walletAddress)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return nil, err
 	}
 
@@ -543,10 +543,10 @@ func (u Usecase) UploadUserAvatar(user entity.Users) (*string, error) {
 		name := fmt.Sprintf("thumb/%s.png", user.WalletAddress)
 		uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 		if err != nil {
-			u.Logger.Error(err)
+			logger.AtLog.Error(err)
 			return nil, err
 		} else {
-			u.Logger.Info("uploaded", uploaded)
+			logger.AtLog.Info("uploaded", uploaded)
 			thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 		}
 
@@ -558,7 +558,7 @@ func (u Usecase) UploadUserAvatar(user entity.Users) (*string, error) {
 func (u Usecase) UpdateUserAvatars() error {
 	users, err := u.Repo.GetAllUsers(entity.FilterUsers{IsUpdatedAvatar: nil})
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Error(err)
 		return err
 	}
 
@@ -570,7 +570,7 @@ func (u Usecase) UpdateUserAvatars() error {
 		if true {
 			uploadedAvatar, err := u.UploadUserAvatar(user)
 			if err != nil {
-				u.Logger.Error(err)
+				logger.AtLog.Error(err)
 				continue
 			}
 
@@ -579,10 +579,10 @@ func (u Usecase) UpdateUserAvatars() error {
 			user.IsUpdatedAvatar = &aUpdated
 			updated, err := u.Repo.UpdateUserByWalletAddress(user.WalletAddress, &user)
 			if err != nil {
-				u.Logger.Error(err)
+				logger.AtLog.Logger.Error("UpdateUserByWalletAddress", zap.Error(err))
 				continue
 			}
-			u.Logger.Info("updated", updated)
+			logger.AtLog.Info("updated", updated)
 		}
 	}
 	return nil

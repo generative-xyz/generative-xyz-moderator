@@ -11,6 +11,7 @@ import (
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
@@ -18,6 +19,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/logger"
 )
 
 func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +27,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -44,7 +46,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	suffix := "i0"
 	if !strings.HasSuffix(inscriptionID, suffix) {
 		err := fmt.Errorf("invalid inscriptionID")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -52,7 +54,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	_, err = chainhash.NewHashFromStr(txHash)
 	if err != nil {
 		err := fmt.Errorf("invalid inscriptionID")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.NewHashFromStr", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.NewHashFromStr", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -61,7 +63,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	ok, _ := btc.ValidateAddress("btc", reqBody.OrdWalletAddress)
 	if !ok {
 		err := fmt.Errorf("invalid ordWalletAddress")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -71,7 +73,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	ethPaymentAddress, okEth := reqBody.PayType["eth"]
 	if !okBtc && !okEth {
 		err := fmt.Errorf("payment type is requied")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.Validate Payment type", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.Validate Payment type", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -80,7 +82,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		ok, _ = btc.ValidateAddress("btc", btcPaymentAddress)
 		if !ok {
 			err := fmt.Errorf("invalid btcPaymentAddress")
-			h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.btcPaymentAddress", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.btcPaymentAddress", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -90,7 +92,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 		ok = eth.ValidateAddress(ethPaymentAddress)
 		if !ok {
 			err := fmt.Errorf("invalid ethPaymentAddress")
-			h.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.ethPaymentAddress", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.ValidateAddress.ethPaymentAddress", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -99,7 +101,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	priceNumber, err := strconv.ParseInt(reqBody.Price, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid price")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -107,7 +109,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 	// check price:
 	if priceNumber < utils.MIN_BTC_TO_LIST_BTC {
 		err := fmt.Errorf("Minimum price is %.2f BTC", float64(utils.MIN_BTC_TO_LIST_BTC/1e8))
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -136,7 +138,7 @@ func (h *httpDelivery) btcMarketplaceListing(w http.ResponseWriter, r *http.Requ
 
 	listing, err := h.Usecase.BTCMarketplaceListingNFT(reqUsecase)
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -179,7 +181,7 @@ func (h *httpDelivery) btcMarketplaceListNFTs(w http.ResponseWriter, r *http.Req
 
 	result, err := h.Usecase.BTCMarketplaceListNFT(filterObject, buyableOnly, int64(limit), int64(offset))
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -195,7 +197,7 @@ func (h *httpDelivery) btcMarketplaceNFTDetail(w http.ResponseWriter, r *http.Re
 	nftInfo, err := h.Usecase.BTCMarketplaceListingDetail(inscriptionID)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListingDetail", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListingDetail", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -209,7 +211,7 @@ func (h *httpDelivery) btcMarketplaceListingFee(w http.ResponseWriter, r *http.R
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -258,7 +260,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -267,7 +269,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	ok, _ := btc.ValidateAddress("btc", reqBody.WalletAddress)
 	if !ok {
 		err := fmt.Errorf("invalid WalletAddress")
-		h.Logger.Error("httpDelivery.btcMarketplaceListing.WalletAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.btcMarketplaceListing.WalletAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -281,7 +283,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 	//TODO: lam uncomment
 	listing, err := h.Usecase.Repo.FindBtcNFTListingByOrderID(reqBody.OrderID)
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Inscription not available to buy"))
 		return
 	}
@@ -297,7 +299,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 	depositAddress, err := h.Usecase.BTCMarketplaceBuyOrder(reqUsecase)
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListingNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -339,7 +341,7 @@ func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
 	// decoder := json.NewDecoder(r.Body)
 	// err := decoder.Decode(&reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.btcTestTransfer.Decode", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.btcTestTransfer.Decode", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -361,7 +363,7 @@ func (h *httpDelivery) btcMarketplaceFilterInfo(w http.ResponseWriter, r *http.R
 	result, err := h.Usecase.BTCMarketplaceFilterInfo()
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -374,7 +376,7 @@ func (h *httpDelivery) btcMarketplaceRunFilterInfo(w http.ResponseWriter, r *htt
 	err := h.Usecase.JobCrawlToUpdateNftInfo()
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -390,7 +392,7 @@ func (h *httpDelivery) btcMarketplaceCollectionStats(w http.ResponseWriter, r *h
 
 	result, err := h.Usecase.GetCollectionMarketplaceStats(projectID)
 	if err != nil {
-		h.Logger.Error("h.Usecase.BTCMarketplaceListNFT", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.BTCMarketplaceListNFT", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

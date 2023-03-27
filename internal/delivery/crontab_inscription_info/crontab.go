@@ -3,6 +3,7 @@ package crontab_inscription_info
 import (
 	"sync"
 
+	"go.uber.org/zap"
 	"gopkg.in/robfig/cron.v2"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
@@ -34,7 +35,7 @@ func (h ScronInscriptionInfoHandler) StartServer() {
 		}()
 		err := h.Usecase.JobSyncTokenInscribeIndex()
 		if err != nil {
-			h.Logger.Error("DispatchCron.OneMinute.JobSyncTokenInscribeIndex", err.Error(), err)
+			logger.AtLog.Logger.Error("DispatchCron.OneMinute.JobSyncTokenInscribeIndex", zap.Error(err))
 		}
 	})
 	c.Start()

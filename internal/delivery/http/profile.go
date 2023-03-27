@@ -72,14 +72,14 @@ func (h *httpDelivery) logout(w http.ResponseWriter, r *http.Request) {
 	token, ok := iToken.(string)
 	if !ok {
 		err := errors.New("Token is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	isLogedOut, err := h.Usecase.Logout(token)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GenerateMessage(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GenerateMessage(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -113,7 +113,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	userID, ok := iUserID.(string)
 	if !ok {
 		err := errors.New("Token is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -122,7 +122,7 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -130,28 +130,28 @@ func (h *httpDelivery) updateProfile(w http.ResponseWriter, r *http.Request) {
 	updateProfile := &structure.UpdateProfile{}
 	err = copier.Copy(updateProfile, reqBody)
 	if err != nil {
-		h.Logger.Error("copier.Copy.structure.UpdateProfile", err.Error(), err)
+		logger.AtLog.Logger.Error("copier.Copy.structure.UpdateProfile", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("input.Data", updateProfile)
+	logger.AtLog.Logger.Info("input.Data", zap.Any("updateProfile", updateProfile))
 	profile, err := h.Usecase.UpdateUserProfile(userID, *updateProfile)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GenerateMessage", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GenerateMessage", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("updated.profile", profile)
+	logger.AtLog.Logger.Info("updated.profile", zap.Any("profile", profile))
 	resp, err := h.profileToResp(profile)
 	if err != nil {
-		h.Logger.Error("h.profileToResp", err.Error(), err)
+		logger.AtLog.Logger.Error("h.profileToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("respond.profile", profile)
+	logger.AtLog.Logger.Info("respond.profile", zap.Any("profile", profile))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
@@ -170,7 +170,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	var err error
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -180,7 +180,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -192,7 +192,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 	f.Sort = 1
 	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -204,7 +204,7 @@ func (h *httpDelivery) getUserProjects(w http.ResponseWriter, r *http.Request) {
 
 		p, err := h.projectToResp(&project)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -280,7 +280,7 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 	walletAddress, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("WalletAddress is incorect")
-		h.Logger.ErrorAny("withdraw.walletAddress", zap.Error(err))
+		logger.AtLog.Logger.Error("withdraw.walletAddress", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -289,14 +289,14 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.ErrorAny("withdraw.Decode", zap.Error(err))
+		logger.AtLog.Logger.Error("withdraw.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.SelfValidate()
 	if err != nil {
-		h.Logger.ErrorAny("withdraw.SelfValidate", zap.Error(err), zap.Any("reqBody", reqBody))
+		logger.AtLog.Logger.Error("withdraw.SelfValidate", zap.Error(err), zap.Any("reqBody", reqBody))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -304,14 +304,14 @@ func (h *httpDelivery) withdraw(w http.ResponseWriter, r *http.Request) {
 	wdr := &structure.WithDrawItemRequest{}
 	err = copier.Copy(wdr, reqBody)
 	if err != nil {
-		h.Logger.ErrorAny("withdraw.Copy", zap.Error(err), zap.Any("wdr", wdr))
+		logger.AtLog.Logger.Error("withdraw.Copy", zap.Error(err), zap.Any("wdr", wdr))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	wd, err := h.Usecase.CreateWithdraw(walletAddress, *wdr)
 	if err != nil {
-		h.Logger.ErrorAny("withdraw.CreateWithdraw", zap.Error(err), zap.Any("wdr", wdr))
+		logger.AtLog.Logger.Error("withdraw.CreateWithdraw", zap.Error(err), zap.Any("wdr", wdr))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

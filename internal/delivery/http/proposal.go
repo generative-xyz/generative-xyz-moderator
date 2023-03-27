@@ -7,10 +7,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -31,7 +33,7 @@ func (h *httpDelivery) proposals(w http.ResponseWriter, r *http.Request) {
 
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -58,7 +60,7 @@ if state != "" {
 
 	uProposals, err := h.Usecase.GetProposals(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -70,7 +72,7 @@ if state != "" {
 
 		p, err := h.proposalToResp(&proItem)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -100,18 +102,18 @@ func (h *httpDelivery) getProposal(w http.ResponseWriter, r *http.Request) {
 
 	proposal, err := h.Usecase.GetProposal(proposalID)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProposal", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProposal", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
 	resp, err := h.proposalToResp(proposal)
 	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-h.Logger.Info("resp.Proposal", resp)
+logger.AtLog.Logger.Info("resp.Proposal", zap.Any("resp", resp))
 	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }
@@ -138,7 +140,7 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -151,7 +153,7 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 	if support != "" {
 		supportInt, err := strconv.Atoi(support)
 		if err != nil {
-			h.Logger.Error("strconv.Atoi", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.Atoi", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -166,7 +168,7 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 
 	paginationData, err := h.Usecase.GetProposalVotes(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProposal", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProposal", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -178,14 +180,14 @@ func (h *httpDelivery) getProposalVotes(w http.ResponseWriter, r *http.Request) 
 		tmp := &response.ProposalVotesResp{}
 		err := response.CopyEntityToRes(tmp, &proItem)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
 
 		pResp = append(pResp, *tmp)
 	}
-//h.Logger.Info("resp.Proposal", resp)
+//logger.AtLog.Logger.Info("resp.Proposal", zap.Any("resp", resp))
 	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(paginationData, pResp) , "")
 }
@@ -205,7 +207,7 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -213,22 +215,22 @@ func (h *httpDelivery) createDraftProposals(w http.ResponseWriter, r *http.Reque
 	reqUsecase := &structure.CreateProposaltReq{}
 	err = copier.Copy(reqUsecase, reqBody)
 	if err != nil {
-		h.Logger.Error("copier.Copy", err.Error(), err)
+		logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	uProposals, err := h.Usecase.CreateDraftProposal(*reqUsecase)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetProjects", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Logger.Info("uProposals", uProposals)
+	logger.AtLog.Logger.Info("uProposals", zap.Any("uProposals", uProposals))
 	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -259,15 +261,15 @@ func (h *httpDelivery) mapOffAndOnChainProposal(w http.ResponseWriter, r *http.R
 
 	uProposals, err := h.Usecase.MapOffToOnChainProposal(iD, proposalID)
 	if err != nil {
-		h.Logger.Error("h.Usecase.MapOffToOnChainProposal", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.MapOffToOnChainProposal", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 
-	h.Logger.Info("uProposals", uProposals)
+	logger.AtLog.Logger.Info("uProposals", zap.Any("uProposals", uProposals))
 	resp, err := h.proposalDetailToResp(uProposals)
 	if err != nil {
-		h.Logger.Error(" h.proposalToResp", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
