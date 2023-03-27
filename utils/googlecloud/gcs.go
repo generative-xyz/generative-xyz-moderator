@@ -90,7 +90,7 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 
 func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket string, waitgroup *sync.WaitGroup) error {
 	defer waitgroup.Done()
-	logger.AtLog.Logger.Info("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.String("name", f.Name))
+	//logger.AtLog.Logger.Info("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.String("name", f.Name))
 	buffer := make([]byte, 32*1024)
 	r, err := f.Open()
 	if err != nil {
@@ -156,7 +156,7 @@ func (g gcstorage) UnzipFile(object string) error {
 			}
 			wg.Wait()
 			
-			logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)),  zap.String("outputBucket", outputBucket))
+			//logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)),  zap.String("outputBucket", outputBucket))
 			groups = make(map[string]*zip.File)
 		}
 	}

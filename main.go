@@ -292,6 +292,8 @@ func startServer() {
 		}
 	}
 
+	uc.JobRetryUnzip()
+
 	// start a group cron:
 	if len(conf.CronTabList) > 0 {
 		for _, cronKey := range conf.CronTabList {
