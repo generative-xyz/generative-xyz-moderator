@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
@@ -57,7 +58,7 @@ func (m *middleware) LoggingMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		wrapped := wrapResponseWriter(w)
 		next.ServeHTTP(wrapped, r)
-		m.log.Info(fmt.Sprintf("Request:[%s] %s - status: %d - duration %s =====", r.Method, r.URL.EscapedPath(), wrapped.status, time.Since(start)))
+		logger.AtLog.Info(fmt.Sprintf("Request:[%s] %s - status: %d - duration %s =====", r.Method, r.URL.EscapedPath(), wrapped.status, time.Since(start)))
 	}
 
 	return http.HandlerFunc(fn)
@@ -94,7 +95,7 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		token := r.Header.Get(utils.AUTH_TOKEN)
 		if token == "" {
 			err := errors.New("token is empty")
-			m.log.Error("token_is_empty", "token is empty", err)
+			logger.AtLog.Logger.Error("token_is_empty", zap.Error(err))
 			m.response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 			return
 		}
@@ -104,12 +105,12 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		//TODO implement here
 		p, err := m.usecase.ValidateAccessToken(token)
 		if err != nil {
-			m.log.Error("cannot_verify_token", "token cannot be verified", err)
+			logger.AtLog.Logger.Error("cannot_verify_token", zap.Error(err))
 			m.response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 			return
 		}
 
-		m.log.Info("profile", p)
+		logger.AtLog.Logger.Info("AccessToken", zap.Any("profile", p))
 		m.cache.SetData(helpers.GenerateCachedProfileKey(token), p)
 		m.cache.SetStringData(helpers.GenerateUserKey(token), p.Uid)
 
@@ -132,7 +133,7 @@ func (m *middleware) AccessTokenPassThrough(next http.Handler) http.Handler {
 		token := r.Header.Get(utils.AUTH_TOKEN)
 		if token == "" {
 			err := errors.New("token is empty")
-			m.log.Error("token_is_empty", "token is empty", err)
+			logger.AtLog.Logger.Error("token_is_empty", zap.Error(err))
 			next.ServeHTTP(w, r.WithContext(r.Context()))
 			return
 		}
@@ -142,7 +143,7 @@ func (m *middleware) AccessTokenPassThrough(next http.Handler) http.Handler {
 		//TODO implement here
 		p, err := m.usecase.ValidateAccessToken(token)
 		if err != nil {
-			m.log.Error("cannot_verify_token", "token cannot be verified", err)
+			logger.AtLog.Logger.Error("cannot_verify_token", zap.Error(err))
 			next.ServeHTTP(w, r.WithContext(r.Context()))
 			return
 		}

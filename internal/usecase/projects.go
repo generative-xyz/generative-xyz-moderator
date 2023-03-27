@@ -1054,7 +1054,7 @@ func (u Usecase) GetMintedOutProjects(req structure.FilterProjects) (*entity.Pag
 }
 
 func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", zap.Any("req)", req)))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, _ := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if (c == nil) || (c != nil && !c.IsSynced) || c.MintedTime == nil {
@@ -1066,7 +1066,7 @@ func (u Usecase) GetProjectDetail(req structure.GetProjectDetailMessageReq) (*en
 
 // only using for project detail api, support est fee:
 func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessageReq) (*entity.Projects, error) {
-	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", zap.Any("req)", req)))
+	logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("req", req))
 	c, err := u.Repo.FindProjectByProjectIdWithoutCache(req.ProjectID)
 
 	if err != nil {

@@ -31,6 +31,8 @@ import (
 )
 
 func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error) {
+	logger.AtLog.Info("GenerateMessage", zap.Any("data", data))
+
 	addrr := data.Address
 	addrr = strings.ToLower(addrr)
 
@@ -44,7 +46,7 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 
 	message = fmt.Sprintf(utils.NONCE_MESSAGE_FORMAT, message)
-	logger.AtLog.Info("message", message)
+	logger.AtLog.Info("GenerateMessage", zap.Any("message", message))
 
 	now := time.Now().UTC()
 	user, err := u.Repo.FindUserByWalletAddress(addrr)
@@ -72,22 +74,20 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 		}
 	}
 
-	logger.AtLog.Info("user", user)
+	logger.AtLog.Info("GenerateMessage", zap.Any("user", user))
 	user.Message = message
 	user.UpdatedAt = &now
 	user.IsVerified = false
-	updated, err := u.Repo.UpdateUserByWalletAddress(addrr, user)
+	_, err = u.Repo.UpdateUserByWalletAddress(addrr, user)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.AtLog.Info("updated", updated)
-	logger.AtLog.Info("updated.User", message)
 	return &message, nil
 }
 
 func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
-	logger.AtLog.Info("input", data)
+	logger.AtLog.Info("VerifyMessage", zap.Any("data", data))
 
 	// validate data
 	if data.ETHSignature == "" || data.Signature == "" ||
@@ -235,10 +235,7 @@ func (u Usecase) verifyBTCSegwit(msgStr string, data structure.VerifyMessage) (b
 }
 
 func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool, error) {
-	logger.AtLog.Info("input.signatureHex", signatureHex)
-	logger.AtLog.Info("input.signer", signer)
-	logger.AtLog.Info("input.msgStr", msgStr)
-
+	logger.AtLog.Info("verify", zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr))
 	sig := hexutil.MustDecode(signatureHex)
 
 	msgBytes := []byte(msgStr)
@@ -258,15 +255,13 @@ func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool
 	signerHex := recoveredAddr.Hex()
 	isVerified := strings.ToLower(signer) == strings.ToLower(signerHex)
 
-	logger.AtLog.Info("recoveredAddr", recoveredAddr)
-	logger.AtLog.Info("signerHex", signerHex)
-	logger.AtLog.Info("isVerified", isVerified)
+	logger.AtLog.Info("verify",  zap.Bool("isVerified", isVerified), zap.String("signerHex", signerHex), zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr),  zap.Any("recoveredAddr", recoveredAddr))
 	return isVerified, nil
 }
 
 func (u Usecase) UserProfile(userID string) (*entity.Users, error) {
 
-	logger.AtLog.Info("input.userID", userID)
+	logger.AtLog.Info("UserProfile", zap.String("userID", userID))
 	user, err := u.Repo.FindUserByID(userID)
 	if err != nil {
 		logger.AtLog.Error(err)
@@ -278,7 +273,7 @@ func (u Usecase) UserProfile(userID string) (*entity.Users, error) {
 
 func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, error) {
 
-	logger.AtLog.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("GetUserProfileByWalletAddress", zap.String("userAddr", userAddr))
 	user, err := u.Repo.FindUserByWalletAddress(userAddr)
 	if err != nil {
 		logger.AtLog.Error(err)
@@ -290,7 +285,7 @@ func (u Usecase) GetUserProfileByWalletAddress(userAddr string) (*entity.Users, 
 
 func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Users, error) {
 
-	logger.AtLog.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("GetUserProfileByBtcAddressTaproot", zap.String("userAddr", userAddr))
 	user, err := u.Repo.FindUserByBtcAddressTaproot(userAddr)
 	if err != nil {
 		logger.AtLog.Error(err)
@@ -302,7 +297,7 @@ func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Use
 
 func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
 
-	logger.AtLog.Info("input.userAddr", userAddr)
+	logger.AtLog.Info("GetUserProfileByBtcAddress", zap.String("userAddr", userAddr))
 	user, err := u.Repo.FindUserByBtcAddress(userAddr)
 	if err != nil {
 		logger.AtLog.Error(err)
