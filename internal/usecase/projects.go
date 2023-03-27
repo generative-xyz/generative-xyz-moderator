@@ -1649,6 +1649,8 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	u.Logger.LogAny("UnzipProjectFile", zap.Any("zipPayload", zipPayload), zap.Any("project", pe), zap.Int("files", len(files)))
 	maxSize := uint64(0)
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
 	for _, f := range files {
 		if strings.Index(strings.ToLower(f.Name), strings.ToLower("__MACOSX")) > -1 {
 			continue
@@ -2028,7 +2030,7 @@ func (u Usecase) CreateProjectsAndTokenUriFromInscribeAuthentic(ctx context.Cont
 		}
 	}
 
-	_, err = u.CreateBTCTokenURI(project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
+	_, err = u.CreateBTCTokenURI(item.OriginUserAddress, project.TokenID, item.InscriptionID, item.FileURI, entity.BIT, item.TokenId, item.UserWalletAddress)
 	if err != nil {
 		return err
 	}
@@ -2236,7 +2238,7 @@ func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	//u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
 	cached, err := u.Cache.GetData(helpers.ProjectFirstSaleKey(genNFTAddr))
 	if err != nil || cached == nil {
-		
+
 		newAmount := 0.0
 		data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
 		if err == nil && data != nil {
@@ -2255,7 +2257,7 @@ func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 
 			amount := oldBTCData.Amount
 			if paytype == string(entity.ETH) {
-				amount = amount / float64(oldBTCData.BtcRate / oldBTCData.EthRate) 
+				amount = amount / float64(oldBTCData.BtcRate/oldBTCData.EthRate)
 			}
 
 			oldAmount += amount
@@ -2267,7 +2269,7 @@ func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 		return totalAmount
 	}
 	return *cached
-	
+
 }
 
 func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, error) {

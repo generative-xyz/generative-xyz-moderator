@@ -741,7 +741,7 @@ func (u Usecase) GetTokensOfAProjectFromChain(project entity.Projects) error {
 	return nil
 }
 
-func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL string, paidType entity.TokenPaidType, opts ...string) (*entity.TokenUri, error) {
+func (u Usecase) CreateBTCTokenURI(ownerAddress, projectID, tokenID, mintedURL string, paidType entity.TokenPaidType, opts ...string) (*entity.TokenUri, error) {
 
 	// find project by projectID
 	u.Logger.Info(utils.TOKEN_ID_TAG, tokenID)
@@ -772,6 +772,7 @@ func (u Usecase) CreateBTCTokenURI(projectID string, tokenID string, mintedURL s
 	tokenUri.ProjectIDInt = project.TokenIDInt
 	tokenUri.PaidType = paidType
 	tokenUri.IsOnchain = false
+	tokenUri.OwnerAddr = ownerAddress
 	if len(opts) > 0 {
 		tokenUri.NftTokenId = opts[0]
 	}
