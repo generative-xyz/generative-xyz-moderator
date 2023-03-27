@@ -10,18 +10,19 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenActivities{}
 	err := copier.Copy(pe, filter)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return nil, errors.WithStack(err)
 	}
 	activitiesResp, err := u.Repo.GetTokenActivities(*pe)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return nil, errors.WithStack(err)
 	}
 	activities := activitiesResp.Result.([]entity.TokenActivity)
@@ -57,13 +58,13 @@ func (u Usecase) GetTokenActivities(filter structure.FilterTokenActivities) (*en
 
 	activitiesResp.Result = activities
 
-	u.Logger.Info("activities", activitiesResp.Total)
+	logger.AtLog.Logger.Info("activities", zap.Any("activitiesResp.Total", activitiesResp.Total))
 	return activitiesResp, nil
 }
 
 func (u Usecase) JobCreateTokenActivityFromListings() error {
 	for page := int64(1);; page++ {
-		u.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", page))
+		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", zap.Any("page)", page)))
 		uListings, err := u.Repo.GetNotCreatedActivitiesListing(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
@@ -72,7 +73,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 		if len(listings) == 0 {
 			break
 		}
-		u.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", page))
+		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesListings", zap.Any("page", zap.Any("page)", page)))
 		
 		for _, listing := range listings {
 			token, err := u.Repo.FindTokenByTokenID(listing.InscriptionID)
@@ -97,9 +98,9 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
-					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
+					logger.AtLog.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", zap.Any("activity)", activity)))
 					u.Repo.UpdateListingCreatedVerifiedActivity(listing.UUID)
 				}
 			}
@@ -115,9 +116,9 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
-					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
+					logger.AtLog.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", zap.Any("activity)", activity)))
 					u.Repo.UpdateListingCreatedCancelledActivity(listing.UUID)
 				}
 			}
@@ -134,9 +135,9 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 				}
 				err := u.Repo.InsertTokenActivity(&activity)
 				if err != nil {
-					u.Logger.ErrorAny("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
+					logger.AtLog.Logger.Error("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Error(err))
 				} else {
-					u.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", activity))
+					logger.AtLog.Logger.Info("JobCreateTokenActivityFromListings.InsertTokenActivity", zap.Any("activity", zap.Any("activity)", activity)))
 					u.Repo.UpdateListingCreatedMatchedActivity(listing.UUID)
 				}
 			}
@@ -147,7 +148,7 @@ func (u Usecase) JobCreateTokenActivityFromListings() error {
 
 func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 	for page := int64(1);; page++ {
-		u.Logger.Info("StartGetPagingNotCreatedActivitiesToken", zap.Any("page", page))
+		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesToken", zap.Any("page", zap.Any("page)", page)))
 		uTokens, err := u.Repo.GetNotCreatedActivitiesToken(page, 100)
 		if err != nil {
 			return errors.WithStack(err)
@@ -156,7 +157,7 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 		if len(tokens) == 0 {
 			break
 		}
-		u.Logger.Info("StartGetPagingNotCreatedActivitiesTokens", zap.Any("page", page))
+		logger.AtLog.Logger.Info("StartGetPagingNotCreatedActivitiesTokens", zap.Any("page", zap.Any("page)", page)))
 		
 		for _, token := range tokens {
 			var minterAddress string
@@ -171,7 +172,7 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 				minterAddress = mintNftBtc.OriginUserAddress
 				amount, err = strconv.ParseInt(mintNftBtc.EstFeeInfo["btc"].MintPrice, 10, 64)
 				if err != nil {
-					u.Logger.Error("JobCreateTokenMintActivityFromTokenUri.FailedParseMintPrice")
+					logger.AtLog.Logger.Error("JobCreateTokenMintActivityFromTokenUri.FailedParseMintPrice")
 				}
 			}
 
@@ -186,9 +187,9 @@ func (u Usecase) JobCreateTokenMintActivityFromTokenUri() error {
 			}
 			err = u.Repo.InsertTokenActivity(&activity)
 			if err != nil {
-				u.Logger.ErrorAny("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Error(err))
+				logger.AtLog.Logger.Error("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Error(err))
 			} else {
-				u.Logger.Info("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Any("activity", activity))
+				logger.AtLog.Logger.Info("JobCreateTokenMintActivityFromTokenUri.InsertTokenActivity", zap.Any("activity", zap.Any("activity)", activity)))
 				u.Repo.UpdateTokenCreatedMintActivity(token.TokenID)
 			}
 		}

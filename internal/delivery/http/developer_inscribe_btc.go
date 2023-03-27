@@ -38,7 +38,7 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 	if developerApiKey == nil {
 		err := errors.New("api-key not found")
 
-		h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+		logger.AtLog.Logger.Error("h.developerCreateInscribe", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 		return
 	}
@@ -74,7 +74,7 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 		if developerKeyRequests.DayReqResetTime.Year() == now.Year() && developerKeyRequests.DayReqResetTime.YearDay() == now.YearDay() {
 			if developerKeyRequests.DayReqCounter >= utils.DEVELOPER_INSCRIBE_MAX_REQUEST {
 				err := errors.New("Limits reached.")
-				h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+				logger.AtLog.Logger.Error("h.developerCreateInscribe", zap.Error(err))
 				h.Response.RespondWithError(w, http.StatusTooManyRequests, response.Error, err)
 				return
 			} else {
@@ -106,7 +106,7 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 
 	if len(reqUsecase.FileName) == 0 {
 		err = errors.New("Filename is required")
-		h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+		logger.AtLog.Logger.Error("h.developerCreateInscribe", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 		return
 	}
@@ -114,7 +114,7 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 	typeFiles := strings.Split(reqUsecase.FileName, ".")
 	if len(typeFiles) < 2 {
 		err := errors.New("File name invalid")
-		h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+		logger.AtLog.Logger.Error("h.developerCreateInscribe", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 		return
 	}
@@ -143,16 +143,16 @@ func (h *httpDelivery) developerCreateInscribe(w http.ResponseWriter, r *http.Re
 			zap.Any("payload", reqBody),
 			zap.Error(err),
 		)
-		h.Logger.Error("h.developerCreateInscribe", err.Error(), err)
+		logger.AtLog.Logger.Error("h.developerCreateInscribe", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 		return
 	}
-	logger.AtLog.Logger.Info("DeveloperCreateInscribe successfully", zap.Any("response", btcWallet))
+	logger.AtLog.Logger.Info("DeveloperCreateInscribe successfully", zap.Any("response", zap.Any("btcWallet)", btcWallet)))
 
 	resp, err := h.developerInscribeCreatedRespResp(btcWallet)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.developerCreateInscribe.developerInscribeCreatedRespResp", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.developerCreateInscribe.developerInscribeCreatedRespResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -218,7 +218,7 @@ func (h *httpDelivery) developerDetailInscribe(w http.ResponseWriter, r *http.Re
 
 	result, err := h.Usecase.DetailDeveloperInscribeBTC(uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.DetailInscribeBTC", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.DetailInscribeBTC", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -242,7 +242,7 @@ func (h *httpDelivery) developerRetryInscribeBTC(w http.ResponseWriter, r *http.
 
 	// err := h.Usecase.DeveloperRetryInscribeBTC(id)
 	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.RetryInscribeBTC", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }

@@ -7,9 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"gopkg.in/ezzarghili/recaptcha-go.v4"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq) (*entity.DeveloperKey, error) {
@@ -17,7 +19,7 @@ func (u Usecase) ApiDevelop_GenApiKey(userAddr string, req *request.GetApiKeyReq
 	// check admin user:
 	profile, err := u.GetUserProfileByWalletAddress(userAddr)
 	if err != nil {
-		u.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		return nil, err
 	}
 
@@ -76,7 +78,7 @@ func (u Usecase) ApiDevelop_GetApiKey(userAddr string) (*entity.DeveloperKey, er
 	// check admin user:
 	profile, err := u.GetUserProfileByWalletAddress(userAddr)
 	if err != nil {
-		u.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		return nil, err
 	}
 

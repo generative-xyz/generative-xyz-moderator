@@ -51,27 +51,27 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.FindProjectByTokenID", zap.Error(err))
 		return nil, errors.New("project not found")
 	}
 
 	// find Project and make sure index < max supply
 	if p.MintingInfo.Index >= p.MaxSupply {
 		err = fmt.Errorf("project %s is minted out", input.ProjectID)
-		u.Logger.Error("projectIsMintedOut", err.Error(), err)
+		logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
 		return nil, err
 	}
 
 	if p.MintingInfo.Index+int64(input.Quantity) > p.MaxSupply {
 		err = fmt.Errorf("not enough quantity %s", input.ProjectID)
-		u.Logger.Error("projectIsMintedOut", err.Error(), err)
+		logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
 		return nil, err
 	}
 
 	// verify paytype:
 	if input.PayType != utils.NETWORK_BTC && input.PayType != utils.NETWORK_ETH {
 		err = errors.New("only support payType is eth or btc")
-		u.Logger.Error("u.CreateMintReceiveAddress.Check(payType)", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Check(payType)", zap.Error(err))
 		return nil, err
 	}
 
@@ -79,7 +79,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	if input.PayType == utils.NETWORK_BTC {
 		privateKey, _, receiveAddress, err = btc.GenerateAddressSegwit()
 		if err != nil {
-			u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", err.Error(), err)
+			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
 
@@ -88,14 +88,14 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 		privateKey, _, receiveAddress, err = ethClient.GenerateAddress()
 		if err != nil {
-			u.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", err.Error(), err)
+			logger.AtLog.Logger.Error("CreateMintReceiveAddress.ethClient.GenerateAddress", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	if len(receiveAddress) == 0 || len(privateKey) == 0 {
 		err = errors.New("can not create the wallet")
-		u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.GenerateAddress", zap.Error(err))
 		return nil, err
 	}
 
@@ -104,13 +104,13 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	if len(os.Getenv("SECRET_KEY")) == 0 {
 		err = errors.New("please config SECRET_KEY")
-		u.Logger.Error("u.CreateMintReceiveAddress.GenerateAddress", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.GenerateAddress", zap.Error(err))
 		return nil, err
 	}
 
 	privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
 	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.Encrypt", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 						mintPrice = big.NewInt(reserveMintPrice.Int64())
 						walletAddress.IsDiscount = true
-						u.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", true)
+						logger.AtLog.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", zap.Any("true", true))
 					}
 				}
 				break
@@ -184,7 +184,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	// cal fee:
 	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)
 	if err != nil {
-		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+		logger.AtLog.Logger.Error("u.calMintFeeInfo.Err", zap.Error(err))
 		return nil, err
 	}
 
@@ -203,7 +203,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	walletAddress.FeeSendMaster = feeSendMaster.String()
 
-	u.Logger.Info("CreateMintReceiveAddress.receive", receiveAddress)
+	logger.AtLog.Logger.Info("CreateMintReceiveAddress.receive", zap.Any("receiveAddress", receiveAddress))
 
 	expiredTime := utils.INSCRIBE_TIMEOUT
 	if u.Config.ENV == "develop" {
@@ -234,7 +234,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	// insert now:
 	err = u.Repo.InsertMintNftBtc(walletAddress)
 	if err != nil {
-		u.Logger.Error("u.CreateMintReceiveAddress.InsertMintNftBtc", err.Error(), err)
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.InsertMintNftBtc", zap.Error(err))
 		return nil, err
 	}
 
@@ -605,7 +605,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 			item.IsConfirm = true
 
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated StatusMint_ReceivedFund", "ok", true)
-			u.Logger.Info(fmt.Sprintf("JobMint_CheckBalance.CheckReceiveFund.%s", item.ReceiveAddress), item)
+			logger.AtLog.Logger.Info(fmt.Sprintf("JobMint_CheckBalance.CheckReceiveFund.%s", item.ReceiveAddress), zap.Any("item", item))
 			go u.Notify("JobMint_CheckBalance", item.ReceiveAddress, fmt.Sprintf("%s received %s %d from [UUID] %s", item.ReceiveAddress, item.PayType, item.Status, item.UUID))
 		}
 
@@ -618,7 +618,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 		// check Project and make sure index < max supply
 		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
-			u.Logger.Error("JobMint_CheckBalance.FindProjectByTokenID", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_CheckBalance.FindProjectByTokenID", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
 			continue
 		}
@@ -634,7 +634,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
 			}
 			err = fmt.Errorf("project %s is minted out", item.ProjectID)
-			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
 			continue
 		}
@@ -679,7 +679,7 @@ func (u Usecase) JobMint_CheckBalance() error {
 				err = u.Repo.InsertMintNftBtc(&batchItem)
 				if err != nil {
 					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Can not InsertMintNftBtc sub item", i, true)
-					u.Logger.Error("u.CheckReceiveFund.InsertMintNftBtc", err.Error(), err)
+					logger.AtLog.Logger.Error("u.CheckReceiveFund.InsertMintNftBtc", zap.Error(err))
 					continue
 				}
 
@@ -715,7 +715,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// get data from project
 		p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
-			u.Logger.Error("JobMint_MintNftBtc.FindProjectByTokenID", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.FindProjectByTokenID", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
 			continue
 		}
@@ -733,7 +733,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
 			}
 			err = fmt.Errorf("project %s is minted out", item.ProjectID)
-			u.Logger.Error("projectIsMintedOut", err.Error(), err)
+			logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
 			continue
 		}
@@ -742,7 +742,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		projectNftTokenUri := &structure.ProjectAnimationUrl{}
 		err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
 		if err != nil {
-			u.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
 			continue
 		}
@@ -761,7 +761,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		// - Upload the Animation URL to GCS
 		animation := projectNftTokenUri.AnimationUrl
-		u.Logger.Info("animation", animation)
+		logger.AtLog.Logger.Info("animation", zap.Any("animation", animation))
 
 		// for html type:
 		if animation != "" {
@@ -769,7 +769,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			now := time.Now().UTC().Unix()
 			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%s-%d.html", p.TokenID, item.UUID, now))
 			if err != nil {
-				u.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", err.Error(), err)
+				logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
 				continue
 			}
@@ -778,7 +778,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		} else {
 			// for image type:
 			images := p.Images
-			u.Logger.Info("images", len(images))
+			logger.AtLog.Logger.Info("images", zap.Any("len(images)", len(images)))
 			if len(images) > 0 {
 				item.FileURI = images[0]
 				newImages := []string{}
@@ -796,14 +796,14 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		//end Animation URL
 		if len(item.FileURI) == 0 {
 			err = errors.New("There is no file uri to mint")
-			u.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
 			continue
 		}
 
 		baseUrl, err := url.Parse(item.FileURI)
 		if err != nil {
-			u.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Parse(FileURI)", err.Error(), true)
 			continue
 		}
@@ -830,7 +830,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			DestinationAddress: item.OriginUserAddress,
 		}
 
-		u.Logger.Info("mintData", mintData)
+		// logger.AtLog.Logger.Info("mintData", zap.Any("mintData", mintData))
 		// execute mint:
 		resp, respStr, err := u.OrdService.Mint(mintData)
 		if err != nil {
@@ -841,12 +841,12 @@ func (u Usecase) JobMint_MintNftBtc() error {
 				tagMention = "<@phuong> <@yen> please check: "
 			}
 
-			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.OrdService", zap.Error(err))
 			messageError := tagMention + respStr + "|" + err.Error() + fmt.Sprintf("| network fe: %d", item.ProjectNetworkFee)
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, messageError, true)
 			continue
 		}
-		u.Logger.Info("mint.resp", resp)
+		// logger.AtLog.Logger.Info("mint.resp", zap.Any("resp", resp))
 
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
 
@@ -877,7 +877,7 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
 		if err != nil {
-			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+			logger.AtLog.Logger.Error("BTCMint.helpers.JsonTransform", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
 			continue
 		}
@@ -892,12 +892,12 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		}
 
 		// update project:
-		updated, err := u.Repo.UpdateProject(p.UUID, p)
+		_, err = u.Repo.UpdateProject(p.UUID, p)
 		if err != nil {
-			u.Logger.Error("JobMint_MintNftBtc.UpdateProject", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
 		}
-		u.Logger.Info("project.Updated", updated)
+		// logger.AtLog.Logger.Info("project.Updated", zap.Any("updated", updated))
 
 		fmt.Println("update project, token info when minting ...")
 
@@ -1001,7 +1001,7 @@ func (u Usecase) JobMint_CheckTxMintSend() error {
 
 			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
 			}
 			// update inscription_index for token uri
@@ -1103,13 +1103,13 @@ func (u Usecase) JobMint_SendNftToUser() error {
 				fmt.Sprintf("%d", entity.DEFAULT_FEE_RATE),
 			}}
 
-		u.Logger.Info("sendTokenReq", sendTokenReq)
+		logger.AtLog.Logger.Info("sendTokenReq", zap.Any("sendTokenReq", sendTokenReq))
 		mintResp, err := u.OrdService.Exec(sendTokenReq)
 
 		go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "SendTokenByWallet.ExecRequest.SendNft()", mintResp, true)
 
 		if err != nil {
-			u.Logger.Error(fmt.Sprintf("JobMin_SendNftToUser.SendTokenMKP.%s.Error", item.OriginUserAddress), err.Error(), err)
+			logger.AtLog.Logger.Error(fmt.Sprintf("JobMin_SendNftToUser.SendTokenMKP.%s.Error", item.OriginUserAddress), zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error(), true)
 			continue
 		}
@@ -1125,7 +1125,7 @@ func (u Usecase) JobMint_SendNftToUser() error {
 		_, err = u.Repo.UpdateMintNftBtc(&item)
 		if err != nil {
 			err := fmt.Errorf("Could not UpdateMintNftBtc id %s - with err: %v", item.UUID, err.Error())
-			u.Logger.Error("JobMin_SendNftToUser.UpdateMintNftBtc", err.Error(), err)
+			logger.AtLog.Logger.Error("JobMin_SendNftToUser.UpdateMintNftBtc", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "UpdateMintNftBtc", item.TableName(), item.Status, "SendTokenMKP.UpdateMintNftBtc", err.Error(), true)
 			continue
 		}
@@ -1140,11 +1140,11 @@ func (u Usecase) JobMint_SendNftToUser() error {
 		_, err = u.Repo.UpdateMintNftBtc(&item)
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-			u.Logger.Error("JobMin_SendNftToUser.UpdateMintNftBtc", errPack.Error(), errPack)
+			logger.AtLog.Logger.Error("JobMin_SendNftToUser.UpdateMintNftBtc", zap.Error(errPack))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMin_SendNftToUser", item.TableName(), item.Status, "u.UpdateMintNftBtc.JobMin_SendNftToUser", err.Error(), true)
 		}
 
-		u.Logger.Info(fmt.Sprintf("JobMin_SendNftToUser.SendNft.execResp.%s", item.OriginUserAddress), mintResp)
+		logger.AtLog.Logger.Info(fmt.Sprintf("JobMin_SendNftToUser.SendNft.execResp.%s", item.OriginUserAddress), zap.Any("mintResp", mintResp))
 
 	}
 	return nil
@@ -1230,7 +1230,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 
 			if len(os.Getenv("SECRET_KEY")) == 0 {
 				err = errors.New("please config SECRET_KEY")
-				u.Logger.Error("u.JobMint_RefundBtc.GenerateAddress", err.Error(), err)
+				logger.AtLog.Logger.Error("u.JobMint_RefundBtc.GenerateAddress", zap.Error(err))
 				continue
 			}
 
@@ -1239,7 +1239,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 
 			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", btcRefundAddress), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", btcRefundAddress), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
@@ -1247,7 +1247,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 			// send user now:
 			tx, err := bs.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.ReceiveAddress, btcRefundAddress, -1, btc.PreferenceMedium)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", btcRefundAddress), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", btcRefundAddress), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
 				continue
 			}
@@ -1256,7 +1256,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 			item.Status = entity.StatusMint_Refunding
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", btcRefundAddress), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", btcRefundAddress), zap.Error(err))
 				continue
 			}
 		} else if item.PayType == utils.NETWORK_ETH {
@@ -1265,13 +1265,13 @@ func (u Usecase) JobMint_RefundBtc() error {
 
 			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", ethAdressRefund), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.Decrypt.%s.Error", ethAdressRefund), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
 			tx, value, err := ethClient.TransferMax(privateKeyDeCrypt, ethAdressRefund)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.ethClient.TransferMax.%s.Error", ethAdressRefund), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_RefundBtc", item.TableName(), item.Status, "JobMint_RefundBtc.ethClient.TransferMax", err.Error(), true)
 				continue
 			}
@@ -1281,7 +1281,7 @@ func (u Usecase) JobMint_RefundBtc() error {
 			item.Status = entity.StatusMint_Refunding
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", ethAdressRefund), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_RefundBtc.UpdateMintNftBtc.%s.Error", ethAdressRefund), zap.Error(err))
 				continue
 			}
 
@@ -1365,14 +1365,14 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 
 			if len(os.Getenv("SECRET_KEY")) == 0 {
 				err = errors.New("please config SECRET_KEY")
-				u.Logger.Error("u.JobMint_SendFundToMaster.GenerateAddress", err.Error(), err)
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SECRET_KEY.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
+				logger.AtLog.Logger.Error("u.JobMint_SendFundToMaster.GenerateAddress", zap.Error(err))
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SECRET_KEY.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), zap.Error(err))
 				continue
 			}
 
 			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 				continue
 			}
@@ -1394,7 +1394,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 					u.Repo.UpdateMintNftBtc(&item)
 
 				}
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
 				time.Sleep(1 * time.Second)
 				continue
@@ -1405,13 +1405,13 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			item.Status = entity.StatusMint_SendingFundToMaster // TODO: need to a job to check tx.
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_BTC), zap.Error(err))
 				continue
 			}
 		} else if item.PayType == utils.NETWORK_ETH {
 			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.Decrypt.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.DecryptToString", err.Error(), true)
 				continue
 			}
@@ -1424,7 +1424,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 					u.Repo.UpdateMintNftBtc(&item)
 				}
 
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.ethClient.TransferMax.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.ethClient.TransferMax.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), zap.Error(err))
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_SendFundToMaster", item.TableName(), item.Status, "JobMint_SendFundToMaster.ethClient.TransferMax", err.Error(), true)
 				time.Sleep(1 * time.Second)
 				continue
@@ -1435,7 +1435,7 @@ func (u Usecase) JobMint_SendFundToMaster() error {
 			item.Status = entity.StatusMint_SendingFundToMaster
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
-				u.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), err.Error(), err)
+				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_SendFundToMaster.UpdateBtcWalletAddress.%s.Error", u.Config.MASTER_ADDRESS_CLAIM_ETH), zap.Error(err))
 				continue
 			}
 
@@ -1652,7 +1652,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
-					u.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), err.Error(), err)
+					logger.AtLog.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), zap.Error(err))
 					go u.trackMintNftBtcHistory(mintItem.UUID, "JobMint_RefundBtc", mintItem.TableName(), mintItem.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 					return err
 				}
@@ -1802,7 +1802,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
-					u.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), err.Error(), err)
+					logger.AtLog.Logger.Error(fmt.Sprintf("SendMasterAndRefund.Decrypt.%s.Error", mintItem.ReceiveAddress), zap.Error(err))
 					go u.trackMintNftBtcHistory(mintItem.UUID, "JobMint_RefundBtc", mintItem.TableName(), mintItem.Status, "JobMint_RefundBtc.DecryptToString", err.Error(), true)
 					return err
 				}
@@ -1902,21 +1902,21 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
 	amountMintBTC.Mul(amountMintBTC, powIntputBig)
 	// if err != nil {
-	// 	u.Logger.Error("strconv.ParseFloat", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("strconv.ParseFloat", zap.Error(err))
 	// 	return "", err
 	// }
 
 	_ = amountMintBTC
 	btcPrice, err := helpers.GetExternalPrice("BTC")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
-	u.Logger.Info("btcPrice", btcPrice)
+	logger.AtLog.Logger.Info("btcPrice", zap.Any("btcPrice", btcPrice))
 	ethPrice, err := helpers.GetExternalPrice("ETH")
 	if err != nil {
-		u.Logger.ErrorAny("convertBTCToETH", zap.Error(err))
+		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 		return "", 0, 0, err
 	}
 
@@ -1935,7 +1935,7 @@ func (u Usecase) convertBTCToETH(amount string) (string, float64, float64, error
 	result := new(big.Int)
 	amountMintBTC.Int(result)
 
-	u.Logger.LogAny("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
+	logger.AtLog.Logger.Info("convertBTCToETH", zap.String("amount", amount), zap.Float64("btcPrice", btcPrice), zap.Float64("ethPrice", ethPrice))
 	return result.String(), btcPrice, ethPrice, nil
 }
 
@@ -1952,7 +1952,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 	amountMintBTC, _ := big.NewFloat(0).SetString(amount)
 	amountMintBTC.Mul(amountMintBTC, powIntputBig)
 	// if err != nil {
-	// 	u.Logger.Error("strconv.ParseFloat", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("strconv.ParseFloat", zap.Error(err))
 	// 	return "", err
 	// }
 
@@ -2005,7 +2005,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 			calNetworkFee := u.networkFeeBySize(int64(fileSize / 4))
 			if calNetworkFee == -1 {
 				err = errors.New("can not cal networkFeeBySize")
-				u.Logger.Error("u.calMintFeeInfo.networkFeeBySize", err.Error(), err)
+				logger.AtLog.Logger.Error("u.calMintFeeInfo.networkFeeBySize", zap.Error(err))
 				return nil, err
 			}
 			feeMintNft = big.NewInt(calNetworkFee)
@@ -2027,13 +2027,13 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	if btcRate <= 0 {
 		btcRate, err = helpers.GetExternalPrice("BTC")
 		if err != nil {
-			u.Logger.Error("getExternalPrice", zap.Error(err))
+			logger.AtLog.Logger.Error("getExternalPrice", zap.Error(err))
 			return nil, err
 		}
 
 		ethRate, err = helpers.GetExternalPrice("ETH")
 		if err != nil {
-			u.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
+			logger.AtLog.Logger.Error("helpers.GetExternalPrice", zap.Error(err))
 			return nil, err
 		}
 	}
@@ -2073,42 +2073,42 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 	// 1. convert mint price btc to eth  ==========
 	mintPriceByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(mintPrice.Uint64())/1e8), btcRate, ethRate)
 	if err != nil {
-		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		logger.AtLog.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", zap.Error(err))
 		return nil, err
 	}
 	// 1. set mint price by eth
 	mintPriceEth, ok := big.NewInt(0).SetString(mintPriceByEth, 10)
 	if !ok {
 		err = errors.New("can not set mintPriceByEth")
-		u.Logger.Error("u.calMintFeeInfo.Set(mintPriceByEth)", err.Error(), err)
+		logger.AtLog.Logger.Error("u.calMintFeeInfo.Set(mintPriceByEth)", zap.Error(err))
 		return nil, err
 	}
 
 	// 2. convert mint fee btc to eth  ==========
 	feeMintNftByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(feeMintNft.Uint64())/1e8), btcRate, ethRate)
 	if err != nil {
-		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		logger.AtLog.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", zap.Error(err))
 		return nil, err
 	}
 	// 2. set mint fee by eth
 	feeMintNftEth, ok := big.NewInt(0).SetString(feeMintNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
-		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
+		logger.AtLog.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", zap.Error(err))
 		return nil, err
 	}
 
 	// 3. convert mint fee btc to eth ==========
 	feeSendNftByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(feeSendNft.Uint64())/1e8), btcRate, ethRate)
 	if err != nil {
-		u.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", err.Error(), err)
+		logger.AtLog.Logger.Error("calMintFeeInfo.convertBTCToETHWithPriceEthBtc", zap.Error(err))
 		return nil, err
 	}
 	// 3. set mint fee by eth
 	feeSendNftEth, ok := big.NewInt(0).SetString(feeSendNftByEth, 10)
 	if !ok {
 		err = errors.New("can not set feeMintNftByEth")
-		u.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", err.Error(), err)
+		logger.AtLog.Logger.Error("u.calMintFeeInfo.Set(feeMintNftByEth)", zap.Error(err))
 		return nil, err
 	}
 

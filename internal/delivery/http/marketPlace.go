@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -34,7 +36,7 @@ func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *
 	tokenID := vars["tokenID"]
 bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -45,7 +47,7 @@ closed := r.URL.Query().Get("closed")
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -54,7 +56,7 @@ closed := r.URL.Query().Get("closed")
 if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -65,7 +67,7 @@ f.CollectionContract = &genNFTAddr
 	f.BaseFilters = *bf
 resp, err := h.getMkListings(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -97,7 +99,7 @@ func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *h
 	tokenID := vars["tokenID"]
 bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -108,7 +110,7 @@ closed := r.URL.Query().Get("closed")
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -117,7 +119,7 @@ closed := r.URL.Query().Get("closed")
 if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -128,7 +130,7 @@ f.CollectionContract = &genNFTAddr
 	f.BaseFilters = *bf
 resp, err := h.getMkOffers(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -156,7 +158,7 @@ func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request)
 	walletAddress := vars["walletAddress"]
 bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -167,7 +169,7 @@ closed := r.URL.Query().Get("closed")
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -176,7 +178,7 @@ closed := r.URL.Query().Get("closed")
 if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -186,7 +188,7 @@ f.SellerAddress = &walletAddress
 	f.BaseFilters = *bf
 resp, err := h.getMkListings(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -216,7 +218,7 @@ func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
 	walletAddress := vars["walletAddress"]
 bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -228,7 +230,7 @@ closed := r.URL.Query().Get("closed")
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.closed", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -237,7 +239,7 @@ closed := r.URL.Query().Get("closed")
 if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
-			h.Logger.Error("strconv.ParseBool.finished", err.Error(), err)
+			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 			return
 		}
@@ -251,7 +253,7 @@ if finished != "" {
 f.BaseFilters = *bf
 resp, err := h.getMkOffers(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getMkListings.getTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
@@ -266,7 +268,7 @@ func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.P
 
 	pag, err := h.Usecase.FilterMKListing(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", zap.Error(err))
 		return nil, err
 	}
 
@@ -275,14 +277,14 @@ func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.P
 	mkData, ok := (iMkData).([]entity.MarketplaceListings)
 	if !ok {
 		err := errors.New( "Cannot parse MarketplaceListings")
-		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		return nil, err
 	}
 
 	for _, mk := range mkData {	resp, err := h.mkListingToResp(&mk)
 		if err != nil {
 			err := errors.New( "Cannot parse MarketplaceListin")
-			h.Logger.Error("tokenToResp",  err.Error(), err)
+			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
 		respItems = append(respItems, *resp)
@@ -316,7 +318,7 @@ func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.Pagi
 
 	pag, err := h.Usecase.FilterMKOffers(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.FilterTokens", zap.Error(err))
 		return nil, err
 	}
 
@@ -325,14 +327,14 @@ func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.Pagi
 	mkData, ok := (iMkData).([]entity.MarketplaceOffers)
 	if !ok {
 		err := errors.New( "Cannot parse MarketplaceOffers")
-		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		return nil, err
 	}
 
 	for _, mk := range mkData {	resp, err := h.mkOfferToResp(&mk)
 		if err != nil {
 			err := errors.New( "Cannot parse mkOfferToResp")
-			h.Logger.Error("tokenToResp",  err.Error(), err)
+			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
 		respItems = append(respItems, *resp)
@@ -373,17 +375,17 @@ func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request
 	
 	project, err := h.Usecase.GetProjectByGenNFTAddr(genNFTAddr)
 	if  err != nil {
-		h.Logger.Error(" h.GetProjectByGenNFTAddr", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.GetProjectByGenNFTAddr", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
 	resp, err := h.projectToStatResp(project)
 	if  err != nil {
-		h.Logger.Error(" h.projectToStatResp", err.Error(), err)
+		logger.AtLog.Logger.Error(" h.projectToStatResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
 		return
 	}
-	h.Logger.Info("project", project)
+	logger.AtLog.Logger.Info("project", zap.Any("project", project))
 	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
 }

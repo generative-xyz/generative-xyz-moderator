@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 // func (h *httpDelivery) inscriptionByOutput(w http.ResponseWriter, r *http.Request) {
@@ -18,14 +20,14 @@ import (
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.inscriptionByOutput.Decode", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.inscriptionByOutput.Decode", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
 
 // 	result, _, _, err := h.Usecase.InscriptionsByOutputs(reqBody.Outputs)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.inscriptionByOutput.Usecase.InscriptionsByOutputs", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.inscriptionByOutput.Usecase.InscriptionsByOutputs", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -42,7 +44,7 @@ func (h *httpDelivery) walletInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.Usecase.GetBTCWalletInfo(address)
 	if err != nil {
-		h.Logger.Error("httpDelivery.walletInfo.Usecase.GetBTCWalletInfo", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.walletInfo.Usecase.GetBTCWalletInfo", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -65,7 +67,7 @@ func (h *httpDelivery) mintStatus(w http.ResponseWriter, r *http.Request) {
 		}
 		userInfo, err := h.Usecase.UserProfile(userID)
 		if err != nil {
-			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -74,7 +76,7 @@ func (h *httpDelivery) mintStatus(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.Usecase.GetCurrentMintingByWalletAddress(address)
 	if err != nil {
-		h.Logger.Error("httpDelivery.mintStatus.Usecase.GetBTCWalletInfo", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.GetBTCWalletInfo", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -86,7 +88,7 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.trackTx.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.trackTx.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -98,7 +100,7 @@ func (h *httpDelivery) trackTx(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Usecase.TrackWalletTx(reqBody.Address, structure.WalletTrackTx{Txhash: reqBody.Txhash, Type: reqBody.Type, Amount: reqBody.Amount, InscriptionID: reqBody.InscriptionID, InscriptionNumber: reqBody.InscriptionNumber, Receiver: reqBody.Receiver})
 	if err != nil {
-		h.Logger.Error("httpDelivery.trackTx.TrackWalletTx", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.trackTx.TrackWalletTx", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -128,7 +130,7 @@ func (h *httpDelivery) walletTrackedTx(w http.ResponseWriter, r *http.Request) {
 		}
 		userInfo, err := h.Usecase.UserProfile(userID)
 		if err != nil {
-			h.Logger.Error("httpDelivery.walletTrackedTx.Usecase.UserProfile", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.walletTrackedTx.Usecase.UserProfile", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -137,7 +139,7 @@ func (h *httpDelivery) walletTrackedTx(w http.ResponseWriter, r *http.Request) {
 
 	txList, err := h.Usecase.GetWalletTrackTxs(address, int64(limit), int64(offset))
 	if err != nil {
-		h.Logger.Error("httpDelivery.walletTrackedTx.GetWalletTrackTxs", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.walletTrackedTx.GetWalletTrackTxs", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -150,14 +152,14 @@ func (h *httpDelivery) submitTx(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.submitTx.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.submitTx.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = h.Usecase.SubmitBTCTransaction(reqBody.Txs)
 	if err != nil {
-		h.Logger.Error("httpDelivery.submitTx.SubmitBTCTransaction", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.submitTx.SubmitBTCTransaction", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

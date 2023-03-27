@@ -33,7 +33,7 @@ func (h *httpDelivery) getChartDataFoTokenURI(w http.ResponseWriter, r *http.Req
 		ToDate:    &f.ToDate,
 	}
 
-	logger.AtLog.Logger.Info("getChartDataFoTokenURI.Filter", zap.Any("filter", filter))
+	logger.AtLog.Logger.Info("getChartDataFoTokenURI.Filter", zap.Any("filter", zap.Any("filter)", filter)))
 	result, err := h.Usecase.GetChartDataOFTokens(*filter)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing", zap.String("err", err.Error()))
@@ -66,7 +66,7 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 		ToDate:    &f.ToDate,
 	}
 	
-	logger.AtLog.Logger.Info("getChartDataForCollection.Filter", zap.Any("filter", filter))
+	logger.AtLog.Logger.Info("getChartDataForCollection.Filter", zap.Any("filter", zap.Any("filter)", filter)))
 	result, err := h.Usecase.GetChartDataOFProject(*filter)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing", zap.String("err", err.Error()))

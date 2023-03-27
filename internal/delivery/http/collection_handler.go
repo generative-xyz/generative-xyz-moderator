@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/algolia"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -27,7 +29,7 @@ import (
 func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *http.Request) {
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getItemListing.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getItemListing.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -90,7 +92,7 @@ func (h *httpDelivery) getSubCollectionItemListing(w http.ResponseWriter, r *htt
 func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Request) {
 	bf, err := h.BaseAlgoliaFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getCollectionListing.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -122,7 +124,7 @@ func (h *httpDelivery) getCollectionListing(w http.ResponseWriter, r *http.Reque
 func (h *httpDelivery) getItemListing(w http.ResponseWriter, r *http.Request) {
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getItemListing.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getItemListing.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -148,7 +150,7 @@ func (h *httpDelivery) getItemListing(w http.ResponseWriter, r *http.Request) {
 func (h *httpDelivery) getItemListingOnSale(w http.ResponseWriter, r *http.Request) {
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.Usecase.getItemListingOnSale.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.getItemListingOnSale.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
