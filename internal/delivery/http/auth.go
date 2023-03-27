@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 
 	"rederinghub.io/internal/delivery/http/request"
 )
@@ -26,31 +27,31 @@ func (h *httpDelivery) generateMessage(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.SelfValidate()
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.LogAny("generateMessage", zap.Any("reqBody", reqBody))
+	logger.AtLog.Logger.Info("generateMessage", zap.Any("reqBody", zap.Any("reqBody)", reqBody)))
 	message, err := h.Usecase.GenerateMessage(structure.GenerateMessage{
 		Address:    *reqBody.Address,
 		WalletType: reqBody.WalletType,
 	})
 
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("resp.message", message)
+	logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.GeneratedMessage{Message: *message}, "")
 }
 
@@ -69,19 +70,19 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.SelfValidate()
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Logger.Info("request.decoder", decoder)
+	logger.AtLog.Logger.Info("request.decoder", zap.Any("decoder", decoder))
 	verifyMessage := structure.VerifyMessage{
 		ETHSignature:     *reqBody.ETHSinature,
 		Signature:        *reqBody.Sinature,
@@ -93,9 +94,9 @@ func (h *httpDelivery) verifyMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	verified, err := h.Usecase.VerifyMessage(verifyMessage)
 
-	h.Logger.Info("verified", verified)
+	logger.AtLog.Logger.Info("verified", zap.Any("verified", verified))
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

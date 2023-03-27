@@ -24,7 +24,7 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	// decoder := json.NewDecoder(r.Body)
 	// err := decoder.Decode(&reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -32,22 +32,22 @@ func (h *httpDelivery) ethGetReceiveWalletAddress(w http.ResponseWriter, r *http
 	// reqUsecase := &structure.EthWalletAddressData{}
 	// err = copier.Copy(reqUsecase, reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
 	// ethWallet, err := h.Usecase.CreateETHWalletAddress(*reqUsecase)
 	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.CreateETHWalletAddress", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
-	// h.Logger.Info("ethWallet", ethWallet)
+	// logger.AtLog.Logger.Info("ethWallet", zap.Any("ethWallet", ethWallet))
 	// resp, err := h.EthWalletAddressToResp(ethWallet)
 	// if err != nil {
-	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -73,7 +73,7 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 	// userWalletAddr, ok := iWalletAddress.(string)
 	// if !ok {
 	// 	err := errors.New("Wallet address is incorect")
-	// 	h.Logger.Error("ctx.Value.Token", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -82,7 +82,7 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 	// decoder := json.NewDecoder(r.Body)
 	// err := decoder.Decode(&reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -90,21 +90,21 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 	// reqUsecase := &structure.EthWalletAddressData{}
 	// err = copier.Copy(reqUsecase, reqBody)
 	// if err != nil {
-	// 	h.Logger.Error("copier.Copy", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 	// ethWallet, err := h.Usecase.CreateWhitelistedETHWalletAddress(ctx, userWalletAddr, *reqUsecase)
 	// if err != nil {
-	// 	h.Logger.Error("h.Usecase.CreateETHWalletAddress", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("h.Usecase.CreateETHWalletAddress", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
 
-	// h.Logger.Info("ethWallet", ethWallet)
+	// logger.AtLog.Logger.Info("ethWallet", zap.Any("ethWallet", ethWallet))
 	// resp, err := h.EthWalletAddressToResp(ethWallet)
 	// if err != nil {
-	// 	h.Logger.Error(" h.proposalToResp", err.Error(), err)
+	// 	logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -131,7 +131,7 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.btcMint.Decode", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.btcMint.Decode", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -139,22 +139,22 @@ func (h *httpDelivery) ethGetReceiveWhitelistedWalletAddress(w http.ResponseWrit
 // 	reqUsecase := &structure.EthMintData{}
 // 	err = copier.Copy(reqUsecase, reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("copier.Copy", err.Error(), err)
+// 		logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
 
 // 	ethWallet, err := h.Usecase.ETHMint(*reqUsecase)
 // 	if err != nil {
-// 		h.Logger.Error("h.Usecase.CreateOrdBTCWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("h.Usecase.CreateOrdBTCWalletAddress", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
 
-// 	h.Logger.Info("ethWallet", ethWallet)
+// 	logger.AtLog.Logger.Info("ethWallet", zap.Any("ethWallet", ethWallet))
 // 	resp, err := h.EthToResp(ethWallet)
 // 	if err != nil {
-// 		h.Logger.Error(" h.proposalToResp", err.Error(), err)
+// 		logger.AtLog.Logger.Error(" h.proposalToResp", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}

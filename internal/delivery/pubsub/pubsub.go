@@ -38,7 +38,7 @@ func (h PubsubHandler) StartServer() {
 		panic(err)
 	}
 
-	h.log.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
+	logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
 	// Go channel which receives messages.
 	ch := pubsub.Channel()
 	for msg := range ch {
