@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"math/big"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -182,6 +184,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	// cal fee:
+	// todo: cal fee for minting on TC:
 	feeInfos, err := u.calMintFeeInfo(mintPrice.Int64(), p.MaxFileSize, int64(input.FeeRate), 0, 0)
 	if err != nil {
 		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
@@ -189,6 +192,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	}
 
 	fmt.Println("feeInfos: ", feeInfos)
+
+	walletAddress.IsMintTC = p.IsMintTC() // is mint on TC network
 
 	walletAddress.ProjectNetworkFee = int(feeInfos["btc"].NetworkFeeBigInt.Int64()) // btc value
 	walletAddress.ProjectMintPrice = int(feeInfos["btc"].MintPriceBigInt.Int64())   // btc value
@@ -2174,4 +2179,35 @@ func (u Usecase) GetBTCToETHRate() (float64, float64, error) {
 	value := fmt.Sprintf("%f|%f", btcPrice, ethPrice)
 	u.Cache.SetStringDataWithExpTime(key, value, 60)
 	return btcPrice, ethPrice, nil
+}
+
+func (u Usecase) ConvertImageToByteArrayToMintTC(imageURL string) ([][]byte, error) {
+	resp, err := http.Get(imageURL)
+	if err != nil {
+		fmt.Println("err1:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var imgData [][]byte
+
+	// split item:
+	buffer := make([]byte, 380000)
+	for {
+		n, err := io.ReadFull(resp.Body, buffer)
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			//read all image:
+			imgData = append(imgData, buffer[:n])
+			break
+		} else if err != nil {
+			fmt.Println("err2:", err)
+			return nil, err
+		}
+		imgData = append(imgData, buffer[:n])
+	}
+
+	fmt.Printf("len: %d\n", len(imgData))
+
+	return imgData, nil
+
 }

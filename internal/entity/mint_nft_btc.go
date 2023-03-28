@@ -139,6 +139,8 @@ type MintNftBtc struct {
 
 	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
 
+	IsMintTC bool `bson:"isMintTC"`
+
 	// for mint batch:
 	Quantity      int    `bson:"quantity"`
 	IsSubItem     bool   `bson:"isSubItem"`
