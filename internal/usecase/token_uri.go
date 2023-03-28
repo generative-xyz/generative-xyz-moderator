@@ -513,7 +513,7 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 		return nil, err
 	}
 
-	value, err := gNft.TokenGenerativeURI(nil, tokenID)
+	value, err := gNft.TokenURI(nil, tokenID)
 	if err != nil {
 		return nil, err
 	}
