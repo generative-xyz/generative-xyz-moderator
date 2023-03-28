@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"rederinghub.io/utils/contracts/bfs"
 	"strconv"
 	"strings"
 	"time"
@@ -342,6 +343,16 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			return
 		}
 
+		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
+			if strings.Index(*tokenUriData, "bfs://") > -1 {
+				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, "")
+			} else {
+				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
+				return
+			}
+		}
+
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 		data, err := helpers.Base64Decode(base64Str)
 		if err != nil {
@@ -499,6 +510,37 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	return dataObject, nil
+}
+
+func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address, gNft common.Address, seed string) (*string, error) {
+	bfsC, err := bfs.NewBfs(bfsContract, client)
+	if err != nil {
+		return nil, err
+	}
+	value, err := bfsC.Count(nil, gNft, seed)
+	if err != nil {
+		return nil, err
+	}
+
+	var bytesArr []byte
+	if value.Cmp(big.NewInt(0)) > 0 {
+		for i := int64(1); i <= value.Int64(); i++ {
+			bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, big.NewInt(i))
+			if err != nil {
+				return nil, err
+			}
+			bytesArr = append(bytesArr, bytes...)
+			if nextChunks.Int64() == -1 {
+				break
+			}
+		}
+	}
+
+	if len(bytesArr) > 0 {
+		result := "data:application/json;base64," + helpers.Base64Encode(bytesArr)
+		return &result, nil
+	}
+	return nil, errors.New("Invalid bfs data")
 }
 
 func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
