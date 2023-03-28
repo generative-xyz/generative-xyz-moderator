@@ -1643,7 +1643,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe := &entity.Projects{}
 	zipLink := zipPayload.ZipLink
 
+	spew.Dump("start", helpers.System())
+
 	defer func  ()  {
+		spew.Dump("end", helpers.System())
+
 		now := time.Now().UTC()
 		status := entity.UzipStatusSuccess
 		message := ""
@@ -1667,11 +1671,11 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			up.Status = status
 			up.Message = message
 			up.ReTries = up.ReTries + 1
-			updated, err := u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, up)
-			if err != nil {
-				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
-			}
-			logger.AtLog.Logger.Info("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Any("updated", updated))
+			// updated, err := u.Repo.UpdateProjectUnzip(zipPayload.ProjectID, up)
+			// if err != nil {
+			// 	logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
+			// }
+			// logger.AtLog.Logger.Info("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Any("updated", updated))
 
 		}else{
 			unzipLog := &entity.ProjectZipLinks{
@@ -1720,18 +1724,18 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	//spew.Dump(zipLink)
 	err = u.GCS.UnzipFile(zipLink)
 	if err != nil {
-		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("UnzipFile", zipLink), zap.String("projectID", pe.TokenID), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("UnzipFile", zipLink), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
 	}
 
 	unzipFoler := zipLink + "_unzip"
 	files, err := u.GCS.ReadFolder(unzipFoler)
 	if err != nil {
-		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
+		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("sysmonitor", helpers.System()) , zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1752,7 +1756,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 	//
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
@@ -1781,39 +1785,40 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
-	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
-	if err != nil {
-		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
-		return nil, err
-	}
 
-	ids, err1 := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
-		ProjectIds: []string{pe.ID.Hex()},
-		CreatedBy:  pe.CreatorAddrr,
-	})
-	if err1 != nil {
-		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.String("projectID", pe.TokenID), zap.Error(err1))
-	} else {
-		logger.AtLog.Logger.Info("CreateDAOProject success",
-			zap.String("project_id", pe.ID.Hex()),
-			zap.Strings("ids", ids),
-		)
-	}
+	// updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	// if err != nil {
+	// 	logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
+	// 	return nil, err
+	// }
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("projectID", pe.TokenID), zap.Int("images", len(images)))
-	go func() {
-		owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
-		if err != nil {
-			logger.AtLog.Error("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
-			return
-		}
-		if len(ids) > 0 {
-			u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
-		}
-		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
-	}()
+	// ids, err1 := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+	// 	ProjectIds: []string{pe.ID.Hex()},
+	// 	CreatedBy:  pe.CreatorAddrr,
+	// })
+	// if err1 != nil {
+	// 	logger.AtLog.Logger.Error("CreateDAOProject failed", zap.String("projectID", pe.TokenID), zap.Error(err1))
+	// } else {
+	// 	logger.AtLog.Logger.Info("CreateDAOProject success",
+	// 		zap.String("project_id", pe.ID.Hex()),
+	// 		zap.Strings("ids", ids),
+	// 	)
+	// }
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("updated", updated), zap.String("projectID", pe.TokenID))
+	// logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("zipPayload", zipPayload), zap.Any("updated", updated), zap.Any("projectID", pe.TokenID), zap.Int("images", len(images)))
+	// go func() {
+	// 	owner, err := u.Repo.FindUserByWalletAddress(pe.CreatorAddrr)
+	// 	if err != nil {
+	// 		logger.AtLog.Error("UnzipProjectFile.FindUserByWalletAddress failed", zap.Error(err))
+	// 		return
+	// 	}
+	// 	if len(ids) > 0 {
+	// 		u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
+	// 	}
+	// 	u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
+	// }()
+
+	// logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID),   zap.Any("sysmonitor", helpers.System()), zap.Any("updated", updated), zap.String("projectID", pe.TokenID))
 	return pe, nil
 }
 
