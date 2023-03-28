@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -40,7 +39,7 @@ func (r Repository) GetProjectUnzips() ([]entity.ProjectZipLinks, error) {
 	// f["status"] = entity.UzipStatusFail
 	// f["retries"] = bson.M{"$lte": 20}
 	// f["updated_at"] =  bson.M{ "$lte":  primitive.NewDateTimeFromTime(checkTime) }
-	f["tokenid"] = "1002898"
+	f["projectID"] = "1002898"
 	
 	cursor, err := r.DB.Collection(entity.ProjectZipLinks{}.TableName()).Find(context.TODO(), f, nil)
 	if err != nil {
