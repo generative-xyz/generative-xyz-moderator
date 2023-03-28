@@ -54,7 +54,7 @@ type NFTProjectProjectMintingSchedule struct {
 
 // GenerativeNftContractMetaData contains all meta data concerning the GenerativeNftContract contract.
 var GenerativeNftContractMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"OperatorNotAllowed\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"approved\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"ApprovalForAll\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"OPERATOR_FILTER_REGISTRY\",\"outputs\":[{\"internalType\":\"contractIOperatorFilterRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_nameCol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_paramsAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_project\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_projectAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_projectId\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"_maxSupply\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_limit\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_index\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_indexReserve\",\"type\":\"uint24\"},{\"internalType\":\"string\",\"name\":\"_creator\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_mintPrice\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_mintPriceAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"_initBlockTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_openingTime\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMintingSchedule\",\"name\":\"_mintingSchedule\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_royalty\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_projectDataContextAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_randomizer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_royalty\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdm\",\"type\":\"address\"}],\"name\":\"changeAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeDataContextAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeParamAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeRandomizerAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getApproved\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStatus\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_projectAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_projectId\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"_maxSupply\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_limit\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_index\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_indexReserve\",\"type\":\"uint24\"},{\"internalType\":\"string\",\"name\":\"_creator\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_mintPrice\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_mintPriceAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"_initBlockTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_openingTime\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMintingSchedule\",\"name\":\"_mintingSchedule\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"_reserves\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"_royalty\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMinting\",\"name\":\"project\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"admin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"paramsAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"randomizer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"projectDataContextAddr\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"disable\",\"type\":\"bool\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"isApprovedForAll\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"mint\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"ownerOf\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"reserveMint\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_salePrice\",\"type\":\"uint256\"}],\"name\":\"royaltyInfo\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"royaltyAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"setApprovalForAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enable\",\"type\":\"bool\"}],\"name\":\"setStatus\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"tokenGenerativeURI\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"tokenURI\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"updatePrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"OperatorNotAllowed\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"approved\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"ApprovalForAll\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"OPERATOR_FILTER_REGISTRY\",\"outputs\":[{\"internalType\":\"contractIOperatorFilterRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_nameCol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_paramsAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_project\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_projectAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_projectId\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"_maxSupply\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_limit\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_index\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_indexReserve\",\"type\":\"uint24\"},{\"internalType\":\"string\",\"name\":\"_creator\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_mintPrice\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_mintPriceAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"_initBlockTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_openingTime\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMintingSchedule\",\"name\":\"_mintingSchedule\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"_royalty\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_projectDataContextAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_randomizer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_royalty\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdm\",\"type\":\"address\"}],\"name\":\"changeAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeDataContextAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeParamAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddr\",\"type\":\"address\"}],\"name\":\"changeRandomizerAddr\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"getApproved\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getStatus\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"_projectAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_projectId\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"_maxSupply\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_limit\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_index\",\"type\":\"uint24\"},{\"internalType\":\"uint24\",\"name\":\"_indexReserve\",\"type\":\"uint24\"},{\"internalType\":\"string\",\"name\":\"_creator\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_mintPrice\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_mintPriceAddr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"_initBlockTime\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_openingTime\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMintingSchedule\",\"name\":\"_mintingSchedule\",\"type\":\"tuple\"},{\"internalType\":\"address[]\",\"name\":\"_reserves\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"_royalty\",\"type\":\"uint256\"}],\"internalType\":\"structNFTProject.ProjectMinting\",\"name\":\"project\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"admin\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"paramsAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"randomizer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"projectDataContextAddr\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"disable\",\"type\":\"bool\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"isApprovedForAll\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes[]\",\"name\":\"chunks\",\"type\":\"bytes[]\"}],\"name\":\"mint\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"ownerOf\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"projectAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"projectIndex\",\"outputs\":[{\"internalType\":\"uint24\",\"name\":\"\",\"type\":\"uint24\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes[]\",\"name\":\"chunks\",\"type\":\"bytes[]\"}],\"name\":\"reserveMint\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_tokenId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_salePrice\",\"type\":\"uint256\"}],\"name\":\"royaltyInfo\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"royaltyAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"safeTransferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"approved\",\"type\":\"bool\"}],\"name\":\"setApprovalForAll\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"enable\",\"type\":\"bool\"}],\"name\":\"setStatus\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"tokenURI\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"price\",\"type\":\"uint256\"}],\"name\":\"updatePrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // GenerativeNftContractABI is the input ABI used to generate the binding from.
@@ -763,6 +763,68 @@ func (_GenerativeNftContract *GenerativeNftContractCallerSession) Paused() (bool
 	return _GenerativeNftContract.Contract.Paused(&_GenerativeNftContract.CallOpts)
 }
 
+// ProjectAddress is a free data retrieval call binding the contract method 0x3cf96af1.
+//
+// Solidity: function projectAddress() view returns(address)
+func (_GenerativeNftContract *GenerativeNftContractCaller) ProjectAddress(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _GenerativeNftContract.contract.Call(opts, &out, "projectAddress")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// ProjectAddress is a free data retrieval call binding the contract method 0x3cf96af1.
+//
+// Solidity: function projectAddress() view returns(address)
+func (_GenerativeNftContract *GenerativeNftContractSession) ProjectAddress() (common.Address, error) {
+	return _GenerativeNftContract.Contract.ProjectAddress(&_GenerativeNftContract.CallOpts)
+}
+
+// ProjectAddress is a free data retrieval call binding the contract method 0x3cf96af1.
+//
+// Solidity: function projectAddress() view returns(address)
+func (_GenerativeNftContract *GenerativeNftContractCallerSession) ProjectAddress() (common.Address, error) {
+	return _GenerativeNftContract.Contract.ProjectAddress(&_GenerativeNftContract.CallOpts)
+}
+
+// ProjectIndex is a free data retrieval call binding the contract method 0x63184726.
+//
+// Solidity: function projectIndex() view returns(uint24)
+func (_GenerativeNftContract *GenerativeNftContractCaller) ProjectIndex(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _GenerativeNftContract.contract.Call(opts, &out, "projectIndex")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// ProjectIndex is a free data retrieval call binding the contract method 0x63184726.
+//
+// Solidity: function projectIndex() view returns(uint24)
+func (_GenerativeNftContract *GenerativeNftContractSession) ProjectIndex() (*big.Int, error) {
+	return _GenerativeNftContract.Contract.ProjectIndex(&_GenerativeNftContract.CallOpts)
+}
+
+// ProjectIndex is a free data retrieval call binding the contract method 0x63184726.
+//
+// Solidity: function projectIndex() view returns(uint24)
+func (_GenerativeNftContract *GenerativeNftContractCallerSession) ProjectIndex() (*big.Int, error) {
+	return _GenerativeNftContract.Contract.ProjectIndex(&_GenerativeNftContract.CallOpts)
+}
+
 // RoyaltyInfo is a free data retrieval call binding the contract method 0x2a55205a.
 //
 // Solidity: function royaltyInfo(uint256 _tokenId, uint256 _salePrice) view returns(address receiver, uint256 royaltyAmount)
@@ -868,37 +930,6 @@ func (_GenerativeNftContract *GenerativeNftContractSession) Symbol() (string, er
 // Solidity: function symbol() view returns(string)
 func (_GenerativeNftContract *GenerativeNftContractCallerSession) Symbol() (string, error) {
 	return _GenerativeNftContract.Contract.Symbol(&_GenerativeNftContract.CallOpts)
-}
-
-// TokenGenerativeURI is a free data retrieval call binding the contract method 0x10da88c5.
-//
-// Solidity: function tokenGenerativeURI(uint256 tokenId) view returns(string)
-func (_GenerativeNftContract *GenerativeNftContractCaller) TokenGenerativeURI(opts *bind.CallOpts, tokenId *big.Int) (string, error) {
-	var out []interface{}
-	err := _GenerativeNftContract.contract.Call(opts, &out, "tokenGenerativeURI", tokenId)
-
-	if err != nil {
-		return *new(string), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(string)).(*string)
-
-	return out0, err
-
-}
-
-// TokenGenerativeURI is a free data retrieval call binding the contract method 0x10da88c5.
-//
-// Solidity: function tokenGenerativeURI(uint256 tokenId) view returns(string)
-func (_GenerativeNftContract *GenerativeNftContractSession) TokenGenerativeURI(tokenId *big.Int) (string, error) {
-	return _GenerativeNftContract.Contract.TokenGenerativeURI(&_GenerativeNftContract.CallOpts, tokenId)
-}
-
-// TokenGenerativeURI is a free data retrieval call binding the contract method 0x10da88c5.
-//
-// Solidity: function tokenGenerativeURI(uint256 tokenId) view returns(string)
-func (_GenerativeNftContract *GenerativeNftContractCallerSession) TokenGenerativeURI(tokenId *big.Int) (string, error) {
-	return _GenerativeNftContract.Contract.TokenGenerativeURI(&_GenerativeNftContract.CallOpts, tokenId)
 }
 
 // TokenURI is a free data retrieval call binding the contract method 0xc87b56dd.
@@ -1058,25 +1089,25 @@ func (_GenerativeNftContract *GenerativeNftContractTransactorSession) Init(proje
 	return _GenerativeNftContract.Contract.Init(&_GenerativeNftContract.TransactOpts, project, admin, paramsAddr, randomizer, projectDataContextAddr, disable)
 }
 
-// Mint is a paid mutator transaction binding the contract method 0x1249c58b.
+// Mint is a paid mutator transaction binding the contract method 0x16c464ae.
 //
-// Solidity: function mint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractTransactor) Mint(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _GenerativeNftContract.contract.Transact(opts, "mint")
+// Solidity: function mint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractTransactor) Mint(opts *bind.TransactOpts, chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.contract.Transact(opts, "mint", chunks)
 }
 
-// Mint is a paid mutator transaction binding the contract method 0x1249c58b.
+// Mint is a paid mutator transaction binding the contract method 0x16c464ae.
 //
-// Solidity: function mint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractSession) Mint() (*types.Transaction, error) {
-	return _GenerativeNftContract.Contract.Mint(&_GenerativeNftContract.TransactOpts)
+// Solidity: function mint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractSession) Mint(chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.Contract.Mint(&_GenerativeNftContract.TransactOpts, chunks)
 }
 
-// Mint is a paid mutator transaction binding the contract method 0x1249c58b.
+// Mint is a paid mutator transaction binding the contract method 0x16c464ae.
 //
-// Solidity: function mint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractTransactorSession) Mint() (*types.Transaction, error) {
-	return _GenerativeNftContract.Contract.Mint(&_GenerativeNftContract.TransactOpts)
+// Solidity: function mint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractTransactorSession) Mint(chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.Contract.Mint(&_GenerativeNftContract.TransactOpts, chunks)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -1100,25 +1131,25 @@ func (_GenerativeNftContract *GenerativeNftContractTransactorSession) RenounceOw
 	return _GenerativeNftContract.Contract.RenounceOwnership(&_GenerativeNftContract.TransactOpts)
 }
 
-// ReserveMint is a paid mutator transaction binding the contract method 0x21c8d676.
+// ReserveMint is a paid mutator transaction binding the contract method 0x0423bf66.
 //
-// Solidity: function reserveMint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractTransactor) ReserveMint(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _GenerativeNftContract.contract.Transact(opts, "reserveMint")
+// Solidity: function reserveMint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractTransactor) ReserveMint(opts *bind.TransactOpts, chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.contract.Transact(opts, "reserveMint", chunks)
 }
 
-// ReserveMint is a paid mutator transaction binding the contract method 0x21c8d676.
+// ReserveMint is a paid mutator transaction binding the contract method 0x0423bf66.
 //
-// Solidity: function reserveMint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractSession) ReserveMint() (*types.Transaction, error) {
-	return _GenerativeNftContract.Contract.ReserveMint(&_GenerativeNftContract.TransactOpts)
+// Solidity: function reserveMint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractSession) ReserveMint(chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.Contract.ReserveMint(&_GenerativeNftContract.TransactOpts, chunks)
 }
 
-// ReserveMint is a paid mutator transaction binding the contract method 0x21c8d676.
+// ReserveMint is a paid mutator transaction binding the contract method 0x0423bf66.
 //
-// Solidity: function reserveMint() payable returns(uint256 tokenId)
-func (_GenerativeNftContract *GenerativeNftContractTransactorSession) ReserveMint() (*types.Transaction, error) {
-	return _GenerativeNftContract.Contract.ReserveMint(&_GenerativeNftContract.TransactOpts)
+// Solidity: function reserveMint(bytes[] chunks) payable returns(uint256 tokenId)
+func (_GenerativeNftContract *GenerativeNftContractTransactorSession) ReserveMint(chunks [][]byte) (*types.Transaction, error) {
+	return _GenerativeNftContract.Contract.ReserveMint(&_GenerativeNftContract.TransactOpts, chunks)
 }
 
 // SafeTransferFrom is a paid mutator transaction binding the contract method 0x42842e0e.
