@@ -113,6 +113,10 @@ type Projects struct {
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
 }
 
+func (p *Projects) IsMintTC() bool {
+	return p.TokenIDInt < 1000000
+}
+
 type ProjectsHaveMinted struct {
 	TokenID      string `bson:"tokenid" json:"tokenID"`
 	Name         string `bson:"name" json:"name"`
