@@ -44,10 +44,10 @@ type IGcstorage interface {
 
 type GcsUploadedObject struct {
 	Name     string `json:"name"`
-	FullName string	`json:"-"`
+	FullName string `json:"-"`
 	Path     string `json:"-"`
-	Minetype string  `json:"minetype"`
-	Size     int64 `json:"size"`
+	Minetype string `json:"minetype"`
+	Size     int64  `json:"size"`
 	FullPath string `json:"-"`
 }
 
@@ -155,12 +155,12 @@ func (g gcstorage) UnzipFile(object string) error {
 				go g.processUnzip(fileData, baseDir, outputBucket, &wg)
 			}
 			wg.Wait()
-			
-			logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)),  zap.String("outputBucket", outputBucket))
+
+			logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)), zap.String("outputBucket", outputBucket), zap.String("baseDir", baseDir), zap.String("object", object))
 			groups = make(map[string]*zip.File)
 		}
 	}
-
+	logger.AtLog.Logger.Info("UnzipFile complete", zap.String("baseDir", baseDir), zap.String("object", object))
 	if len(groups) > 0 {
 		var wg sync.WaitGroup
 		for _, fileData := range groups {
