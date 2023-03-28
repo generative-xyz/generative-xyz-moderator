@@ -148,7 +148,7 @@ func (g gcstorage) UnzipFile(object string) error {
 		}
 
 		groups[f.Name] = f
-		if len(groups) == 500 {
+		if len(groups) == 100 {
 			var wg sync.WaitGroup
 			for _, fileData := range groups {
 				wg.Add(1)
