@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -346,7 +347,12 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
 			if strings.Index(*tokenUriData, "bfs://") > -1 {
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, "")
+				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
+				if err != nil {
+					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+					return
+				}
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
 			} else {
 				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
 				return
@@ -541,6 +547,24 @@ func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address
 		return &result, nil
 	}
 	return nil, errors.New("Invalid bfs data")
+}
+
+func (u Usecase) getSeedFromTokenId(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		return nil, err
+	}
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
+	if !ok {
+		return nil, errors.New("cannot convert tokenID")
+	}
+	val, err := gNft.TokenIdToHash(nil, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	result := "0x" + hex.EncodeToString(val[:])
+	return &result, nil
 }
 
 func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
