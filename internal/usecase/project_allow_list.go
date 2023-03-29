@@ -68,6 +68,18 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	return pe, nil
 }
 
+func (u Usecase) CountingProjectAllowList(projectId string) (int64, int64, error) {
+	totalCount, err := u.Repo.GetProjectAllowListTotal(projectId)
+	if err != nil {
+		return 0, 0, err
+	}
+	publicCount, err := u.Repo.GetProjectAllowListTotalByTyppe(projectId, "public")
+	if err != nil {
+		return 0, 0, err
+	}
+	return publicCount, totalCount - publicCount, nil
+}
+
 func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
 	userAddress := strings.ToLower(*req.UserWalletAddress)
 	projectID := strings.ToLower(*req.ProjectID)

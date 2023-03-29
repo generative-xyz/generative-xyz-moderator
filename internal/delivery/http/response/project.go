@@ -13,8 +13,13 @@ type TraitStat struct {
 }
 
 type ExistedInAllowList struct {
-	Existed bool `json:"existed"`
+	Existed   bool   `json:"existed"`
 	AllowedBy string `json:"allowedBy"`
+}
+
+type CountingAllowList struct {
+	Public    int64 `json:"public"`
+	AllowList int64 `json:"allow_list"`
 }
 
 type ProjectResp struct {

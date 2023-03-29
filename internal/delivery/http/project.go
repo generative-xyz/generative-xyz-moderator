@@ -608,7 +608,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	}
 
 	profile, err := h.Usecase.UserProfileByWalletWithCache(input.CreatorAddrr)
-	if err == nil && profile != nil  {
+	if err == nil && profile != nil {
 		profileResp, err := h.profileToResp(profile)
 		if err == nil {
 			resp.CreatorProfile = *profileResp
@@ -1157,4 +1157,16 @@ func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Reques
 		Existed:   existed,
 		AllowedBy: allowedBy,
 	}, "")
+}
+
+func (h *httpDelivery) getCountingAllowList(w http.ResponseWriter, r *http.Request) {
+	public, al, err := h.Usecase.CountingProjectAllowList(r.URL.Query().Get("projectId"))
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	} else {
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.CountingAllowList{
+			Public:    public,
+			AllowList: al,
+		}, "")
+	}
 }
