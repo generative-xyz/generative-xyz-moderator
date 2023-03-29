@@ -42,6 +42,7 @@ var conf *config.Config
 var logger _logger.Ilogger
 var mongoConnection connections.IConnection
 var ethClient *blockchain.Blockchain
+var tcClient *blockchain.TcNetwork
 
 func init() {
 	c, err := config.NewConfig()
@@ -67,6 +68,12 @@ func init() {
 	ethClient, err = blockchain.NewBlockchain(c.BlockchainConfig)
 	if err != nil {
 		log.Println("Cannot connect to eth client ", err)
+		panic(err)
+	}
+	
+	tcClient, err = blockchain.NewTcNetwork(c.BlockchainConfig)
+	if err != nil {
+		log.Println("Cannot connect to tc client ", err)
 		panic(err)
 	}
 
@@ -143,6 +150,7 @@ func startServer() {
 		MoralisNFT:          *moralis,
 		CovalentNFT:         *covalent,
 		Blockchain:          *ethClient,
+		TcNetwotkchain:      *tcClient,
 		Slack:               *slack,
 		DiscordClient:       discordclient.NewCLient(),
 		Pubsub:              rPubsub,

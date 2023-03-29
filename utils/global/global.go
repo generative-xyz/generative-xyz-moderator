@@ -35,6 +35,7 @@ type Global struct {
 	OrdService          *ord_service.BtcOrd
 	OrdServiceDeveloper *ord_service.BtcOrd
 	Blockchain          blockchain.Blockchain
+	TcNetwotkchain      blockchain.TcNetwork
 	Slack               slack.Slack
 	DiscordClient       *discordclient.Client
 	DelegateService     *delegate.Service
