@@ -6,7 +6,9 @@ type ReportProjectReq struct {
 
 type CreateETHProjectReq struct {
 	ContractAddress string   `json:"contractAddress"`
+	CreatorAddrr    string   `json:"creatorAddrr"`
 	TokenID         string   `json:"tokenID"`
+	ZipLink         *string   `json:"zipLink"`
 	Tags            []string `json:"tags"`
 	Categories      []string `json:"categories"`
 }
