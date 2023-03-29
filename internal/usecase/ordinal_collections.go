@@ -1,10 +1,16 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -171,5 +177,109 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		}
 	}
 
+	return nil
+}
+
+func (h Usecase) syncCollection(collectionFoldersPath string, source string) error {
+	h.Logger.LogAny("syncCollection.start", zap.String("collectionFoldersPath", collectionFoldersPath), zap.String("source", source))
+	collectionMetaFilePath := fmt.Sprintf("%s/meta.json", collectionFoldersPath)
+	collectionInscriptionFilePath := fmt.Sprintf("%s/inscriptions.json", collectionFoldersPath)
+	metaJsonFile, err := os.Open(collectionMetaFilePath)
+	if err != nil {
+		return err
+	}
+	defer metaJsonFile.Close()
+
+	inscrJsonFile, err := os.Open(collectionInscriptionFilePath)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer inscrJsonFile.Close()
+
+	var meta entity.CollectionMeta
+	var inscriptions []entity.CollectionInscription
+
+	byteValue, _ := ioutil.ReadAll(metaJsonFile)
+	json.Unmarshal(byteValue, &meta)
+	byteValue, _ = ioutil.ReadAll(inscrJsonFile)
+	json.Unmarshal(byteValue, &inscriptions)
+
+	meta.Source = source
+	meta.WalletAddress = strings.ToLower(meta.WalletAddress)
+
+	_, err = h.Repo.FindCollectionMetaByInscriptionIcon(meta.InscriptionIcon)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			h.Repo.InsertCollectionMeta(&meta)
+		} else {
+			return err
+		}
+	}
+
+	insertedInscriptions, err := h.Repo.FindCollectionInscriptionByInscriptionIcon(meta.InscriptionIcon)
+	if err != nil {
+		return err
+	}
+	insertedIds := map[string]bool{}
+	for _, inscription := range insertedInscriptions {
+		insertedIds[inscription.ID] = true
+	}
+
+	processed := 0
+	for _, inscription := range inscriptions {
+		if insertedIds[inscription.ID] {
+			continue
+		}
+		processed++
+		inscription.CollectionInscriptionIcon = meta.InscriptionIcon
+		inscription.Source = source
+		h.Repo.InsertCollectionInscription(&inscription)
+
+		if processed%10 == 0 {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	fmt.Printf("Done for collection %s \n", meta.Name)
+
+	return nil
+}
+
+func (h Usecase) crawlOrdinalCollection(source string) error {
+	h.Logger.LogAny("crawlOrdinalCollection.start", zap.String("source", source))
+	uuid := uuid.New().String()
+	folder_path := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
+
+	_, err := git.PlainClone(folder_path, false, &git.CloneOptions{
+		URL:      source,
+		Progress: os.Stdout,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	collectionFoldersPath := fmt.Sprintf("%s/collections", folder_path)
+	collectionFolders, err := ioutil.ReadDir(collectionFoldersPath)
+	if err != nil {
+		return err
+	}
+	for _, f := range collectionFolders {
+		h.syncCollection(fmt.Sprintf("%s/%s", collectionFoldersPath, f.Name()), source)
+	}
+	return nil
+}
+
+func (u Usecase) JobCrawlGenerativeOrdinalCollection() error {
+	source := "https://github.com/generative-xyz/ordinals-collections.git"
+	err := u.crawlOrdinalCollection(source)
+	if err != nil {
+		u.Logger.ErrorAny(
+			"JobCrawlGenerativeOrdinalCollection.crawlOrdinalCollection",
+			zap.Error(err),
+		)
+	}
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
@@ -32,6 +33,7 @@ func NewScronOrdinalCollectionHandler(global *global.Global, uc usecase.Usecase)
 }
 
 func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath string, source string) error {
+	h.Logger.LogAny("syncCollection.start", zap.String("collectionFoldersPath", collectionFoldersPath), zap.String("source", source))
 	collectionMetaFilePath := fmt.Sprintf("%s/meta.json", collectionFoldersPath)
 	collectionInscriptionFilePath := fmt.Sprintf("%s/inscriptions.json", collectionFoldersPath)
 	metaJsonFile, err := os.Open(collectionMetaFilePath)
@@ -98,6 +100,7 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 }
 
 func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection(source string) error {
+	h.Logger.LogAny("crawlOrdinalCollection.start", zap.String("source", source))
 	uuid := uuid.New().String()
 	folder_path := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
 
@@ -156,5 +159,4 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 			time.Sleep(1 * time.Minute)
 		}
 	}()
-
 }
