@@ -20,7 +20,7 @@ import (
 )
 
 type HttpTxConsumer struct {
-	Blockchain                blockchain.Blockchain
+	Blockchain                blockchain.TcNetwork
 	DefaultLastProcessedBlock int64
 	CronJobPeriod             int32
 	BatchLogSize              int32
@@ -43,7 +43,7 @@ func NewHttpTxConsumer(global *global.Global, uc usecase.Usecase, cfg config.Con
 	}
 	txConsumer.Cache = global.Cache
 	txConsumer.Logger = global.Logger
-	txConsumer.Blockchain = global.Blockchain
+	txConsumer.Blockchain = global.TcNetwotkchain
 	txConsumer.RedisKey = "tx-consumer"
 	txConsumer.Usecase = uc
 	txConsumer.Config = &cfg
