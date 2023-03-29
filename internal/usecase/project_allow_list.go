@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -56,15 +55,15 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	}
 
 	//SLACK_ALLOW_LIST_CHANNEL
-	go func(u Usecase, user entity.Users, p entity.Projects, allowBy entity.AllowedByType) {
-		totalCount, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
-		publicCount, _ := u.Repo.GetProjectAllowListTotalByTyppe(p.TokenID, "public")
-		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"),
-			"",
-			"",
-			fmt.Sprintf("%s registered to Perceptrons as %s PUBLIC: %d AL: %d",
-				helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), allowedBy, publicCount, totalCount-publicCount))
-	}(u, *user, *p, allowedBy)
+	// go func(u Usecase, user entity.Users, p entity.Projects, allowBy entity.AllowedByType) {
+	// 	totalCount, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
+	// 	publicCount, _ := u.Repo.GetProjectAllowListTotalByTyppe(p.TokenID, "public")
+	// 	u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"),
+	// 		"",
+	// 		"",
+	// 		fmt.Sprintf("%s registered to Perceptrons as %s PUBLIC: %d AL: %d",
+	// 			helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), allowedBy, publicCount, totalCount-publicCount))
+	// }(u, *user, *p, allowedBy)
 	return pe, nil
 }
 
