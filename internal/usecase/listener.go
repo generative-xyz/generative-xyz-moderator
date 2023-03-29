@@ -16,23 +16,23 @@ import (
 
 type projectChan struct {
 	Data *entity.Projects
-	Err error
+	Err  error
 }
 
 type projectDetailChan struct {
 	Data *structure.ProjectDetail
-	Err error
+	Err  error
 }
 
 type projectStatChan struct {
-	Data *entity.ProjectStat
+	Data      *entity.ProjectStat
 	DataTrait []entity.TraitStat
-	Err error
+	Err       error
 }
 
-func (u Usecase) ResolveMarketplaceListTokenEvent( chainLog  types.Log) error {
+func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -44,7 +44,6 @@ func (u Usecase) ResolveMarketplaceListTokenEvent( chainLog  types.Log) error {
 		return err
 	}
 
-	
 	u.Logger.Info("resolved-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.ListToken(event, blocknumber)
@@ -56,9 +55,9 @@ func (u Usecase) ResolveMarketplaceListTokenEvent( chainLog  types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplacePurchaseTokenEvent( chainLog types.Log) error {
+func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -68,7 +67,6 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent( chainLog types.Log) error
 		return err
 	}
 
-	
 	u.Logger.Info("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.PurchaseToken(event)
@@ -80,9 +78,9 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent( chainLog types.Log) error
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceMakeOffer( chainLog types.Log) error {
+func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -94,7 +92,6 @@ func (u Usecase) ResolveMarketplaceMakeOffer( chainLog types.Log) error {
 		return err
 	}
 
-	
 	u.Logger.Info("resolved-make-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
 
 	err = u.MakeOffer(event, blocknumber)
@@ -106,9 +103,9 @@ func (u Usecase) ResolveMarketplaceMakeOffer( chainLog types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceAcceptOfferEvent( chainLog types.Log) error {
+func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -119,8 +116,8 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent( chainLog types.Log) error {
 	}
 
 	u.Logger.Info("resolved-purchase-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	
-err = u.AcceptMakeOffer(event)
+
+	err = u.AcceptMakeOffer(event)
 
 	if err != nil {
 		u.Logger.Error("fail when resolve accept offer event", "", err)
@@ -129,9 +126,9 @@ err = u.AcceptMakeOffer(event)
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelListing( chainLog types.Log) error {
+func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -142,7 +139,7 @@ func (u Usecase) ResolveMarketplaceCancelListing( chainLog types.Log) error {
 	}
 
 	u.Logger.Info("resolved-cancel-listing-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	
+
 	err = u.CancelListing(event)
 
 	if err != nil {
@@ -152,9 +149,9 @@ func (u Usecase) ResolveMarketplaceCancelListing( chainLog types.Log) error {
 	return nil
 }
 
-func (u Usecase) ResolveMarketplaceCancelOffer( chainLog types.Log) error {
+func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
-	if  err != nil {
+	if err != nil {
 		u.Logger.Error("cannot init marketplace contract", "", err)
 		return err
 	}
@@ -165,7 +162,7 @@ func (u Usecase) ResolveMarketplaceCancelOffer( chainLog types.Log) error {
 	}
 
 	u.Logger.Info("resolved-cancel-offer-event", strings.ToLower(fmt.Sprintf("%x", event.OfferingId)))
-	
+
 	err = u.CancelOffer(event)
 
 	if err != nil {
@@ -179,35 +176,34 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
 	topics := chainLog.Topics
 
-	tokenIDStr :=  helpers.HexaNumberToInteger(topics[3].String())
+	tokenIDStr := helpers.HexaNumberToInteger(topics[3].String())
 	tokenID, _ := strconv.Atoi(tokenIDStr)
-	tokenIDStr = fmt.Sprintf("%d",tokenID)
-	contractAddr := strings.ToLower(chainLog.Address.String()) 
+	tokenIDStr = fmt.Sprintf("%d", tokenID)
+	contractAddr := strings.ToLower(chainLog.Address.String())
 
-	u.UpdateProjectFromChain(contractAddr,tokenIDStr, txnHash)
+	u.UpdateProjectFromChain(contractAddr, tokenIDStr, txnHash)
 }
 
-func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string, txnHash string) (*entity.Projects, error) {
+func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, txnHash string) (*entity.Projects, error) {
 	var err error
 	project := &entity.Projects{}
 
-	
-	defer func () {
+	defer func() {
 		if err != nil {
-			logger.AtLog.Logger.Error("UpdateProjectFromChain", zap.String("contractAddr", contractAddr),  zap.String("txnHash", txnHash), zap.Error(err) )
-		}else{
-			logger.AtLog.Logger.Info("UpdateProjectFromChain", zap.String("contractAddr", contractAddr),  zap.String("txnHash", txnHash), zap.String("projectID", project.TokenID))
+			logger.AtLog.Logger.Error("UpdateProjectFromChain", zap.String("contractAddr", contractAddr), zap.String("txnHash", txnHash), zap.Error(err))
+		} else {
+			logger.AtLog.Logger.Info("UpdateProjectFromChain", zap.String("contractAddr", contractAddr), zap.String("txnHash", txnHash), zap.String("projectID", project.TokenID))
 		}
 	}()
 
 	project, err = u.Repo.FindProjectByTxHash(txnHash)
-	if err != nil { 
+	if err != nil {
 		return nil, err
 	}
 
 	if project.TokenID == "" {
 		tokenIDInt, err := strconv.Atoi(tokenIDStr)
-		if err != nil { 
+		if err != nil {
 			return nil, err
 		}
 
@@ -215,7 +211,75 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 		project.GenNFTAddr = tokenIDStr
 		project.TokenIDInt = int64(tokenIDInt)
 	}
-		
+
+	projectDetail, err := u.getProjectDetailFromChainWithoutCache(structure.GetProjectDetailMessageReq{
+		ContractAddress: contractAddr,
+		ProjectID:       tokenIDStr,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	project.IsSynced = true
+	project.Name = projectDetail.ProjectDetail.Name
+	project.CreatorName = projectDetail.ProjectDetail.Creator
+	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
+	project.Description = projectDetail.ProjectDetail.Desc
+	project.Scripts = projectDetail.ProjectDetail.Scripts
+	project.ThirdPartyScripts = projectDetail.ProjectDetail.ScriptType
+	project.Styles = projectDetail.ProjectDetail.Styles
+	project.GenNFTAddr = strings.ToLower(projectDetail.ProjectDetail.GenNFTAddr.String())
+	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
+	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
+	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
+	project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
+	project.License = projectDetail.ProjectDetail.License
+	project.Status = projectDetail.Status
+	project.SocialWeb = projectDetail.ProjectDetail.Social.Web
+	project.SocialTwitter = projectDetail.ProjectDetail.Social.Twitter
+	project.SocialDiscord = projectDetail.ProjectDetail.Social.Discord
+	project.SocialMedium = projectDetail.ProjectDetail.Social.Medium
+	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
+	project.Thumbnail = projectDetail.ProjectDetail.Image
+	project.NftTokenUri = projectDetail.NftTokenUri
+	project.Royalty = int(projectDetail.Royalty.Data.Int64())
+	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+	for _, reserve := range projectDetail.ProjectDetail.Reserves {
+		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()))
+	}
+
+	if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
+		project.MintingInfo = entity.ProjectMintingInfo{
+			Index:        projectDetail.NftProjectDetail.Index.Int64(),
+			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
+		}
+	}
+
+	projectStat, traitStat, err := u.GetUpdatedProjectStats(structure.GetProjectReq{
+		ContractAddr: contractAddr,
+		TokenID:      tokenIDStr,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	project.Stats = *projectStat
+	project.TraitsStat = traitStat
+
+	user, err := u.GetUserProfileByWalletAddress(strings.ToLower(project.CreatorAddrr))
+	if err != nil {
+		return nil, err
+	}
+
+	project.CreatorProfile = *user
+
+	_, err = u.Repo.UpdateProject(project.UUID, project)
+	if err != nil {
+		return nil, err
+	}
+
 	// go func( pDChan chan projectDetailChan, contractAddr string, tokenIDStr string) {
 	// 	projectDetail := &structure.ProjectDetail{}
 	// 	var err error
@@ -234,7 +298,6 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 	// 	if err != nil {
 	// 		return
 	// 	}
-	
 
 	// }(pDChan, contractAddr, tokenIDStr)
 
@@ -264,7 +327,7 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 	// projectDetailFChan := <- pDChan
 	// projectStatFChan := <- pSChan
 
-	// err = projectFChan.Err 
+	// err = projectFChan.Err
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -303,50 +366,13 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 	// 	//return nil, err
 	// }else{
 
-	// 	projectDetail := projectDetailFChan.Data
-	// 	//u.Logger.Info("projectDetail", projectDetail)
-	// 	project.IsSynced = true
-	// 	project.Name = projectDetail.ProjectDetail.Name
-	// 	project.CreatorName = projectDetail.ProjectDetail.Creator
-	// 	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
-	// 	project.Description = projectDetail.ProjectDetail.Desc
-	// 	project.Scripts= projectDetail.ProjectDetail.Scripts
-	// 	project.ThirdPartyScripts= projectDetail.ProjectDetail.ScriptType
-	// 	project.Styles= projectDetail.ProjectDetail.Styles
-	// 	project.GenNFTAddr= strings.ToLower( projectDetail.ProjectDetail.GenNFTAddr.String())
-	// 	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
-	// 	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
-	// 	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
-	// 	project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
-	// 	project.License = projectDetail.ProjectDetail.License
-	// 	project.Status = projectDetail.Status
-	// 	project.SocialWeb = projectDetail.ProjectDetail.Social.Web
-	// 	project.SocialTwitter = projectDetail.ProjectDetail.Social.Twitter
-	// 	project.SocialDiscord = projectDetail.ProjectDetail.Social.Discord
-	// 	project.SocialMedium = projectDetail.ProjectDetail.Social.Medium
-	// 	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
-	// 	project.Thumbnail = projectDetail.ProjectDetail.Image
-	// 	project.NftTokenUri = projectDetail.NftTokenUri
-	// 	project.Royalty = int(projectDetail.Royalty.Data.Int64())
-	// 	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
-	// 	for _, reserve := range projectDetail.ProjectDetail.Reserves {
-	// 		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()) )
-	// 	}
-
-	// 	if projectDetail.NftProjectDetail.Index != nil && projectDetail.NftProjectDetail.IndexReserve != nil {
-	// 		project.MintingInfo = entity.ProjectMintingInfo{
-	// 			Index: projectDetail.NftProjectDetail.Index.Int64(),
-	// 			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
-	// 		}
-	// 	}
-
 	// 	if project.Priority ==  nil {
 	// 		priority := 0
 	// 		project.Priority =  &priority
 	// 	}
 	// }
 
-	// // get minted time 
+	// // get minted time
 	// if project.BlockNumberMinted == nil || project.MintedTime == nil {
 	// 	mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
 	// 	go func(mintedTimeChan chan structure.NftMintedTimeChan) {
@@ -358,15 +384,15 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 	// 				Err: err,
 	// 			}
 	// 		}()
-	
+
 	// 		mintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
 	// 			ContractAddress: project.ContractAddress,
 	// 			TokenID: project.TokenID,
 	// 		})
 	// 	}(mintedTimeChan)
 	// 	mintedTimeFChan := <-mintedTimeChan
-	// 	if mintedTimeFChan.Err != nil {	
-	// 		err = 
+	// 	if mintedTimeFChan.Err != nil {
+	// 		err =
 	// 	} else {
 	// 		project.BlockNumberMinted = mintedTimeFChan.NftMintedTime.BlockNumberMinted
 	// 		project.MintedTime = mintedTimeFChan.NftMintedTime.MintedTime
@@ -396,7 +422,7 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 	// }
 	// u.Logger.Info("projectUUID", project.UUID)
 	// u.Logger.Info("updated",updated)
-	return  project, nil
+	return project, nil
 }
 
 // func (u Usecase) GetProjectsFromChain() error {
@@ -408,7 +434,7 @@ func (u Usecase) UpdateProjectFromChain( contractAddr string, tokenIDStr string,
 // 	}
 
 // 	u.Logger.Info("contractAddress", contractAddress)
-	
+
 // 	for _, mProject := range mProjects.Result {
 // 		_, err := u.UpdateProjectFromChain(contractAddress, mProject.TokenID)
 // 		if err != nil {
