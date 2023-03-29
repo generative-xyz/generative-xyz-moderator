@@ -1160,7 +1160,9 @@ func (h *httpDelivery) getProjectAllowList(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *httpDelivery) getCountingAllowList(w http.ResponseWriter, r *http.Request) {
-	public, al, err := h.Usecase.CountingProjectAllowList(r.URL.Query().Get("projectId"))
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	public, al, err := h.Usecase.CountingProjectAllowList(projectID)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	} else {
