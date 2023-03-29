@@ -19,8 +19,10 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
@@ -42,10 +44,10 @@ type IGcstorage interface {
 
 type GcsUploadedObject struct {
 	Name     string `json:"name"`
-	FullName string	`json:"-"`
+	FullName string `json:"-"`
 	Path     string `json:"-"`
-	Minetype string  `json:"minetype"`
-	Size     int64 `json:"size"`
+	Minetype string `json:"minetype"`
+	Size     int64  `json:"size"`
 	FullPath string `json:"-"`
 }
 
@@ -88,11 +90,11 @@ func NewDataGCStorage(config config.Config) (*gcstorage, error) {
 
 func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket string, waitgroup *sync.WaitGroup) error {
 	defer waitgroup.Done()
-	fmt.Printf("processing unzip for file %s %s to %s", baseDir, f.Name, outputBucket)
+	//logger.AtLog.Logger.Info("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.String("name", f.Name))
 	buffer := make([]byte, 32*1024)
 	r, err := f.Open()
 	if err != nil {
-		fmt.Println(baseDir, outputBucket, err)
+		logger.AtLog.Logger.Error("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.Error(err))
 		return fmt.Errorf("Open: %v", err)
 	}
 	defer r.Close()
@@ -103,7 +105,7 @@ func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket strin
 
 	_, err = io.CopyBuffer(w, r, buffer)
 	if err != nil {
-		fmt.Println(baseDir, outputBucket, err)
+		logger.AtLog.Logger.Error("processUnzip", zap.String("baseDir", baseDir), zap.String("outputBucket", outputBucket), zap.Error(err))
 		return fmt.Errorf("io.Copy: %v", err)
 	}
 
@@ -113,16 +115,19 @@ func (g *gcstorage) processUnzip(f *zip.File, baseDir string, outputBucket strin
 func (g gcstorage) UnzipFile(object string) error {
 	r, err := g.client.Bucket(os.Getenv("GCS_BUCKET")).Object(object).NewReader(g.ctx)
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 	br := bytes.NewReader(b)
 
 	zr, err := zip.NewReader(br, int64(len(b)))
 	if err != nil {
+		logger.AtLog.Logger.Error("UnzipFile", zap.String("object", object), zap.Error(err))
 		return err
 	}
 
@@ -143,18 +148,19 @@ func (g gcstorage) UnzipFile(object string) error {
 		}
 
 		groups[f.Name] = f
-		if len(groups) == 500 {
+		if len(groups) == 100 {
 			var wg sync.WaitGroup
 			for _, fileData := range groups {
 				wg.Add(1)
 				go g.processUnzip(fileData, baseDir, outputBucket, &wg)
 			}
 			wg.Wait()
-			fmt.Println("process", len(groups), " files for ", outputBucket)
+
+			logger.AtLog.Logger.Info("UnzipFile", zap.Int("len(groups)", len(groups)), zap.String("outputBucket", outputBucket), zap.String("baseDir", baseDir), zap.String("object", object))
 			groups = make(map[string]*zip.File)
 		}
 	}
-
+	logger.AtLog.Logger.Info("UnzipFile complete", zap.String("baseDir", baseDir), zap.String("object", object))
 	if len(groups) > 0 {
 		var wg sync.WaitGroup
 		for _, fileData := range groups {

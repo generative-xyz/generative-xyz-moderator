@@ -10,6 +10,7 @@ import (
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
+	"rederinghub.io/utils/logger"
 	_logger "rederinghub.io/utils/logger"
 	_redis "rederinghub.io/utils/redis"
 
@@ -56,7 +57,7 @@ func NewHandler(global *global.Global, uc usecase.Usecase) (*httpDelivery, error
 }
 
 func (h *httpDelivery) StartServer() {
-	h.Logger.Info("httpDelivery.StartServer - Starting http-server")
+	logger.AtLog.Info("httpDelivery.StartServer - Starting http-server")
 	h.registerRoutes()
 	h.Handler.NotFoundHandler = h.Handler.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 	credentials := handlers.AllowCredentials()
@@ -74,9 +75,9 @@ func (h *httpDelivery) StartServer() {
 		ReadTimeout:  time.Duration(timeOut) * time.Second,
 	}
 
-	h.Logger.Info(fmt.Sprintf("Server is listening at port %s ...", h.Config.ServicePort))
+	logger.AtLog.Info(fmt.Sprintf("Server is listening at port %s ...", h.Config.ServicePort))
 	if err := srv.ListenAndServe(); err != nil {
-		h.Logger.Error("httpDelivery.StartServer - Can not start http server", err)
+		logger.AtLog.Error("httpDelivery.StartServer - Can not start http server", err)
 	}
 
 }

@@ -89,7 +89,7 @@ type MintNftBtc struct {
 
 	TxReceived   string `bson:"tx_received"` // tx received fund from user.
 	TxMintNft    string `bson:"tx_mint_nft"`
-	TxSendNft    string `bson:"tx_send_nft"`
+	TxSendNft    string `bson:"tx_send_nft"` // now user for tx mint on tc to btc
 	TxSendMaster string `bson:"tx_send_master"`
 	TxRefund     string `bson:"tx_refund"`
 
@@ -139,7 +139,9 @@ type MintNftBtc struct {
 
 	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
 
-	IsMintTC bool `bson:"isMintTC"`
+	IsCalledMintTc bool `bson:"isCalledMintTc"`
+
+	Platform string `bson:"platform"` // ordinal/tc
 
 	// for mint batch:
 	Quantity      int    `bson:"quantity"`

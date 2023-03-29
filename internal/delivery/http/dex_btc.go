@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
+	"rederinghub.io/utils/logger"
 )
 
 func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +22,7 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -35,7 +37,7 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 		}
 		userInfo, err := h.Usecase.UserProfile(userID)
 		if err != nil {
-			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -48,7 +50,7 @@ func (h *httpDelivery) dexBTCListing(w http.ResponseWriter, r *http.Request) {
 
 	listing, err := h.Usecase.DexBTCListing(address, reqBody.RawPSBT, reqBody.InscriptionID, reqBody.SplitTx)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -65,7 +67,7 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -81,7 +83,7 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 		}
 		userInfo, err := h.Usecase.UserProfile(userID)
 		if err != nil {
-			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -95,7 +97,7 @@ func (h *httpDelivery) cancelBTCListing(w http.ResponseWriter, r *http.Request) 
 	//find order by inscription_id and user_address
 	err = h.Usecase.CancelDexBTCListing(reqBody.Txhash, address, reqBody.InscriptionID, reqBody.OrderID)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -123,7 +125,7 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 	} else {
 		orderInfo, err = h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(inscription)
 		if err != nil {
-			h.Logger.Error("httpDelivery retrieveListingOrderByInscription GetDexBTCListingOrderPendingByInscriptionID", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery retrieveListingOrderByInscription GetDexBTCListingOrderPendingByInscriptionID", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -131,7 +133,7 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 
 	psbt, err := btc.ParsePSBTFromBase64(orderInfo.RawPSBT)
 	if err != nil {
-		h.Logger.Error("httpDelivery ParsePSBTFromBase64", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery ParsePSBTFromBase64", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -143,11 +145,11 @@ func (h *httpDelivery) retrieveBTCListingOrderInfo(w http.ResponseWriter, r *htt
 
 	btcRate, ethRate, err := h.Usecase.GetBTCToETHRate()
 	if err != nil {
-		h.Logger.Error("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
+		logger.AtLog.Logger.Error("GenBuyETHOrder GetBTCToETHRate", zap.Error(err))
 	}
 	amountETH, _, _, err := h.Usecase.ConvertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 	if err != nil {
-		h.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+		logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 	}
 
 	result := response.DexBTCListingOrderInfo{
@@ -167,7 +169,7 @@ func (h *httpDelivery) retrieveBTCListingOrdersInfo(w http.ResponseWriter, r *ht
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -214,7 +216,7 @@ func (h *httpDelivery) historyBTCListing(w http.ResponseWriter, r *http.Request)
 		}
 		userInfo, err := h.Usecase.UserProfile(userID)
 		if err != nil {
-			h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -289,7 +291,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListingFee.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListingFee.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -356,7 +358,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -371,7 +373,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 // 	}
 // 	userInfo, err := h.Usecase.UserProfile(userID)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -379,7 +381,7 @@ func (h *httpDelivery) dexBTCListingFee(w http.ResponseWriter, r *http.Request) 
 // 	//find order by inscription_id and user_address
 // 	err = h.Usecase.CancelDexBTCListing(reqBody.Txhash, address, reqBody.InscriptionID, reqBody.OrderID)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Usecase.DexBTCListing", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -391,7 +393,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -415,7 +417,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 	}
 	buyOrderID, tempETHAddress, amountETH, expiredAt, originalETH, feeETH, orderListInvalid, hasRoyalty, err := h.Usecase.GenBuyETHOrder(reqBody.IsEstimate, userID, reqBody.OrderID, reqBody.OrderIDList, reqBody.FeeRate, reqBody.ReceiveAddress, reqBody.RefundAddress)
 	if err != nil {
-		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.GenBuyETHOrder", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -439,7 +441,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -453,7 +455,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 // 	}
 // 	err = h.Usecase.UpdateBuyETHOrderTx(reqBody.OrderID, userID, reqBody.Txhash)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.genDexBTCBuyETHOrder.Usecase.UpdateBuyETHOrderTx", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -465,7 +467,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 // 	decoder := json.NewDecoder(r.Body)
 // 	err := decoder.Decode(&reqBody)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.dexBTCListing.Decode", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.dexBTCListing.Decode", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -480,7 +482,7 @@ func (h *httpDelivery) genDexBTCBuyETHOrder(w http.ResponseWriter, r *http.Reque
 
 // 	err = h.Usecase.DexBTCBuyWithETH(userID, reqBody.OrderID, reqBody.Txhash, reqBody.FeeRate)
 // 	if err != nil {
-// 		h.Logger.Error("httpDelivery.submitDexBTCBuyETHTx.DexBTCBuyWithETH", err.Error(), err)
+// 		logger.AtLog.Logger.Error("httpDelivery.submitDexBTCBuyETHTx.DexBTCBuyWithETH", zap.Error(err))
 // 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 // 		return
 // 	}
@@ -509,7 +511,7 @@ func (h *httpDelivery) dexBTCBuyETHHistory(w http.ResponseWriter, r *http.Reques
 
 	list, err := h.Usecase.Repo.GetDexBTCBuyETHOrderByUserID(userID, int64(limit), int64(offset))
 	if err != nil {
-		h.Logger.Error("httpDelivery dexBTCBuyETHHistory GetDexBTCBuyETHOrderByUserID", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery dexBTCBuyETHHistory GetDexBTCBuyETHOrderByUserID", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

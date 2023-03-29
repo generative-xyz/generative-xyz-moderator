@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
@@ -20,6 +21,7 @@ import (
 type IMiddleware interface {
 	LoggingMiddleware(next http.Handler) http.Handler
 	AccessToken(next http.Handler) http.Handler
+	AccessTokenPassThrough(next http.Handler) http.Handler
 	AuthorizationFunc(next http.Handler) http.Handler
 }
 
@@ -56,7 +58,7 @@ func (m *middleware) LoggingMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		wrapped := wrapResponseWriter(w)
 		next.ServeHTTP(wrapped, r)
-		m.log.Info(fmt.Sprintf("Request:[%s] %s - status: %d - duration %s =====", r.Method, r.URL.EscapedPath(), wrapped.status, time.Since(start)))
+		logger.AtLog.Info(fmt.Sprintf("Request:[%s] %s - status: %d - duration %s =====", r.Method, r.URL.EscapedPath(), wrapped.status, time.Since(start)))
 	}
 
 	return http.HandlerFunc(fn)
@@ -93,7 +95,7 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		token := r.Header.Get(utils.AUTH_TOKEN)
 		if token == "" {
 			err := errors.New("token is empty")
-			m.log.Error("token_is_empty", "token is empty", err)
+			logger.AtLog.Logger.Error("token_is_empty", zap.Error(err))
 			m.response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
 			return
 		}
@@ -103,8 +105,46 @@ func (m *middleware) AccessToken(next http.Handler) http.Handler {
 		//TODO implement here
 		p, err := m.usecase.ValidateAccessToken(token)
 		if err != nil {
-			m.log.Error("cannot_verify_token", "token cannot be verified", err)
+			logger.AtLog.Logger.Error("cannot_verify_token", zap.Error(err))
 			m.response.RespondWithError(w, http.StatusUnauthorized, response.Error, err)
+			return
+		}
+
+		logger.AtLog.Logger.Info("AccessToken", zap.Any("profile", p))
+		m.cache.SetData(helpers.GenerateCachedProfileKey(token), p)
+		m.cache.SetStringData(helpers.GenerateUserKey(token), p.Uid)
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, utils.AUTH_TOKEN, token)
+		ctx = context.WithValue(ctx, utils.SIGNED_WALLET_ADDRESS, p.WalletAddress)
+		//ctx = context.WithValue(ctx, utils.SIGNED_EMAIL, p.Email)
+		ctx = context.WithValue(ctx, utils.SIGNED_USER_ID, p.Uid)
+		wrapped := wrapResponseWriter(w)
+		next.ServeHTTP(wrapped, r.WithContext(ctx))
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+// Authenticate
+func (m *middleware) AccessTokenPassThrough(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+
+		token := r.Header.Get(utils.AUTH_TOKEN)
+		if token == "" {
+			err := errors.New("token is empty")
+			logger.AtLog.Logger.Error("token_is_empty", zap.Error(err))
+			next.ServeHTTP(w, r.WithContext(r.Context()))
+			return
+		}
+
+		token = helpers.ReplaceToken(token)
+
+		//TODO implement here
+		p, err := m.usecase.ValidateAccessToken(token)
+		if err != nil {
+			logger.AtLog.Logger.Error("cannot_verify_token", zap.Error(err))
+			next.ServeHTTP(w, r.WithContext(r.Context()))
 			return
 		}
 

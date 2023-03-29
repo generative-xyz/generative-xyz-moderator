@@ -100,12 +100,12 @@ func calculateMintPrice(input structure.InscribeBtcReceiveAddrRespReq) (*Bitcoin
 
 func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.InscribeBtcReceiveAddrRespReq) (*entity.InscribeBTC, error) {
 
-	u.Logger.LogAny("CreateInscribeBTC", zap.Any("input", input))
+	logger.AtLog.Logger.Info("CreateInscribeBTC", zap.Any("input", zap.Any("input)", input)))
 
 	// todo remove:
 	// _, base64Str, err := decodeFileBase64(input.File)
 	// if err != nil {
-	// 	u.Logger.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+	// 	logger.AtLog.Logger.Error("JobInscribeMintNft.decodeFileBase64", zap.Error(err))
 	// 	return nil, err
 	// }
 
@@ -122,21 +122,21 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	if input.FeeRate <= 3 {
 		err := errors.New("fee rate must be > 3")
-		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.Copy", zap.Error(err))
 		return nil, err
 	}
 
 	walletAddress := &entity.InscribeBTC{}
 	err := copier.Copy(walletAddress, input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateInscribeBTC.Copy", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.Copy", zap.Error(err))
 		return nil, err
 	}
 
 	// need function get size only:
 	mintFee, err := calculateMintPrice(input)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateSegwitBTCWalletAddress.calculateMintPrice", zap.Error(err))
 		return nil, err
 	}
 
@@ -145,7 +145,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 	// cal fee again:
 	feeInfos, err := u.calMintFeeInfo(0, int64(mintFee.Size), int64(input.FeeRate), 0, 0)
 	if err != nil {
-		u.Logger.Error("u.calMintFeeInfo.Err", err.Error(), err)
+		logger.AtLog.Logger.Error("u.calMintFeeInfo.Err", zap.Error(err))
 		return nil, err
 	}
 
@@ -182,7 +182,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		// create segwit address
 		privKey, _, addressSegwit, err = ethClient.GenerateAddress()
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
 
@@ -205,12 +205,12 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		})
 
 		if err != nil {
-			u.Logger.ErrorAny("u.OrdService.Exec.create.Wallet", zap.Error(err))
+			logger.AtLog.Logger.Error("u.OrdService.Exec.create.Wallet", zap.Error(err))
 			return nil, err
 		}
 		walletAddress.Mnemonic = resp.Stdout
 
-		u.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", resp)
+		logger.AtLog.Logger.Info("CreateOrdBTCWalletAddress.createdWallet", zap.Any("resp", resp))
 		resp, err = u.OrdService.Exec(ord_service.ExecRequest{
 			Args: []string{
 				"--wallet",
@@ -221,10 +221,10 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		})
 
 		if err != nil {
-			u.Logger.ErrorAny("u.OrdService.Exec.create.receive", zap.Error(err))
+			logger.AtLog.Logger.Error("u.OrdService.Exec.create.receive", zap.Error(err))
 			return nil, err
 		}
-		u.Logger.Info("CreateInscribeBTC.calculateMintPrice", resp)
+		logger.AtLog.Logger.Info("CreateInscribeBTC.calculateMintPrice", zap.Any("resp", resp))
 
 		// parse json to get address:
 		// ex: {"mnemonic": "chaos dawn between remember raw credit pluck acquire satoshi rain one valley","passphrase": ""}
@@ -236,7 +236,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 		err = json.Unmarshal([]byte(jsonStr), &receiveResp)
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.Unmarshal", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.Unmarshal", zap.Error(err))
 			return nil, err
 		}
 
@@ -246,7 +246,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 		// create segwit address
 		privKey, _, addressSegwit, err = btc.GenerateAddressSegwit()
 		if err != nil {
-			u.Logger.ErrorAny("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
+			logger.AtLog.Logger.Error("CreateInscribeBTC.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
 
@@ -254,13 +254,13 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	if privKey == "" {
 		err := errors.New("Cannot create privKey")
-		u.Logger.ErrorAny("CreateInscribeBTC.privKey", zap.Error(err))
+		logger.AtLog.Logger.Error("CreateInscribeBTC.privKey", zap.Error(err))
 		return nil, err
 	}
 
 	if addressSegwit == "" {
 		err := errors.New("Cannot create addressSegwit")
-		u.Logger.ErrorAny("CreateInscribeBTC.addressSegwit", zap.Error(err))
+		logger.AtLog.Logger.Error("CreateInscribeBTC.addressSegwit", zap.Error(err))
 		return nil, err
 	}
 
@@ -331,7 +331,7 @@ func (u Usecase) CreateInscribeBTC(ctx context.Context, input structure.Inscribe
 
 	err = u.Repo.InsertInscribeBTC(walletAddress)
 	if err != nil {
-		u.Logger.ErrorAny("u.CreateInscribeBTC.InsertInscribeBTC", zap.Error(err))
+		logger.AtLog.Logger.Error("u.CreateInscribeBTC.InsertInscribeBTC", zap.Error(err))
 		return nil, err
 	}
 
@@ -348,7 +348,7 @@ func (u Usecase) DetailInscribeBTC(inscriptionID string) (*entity.InscribeBTCRes
 
 func (u Usecase) RetryInscribeBTC(id string) error {
 	item, _ := u.Repo.FindInscribeBTC(id)
-	u.Logger.Info("item: ", item, id)
+	logger.AtLog.Logger.Info("item: ", zap.Any("item", item), zap.Any("id", id))
 	if item != nil {
 		if item.Status == entity.StatusInscribe_NotEnoughBalance {
 			item.Status = entity.StatusInscribe_Pending
@@ -517,7 +517,7 @@ func (u Usecase) JobInscribeWaitingBalance() error {
 		}
 
 		go u.trackInscribeHistory(item.UUID, "JobInscribeWaitingBalance", item.TableName(), item.Status, "Updated StatusInscribe_ReceivedFund", "ok")
-		u.Logger.Info(fmt.Sprintf("JobInscribeWaitingBalance.CheckReceiveBTC.%s", item.SegwitAddress), item)
+		logger.AtLog.Logger.Info(fmt.Sprintf("JobInscribeWaitingBalance.CheckReceiveBTC.%s", item.SegwitAddress), zap.Any("item", item))
 		u.Notify("JobInscribeWaitingBalance", item.SegwitAddress, fmt.Sprintf("%s received BTC %d from [InscriptionID] %s", item.SegwitAddress, item.Status, item.InscriptionID))
 
 	}
@@ -709,7 +709,7 @@ func (u Usecase) JobInscribeMintNft() error {
 
 		if len(item.FileName) == 0 {
 			err := errors.New("File name invalid")
-			u.Logger.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			logger.AtLog.Logger.Error("JobInscribeMintNft.len(Filename)", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
@@ -717,19 +717,19 @@ func (u Usecase) JobInscribeMintNft() error {
 		typeFiles := strings.Split(item.FileName, ".")
 		if len(typeFiles) < 2 {
 			err := errors.New("File name invalid")
-			u.Logger.Error("JobInscribeMintNft.len(Filename)", err.Error(), err)
+			logger.AtLog.Logger.Error("JobInscribeMintNft.len(Filename)", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "CheckFileName", err.Error())
 			continue
 		}
 
 		typeFile = typeFiles[len(typeFiles)-1]
 		fields = append(fields, zap.String("type_file", typeFile))
-		logger.AtLog.Logger.Info("TypeFile", fields...)
+		logger.AtLog.Logger.Info("TypeFile", zap.Any("fields...", fields))
 
 		// update google clound: TODO need to move into api to avoid create file many time.
 		_, base64Str, err := decodeFileBase64(item.FileURI)
 		if err != nil {
-			u.Logger.Error("JobInscribeMintNft.decodeFileBase64", err.Error(), err)
+			logger.AtLog.Logger.Error("JobInscribeMintNft.decodeFileBase64", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "helpers.decodeFileBase64", err.Error())
 			continue
 		}
@@ -737,7 +737,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		now := time.Now().UTC().Unix()
 		uploaded, err := u.GCS.UploadBaseToBucket(base64Str, fmt.Sprintf("btc-projects/%s/%d.%s", item.SegwitAddress, now, typeFile))
 		if err != nil {
-			u.Logger.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", err.Error(), err)
+			logger.AtLog.Logger.Error("JobInscribeMintNft.helpers.UploadBaseToBucket.Base64DecodeRaw", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "helpers.BUploadBaseToBucket.ase64DecodeRaw", err.Error())
 			continue
 		}
@@ -768,7 +768,7 @@ func (u Usecase) JobInscribeMintNft() error {
 		resp, respStr, err := u.OrdService.Mint(mintData)
 
 		if err != nil {
-			u.Logger.Error("OrdService.Mint", err.Error(), err)
+			logger.AtLog.Logger.Error("OrdService.Mint", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, mintData, respStr)
 			continue
 		}
@@ -796,7 +796,7 @@ func (u Usecase) JobInscribeMintNft() error {
 
 		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
 		if err != nil {
-			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+			logger.AtLog.Logger.Error("BTCMint.helpers.JsonTransform", zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeMintNft", item.TableName(), item.Status, "JobInscribeMintNft.Unmarshal(btcMintResp)", err.Error())
 			continue
 		}
@@ -876,7 +876,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.sentTokenResp", sentTokenResp)
 
 		if err != nil {
-			u.Logger.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), err.Error(), err)
+			logger.AtLog.Logger.Error(fmt.Sprintf("JobInscribeSendNft.SendTokenMKP.%s.Error", item.OrdAddress), zap.Error(err))
 			go u.trackInscribeHistory(item.UUID, "JobInscribeSendNft", item.TableName(), item.Status, "SendTokenByWallet.err", err.Error())
 			continue
 		}
@@ -892,7 +892,7 @@ func (u Usecase) JobInscribeSendNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err.Error())
-			u.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", errPack.Error(), errPack)
+			logger.AtLog.Logger.Error("JobMKP_SendNftToBuyer.helpers.JsonTransform", zap.Error(errPack))
 			go u.trackInscribeHistory(item.UUID, "UpdateBtcInscribe", item.TableName(), item.Status, "SendTokenMKP.UpdateBtcInscribe", err.Error())
 			continue
 		}
@@ -907,11 +907,11 @@ func (u Usecase) JobInscribeSendNft() error {
 		_, err = u.Repo.UpdateBtcInscribe(&item)
 		if err != nil {
 			errPack := fmt.Errorf("Could not UpdateBtcInscribe id %s - with err: %v", item.ID, err)
-			u.Logger.Error("UpdateBtcInscribe.UpdateBtcInscribe", errPack.Error(), errPack)
+			logger.AtLog.Logger.Error("UpdateBtcInscribe.UpdateBtcInscribe", zap.Error(errPack))
 			go u.trackInscribeHistory(item.UUID, "UpdateBtcInscribe", item.TableName(), item.Status, "u.UpdateBtcInscribe.UpdateBTCNFTBuyOrder", err.Error())
 		}
 		// save log:
-		u.Logger.Info(fmt.Sprintf("UpdateBtcInscribe.execResp.%s", item.OrdAddress), sentTokenResp)
+		logger.AtLog.Logger.Info(fmt.Sprintf("UpdateBtcInscribe.execResp.%s", item.OrdAddress), zap.Any("sentTokenResp", sentTokenResp))
 
 	}
 	return nil
@@ -945,15 +945,15 @@ func (u Usecase) GetNftsOwnerOf(walletName string) (*ord_service.ExecRespose, er
 			"inscriptions",
 		}}
 
-	u.Logger.Info("listNFTsReq", listNFTsReq)
+	logger.AtLog.Logger.Info("listNFTsReq", zap.Any("listNFTsReq", listNFTsReq))
 	resp, err := u.OrdService.Exec(listNFTsReq)
 	defer u.Notify("GetNftsOwnerOf", "ord_marketplace_master", "inscriptions")
 	if err != nil {
-		u.Logger.Info("u.OrdService.Exec.Error", err.Error())
-		u.Logger.Error("u.OrdService.Exec", err.Error(), err)
+		logger.AtLog.Logger.Info("u.OrdService.Exec.Error", zap.Any("err.Error()", err.Error()))
+		logger.AtLog.Logger.Error("u.OrdService.Exec", zap.Error(err))
 		return nil, err
 	}
-	u.Logger.Info("listNFTsRep", resp)
+	logger.AtLog.Logger.Info("listNFTsRep", zap.Any("resp", resp))
 	return resp, err
 }
 

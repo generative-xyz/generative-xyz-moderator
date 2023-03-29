@@ -34,19 +34,19 @@ var secondParser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.D
 
 func (h *CrontabManager) StartServer() {
 	start := time.Now()
-	h.Logger.Info(fmt.Sprintf("\nTime now (UTC): %v \n", start.UTC().Format(time.RFC3339)))
+	logger.AtLog.Info(fmt.Sprintf("\nTime now (UTC): %v \n", start.UTC().Format(time.RFC3339)))
 
 	c := cron.New(cron.WithLocation(time.UTC))
-	h.Logger.Info(fmt.Sprintf("\nCron location: %v \n", c.Location()))
+	logger.AtLog.Info(fmt.Sprintf("\nCron location: %v \n", c.Location()))
 
 	eventList, err := h.Usecase.Repo.FindCronJobManagerByJobKey(h.JobKey)
 	if err != nil {
-		h.Logger.Error(fmt.Sprintf("\nGet all items has error %v\n", err))
+		logger.AtLog.Error(fmt.Sprintf("\nGet all items has error %v\n", err))
 		panic(err)
 	}
 
 	if eventList == nil {
-		h.Logger.Info("list event empty")
+		logger.AtLog.Info("list event empty")
 		return
 		// panic(errors.New("List event is empty"))
 	}
@@ -55,24 +55,24 @@ func (h *CrontabManager) StartServer() {
 		eventName := fmt.Sprintf("[%v-%v]", item.Group, item.JobName)
 		domain := item.FunctionName
 
-		h.Logger.Info(fmt.Sprintf("\n=======Add task %v, webhook %v ======= \n", eventName, domain))
+		logger.AtLog.Info(fmt.Sprintf("\n=======Add task %v, webhook %v ======= \n", eventName, domain))
 
 		err := h.Validation(item)
 		if err != nil {
 			// go e.slack.PostMsg(err.Error())
 			// TODO: notify
-			h.Logger.Info(fmt.Sprintf("\nHas error--> %v\n", err))
+			logger.AtLog.Info(fmt.Sprintf("\nHas error--> %v\n", err))
 			go h.trackCronJobManagerLogs(fmt.Sprintf("[%v-%v]", item.Group, item.JobName), "Cron job manager -> StartServer", item.TableName(), item.Enabled, "h.Validation(item) - with err", err.Error())
 			continue
 		}
 
 		entryId, err := h.AddTask(c, item)
 		if err != nil {
-			h.Logger.Info(fmt.Sprintf("\nAdding taskName %v, webhook %v, err %v\n", eventName, domain, err))
+			logger.AtLog.Info(fmt.Sprintf("\nAdding taskName %v, webhook %v, err %v\n", eventName, domain, err))
 			continue
 		}
 
-		h.Logger.Info(fmt.Sprintf("\nAdd task completed with id %v of %v\n", entryId, eventName))
+		logger.AtLog.Info(fmt.Sprintf("\nAdd task completed with id %v of %v\n", entryId, eventName))
 	}
 
 	c.Start()
@@ -106,12 +106,12 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 
 	idEntries, err := c.AddFunc(cronJobManager.Schedule, func() {
 		start := time.Now()
-		h.Logger.Info(fmt.Sprintf("Time now (UTC): %v \n", start.UTC().Format(time.RFC3339)))
+		logger.AtLog.Info(fmt.Sprintf("Time now (UTC): %v \n", start.UTC().Format(time.RFC3339)))
 
-		h.Logger.Info(fmt.Sprintf("=======Start call task %v ======= \n", cronJobManager.FunctionName))
+		logger.AtLog.Info(fmt.Sprintf("=======Start call task %v ======= \n", cronJobManager.FunctionName))
 
 		if isRunning {
-			h.Logger.Info(fmt.Sprintf("\nTaskName %v, webhook %v is running\n", eventName, cronJobManager.FunctionName))
+			logger.AtLog.Info(fmt.Sprintf("\nTaskName %v, webhook %v is running\n", eventName, cronJobManager.FunctionName))
 			h.Usecase.Repo.UpdateCronJobManagerLastSatus(cronJobManager.UUID, "Job is waiting...Skip now!")
 			return
 		}
@@ -124,17 +124,17 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 		// check
 		eventItem, err := h.Usecase.Repo.FindCronJobManagerByUUID(cronJobManager.UUID)
 		if err != nil {
-			h.Logger.Info(fmt.Sprintf("\nTaskName %v, webhook %v error: %v", eventName, cronJobManager.FunctionName, err.Error()))
+			logger.AtLog.Info(fmt.Sprintf("\nTaskName %v, webhook %v error: %v", eventName, cronJobManager.FunctionName, err.Error()))
 			return
 		}
 
 		if eventItem == nil {
-			h.Logger.Info(fmt.Sprintf("\nTaskName %v, webhook %v is disable\n", eventName, cronJobManager.FunctionName))
+			logger.AtLog.Info(fmt.Sprintf("\nTaskName %v, webhook %v is disable\n", eventName, cronJobManager.FunctionName))
 			return
 		}
 
 		if eventItem.Enabled == false {
-			h.Logger.Info(fmt.Sprintf("\nTaskName %v, webhook %v is off\n", eventName, cronJobManager.FunctionName))
+			logger.AtLog.Info(fmt.Sprintf("\nTaskName %v, webhook %v is off\n", eventName, cronJobManager.FunctionName))
 			h.Usecase.Repo.UpdateCronJobManagerLastSatus(cronJobManager.UUID, "Job is paused!")
 			return
 		} else {
@@ -143,7 +143,7 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 
 		defer func() {
 			if err := recover(); err != nil {
-				h.Logger.Error(fmt.Sprintf("\nError calling %s->%s: %v", eventName, cronJobManager.FunctionName, err))
+				logger.AtLog.Error(fmt.Sprintf("\nError calling %s->%s: %v", eventName, cronJobManager.FunctionName, err))
 				go h.trackCronJobManagerLogs(fmt.Sprintf("[%v-%v]", eventItem.Group, eventItem.JobName), "Cron job manager -> AddTask", eventItem.TableName(), cronJobManager.FunctionName, "call the function - with err", err)
 				return
 			}
@@ -155,21 +155,21 @@ func (h *CrontabManager) AddTask(c *cron.Cron, cronJobManager entity.CronJobMana
 		result := meth.Call(nil)
 		errResult := result[0].Interface()
 		if errResult == nil {
-			h.Logger.Info(fmt.Sprintf("\nCalling %s->%s: is OK!!!!", eventName, cronJobManager.FunctionName))
+			logger.AtLog.Info(fmt.Sprintf("\nCalling %s->%s: is OK!!!!", eventName, cronJobManager.FunctionName))
 		} else {
-			h.Logger.Error(fmt.Sprintf("\nError calling %s->%s: %v", eventName, cronJobManager.FunctionName, errResult))
+			logger.AtLog.Error(fmt.Sprintf("\nError calling %s->%s: %v", eventName, cronJobManager.FunctionName, errResult))
 		}
 
 		duration := time.Since(start)
-		h.Logger.Info(fmt.Sprintf("\nEnd %v \n", duration.String()))
+		logger.AtLog.Info(fmt.Sprintf("\nEnd %v \n", duration.String()))
 
 		if err != nil {
-			h.Logger.Info(fmt.Sprintf("TaskName %v, webhook %v, err %v\n", eventName, cronJobManager.FunctionName, err))
+			logger.AtLog.Info(fmt.Sprintf("TaskName %v, webhook %v, err %v\n", eventName, cronJobManager.FunctionName, err))
 
 			return
 		}
 
-		h.Logger.Info(fmt.Sprintf("=======TaskName %v, webhook %v completefully=======\n", eventName, cronJobManager.FunctionName))
+		logger.AtLog.Info(fmt.Sprintf("=======TaskName %v, webhook %v completefully=======\n", eventName, cronJobManager.FunctionName))
 	})
 
 	return idEntries, err

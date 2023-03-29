@@ -11,17 +11,16 @@ type QuerySort struct {
 	SortBy string
 }
 
-
 type AggregateDexBTCListing struct {
-	FromDate   time.Time
-	ToDate  time.Time
+	FromDate time.Time
+	ToDate   time.Time
 }
 
 func ParseAggregation(key string) AggregateDexBTCListing {
 	sortParams := make(map[string]AggregateDexBTCListing)
-	to := time.Now().UTC()	
-	sortParams["week"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-7), ToDate: to}
-	sortParams["month"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0,0,-30), ToDate: to}
+	to := time.Now().UTC()
+	sortParams["week"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0, 0, -7), ToDate: to}
+	sortParams["month"] = AggregateDexBTCListing{FromDate: now.BeginningOfDay().AddDate(0, 0, -30), ToDate: to}
 	filter, ok := sortParams[key]
 	if !ok {
 		return sortParams["custom"]
@@ -81,7 +80,7 @@ const (
 	AUTH_TOKEN                string = "Authorization" //token will be save in this variable
 	REDIS_VERIFIED_TOKEN      string = "verified_token"
 	REDIS_PROFILE             string = "profile"
-	REDIS_INSCRIPTION            string = "inscription"
+	REDIS_INSCRIPTION         string = "inscription"
 	REDIS_NFT_METADATA_KEY    string = "nfts_metadata_%s_%s"
 	REDIS_PAGINATION_KEY      string = "pagination_%s"
 	REDIS_PAGINATION_DATA_KEY string = "pagination_data_%s"
@@ -133,45 +132,46 @@ const (
 	KEY_LISTING_CONTRACT           string = "collection_contract"
 	KEY_BTC_WALLET_INFO            string = "btc_wallet_info"
 
-	COLLECTION_USERS                    string = "users"
-	COLLECTION_USER_VOLUMN              string = "user_volumn"
-	COLLECTION_WITHDRAW                 string = "withdraw"
-	COLLECTION_TOKEN_URI                string = "token_uri"
-	COLLECTION_TOKEN_URI_HISTORIES      string = "token_uri_histories"
-	COLLECTION_TOKEN_URI_METADATA       string = "token_uri_metadata"
-	COLLECTION_FILES                    string = "files"
-	COLLECTION_PROJECTS                 string = "projects"
-	COLLECTION_PROJECT_ALLOW_LIST                 string = "project_allow_list"
-	COLLECTION_CONFIGS                  string = "configs"
-	COLLECTION_CATEGORIES               string = "categories"
-	COLLECTION_ACTIVITIES               string = "activities"
-	COLLECTION_REFERRALS                string = "referrals"
-	COLLECTION_MARKETPLACE_LISTINGS     string = "marketplace_listings"
-	COLLECTION_MARKETPLACE_OFFERS       string = "marketplace_offers"
-	COLLECTION_DAO_PROPOSAL             string = "proposals"
-	COLLECTION_DAO_PROPOSAL_DETAIL      string = "proposal_detail"
-	COLLECTION_LEADERBOARD_TOKEN_HOLDER string = "token_holders"
-	COLLECTION_DAO_PROPOSAL_VOTES       string = "proposal_votes"
-	COLLECTION_BTC_WALLET_ADDRESS       string = "btc_wallet_address"
-	INSCRIBE_BTC                        string = "inscribe_btc"
-	INSCRIBE_INFO                       string = "inscribe_infos"
-	COLLECTION_ETH_WALLET_ADDRESS       string = "eth_wallet_address"
-	COLLECTION_MARKETPLACE_BTC_LISTING  string = "marketplace_btc_listing"
-	COLLECTION_MARKETPLACE_BTC_BUY      string = "marketplace_btc_buy"
-	COLLECTION_MARKETPLACE_BTC_LOGS     string = "marketplace_btc_logs"
-	COLLECTION_COLLECTION_META          string = "collection_metas"
-	COLLECTION_COLLECTION_INSCRIPTION   string = "collection_inscriptions"
-	WALLET_TRACK_TX                     string = "wallet_track_txs"
-	COLLECTION_AIRDROP                  string = "airdrop"
-	COLLECTION_DEX_BTC_LISTING          string = "dex_btc_listing"
-	COLLECTION_DISCORD_NOTI             string = "discord_notis"
-	COLLECTION_DEX_BTC_BUY_ETH          string = "dex_btc_buy_eth"
-	COLLECTION_BTC_TX_SUBMIT            string = "btc_tx_submit"
-	COLLECTION_TOKEN_ACTIVITY           string = "token_activities"
-	COLLECTION_DISCORD_PARTNER          string = "discord_partners"
-	COLLECTION_TOKEN_TX                 string = "token_txs"
+	COLLECTION_USERS                     string = "users"
+	COLLECTION_USER_VOLUMN               string = "user_volumn"
+	COLLECTION_WITHDRAW                  string = "withdraw"
+	COLLECTION_TOKEN_URI                 string = "token_uri"
+	COLLECTION_TOKEN_URI_HISTORIES       string = "token_uri_histories"
+	COLLECTION_TOKEN_URI_METADATA        string = "token_uri_metadata"
+	COLLECTION_FILES                     string = "files"
+	COLLECTION_PROJECTS                  string = "projects"
+	COLLECTION_PROJECT_ALLOW_LIST        string = "project_allow_list"
+	COLLECTION_PROJECT_ZIPLINKS          string = "project_zip_links"
+	COLLECTION_CONFIGS                   string = "configs"
+	COLLECTION_CATEGORIES                string = "categories"
+	COLLECTION_ACTIVITIES                string = "activities"
+	COLLECTION_REFERRALS                 string = "referrals"
+	COLLECTION_MARKETPLACE_LISTINGS      string = "marketplace_listings"
+	COLLECTION_MARKETPLACE_OFFERS        string = "marketplace_offers"
+	COLLECTION_DAO_PROPOSAL              string = "proposals"
+	COLLECTION_DAO_PROPOSAL_DETAIL       string = "proposal_detail"
+	COLLECTION_LEADERBOARD_TOKEN_HOLDER  string = "token_holders"
+	COLLECTION_DAO_PROPOSAL_VOTES        string = "proposal_votes"
+	COLLECTION_BTC_WALLET_ADDRESS        string = "btc_wallet_address"
+	INSCRIBE_BTC                         string = "inscribe_btc"
+	INSCRIBE_INFO                        string = "inscribe_infos"
+	COLLECTION_ETH_WALLET_ADDRESS        string = "eth_wallet_address"
+	COLLECTION_MARKETPLACE_BTC_LISTING   string = "marketplace_btc_listing"
+	COLLECTION_MARKETPLACE_BTC_BUY       string = "marketplace_btc_buy"
+	COLLECTION_MARKETPLACE_BTC_LOGS      string = "marketplace_btc_logs"
+	COLLECTION_COLLECTION_META           string = "collection_metas"
+	COLLECTION_COLLECTION_INSCRIPTION    string = "collection_inscriptions"
+	WALLET_TRACK_TX                      string = "wallet_track_txs"
+	COLLECTION_AIRDROP                   string = "airdrop"
+	COLLECTION_DEX_BTC_LISTING           string = "dex_btc_listing"
+	COLLECTION_DISCORD_NOTI              string = "discord_notis"
+	COLLECTION_DEX_BTC_BUY_ETH           string = "dex_btc_buy_eth"
+	COLLECTION_BTC_TX_SUBMIT             string = "btc_tx_submit"
+	COLLECTION_TOKEN_ACTIVITY            string = "token_activities"
+	COLLECTION_DISCORD_PARTNER           string = "discord_partners"
+	COLLECTION_TOKEN_TX                  string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
-	COLLECTION_GLOBAL_VARIABLE          string = "global_variables"
+	COLLECTION_GLOBAL_VARIABLE           string = "global_variables"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
@@ -199,6 +199,9 @@ const (
 
 	NETWORK_BTC = "btc"
 	NETWORK_ETH = "eth"
+
+	PLATFORM_ORDINAL = "ordinal"
+	PLATFORM_TC      = "tc"
 
 	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/magickey.html"
 	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/goldenkey.html"
