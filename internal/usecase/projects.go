@@ -47,24 +47,6 @@ type uploadFileChan struct {
 	Err     error
 }
 
-func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects, error) {
-
-	pe := &entity.Projects{}
-	err := copier.Copy(pe, req)
-	if err != nil {
-		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
-		return nil, err
-	}
-
-	err = u.Repo.CreateProject(pe)
-	if err != nil {
-		u.Logger.ErrorAny("CreateProject", zap.Any("err", err))
-		return nil, err
-	}
-
-	u.Logger.ErrorAny("CreateProject", zap.Any("project", pe))
-	return pe, nil
-}
 
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
 	u.Logger.LogAny("CreateBTCProject", zap.Any("CreateBtcProjectReq", req))
