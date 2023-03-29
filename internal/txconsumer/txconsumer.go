@@ -66,7 +66,6 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 	if *exists {
 		processed, err := c.Cache.GetData(redisKey)
 		if err != nil {
-			fmt.Println(err)
 			logger.AtLog.Logger.Error("error get from redis", zap.Error(err))
 			return 0, err
 		}
@@ -88,7 +87,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
-		logger.AtLog.Logger.Error("err.getLastProcessedBlock", zap.String("err", err.Error()))
+		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -96,23 +95,21 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
-		logger.AtLog.Logger.Error("err.GetBlockNumber", zap.String("err", err.Error()))
+		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
 		return err
 	}
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock+int64(c.BatchLogSize))))
 
-	logger.AtLog.Logger.Info("Searching log", zap.Int64("blockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock))
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		logger.AtLog.Logger.Error("err.GetEventLogs", zap.Error(err))
 		return err
 	}
-
-	logger.AtLog.Logger.Info("logs", zap.Any("logs", logs))
+	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("blockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Any("logs", logs))
 	for _, _log := range logs {
 		// marketplace logs
-		logger.AtLog.Logger.Info("_log.Address.String()", zap.Any("_log.Address.String()", _log.Address.String()))
+		logger.AtLog.Logger.Info("resolveTransaction", zap.Any("_log.Address", _log.Address.String()))
 		//MAKET PLACE
 		// if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
 		// 	topic := strings.ToLower(_log.Topics[0].String())
@@ -163,13 +160,12 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	lock, err := c.Cache.GetData(utils.REDIS_KEY_LOCK_TX_CONSUMER_CONSUMER_BLOCK)
 	if err == nil && *lock == "true" {
-		logger.AtLog.Logger.Info("lock-tx-consumer-update-last-processed-block", zap.Any("true", true))
+		logger.AtLog.Logger.Info("resolveTransaction", zap.Any("true", true))
 	} else {
 		// if no error occured, save toBlock as lastProcessedBlock
 		err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
-		logger.AtLog.Logger.Info("set-last-processed", zap.Any("toBlock", strconv.FormatInt(toBlock, 10)))
 		if err != nil {
-			logger.AtLog.Logger.Error("err", zap.Error(err))
+			logger.AtLog.Logger.Error("resolveTransaction", zap.Error(err))
 			return err
 		}
 	}
