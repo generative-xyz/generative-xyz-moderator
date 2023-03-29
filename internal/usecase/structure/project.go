@@ -26,7 +26,8 @@ type FilterProposalVote struct {
 type CreateProjectReq struct {
 	ContractAddress string   `json:"contractAddress"`
 	CreatorAddrr    string   `json:"creatorAddrr"`
-	TokenID         string   `json:"tokenID"`
+	TokenID         string   `json:"-"`
+	TxHash         string   `json:"txHash"`
 	ZipLink         *string   `json:"ziplink"`
 	Tags            []string `json:"tags"`
 	Categories      []string `json:"categories"`

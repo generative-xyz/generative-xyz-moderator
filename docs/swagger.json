@@ -5896,6 +5896,9 @@
                         "$ref": "#/definitions/entity.TraitStat"
                     }
                 },
+                "txHash": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -6052,6 +6055,9 @@
                 },
                 "project_id_int": {
                     "type": "integer"
+                },
+                "seed": {
+                    "type": "string"
                 },
                 "source": {
                     "type": "string"
@@ -6526,7 +6532,7 @@
                         "type": "string"
                     }
                 },
-                "tokenID": {
+                "txHash": {
                     "type": "string"
                 },
                 "zipLink": {
@@ -7360,6 +7366,9 @@
                 },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
+                },
+                "seed": {
+                    "type": "string"
                 },
                 "sell_verified": {
                     "type": "boolean"
