@@ -78,7 +78,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.Use(h.MiddleWare.AuthorizationFunc)
 	project.HandleFunc("", h.getProjects).Methods("GET")
-	project.HandleFunc("", h.createProjects).Methods("POST")
+	project.HandleFunc("/eth", h.createEthProjects).Methods("POST")
+	project.HandleFunc("/eth/files", h.uploadEthProjectFiles).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")

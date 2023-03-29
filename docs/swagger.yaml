@@ -555,6 +555,8 @@ definitions:
       wallet_address_payment:
         description: eth wallet artist receive royalty
         type: string
+      wallet_type:
+        type: string
     type: object
   nfts.InscribeBTC:
     properties:
@@ -614,6 +616,15 @@ definitions:
   request.CheckBalanceAddressReq:
     properties:
       address:
+        type: string
+    type: object
+  request.CompressImageReq:
+    properties:
+      compressPercents:
+        items:
+          type: integer
+        type: array
+      imageUrl:
         type: string
     type: object
   request.CreateBTCProjectReq:
@@ -733,6 +744,21 @@ definitions:
     required:
     - project_ids
     type: object
+  request.CreateETHProjectReq:
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      contractAddress:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tokenID:
+        type: string
+    type: object
   request.CreateEthWalletAddressReq:
     properties:
       projectID:
@@ -790,21 +816,6 @@ definitions:
       group:
         type: string
     type: object
-  request.CreateProjectReq:
-    properties:
-      categories:
-        items:
-          type: string
-        type: array
-      contractAddress:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-      tokenID:
-        type: string
-    type: object
   request.CreateProposalReq:
     properties:
       amount:
@@ -850,6 +861,8 @@ definitions:
   request.GenerateMessageRequest:
     properties:
       address:
+        type: string
+      walletType:
         type: string
     type: object
   request.GetApiKeyReq:
@@ -990,6 +1003,8 @@ definitions:
       addressBtc:
         type: string
       addressBtcSegwit:
+        type: string
+      addressPayment:
         type: string
       ethSignature:
         type: string
@@ -1171,6 +1186,7 @@ definitions:
       balance:
         description: balance after check
         type: string
+      estFeeInfo: {}
       fileURI:
         description: FileURI will be mount if OrdAddress get all amount
         type: string
@@ -1465,6 +1481,9 @@ definitions:
       inscribedBy:
         type: string
       isFullChain:
+        type: boolean
+      isGenerative:
+        description: art by generative code or html file
         type: boolean
       isHidden:
         type: boolean
@@ -2447,7 +2466,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2468,7 +2487,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2494,7 +2513,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2549,7 +2568,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2598,7 +2617,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2970,7 +2989,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -2992,7 +3011,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3187,6 +3206,25 @@ paths:
       summary: Upload multipart file
       tags:
       - Files
+  /inscribe/compress-image:
+    post:
+      consumes:
+      - application/json
+      description: compress-image
+      parameters:
+      - description: compress images
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CompressImageReq'
+      produces:
+      - application/json
+      security:
+      - ApiKeyAuth: []
+      summary: compress-image
+      tags:
+      - compress-image
   /inscribe/info/{ID}:
     get:
       consumes:
@@ -3289,7 +3327,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -3985,27 +4023,6 @@ paths:
       summary: get projects
       tags:
       - Project
-    post:
-      consumes:
-      - application/json
-      description: Create projects
-      parameters:
-      - description: Create profile request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateProjectReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: Create project
-      tags:
-      - Project
   /project/{contractAddress}/{projectID}:
     delete:
       consumes:
@@ -4066,6 +4083,33 @@ paths:
       tags:
       - Project
   /project/{contractAddress}/{projectID}/allow-list:
+    get:
+      consumes:
+      - application/json
+      description: Check project's allow list
+      parameters:
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Check project's allow list
+      tags:
+      - Project
     post:
       consumes:
       - application/json
@@ -4446,6 +4490,43 @@ paths:
       summary: Upload images for a project
       tags:
       - Project
+  /project/eth:
+    post:
+      consumes:
+      - application/json
+      description: Create projects
+      parameters:
+      - description: Create eth-project request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateETHProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Create project
+      tags:
+      - ETH Project
+  /project/eth/files:
+    post:
+      consumes:
+      - application/json
+      description: Upload files for ETH-project
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Upload files for ETH-project
+      tags:
+      - ETH Project
   /project/minted-out:
     get:
       parameters:
