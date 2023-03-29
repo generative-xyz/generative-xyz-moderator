@@ -752,11 +752,15 @@ definitions:
         type: array
       contractAddress:
         type: string
+      creatorAddrr:
+        type: string
       tags:
         items:
           type: string
         type: array
       tokenID:
+        type: string
+      zipLink:
         type: string
     type: object
   request.CreateEthWalletAddressReq:
@@ -4023,6 +4027,29 @@ paths:
       summary: get projects
       tags:
       - Project
+    post:
+      consumes:
+      - application/json
+      description: Create projects
+      parameters:
+      - description: Create eth-project request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateETHProjectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Create project
+      tags:
+      - ETH Project
   /project/{contractAddress}/{projectID}:
     delete:
       consumes:
@@ -4490,43 +4517,6 @@ paths:
       summary: Upload images for a project
       tags:
       - Project
-  /project/eth:
-    post:
-      consumes:
-      - application/json
-      description: Create projects
-      parameters:
-      - description: Create eth-project request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateETHProjectReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: Create project
-      tags:
-      - ETH Project
-  /project/eth/files:
-    post:
-      consumes:
-      - application/json
-      description: Upload files for ETH-project
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: Upload files for ETH-project
-      tags:
-      - ETH Project
   /project/minted-out:
     get:
       parameters:

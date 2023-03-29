@@ -3660,6 +3660,43 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH Project"
+                ],
+                "summary": "Create project",
+                "parameters": [
+                    {
+                        "description": "Create eth-project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateETHProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
             }
         },
         "/project/btc": {
@@ -3744,63 +3781,6 @@ var doc = `{
                                     }
                                 }
                             ]
-                        }
-                    }
-                }
-            }
-        },
-        "/project/eth": {
-            "post": {
-                "description": "Create projects",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ETH Project"
-                ],
-                "summary": "Create project",
-                "parameters": [
-                    {
-                        "description": "Create eth-project request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateETHProjectReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/project/eth/files": {
-            "post": {
-                "description": "Upload files for ETH-project",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ETH Project"
-                ],
-                "summary": "Upload files for ETH-project",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -6552,6 +6532,9 @@ var doc = `{
                 "contractAddress": {
                     "type": "string"
                 },
+                "creatorAddrr": {
+                    "type": "string"
+                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -6559,6 +6542,9 @@ var doc = `{
                     }
                 },
                 "tokenID": {
+                    "type": "string"
+                },
+                "zipLink": {
                     "type": "string"
                 }
             }
