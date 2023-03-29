@@ -1242,42 +1242,32 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			item.Status = entity.StatusMint_Minted
 			item.IsMinted = true
 
+			//get token ID from the tx (log event)
+			nftID, err := u.TcClient.GetNftIDFromTx(item.TxMintNft, os.Getenv("TRANSFER_NFT_SIGNATURE"))
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "GetNftIDFromTx()", err.Error(), true)
+			}
+			// save nft_id info:
+			item.InscriptionID = nftID.String()
+
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				continue
 			}
 
-			err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.InscriptionID)
-			if err != nil {
-				logger.AtLog.Logger.Error(fmt.Sprintf("JobMint_CheckTxMintSend.%s.UpdateTokenOnchainStatusByTokenId.Error", item.InscriptionID), zap.Error(err))
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "UpdateTokenOnchainStatusByTokenId()", err.Error(), true)
-			}
-			// update tokenID for token uri
-			// go u.getInscribeInfoForMintSuccessToUpdate(item.InscriptionID)
-
-			//todo: get token ID from the tx (log event)
-
+			// update token uri auto:
 			p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 			if err != nil {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "project not found", "", true)
 				return err
 			}
-
 			go u.getTokenInfo(structure.GetTokenMessageReq{
 				ContractAddress: p.GenNFTAddr,
 				TokenID:         item.InscriptionID,
 			})
+			// create mint activity:
 			go u.CreateMintActivity(item.InscriptionID, item.Amount)
-			// if item.ProjectMintPrice >= 100000 {
-			// 	go func(u Usecase, item entity.MintNftBtc) {
-			// 		owner, err := u.Repo.FindUserByBtcAddressTaproot(item.OriginUserAddress)
-			// 		if err != nil || owner == nil {
-			// 			return
-			// 		}
-			// 		u.AirdropCollector(item.ProjectID, item.InscriptionID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
-			// 	}(u, item)
-			// }
 
 		} else {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "check tx confirm", 0, false)
