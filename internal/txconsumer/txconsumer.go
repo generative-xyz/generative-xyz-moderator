@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -89,7 +88,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
-		logger.AtLog.Logger.Error("err.getLastProcessedBlock", zap.Error(err))
+		logger.AtLog.Logger.Error("err.getLastProcessedBlock", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -97,7 +96,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
-		logger.AtLog.Logger.Error("err.GetBlockNumber", zap.Error(err))
+		logger.AtLog.Logger.Error("err.GetBlockNumber", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -115,38 +114,40 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		// marketplace logs
 		logger.AtLog.Logger.Info("_log.Address.String()", zap.Any("_log.Address.String()", _log.Address.String()))
 		//MAKET PLACE
-		if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
-			topic := strings.ToLower(_log.Topics[0].String())
-			logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash), zap.Any("_log.BlockNumber", _log.BlockNumber))
+		// if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
+		// 	topic := strings.ToLower(_log.Topics[0].String())
+		// 	logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash), zap.Any("_log.BlockNumber", _log.BlockNumber))
 			
-			switch topic {
-			case c.Config.MarketplaceEvents.ListToken:
-				err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-			case c.Config.MarketplaceEvents.PurchaseToken:
-				err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-			case c.Config.MarketplaceEvents.MakeOffer:
-				err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
-			case c.Config.MarketplaceEvents.AcceptMakeOffer:
-				err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-			case c.Config.MarketplaceEvents.CancelListing:
-				err = c.Usecase.ResolveMarketplaceCancelListing(_log)
-			case c.Config.MarketplaceEvents.CancelMakeOffer:
-				err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
-			}
-		}
-		//DAO
-		if strings.ToLower(_log.Address.String()) == c.Config.DAOEvents.Contract {
-			topic := strings.ToLower(_log.Topics[0].String())
-			logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash),  zap.Any("_log.BlockNumber", _log.BlockNumber))
-			
-			switch topic {
-			case c.Config.DAOEvents.ProposalCreated:
-				err = c.Usecase.DAOProposalCreated(_log)
+		// 	switch topic {
+		// 	case c.Config.MarketplaceEvents.ListToken:
+		// 		err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+		// 	case c.Config.MarketplaceEvents.PurchaseToken:
+		// 		err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+		// 	case c.Config.MarketplaceEvents.MakeOffer:
+		// 		err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
+		// 	case c.Config.MarketplaceEvents.AcceptMakeOffer:
+		// 		err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+		// 	case c.Config.MarketplaceEvents.CancelListing:
+		// 		err = c.Usecase.ResolveMarketplaceCancelListing(_log)
+		// 	case c.Config.MarketplaceEvents.CancelMakeOffer:
+		// 		err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
+		// 	}
+		// }
 
-			case c.Config.DAOEvents.CastVote:
-				err = c.Usecase.DAOCastVote(_log)
-			}
-		}
+
+		//DAO
+		// if strings.ToLower(_log.Address.String()) == c.Config.DAOEvents.Contract {
+		// 	topic := strings.ToLower(_log.Topics[0].String())
+		// 	logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash),  zap.Any("_log.BlockNumber", _log.BlockNumber))
+			
+		// 	switch topic {
+		// 	case c.Config.DAOEvents.ProposalCreated:
+		// 		err = c.Usecase.DAOProposalCreated(_log)
+
+		// 	case c.Config.DAOEvents.CastVote:
+		// 		err = c.Usecase.DAOCastVote(_log)
+		// 	}
+		// }
 
 		// do switch case with log.Address and log.Topics
 		if _log.Topics[0].String() == os.Getenv("TRANSFER_NFT_SIGNATURE") {
@@ -156,6 +157,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		if err != nil {
 			logger.AtLog.Logger.Error("err", zap.Error(err))
 			//return err
+			continue
 		}
 	}
 
@@ -165,7 +167,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	} else {
 		// if no error occured, save toBlock as lastProcessedBlock
 		err = c.Cache.SetStringData(c.getRedisKey(), strconv.FormatInt(toBlock, 10))
-		logger.AtLog.Logger.Info("set-last-processed", zap.Any("strconv.FormatInt(toBlock, 10)", strconv.FormatInt(toBlock, 10)))
+		logger.AtLog.Logger.Info("set-last-processed", zap.Any("toBlock", strconv.FormatInt(toBlock, 10)))
 		if err != nil {
 			logger.AtLog.Logger.Error("err", zap.Error(err))
 			return err
