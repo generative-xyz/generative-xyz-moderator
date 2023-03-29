@@ -68,11 +68,7 @@ func (u Usecase) CreateProjectsFromMetas() error {
 		processed++
 		project, err := u.FindProjectByInscriptionIcon(meta.InscriptionIcon)
 		if err != nil {
-<<<<<<< HEAD
-			u.Logger.ErrorAny("u.FindProjectByInscriptionIcon", zap.Error(err))
-=======
 			logger.AtLog.Logger.Error("u.FindProjectByInscriptionIcon", zap.Error(err))
->>>>>>> 0e3a650cf6ef84ce236ce80ce151e977c88d8f77
 			continue
 		}
 
@@ -98,16 +94,12 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			logger.AtLog.Logger.Error("CreateProjectsFromMetas.NilProject")
 			continue
 		}
-		
+
 		err = u.Repo.SetMetaMappedProjectID(meta, project.TokenID)
 		if err != nil {
 			logger.AtLog.Logger.Error("CreateProjectsFromMetas.SetMetaMappedProjectID", zap.Error(err))
 			continue
 		}
-<<<<<<< HEAD
-=======
-
->>>>>>> 0e3a650cf6ef84ce236ce80ce151e977c88d8f77
 		u.Logger.LogAny("SetMetaMappedProjectID", zap.Any("projectID", project.TokenID))
 
 		err = u.Repo.SetMetaProjectExisted(meta, existed)
@@ -116,20 +108,14 @@ func (u Usecase) CreateProjectsFromMetas() error {
 			continue
 		}
 		u.Logger.LogAny("SetMetaProjectExisted", zap.Any("projectID", project.TokenID))
-<<<<<<< HEAD
-		
-		
-=======
-				
->>>>>>> 0e3a650cf6ef84ce236ce80ce151e977c88d8f77
-		if processed % 20 == 0 {
+
+		if processed%20 == 0 {
 			time.Sleep(1 * time.Second)
 		}
 	}
 
 	return nil
 }
-
 
 func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 	uncreatedInscription, err := u.Repo.FindUncreatedCollectionInscription()
@@ -145,7 +131,7 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 		_, err = u.Repo.FindTokenByTokenID(inscription.ID)
 		if err != nil {
 			if !errors.Is(err, mongo.ErrNoDocuments) {
-				logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID " + inscription.ID, zap.Error(err))
+				logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID "+inscription.ID, zap.Error(err))
 				continue
 			} else {
 				meta, err := u.Repo.FindCollectionMetaByInscriptionIcon(inscription.CollectionInscriptionIcon)
@@ -178,8 +164,8 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 			logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
 			continue
 		}
-		
-		if processed % 20 == 0 {
+
+		if processed%20 == 0 {
 			time.Sleep(1 * time.Second)
 		}
 	}

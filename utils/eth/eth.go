@@ -421,3 +421,19 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 
 	return tx.Hash().Hex(), nil
 }
+
+func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
+	ctx := context.Background()
+
+	receipt, err := c.GetClient().TransactionReceipt(ctx, common.HexToHash(tx))
+	if err != nil {
+		return nil, err
+	}
+
+	if receipt.Status > 0 {
+		return receipt.Logs[0].Topics[3].Big(), nil
+
+	}
+
+	return nil, nil
+}
