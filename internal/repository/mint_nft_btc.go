@@ -111,6 +111,24 @@ func (r Repository) ListMintNftBtcByStatus(statuses []entity.StatusMint) ([]enti
 
 	return resp, nil
 }
+func (r Repository) ListMintNftBtcByStatusAndPlatform(statuses []entity.StatusMint, platform string) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"status":   bson.M{"$in": statuses},
+		"platform": bson.M{"$eq": platform},
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
 
 func (r Repository) UpdateMintNftBtc(model *entity.MintNftBtc) (*mongo.UpdateResult, error) {
 

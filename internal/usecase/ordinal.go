@@ -269,8 +269,8 @@ func (u Usecase) pushToGithub(folderName string, metaCollection structure.Ordina
 		err = fmt.Errorf("Cannot create %s", "meta.json")
 		return  err
 	}
-
-	err = helpers.CreateFile(fmt.Sprintf("%s/inscriptions.json",collectionPath), metaCollection)
+	
+	err = helpers.CreateFile(fmt.Sprintf("%s/inscriptions.json",collectionPath), inscription)
 	if err != nil {
 		err = fmt.Errorf("Cannot create %s", "inscriptions.json")
 		return  err

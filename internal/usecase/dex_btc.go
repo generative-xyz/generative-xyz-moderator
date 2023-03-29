@@ -23,6 +23,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/eth"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) CancelDexBTCListing(txhash string, seller_address string, inscription_id string, order_id string) error {
@@ -261,7 +262,7 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() {
 }
 
 func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
-	u.Logger.Info("DexVolumeInscription Insert to time series data %s", o.InscriptionID)
+	logger.AtLog.Logger.Info("DexVolumeInscription Insert to time series data %s", zap.Any("o.InscriptionID", o.InscriptionID))
 	data := entity.DexVolumeInscription{
 		Amount:    o.Amount,
 		Timestamp: o.MatchAt,
@@ -272,12 +273,12 @@ func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
 	}
 	err := u.Repo.InsertDexVolumeInscription(&data)
 	if err != nil {
-		u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data", o.InscriptionID), zap.Any("error", err))
 	} else {
 		o.IsTimeSeriesData = true
 		_, err = u.Repo.UpdateDexBTCListingTimeseriesData(&o)
 		if err != nil {
-			u.Logger.ErrorAny(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
+			logger.AtLog.Logger.Error(fmt.Sprintf("DexVolumeInscription Error Insert %s to time series data - UpdateDexBTCListingTimeseriesData", o.InscriptionID), zap.Any("error", err))
 		}
 	}
 }
@@ -1127,19 +1128,19 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 
 		amountETHFee, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCFee)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 		amountETHOriginal, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCNoFee)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 
 		amountBTCRequired += amountBTCFee
 		amountETH, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBTCRequired)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 
@@ -1147,7 +1148,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		if !isEstimate {
 			privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
 			if err != nil {
-				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
+				logger.AtLog.Logger.Error("GenBuyETHOrder GenerateAddress", zap.Error(err))
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
 			tempETHAddress = address
@@ -1251,21 +1252,21 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		// amount eth:
 		amountETHOriginal, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(amountBtcSum)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 
 		// fee eth
 		amountETHFee, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(feeAmountBtcSum)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 
 		// total amount eth:
 		amountETH, _, _, err = u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(totalAmountBtcSum)/1e8), btcRate, ethRate)
 		if err != nil {
-			u.Logger.Error("GenBuyETHOrder convertBTCToETH", err.Error(), err)
+			logger.AtLog.Logger.Error("GenBuyETHOrder convertBTCToETH", zap.Error(err))
 			return "", "", "", 0, "", "", []string{}, false, err
 		}
 
@@ -1273,7 +1274,7 @@ func (u Usecase) GenBuyETHOrder(isEstimate bool, userID string, orderID string, 
 		if !isEstimate {
 			privKey, _, address, err = eth.NewClient(nil).GenerateAddress()
 			if err != nil {
-				u.Logger.Error("GenBuyETHOrder GenerateAddress", err.Error(), err)
+				logger.AtLog.Logger.Error("GenBuyETHOrder GenerateAddress", zap.Error(err))
 				return "", "", "", 0, "", "", []string{}, false, err
 			}
 			tempETHAddress = address

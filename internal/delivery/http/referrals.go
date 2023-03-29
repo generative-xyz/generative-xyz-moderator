@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -28,7 +30,7 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		err := errors.New( "Token is incorect")
-		h.Logger.Error("ctx.Value.Token",  err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -40,7 +42,7 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 	err := h.Usecase.CreateReferral(referrerID, referreeID)
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.CreateReferral", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CreateReferral", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -67,7 +69,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	var err error
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -82,7 +84,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 	// if !ok {
 	// 	err := errors.New( "Token is incorect")
-	// 	h.Logger.Error("ctx.Value.Token",  err.Error(), err)
+	// 	logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 	// 	return
 	// }
@@ -94,7 +96,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 	f.PayType = &amountType
 	uReferrals, err := h.Usecase.GetReferrals(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetReferrals", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetReferrals", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -106,7 +108,7 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 
 		p, err := h.referralToResp(&referral)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}

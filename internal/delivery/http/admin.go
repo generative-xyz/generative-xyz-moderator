@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -24,7 +26,7 @@ func (h *httpDelivery) getRedisKeys(w http.ResponseWriter, r *http.Request) {
 	res, err := h.Usecase.GetAllRedis()
 
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -61,7 +63,7 @@ func (h *httpDelivery) getRedis(w http.ResponseWriter, r *http.Request) {
 	res, err := h.Usecase.GetRedis(redisKey)
 
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -82,14 +84,14 @@ func (h *httpDelivery) upsertRedis(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	res, err := h.Usecase.UpsertRedis(reqBody.Key, reqBody.Value)
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -113,7 +115,7 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Usecase.DeleteRedis(redisKey)
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -132,7 +134,7 @@ func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
 	res, err := h.Usecase.DeleteAllRedis()
 
 	if err != nil {
-		h.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -159,7 +161,7 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -168,13 +170,13 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	// check admin user:
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	if !profile.IsAdmin {
 		err := errors.New("permission denied")
-		h.Logger.Error("permission", err.Error(), err)
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -183,7 +185,7 @@ func (h *httpDelivery) autoListing(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -201,7 +203,7 @@ func (h *httpDelivery) checkRefundMintBtc(w http.ResponseWriter, r *http.Request
 	userWalletAddr, ok := iWalletAddress.(string)
 	if !ok {
 		err := errors.New("Wallet address is incorect")
-		h.Logger.Error("ctx.Value.Token", err.Error(), err)
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -210,13 +212,13 @@ func (h *httpDelivery) checkRefundMintBtc(w http.ResponseWriter, r *http.Request
 	// check admin user:
 	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	if !profile.IsAdmin {
 		err := errors.New("permission denied")
-		h.Logger.Error("permission", err.Error(), err)
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

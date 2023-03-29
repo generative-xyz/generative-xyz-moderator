@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -23,7 +25,7 @@ func (h *httpDelivery) getConfigs(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.Usecase.GetConfigs(structure.FilterConfigs{})
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetConfigs", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetConfigs", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -36,7 +38,7 @@ func (h *httpDelivery) getConfigs(w http.ResponseWriter, r *http.Request) {
 		respItem := &response.ConfigResp{}
 		err := response.CopyEntityToRes(respItem, &conf)
 		if err != nil {
-			h.Logger.Error("response.CopyEntityToRes", err.Error(), err)
+			logger.AtLog.Logger.Error("response.CopyEntityToRes", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
@@ -62,14 +64,14 @@ func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
-		h.Logger.Error("decoder.Decode", err.Error(), err)
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	err = reqBody.Validate()
 	if err != nil {
-		h.Logger.Error("reqBody.Validate", err.Error(), err)
+		logger.AtLog.Logger.Error("reqBody.Validate", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -80,7 +82,7 @@ func (h *httpDelivery) createConfig(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		h.Logger.Error("h.Usecase.CreateConfig", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.CreateConfig", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -105,7 +107,7 @@ func (h *httpDelivery) deleteConfig(w http.ResponseWriter, r *http.Request) {
 	key := vars["key"]
 	err := h.Usecase.DeleteConfig(key)
 	if err != nil {
-		h.Logger.Error("h.Usecase.DeleteConfig", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.DeleteConfig", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -127,7 +129,7 @@ func (h *httpDelivery) getConfig(w http.ResponseWriter, r *http.Request) {
 	key := vars["key"]
 	config, err := h.Usecase.GetConfig(key)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetConfig", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetConfig", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

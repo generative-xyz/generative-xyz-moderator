@@ -11,8 +11,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/redisv9"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
@@ -54,18 +56,18 @@ func init() {
 	}
 
 	l := _logger.NewLogger(c.Debug)
-	l.LogAny("config", zap.Any("config.NewConfig", c))
+	l.AtLog().Logger.Info("config", zap.Any("config.NewConfig", c))
 
 	mongoCnn := fmt.Sprintf("%s://%s:%s@%s/?retryWrites=true&w=majority", c.Databases.Mongo.Scheme, c.Databases.Mongo.User, c.Databases.Mongo.Pass, c.Databases.Mongo.Host)
 	mongoDbConnection, err := connections.NewMongo(mongoCnn)
 	if err != nil {
-		log.Println("Cannot connect mongoDB ", err)
+		l.AtLog().Logger.Error("Cannot connect mongoDB ", zap.Error(err))
 		panic(err)
 	}
 
 	ethClient, err = blockchain.NewBlockchain(c.BlockchainConfig)
 	if err != nil {
-		log.Println("Cannot connect to eth client ", err)
+		l.AtLog().Logger.Error("Cannot connect ethClient ", zap.Error(err))
 		panic(err)
 	}
 
@@ -97,14 +99,14 @@ func main() {
 }
 
 func startServer() {
-	log.Println("starting server ...")
+	logger.AtLog().Logger.Info("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	redisV9 := redisv9.NewClient(conf.Redis)
 	r := mux.NewRouter()
 
 	gcs, err := googlecloud.NewDataGCStorage(*conf)
 	if err != nil {
-		logger.Error("Cannot init gcs", err)
+		_logger.AtLog.Logger.Error("Cannot init gcs", zap.Error(err))
 		return
 	}
 	s3Adapter := googlecloud.NewS3Adapter(googlecloud.S3AdapterConfig{
@@ -125,9 +127,17 @@ func startServer() {
 	rPubsub := redis.NewPubsubClient(conf.Redis)
 	delegateService, err := delegate.NewService(ethClient.GetClient())
 	if err != nil {
-		logger.Error("error initializing delegate service", err)
+		_logger.AtLog.Logger.Error("error initializing delegate service", zap.Error(err))
 		return
 	}
+
+	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing tcClient service", zap.Error(err))
+		return
+	}
+	tcClient := eth.NewClient(tcClientWrap)
+
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
@@ -149,17 +159,19 @@ func startServer() {
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
+
+		TcClient: tcClient,
 	}
 
 	repo, err := repository.NewRepository(&g)
 	if err != nil {
-		logger.Error("Cannot init repository", err)
+		_logger.AtLog.Logger.Error("Cannot init repository", zap.Error(err))
 		return
 	}
 
 	err = repo.CreateCollectionIndexes()
 	if err != nil {
-		logger.Error("CreateCollectionIndexes - Cannot created index ", err)
+		_logger.AtLog.Logger.Error("CreateCollectionIndexes - Cannot created index ", zap.Error(err))
 		// return
 	}
 
@@ -171,7 +183,7 @@ func startServer() {
 
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
-		logger.Error("LoadUsecases - Cannot init usecase", err)
+		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
 
@@ -286,16 +298,16 @@ func startServer() {
 			if server.Server != nil {
 				go server.Server.StartServer()
 			}
-			h.Logger.Info(fmt.Sprintf("%s is enabled", name))
+			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is enabled", name))
 		} else {
-			h.Logger.Info(fmt.Sprintf("%s is disabled", name))
+			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is disabled", name))
 		}
 	}
 
 	// start a group cron:
 	if len(conf.CronTabList) > 0 {
 		for _, cronKey := range conf.CronTabList {
-			h.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
+			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
 			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
 		}
 
@@ -311,13 +323,13 @@ func startServer() {
 	// // until the timeout deadline.
 	// err := srv.Shutdown(ctx)
 	// if err != nil {
-	// 	h.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
+	// 	logger.AtLog.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
 	// 	return
 	// }
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	<-ctx.Done() //if your application should wait for other services
 	// to finalize based on context cancellation.
-	h.Logger.Warning("httpDelivery.StartServer - server is shutting down")
+	_logger.AtLog.Logger.Warn("httpDelivery.StartServer - server is shutting down")
 	tracer.Stop()
 	os.Exit(0)
 

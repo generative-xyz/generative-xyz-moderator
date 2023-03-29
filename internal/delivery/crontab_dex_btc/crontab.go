@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -32,14 +33,14 @@ func (h ScronBTCHandler) StartServer() {
 	for {
 		wg.Add(1)
 
-		h.Logger.Info("h.Usecase.JobWatchPendingDexBTCListing", "start")
+		logger.AtLog.Logger.Info("h.Usecase.JobWatchPendingDexBTCListing", zap.Any("start", "start"))
 		// job check tx:
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			h.Usecase.JobWatchPendingDexBTCListing()
 		}(&wg)
 
-		h.Logger.Info("h.Usecase.JobWatchPendingDexBTCListing", "wait")
+		logger.AtLog.Logger.Info("h.Usecase.JobWatchPendingDexBTCListing", zap.Any("wait", "wait"))
 		wg.Wait()
 		time.Sleep(3 * time.Minute)
 	}

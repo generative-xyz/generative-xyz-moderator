@@ -27,12 +27,12 @@ package usecase
 
 // func (u Usecase) CreateETHWalletAddress(input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
-// 	u.Logger.Info("input", input)
+// 	logger.AtLog.Logger.Info("input", zap.Any("input", input))
 
 // 	walletAddress := &entity.ETHWalletAddress{}
 // 	err := copier.Copy(walletAddress, input)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.Copy", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -40,39 +40,39 @@ package usecase
 
 // 	privKey, pubKey, address, err := ethClient.GenerateAddress()
 // 	if err != nil {
-// 		u.Logger.Error("ethClient.GenerateAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ethClient.GenerateAddress", zap.Error(err))
 // 		return nil, err
 // 	} else {
 // 		walletAddress.Mnemonic = privKey
 // 	}
 
-// 	u.Logger.Info("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
+// 	logger.AtLog.Logger.Info("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", zap.Any("privKey, pubKey, address)", privKey, pubKey, address)))
 
-// 	u.Logger.Info("CreateETHWalletAddress.receive", address)
+// 	logger.AtLog.Logger.Info("CreateETHWalletAddress.receive", zap.Any("address", address))
 // 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.FindProjectByTokenID", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.FindProjectByTokenID", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("found.Project", p.ID)
+// 	logger.AtLog.Logger.Info("found.Project", zap.Any("p.ID", p.ID))
 // 	mintPriceInt, err := strconv.ParseInt(p.MintPrice, 10, 64)
 // 	if err != nil {
-// 		u.Logger.Error("convertBTCToInt", err.Error(), err)
+// 		logger.AtLog.Logger.Error("convertBTCToInt", zap.Error(err))
 // 		return nil, err
 // 	}
 // 	if p.NetworkFee != "" {
 // 		// extra network fee
 // 		networkFee, err1 := strconv.ParseInt(p.NetworkFee, 10, 64)
 // 		if err1 != nil {
-// 			u.Logger.Error("convertBTCToInt", err.Error(), err)
+// 			logger.AtLog.Logger.Error("convertBTCToInt", zap.Error(err))
 // 		} else {
 // 			mintPriceInt += networkFee
 // 		}
 // 	}
 // 	mintPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 // 	if err != nil {
-// 		u.Logger.Error("convertBTCToETH", err.Error(), err)
+// 		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 // 		return nil, err
 // 	}
 // 	walletAddress.Amount = mintPrice // 0.023 * 1e18 eth
@@ -88,7 +88,7 @@ package usecase
 
 // 	err = u.Repo.InsertEthWalletAddress(walletAddress)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -97,9 +97,9 @@ package usecase
 
 // func (u Usecase) IsWhitelistedAddress(ctx context.Context, userAddr string, whitelistedAddrs []string) (bool, error) {
 
-// 	u.Logger.Info("whitelistedAddrs", whitelistedAddrs)
+// 	logger.AtLog.Logger.Info("whitelistedAddrs", zap.Any("whitelistedAddrs", whitelistedAddrs))
 // 	if len(whitelistedAddrs) == 0 {
-// 		u.Logger.Info("whitelistedAddrs.Total", len(whitelistedAddrs))
+// 		logger.AtLog.Logger.Info("whitelistedAddrs.Total", zap.Any("len(whitelistedAddrs)", len(whitelistedAddrs)))
 // 		return false, nil
 // 	}
 // 	filter := nfts.MoralisFilter{}
@@ -108,27 +108,27 @@ package usecase
 // 	filter.TokenAddresses = new([]string)
 // 	*filter.TokenAddresses = whitelistedAddrs
 
-// 	u.Logger.Info("filter.GetNftByWalletAddress", filter)
+// 	logger.AtLog.Logger.Info("filter.GetNftByWalletAddress", zap.Any("filter", filter))
 // 	resp, err := u.MoralisNft.GetNftByWalletAddress(userAddr, filter)
 // 	if err != nil {
-// 		u.Logger.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.MoralisNft.GetNftByWalletAddress", zap.Error(err))
 // 		return false, err
 // 	}
 
-// 	u.Logger.Info("resp", resp)
+// 	logger.AtLog.Logger.Info("resp", zap.Any("resp", resp))
 // 	if len(resp.Result) > 0 {
 // 		return true, nil
 // 	}
 
 // 	delegations, err := u.DelegateService.GetDelegationsByDelegate(ctx, userAddr)
 // 	if err != nil {
-// 		u.Logger.Error("u.DelegateService.GetDelegationsByDelegate", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.DelegateService.GetDelegationsByDelegate", zap.Error(err))
 // 		return false, err
 // 	}
 
-// 	u.Logger.Info("delegations", delegations)
+// 	logger.AtLog.Logger.Info("delegations", zap.Any("delegations", delegations))
 // 	for _, delegation := range delegations {
-		
+
 // 		if delegation.Type == 2 || delegation.Type == 3 {
 // 			if containsIgnoreCase(whitelistedAddrs, delegation.Contract.String()) {
 // 				return true, nil
@@ -136,44 +136,44 @@ package usecase
 // 		}else if ( delegation.Type == 1) {
 // 			resp, err := u.MoralisNft.GetNftByWalletAddress(delegation.Vault.Hex(), filter)
 // 			if err != nil {
-// 				u.Logger.Error("u.MoralisNft.GetNftByWalletAddress", err.Error(), err)
+// 				logger.AtLog.Logger.Error("u.MoralisNft.GetNftByWalletAddress", zap.Error(err))
 // 				continue
 // 			}
 
-// 			u.Logger.Info("resp", resp)
+// 			logger.AtLog.Logger.Info("resp", zap.Any("resp", resp))
 // 			if len(resp.Result) > 0 {
 // 				return true, nil
 // 			}
 // 		}
-		
+
 // 	}
 // 	return false, nil
 // }
 
 // func (u Usecase) CreateWhitelistedETHWalletAddress(ctx context.Context, userAddr string, input structure.EthWalletAddressData) (*entity.ETHWalletAddress, error) {
 
-// 	u.Logger.Info("input", input)
+// 	logger.AtLog.Logger.Info("input", zap.Any("input", input))
 
 // 	weth, err := u.Repo.FindDelegateEthWalletAddressByUserAddress(userAddr)
 // 	if err == nil {
 // 		if weth != nil {
-// 			u.Logger.Info("ethWalletAddress", weth)
+// 			logger.AtLog.Logger.Info("ethWalletAddress", zap.Any("weth", weth))
 // 			if weth.IsConfirm == true {
 // 				err = errors.New("This account has applied discount")
-// 				u.Logger.Error("applied.Discount", err.Error(), err)
+// 				logger.AtLog.Logger.Error("applied.Discount", zap.Error(err))
 // 				return nil, err
 // 			}
 
 // 			return weth, nil
 // 		}
 // 	} else {
-// 		u.Logger.Error("u.Repo.FindEthWalletAddressByUserAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.Repo.FindEthWalletAddressByUserAddress", zap.Error(err))
 // 	}
 
 // 	walletAddress := &entity.ETHWalletAddress{}
 // 	err = copier.Copy(walletAddress, input)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.Copy", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.Copy", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -191,39 +191,39 @@ package usecase
 
 // 	privKey, pubKey, address, err := ethClient.GenerateAddress()
 // 	if err != nil {
-// 		u.Logger.Error("ethClient.GenerateAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ethClient.GenerateAddress", zap.Error(err))
 // 		return nil, err
 // 	} else {
 // 		walletAddress.Mnemonic = privKey
 // 	}
 
-// 	u.Logger.Info("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", privKey, pubKey, address))
+// 	logger.AtLog.Logger.Info("CreateETHWalletAddress.createdWallet", fmt.Sprintf("%v %v %v", zap.Any("privKey, pubKey, address)", privKey, pubKey, address)))
 
-// 	u.Logger.Info("CreateETHWalletAddress.receive", address)
+// 	logger.AtLog.Logger.Info("CreateETHWalletAddress.receive", zap.Any("address", address))
 // 	p, err := u.Repo.FindProjectByTokenID(input.ProjectID)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.FindProjectByTokenID", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.FindProjectByTokenID", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("found.Project", p.ID)
+// 	logger.AtLog.Logger.Info("found.Project", zap.Any("p.ID", p.ID))
 // 	mintPriceInt, err := strconv.Atoi(p.MintPrice)
 // 	if err != nil {
-// 		u.Logger.Error("convertBTCToInt", err.Error(), err)
+// 		logger.AtLog.Logger.Error("convertBTCToInt", zap.Error(err))
 // 		return nil, err
 // 	}
 // 	if p.NetworkFee != "" {
 // 		// extra network fee
 // 		networkFee, err1 := strconv.Atoi(p.NetworkFee)
 // 		if err1 != nil {
-// 			u.Logger.Error("convertBTCToInt", err.Error(), err)
+// 			logger.AtLog.Logger.Error("convertBTCToInt", zap.Error(err))
 // 		} else {
 // 			mintPriceInt += networkFee
 // 		}
 // 	}
 // 	mintPrice, _, _, err := u.convertBTCToETH(fmt.Sprintf("%f", float64(mintPriceInt)/1e8))
 // 	if err != nil {
-// 		u.Logger.Error("convertBTCToETH", err.Error(), err)
+// 		logger.AtLog.Logger.Error("convertBTCToETH", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -259,7 +259,7 @@ package usecase
 
 // 	err = u.Repo.InsertEthWalletAddress(walletAddress)
 // 	if err != nil {
-// 		u.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CreateETHWalletAddress.InsertEthWalletAddress", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -268,35 +268,35 @@ package usecase
 
 // func (u Usecase) ETHMint(input structure.BctMintData) (*entity.ETHWalletAddress, error) {
 
-// 	u.Logger.Info("input", input)
+// 	logger.AtLog.Logger.Info("input", zap.Any("input", input))
 
 // 	ethAddress, err := u.Repo.FindEthWalletAddressByOrd(input.Address)
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.FindBtcWalletAddressByOrd", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.FindBtcWalletAddressByOrd", zap.Error(err))
 // 		return nil, err
 // 	}
 
 // 	//mint logic
 // 	ethAddress, err = u.MintLogicETH(ethAddress)
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.MintLogic", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.MintLogic", zap.Error(err))
 // 		return nil, err
 // 	}
 
 // 	// get data from project
 // 	p, err := u.Repo.FindProjectByTokenID(ethAddress.ProjectID)
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.FindProjectByTokenID", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.FindProjectByTokenID", zap.Error(err))
 // 		return nil, err
 // 	}
-// 	//u.Logger.Info("found.Project", p)
+// 	//logger.AtLog.Logger.Info("found.Project", zap.Any("p", p))
 
 // 	//prepare data for mint
 // 	// - Get project.AnimationURL
 // 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
 // 	err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.helpers.Base64DecodeRaw", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -307,7 +307,7 @@ package usecase
 // 	now := time.Now().UTC().Unix()
 // 	uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%d.html", p.TokenID, now))
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.helpers.Base64DecodeRaw", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.helpers.Base64DecodeRaw", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -323,7 +323,7 @@ package usecase
 // 	})
 // 	u.Notify(fmt.Sprintf("[MintFor][projectID %s]", ethAddress.ProjectID), ethAddress.UserAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", ethAddress.UserAddress, resp.Stdout))
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.Mint", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.Mint", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -336,14 +336,14 @@ package usecase
 // 	bytes := []byte(jsonStr)
 // 	err = json.Unmarshal(bytes, btcMintResp)
 // 	if err != nil {
-// 		u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+// 		logger.AtLog.Logger.Error("BTCMint.helpers.JsonTransform", zap.Error(err))
 // 		return nil, err
 // 	}
 
 // 	ethAddress.MintResponse = entity.MintStdoputResponse(*btcMintResp)
 // 	ethAddress, err = u.UpdateEthMintedStatus(ethAddress)
 // 	if err != nil {
-// 		u.Logger.Error("ETHMint.UpdateBtcMintedStatus", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.UpdateBtcMintedStatus", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -352,23 +352,23 @@ package usecase
 
 // func (u Usecase) ReadGCSFolderETH(input structure.BctWalletAddressData) (*entity.ETHWalletAddress, error) {
 
-// 	u.Logger.Info("input", input)
+// 	logger.AtLog.Logger.Info("input", zap.Any("input", input))
 // 	u.GCS.ReadFolder("btc-projects/project-1/")
 // 	return nil, nil
 // }
 
 // func (u Usecase) UpdateEthMintedStatus(ethWallet *entity.ETHWalletAddress) (*entity.ETHWalletAddress, error) {
 
-// 	u.Logger.Info("input", ethWallet)
+// 	logger.AtLog.Logger.Info("input", zap.Any("ethWallet", ethWallet))
 // 	ethWallet.IsMinted = true
 
 // 	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethWallet.OrdAddress, ethWallet)
 // 	if err != nil {
-// 		u.Logger.Error("BTCMint.helpers.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+// 		logger.AtLog.Logger.Error("BTCMint.helpers.UpdateBtcWalletAddressByOrdAddr", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("updated", updated)
+// 	logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 // 	return ethWallet, nil
 // }
 
@@ -389,7 +389,7 @@ package usecase
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("balance", balance)
+// 	logger.AtLog.Logger.Info("balance", zap.Any("balance", balance))
 
 // 	if balance == nil {
 // 		err = errors.New("balance is nil")
@@ -399,7 +399,7 @@ package usecase
 // 	ethEntity.BalanceCheckTime = ethEntity.BalanceCheckTime + 1
 // 	updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 // 	if err != nil {
-// 		u.Logger.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.Repo.UpdateBtcWalletAddressByOrdAddr", zap.Error(err))
 // 		return nil, err
 // 	}
 
@@ -415,18 +415,18 @@ package usecase
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("userWallet", ethEntity.UserAddress)
-// 	u.Logger.Info("ordWalletAddress", ethEntity.OrdAddress)
+// 	logger.AtLog.Logger.Info("userWallet", zap.Any("ethEntity.UserAddress", ethEntity.UserAddress))
+// 	logger.AtLog.Logger.Info("ordWalletAddress", zap.Any("ethEntity.OrdAddress", ethEntity.OrdAddress))
 
 // 	ethEntity.IsConfirm = true
 // 	ethEntity.Balance = balance.String()
 // 	//TODO - save balance
 // 	updated, err = u.Repo.UpdateEthWalletAddressByOrdAddr(ethEntity.OrdAddress, &ethEntity)
 // 	if err != nil {
-// 		u.Logger.Error("u.CheckBalance.updatedStatus", err.Error(), err)
+// 		logger.AtLog.Logger.Error("u.CheckBalance.updatedStatus", zap.Error(err))
 // 		return nil, err
 // 	}
-// 	u.Logger.Info("updated", updated)
+// 	logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 
 // 	return &ethEntity, nil
 // }
@@ -438,17 +438,17 @@ package usecase
 // 	//if this was minted, skip it
 // 	if ethEntity.IsMinted {
 // 		err = errors.New("This btc was minted")
-// 		u.Logger.Error("ETHMint.Minted", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.Minted", zap.Error(err))
 // 		return nil, err
 // 	}
 
 // 	if !ethEntity.IsConfirm {
 // 		err = errors.New("This btc must be IsConfirmed")
-// 		u.Logger.Error("ETHMint.IsConfirmed", err.Error(), err)
+// 		logger.AtLog.Logger.Error("ETHMint.IsConfirmed", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("ethEntity", ethEntity)
+// 	logger.AtLog.Logger.Info("ethEntity", zap.Any("ethEntity", ethEntity))
 // 	return ethEntity, nil
 // }
 
@@ -457,27 +457,27 @@ package usecase
 
 // 	addreses, err := u.Repo.ListProcessingETHWalletAddress()
 // 	if err != nil {
-// 		u.Logger.Error("WaitingForETHBalancing.ListProcessingWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("WaitingForETHBalancing.ListProcessingWalletAddress", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("addreses", addreses)
+// 	logger.AtLog.Logger.Info("addreses", zap.Any("addreses", addreses))
 // 	for _, item := range addreses {
 // 		func(item entity.ETHWalletAddress) {
 
 // 			newItem, err := u.BalanceETHLogic(item)
 // 			if err != nil {
-// 				u.Logger.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), err.Error(), err)
+// 				logger.AtLog.Logger.Error(fmt.Sprintf("WillBeProcessWTC.BalanceLogic.%s.Error", item.OrdAddress), zap.Error(err))
 // 				return
 // 			}
-// 			u.Logger.Info(fmt.Sprintf("WaitingForETHBalancing.BalanceLogic.%s", item.OrdAddress), newItem)
+// 			logger.AtLog.Logger.Info(fmt.Sprintf("WaitingForETHBalancing.BalanceLogic.%s", item.OrdAddress), newItem)
 // 			u.Notify(fmt.Sprintf("[WaitingForBalance][projectID %s]", item.ProjectID), item.UserAddress, fmt.Sprintf("%s checking ETH %s from [user_address] %s", item.OrdAddress, newItem.Balance, item.UserAddress))
 // 			updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, newItem)
 // 			if err != nil {
-// 				u.Logger.Error(fmt.Sprintf("WaitingForETHBalancing.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+// 				logger.AtLog.Logger.Error(fmt.Sprintf("WaitingForETHBalancing.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), zap.Error(err))
 // 				return
 // 			}
-// 			u.Logger.Info("updated", updated)
+// 			logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 
 // 			u.Repo.CreateTokenUriHistory(&entity.TokenUriHistories{
 // 				MinterAddress: os.Getenv("ORD_MASTER_ADDRESS"),
@@ -499,23 +499,23 @@ package usecase
 
 // 	addreses, err := u.Repo.ListMintingETHWalletAddress()
 // 	if err != nil {
-// 		u.Logger.Error("WaitingForETHMinting.ListProcessingWalletAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("WaitingForETHMinting.ListProcessingWalletAddress", zap.Error(err))
 // 		return nil, err
 // 	}
 
-// 	u.Logger.Info("addreses", addreses)
+// 	logger.AtLog.Logger.Info("addreses", zap.Any("addreses", addreses))
 // 	for _, item := range addreses {
 // 		func(item entity.ETHWalletAddress) {
 
 // 			if item.MintResponse.Inscription != "" {
 // 				err = errors.New("Token is being minted")
-// 				u.Logger.Error("Token.minted", err.Error(), err)
+// 				logger.AtLog.Logger.Error("Token.minted", zap.Error(err))
 // 				return
 // 			}
 
 // 			_, _, err := u.BTCMint(structure.BctMintData{Address: item.OrdAddress})
 // 			if err != nil {
-// 				u.Logger.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), err.Error(), err)
+// 				logger.AtLog.Logger.Error(fmt.Sprintf("WillBeProcessWTC.UpdateEthWalletAddressByOrdAddr.%s.Error", item.OrdAddress), zap.Error(err))
 // 				return
 // 			}
 // 		}(item)
@@ -530,33 +530,33 @@ package usecase
 
 // 	addreses, err := u.Repo.ListETHAddress()
 // 	if err != nil {
-// 		u.Logger.Error("WillBeProcessWTC.ListETHAddress", err.Error(), err)
+// 		logger.AtLog.Logger.Error("WillBeProcessWTC.ListETHAddress", zap.Error(err))
 // 		return nil, err
 // 	}
 
 // 	_, bs, err := u.buildBTCClient()
 
-// 	u.Logger.Info("addreses", addreses)
+// 	logger.AtLog.Logger.Info("addreses", zap.Any("addreses", addreses))
 // 	for _, item := range addreses {
 // 		func(item entity.ETHWalletAddress) {
 
-// 			u.Logger.Info("userWallet", item.UserAddress)
-// 			u.Logger.Info("ordWalletAddress", item.OrdAddress)
+// 			logger.AtLog.Logger.Info("userWallet", zap.Any("item.UserAddress", item.UserAddress))
+// 			logger.AtLog.Logger.Info("ordWalletAddress", zap.Any("item.OrdAddress", item.OrdAddress))
 
 // 			//check token is created or not via BlockcypherService
 // 			txInfo, err := bs.CheckTx(item.MintResponse.Reveal)
 // 			if err != nil {
-// 				u.Logger.Error(" bs.CheckTx", err.Error(), err)
+// 				logger.AtLog.Logger.Error(" bs.CheckTx", zap.Error(err))
 // 				u.Notify(fmt.Sprintf("[Error][ETH][SendToken.bs.CheckTx][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
 // 				return
 // 			}
 
-// 			u.Logger.Info("txInfo", txInfo)
+// 			logger.AtLog.Logger.Info("txInfo", zap.Any("txInfo", txInfo))
 // 			if txInfo.Confirmations > 1 {
 // 				sentTokenResp, err := u.SendToken(item.UserAddress, item.MintResponse.Inscription) // TODO: BAO update this logic.
 // 				if err != nil {
 // 					u.Notify(fmt.Sprintf("[Error][ETH][SendToken][projectID %s]", item.ProjectID), item.InscriptionID, fmt.Sprintf("%s, object: %s", err.Error(), item.UUID))
-// 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), err.Error(), err)
+// 					logger.AtLog.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.sentToken.%s.Error", item.OrdAddress), zap.Error(err))
 // 					return
 // 				}
 
@@ -575,32 +575,32 @@ package usecase
 
 // 				u.Notify(fmt.Sprintf("[SendToken][ProjectID: %s]", item.ProjectID), item.UserAddress, item.MintResponse.Inscription)
 
-// 				u.Logger.Info(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
+// 				logger.AtLog.Logger.Info(fmt.Sprintf("ListenTheMintedBTC.execResp.%s", item.OrdAddress), sentTokenResp)
 
 // 				//TODO - fund via ETH
 
 // 				item.MintResponse.IsSent = true
 // 				updated, err := u.Repo.UpdateEthWalletAddressByOrdAddr(item.OrdAddress, &item)
 // 				if err != nil {
-// 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), err.Error(), err)
+// 					logger.AtLog.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateEthWalletAddressByOrdAddr.Error", item.OrdAddress), zap.Error(err))
 // 					return
 // 				}
-// 				u.Logger.Info("updated", updated)
+// 				logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 
 // 				//TODO: - create entity.TokenURI
 // 				_, err = u.CreateBTCTokenURI(item.ProjectID, item.MintResponse.Inscription, item.FileURI, entity.ETH)
 // 				if err != nil {
-// 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), err.Error(), err)
+// 					logger.AtLog.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.CreateBTCTokenURI.Error", item.OrdAddress), zap.Error(err))
 // 					return
 // 				}
 
 // 				err = u.Repo.UpdateTokenOnchainStatusByTokenId(item.MintResponse.Inscription)
 // 				if err != nil {
-// 					u.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), err.Error(), err)
+// 					logger.AtLog.Logger.Error(fmt.Sprintf("ListenTheMintedBTC.%s.UpdateTokenOnchainStatusByTokenId.Error", item.OrdAddress), zap.Error(err))
 // 					return
 // 				}
 // 			} else {
-// 				u.Logger.Info("checkTx.Inscription.Existed", false)
+// 				logger.AtLog.Logger.Info("checkTx.Inscription.Existed", zap.Any("false", false))
 // 			}
 
 // 		}(item)
@@ -655,8 +655,7 @@ package usecase
 // 			return true, nil
 // 		}
 // 	}
-	 
-	
+
 // 	return false, nil
 // }
 
