@@ -22,6 +22,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
+	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -194,6 +195,12 @@ func startServer() {
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
+	}
+	
+	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+	servers["txconsumer"] = delivery.AddedServer{
+		Server:  txConsumer,
+		Enabled: conf.TxConsumerConfig.Enabled,
 	}
 
 	// job init:
