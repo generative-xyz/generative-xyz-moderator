@@ -223,6 +223,8 @@ func (h *httpDelivery) checkRefundMintBtc(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	res := h.Usecase.CheckRefundNftBtc()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+	// res := h.Usecase.CheckRefundNftBtc()
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, res, "")
+	// res := h.Usecase.CheckRefundNftBtc()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
