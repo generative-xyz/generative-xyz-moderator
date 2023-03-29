@@ -1,12 +1,14 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/contracts/generative_marketplace_lib"
@@ -280,148 +282,20 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 
-	// go func( pDChan chan projectDetailChan, contractAddr string, tokenIDStr string) {
-	// 	projectDetail := &structure.ProjectDetail{}
-	// 	var err error
+	//DAO
+	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
+		ProjectIds: []string{project.ID.Hex()},
+		CreatedBy:  project.CreatorAddrr,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("CreateDAOProject failed", zap.Error(err))
+	} else {
+		logger.AtLog.Logger.Info("CreateDAOProject success",
+			zap.String("project_id", project.ID.Hex()),
+			zap.Strings("ids", ids),
+		)
+	}
 
-	// 	defer func  ()  {
-	// 		pDChan <- projectDetailChan {
-	// 			Data: projectDetail,
-	// 			Err:  err,
-	// 		}
-	// 	}()
-
-	// 	projectDetail, err = u.getProjectDetailFromChainWithoutCache(structure.GetProjectDetailMessageReq{
-	// 		ContractAddress:  contractAddr,
-	// 		ProjectID:  tokenIDStr,
-	// 	})
-	// 	if err != nil {
-	// 		return
-	// 	}
-
-	// }(pDChan, contractAddr, tokenIDStr)
-
-	// go func( pDChan chan projectStatChan, contractAddr string, tokenIDStr string) {
-	// 	projectStat := &entity.ProjectStat{}
-	// 	traitStat := make([]entity.TraitStat, 0)
-	// 	var err error
-
-	// 	defer func  ()  {
-	// 		pDChan <- projectStatChan {
-	// 			Data: projectStat,
-	// 			DataTrait: traitStat,
-	// 			Err:  err,
-	// 		}
-	// 	}()
-
-	// 	projectStat, traitStat, err = u.GetUpdatedProjectStats(structure.GetProjectReq{
-	// 		ContractAddr: contractAddr,
-	// 		TokenID: tokenIDStr,
-	// 	})
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// }(pSChan, contractAddr, tokenIDStr)
-
-	// projectFChan := <- pChan
-	// projectDetailFChan := <- pDChan
-	// projectStatFChan := <- pSChan
-
-	// err = projectFChan.Err
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// project = projectFChan.Data
-	// //get creator profile
-	// getProfile := func(profileChan chan structure.ProfileChan, address string) {
-	// 	var user *entity.Users
-	// 	var err error
-
-	// 	defer func() {
-	// 		profileChan <- structure.ProfileChan{
-	// 			Data: user,
-	// 			Err: err,
-	// 		}
-	// 	}()
-
-	// 	user, err = u.GetUserProfileByWalletAddress(strings.ToLower(address))
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// }
-
-	// profileChan := make(chan structure.ProfileChan, 1)
-	// go getProfile(profileChan, project.CreatorAddrr)
-
-	// usrFromChan := <- profileChan
-
-	// project.MintingInfo = entity.ProjectMintingInfo{
-	// 	Index: 0,
-	// 	IndexReverse: 0,
-	// }
-
-	// err = projectDetailFChan.Err
-	// if err != nil {
-	// 	//return nil, err
-	// }else{
-
-	// 	if project.Priority ==  nil {
-	// 		priority := 0
-	// 		project.Priority =  &priority
-	// 	}
-	// }
-
-	// // get minted time
-	// if project.BlockNumberMinted == nil || project.MintedTime == nil {
-	// 	mintedTimeChan := make (chan structure.NftMintedTimeChan, 1)
-	// 	go func(mintedTimeChan chan structure.NftMintedTimeChan) {
-	// 		var mintedTime *structure.NftMintedTime
-	// 		var err error
-	// 		defer func() {
-	// 			mintedTimeChan <- structure.NftMintedTimeChan{
-	// 				NftMintedTime: mintedTime,
-	// 				Err: err,
-	// 			}
-	// 		}()
-
-	// 		mintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
-	// 			ContractAddress: project.ContractAddress,
-	// 			TokenID: project.TokenID,
-	// 		})
-	// 	}(mintedTimeChan)
-	// 	mintedTimeFChan := <-mintedTimeChan
-	// 	if mintedTimeFChan.Err != nil {
-	// 		err =
-	// 	} else {
-	// 		project.BlockNumberMinted = mintedTimeFChan.NftMintedTime.BlockNumberMinted
-	// 		project.MintedTime = mintedTimeFChan.NftMintedTime.MintedTime
-	// 	}
-	// }
-
-	// project.TokenIDInt = int64(tokenIDInt)
-
-	// if usrFromChan.Err != nil {
-	// 	u.Logger.Error("usrFromChan.Err", usrFromChan.Err.Error(), usrFromChan.Err)
-	// }else{
-	// 	project.CreatorProfile = *usrFromChan.Data
-	// }
-
-	// if projectStatFChan.Err != nil {
-	// 	u.Logger.Error("projectStatFChan.Err", projectStatFChan.Err.Error(), projectStatFChan.Err)
-	// } else {
-	// 	project.Stats = *projectStatFChan.Data
-	// 	project.TraitsStat = projectStatFChan.DataTrait
-	// }
-
-	// u.Logger.Info("project",project)
-	// updated, err := u.Repo.UpdateProject(project.UUID, project)
-	// if err != nil {
-	// 	u.Logger.Error(" u.UpdateProject", err.Error(), err)
-	// 	return nil, err
-	// }
-	// u.Logger.Info("projectUUID", project.UUID)
-	// u.Logger.Info("updated",updated)
 	return project, nil
 }
 

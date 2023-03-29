@@ -33,6 +33,10 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		pe.Images = imageLinks
 	}
 
+	pe.IsHidden = true
+	pe.Status = false
+	pe.IsSynced = false
+
 	if os.Getenv("ENV") != "local" {
 		err = u.Repo.CreateProject(pe)
 		if err != nil {
