@@ -1096,8 +1096,10 @@ func (u Usecase) MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRa
 // job check 3 tx mint:
 func (u Usecase) JobMint_CheckTxMintSend() error {
 
+	// check tx mint from ord:
 	u.checkTxMintSend_ForOrdinal()
 
+	// check tx mint from tc:
 	u.checkTxMintSend_ForTc()
 
 	return nil
