@@ -5911,6 +5911,9 @@ var doc = `{
                         "$ref": "#/definitions/entity.TraitStat"
                     }
                 },
+                "txHash": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -6067,6 +6070,9 @@ var doc = `{
                 },
                 "project_id_int": {
                     "type": "integer"
+                },
+                "seed": {
+                    "type": "string"
                 },
                 "source": {
                     "type": "string"
@@ -6541,7 +6547,7 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "tokenID": {
+                "txHash": {
                     "type": "string"
                 },
                 "zipLink": {
@@ -7375,6 +7381,9 @@ var doc = `{
                 },
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
+                },
+                "seed": {
+                    "type": "string"
                 },
                 "sell_verified": {
                     "type": "boolean"

@@ -111,6 +111,7 @@ type Projects struct {
 	InscribedBy              string             `bson:"inscribedBy"`
 	HtmlFile                 string             `bson:"htmlFile"`
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
+	TxHash                   string             `json:"txHash"`
 }
 
 type ProjectsHaveMinted struct {

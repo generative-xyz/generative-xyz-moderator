@@ -342,6 +342,8 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
+      txHash:
+        type: string
       updated_at:
         type: string
       uuid:
@@ -446,6 +448,8 @@ definitions:
         type: string
       project_id_int:
         type: integer
+      seed:
+        type: string
       source:
         type: string
       stats:
@@ -758,7 +762,7 @@ definitions:
         items:
           type: string
         type: array
-      tokenID:
+      txHash:
         type: string
       zipLink:
         type: string
@@ -1307,6 +1311,8 @@ definitions:
         type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
+      seed:
+        type: string
       sell_verified:
         type: boolean
       stats:

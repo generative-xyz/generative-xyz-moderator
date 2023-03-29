@@ -117,6 +117,22 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 	return resp, nil
 }
 
+
+func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txHash", txHash}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) FindProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
