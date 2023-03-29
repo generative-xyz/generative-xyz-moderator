@@ -46,6 +46,8 @@ type Config struct {
 
 	MASTER_ADDRESS_CLAIM_BTC, MASTER_ADDRESS_CLAIM_ETH string
 
+	TC_MASTER_PRIVATE_KEY string
+
 	MarketBTCServiceFeeAddress string
 
 	OtherCategoryID      string
@@ -180,6 +182,7 @@ type Chain struct {
 
 type BlockchainConfig struct {
 	ETHEndpoint string
+	TCEndpoint  string
 }
 
 type TxConsumerConfig struct {
@@ -312,6 +315,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 		},
 		BlockchainConfig: BlockchainConfig{
 			ETHEndpoint: os.Getenv("ETH_ENDPOINT"),
+			TCEndpoint:  os.Getenv("TC_ENDPOINT"),
 		},
 		TxConsumerConfig: TxConsumerConfig{
 			Enabled:       enabled,
@@ -367,6 +371,7 @@ func NewConfig(filePaths ...string) (*Config, error) {
 
 		MASTER_ADDRESS_CLAIM_BTC: os.Getenv("MASTER_ADDRESS_CLAIM_BTC"),
 		MASTER_ADDRESS_CLAIM_ETH: os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
+		TC_MASTER_PRIVATE_KEY:    os.Getenv("MASTER_ADDRESS_CLAIM_ETH"),
 
 		MarketBTCServiceFeeAddress: os.Getenv("MARKET_BTC_SERVICE_FEE_ADDRESS"),
 		OtherCategoryID:            os.Getenv("OTHER_CATEGORY_ID"),

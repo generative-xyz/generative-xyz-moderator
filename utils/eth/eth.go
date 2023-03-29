@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 )
 
 type Client struct {
@@ -359,6 +360,61 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 
 	if err != nil {
 		return "", errors.Wrap(err, "contract.MultiTransferOST")
+	}
+
+	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
+
+	return tx.Hash().Hex(), nil
+}
+
+// mint on tc:
+func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks [][]byte) (string, error) {
+
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	// gasPrice, err := c.SuggestGasPrice(context.Background())
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	chainID, err := c.NetworkID(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0) // in wei
+	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
+	// auth.GasPrice = gasPrice
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return "", errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	tx, err := contract.Mint(auth, common.HexToAddress(toAddress), chunks)
+
+	if err != nil {
+		return "", errors.Wrap(err, "contract.Mint")
 	}
 
 	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())

@@ -699,6 +699,13 @@ func (u Usecase) JobMint_CheckBalance() error {
 // job 2: mint nft now:
 func (u Usecase) JobMint_MintNftBtc() error {
 
+	tcClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.TCEndpoint)
+	if err != nil {
+		go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "Could not initialize TC RPCClient - with err", err.Error(), true)
+		return err
+	}
+	tcClient := eth.NewClient(tcClientWrap)
+
 	listToMint, _ := u.Repo.ListMintNftBtcByStatus([]entity.StatusMint{entity.StatusMint(entity.StatusMint_ReceivedFund)})
 	if len(listToMint) == 0 {
 		// go u.trackMintNftBtcHistory("", "JobMint_MintNftBtc", "", "", "ListMintNftBtcByStatus", "[]")
@@ -819,74 +826,116 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			feeRate = entity.DEFAULT_FEE_RATE
 		}
 
-		// start call rpc mint nft now:
-		mintData := ord_service.MintRequest{
-			WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
-			FileUrl:     baseUrl.String(),
-			FeeRate:     int(feeRate),
-			DryRun:      false,
-			RequestId:   item.UUID,      // for tracking log
-			ProjectID:   item.ProjectID, // for tracking log
-			FileUrlUnit: item.FileURI,   // for tracking log
+		// mint via TC:
+		if p.IsMintTC() {
 
-			AutoFeeRateSelect: false, // not auto
+			if len(u.Config.TC_MASTER_PRIVATE_KEY) == 0 {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "TC_MASTER_PRIVATE_KEY", "empty", true)
+				continue
+			}
 
-			// new key for ord v5.1, support mint + send in 1 tx:
-			DestinationAddress: item.OriginUserAddress,
-		}
+			// encrypt:
+			privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, u.Config.TC_MASTER_PRIVATE_KEY)
+			if err != nil {
+				u.Logger.Error(fmt.Sprintf("JobMint_MintNftBtc.Decrypt.%s.Error", "decrypt tc privKey"), err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.DecryptToString", err.Error(), true)
+				continue
+			}
 
-		u.Logger.Info("mintData", mintData)
-		// execute mint:
-		resp, respStr, err := u.OrdService.Mint(mintData)
-		if err != nil {
-			u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
-			messageError := respStr + "|" + err.Error()
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, messageError, true)
-			continue
-		}
-		u.Logger.Info("mint.resp", resp)
+			if len(p.GenNFTAddr) == 0 {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "GenNFTAddr", "empty", true)
+				continue
+			}
+			// create byte data:
+			byteData, err := u.ConvertImageToByteArrayToMintTC(baseUrl.String())
+			tx, err := tcClient.MintTC(p.GenNFTAddr, item.OriginUserAddress, privateKeyDeCrypt, byteData)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
+				continue
+			}
 
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
+			item.TxMintNft = tx
+			item.Status = entity.StatusMint_Minting
+			item.MintMessage = ""
+			item.IsMerged = true
+			// item.InscriptionID = ? todo:
 
-		//update
-		// if not err => update status ok now:
-		//TODO: handle log err: Database already open. Cannot acquire lock
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
+			}
+		} else {
+			// mint on ordinal:
+			// start call rpc mint nft now:
+			mintData := ord_service.MintRequest{
+				WalletName:  os.Getenv("ORD_MASTER_ADDRESS"),
+				FileUrl:     baseUrl.String(),
+				FeeRate:     int(feeRate),
+				DryRun:      false,
+				RequestId:   item.UUID,      // for tracking log
+				ProjectID:   item.ProjectID, // for tracking log
+				FileUrlUnit: item.FileURI,   // for tracking log
 
-		item.Status = entity.StatusMint_Minting
-		item.MintMessage = ""
-		item.IsMerged = true // new key for ord v5.1, support mint + send in 1 tx.
+				AutoFeeRateSelect: false, // not auto
 
-		// item.ErrCount = 0 // reset error count!
+				// new key for ord v5.1, support mint + send in 1 tx:
+				DestinationAddress: item.OriginUserAddress,
+			}
 
-		item.OutputMintNFT = resp
+			u.Logger.Info("mintData", mintData)
+			// execute mint:
+			resp, respStr, err := u.OrdService.Mint(mintData)
+			if err != nil {
+				u.Logger.Error("JobMint_MintNftBtc.OrdService", err.Error(), err)
+				messageError := respStr + "|" + err.Error()
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.Mint", item.TableName(), item.Status, mintData, messageError, true)
+				continue
+			}
+			u.Logger.Info("mint.resp", resp)
 
-		_, err = u.Repo.UpdateMintNftBtc(&item)
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateMintNftBtc", err.Error(), true)
-			continue
-		}
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, mintData, resp, false)
 
-		tmpText := resp.Stdout
-		//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
-		jsonStr := strings.ReplaceAll(tmpText, "\n", "")
-		jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+			//update
+			// if not err => update status ok now:
+			//TODO: handle log err: Database already open. Cannot acquire lock
 
-		var btcMintResp ord_service.MintStdoputRespose
+			item.Status = entity.StatusMint_Minting
+			item.MintMessage = ""
+			item.IsMerged = true // new key for ord v5.1, support mint + send in 1 tx.
 
-		err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
-		if err != nil {
-			u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
-			continue
-		}
+			// item.ErrCount = 0 // reset error count!
 
-		item.TxMintNft = btcMintResp.Reveal
-		item.InscriptionID = btcMintResp.Inscription
-		item.MintFee = btcMintResp.Fees
-		// TODO: update item
-		_, err = u.Repo.UpdateMintNftBtc(&item)
-		if err != nil {
-			fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
+			item.OutputMintNFT = resp
+
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateMintNftBtc", err.Error(), true)
+				continue
+			}
+
+			tmpText := resp.Stdout
+			//tmpText := `{\n  \"commit\": \"7a47732d269d5c005c4df99f2e5cf1e268e217d331d175e445297b1d2991932f\",\n  \"inscription\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0\",\n  \"reveal\": \"9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2af\",\n  \"fees\": 185514\n}\n`
+			jsonStr := strings.ReplaceAll(tmpText, "\n", "")
+			jsonStr = strings.ReplaceAll(jsonStr, "\\", "")
+
+			var btcMintResp ord_service.MintStdoputRespose
+
+			err = json.Unmarshal([]byte(jsonStr), &btcMintResp)
+			if err != nil {
+				u.Logger.Error("BTCMint.helpers.JsonTransform", err.Error(), err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.Unmarshal(btcMintResp)", err.Error(), true)
+				continue
+			}
+
+			item.TxMintNft = btcMintResp.Reveal
+			item.InscriptionID = btcMintResp.Inscription
+			item.MintFee = btcMintResp.Fees
+			// TODO: update item
+			_, err = u.Repo.UpdateMintNftBtc(&item)
+			if err != nil {
+				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
+			}
+
 		}
 
 		// update project:
