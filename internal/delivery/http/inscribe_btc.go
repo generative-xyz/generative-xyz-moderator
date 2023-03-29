@@ -97,7 +97,6 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 // @Accept json
 // @Produce json
 // @Param request body request.CompressImageReq true "compress images"
-// @Success 200 {object} response.CompressInfo{}
 // @Router /inscribe/compress-image [POST]
 // @Security ApiKeyAuth
 func (h *httpDelivery) compressImage(w http.ResponseWriter, r *http.Request) {

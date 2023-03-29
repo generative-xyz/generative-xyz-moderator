@@ -4,7 +4,7 @@ type ReportProjectReq struct {
 	OriginalLink string `json:"originalLink"`
 }
 
-type CreateProjectReq struct {
+type CreateETHProjectReq struct {
 	ContractAddress string   `json:"contractAddress"`
 	TokenID         string   `json:"tokenID"`
 	Tags            []string `json:"tags"`

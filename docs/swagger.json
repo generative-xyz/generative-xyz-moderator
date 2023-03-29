@@ -1152,7 +1152,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1186,7 +1186,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             },
@@ -1227,7 +1227,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1315,7 +1315,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1441,7 +1441,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1978,7 +1978,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2014,7 +2014,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2346,6 +2346,37 @@
                 }
             }
         },
+        "/inscribe/compress-image": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "compress-image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "compress-image"
+                ],
+                "summary": "compress-image",
+                "parameters": [
+                    {
+                        "description": "compress images",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CompressImageReq"
+                        }
+                    }
+                ]
+            }
+        },
         "/inscribe/info/{ID}": {
             "get": {
                 "security": [
@@ -2516,7 +2547,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -3614,38 +3645,6 @@
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create projects",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Project"
-                ],
-                "summary": "Create project",
-                "parameters": [
-                    {
-                        "description": "Create profile request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateProjectReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
             }
         },
         "/project/btc": {
@@ -3730,6 +3729,63 @@
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/project/eth": {
+            "post": {
+                "description": "Create projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH Project"
+                ],
+                "summary": "Create project",
+                "parameters": [
+                    {
+                        "description": "Create eth-project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateETHProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/eth/files": {
+            "post": {
+                "description": "Upload files for ETH-project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH Project"
+                ],
+                "summary": "Upload files for ETH-project",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
                         }
                     }
                 }
@@ -4231,6 +4287,48 @@
             }
         },
         "/project/{contractAddress}/{projectID}/allow-list": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Check project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Check project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -6138,6 +6236,9 @@
                 "wallet_address_payment": {
                     "description": "eth wallet artist receive royalty",
                     "type": "string"
+                },
+                "wallet_type": {
+                    "type": "string"
                 }
             }
         },
@@ -6228,6 +6329,20 @@
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CompressImageReq": {
+            "type": "object",
+            "properties": {
+                "compressPercents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "imageUrl": {
                     "type": "string"
                 }
             }
@@ -6410,6 +6525,29 @@
                 }
             }
         },
+        "request.CreateETHProjectReq": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "contractAddress": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tokenID": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateEthWalletAddressReq": {
             "type": "object",
             "properties": {
@@ -6497,29 +6635,6 @@
                 }
             }
         },
-        "request.CreateProjectReq": {
-            "type": "object",
-            "properties": {
-                "categories": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "contractAddress": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tokenID": {
-                    "type": "string"
-                }
-            }
-        },
         "request.CreateProposalReq": {
             "type": "object",
             "properties": {
@@ -6589,6 +6704,9 @@
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                },
+                "walletType": {
                     "type": "string"
                 }
             }
@@ -6805,6 +6923,9 @@
                     "type": "string"
                 },
                 "addressBtcSegwit": {
+                    "type": "string"
+                },
+                "addressPayment": {
                     "type": "string"
                 },
                 "ethSignature": {
@@ -7083,6 +7204,7 @@
                     "description": "balance after check",
                     "type": "string"
                 },
+                "estFeeInfo": {},
                 "fileURI": {
                     "description": "FileURI will be mount if OrdAddress get all amount",
                     "type": "string"
@@ -7524,6 +7646,10 @@
                     "type": "string"
                 },
                 "isFullChain": {
+                    "type": "boolean"
+                },
+                "isGenerative": {
+                    "description": "art by generative code or html file",
                     "type": "boolean"
                 },
                 "isHidden": {
