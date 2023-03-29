@@ -785,6 +785,10 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 
 	resp.InscriptionIndex = input.InscriptionIndex
 	resp.OrderInscriptionIndex = input.OrderInscriptionIndex
+	resp.Seed = input.TokenID
+	if !strings.HasSuffix(resp.Seed, "i0") {
+		resp.Seed = input.Seed
+	}
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
 
