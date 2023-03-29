@@ -93,6 +93,7 @@ type TokenUri struct {
 	GenNFTAddr          string            `bson:"gen_nft_addrress"`
 	Thumbnail           string            `bson:"thumbnail"`
 	ThumbnailCapturedAt *time.Time        `bson:"thumbnailCapturedAt"`
+	Seed                string            `bson:"seed"`
 
 	Stats TokenStats `bson:"stats" json:"stats"`
 
