@@ -225,3 +225,18 @@ type MintFeeInfo struct {
 	BtcPrice float64 `json:"btcPrice"`
 	Decimal  int     `json:"decimal"`
 }
+
+// wallet temp:
+type EvmTempWallets struct {
+	BaseEntity    `bson:",inline"`
+	WalletAddress string `bson:"walletAddress"` // the wallet address
+	PrivateKey    string `bson:"privateKey"`    // private key (has encrypt).
+	Status        int    `bson:"status"`        // -1: invalid, 0: free, 1 busy
+}
+
+func (u EvmTempWallets) TableName() string {
+	return "evm_temp_wallets"
+}
+func (u EvmTempWallets) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}

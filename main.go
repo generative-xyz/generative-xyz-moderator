@@ -72,7 +72,7 @@ func init() {
 		l.AtLog().Logger.Error("Cannot connect ethClient ", zap.Error(err))
 		panic(err)
 	}
-	
+
 	tcClient, err = blockchain.NewTcNetwork(c.BlockchainConfig)
 	if err != nil {
 		log.Println("Cannot connect to tc client ", err)
@@ -144,7 +144,7 @@ func startServer() {
 		_logger.AtLog.Logger.Error("error initializing tcClient service", zap.Error(err))
 		return
 	}
-	tcClient := eth.NewClient(tcClientWrap)
+	tcClientw := eth.NewClient(tcClientWrap)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -169,7 +169,7 @@ func startServer() {
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
 
-		TcClient: tcClient,
+		TcClient: tcClientw,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -216,7 +216,7 @@ func startServer() {
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
-	
+
 	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,

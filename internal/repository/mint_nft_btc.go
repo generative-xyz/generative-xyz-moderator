@@ -323,3 +323,27 @@ func (r Repository) FindMintNftBtcByInscriptionID(inscriptionID string) (*entity
 	}
 	return resp, nil
 }
+
+// wallet:
+func (r Repository) FindEvmTempWalletsByID(uuid string) (*entity.MintNftBtc, error) {
+
+	resp := &entity.MintNftBtc{}
+	usr, err := r.FilterOne(entity.EvmTempWallets{}.TableName(), bson.D{{"uuid", uuid}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) InsertEvmTempWallets(data *entity.EvmTempWallets) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
