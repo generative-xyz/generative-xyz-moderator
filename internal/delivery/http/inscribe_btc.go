@@ -85,7 +85,7 @@ func (h *httpDelivery) btcCreateInscribeBTC(w http.ResponseWriter, r *http.Reque
 				)
 				return nil, err
 			}
-			// logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", btcWallet))
+			// logger.AtLog.Logger.Info("CreateInscribeBTC successfully", zap.Any("response", zap.Any("btcWallet)", btcWallet)))
 			return h.inscribeBtcCreatedRespResp(btcWallet)
 		},
 	).ServeHTTP(w, r)
@@ -124,7 +124,7 @@ func (h *httpDelivery) compressImage(w http.ResponseWriter, r *http.Request) {
 				)
 				return nil, err
 			}
-			logger.AtLog.Logger.Info("CompressNftImageFromMoralis successfully", zap.Any("response", response))
+			logger.AtLog.Logger.Info("CompressNftImageFromMoralis successfully", zap.Any("response", zap.Any("response)", response)))
 			return response, nil
 		},
 	).ServeHTTP(w, r)
@@ -193,7 +193,7 @@ func (h *httpDelivery) btcDetailInscribeBTC(w http.ResponseWriter, r *http.Reque
 
 	result, err := h.Usecase.DetailDeveloperInscribeBTC(uuid)
 	if err != nil {
-		h.Logger.Error("h.Usecase.DetailDeveloperInscribeBTC", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.DetailDeveloperInscribeBTC", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -218,7 +218,7 @@ func (h *httpDelivery) btcRetryInscribeBTC(w http.ResponseWriter, r *http.Reques
 
 	err := h.Usecase.RetryInscribeBTC(id)
 	if err != nil {
-		h.Logger.Error("h.Usecase.RetryInscribeBTC", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.RetryInscribeBTC", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -242,14 +242,14 @@ func (h *httpDelivery) getInscribeInfo(w http.ResponseWriter, r *http.Request) {
 	id := vars["ID"]
 	inscribeInfo, err := h.Usecase.GetInscribeInfo(id)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetInscribeInfo", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetInscribeInfo", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
 	resp, err := h.inscribeInfoToResp(inscribeInfo)
 	if err != nil {
-		h.Logger.Error("h.inscribeInfoToResp", err.Error(), err)
+		logger.AtLog.Logger.Error("h.inscribeInfoToResp", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

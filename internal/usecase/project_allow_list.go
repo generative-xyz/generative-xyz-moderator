@@ -13,6 +13,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {
@@ -50,7 +51,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	err = u.Repo.CreateProjectAllowList(pe)
 	if err != nil {
 		//err := errors.New("Error while create allow list")
-		u.Logger.ErrorAny("Error while create allow list", zap.Any("error", err))
+		logger.AtLog.Logger.Error("Error while create allow list", zap.Any("error", err))
 		return pe, nil
 	}
 
@@ -58,9 +59,25 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 	go func(u Usecase, user entity.Users, p entity.Projects, allowBy entity.AllowedByType) {
 		totalCount, _ := u.Repo.GetProjectAllowListTotal(p.TokenID)
 		publicCount, _ := u.Repo.GetProjectAllowListTotalByTyppe(p.TokenID, "public")
-		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"), fmt.Sprintf("[Allowlist][User %s]", helpers.CreateProfileLink(user.WalletAddress, user.DisplayName)), user.WalletAddressBTCTaproot, fmt.Sprintf("%s registered to  %s's allowlist allowBy: %s PUBLIC: %d AL: %d", helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), helpers.CreateProjectLink(p.TokenID, p.Name), allowedBy, publicCount, totalCount-publicCount))
+		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"),
+			"",
+			"",
+			fmt.Sprintf("%s registered to Perceptrons as %s PUBLIC: %d AL: %d",
+				helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), allowedBy, publicCount, totalCount-publicCount))
 	}(u, *user, *p, allowedBy)
 	return pe, nil
+}
+
+func (u Usecase) CountingProjectAllowList(projectId string) (int64, int64, error) {
+	totalCount, err := u.Repo.GetProjectAllowListTotal(projectId)
+	if err != nil {
+		return 0, 0, err
+	}
+	publicCount, err := u.Repo.GetProjectAllowListTotalByTyppe(projectId, "public")
+	if err != nil {
+		return 0, 0, err
+	}
+	return publicCount, totalCount - publicCount, nil
 }
 
 func (u Usecase) GetProjectAllowList(req structure.CreateProjectAllowListReq) (*entity.ProjectAllowList, error) {

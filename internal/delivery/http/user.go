@@ -4,9 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -24,7 +26,7 @@ func (h *httpDelivery) getUsers(w http.ResponseWriter, r *http.Request) {
 	searchStr := r.URL.Query().Get("search")
 	baseF, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -35,7 +37,7 @@ func (h *httpDelivery) getUsers(w http.ResponseWriter, r *http.Request) {
 
 	uUsers, err := h.Usecase.ListUsers(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.ListUsers", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.ListUsers", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -57,7 +59,7 @@ func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		h.Logger.Error("parse page param to int", err.Error(), err)
+		logger.AtLog.Logger.Error("parse page param to int", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -65,7 +67,7 @@ func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		h.Logger.Error("parse limit param to int", err.Error(), err)
+		logger.AtLog.Logger.Error("parse limit param to int", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -76,7 +78,7 @@ func (h *httpDelivery) listArtist(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.Usecase.ListArtist(f)
 	if err != nil {
-		h.Logger.Error("httpDelivery.listArtist.Usecase.ListArtist", err.Error(), err)
+		logger.AtLog.Logger.Error("httpDelivery.listArtist.Usecase.ListArtist", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}

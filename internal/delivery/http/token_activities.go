@@ -3,9 +3,11 @@ package http
 import (
 	"net/http"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 // UserCredits godoc
@@ -26,14 +28,14 @@ func (h *httpDelivery) getTokenActivities(w http.ResponseWriter, r *http.Request
 	f.CreateFilter(r)
 	bf, err := h.BaseFilters(r)
 	if err != nil {
-		h.Logger.Error("h.getTokenActivities.BaseFilters", err.Error(), err)
+		logger.AtLog.Logger.Error("h.getTokenActivities.BaseFilters", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	f.BaseFilters = *bf
 	uTokenActivities, err := h.Usecase.GetTokenActivities(f)
 	if err != nil {
-		h.Logger.Error("h.Usecase.GetTokenActivities", err.Error(), err)
+		logger.AtLog.Logger.Error("h.Usecase.GetTokenActivities", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
@@ -45,7 +47,7 @@ func (h *httpDelivery) getTokenActivities(w http.ResponseWriter, r *http.Request
 
 		p, err := h.tokenActivityToResp(&tokenActivity)
 		if err != nil {
-			h.Logger.Error("copier.Copy", err.Error(), err)
+			logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}

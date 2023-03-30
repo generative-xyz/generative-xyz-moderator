@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
@@ -73,7 +74,7 @@ func (h ScronMarketplaceHandler) StartServer() {
 			h.Usecase.JobCrawlToUpdateNftInfo()
 		}(&wg)
 
-		h.Logger.Info("MaketPlace.wait", "wait")
+		logger.AtLog.Logger.Info("MaketPlace.wait", zap.Any("wait", "wait"))
 		wg.Wait()
 		time.Sleep(5 * time.Minute)
 	}
