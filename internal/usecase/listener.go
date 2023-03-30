@@ -7,6 +7,7 @@ import (
 	"rederinghub.io/internal/delivery/http/response"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -191,6 +192,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		}
 	}()
 
+	txnHash = strings.ToLower(txnHash)
 	project, err = u.Repo.FindProjectByTxHash(txnHash)
 	if err != nil {
 		return nil, err
@@ -215,6 +217,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now().UTC()
 
 	project.IsSynced = true
 	project.Name = projectDetail.ProjectDetail.Name
@@ -265,6 +268,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 
 	project.Royalty = int(projectDetail.Royalty.Data.Int64())
 	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+	project.MintedTime = &now
 	for _, reserve := range projectDetail.ProjectDetail.Reserves {
 		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()))
 	}
@@ -274,6 +278,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 			Index:        projectDetail.NftProjectDetail.Index.Int64(),
 			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
 		}
+	}
+
+	_, err = u.Repo.UpdateProject(project.UUID, project)
+	if err != nil {
+		return nil, err
 	}
 
 	projectStat, traitStat, err := u.GetUpdatedProjectStats(structure.GetProjectReq{
@@ -292,13 +301,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
-
 	project.CreatorProfile = *user
-
-	_, err = u.Repo.UpdateProject(project.UUID, project)
-	if err != nil {
-		return nil, err
-	}
 
 	//DAO
 	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
