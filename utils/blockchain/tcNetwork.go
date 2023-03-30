@@ -43,7 +43,7 @@ func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses [
 	query := ethereum.FilterQuery{
 		FromBlock: &fromBlock,
 		ToBlock: &toBlock, 
-		Addresses: addresses,
+		//Addresses: addresses,
 	}
 	logs, err := a.client.FilterLogs(context.Background(), query)
 	if err != nil {

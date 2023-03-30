@@ -120,7 +120,7 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 
 func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
-	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txHash", txHash}})
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txhash", txHash}})
 	if err != nil {
 		return nil, err
 	}
