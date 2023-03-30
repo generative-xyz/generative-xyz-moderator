@@ -6,6 +6,8 @@ type FilterProjects struct {
 	Name          *string
 	CategoryIds   []string
 	IsHidden      *bool
+	Status        *bool
+	IsSynced      *bool
 	Ids           []string
 }
 
@@ -24,13 +26,9 @@ type FilterProposalVote struct {
 }
 
 type CreateProjectReq struct {
-	ContractAddress string   `json:"contractAddress"`
-	CreatorAddrr    string   `json:"creatorAddrr"`
-	TokenID         string   `json:"-"`
-	TxHash         string   `json:"txHash"`
-	ZipLink         *string   `json:"ziplink"`
-	Tags            []string `json:"tags"`
-	Categories      []string `json:"categories"`
+	CreateBtcProjectReq
+	TxHash  string  `json:"txHash"`
+	ZipLink *string `json:"ziplink"`
 }
 
 type CreateBtcProjectReq struct {

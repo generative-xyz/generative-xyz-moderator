@@ -400,6 +400,8 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string false "Filter project via wallet address"
+// @Param status query bool false "status"
+// @Param isSynced query bool false "isSynced"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
@@ -418,9 +420,26 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	statusStr := r.URL.Query().Get("status")
+	isSyncedStr := r.URL.Query().Get("isSynced")
+
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
+
+	if statusStr != "" {
+		status, err := strconv.ParseBool(statusStr)
+		if err == nil {
+			f.Status = &status
+		}
+	}
+	
+	if isSyncedStr != "" {
+		isSynced, err := strconv.ParseBool(isSyncedStr)
+		if err == nil {
+			f.IsSynced = &isSynced
+		}
+	}
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)

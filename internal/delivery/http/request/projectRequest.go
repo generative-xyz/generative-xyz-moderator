@@ -5,13 +5,9 @@ type ReportProjectReq struct {
 }
 
 type CreateETHProjectReq struct {
-	ContractAddress string   `json:"contractAddress"`
-	CreatorAddrr    string   `json:"creatorAddrr"`
-	TokenID         string   `json:"-"`
+	CreateBTCProjectReq
 	TxHash         string   `json:"txHash"`
 	ZipLink         *string   `json:"zipLink"`
-	Tags            []string `json:"tags"`
-	Categories      []string `json:"categories"`
 }
 
 type CreateBTCProjectReq struct {

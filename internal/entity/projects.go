@@ -148,6 +148,8 @@ type FilterProjects struct {
 	WalletAddress *string
 	Name          *string
 	IsHidden      *bool
+	Status        *bool
+	IsSynced      *bool
 	CategoryIds   []string
 	TokenIds      []string
 	Ids           []string

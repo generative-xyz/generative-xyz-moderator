@@ -3473,6 +3473,18 @@ var doc = `{
                         "in": "path"
                     },
                     {
+                        "type": "boolean",
+                        "description": "status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isSynced",
+                        "name": "isSynced",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
@@ -6529,16 +6541,94 @@ var doc = `{
         "request.CreateETHProjectReq": {
             "type": "object",
             "properties": {
+                "animationURL": {
+                    "type": "string"
+                },
+                "captureImageTime": {
+                    "type": "integer"
+                },
                 "categories": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "contractAddress": {
-                    "type": "string"
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
                 },
                 "creatorAddrr": {
+                    "type": "string"
+                },
+                "creatorAddrrBTC": {
+                    "type": "string"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isFullChain": {
+                    "type": "boolean"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
+                "limitSupply": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "socialDiscord": {
+                    "type": "string"
+                },
+                "socialInstagram": {
+                    "type": "string"
+                },
+                "socialMedium": {
+                    "type": "string"
+                },
+                "socialTwitter": {
+                    "type": "string"
+                },
+                "socialWeb": {
+                    "type": "string"
+                },
+                "styles": {
                     "type": "string"
                 },
                 "tags": {
@@ -6546,6 +6636,18 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "thirdPartyScripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "tokenDescription": {
+                    "type": "string"
                 },
                 "txHash": {
                     "type": "string"
