@@ -60,7 +60,7 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 	redisKey := c.getRedisKey()
 	exists, err := c.Cache.Exists(redisKey)
 	if err != nil {
-		logger.AtLog.Logger.Error("c.Cache.Exists",zap.String("redisKey", redisKey), zap.Error(err))
+		logger.AtLog.Logger.Error("c.Cache.Exists", zap.String("redisKey", redisKey), zap.Error(err))
 		return 0, err
 	}
 	if *exists {
@@ -85,14 +85,14 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 func (c *HttpTxConsumer) resolveTransaction() error {
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
-		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
+		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
 		return err
 	}
 
 	fromBlock := lastProcessedBlock + 1
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
-		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
+		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
 		return err
 	}
 
@@ -103,8 +103,8 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		return err
 	}
 
-	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("currentBlockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Int64("lastProcessedBlock",lastProcessedBlock), zap.Any("logs", logs))
-	
+	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("currentBlockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Int64("lastProcessedBlock", lastProcessedBlock), zap.Any("logs", logs))
+
 	for _, _log := range logs {
 		// marketplace logs
 		logger.AtLog.Logger.Info("resolveTransaction", zap.Any("_log.Address", _log.Address.String()))
@@ -112,7 +112,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		// if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
 		// 	topic := strings.ToLower(_log.Topics[0].String())
 		// 	logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash), zap.Any("_log.BlockNumber", _log.BlockNumber))
-			
+
 		// 	switch topic {
 		// 	case c.Config.MarketplaceEvents.ListToken:
 		// 		err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
@@ -129,12 +129,11 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		// 	}
 		// }
 
-
 		//DAO
 		// if strings.ToLower(_log.Address.String()) == c.Config.DAOEvents.Contract {
 		// 	topic := strings.ToLower(_log.Topics[0].String())
 		// 	logger.AtLog.Logger.Info("topic", zap.Any("topic", topic), zap.Any("_log.TxHash", _log.TxHash),  zap.Any("_log.BlockNumber", _log.BlockNumber))
-			
+
 		// 	switch topic {
 		// 	case c.Config.DAOEvents.ProposalCreated:
 		// 		err = c.Usecase.DAOProposalCreated(_log)
@@ -177,7 +176,7 @@ func (c *HttpTxConsumer) StartServer() {
 		previousTime := time.Now()
 		err := c.resolveTransaction()
 		if err != nil {
-			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err",err.Error()))
+			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err", err.Error()))
 		}
 		processedTime := time.Now().Unix() - previousTime.Unix()
 		if processedTime < int64(c.CronJobPeriod) {
