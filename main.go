@@ -10,10 +10,12 @@ import (
 
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/delegate"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/redisv9"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
@@ -139,12 +141,24 @@ func startServer() {
 		return
 	}
 
+	// init tc client
 	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
 	if err != nil {
 		_logger.AtLog.Logger.Error("error initializing tcClient service", zap.Error(err))
 		return
 	}
-	tcClientw := eth.NewClient(tcClientWrap)
+	tcClients := eth.NewClient(tcClientWrap)
+
+	// init eth client
+	ethClientWrap, err := ethclient.Dial(conf.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing ethClients service", zap.Error(err))
+		return
+	}
+	ethClients := eth.NewClient(ethClientWrap)
+
+	// init blockcypher service:
+	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
 
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
@@ -169,7 +183,10 @@ func startServer() {
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
 
-		TcClient: tcClientw,
+		EthClient: ethClients, // for eth chain
+		TcClient:  tcClients,  // for tc chain
+		BsClient:  bsClient,   // for btc/blockcypher service
+
 	}
 
 	repo, err := repository.NewRepository(&g)
