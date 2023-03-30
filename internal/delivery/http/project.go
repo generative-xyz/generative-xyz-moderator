@@ -20,52 +20,6 @@ import (
 )
 
 // UserCredits godoc
-// @Summary Create project
-// @Description Create projects
-// @Tags Project
-// @Accept  json
-// @Produce  json
-// @Param request body request.CreateProjectReq true "Create profile request"
-// @Success 200 {object} response.JsonResponse{}
-// @Router /project [POST]
-func (h *httpDelivery) createProjects(w http.ResponseWriter, r *http.Request) {
-	var reqBody request.CreateProjectReq
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	reqUsecase := &structure.CreateProjectReq{}
-	err = copier.Copy(reqUsecase, reqBody)
-	if err != nil {
-		logger.AtLog.Logger.Error("copier.Copy", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	logger.AtLog.Logger.Info("reqUsecase", zap.Any("reqUsecase", reqUsecase))
-
-	message, err := h.Usecase.CreateProject(*reqUsecase)
-	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.CreateProject", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	resp, err := h.projectToResp(message)
-	if err != nil {
-		logger.AtLog.Logger.Error("h.projectToResp", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
-}
-
-// UserCredits godoc
 // @Summary Create btc project
 // @Description Create btc project
 // @Tags Project
