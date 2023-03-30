@@ -347,3 +347,33 @@ func (r Repository) InsertEvmTempWallets(data *entity.EvmTempWallets) error {
 	}
 	return nil
 }
+
+func (r Repository) GetMintFreeTempAddress() (*entity.EvmTempWallets, error) {
+	resp := &entity.EvmTempWallets{}
+	usr, err := r.FilterOne(entity.EvmTempWallets{}.TableName(), bson.D{{"status", entity.StatusEvmTempWallets_Free}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) UpdateTcTempWalletAddress(address string, status entity.StatusEvmTempWallets) error {
+	filter := bson.D{
+		{Key: "walletAddress", Value: address},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status": status, // 0 free, 1 busy
+		},
+	}
+	_, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}

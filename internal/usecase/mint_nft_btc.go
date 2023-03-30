@@ -33,6 +33,7 @@ import (
 )
 
 // for api create a new mint:
+
 func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*entity.MintNftBtc, error) {
 
 	if len(input.ProjectID) == 0 || len(input.WalletAddress) == 0 || len(input.RefundUserAddress) == 0 {
@@ -749,15 +750,6 @@ func (u Usecase) JobMint_MintNftBtc() error {
 			continue
 		}
 
-		// - Get project.AnimationURL
-		projectNftTokenUri := &structure.ProjectAnimationUrl{}
-		err = helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
-		if err != nil {
-			logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
-			continue
-		}
-
 		// "smart fee": check fee rate with current fee:
 		if feeRateCurrent != nil {
 			mintNetworkFeeRate := int64(feeRateCurrent.EconomyFee) //safe to thr
@@ -768,48 +760,6 @@ func (u Usecase) JobMint_MintNftBtc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "SmartFee.Wait", message, true)
 				continue
 			}
-		}
-
-		// - Upload the Animation URL to GCS
-		animation := projectNftTokenUri.AnimationUrl
-		logger.AtLog.Logger.Info("animation", zap.Any("animation", animation))
-
-		// for html type:
-		if animation != "" {
-			animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
-			now := time.Now().UTC().Unix()
-			uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%s-%d.html", p.TokenID, item.UUID, now))
-			if err != nil {
-				logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
-				continue
-			}
-			item.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
-
-		} else {
-			// for image type:
-			images := p.Images
-			logger.AtLog.Logger.Info("images", zap.Any("len(images)", len(images)))
-			if len(images) > 0 {
-				item.FileURI = images[0]
-				newImages := []string{}
-				processingImages := p.ProcessingImages
-
-				//remove the project's image out of the current projects
-				for i := 1; i < len(images); i++ {
-					newImages = append(newImages, images[i])
-				}
-				processingImages = append(p.ProcessingImages, item.FileURI)
-				p.Images = newImages
-				p.ProcessingImages = processingImages
-			}
-		}
-		//end Animation URL
-		if len(item.FileURI) == 0 {
-			err = errors.New("There is no file uri to mint")
-			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
-			continue
 		}
 
 		// check platform to mint:
@@ -831,6 +781,57 @@ func (u Usecase) MintNftViaOrdinal(item *entity.MintNftBtc, p *entity.Projects) 
 	feeRate := item.FeeRate
 	if feeRate == 0 {
 		feeRate = entity.DEFAULT_FEE_RATE
+	}
+
+	// - Get project.AnimationURL
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err := helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
+	if err != nil {
+		logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
+		return nil
+	}
+
+	// - Upload the Animation URL to GCS
+	animation := projectNftTokenUri.AnimationUrl
+	logger.AtLog.Logger.Info("animation", zap.Any("animation", animation))
+
+	// for html type:
+	if animation != "" {
+		animation = strings.ReplaceAll(animation, "data:text/html;base64,", "")
+		now := time.Now().UTC().Unix()
+		uploaded, err := u.GCS.UploadBaseToBucket(animation, fmt.Sprintf("btc-projects/%s/%s-%d.html", p.TokenID, item.UUID, now))
+		if err != nil {
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
+			return nil
+		}
+		item.FileURI = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+
+	} else {
+		// for image type:
+		images := p.Images
+		logger.AtLog.Logger.Info("images", zap.Any("len(images)", len(images)))
+		if len(images) > 0 {
+			item.FileURI = images[0]
+			newImages := []string{}
+			processingImages := p.ProcessingImages
+
+			//remove the project's image out of the current projects
+			for i := 1; i < len(images); i++ {
+				newImages = append(newImages, images[i])
+			}
+			processingImages = append(p.ProcessingImages, item.FileURI)
+			p.Images = newImages
+			p.ProcessingImages = processingImages
+		}
+	}
+	//end Animation URL
+	if len(item.FileURI) == 0 {
+		err = errors.New("There is no file uri to mint")
+		logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
+		return nil
 	}
 
 	baseUrl, err := url.Parse(item.FileURI)
@@ -975,25 +976,53 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		feeRate = entity.DEFAULT_FEE_RATE
 	}
 
-	baseUrl, err := url.Parse(item.FileURI)
+	// - Get project.AnimationURL
+	projectNftTokenUri := &structure.ProjectAnimationUrl{}
+	err := helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
 	if err != nil {
-		logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Parse(FileURI)", err.Error(), true)
+		logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
 		return nil
 	}
 
-	// todo: update to use a temp wallet to submit:
-	if len(u.Config.TC_MASTER_PRIVATE_KEY) == 0 {
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "TC_MASTER_PRIVATE_KEY", "empty", true)
-		return nil
-	}
+	// - Upload the Animation URL to GCS
+	animation := projectNftTokenUri.AnimationUrl
+	logger.AtLog.Logger.Info("animation", zap.Any("animation", animation))
 
-	// encrypt:
-	privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, u.Config.TC_MASTER_PRIVATE_KEY)
-	if err != nil {
-		u.Logger.Error(fmt.Sprintf("JobMint_MintNftBtc.Decrypt.%s.Error", "decrypt tc privKey"), err.Error(), err)
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.DecryptToString", err.Error(), true)
-		return nil
+	urlToMint := ""
+
+	// for html type:
+	if len(animation) == 0 {
+		// for image type:
+		images := p.Images
+		logger.AtLog.Logger.Info("images", zap.Any("len(images)", len(images)))
+		if len(images) > 0 {
+			item.FileURI = images[0]
+			newImages := []string{}
+			processingImages := p.ProcessingImages
+
+			//remove the project's image out of the current projects
+			for i := 1; i < len(images); i++ {
+				newImages = append(newImages, images[i])
+			}
+			processingImages = append(p.ProcessingImages, item.FileURI)
+			p.Images = newImages
+			p.ProcessingImages = processingImages
+		}
+		//end Animation URL
+		if len(item.FileURI) == 0 {
+			err = errors.New("There is no file uri to mint")
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "UploadBaseToBucket", err.Error(), true)
+			return nil
+		}
+		baseUrl, err := url.Parse(item.FileURI)
+		if err != nil {
+			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UploadBaseToBucket", zap.Error(err))
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Parse(FileURI)", err.Error(), true)
+			return nil
+		}
+		urlToMint = baseUrl.String()
 	}
 
 	if len(p.GenNFTAddr) == 0 {
@@ -1001,16 +1030,42 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		return nil
 	}
 	// create byte data:
-	byteData, err := u.ConvertImageToByteArrayToMintTC(baseUrl.String())
+	var byteData [][]byte
+	if len(urlToMint) > 0 {
+		byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
+		if err != nil {
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
+			return nil
+		}
+	}
+
+	// get free temp wallet:
+	tempWallet := u.GetMintFreeTemAddress()
+	if tempWallet == nil {
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "GetMintFreeTemAddress", "can not get temp free wallet", true)
+		return nil
+	}
+	// encrypt:
+	privateKeyDeCrypt, err := encrypt.DecryptToString(tempWallet.PrivateKey, os.Getenv("SECRET_KEY"))
+	if err != nil {
+		u.Logger.Error(fmt.Sprintf("JobMint_MintNftBtc.Decrypt.%s.Error", "decrypt tc privKey"), err.Error(), err)
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.DecryptToString", err.Error(), true)
+		return nil
+	}
+
 	tx, err := u.TcClient.MintTC(p.GenNFTAddr, item.OriginUserAddress, privateKeyDeCrypt, byteData)
 	if err != nil {
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
 	}
 
+	// update make busy temp wallet:
+	u.Repo.UpdateTcTempWalletAddress(item.TcTempWallet, entity.StatusEvmTempWallets_Busy)
+
 	item.TxMintNft = tx
 	item.MintMessage = ""
 	item.IsCalledMintTc = true
+	item.TcTempWallet = tempWallet.WalletAddress
 
 	_, err = u.Repo.UpdateMintNftBtc(item)
 	if err != nil {
@@ -1257,6 +1312,9 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
 				continue
 			}
+
+			// update make free temp wallet:
+			u.Repo.UpdateTcTempWalletAddress(item.TcTempWallet, entity.StatusEvmTempWallets_Free)
 
 			// update token uri auto:
 			p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
@@ -2455,4 +2513,22 @@ func (u Usecase) ConvertImageToByteArrayToMintTC(imageURL string) ([][]byte, err
 
 	return imgData, nil
 
+}
+
+func (u Usecase) GetMintFreeTemAddress() *entity.EvmTempWallets {
+	mutex := u.RedisV9.GetRedSyncClient().NewMutex("GetMintFreeTemAddress")
+
+	var freeWallet *entity.EvmTempWallets
+
+	if err := mutex.Lock(); err != nil {
+		fmt.Println("can not lock")
+		return nil
+	}
+
+	freeWallet, _ = u.Repo.GetMintFreeTempAddress()
+
+	if ok, err := mutex.Unlock(); !ok || err != nil {
+		fmt.Println("can not unlock")
+	}
+	return freeWallet
 }

@@ -141,7 +141,8 @@ type MintNftBtc struct {
 
 	IsCalledMintTc bool `bson:"isCalledMintTc"`
 
-	Platform string `bson:"platform"` // ordinal/tc
+	Platform     string `bson:"platform"` // ordinal/tc
+	TcTempWallet string `bson:"tc_temp_wallet"`
 
 	// for mint batch:
 	Quantity      int    `bson:"quantity"`
@@ -227,6 +228,13 @@ type MintFeeInfo struct {
 }
 
 // wallet temp:
+type StatusEvmTempWallets int
+
+const (
+	StatusEvmTempWallets_Free StatusEvmTempWallets = iota // 0: free
+	StatusEvmTempWallets_Busy                             // 1: busy
+)
+
 type EvmTempWallets struct {
 	BaseEntity    `bson:",inline"`
 	WalletAddress string `bson:"walletAddress"` // the wallet address
