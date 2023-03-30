@@ -3,8 +3,12 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
+	"time"
+
+	"rederinghub.io/internal/delivery/http/response"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -189,6 +193,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		}
 	}()
 
+	txnHash = strings.ToLower(txnHash)
 	project, err = u.Repo.FindProjectByTxHash(txnHash)
 	if err != nil {
 		return nil, err
@@ -201,6 +206,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		}
 
 		project.TokenID = tokenIDStr
+		project.TokenId = tokenIDStr
 		project.GenNFTAddr = tokenIDStr
 		project.TokenIDInt = int64(tokenIDInt)
 	}
@@ -213,6 +219,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now().UTC()
 
 	project.IsSynced = true
 	project.Name = projectDetail.ProjectDetail.Name
@@ -223,7 +230,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.ThirdPartyScripts = projectDetail.ProjectDetail.ScriptType
 	project.Styles = projectDetail.ProjectDetail.Styles
 	project.GenNFTAddr = strings.ToLower(projectDetail.ProjectDetail.GenNFTAddr.String())
-	project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
+	//project.MintPrice = projectDetail.ProjectDetail.MintPrice.String()
 	project.MaxSupply = projectDetail.ProjectDetail.MaxSupply.Int64()
 	project.LimitSupply = projectDetail.ProjectDetail.Limit.Int64()
 	project.MintTokenAddress = strings.ToLower(string(projectDetail.ProjectDetail.MintPriceAddr.String()))
@@ -236,8 +243,34 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
 	project.Thumbnail = projectDetail.ProjectDetail.Image
 	project.NftTokenUri = projectDetail.NftTokenUri
+
+	// check is full chain
+	tokenUri := response.TokenURIResp{}
+	err = helpers.Base64DecodeRaw(project.NftTokenUri, &tokenUri)
+	if err != nil {
+		return nil, err
+	}
+	if len(tokenUri.AnimationURL) > 0 {
+		maxSize := helpers.CalcOrigBinaryLength(tokenUri.AnimationURL)
+		project.MaxFileSize = int64(maxSize)
+		project.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
+		htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(tokenUri.AnimationURL, "data:text/html;base64,", ""))
+		if err == nil {
+			isFullChain, err := helpers.IsFullChain(string(htmlContent))
+			if err == nil {
+				project.IsFullChain = isFullChain
+				logger.AtLog.Logger.Info("UpdateProjectFromChain", zap.Any("isFullChain", zap.Any("isFullChain)", isFullChain)))
+			} else {
+				logger.AtLog.Error("UpdateProjectFromChain", zap.Any("isFullChain", err))
+			}
+		} else {
+			logger.AtLog.Error("UpdateProjectFromChain", zap.Any("isFullChain", err))
+		}
+	}
+
 	project.Royalty = int(projectDetail.Royalty.Data.Int64())
 	project.CompleteTime = projectDetail.ProjectDetail.CompleteTime.Int64()
+	project.MintedTime = &now
 	for _, reserve := range projectDetail.ProjectDetail.Reserves {
 		project.Reservers = append(project.Reservers, strings.ToLower(reserve.String()))
 	}
@@ -247,6 +280,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 			Index:        projectDetail.NftProjectDetail.Index.Int64(),
 			IndexReverse: projectDetail.NftProjectDetail.IndexReserve.Int64(),
 		}
+	}
+
+	_, err = u.Repo.UpdateProject(project.UUID, project)
+	if err != nil {
+		return nil, err
 	}
 
 	projectStat, traitStat, err := u.GetUpdatedProjectStats(structure.GetProjectReq{
@@ -265,13 +303,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
-
 	project.CreatorProfile = *user
-
-	_, err = u.Repo.UpdateProject(project.UUID, project)
-	if err != nil {
-		return nil, err
-	}
 
 	//DAO
 	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
