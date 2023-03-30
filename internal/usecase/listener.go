@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"rederinghub.io/internal/delivery/http/response"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/internal/delivery/http/response"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -205,6 +206,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		}
 
 		project.TokenID = tokenIDStr
+		project.TokenId = tokenIDStr
 		project.GenNFTAddr = tokenIDStr
 		project.TokenIDInt = int64(tokenIDInt)
 	}

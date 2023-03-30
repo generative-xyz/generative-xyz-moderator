@@ -36,15 +36,18 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	pe.IsHidden = true
 	pe.Status = false
 	pe.IsSynced = false
-
 	pe.TxHash = strings.ToLower(pe.TxHash)
+
+	pe.TokenID = pe.TxHash
+	pe.TokenId = pe.TxHash
+	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
 		return nil, err
 	}
 	logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
-
 	return pe, nil
 }
 
