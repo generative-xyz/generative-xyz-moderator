@@ -19,7 +19,7 @@ type ExistedInAllowList struct {
 
 type CountingAllowList struct {
 	Public    int64 `json:"public"`
-	AllowList int64 `json:"allow_list"`
+	AllowList int64 `json:"allowList"`
 }
 
 type ProjectResp struct {
