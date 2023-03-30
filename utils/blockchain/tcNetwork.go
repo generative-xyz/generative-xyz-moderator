@@ -9,7 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
+	"rederinghub.io/utils/logger"
 )
 
 type TcNetwork struct {
@@ -29,8 +31,11 @@ func NewTcNetwork(cfg config.BlockchainConfig) (*TcNetwork, error) {
 func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 	header, err := a.client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
+		logger.AtLog.Logger.Error("GetBlockNumber", zap.Error(err))
 		return nil, err
 	}
+
+	logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header", header))
 	return header.Number, nil
 }
 
