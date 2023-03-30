@@ -83,7 +83,6 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 }
 
 func (c *HttpTxConsumer) resolveTransaction() error {
-
 	lastProcessedBlock, err := c.getLastProcessedBlock()
 	if err != nil {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
@@ -91,7 +90,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	fromBlock := lastProcessedBlock + 1
-
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.String("err", err.Error()))
@@ -99,10 +97,9 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock+int64(c.BatchLogSize))))
-
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
-		logger.AtLog.Logger.Error("err.GetEventLogs", zap.Error(err))
+		logger.AtLog.Logger.Error("err.GetEventLogs", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -180,7 +177,7 @@ func (c *HttpTxConsumer) StartServer() {
 		previousTime := time.Now()
 		err := c.resolveTransaction()
 		if err != nil {
-			logger.AtLog.Logger.Error("Error when resolve transactions", zap.Error(err))
+			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err",err.Error()))
 		}
 		processedTime := time.Now().Unix() - previousTime.Unix()
 		if processedTime < int64(c.CronJobPeriod) {
