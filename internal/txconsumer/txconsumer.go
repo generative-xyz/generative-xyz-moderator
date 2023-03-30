@@ -73,7 +73,6 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 			return (c.DefaultLastProcessedBlock), nil
 		}
 		lastProcessedSavedOnRedis, err := strconv.ParseInt(*processed, 10, 64)
-		logger.AtLog.Logger.Info("lastProcessedSavedOnRedis", zap.Any("processed", processed), zap.Any("lastProcessedSavedOnRedis", lastProcessedSavedOnRedis))
 		if err != nil {
 			logger.AtLog.Logger.Error("err.getLastProcessedBlock", zap.Error(err))
 			return 0, err
@@ -106,7 +105,9 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		logger.AtLog.Logger.Error("err.GetEventLogs", zap.Error(err))
 		return err
 	}
-	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("blockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Any("logs", logs))
+
+	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("currentBlockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Int64("lastProcessedBlock",lastProcessedBlock), zap.Any("logs", logs))
+	
 	for _, _log := range logs {
 		// marketplace logs
 		logger.AtLog.Logger.Info("resolveTransaction", zap.Any("_log.Address", _log.Address.String()))
