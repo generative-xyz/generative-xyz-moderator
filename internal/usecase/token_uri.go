@@ -361,6 +361,21 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			}
 		}
 
+		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
+			if strings.Index(*tokenUriData, "bfs://") > -1 {
+				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
+				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
+				if err != nil {
+					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+					return
+				}
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
+			} else {
+				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
+				return
+			}
+		}
+
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 		data, err := helpers.Base64Decode(base64Str)
 		if err != nil {

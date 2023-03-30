@@ -11,8 +11,10 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"rederinghub.io/utils/delegate"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/redisv9"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
@@ -136,6 +138,14 @@ func startServer() {
 		_logger.AtLog.Logger.Error("error initializing delegate service", zap.Error(err))
 		return
 	}
+
+	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing tcClient service", zap.Error(err))
+		return
+	}
+	tcClient := eth.NewClient(tcClientWrap)
+
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
@@ -158,6 +168,8 @@ func startServer() {
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
+
+		TcClient: tcClient,
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -180,7 +192,7 @@ func startServer() {
 
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
-		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase",  zap.Error(err))
+		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
 

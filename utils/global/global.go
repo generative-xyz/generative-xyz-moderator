@@ -8,6 +8,7 @@ import (
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/delegate"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
@@ -39,4 +40,6 @@ type Global struct {
 	Slack               slack.Slack
 	DiscordClient       *discordclient.Client
 	DelegateService     *delegate.Service
+
+	TcClient *eth.Client
 }
