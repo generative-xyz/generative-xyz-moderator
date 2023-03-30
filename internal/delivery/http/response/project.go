@@ -48,6 +48,7 @@ type ProjectResp struct {
 	GenNFTAddr                string           `json:"genNFTAddr"`
 	ItemDesc                  string           `json:"itemDesc"`
 	Status                    bool             `json:"status"`
+	IsSynced                    bool             `json:"isSynced"`
 	IsFullChain               bool             `json:"isFullChain"`
 	NftTokenURI               string           `json:"projectURI"`
 	MintingInfo               NftMintingDetail `json:"mintingInfo"`

@@ -480,6 +480,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.NftTokenURI = input.NftTokenUri
 	resp.NetworkFee = input.NetworkFee
 	resp.Categories = input.Categories
+	resp.IsSynced = input.IsSynced
 	social["web"] = input.SocialWeb
 	social["twitter"] = input.SocialTwitter
 	social["discord"] = input.SocialDiscord
