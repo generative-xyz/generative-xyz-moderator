@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"rederinghub.io/internal/delivery/http/response"
 	"strconv"
 	"strings"
@@ -245,9 +246,9 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 	if len(tokenUri.AnimationURL) > 0 {
-		//maxSize := helpers.CalcOrigBinaryLength(tokenUri.AnimationURL)
-		//project.MaxFileSize = int64(maxSize)
-		//project.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
+		maxSize := helpers.CalcOrigBinaryLength(tokenUri.AnimationURL)
+		project.MaxFileSize = int64(maxSize)
+		project.NetworkFee = big.NewInt(u.networkFeeBySize(int64(maxSize / 4))).String()
 		htmlContent, err := helpers.Base64Decode(strings.ReplaceAll(tokenUri.AnimationURL, "data:text/html;base64,", ""))
 		if err == nil {
 			isFullChain, err := helpers.IsFullChain(string(htmlContent))
