@@ -57,6 +57,14 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, error) {
 		if strings.Index(path, "http") != -1 {
 			continue
 		}
+		
+		if strings.Index(path, "storage.googleapis.com") != -1 {
+			continue
+		}
+		
+		if strings.Index(path, os.Getenv("GCS_BUCKET")) != -1 {
+			continue
+		}
 
 		if strings.Index(path, os.Getenv("GCS_DOMAIN")) != -1 || strings.Index(os.Getenv("GCS_DOMAIN"), path) != -1 {
 			continue
