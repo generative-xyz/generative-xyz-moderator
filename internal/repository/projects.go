@@ -464,6 +464,14 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
 	}
+	
+	if filter.IsSynced != nil {
+		f["isSynced"] = *filter.IsSynced
+	}
+	
+	if filter.Status != nil {
+		f["status"] = *filter.Status
+	}
 
 	if len(filter.CustomQueries) > 0 {
 		for key, query := range filter.CustomQueries {

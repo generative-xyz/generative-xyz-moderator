@@ -750,18 +750,78 @@ definitions:
     type: object
   request.CreateETHProjectReq:
     properties:
+      animationURL:
+        type: string
+      captureImageTime:
+        type: integer
       categories:
         items:
           type: string
         type: array
-      contractAddress:
-        type: string
+      closeMintUnixTimestamp:
+        type: integer
       creatorAddrr:
+        type: string
+      creatorAddrrBTC:
+        type: string
+      creatorName:
+        type: string
+      description:
+        type: string
+      isFullChain:
+        type: boolean
+      license:
+        type: string
+      limitMintPerProcess:
+        type: integer
+      limitSupply:
+        type: integer
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      name:
+        type: string
+      openMintUnixTimestamp:
+        type: integer
+      reserveMintLimit:
+        type: integer
+      reserveMintPrice:
+        type: string
+      reservers:
+        items:
+          type: string
+        type: array
+      royalty:
+        type: integer
+      scripts:
+        items:
+          type: string
+        type: array
+      socialDiscord:
+        type: string
+      socialInstagram:
+        type: string
+      socialMedium:
+        type: string
+      socialTwitter:
+        type: string
+      socialWeb:
+        type: string
+      styles:
         type: string
       tags:
         items:
           type: string
         type: array
+      thirdPartyScripts:
+        items:
+          type: string
+        type: array
+      thumbnail:
+        type: string
+      tokenDescription:
+        type: string
       txHash:
         type: string
       zipLink:
@@ -3907,6 +3967,14 @@ paths:
         in: path
         name: walletAddress
         type: string
+      - description: status
+        in: query
+        name: status
+        type: boolean
+      - description: isSynced
+        in: query
+        name: isSynced
+        type: boolean
       - description: limit
         in: query
         name: limit
