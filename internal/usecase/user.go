@@ -1,29 +1,31 @@
 package usecase
 
 import (
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) ListArtist(req entity.FilteArtist) (*entity.Pagination, error) {
 	artists, err := u.Repo.ListArtist(req)
 	if err != nil {
-		u.Logger.Error("u.Repo.ListArtist", err.Error(), err)
+		logger.AtLog.Logger.Error("u.Repo.ListArtist", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.Info("artists", artists.Total)
+	logger.AtLog.Logger.Info("artists", zap.Any("artists.Total", artists.Total))
 	return artists, nil
 }
 
 func (u Usecase) ListUsers(req structure.FilterUsers) (*entity.Pagination, error) {
 	users, err := u.Repo.ListUsers(req)
 	if err != nil {
-		u.Logger.Error("u.Repo.ListUsers", err.Error(), err)
+		logger.AtLog.Logger.Error("u.Repo.ListUsers", zap.Error(err))
 		return nil, err
 	}
 
-	u.Logger.Info("ListUsers", users.Total)
+	logger.AtLog.Logger.Info("ListUsers", zap.Any("users.Total", users.Total))
 	return users, nil
 }
 

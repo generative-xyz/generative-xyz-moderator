@@ -5,9 +5,11 @@ import (
 	"math/big"
 	"time"
 
+	"go.uber.org/zap"
 	nftStructure "rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/logger"
 )
 
 func (u Usecase) GetNftTransactions(req structure.GetNftTransactionsReq) (*nftStructure.CovalentGetNftTransactionResponse, error) {
@@ -69,7 +71,7 @@ func (u Usecase) GetNftMintedTime( req structure.GetNftMintedTimeReq) (*structur
 // try to get block number minted and minted time from moralis
 	nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return nil, err
 	}
 	blockNumber := nft.BlockNumberMinted

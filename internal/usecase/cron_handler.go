@@ -64,7 +64,7 @@ func (u Usecase) SyncUserStats() error {
 	addressToVolumeMinted := make(map[string]float64)
 
 	for _, token := range u.gData.AllTokens {
-		u.Logger.Info(fmt.Sprintf("tokenId=%s", token.TokenID), token.TokenID)
+		logger.AtLog.Logger.Info(fmt.Sprintf("tokenId=%s", token.TokenID), zap.String("token.TokenID", token.TokenID))
 		if token.MinterAddress != nil {
 			addressToNftMinted[*token.MinterAddress]++
 		}
@@ -94,7 +94,7 @@ func (u Usecase) SyncUserStats() error {
 
 	updateUserStats := func(wg *sync.WaitGroup, address string, stats entity.UserStats) {
 		defer wg.Done()
-		//u.Logger.Info(fmt.Sprintf("update user stats address=%s", address), stats)
+		//logger.AtLog.Logger.Info(fmt.Sprintf("update user stats address=%s", address), stats)
 		u.Repo.UpdateUserStats(address, stats)
 	}
 
@@ -110,7 +110,7 @@ func (u Usecase) SyncUserStats() error {
 		outputMinted := addressToOutputMinted[user.WalletAddress]
 		volumeMint := addressToVolumeMinted[user.WalletAddress]
 
-		u.Logger.Info(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), true)
+		logger.AtLog.Logger.Info(fmt.Sprintf("address %s collectionCreated %v nftMinted %v", user.WalletAddress, collectionCreated, nftMinted), zap.Bool("true",true))
 		if collectionCreated != user.Stats.CollectionCreated {
 			user.Stats.CollectionCreated = collectionCreated
 			update = true
@@ -174,7 +174,7 @@ func (u Usecase) SyncTokenAndMarketplaceData() error {
 	for e := range errChan {
 		if e != nil {
 			err = e
-			u.Logger.Error(err)
+			logger.AtLog.Logger.Error("err", zap.Error(err))
 		}
 	}
 
@@ -273,7 +273,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(gData *gData) error {
 			return fmt.Errorf("can not find token with tokenID %s", k)
 		}
 		if token.Stats.PriceInt == nil || *token.Stats.PriceInt != v {
-			u.Logger.Info(fmt.Sprintf("setTokenPrice%s", k), v)
+			logger.AtLog.Logger.Info(fmt.Sprintf("setTokenPrice%s", k), zap.Int64("v",v))
 			u.Repo.UpdateTokenPriceByTokenId(k, v)
 		}
 		tokenWithPricesSet[k] = false
@@ -282,7 +282,7 @@ func (u Usecase) syncMarketplaceDurationAndTokenPrice(gData *gData) error {
 		if !v {
 			continue
 		}
-		u.Logger.Info(fmt.Sprintf("unsetTokenPrice%s", k), true)
+		logger.AtLog.Logger.Info(fmt.Sprintf("unsetTokenPrice%s", k), zap.Bool("true",true))
 		u.Repo.UnsetTokenPriceByTokenId(k)
 	}
 	return nil
@@ -300,13 +300,13 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(gData *gData) error {
 
 	updateListingOwner := func(wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
-		u.Logger.Info(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
+		logger.AtLog.Logger.Info(fmt.Sprintf("update listing offeringId=%s to ownerAddress %s", offeringID, ownerAddress), zap.Bool("true",true))
 		u.Repo.UpdateListingOwnerAddress(offeringID, ownerAddress)
 	}
 
 	updateOfferOwner := func(wg *sync.WaitGroup, offeringID string, ownerAddress string) {
 		defer wg.Done()
-		u.Logger.Info(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), true)
+		logger.AtLog.Logger.Info(fmt.Sprintf("update offer offeringId=%s to ownerAddress %s", offeringID, ownerAddress), zap.Bool("true",true))
 		u.Repo.UpdateOfferOwnerAddress(offeringID, ownerAddress)
 	}
 
@@ -351,31 +351,31 @@ func (u Usecase) syncMarketplaceOfferTokenOwner(gData *gData) error {
 func (u Usecase) GetTheCurrentBlockNumber() error {
 	block, err := u.Blockchain.GetBlockNumber()
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", err.Error(), err)
+		logger.AtLog.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", zap.Error(err))
 		return err
 	}
 
-	u.Logger.Info("block", block)
+	logger.AtLog.Logger.Info("block", zap.Any("block", block))
 	return nil
 }
 
 func (u Usecase) UpdateProposalState() error {
 	block, err := u.Blockchain.GetBlock()
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", err.Error(), err)
+		logger.AtLog.Logger.Error("Usecase.GetTheCurrentBlockNumber.GetBlockNumber", zap.Error(err))
 		return err
 	}
 
 	proposals, err := u.Repo.AllProposals(entity.FilterProposals{})
 	if err != nil {
-		u.Logger.Error("Usecase.GetTheCurrentBlockNumber.AllProposals", err.Error(), err)
+		logger.AtLog.Logger.Error("Usecase.GetTheCurrentBlockNumber.AllProposals", zap.Error(err))
 		return err
 	}
 
 	addr := common.HexToAddress(os.Getenv("DAO_PROPOSAL_CONTRACT"))
 	daoContract, err := generative_dao.NewGenerativeDao(addr, u.Blockchain.GetClient())
 	if err != nil {
-		u.Logger.Error(err)
+		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return err
 	}
 
@@ -396,15 +396,15 @@ func (u Usecase) UpdateProposalState() error {
 				if err == nil {
 					proposal.State = state
 				} else {
-					u.Logger.Error(err)
+					logger.AtLog.Logger.Error("err", zap.Error(err))
 				}
 
 				vote, err := daoContract.Proposals(nil, n)
 				if err != nil {
-					u.Logger.Error(err)
+					logger.AtLog.Logger.Error("err", zap.Error(err))
 				} else {
 					//createdProposal.State = state
-					u.Logger.Info("daoContract.Proposals.vote", vote)
+					logger.AtLog.Logger.Info("daoContract.Proposals.vote", zap.Any("vote", vote))
 				}
 
 				forVote := helpers.ParseBigToFloat(vote.ForVotes)
@@ -454,9 +454,9 @@ func (u Usecase) UpdateProposalState() error {
 
 			updated, err := u.Repo.UpdateProposal(proposal.UUID, &proposal)
 			if err != nil {
-				u.Logger.Error(err)
+				logger.AtLog.Logger.Error("err", zap.Error(err))
 			}
-			u.Logger.Info("Updated", updated)
+			logger.AtLog.Logger.Info("Updated", zap.Any("updated", updated))
 		}(proposal)
 
 		if processed%10 == 0 {
@@ -626,10 +626,10 @@ func (u Usecase) JobSyncTokenInscribeIndex() error {
 		processed++
 		inscribeInfo, err := u.GetInscribeInfo(token.TokenID)
 		if err != nil {
-			u.Logger.ErrorAny("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
+			logger.AtLog.Logger.Error("JobSyncTokenInscribeIndex.FailedToGetInscribeInfo", zap.Error(err))
 			continue
 		}
-		u.Logger.LogAny("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id", token.TokenID))
+		logger.AtLog.Logger.Info("JobSyncTokenInscribeIndex.UpdateTokenInscriptionIndex", zap.String("token_id", token.TokenID))
 		u.Repo.UpdateTokenInscriptionIndex(token.TokenID, inscribeInfo.Index)
 
 		if token.OwnerAddr != inscribeInfo.Address {
