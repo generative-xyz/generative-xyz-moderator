@@ -219,15 +219,35 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		logger.AtLog.Logger.Info("incriptionData", zap.Any("data", zap.Any("resp)", resp)))
 		if err != nil {
 			logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
-			// return nil, err
+		} else {
+			tokenUri.Owner = nil
+			if resp.Address != "" {
+				tokenUri.OwnerAddr = resp.Address
+				user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
+				if err == nil {
+					tokenUri.Owner = user
+				}
+			}
 		}
-
-		tokenUri.Owner = nil
-		if resp.Address != "" {
-			tokenUri.OwnerAddr = resp.Address
-			user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
-			if err == nil {
-				tokenUri.Owner = user
+	} else {
+		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
+		if err1 == nil {
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
+		} else {
+			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
+			if err2 != nil {
+				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+			} else {
+				if addr != nil {
+					if tokenUri.OwnerAddr != addr.String() {
+						tokenUri.Owner = nil
+						tokenUri.OwnerAddr = addr.String()
+						user, err := u.Repo.FindUserByBtcAddressTaproot(addr.String())
+						if err == nil {
+							tokenUri.Owner = user
+						}
+					}
+				}
 			}
 		}
 	}
