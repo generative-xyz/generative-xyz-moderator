@@ -432,11 +432,8 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
 
-	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress))
-	logger.AtLog.Logger.Info("dataObject.Creator", zap.Any("dataObject.Creator", dataObject.Creator))
-	logger.AtLog.Logger.Info("dataObject.TokenID", zap.Any("dataObject.TokenID", dataObject.TokenID))
-	logger.AtLog.Logger.Info("dataObject.ProjectID", zap.Any("dataObject.ProjectID", dataObject.ProjectID))
-
+	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.Any("dataObject.TokenID", dataObject.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
+	
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
@@ -459,8 +456,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 			ownerAddr := strings.ToLower(nft.Owner)
 
-			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old", zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr))
-			logger.AtLog.Logger.Info("dataObject.OwnerAddr.new", zap.Any("ownerAddr", ownerAddr))
+			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old", zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr), zap.Any("ownerAddr", ownerAddr))
 			owner, err := u.Repo.FindUserByWalletAddress(ownerAddr)
 			if err != nil {
 				logger.AtLog.Logger.Error("err", zap.Error(err))
@@ -480,7 +476,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 	} else {
-		logger.AtLog.Logger.Error(" u.GetNftMintedTime", zap.Error(mftMintedTime.Err))
+		logger.AtLog.Logger.Error("u.GetNftMintedTime", zap.Error(mftMintedTime.Err))
 	}
 
 	tokenFChan := <-tokendatachan
