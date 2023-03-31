@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -34,7 +35,9 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		}
 		pe.Images = imageLinks
 		pe.IsFullChain = true
+		networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 		pe.MaxFileSize = int64(maxSize)
+		pe.NetworkFee = networkFee.String()
 	}
 
 	if req.CaptureImageTime == nil {
@@ -112,7 +115,7 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, uint64, error) {
 		if strings.Index(file.Name, ".json") == -1 {
 			continue
 		}
-		
+
 		if uint64(file.Size) > maxSize {
 			maxSize = uint64(file.Size)
 		}
