@@ -117,3 +117,20 @@ func (u Usecase) GetNftMintedTime(client *ethclient.Client, req structure.GetNft
 		},
 	}, nil
 }
+
+func (u Usecase) ownerOf(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*common.Address, error) {
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		return nil, err
+	}
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
+	if !ok {
+		return nil, errors.New("cannot convert tokenID")
+	}
+	value, err := gNft.OwnerOf(nil, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	return &value, err
+}
