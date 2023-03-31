@@ -636,19 +636,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 		if p.MintingInfo.Index >= p.MaxSupply {
-
 			// update need to return:
-			item.ReasonRefund = "Project is minted out."
-			item.Status = entity.StatusMint_NeedToRefund
-
-			_, err = u.Repo.UpdateMintNftBtc(&item)
-			if err != nil {
-				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
-			}
-			err = fmt.Errorf("project %s is minted out", item.ProjectID)
-			logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckBalance", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
+			u.updateProjectMintedOut(&item, "JobMint_CheckBalance")
 			continue
 		}
 
@@ -734,19 +723,8 @@ func (u Usecase) JobMint_MintNftBtc() error {
 
 		// check Project and make sure index < max supply
 		if p.MintingInfo.Index >= p.MaxSupply {
-
 			// update need to return:
-			item.ReasonRefund = "Project is minted out."
-			item.Status = entity.StatusMint_NeedToRefund
-
-			_, err = u.Repo.UpdateMintNftBtc(&item)
-			if err != nil {
-				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Update need to refund for minted out", err.Error(), true)
-			}
-			err = fmt.Errorf("project %s is minted out", item.ProjectID)
-			logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
+			u.updateProjectMintedOut(&item, "JobMint_MintNftBtc")
 			continue
 		}
 
@@ -971,6 +949,17 @@ func (u Usecase) MintNftViaTrustlessComputer(item *entity.MintNftBtc, p *entity.
 // function for job mint:
 func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBtc, p *entity.Projects) error {
 
+	if len(p.GenNFTAddr) == 0 {
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "GenNFTAddr", "empty", true)
+		return nil
+	}
+
+	isMintOut, _ := u.TcClient.CheckProjectIsMintedOut(p.GenNFTAddr)
+	if isMintOut {
+		u.updateProjectMintedOut(item, "JobMint_MintNftBtc.MintNftViaTrustlessComputer_CallContract")
+		return nil
+	}
+
 	feeRate := item.FeeRate
 	if feeRate == 0 {
 		feeRate = entity.DEFAULT_FEE_RATE
@@ -1025,10 +1014,6 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		urlToMint = baseUrl.String()
 	}
 
-	if len(p.GenNFTAddr) == 0 {
-		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "GenNFTAddr", "empty", true)
-		return nil
-	}
 	// create byte data:
 	var byteData [][]byte
 	if len(urlToMint) > 0 {
@@ -1054,15 +1039,13 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		return nil
 	}
 
-	// context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	// defer cancel()
-
-	// balance, err := u.TcClient.GetBalance(context, tempWallet.WalletAddress)
-
-	// fmt.Println("balance, err: ", tempWallet.WalletAddress, balance, err)
-
 	tx, err := u.TcClient.MintTC(p.GenNFTAddr, privateKeyDeCrypt, item.OriginUserAddress, byteData)
 	if err != nil {
+
+		if strings.Contains(err.Error(), "minted_out") {
+			u.updateProjectMintedOut(item, "JobMint_MintNftBtc")
+			return nil
+		}
 		fmt.Println("can not mint MintTC: ", err)
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
@@ -1087,6 +1070,21 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		return nil
 	}
 	return nil
+}
+
+func (u Usecase) updateProjectMintedOut(item *entity.MintNftBtc, jobName string) {
+	// update need to return:
+	item.ReasonRefund = "Project is minted out."
+	item.Status = entity.StatusMint_NeedToRefund
+
+	_, err := u.Repo.UpdateMintNftBtc(item)
+	if err != nil {
+		fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+		go u.trackMintNftBtcHistory(item.UUID, jobName, item.TableName(), item.Status, "can not update need to refund for minted out", err.Error(), true)
+	}
+	err = fmt.Errorf("project %s is minted out", item.ProjectID)
+	logger.AtLog.Logger.Error("projectIsMintedOut", zap.Error(err))
+	go u.trackMintNftBtcHistory(item.UUID, jobName, item.TableName(), item.Status, "Updated to minted out", err.Error(), true)
 }
 
 // function for job mint:
@@ -1350,6 +1348,18 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "project not found", "", true)
 				return err
 			}
+
+			projectIndex, err := u.TcClient.GetProjectIndex(p.GenNFTAddr)
+
+			fmt.Println("projectIndex, p.MintingInfo.Index", projectIndex, p.MintingInfo.Index)
+
+			if err == nil {
+				if p.MintingInfo.Index != int64(projectIndex) {
+					// update project:
+					// u.Repo.SetProjectIndex(p.TokenId, int(projectIndex))
+				}
+			}
+
 			go u.getTokenInfo(structure.GetTokenMessageReq{
 				ContractAddress: p.ContractAddress,
 				TokenID:         item.InscriptionID,
