@@ -576,6 +576,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"project.tokenid", 1},
 					{"project.royalty", 1},
 					{"owner_addrress", 1},
+					{"owner", 1},
 					{"owner_object.wallet_address", 1},
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},

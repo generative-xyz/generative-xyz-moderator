@@ -152,6 +152,7 @@ type TokenUriListingFilter struct {
 	OwnerAddr             bool                 `bson:"ownerAddr" json:"ownerAddr"`
 	OwnerAddress          string               `bson:"owner_addrress" json:"owner_addrress"`
 	Owner                 TokenURIListingOwner `bson:"owner_object" json:"owner"`
+	OnwerInternal         TokenURIListingOwner `bson:"owner" json:"owner_internal"`
 	Project               struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`

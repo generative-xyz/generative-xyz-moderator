@@ -743,6 +743,13 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 					}
 				}
 			}
+		} else {
+			item.Owner = entity.TokenURIListingOwner{
+				WalletAddressBTCTaproot: item.OnwerInternal.WalletAddressBTCTaproot,
+				WalletAddress:           item.OnwerInternal.WalletAddress,
+				DisplayName:             item.OnwerInternal.DisplayName,
+				Avatar:                  item.OnwerInternal.Avatar,
+			}
 		}
 
 		//spew.Dump(iResp)
