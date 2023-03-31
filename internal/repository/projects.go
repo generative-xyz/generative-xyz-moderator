@@ -606,6 +606,7 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"ordinalsTx", 1},
 		{"inscribedBy", 1},
 		{"isSynced", 1},
+		{"txhash", 1},
 	}
 	return f
 }

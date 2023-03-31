@@ -168,7 +168,7 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
-	_ = txnHash
+	blockNumber := chainLog.BlockNumber
 
 	logger.AtLog.Logger.Info("chainLog", zap.Any("chainLog", chainLog))
 	topics := chainLog.Topics
@@ -178,10 +178,10 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	tokenIDStr = fmt.Sprintf("%d", tokenID)
 	contractAddr := strings.ToLower(chainLog.Address.String())
 
-	u.UpdateProjectFromChain(contractAddr, tokenIDStr, txnHash)
+	u.UpdateProjectFromChain(contractAddr, tokenIDStr, txnHash, blockNumber)
 }
 
-func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, txnHash string) (*entity.Projects, error) {
+func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, txnHash string, blockNumber uint64) (*entity.Projects, error) {
 	var err error
 	project := &entity.Projects{}
 
@@ -221,8 +221,10 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	}
 	now := time.Now().UTC()
 
+	blockNumberString := fmt.Sprintf("%d", blockNumber)
 	project.IsSynced = true
 	project.Name = projectDetail.ProjectDetail.Name
+	project.ContractAddress = contractAddr
 	project.CreatorName = projectDetail.ProjectDetail.Creator
 	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
 	project.Description = projectDetail.ProjectDetail.Desc
@@ -243,6 +245,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.SocialInstagram = projectDetail.ProjectDetail.Social.Instagram
 	project.Thumbnail = projectDetail.ProjectDetail.Image
 	project.NftTokenUri = projectDetail.NftTokenUri
+	project.BlockNumberMinted = &blockNumberString
 
 	// check is full chain
 	tokenUri := response.TokenURIResp{}
@@ -295,7 +298,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
-
+	
 	project.Stats = *projectStat
 	project.TraitsStat = traitStat
 
@@ -304,6 +307,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 	project.CreatorProfile = *user
+	project.CreatorAddrrBTC = user.WalletAddressBTC
+	_, err = u.Repo.UpdateProject(project.UUID, project)
+	if err != nil {
+		return nil, err
+	}
 
 	//DAO
 	ids, err := u.CreateDAOProject(context.TODO(), &request.CreateDaoProjectRequest{
