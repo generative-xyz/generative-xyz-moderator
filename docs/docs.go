@@ -2389,7 +2389,6 @@ var doc = `{
                             "$ref": "#/definitions/request.CompressImageReq"
                         }
                     }
-                ]
             }
         },
         "/inscribe/info/{ID}": {
@@ -4413,6 +4412,63 @@ var doc = `{
                         "type": "string",
                         "description": "projectID adress",
                         "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/{projectID}/token": {
+            "get": {
+                "description": "Search Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search Token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
                         "in": "path",
                         "required": true
                     }
