@@ -94,6 +94,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
+	project.HandleFunc("/{contractAddress}/{projectID}/token", h.searchToken).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
@@ -139,6 +140,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
+	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")

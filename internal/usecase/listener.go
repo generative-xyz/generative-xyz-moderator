@@ -199,7 +199,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 
-	if project.TokenID == "" {
+	if project.TokenID == project.TxHash {
 		tokenIDInt, err := strconv.Atoi(tokenIDStr)
 		if err != nil {
 			return nil, err
