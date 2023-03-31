@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"rederinghub.io/utils/contracts/bfs"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/contracts/bfs"
 
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
@@ -181,8 +182,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	tokenID := strings.ToLower(req.TokenID)
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
-		number, err1 := strconv.ParseUint(req.TokenID, 10, 64)
-		if err1 == nil && number/1000000 < 1000000 {
+		if !helpers.IsOrdinalProject(req.TokenID) {
 			//this was used for ETH (old flow), try to get DB
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				token, err2 := u.getTokenInfo(req)
@@ -294,7 +294,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.EthDialer()
+	client, err := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
 		return nil, err
@@ -344,17 +344,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 		tok.Seed = *seed
 
-		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
-			if strings.Index(*tokenUriData, "bfs://") > -1 {
-				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
-			} else {
-				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
-				return
-			}
-		}
-
-		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
+		if strings.Index(*tokenUriData, "data:application/json;base64,") == -1 {
 			if strings.Index(*tokenUriData, "bfs://") > -1 {
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
 				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
@@ -403,7 +393,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			}
 		}()
 
-		nftMintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
+		nftMintedTime, err = u.GetNftMintedTime(client, structure.GetNftMintedTimeReq{
 			ContractAddress: genNFTAddr,
 			TokenID:         req.TokenID,
 		})
@@ -740,15 +730,17 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
-		iResp, err := genService.Inscription(item.TokenID)
-		if err == nil && iResp != nil {
-			item.OwnerAddress = iResp.Address
-			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
-				item.Owner = entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot: iResp.Address,
-					WalletAddress:           "",
-					DisplayName:             "",
-					Avatar:                  "",
+		if helpers.IsOrdinalProject(item.TokenID) {
+			iResp, err := genService.Inscription(item.TokenID)
+			if err == nil && iResp != nil {
+				item.OwnerAddress = iResp.Address
+				if iResp.Address != item.Owner.WalletAddressBTCTaproot {
+					item.Owner = entity.TokenURIListingOwner{
+						WalletAddressBTCTaproot: iResp.Address,
+						WalletAddress:           "",
+						DisplayName:             "",
+						Avatar:                  "",
+					}
 				}
 			}
 		}
