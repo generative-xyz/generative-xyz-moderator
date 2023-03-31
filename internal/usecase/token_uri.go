@@ -394,7 +394,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			}
 		}()
 
-		nftMintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
+		nftMintedTime, err = u.GetNftMintedTime(client, structure.GetNftMintedTimeReq{
 			ContractAddress: genNFTAddr,
 			TokenID:         req.TokenID,
 		})

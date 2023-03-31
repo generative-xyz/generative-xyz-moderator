@@ -2,14 +2,14 @@ package usecase
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
-	"time"
-
-	"go.uber.org/zap"
 	nftStructure "rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils/logger"
+	"rederinghub.io/utils/contracts/generative_nft_contract"
+	"time"
 )
 
 func (u Usecase) GetNftTransactions(req structure.GetNftTransactionsReq) (*nftStructure.CovalentGetNftTransactionResponse, error) {
@@ -53,11 +53,11 @@ func (u Usecase) GetAllTokenHolder() ([]structure.TokenHolder, error) {
 }
 
 func (u Usecase) GetTokenHolders(req structure.GetTokenHolderRequest) (*entity.Pagination, error) {
-bf := entity.BaseFilters{
-		Page: int64(req.Page),
-		Limit: int64(req.Limit),
+	bf := entity.BaseFilters{
+		Page:   int64(req.Page),
+		Limit:  int64(req.Limit),
 		SortBy: "current_rank",
-		Sort: entity.SORT_ASC,
+		Sort:   entity.SORT_ASC,
 	}
 
 	resp, err := u.Repo.FilterTokenHolders(entity.FilterTokenHolders{
@@ -67,9 +67,9 @@ bf := entity.BaseFilters{
 	return resp, err
 }
 
-func (u Usecase) GetNftMintedTime( req structure.GetNftMintedTimeReq) (*structure.NftMintedTime, error) {
-// try to get block number minted and minted time from moralis
-	nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
+func (u Usecase) GetNftMintedTime(client *ethclient.Client, req structure.GetNftMintedTimeReq) (*structure.NftMintedTime, error) {
+	// try to get block number minted and minted time from moralis
+	/*nft, err := u.MoralisNft.GetNftByContractAndTokenID(req.ContractAddress, req.TokenID)
 	if err != nil {
 		logger.AtLog.Logger.Error("err", zap.Error(err))
 		return nil, err
@@ -91,5 +91,29 @@ func (u Usecase) GetNftMintedTime( req structure.GetNftMintedTimeReq) (*structur
 		BlockNumberMinted: &blockNumber,
 		MintedTime:        &mintedTime,
 		Nft:               nft,
+	}, nil*/
+
+	contractAddr := common.HexToAddress(req.ContractAddress)
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		return nil, err
+	}
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(req.TokenID, 10)
+	if !ok {
+		return nil, errors.New("cannot convert tokenID")
+	}
+	value, err := gNft.OwnerOf(nil, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	return &structure.NftMintedTime{
+		BlockNumberMinted: nil,
+		MintedTime:        &now,
+		Nft: &nftStructure.MoralisToken{
+			TokenID: req.TokenID,
+			Owner:   value.String(),
+		},
 	}, nil
 }
