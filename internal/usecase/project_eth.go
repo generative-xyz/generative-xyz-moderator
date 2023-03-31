@@ -2,9 +2,12 @@ package usecase
 
 import (
 	"fmt"
+	"math/big"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/copier"
 
@@ -25,12 +28,16 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 
 	//process ziplink
 	if req.ZipLink != nil && *req.ZipLink != "" {
-		imageLinks, err := u.ProcessEthZip(*req.ZipLink)
+		imageLinks, maxSize, err := u.ProcessEthZip(*req.ZipLink)
 		if err != nil {
 			logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.ProcessEthZip.%s", pe.TokenId), zap.String("zipLink", *req.ZipLink), zap.Error(err))
 			return nil, err
 		}
 		pe.Images = imageLinks
+		pe.IsFullChain = true
+		networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
+		pe.MaxFileSize = int64(maxSize)
+		pe.NetworkFee = networkFee.String()
 	}
 
 	if req.CaptureImageTime == nil {
@@ -56,7 +63,8 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	return pe, nil
 }
 
-func (u Usecase) ProcessEthZip(zipLink string) ([]string, error) {
+func (u Usecase) ProcessEthZip(zipLink string) ([]string, uint64, error) {
+	maxSize := uint64(0)
 	resp := []string{}
 	linksArr := strings.Split(zipLink, "/")
 
@@ -93,20 +101,31 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, error) {
 	err := u.GCS.UnzipFile(contentPath)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ProcessEthZip.UnzipFile.%s", zipLink), zap.String("zipLink", zipLink), zap.String("contentPath", contentPath))
-		return nil, err
+		return nil, maxSize, err
 	}
 
 	unzippedFolder := strings.TrimSuffix(contentPath+"_unzip", filepath.Ext(zipLink))
 	files, err := u.GCS.ReadFolder(unzippedFolder)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ProcessEthZip.ReadFolder.%s", zipLink), zap.String("zipLink", zipLink), zap.String("unzippedFolder", unzippedFolder))
-		return nil, err
+		return nil, maxSize, err
 	}
 
 	for _, file := range files {
+		if strings.Index(file.Name, ".json") == -1 {
+			continue
+		}
+
+		if uint64(file.Size) > maxSize {
+			maxSize = uint64(file.Size)
+		}
+
 		path := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), file.Name)
 		resp = append(resp, path)
 	}
 
-	return resp, nil
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(resp), func(i, j int) { resp[i], resp[j] = resp[j], resp[i] })
+
+	return resp, maxSize, nil
 }

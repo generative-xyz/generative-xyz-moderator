@@ -377,3 +377,19 @@ func (r Repository) UpdateTcTempWalletAddress(address string, status entity.Stat
 	}
 	return err
 }
+
+func (r Repository) ListEvmTempWallets() ([]entity.EvmTempWallets, error) {
+	resp := []entity.EvmTempWallets{}
+	filter := bson.M{}
+
+	cursor, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
