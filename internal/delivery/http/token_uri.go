@@ -139,26 +139,27 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
-	aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
-	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
-	for _, i := range aresp {
-		if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
-			resp.OrdinalsData = &response.OrdinalsData{
-				Sat:         i.Inscription.Sat,
-				ContentType: i.Inscription.ContentType,
-				Timestamp:   i.Inscription.Timestamp,
-				Block:       i.Inscription.GenesisHeight,
+	if helpers.IsOrdinalProject(token.TokenID) {
+		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
+		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		} else {
+			for _, i := range aresp {
+				if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
+					resp.OrdinalsData = &response.OrdinalsData{
+						Sat:         i.Inscription.Sat,
+						ContentType: i.Inscription.ContentType,
+						Timestamp:   i.Inscription.Timestamp,
+						Block:       i.Inscription.GenesisHeight,
+					}
+					break
+				}
 			}
-			break
 		}
 	}
 
@@ -433,7 +434,7 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 			f.Status = &status
 		}
 	}
-	
+
 	if isSyncedStr != "" {
 		isSynced, err := strconv.ParseBool(isSyncedStr)
 		if err == nil {
@@ -575,7 +576,7 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 
 		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
 		if err != nil {
-			logger.AtLog.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID",zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
 		} else {
 			if listingInfo.CancelTx == "" {
 				resp.Buyable = true

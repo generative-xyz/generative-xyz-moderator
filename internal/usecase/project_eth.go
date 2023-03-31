@@ -104,6 +104,10 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, error) {
 	}
 
 	for _, file := range files {
+		if strings.Index(file.Name, ".json") == -1 {
+			continue
+		}
+
 		path := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), file.Name)
 		resp = append(resp, path)
 	}
