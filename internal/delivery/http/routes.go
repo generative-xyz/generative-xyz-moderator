@@ -139,6 +139,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
+	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
@@ -234,7 +235,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
-	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 

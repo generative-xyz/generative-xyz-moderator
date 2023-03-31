@@ -315,8 +315,6 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	h.Usecase.JobMint_MintNftBtc()
-
 	// h.Usecase.ResetEvenManager()
 
 	// meth := reflect.ValueOf(h.Usecase).MethodByName("JobMKP_CheckTxSendNftToBuyer")
@@ -329,7 +327,7 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("len result", len(result))
 
 	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, err, "")
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
+	// h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
 
 func (h *httpDelivery) btcTestTransfer(w http.ResponseWriter, r *http.Request) {
