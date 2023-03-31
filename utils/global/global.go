@@ -26,6 +26,7 @@ type Global struct {
 	MuxRouter           *mux.Router
 	DBConnection        _pConnection.IConnection
 	Cache               redis.IRedisCache
+	Queue               redis.QueueClient
 	CacheAuthService    redis.IRedisCache
 	RedisV9             redisv9.Client
 	Pubsub              redis.IPubSubClient

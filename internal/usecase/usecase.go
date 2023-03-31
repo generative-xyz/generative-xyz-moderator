@@ -33,6 +33,7 @@ type Usecase struct {
 	Logger              logger.Ilogger
 	Config              *config.Config
 	PubSub              redis.IPubSubClient
+	Queue              	redis.QueueClient
 	Cache               redis.IRedisCache
 	Auth2               oauth2service.Auth2
 	GCS                 googlecloud.IGcstorage
@@ -47,7 +48,6 @@ type Usecase struct {
 	gData               gData
 	DelegateService     *delegate.Service
 	RedisV9             redisv9.Client
-
 	TcClient, EthClient *eth.Client
 }
 
@@ -70,7 +70,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.OrdServiceDeveloper = global.OrdServiceDeveloper
 	u.DelegateService = global.DelegateService
 	u.RedisV9 = global.RedisV9
-
+	u.Queue = global.Queue
 	u.TcClient = global.TcClient
 	u.EthClient = global.EthClient
 

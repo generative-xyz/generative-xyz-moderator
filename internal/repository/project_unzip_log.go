@@ -2,10 +2,8 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
@@ -35,12 +33,12 @@ func (r Repository) GetProjectUnzip(projectID string) (*entity.ProjectZipLinks, 
 }
 
 func (r Repository) GetProjectUnzips() ([]entity.ProjectZipLinks, error) {
-	checkTime := time.Now().UTC().Add(-5 * time.Minute)
+	//checkTime := time.Now().UTC().Add(-5 * time.Minute)
 	zipFiles := []entity.ProjectZipLinks{}
 	f := bson.M{}
 	f["status"] = entity.UzipStatusFail
 	f["retries"] = bson.M{"$lte": 20}
-	f["updated_at"] =  bson.M{ "$lte":  primitive.NewDateTimeFromTime(checkTime) }
+	//f["updated_at"] =  bson.M{ "$lte":  primitive.NewDateTimeFromTime(checkTime) }
 	//f["tokenid"] = "1001572"
 	
 	cursor, err := r.DB.Collection(entity.ProjectZipLinks{}.TableName()).Find(context.TODO(), f, nil)

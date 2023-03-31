@@ -38,7 +38,6 @@ import (
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
-	"rederinghub.io/utils/redis"
 	"rederinghub.io/utils/rediskey"
 )
 
@@ -207,13 +206,10 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	}
 
 	if isPubsub {
-
-		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
-		if err != nil {
-			logger.AtLog.Logger.Error("u.Repo.CreateProject",  zap.Error(err))
-			//return nil, err
-		}
-
+		u.PubSubProjectUnzip(utils.PUBSUB_PROJECT_UNZIP, structure.ProjectUnzipPayload{
+			ProjectID: pe.TokenID, 
+			ZipLink: *zipLink,
+		})
 	} else {
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), pe.CreatorProfile, 3)
 	}

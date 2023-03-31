@@ -26,6 +26,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
+	"rederinghub.io/internal/delivery/queue"
 	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
@@ -135,6 +136,8 @@ func startServer() {
 	covalent := nfts.NewCovalentNfts(conf)
 	slack := slack.NewSlack(conf.Slack)
 	rPubsub := redis.NewPubsubClient(conf.Redis)
+	queueClient := redis.NewQueueClient(conf.Redis)
+	
 	delegateService, err := delegate.NewService(ethClient.GetClient())
 	if err != nil {
 		_logger.AtLog.Logger.Error("error initializing delegate service", zap.Error(err))
@@ -178,6 +181,7 @@ func startServer() {
 		Slack:               *slack,
 		DiscordClient:       discordclient.NewCLient(),
 		Pubsub:              rPubsub,
+		Queue:              *queueClient,
 		OrdService:          ord,
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
@@ -238,6 +242,12 @@ func startServer() {
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
+	}
+
+	queueServer := queue.NewQueueHandler(*uc, conf.Redis, logger)
+	servers["queue"] = delivery.AddedServer{
+		Server:  queueServer,
+		Enabled: conf.StartPubsub,
 	}
 
 	// job init:

@@ -44,17 +44,17 @@ func (h PubsubHandler) StartServer() {
 	for msg := range ch {
 
 		chanName := msg.Channel
-		payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
+		payload, _, err := h.pubsub.Parsepayload(msg.Payload)
 		if err != nil {
 			continue
 		}
 
 		switch chanName {
 		case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
-			h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
+			h.usecase.PubSubCreateTokenThumbnail(chanName, payload)
 			break
 		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
-			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
+			h.usecase.PubSubProjectUnzip(chanName, payload)
 			break
 		}}
 	<-ch

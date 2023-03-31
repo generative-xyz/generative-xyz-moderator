@@ -25,6 +25,18 @@ services:
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
     ports:
       - "6379:6379"
+      
+  api_asynqmon_service:
+    restart: always
+    container_name: api_asynqmon_service
+    image: hibiken/asynqmon
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - REDIS_ADDR=api_redis_service:6379
+      - REDIS_DB=1
+      - REDIS_REDIS_PASSWORDDB=""
+    ports:
+      - "8080:8080"
 
   # api_jaeger:
   #   container_name: api_jaeger
