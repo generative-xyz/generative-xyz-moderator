@@ -2354,6 +2354,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/inscribe/compress-image": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "compress-image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "compress-image"
+                ],
+                "summary": "compress-image",
+                "parameters": [
+                    {
+                        "description": "compress images",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CompressImageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/inscribe/info/{ID}": {
             "get": {
                 "security": [
@@ -4239,6 +4275,48 @@ const docTemplate = `{
             }
         },
         "/project/{contractAddress}/{projectID}/allow-list": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Check project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Check project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -4316,6 +4394,63 @@ const docTemplate = `{
                         "type": "string",
                         "description": "projectID adress",
                         "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/{projectID}/token": {
+            "get": {
+                "description": "Search Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search Token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
                         "in": "path",
                         "required": true
                     }
@@ -6146,6 +6281,9 @@ const docTemplate = `{
                 "wallet_address_payment": {
                     "description": "eth wallet artist receive royalty",
                     "type": "string"
+                },
+                "wallet_type": {
+                    "type": "string"
                 }
             }
         },
@@ -6236,6 +6374,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CompressImageReq": {
+            "type": "object",
+            "properties": {
+                "compressPercents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "imageUrl": {
                     "type": "string"
                 }
             }
@@ -6598,6 +6750,9 @@ const docTemplate = `{
             "properties": {
                 "address": {
                     "type": "string"
+                },
+                "walletType": {
+                    "type": "string"
                 }
             }
         },
@@ -6813,6 +6968,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "addressBtcSegwit": {
+                    "type": "string"
+                },
+                "addressPayment": {
                     "type": "string"
                 },
                 "ethSignature": {
@@ -7091,6 +7249,7 @@ const docTemplate = `{
                     "description": "balance after check",
                     "type": "string"
                 },
+                "estFeeInfo": {},
                 "fileURI": {
                     "description": "FileURI will be mount if OrdAddress get all amount",
                     "type": "string"
@@ -7532,6 +7691,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "isFullChain": {
+                    "type": "boolean"
+                },
+                "isGenerative": {
+                    "description": "art by generative code or html file",
                     "type": "boolean"
                 },
                 "isHidden": {
