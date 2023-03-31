@@ -33,6 +33,11 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		pe.Images = imageLinks
 	}
 
+	if req.CaptureImageTime == nil {
+		cap := entity.DEFAULT_CAPTURE_TIME
+		pe.CatureThumbnailDelayTime = &cap
+	}
+
 	pe.IsHidden = true
 	pe.Status = false
 	pe.IsSynced = false
