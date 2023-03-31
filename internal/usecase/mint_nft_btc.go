@@ -1065,6 +1065,13 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err.Error())
 	}
 
+	// update project:
+	_, err = u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
+		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
+	}
+
 	err = u.Repo.IncreaseProjectIndex(item.ProjectID)
 	if err != nil {
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
