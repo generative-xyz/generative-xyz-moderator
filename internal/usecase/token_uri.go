@@ -378,12 +378,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		if strings.Index(*tokenUriData, "data:application/json;base64,") == -1 {
 			if strings.Index(*tokenUriData, "bfs://") > -1 {
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
-				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
-				if err != nil {
-					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("getSeedFromTokenId", seed), zap.Any("error", err))
-					return
-				}
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, strings.ToUpper(strings.Replace(*seed, "0x", "", 1)))
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, tok.Seed)
 				if err != nil {
 					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
 					return
@@ -422,10 +417,10 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			imageArr := strings.Split(tokeBFS.Image, ",")
 			if len(imageArr) == 2 {
 				ext := helpers.FileType(imageArr[0])
-				fName := fmt.Sprintf("%s%s",tokenID, ext)
+				fName := fmt.Sprintf("%s%s", tokenID, ext)
 				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
 				if err == nil {
-					imageURL = fmt.Sprintf("%s/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 				}
 			}
 
@@ -441,8 +436,8 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			attrs := []entity.TokenUriAttr{}
 			for _, attr := range tokeBFS.Attributes {
 				tmp := entity.TokenUriAttr{
-					TraitType:  attr.TraitType,
-					Value:  attr.Value,
+					TraitType: attr.TraitType,
+					Value:     attr.Value,
 				}
 
 				attrs = append(attrs, tmp)
@@ -451,7 +446,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			tok.ParsedAttributes = attrs
 			tok.ParsedAttributesStr = tokeBFS.Attributes
 			tok.Attributes = ""
-		
+
 			return
 		}
 		err = json.Unmarshal([]byte(stringData), tok)
@@ -493,7 +488,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	dataObject.ProjectIDInt = projectID.Int64()
 
 	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.Any("dataObject.TokenID", dataObject.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
-	
+
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
@@ -546,21 +541,21 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			dataObject.Name = dataObject.TokenID
 		}
 		dataObject.Description = tokenFChan.Data.Description
-		
+
 		dataObject.Thumbnail = tokenFChan.Data.Image
 		if tokenFChan.Data.Image != "" {
 			dataObject.Image = tokenFChan.Data.Image
 		}
-		
+
 		if tokenFChan.Data.Thumbnail != "" {
 			dataObject.Thumbnail = tokenFChan.Data.Thumbnail
 		}
-		
-		if tokenFChan.Data.ParsedImage != nil && *tokenFChan.Data.ParsedImage != ""  {
+
+		if tokenFChan.Data.ParsedImage != nil && *tokenFChan.Data.ParsedImage != "" {
 			dataObject.ParsedImage = tokenFChan.Data.ParsedImage
 		}
-		
-		if tokenFChan.Data.ThumbnailCapturedAt != nil   {
+
+		if tokenFChan.Data.ThumbnailCapturedAt != nil {
 			dataObject.ThumbnailCapturedAt = tokenFChan.Data.ThumbnailCapturedAt
 		}
 
@@ -568,14 +563,13 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		dataObject.Attributes = tokenFChan.Data.Attributes
 		dataObject.Seed = tokenFChan.Data.Seed
 
-		if len( tokenFChan.Data.ParsedAttributes)  > 0 {
+		if len(tokenFChan.Data.ParsedAttributes) > 0 {
 			dataObject.ParsedAttributes = tokenFChan.Data.ParsedAttributes
 		}
-		
-		if len( tokenFChan.Data.ParsedAttributesStr)  > 0 {
+
+		if len(tokenFChan.Data.ParsedAttributesStr) > 0 {
 			dataObject.ParsedAttributesStr = tokenFChan.Data.ParsedAttributesStr
 		}
-		
 
 	} else {
 		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
@@ -672,7 +666,7 @@ func (u Usecase) getSeedFromTokenId(client *ethclient.Client, contractAddr commo
 	if err != nil {
 		return nil, err
 	}
-	result := "0x" + hex.EncodeToString(val[:])
+	result := "0x" + strings.ToUpper(hex.EncodeToString(val[:]))
 	return &result, nil
 }
 
