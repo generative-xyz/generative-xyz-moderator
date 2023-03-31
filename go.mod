@@ -5,6 +5,7 @@ go 1.18
 require (
 	cloud.google.com/go/storage v1.29.0
 	firebase.google.com/go/v4 v4.10.0
+	github.com/adshao/go-binance/v2 v2.4.1
 	github.com/algolia/algoliasearch-client-go/v3 v3.26.4
 	github.com/antchfx/htmlquery v1.3.0
 	github.com/aws/aws-sdk-go v1.44.211
@@ -21,6 +22,7 @@ require (
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/go-redsync/redsync/v4 v4.8.2-0.20230215144735-e1e5da6654c8
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gobeam/mongo-go-pagination v0.0.8
 	github.com/gocolly/colly v1.2.0
@@ -83,7 +85,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
-	github.com/adshao/go-binance/v2 v2.4.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/antchfx/xmlquery v1.3.15 // indirect
 	github.com/antchfx/xpath v1.2.3 // indirect
@@ -113,7 +114,6 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
-	github.com/go-redsync/redsync/v4 v4.8.2-0.20230215144735-e1e5da6654c8 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect

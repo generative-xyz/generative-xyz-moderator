@@ -178,11 +178,21 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	logger.AtLog.Logger.Info("GetToken", zap.Any("req", zap.Any("req)", req)))
-	//contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
-
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
+		number, err := strconv.ParseUint(req.TokenID, 10, 64)
+		if number/1000000 < 1000000 {
+			//this was used for ETH (old flow), try to get DB
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				token, err := u.getTokenInfo(req)
+				if err != nil {
+					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
+					return nil, err
+				}
+				return token, nil
+			}
+		}
 		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
@@ -218,22 +228,6 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			tokenUri.Owner = user
 		}
 	}
-
-	//this was used for ETH (old flow)
-	// if err != nil {
-	// 	logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-	// 	if errors.Is(err, mongo.ErrNoDocuments) {
-	// 		token, err := u.getTokenInfo(req)
-	// 		if err != nil {
-	// 			logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
-	// 			return nil, err
-	// 		}
-	// 		return token, nil
-	// 	} else {
-	// 		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-	// 		return nil, err
-	// 	}
-	// }
 
 	go func() {
 		if tokenUri.Thumbnail == "" {
@@ -281,7 +275,6 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	logger.AtLog.Logger.Info("req", zap.Any("req", req))
 	addr := common.HexToAddress(req.ContractAddress)
-	//fAddr := strings.ToLower(req.ContractAddress)
 	isUpdated := false
 
 	dataObject, err := u.Repo.FindTokenByTokenID(req.TokenID)
@@ -487,13 +480,13 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		dataObject.Image = tokenFChan.Data.Image
 
 	} else {
-		logger.AtLog.Logger.Error("tokenFChan.Err",zap.Error(tokenFChan.Err))
+		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), zap.Bool("true",true))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), zap.Bool("true", true))
 
 	isAddress := func(s *string) bool {
 		if s == nil {
@@ -503,7 +496,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	if dataObject.MinterAddress != nil {
-		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), zap.Bool("true",true))
+		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), zap.Bool("true", true))
 	}
 
 	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
