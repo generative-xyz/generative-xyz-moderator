@@ -634,7 +634,7 @@ func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address
 	//if value.Cmp(big.NewInt(0)) > 0 {
 	nextChunks := big.NewInt(0)
 	for {
-		bytes, nextChunks, err := bfsC.Load(nil, gNft, "0x"+seed, nextChunks)
+		bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, nextChunks)
 		if err != nil {
 			return nil, err
 		}
