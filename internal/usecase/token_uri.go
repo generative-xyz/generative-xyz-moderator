@@ -208,24 +208,27 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			tokenUri.Project.TokenId = inscribeBtc.TokenId
 		}
 	}
-	client := resty.New()
-	resp := &response.SearhcInscription{}
-	_, err = client.R().
-		EnableTrace().
-		SetResult(&resp).
-		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
-	logger.AtLog.Logger.Info("incriptionData", zap.Any("data", zap.Any("resp)", resp)))
-	if err != nil {
-		logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
-		// return nil, err
-	}
 
-	tokenUri.Owner = nil
-	if resp.Address != "" {
-		tokenUri.OwnerAddr = resp.Address
-		user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
-		if err == nil {
-			tokenUri.Owner = user
+	if helpers.IsOrdinalProject(req.TokenID) {
+		client := resty.New()
+		resp := &response.SearhcInscription{}
+		_, err = client.R().
+			EnableTrace().
+			SetResult(&resp).
+			Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
+		logger.AtLog.Logger.Info("incriptionData", zap.Any("data", zap.Any("resp)", resp)))
+		if err != nil {
+			logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
+			// return nil, err
+		}
+
+		tokenUri.Owner = nil
+		if resp.Address != "" {
+			tokenUri.OwnerAddr = resp.Address
+			user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
+			if err == nil {
+				tokenUri.Owner = user
+			}
 		}
 	}
 
