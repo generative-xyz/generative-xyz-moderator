@@ -347,6 +347,9 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	go func(tokenDataChan chan structure.TokenDataChan, parentAddr common.Address, tokenID string) {
 		var err error
 		tok := &entity.TokenUri{}
+		fromBFS := false
+
+		tokeBFS := entity.TokenFromBase64{}
 
 		defer func() {
 			tokenDataChan <- structure.TokenDataChan{
@@ -380,6 +383,9 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
 					return
 				}
+
+				fromBFS = true
+
 			} else {
 				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
 				return
@@ -400,11 +406,40 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		stringData = strings.ReplaceAll(stringData, "\r", "\\r")
 		stringData = strings.ReplaceAll(stringData, "\t", "\\t")
 
+		if fromBFS {
+			err = json.Unmarshal([]byte(stringData), &tokeBFS)
+			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+				return
+			}
+			tok.Name = tokeBFS.Name
+			tok.Description = tokeBFS.Description
+			tok.Image = tokeBFS.Image
+			tok.AnimationURL = tokeBFS.AnimationURL
+
+			attrs := []entity.TokenUriAttr{}
+			for _, attr := range tokeBFS.Attributes {
+				tmp := entity.TokenUriAttr{
+					TraitType:  attr.TraitType,
+					Value:  attr.Value,
+				}
+
+				attrs = append(attrs, tmp)
+			}
+
+			tok.ParsedAttributes = attrs
+			tok.ParsedAttributesStr = tokeBFS.Attributes
+			tok.Attributes = *tokenUriData
+		
+			return
+		}
 		err = json.Unmarshal([]byte(stringData), tok)
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
+
+		//TOD - upload the base64 image into GCS
 
 	}(tokendatachan, parentAddr, req.TokenID)
 
