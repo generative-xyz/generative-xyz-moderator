@@ -1023,6 +1023,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 			return nil
 		}
 	}
+	// fmt.Println("byteData", byteData)
 
 	// get free temp wallet:
 	tempWallet := u.GetMintFreeTemAddress()
@@ -2571,7 +2572,7 @@ func (u Usecase) GetMintFreeTemAddress() *entity.EvmTempWallets {
 	return freeWallet
 }
 
-func (u Usecase) GenMintFreeTemAddress() {
+func (u Usecase) GenMintFreeTemAddress() (string, error) {
 
 	fmt.Println("start------")
 
@@ -2582,33 +2583,76 @@ func (u Usecase) GenMintFreeTemAddress() {
 	// 	return
 	// }
 	// time.Sleep(1 * time.Second)
-	ethClient := eth.NewClient(nil)
-	for i := 0; i < 5; i++ {
 
-		fmt.Println("xxxxxx i =>", i)
+	maxItem := 200
 
-		privateKey, _, receiveAddress, err := ethClient.GenerateAddress()
-		if err != nil {
+	if len(os.Getenv("PRIVATE_KEY_FEE_TC_WALLET")) == 0 {
+		return "", errors.New("PRIVATE_KEY_FEE_TC_WALLET empty")
+	}
+	if len(os.Getenv("SECRET_KEY")) == 0 {
+		return "", errors.New("SECRET_KEY empty")
+	}
+
+	if len(os.Getenv("TC_MULTI_CONTRACT")) == 0 {
+		return "", errors.New("TC_MULTI_CONTRACT empty")
+	}
+
+	// get data:
+	list, _ := u.Repo.ListEvmTempWallets()
+
+	if len(list) == 0 {
+		for i := 0; i < maxItem; i++ {
+			fmt.Println("xxxxxx i =>", i)
+
+			privateKey, _, receiveAddress, err := u.TcClient.GenerateAddress()
+			if err != nil {
+				logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+				return "", err
+			}
+
+			privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
+			if err != nil {
+				logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+				return "", err
+			}
+
+			err = u.Repo.InsertEvmTempWallets(&entity.EvmTempWallets{
+				WalletAddress: receiveAddress,
+				PrivateKey:    privateKeyEnCrypt,
+				Status:        0,
+			})
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
-			return
 		}
+	}
 
-		if len(os.Getenv("SECRET_KEY")) == 0 {
-			panic("xxx")
-		}
+	// send JUICE:
+	destinations := make(map[string]*big.Int)
 
-		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
-		if err != nil {
-			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
-			return
-		}
+	// get list again:
+	list, _ = u.Repo.ListEvmTempWallets()
+	for _, item := range list {
+		destinations[item.WalletAddress] = big.NewInt(0.5 * 1e18)
+	}
 
-		err = u.Repo.InsertEvmTempWallets(&entity.EvmTempWallets{
-			WalletAddress: receiveAddress,
-			PrivateKey:    privateKeyEnCrypt,
-			Status:        0,
-		})
-		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+	fmt.Println("destinations: ", destinations)
+
+	privateKeyDeCrypt, err := encrypt.DecryptToString(os.Getenv("PRIVATE_KEY_FEE_TC_WALLET"), os.Getenv("SECRET_KEY"))
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("GenMintFreeTemAddress.Decrypt.%s.Error", "can decrypt"), zap.Error(err))
+		return "", err
+	}
+
+	txID, err := u.TcClient.SendMulti(
+		os.Getenv("TC_MULTI_CONTRACT"),
+		privateKeyDeCrypt,
+		destinations,
+		nil,
+		0,
+	)
+	fmt.Println("txID, err ", txID, err)
+
+	if err != nil {
+		return "", err
 	}
 
 	// if ok, err := mutex.Unlock(); !ok || err != nil {
@@ -2616,5 +2660,6 @@ func (u Usecase) GenMintFreeTemAddress() {
 	// }
 
 	fmt.Println("done------")
-	return
+
+	return txID, err
 }
