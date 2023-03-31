@@ -81,8 +81,13 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 
 	imageURL := token.AnimationURL
 	if len(imageURL) == 0 {
+		parsedImage := ""
+		if token.ParsedImage != nil {
+			parsedImage = *token.ParsedImage
+		}
+
 		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
+			ParsedImage: parsedImage,
 			Thumbnail:   token.Thumbnail,
 			Traits:      token.ParsedAttributes,
 			TraitsStr:   token.ParsedAttributesStr,
@@ -415,7 +420,9 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			tok.Name = tokeBFS.Name
 			tok.Description = tokeBFS.Description
 			tok.Image = tokeBFS.Image
+			tok.ParsedImage = &tokeBFS.Image
 			tok.AnimationURL = tokeBFS.AnimationURL
+			
 
 			attrs := []entity.TokenUriAttr{}
 			for _, attr := range tokeBFS.Attributes {
@@ -429,7 +436,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 			tok.ParsedAttributes = attrs
 			tok.ParsedAttributesStr = tokeBFS.Attributes
-			tok.Attributes = *tokenUriData
+			tok.Attributes = ""
 		
 			return
 		}
@@ -521,11 +528,24 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	tokenFChan := <-tokendatachan
 	if tokenFChan.Err == nil {
 		dataObject.Name = tokenFChan.Data.Name
+		if dataObject.Name == "" {
+			dataObject.Name = dataObject.TokenID
+		}
 		dataObject.Description = tokenFChan.Data.Description
 		dataObject.Image = tokenFChan.Data.Image
+		dataObject.Thumbnail = tokenFChan.Data.Image
 		dataObject.AnimationURL = tokenFChan.Data.AnimationURL
 		dataObject.Attributes = tokenFChan.Data.Attributes
-		dataObject.Image = tokenFChan.Data.Image
+		dataObject.Seed = tokenFChan.Data.Seed
+
+		if len( tokenFChan.Data.ParsedAttributes)  > 0 {
+			dataObject.ParsedAttributes = tokenFChan.Data.ParsedAttributes
+		}
+		
+		if len( tokenFChan.Data.ParsedAttributesStr)  > 0 {
+			dataObject.ParsedAttributesStr = tokenFChan.Data.ParsedAttributesStr
+		}
+		
 
 	} else {
 		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
