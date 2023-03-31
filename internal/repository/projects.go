@@ -117,7 +117,6 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 	return resp, nil
 }
 
-
 func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txhash", txHash}})
@@ -464,11 +463,11 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	if filter.IsHidden != nil {
 		f["isHidden"] = *filter.IsHidden
 	}
-	
+
 	if filter.IsSynced != nil {
 		f["isSynced"] = *filter.IsSynced
 	}
-	
+
 	if filter.Status != nil {
 		f["status"] = *filter.Status
 	}
@@ -1056,4 +1055,23 @@ func (r Repository) AggregateProjectsFloorPrice(projectIDs []string) ([]structur
 	}
 
 	return result, nil
+}
+
+func (r Repository) SetProjectIndex(projectID string, index int) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"index": index,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
