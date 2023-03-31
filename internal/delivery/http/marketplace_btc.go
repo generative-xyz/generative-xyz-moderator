@@ -315,9 +315,9 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	// h.Usecase.JobMint_CheckTxMintSend()
+	h.Usecase.JobMint_CheckTxMintSend()
 
-	h.Usecase.Repo.UpdateTcTempWalletAddress("0x232FdCd3a77A21F3C8b50F64ba56daFF80bBfA97", entity.StatusEvmTempWallets_Free)
+	// h.Usecase.Repo.UpdateTcTempWalletAddress("0x232FdCd3a77A21F3C8b50F64ba56daFF80bBfA97", entity.StatusEvmTempWallets_Free)
 
 	// h.Usecase.ResetEvenManager()
 
