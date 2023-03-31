@@ -416,6 +416,12 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 	if err != nil {
 		return "", errors.Wrap(err, "contract.Mint")
 	}
+
+	if projectContract.Index.Uint64() >= projectContract.MaxSupply.Uint64() {
+		err = errors.New("minted_out")
+		return "", errors.Wrap(err, "contract.Mint")
+	}
+
 	auth.Value = projectContract.MintPrice
 
 	tx, err := contract.Mint(auth, common.HexToAddress(toAddress), chunks)
@@ -427,6 +433,52 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
+}
+
+func (c *Client) GetProjectIndex(contractAddress string) (uint64, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return 0, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.Index.Uint64(), nil
+}
+func (c *Client) GetMaxSupply(contractAddress string) (uint64, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return 0, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.MaxSupply.Uint64(), nil
+}
+
+func (c *Client) CheckProjectIsMintedOut(contractAddress string) (bool, error) {
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return false, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return false, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.MaxSupply.Uint64() == projectContract.Index.Uint64(), nil
 }
 
 func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
