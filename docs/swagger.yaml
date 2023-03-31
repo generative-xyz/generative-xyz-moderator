@@ -555,6 +555,8 @@ definitions:
       wallet_address_payment:
         description: eth wallet artist receive royalty
         type: string
+      wallet_type:
+        type: string
     type: object
   nfts.InscribeBTC:
     properties:
@@ -614,6 +616,15 @@ definitions:
   request.CheckBalanceAddressReq:
     properties:
       address:
+        type: string
+    type: object
+  request.CompressImageReq:
+    properties:
+      compressPercents:
+        items:
+          type: integer
+        type: array
+      imageUrl:
         type: string
     type: object
   request.CreateBTCProjectReq:
@@ -851,6 +862,8 @@ definitions:
     properties:
       address:
         type: string
+      walletType:
+        type: string
     type: object
   request.GetApiKeyReq:
     properties:
@@ -990,6 +1003,8 @@ definitions:
       addressBtc:
         type: string
       addressBtcSegwit:
+        type: string
+      addressPayment:
         type: string
       ethSignature:
         type: string
@@ -1171,6 +1186,7 @@ definitions:
       balance:
         description: balance after check
         type: string
+      estFeeInfo: {}
       fileURI:
         description: FileURI will be mount if OrdAddress get all amount
         type: string
@@ -1465,6 +1481,9 @@ definitions:
       inscribedBy:
         type: string
       isFullChain:
+        type: boolean
+      isGenerative:
+        description: art by generative code or html file
         type: boolean
       isHidden:
         type: boolean
@@ -3187,6 +3206,28 @@ paths:
       summary: Upload multipart file
       tags:
       - Files
+  /inscribe/compress-image:
+    post:
+      consumes:
+      - application/json
+      description: compress-image
+      parameters:
+      - description: compress images
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CompressImageReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: compress-image
+      tags:
+      - compress-image
   /inscribe/info/{ID}:
     get:
       consumes:
@@ -4066,6 +4107,33 @@ paths:
       tags:
       - Project
   /project/{contractAddress}/{projectID}/allow-list:
+    get:
+      consumes:
+      - application/json
+      description: Check project's allow list
+      parameters:
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Check project's allow list
+      tags:
+      - Project
     post:
       consumes:
       - application/json
@@ -4125,6 +4193,44 @@ paths:
       summary: Update project's categories
       tags:
       - Project
+  /project/{contractAddress}/{projectID}/token:
+    get:
+      consumes:
+      - application/json
+      description: Search Token
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Search Token
+      tags:
+      - Search
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
