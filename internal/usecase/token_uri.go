@@ -417,12 +417,26 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
 				return
 			}
+
+			imageURL := ""
+			imageArr := strings.Split(tokeBFS.Image, ",")
+			if len(imageArr) == 2 {
+				ext := helpers.FileType(imageArr[0])
+				fName := fmt.Sprintf("%s%s",tokenID, ext)
+				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
+				if err == nil {
+					imageURL = fmt.Sprintf("%s/%s",os.Getenv("GCS_DOMAIN"), uploaded.Name)
+				}
+			}
+
 			tok.Name = tokeBFS.Name
 			tok.Description = tokeBFS.Description
-			tok.Image = tokeBFS.Image
-			tok.ParsedImage = &tokeBFS.Image
+			tok.Image = imageURL
+			tok.Thumbnail = imageURL
+			tok.ParsedImage = &imageURL
 			tok.AnimationURL = tokeBFS.AnimationURL
-			
+			now := time.Now().UTC()
+			tok.ThumbnailCapturedAt = &now
 
 			attrs := []entity.TokenUriAttr{}
 			for _, attr := range tokeBFS.Attributes {
@@ -532,8 +546,24 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			dataObject.Name = dataObject.TokenID
 		}
 		dataObject.Description = tokenFChan.Data.Description
-		dataObject.Image = tokenFChan.Data.Image
+		
 		dataObject.Thumbnail = tokenFChan.Data.Image
+		if tokenFChan.Data.Image != "" {
+			dataObject.Image = tokenFChan.Data.Image
+		}
+		
+		if tokenFChan.Data.Thumbnail != "" {
+			dataObject.Thumbnail = tokenFChan.Data.Thumbnail
+		}
+		
+		if tokenFChan.Data.ParsedImage != nil && *tokenFChan.Data.ParsedImage != ""  {
+			dataObject.ParsedImage = tokenFChan.Data.ParsedImage
+		}
+		
+		if tokenFChan.Data.ThumbnailCapturedAt != nil   {
+			dataObject.ThumbnailCapturedAt = tokenFChan.Data.ThumbnailCapturedAt
+		}
+
 		dataObject.AnimationURL = tokenFChan.Data.AnimationURL
 		dataObject.Attributes = tokenFChan.Data.Attributes
 		dataObject.Seed = tokenFChan.Data.Seed
