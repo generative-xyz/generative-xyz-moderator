@@ -315,7 +315,7 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	h.Usecase.JobMint_RefundBtc()
+	h.Usecase.JobMint_CheckTxMintSend()
 
 	// h.Usecase.ResetEvenManager()
 
