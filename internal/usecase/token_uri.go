@@ -372,10 +372,14 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
 				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
 				if err != nil {
-					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("getSeedFromTokenId", seed), zap.Any("error", err))
 					return
 				}
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, strings.ToUpper(strings.Replace(*seed, "0x", "", 1)))
+				if err != nil {
+					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
+					return
+				}
 			} else {
 				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
 				return
@@ -546,24 +550,25 @@ func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address
 	if err != nil {
 		return nil, err
 	}
-	value, err := bfsC.Count(nil, gNft, seed)
+	/*value, err := bfsC.Count(nil, gNft, seed)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	var bytesArr []byte
-	if value.Cmp(big.NewInt(0)) > 0 {
-		for i := int64(1); i <= value.Int64(); i++ {
-			bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, big.NewInt(i))
-			if err != nil {
-				return nil, err
-			}
-			bytesArr = append(bytesArr, bytes...)
-			if nextChunks.Int64() == -1 {
-				break
-			}
+	//if value.Cmp(big.NewInt(0)) > 0 {
+	nextChunks := big.NewInt(0)
+	for {
+		bytes, nextChunks, err := bfsC.Load(nil, gNft, "0x"+seed, nextChunks)
+		if err != nil {
+			return nil, err
+		}
+		bytesArr = append(bytesArr, bytes...)
+		if nextChunks.Int64() == -1 {
+			break
 		}
 	}
+	//}
 
 	if len(bytesArr) > 0 {
 		result := "data:application/json;base64," + helpers.Base64Encode(bytesArr)
