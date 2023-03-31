@@ -243,7 +243,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 						tokenUri.Owner = nil
 						tokenUri.OwnerAddr = addr.String()
 						user, err := u.Repo.FindUserByBtcAddressTaproot(addr.String())
-						if err == nil {
+						if err == nil && user != nil {
 							tokenUri.Owner = user
 						}
 					}
