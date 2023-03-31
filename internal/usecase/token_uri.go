@@ -181,15 +181,14 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	tokenID := strings.ToLower(req.TokenID)
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
-		number, err := strconv.ParseUint(req.TokenID, 10, 64)
-		logger.AtLog.Logger.Error("Number", zap.Any("number", number))
-		if err == nil && number/1000000 < 1000000 {
+		number, err1 := strconv.ParseUint(req.TokenID, 10, 64)
+		if err1 == nil && number/1000000 < 1000000 {
 			//this was used for ETH (old flow), try to get DB
 			if errors.Is(err, mongo.ErrNoDocuments) {
-				token, err := u.getTokenInfo(req)
-				if err != nil {
-					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
-					return nil, err
+				token, err2 := u.getTokenInfo(req)
+				if err2 != nil {
+					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err2))
+					return nil, err2
 				}
 				return token, nil
 			}
