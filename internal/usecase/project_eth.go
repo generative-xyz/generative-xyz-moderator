@@ -40,7 +40,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 
 	pe.TokenID = pe.TxHash
 	pe.TokenId = pe.TxHash
-	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	pe.ContractAddress = strings.ToLower(os.Getenv("GENERATIVE_PROJECT"))
 
 	err = u.Repo.CreateProject(pe)
 	if err != nil {
