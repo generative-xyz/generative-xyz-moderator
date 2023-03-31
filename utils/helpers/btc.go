@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"hash"
+	"strconv"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
@@ -55,4 +56,12 @@ func MagicHash(msg, messagePrefix string) (chainhash.Hash, error) {
 
 	bytes := append([]byte(messagePrefix), []byte(msg)...)
 	return chainhash.DoubleHashH(bytes), nil
+}
+
+func IsOrdinalProject(tokenID string) bool {
+	number, err1 := strconv.ParseUint(tokenID, 10, 64)
+	if err1 == nil && number/1000000 < 1000000 {
+		return false
+	}
+	return true
 }

@@ -15,3 +15,13 @@ func EthDialer() (*ethclient.Client, error) {
 
 	return client, nil
 }
+
+
+func ChainDialer(chainURL string) (*ethclient.Client, error) {
+	client, err := ethclient.Dial(chainURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
