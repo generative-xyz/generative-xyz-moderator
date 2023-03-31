@@ -317,8 +317,6 @@ func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
 	// h.Usecase.JobMint_CheckTxMintSend()
 
-	h.Usecase.Repo.UpdateTcTempWalletAddress("0x232FdCd3a77A21F3C8b50F64ba56daFF80bBfA97", entity.StatusEvmTempWallets_Free)
-
 	// h.Usecase.ResetEvenManager()
 
 	// meth := reflect.ValueOf(h.Usecase).MethodByName("JobMKP_CheckTxSendNftToBuyer")
