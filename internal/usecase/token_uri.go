@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"rederinghub.io/utils/contracts/bfs"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/contracts/bfs"
 
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
@@ -294,7 +295,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.EthDialer()
+	client, err := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
 		return nil, err
@@ -344,17 +345,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 		tok.Seed = *seed
 
-		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
-			if strings.Index(*tokenUriData, "bfs://") > -1 {
-				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
-			} else {
-				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
-				return
-			}
-		}
-
-		if strings.Index(*tokenUriData, "data:application/json;base64,") != -1 {
+		if strings.Index(*tokenUriData, "data:application/json;base64,") == -1 {
 			if strings.Index(*tokenUriData, "bfs://") > -1 {
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
 				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
