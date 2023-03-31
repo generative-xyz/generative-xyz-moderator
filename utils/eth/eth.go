@@ -401,7 +401,6 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 	}
 
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0) // in wei
 	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 	// auth.GasPrice = gasPrice
 
@@ -410,6 +409,12 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 	if err != nil {
 		return "", errors.Wrap(err, "NewGenerativeNftContract")
 	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return "", errors.Wrap(err, "contract.Mint")
+	}
+	auth.Value = projectContract.MintPrice
 
 	tx, err := contract.Mint(auth, common.HexToAddress(toAddress), chunks)
 
