@@ -372,7 +372,7 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("HexToECDSA err", err)
 		return "", err
 	}
 	publicKey := privateKey.Public()
@@ -385,10 +385,12 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 		return "", err
 	}
 
-	// gasPrice, err := c.SuggestGasPrice(context.Background())
-	// if err != nil {
-	// 	return "", err
-	// }
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("gasPrice: ", gasPrice)
 
 	chainID, err := c.NetworkID(context.Background())
 	if err != nil {
@@ -402,7 +404,7 @@ func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks
 
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0) // in wei
-	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
+	// auth.GasLimit = uint64(1000000000) // in units
 	// auth.GasPrice = gasPrice
 
 	// Create a new instance of the contract with the given address and ABI

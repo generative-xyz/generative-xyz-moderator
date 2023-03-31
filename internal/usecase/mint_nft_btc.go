@@ -1045,6 +1045,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "GetMintFreeTemAddress", "can not get temp free wallet", true)
 		return nil
 	}
+	fmt.Println("found temp wallet: ", tempWallet.WalletAddress)
 	// encrypt:
 	privateKeyDeCrypt, err := encrypt.DecryptToString(tempWallet.PrivateKey, os.Getenv("SECRET_KEY"))
 	if err != nil {
@@ -1053,8 +1054,16 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		return nil
 	}
 
-	tx, err := u.TcClient.MintTC(p.GenNFTAddr, item.OriginUserAddress, privateKeyDeCrypt, byteData)
+	// context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// defer cancel()
+
+	// balance, err := u.TcClient.GetBalance(context, tempWallet.WalletAddress)
+
+	// fmt.Println("balance, err: ", tempWallet.WalletAddress, balance, err)
+
+	tx, err := u.TcClient.MintTC(p.GenNFTAddr, privateKeyDeCrypt, item.OriginUserAddress, byteData)
 	if err != nil {
+		fmt.Println("can not mint MintTC: ", err)
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
 	}
@@ -1084,23 +1093,35 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 func (u Usecase) MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRate(item *entity.MintNftBtc, p *entity.Projects) error {
 
 	var resp struct {
-		Result string `json: "result"`
+		Result string `json:"result"`
 		Error  *struct {
-			Code    string `code: "result"`
-			Message string `message: "result"`
-		} `json: "error"`
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
 	}
 
 	payloadStr := fmt.Sprintf(`{
 			"jsonrpc": "2.0",
 			"method": "eth_inscribeTxWithTargetFeeRate",
 			"params": [
-				"%s","%s"
+				"%s",%d
 			],
 			"id": 1
 		}`, item.TxMintNft, item.FeeRate)
 
 	payload := strings.NewReader(payloadStr)
+
+	fmt.Println("payloadStr: ", payloadStr)
+
+	// context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// defer cancel()
+	// status, err := u.TcClient.GetTransaction(context, item.TxMintNft)
+
+	// fmt.Println("GetTransaction tc tx: ", status, err)
+
+	// balance, err := u.TcClient.GetBalance(context, "0x232FdCd3a77A21F3C8b50F64ba56daFF80bBfA97")
+
+	// fmt.Println("balance, err: ", balance, err)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", u.Config.BlockchainConfig.TCEndpoint, payload)
@@ -1123,7 +1144,10 @@ func (u Usecase) MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRa
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRate.ioutil.ReadAll", err.Error(), true)
 		return err
 	}
-	err = json.Unmarshal(body, resp)
+
+	fmt.Println("body", string(body))
+
+	err = json.Unmarshal(body, &resp)
 	if err != nil {
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRate.Unmarshal", err.Error(), true)
 		return err
@@ -1265,6 +1289,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 
 	// get list pending tx:
 	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatusAndPlatform([]entity.StatusMint{entity.StatusMint_Minting}, utils.PLATFORM_TC)
+
 	if len(listTxToCheck) == 0 {
 		return nil
 	}
@@ -1277,6 +1302,9 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 		context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		status, err := u.TcClient.GetTransaction(context, txToCheck)
+
+		fmt.Println("GetTransaction status, err ", txToCheck, status, err)
+
 		if err == nil {
 			if status > 0 {
 				confirm = 1
@@ -1323,7 +1351,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 				return err
 			}
 			go u.getTokenInfo(structure.GetTokenMessageReq{
-				ContractAddress: p.GenNFTAddr,
+				ContractAddress: p.ContractAddress,
 				TokenID:         item.InscriptionID,
 			})
 			// create mint activity:
@@ -2516,19 +2544,67 @@ func (u Usecase) ConvertImageToByteArrayToMintTC(imageURL string) ([][]byte, err
 }
 
 func (u Usecase) GetMintFreeTemAddress() *entity.EvmTempWallets {
-	mutex := u.RedisV9.GetRedSyncClient().NewMutex("GetMintFreeTemAddress")
+	// mutex := u.RedisV9.GetRedSyncClient().NewMutex("GetMintFreeTemAddress")
 
 	var freeWallet *entity.EvmTempWallets
 
-	if err := mutex.Lock(); err != nil {
-		fmt.Println("can not lock")
-		return nil
-	}
+	// if err := mutex.Lock(); err != nil {
+	// 	fmt.Println("can not lock")
+	// 	return nil
+	// }
 
 	freeWallet, _ = u.Repo.GetMintFreeTempAddress()
 
-	if ok, err := mutex.Unlock(); !ok || err != nil {
-		fmt.Println("can not unlock")
-	}
+	// if ok, err := mutex.Unlock(); !ok || err != nil {
+	// 	fmt.Println("can not unlock")
+	// }
 	return freeWallet
+}
+
+func (u Usecase) GenMintFreeTemAddress() {
+
+	fmt.Println("start------")
+
+	// mutex := u.RedisV9.GetRedSyncClient().NewMutex("GetMintFreeTemAddress")
+
+	// if err := mutex.Lock(); err != nil {
+	// 	fmt.Println("can not lock", err)
+	// 	return
+	// }
+	// time.Sleep(1 * time.Second)
+	ethClient := eth.NewClient(nil)
+	for i := 0; i < 5; i++ {
+
+		fmt.Println("xxxxxx i =>", i)
+
+		privateKey, _, receiveAddress, err := ethClient.GenerateAddress()
+		if err != nil {
+			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+			return
+		}
+
+		if len(os.Getenv("SECRET_KEY")) == 0 {
+			panic("xxx")
+		}
+
+		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
+		if err != nil {
+			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+			return
+		}
+
+		err = u.Repo.InsertEvmTempWallets(&entity.EvmTempWallets{
+			WalletAddress: receiveAddress,
+			PrivateKey:    privateKeyEnCrypt,
+			Status:        0,
+		})
+		logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
+	}
+
+	// if ok, err := mutex.Unlock(); !ok || err != nil {
+	// 	fmt.Println("can not unlock", err)
+	// }
+
+	fmt.Println("done------")
+	return
 }
