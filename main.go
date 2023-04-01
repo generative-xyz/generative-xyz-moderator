@@ -301,6 +301,8 @@ func startServer() {
 
 	}
 
+	uc.JobRetryUnzip()
+
 	// Block until we receive our signal.
 	<-c
 	wait := time.Second
