@@ -217,6 +217,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
+	// faucet:
+	faucet := api.PathPrefix("/faucet").Subrouter()
+	faucet.HandleFunc("/request", h.requestFaucet).Methods("POST")
+
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
 	// marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
