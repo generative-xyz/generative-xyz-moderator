@@ -87,7 +87,7 @@ func (h *httpDelivery) createEthProjects(w http.ResponseWriter, r *http.Request)
 // @Param commitTxHash query string false "commitTxHash"
 // @Param txHex query string false "txHex"
 // @Param revealTxHash query string false "revealTxHash"
-// @Param contractAddress query string false "contractAddress"
+// @Param walletAddress query string false "walletAddress"
 // @Param status query bool false "status"
 // @Param isSynced query bool false "isSynced"
 // @Param isHidden query bool false "isHidden"
@@ -106,6 +106,7 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	revealTxHash := r.URL.Query().Get("revealTxHash")
 	txHex := r.URL.Query().Get("txHex")
 	contractAddress := r.URL.Query().Get("contractAddress")
+	walletAddress := r.URL.Query().Get("walletAddress")
 	isSyncedStr := r.URL.Query().Get("isSynced")
 	isHiddenStr := r.URL.Query().Get("isHidden")
 	statusStr := r.URL.Query().Get("status")
@@ -131,6 +132,7 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	f.TxHex = &txHex
 	f.CategoryIds = categoryIds
 	f.ContractAddress = &contractAddress
+	f.WalletAddress = &walletAddress
 
 	if isHiddenStr != "" {
 		hidden, err := strconv.ParseBool(isHiddenStr)
