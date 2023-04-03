@@ -81,8 +81,13 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 
 	imageURL := token.AnimationURL
 	if len(imageURL) == 0 {
+		parsedImage := ""
+		if token.ParsedImage != nil {
+			parsedImage = *token.ParsedImage
+		}
+
 		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
+			ParsedImage: parsedImage,
 			Thumbnail:   token.Thumbnail,
 			Traits:      token.ParsedAttributes,
 			TraitsStr:   token.ParsedAttributesStr,
@@ -347,6 +352,9 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	go func(tokenDataChan chan structure.TokenDataChan, parentAddr common.Address, tokenID string) {
 		var err error
 		tok := &entity.TokenUri{}
+		fromBFS := false
+
+		tokeBFS := entity.TokenFromBase64{}
 
 		defer func() {
 			tokenDataChan <- structure.TokenDataChan{
@@ -370,12 +378,14 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		if strings.Index(*tokenUriData, "data:application/json;base64,") == -1 {
 			if strings.Index(*tokenUriData, "bfs://") > -1 {
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
-				seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, tok.Seed)
 				if err != nil {
-					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
 					return
 				}
-				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, *seed)
+
+				fromBFS = true
+
 			} else {
 				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
 				return
@@ -396,11 +406,56 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		stringData = strings.ReplaceAll(stringData, "\r", "\\r")
 		stringData = strings.ReplaceAll(stringData, "\t", "\\t")
 
+		if fromBFS {
+			err = json.Unmarshal([]byte(stringData), &tokeBFS)
+			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+				return
+			}
+
+			imageURL := ""
+			imageArr := strings.Split(tokeBFS.Image, ",")
+			if len(imageArr) == 2 {
+				ext := helpers.FileType(imageArr[0])
+				fName := fmt.Sprintf("%s%s", tokenID, ext)
+				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
+				if err == nil {
+					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+				}
+			}
+
+			tok.Name = tokeBFS.Name
+			tok.Description = tokeBFS.Description
+			tok.Image = imageURL
+			tok.Thumbnail = imageURL
+			tok.ParsedImage = &imageURL
+			tok.AnimationURL = tokeBFS.AnimationURL
+			now := time.Now().UTC()
+			tok.ThumbnailCapturedAt = &now
+
+			attrs := []entity.TokenUriAttr{}
+			for _, attr := range tokeBFS.Attributes {
+				tmp := entity.TokenUriAttr{
+					TraitType: attr.TraitType,
+					Value:     attr.Value,
+				}
+
+				attrs = append(attrs, tmp)
+			}
+
+			tok.ParsedAttributes = attrs
+			tok.ParsedAttributesStr = tokeBFS.Attributes
+			tok.Attributes = ""
+
+			return
+		}
 		err = json.Unmarshal([]byte(stringData), tok)
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
+
+		//TOD - upload the base64 image into GCS
 
 	}(tokendatachan, parentAddr, req.TokenID)
 
@@ -433,7 +488,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	dataObject.ProjectIDInt = projectID.Int64()
 
 	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.Any("dataObject.TokenID", dataObject.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
-	
+
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
@@ -482,11 +537,39 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	tokenFChan := <-tokendatachan
 	if tokenFChan.Err == nil {
 		dataObject.Name = tokenFChan.Data.Name
+		if dataObject.Name == "" {
+			dataObject.Name = dataObject.TokenID
+		}
 		dataObject.Description = tokenFChan.Data.Description
-		dataObject.Image = tokenFChan.Data.Image
+
+		dataObject.Thumbnail = tokenFChan.Data.Image
+		if tokenFChan.Data.Image != "" {
+			dataObject.Image = tokenFChan.Data.Image
+		}
+
+		if tokenFChan.Data.Thumbnail != "" {
+			dataObject.Thumbnail = tokenFChan.Data.Thumbnail
+		}
+
+		if tokenFChan.Data.ParsedImage != nil && *tokenFChan.Data.ParsedImage != "" {
+			dataObject.ParsedImage = tokenFChan.Data.ParsedImage
+		}
+
+		if tokenFChan.Data.ThumbnailCapturedAt != nil {
+			dataObject.ThumbnailCapturedAt = tokenFChan.Data.ThumbnailCapturedAt
+		}
+
 		dataObject.AnimationURL = tokenFChan.Data.AnimationURL
 		dataObject.Attributes = tokenFChan.Data.Attributes
-		dataObject.Image = tokenFChan.Data.Image
+		dataObject.Seed = tokenFChan.Data.Seed
+
+		if len(tokenFChan.Data.ParsedAttributes) > 0 {
+			dataObject.ParsedAttributes = tokenFChan.Data.ParsedAttributes
+		}
+
+		if len(tokenFChan.Data.ParsedAttributesStr) > 0 {
+			dataObject.ParsedAttributesStr = tokenFChan.Data.ParsedAttributesStr
+		}
 
 	} else {
 		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
@@ -542,24 +625,25 @@ func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address
 	if err != nil {
 		return nil, err
 	}
-	value, err := bfsC.Count(nil, gNft, seed)
+	/*value, err := bfsC.Count(nil, gNft, seed)
 	if err != nil {
 		return nil, err
-	}
+	}*/
 
 	var bytesArr []byte
-	if value.Cmp(big.NewInt(0)) > 0 {
-		for i := int64(1); i <= value.Int64(); i++ {
-			bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, big.NewInt(i))
-			if err != nil {
-				return nil, err
-			}
-			bytesArr = append(bytesArr, bytes...)
-			if nextChunks.Int64() == -1 {
-				break
-			}
+	//if value.Cmp(big.NewInt(0)) > 0 {
+	nextChunks := big.NewInt(0)
+	for {
+		bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, nextChunks)
+		if err != nil {
+			return nil, err
+		}
+		bytesArr = append(bytesArr, bytes...)
+		if nextChunks.Int64() == -1 {
+			break
 		}
 	}
+	//}
 
 	if len(bytesArr) > 0 {
 		result := "data:application/json;base64," + helpers.Base64Encode(bytesArr)
@@ -582,7 +666,7 @@ func (u Usecase) getSeedFromTokenId(client *ethclient.Client, contractAddr commo
 	if err != nil {
 		return nil, err
 	}
-	result := "0x" + hex.EncodeToString(val[:])
+	result := "0x" + strings.ToUpper(hex.EncodeToString(val[:]))
 	return &result, nil
 }
 
