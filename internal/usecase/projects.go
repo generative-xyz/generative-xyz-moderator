@@ -938,7 +938,7 @@ func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Paginatio
 		return nil, err
 	}
 
-	projects, err := u.Repo.GetProjects(*pe)
+	projects, err := u.Repo.GetAllRawProjects(*pe)
 	if err != nil {
 		logger.AtLog.Error("u.Repo.GetProjects", err.Error(), err)
 		return nil, err
