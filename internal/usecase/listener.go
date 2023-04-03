@@ -169,11 +169,10 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
 	blockNumber := chainLog.BlockNumber
-
-	logger.AtLog.Logger.Info("chainLog", zap.Any("chainLog", chainLog))
+	logger.AtLog.Logger.Info(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog))
 	topics := chainLog.Topics
 
-	tokenIDStr := helpers.HexaNumberToInteger(topics[3].String())
+	tokenIDStr := topics[3].Big().String()
 	tokenID, _ := strconv.Atoi(tokenIDStr)
 	tokenIDStr = fmt.Sprintf("%d", tokenID)
 	contractAddr := strings.ToLower(chainLog.Address.String())

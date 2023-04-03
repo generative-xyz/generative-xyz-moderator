@@ -62,7 +62,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
 		return nil, err
 	}
-	logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
+	logger.AtLog.Logger.Info(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
 	return pe, nil
 }
 
