@@ -286,7 +286,9 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 	for _, item := range listMintV2 {
 		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
-			return nil, err
+			log.Println("FindProjectByTokenID", item.ProjectID)
+			// return nil, err
+			continue
 		}
 		creator, err := u.Repo.FindUserByAddress(projectInfo.CreatorAddrr)
 		if err != nil {
