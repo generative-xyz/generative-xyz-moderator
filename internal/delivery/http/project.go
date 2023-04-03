@@ -657,23 +657,23 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 }
 
 // UserCredits godoc
-// @Summary Update project
-// @Description Update projects
+// @Summary Update project's hash 
+// @Description Update project's hash via txHasg
 // @Tags Project
 // @Accept  json
 // @Produce  json
 // @Param request body request.UpdateProjectReq true "Create profile request"
 // @Param contractAddress path string true "contract adress"
-// @Param projectID path string true "projectID adress"
+// @Param txHash path string true "txHash adress"
 // @Success 200 {object} response.JsonResponse{}
-// @Router /project/{contractAddress}/{projectID} [PUT]
-func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
+// @Router /project/{contractAddress}/tx-hash/{txHash} [PUT]
+func (h *httpDelivery) updateProjectHash(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	projectID := vars["projectID"]
+	txHash := vars["txHash"]
 	contractAddress := vars["contractAddress"]
 
-	var reqBody request.UpdateProjectReq
+	var reqBody structure.UpdateProjectHash
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqBody)
 	if err != nil {
@@ -681,15 +681,8 @@ func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	reqUsecase := &structure.UpdateProjectReq{
-		ContracAddress: contractAddress,
-		TokenID:        projectID,
-		Priority:       reqBody.Priority,
-	}
-
-	logger.AtLog.Logger.Info("reqUsecase", zap.Any("reqUsecase", reqUsecase))
-
+	reqBody.TxHash = &txHash
+	reqBody.ContractAddress = &contractAddress
 	message, err := h.Usecase.UpdateProject(*reqUsecase)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.CreateProject", zap.Error(err))

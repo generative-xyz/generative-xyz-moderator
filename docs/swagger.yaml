@@ -4491,6 +4491,38 @@ paths:
       summary: get project's volumn
       tags:
       - Project
+  /project/{contractAddress}/tx-hash/{txHash}:
+    put:
+      consumes:
+      - application/json
+      description: Update project's hash via txHasg
+      parameters:
+      - description: Create profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProjectReq'
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: txHash adress
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Update project's hash
+      tags:
+      - Project
   /project/{genNFTAddr}/tokens:
     get:
       consumes:

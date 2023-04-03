@@ -2346,3 +2346,29 @@ func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, er
 	}
 	return result, nil
 }
+
+func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Projects, error) {
+	p, err := u.Repo.FindProjectByTxHash(*req.TxHash)
+	if err != nil {
+		logger.AtLog.Error("UpdateProjectHash", zap.Any("err.FindProjectBy", err))
+		return nil, err
+	}
+
+	if req.CommitTxHash != nil {
+		p.CommitTxHash = *req.CommitTxHash
+	}
+	
+	if req.RevealTxHash != nil {
+		p.RevealTxHash = *req.RevealTxHash
+	}
+
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
+		return nil, err
+	}
+
+	logger.AtLog.Info()
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
+	return p, nil
+}
