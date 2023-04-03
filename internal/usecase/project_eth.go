@@ -50,6 +50,8 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	pe.IsSynced = false
 	pe.TxHash = strings.ToLower(pe.TxHash)
 	pe.TxHex = strings.ToLower(pe.TxHex)
+	pe.CommitTxHash = strings.ToLower(pe.CommitTxHash)
+	pe.RevealTxHash = strings.ToLower(pe.RevealTxHash)
 
 	pe.TokenID = pe.TxHash
 	pe.TokenId = pe.TxHash
