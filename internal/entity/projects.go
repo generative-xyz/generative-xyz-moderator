@@ -112,6 +112,7 @@ type Projects struct {
 	HtmlFile                 string             `bson:"htmlFile"`
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
 	TxHash                   string             `bson:"txhash"`
+	TxHex                    string             `bson:"txHex"`
 }
 
 func (p *Projects) IsMintTC() bool {

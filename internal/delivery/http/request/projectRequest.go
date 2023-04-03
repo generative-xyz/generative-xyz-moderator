@@ -6,8 +6,9 @@ type ReportProjectReq struct {
 
 type CreateETHProjectReq struct {
 	CreateBTCProjectReq
-	TxHash         string   `json:"txHash"`
-	ZipLink         *string   `json:"zipLink"`
+	TxHash  string  `json:"txHash"`
+	TxHex   string  `json:"txHex"`
+	ZipLink *string `json:"zipLink"`
 }
 
 type CreateBTCProjectReq struct {

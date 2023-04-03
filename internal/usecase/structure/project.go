@@ -28,6 +28,7 @@ type FilterProposalVote struct {
 type CreateProjectReq struct {
 	CreateBtcProjectReq
 	TxHash  string  `json:"txHash"`
+	TxHex  string  `json:"txHex"`
 	ZipLink *string `json:"ziplink"`
 }
 
