@@ -662,7 +662,7 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 // @Tags Project
 // @Accept  json
 // @Produce  json
-// @Param request body request.UpdateProjectReq true "Create profile request"
+// @Param request body structure.UpdateProjectHash true "Request body"
 // @Param contractAddress path string true "contract adress"
 // @Param txHash path string true "txHash adress"
 // @Success 200 {object} response.JsonResponse{}

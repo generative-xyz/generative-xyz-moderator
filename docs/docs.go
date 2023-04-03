@@ -4333,12 +4333,12 @@ var doc = `{
                 "summary": "Update project's hash",
                 "parameters": [
                     {
-                        "description": "Create profile request",
+                        "description": "Request body",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.UpdateProjectReq"
+                            "$ref": "#/definitions/structure.UpdateProjectHash"
                         }
                     },
                     {
@@ -8440,6 +8440,23 @@ var doc = `{
                     "type": "string"
                 },
                 "price": {
+                    "type": "string"
+                }
+            }
+        },
+        "structure.UpdateProjectHash": {
+            "type": "object",
+            "properties": {
+                "commitTxHash": {
+                    "type": "string"
+                },
+                "contractAddress": {
+                    "type": "string"
+                },
+                "revealTxHash": {
+                    "type": "string"
+                },
+                "txHash": {
                     "type": "string"
                 }
             }

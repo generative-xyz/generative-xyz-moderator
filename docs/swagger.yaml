@@ -1858,6 +1858,17 @@ definitions:
       price:
         type: string
     type: object
+  structure.UpdateProjectHash:
+    properties:
+      commitTxHash:
+        type: string
+      contractAddress:
+        type: string
+      revealTxHash:
+        type: string
+      txHash:
+        type: string
+    type: object
 info:
   contact: {}
   description: This is a sample server Autonomous devices management server.
@@ -4501,12 +4512,12 @@ paths:
       - application/json
       description: Update project's hash via txHasg
       parameters:
-      - description: Create profile request
+      - description: Request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request.UpdateProjectReq'
+          $ref: '#/definitions/structure.UpdateProjectHash'
       - description: contract adress
         in: path
         name: contractAddress
