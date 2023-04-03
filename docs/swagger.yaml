@@ -187,6 +187,8 @@ definitions:
         type: integer
       closeMintUnixTimestamp:
         type: integer
+      commitTxHash:
+        type: string
       completeTime:
         type: integer
       contractAddress:
@@ -291,6 +293,8 @@ definitions:
         items:
           type: string
         type: array
+      revealTxHash:
+        type: string
       royalty:
         type: integer
       scripts:
@@ -343,6 +347,8 @@ definitions:
           $ref: '#/definitions/entity.TraitStat'
         type: array
       txHash:
+        type: string
+      txHex:
         type: string
       updated_at:
         type: string
@@ -760,6 +766,8 @@ definitions:
         type: array
       closeMintUnixTimestamp:
         type: integer
+      commitTxHash:
+        type: string
       creatorAddrr:
         type: string
       creatorAddrrBTC:
@@ -792,6 +800,8 @@ definitions:
         items:
           type: string
         type: array
+      revealTxHash:
+        type: string
       royalty:
         type: integer
       scripts:
@@ -823,6 +833,8 @@ definitions:
       tokenDescription:
         type: string
       txHash:
+        type: string
+      txHex:
         type: string
       zipLink:
         type: string
@@ -1559,6 +1571,8 @@ definitions:
         type: boolean
       isReviewing:
         type: boolean
+      isSynced:
+        type: boolean
       itemDesc:
         type: string
       license:
@@ -1640,6 +1654,12 @@ definitions:
         items:
           $ref: '#/definitions/response.TraitStat'
         type: array
+      txHash:
+        description: art by generative code or html file
+        type: string
+      txHex:
+        description: art by generative code or html file
+        type: string
       whiteListEthContracts:
         items:
           type: string
@@ -1836,6 +1856,17 @@ definitions:
       paymentAddress:
         type: string
       price:
+        type: string
+    type: object
+  structure.UpdateProjectHash:
+    properties:
+      commitTxHash:
+        type: string
+      contractAddress:
+        type: string
+      revealTxHash:
+        type: string
+      txHash:
         type: string
     type: object
 info:
@@ -4475,6 +4506,38 @@ paths:
       summary: get project's volumn
       tags:
       - Project
+  /project/{contractAddress}/tx-hash/{txHash}:
+    put:
+      consumes:
+      - application/json
+      description: Update project's hash via txHasg
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/structure.UpdateProjectHash'
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: txHash adress
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Update project's hash
+      tags:
+      - Project
   /project/{genNFTAddr}/tokens:
     get:
       consumes:
@@ -4574,6 +4637,83 @@ paths:
       security:
       - Authorization: []
       summary: Update project
+      tags:
+      - Project
+  /project/all:
+    get:
+      consumes:
+      - application/json
+      description: get all projects without project's status
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: filter project via name
+        in: query
+        name: name
+        type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
+      - description: txHash
+        in: query
+        name: txHash
+        type: string
+      - description: commitTxHash
+        in: query
+        name: commitTxHash
+        type: string
+      - description: txHex
+        in: query
+        name: txHex
+        type: string
+      - description: revealTxHash
+        in: query
+        name: revealTxHash
+        type: string
+      - description: contractAddress
+        in: query
+        name: contractAddress
+        type: string
+      - description: status
+        in: query
+        name: status
+        type: boolean
+      - description: isSynced
+        in: query
+        name: isSynced
+        type: boolean
+      - description: isHidden
+        in: query
+        name: isHidden
+        type: boolean
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: newest, oldest, priority-asc, priority-desc, trending-score
+        in: query
+        name: sort
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get all projects
       tags:
       - Project
   /project/btc:

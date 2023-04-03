@@ -78,6 +78,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.Use(h.MiddleWare.AuthorizationFunc)
 	project.HandleFunc("", h.getProjects).Methods("GET")
+	project.HandleFunc("/all", h.getAllProjects).Methods("GET")
 	project.HandleFunc("", h.createEthProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
@@ -91,6 +92,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
+	project.HandleFunc("/{contractAddress}/tx-hash/{txHash}", h.updateProjectHash).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")

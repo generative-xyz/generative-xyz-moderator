@@ -49,6 +49,9 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 	pe.Status = false
 	pe.IsSynced = false
 	pe.TxHash = strings.ToLower(pe.TxHash)
+	pe.TxHex = strings.ToLower(pe.TxHex)
+	pe.CommitTxHash = strings.ToLower(pe.CommitTxHash)
+	pe.RevealTxHash = strings.ToLower(pe.RevealTxHash)
 
 	pe.TokenID = pe.TxHash
 	pe.TokenId = pe.TxHash
@@ -59,7 +62,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
 		return nil, err
 	}
-	logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
+	logger.AtLog.Logger.Info(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Any("project", pe))
 	return pe, nil
 }
 
