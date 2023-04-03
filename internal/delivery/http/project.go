@@ -501,6 +501,7 @@ func (h *httpDelivery) projectToResp(input *entity.Projects) (*response.ProjectR
 	resp.AnimationHtml = input.AnimationHtml
 	resp.MaxFileSize = input.MaxFileSize
 	resp.TxHash = input.TxHash
+	resp.TxHex = input.TxHex
 
 	fileExt := ""
 	if len(input.Images) > 0 {

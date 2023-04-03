@@ -2,13 +2,18 @@ package structure
 
 type FilterProjects struct {
 	BaseFilters
-	WalletAddress *string
-	Name          *string
-	CategoryIds   []string
-	IsHidden      *bool
-	Status        *bool
-	IsSynced      *bool
-	Ids           []string
+	WalletAddress   *string
+	ContractAddress *string
+	TxHash          *string
+	TxHex           *string
+	Name            *string
+	CategoryIds     []string
+	IsHidden        *bool
+	Status          *bool
+	IsSynced        *bool
+	Ids             []string
+	CommitTxHash    *string
+	RevealTxHash    *string
 }
 
 type FilterProposal struct {
@@ -28,7 +33,7 @@ type FilterProposalVote struct {
 type CreateProjectReq struct {
 	CreateBtcProjectReq
 	TxHash  string  `json:"txHash"`
-	TxHex  string  `json:"txHex"`
+	TxHex   string  `json:"txHex"`
 	ZipLink *string `json:"ziplink"`
 }
 

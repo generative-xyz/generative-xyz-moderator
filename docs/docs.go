@@ -2389,6 +2389,7 @@ var doc = `{
                             "$ref": "#/definitions/request.CompressImageReq"
                         }
                     }
+                ]
             }
         },
         "/inscribe/info/{ID}": {
@@ -3698,6 +3699,121 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/request.CreateETHProjectReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/all": {
+            "get": {
+                "description": "get all projects without project's status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "get all projects",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via category ids",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "txHash",
+                        "name": "txHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "commitTxHash",
+                        "name": "commitTxHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "txHex",
+                        "name": "txHex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "revealTxHash",
+                        "name": "revealTxHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isSynced",
+                        "name": "isSynced",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isHidden",
+                        "name": "isHidden",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, oldest, priority-asc, priority-desc, trending-score",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5748,6 +5864,9 @@ var doc = `{
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
+                "commitTxHash": {
+                    "type": "string"
+                },
                 "completeTime": {
                     "type": "integer"
                 },
@@ -5903,6 +6022,9 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "revealTxHash": {
+                    "type": "string"
+                },
                 "royalty": {
                     "type": "integer"
                 },
@@ -5980,6 +6102,9 @@ var doc = `{
                     }
                 },
                 "txHash": {
+                    "type": "string"
+                },
+                "txHex": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -6706,6 +6831,9 @@ var doc = `{
                     "type": "string"
                 },
                 "txHash": {
+                    "type": "string"
+                },
+                "txHex": {
                     "type": "string"
                 },
                 "zipLink": {
@@ -7826,6 +7954,9 @@ var doc = `{
                 "isReviewing": {
                     "type": "boolean"
                 },
+                "isSynced": {
+                    "type": "boolean"
+                },
                 "itemDesc": {
                     "type": "string"
                 },
@@ -7946,6 +8077,14 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/response.TraitStat"
                     }
+                },
+                "txHash": {
+                    "description": "art by generative code or html file",
+                    "type": "string"
+                },
+                "txHex": {
+                    "description": "art by generative code or html file",
+                    "type": "string"
                 },
                 "whiteListEthContracts": {
                     "type": "array",
