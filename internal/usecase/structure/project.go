@@ -118,6 +118,13 @@ type UpdateProjectReq struct {
 	ContracAddress string `json:"contractAddress"`
 }
 
+type UpdateProjectHash struct {
+	ContractAddress *string `json:"contractAddress"`
+	TxHash          *string `json:"txHash"`
+	CommitTxHash    *string `json:"commitTxHash"`
+	RevealTxHash    *string `json:"revealTxHash"`
+}
+
 type GetProjectReq struct {
 	ContractAddr string
 	TokenID      string

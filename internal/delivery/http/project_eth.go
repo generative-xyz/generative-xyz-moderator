@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
@@ -179,4 +180,55 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uProjects, pResp), "")
+}
+
+// UserCredits godoc
+// @Summary Update project
+// @Description Update projects
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param request body request.UpdateProjectReq true "Create profile request"
+// @Param contractAddress path string true "contract adress"
+// @Param projectID path string true "projectID adress"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID} [PUT]
+func (h *httpDelivery) updateProject(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	contractAddress := vars["contractAddress"]
+
+	var reqBody request.UpdateProjectReq
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&reqBody)
+	if err != nil {
+		logger.AtLog.Logger.Error("decoder.Decode", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	reqUsecase := &structure.UpdateProjectReq{
+		ContracAddress: contractAddress,
+		TokenID:        projectID,
+		Priority:       reqBody.Priority,
+	}
+
+	logger.AtLog.Logger.Info("reqUsecase", zap.Any("reqUsecase", reqUsecase))
+
+	message, err := h.Usecase.UpdateProject(*reqUsecase)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.CreateProject", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	resp, err := h.projectToResp(message)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.projectToResp", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
