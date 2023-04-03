@@ -6785,6 +6785,9 @@ var doc = `{
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
+                "commitTxHash": {
+                    "type": "string"
+                },
                 "creatorAddrr": {
                     "type": "string"
                 },
@@ -6832,6 +6835,9 @@ var doc = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "revealTxHash": {
+                    "type": "string"
                 },
                 "royalty": {
                     "type": "integer"

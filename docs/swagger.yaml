@@ -766,6 +766,8 @@ definitions:
         type: array
       closeMintUnixTimestamp:
         type: integer
+      commitTxHash:
+        type: string
       creatorAddrr:
         type: string
       creatorAddrrBTC:
@@ -798,6 +800,8 @@ definitions:
         items:
           type: string
         type: array
+      revealTxHash:
+        type: string
       royalty:
         type: integer
       scripts:

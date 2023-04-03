@@ -6770,6 +6770,9 @@
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
+                "commitTxHash": {
+                    "type": "string"
+                },
                 "creatorAddrr": {
                     "type": "string"
                 },
@@ -6817,6 +6820,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "revealTxHash": {
+                    "type": "string"
                 },
                 "royalty": {
                     "type": "integer"
