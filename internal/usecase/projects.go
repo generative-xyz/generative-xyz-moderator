@@ -2368,7 +2368,6 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 		return nil, err
 	}
 
-	logger.AtLog.Info()
 	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
 	return p, nil
 }

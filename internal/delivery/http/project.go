@@ -683,7 +683,7 @@ func (h *httpDelivery) updateProjectHash(w http.ResponseWriter, r *http.Request)
 	}
 	reqBody.TxHash = &txHash
 	reqBody.ContractAddress = &contractAddress
-	message, err := h.Usecase.UpdateProject(*reqUsecase)
+	message, err := h.Usecase.UpdateProjectHash(reqBody)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.CreateProject", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
