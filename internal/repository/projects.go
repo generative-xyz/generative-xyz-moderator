@@ -495,23 +495,23 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 		f["status"] = *filter.Status
 	}
 	
-	if filter.TxHash != nil {
+	if filter.TxHash != nil && *filter.TxHash != ""  {
 		f["txhash"] = *filter.TxHash
 	}
 	
-	if filter.TxHex != nil {
+	if filter.TxHex != nil && *filter.TxHex != "" {
 		f["txHex"] = *filter.TxHex
 	}
 	
-	if filter.ContractAddress != nil {
+	if filter.ContractAddress != nil && *filter.ContractAddress != ""  {
 		f["contractAddress"] = *filter.ContractAddress
 	}
 	
-	if filter.CommitTxHash != nil {
+	if filter.CommitTxHash != nil && *filter.CommitTxHash != "" {
 		f["commitTxHash"] = *filter.CommitTxHash
 	}
 	
-	if filter.RevealTxHash != nil {
+	if filter.RevealTxHash != nil && *filter.RevealTxHash != "" {
 		f["revealTxHash"] = *filter.RevealTxHash
 	}
 
