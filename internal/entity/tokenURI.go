@@ -119,6 +119,15 @@ type TokenUri struct {
 	CreatedTokenTx                 bool          `bson:"created_token_tx"`
 }
 
+
+type TokenFromBase64 struct {
+	Name                string            `bson:"name" json:"name"`
+	Description         string            `bson:"description" json:"description"`
+	Image               string            `bson:"image" json:"image"`
+	Attributes          []TokenUriAttrStr     	 	`bson:"attributes" json:"attributes"`
+	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
+}
+
 type AggregateTokenUriTraits struct {
 	AggregateTokenUriTraitsID `bson:"_id"`
 	ParsedAttributes          []TokenUriAttr    `bson:"parsed_attributes" json:"parsed_attributes"`

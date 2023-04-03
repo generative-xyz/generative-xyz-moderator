@@ -668,10 +668,19 @@ func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 		}
 	}
 
-	if filter.Search != nil && len(*filter.Search) >= 3 {
-		f["$or"] = []bson.M{
-			{"token_id": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
-			{"inscription_index": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+	if filter.Search != nil {
+		searchInt, err := strconv.Atoi(*filter.Search)
+		if err == nil {
+			f["$or"] = []bson.M{
+				{"inscription_index": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+				{"order_inscription_index": searchInt},
+			}
+		} else {
+			f["$or"] = []bson.M{
+				{"token_id": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+				{"inscription_index": primitive.Regex{Pattern: *filter.Search, Options: "i"}},
+			}
+
 		}
 	}
 
