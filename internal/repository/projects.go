@@ -651,6 +651,9 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"inscribedBy", 1},
 		{"isSynced", 1},
 		{"txhash", 1},
+		{"txHex", 1},
+		{"commitTxHash", 1},
+		{"revealTxHash", 1},
 	}
 	return f
 }
