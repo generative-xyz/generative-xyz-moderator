@@ -330,6 +330,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	orCollections.HandleFunc("/collections/template", h.getOrdinalTemplate).Methods("GET")
 	orCollections.HandleFunc("/collections", h.uploadOrdinalTemplate).Methods("POST")
 
+	auction := api.PathPrefix("/auction").Subrouter()
+	auction.HandleFunc("/list", h.getListAuction).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {

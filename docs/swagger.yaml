@@ -1871,7 +1871,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: This is a sample server Autonomous devices management server.
+  description: This is a sample server Generative.
   title: Generative.xyz APIs
   version: 1.0.0
 paths:
@@ -4673,9 +4673,9 @@ paths:
         in: query
         name: revealTxHash
         type: string
-      - description: contractAddress
+      - description: walletAddress
         in: query
-        name: contractAddress
+        name: walletAddress
         type: string
       - description: status
         in: query
