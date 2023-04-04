@@ -422,26 +422,30 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	}
 
 	statusStr := r.URL.Query().Get("status")
-	// statusStr := "true"
-	// isSyncedStr := "true"
 	isSyncedStr := r.URL.Query().Get("isSynced")
 
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
 
-	if statusStr != "" {
-		status, err := strconv.ParseBool(statusStr)
-		if err == nil {
-			f.Status = &status
-		}
+
+	//Pending project are not shown by default
+	if statusStr == "" {
+		statusStr = "true"
 	}
 
-	if isSyncedStr != "" {
-		isSynced, err := strconv.ParseBool(isSyncedStr)
-		if err == nil {
-			f.IsSynced = &isSynced
-		}
+	if isSyncedStr == "" {
+		isSyncedStr = "true"
+	}
+
+	status, err := strconv.ParseBool(statusStr)
+	if err == nil {
+		f.Status = &status
+	}
+
+	isSynced, err := strconv.ParseBool(isSyncedStr)
+	if err == nil {
+		f.IsSynced = &isSynced
 	}
 
 	ctx := r.Context()
