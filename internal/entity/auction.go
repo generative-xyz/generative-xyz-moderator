@@ -6,7 +6,7 @@ import (
 )
 
 type AuctionCollectionBidder struct {
-	BaseEntity `bson:",inline"`
+	BaseEntity `bson:",inline" json:"-"`
 
 	Bidder   string `bson:"bidder" json:"bidder"`
 	IsWinner bool   `bson:"isWinner" json:"isWinner"`
