@@ -29,9 +29,9 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	chromePath := "google-chrome"
 
-	if u.Config.ENV == "develop" {
-		chromePath = ""
-	}
+	// if u.Config.ENV == "develop" {
+	// 	chromePath = ""
+	// }
 
 	address, err := getFaucetPaymentInfo(url, chromePath, eCH)
 	fmt.Println("address, err: ", address, err)
