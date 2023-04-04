@@ -10,6 +10,7 @@ import (
 
 	"rederinghub.io/internal/delivery/http/response"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
@@ -168,6 +169,10 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
+	if txnHash == "0xb83802117df5d69515b2f8a6b5b61d24831467253c0c60c76c98a626146d9826" {
+		spew.Dump(1)
+	}
+	
 	blockNumber := chainLog.BlockNumber
 	logger.AtLog.Logger.Info(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog))
 	topics := chainLog.Topics
