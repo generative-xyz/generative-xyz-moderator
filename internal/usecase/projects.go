@@ -115,25 +115,24 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 		//create unzip's log here
 		unzipLog := &entity.ProjectZipLinks{
 			ProjectID: pe.TokenID,
-			ZipLink: *zipLink,
-			Status: entity.UzipStatusFail,
-			Message: "Create project",
-			ReTries: 0,
+			ZipLink:   *zipLink,
+			Status:    entity.UzipStatusFail,
+			Message:   "Create project",
+			ReTries:   0,
 		}
 
 		unzipLog.Logs = []entity.ProjectZipLinkLog{}
 		unzipLog.Logs = append(unzipLog.Logs, entity.ProjectZipLinkLog{
-			Message: "Create project",
-			Status: entity.UzipStatusFail,
+			Message:     "Create project",
+			Status:      entity.UzipStatusFail,
 			CreatedTime: &now,
-			
 		})
 
 		unzipLog.UpdatedAt = &now
 		unzipLog.CreatedAt = &now
-		err = u.Repo.CreateProjectUnzip(unzipLog) 
+		err = u.Repo.CreateProjectUnzip(unzipLog)
 		if err != nil {
-			logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID",  pe.TokenID), zap.Error(err))
+			logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", pe.TokenID), zap.Error(err))
 		}
 
 	} else {
@@ -210,7 +209,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 
 		err = u.PubSub.Producer(utils.PUBSUB_PROJECT_UNZIP, redis.PubSubPayload{Data: structure.ProjectUnzipPayload{ProjectID: pe.TokenID, ZipLink: *zipLink}})
 		if err != nil {
-			logger.AtLog.Logger.Error("u.Repo.CreateProject",  zap.Error(err))
+			logger.AtLog.Logger.Error("u.Repo.CreateProject", zap.Error(err))
 			//return nil, err
 		}
 
@@ -915,10 +914,10 @@ func (u Usecase) GetProjects(req structure.FilterProjects) (*entity.Pagination, 
 		return nil, err
 	}
 
-	if !u.CheckExisted("6406e7abb90f7fc13f55490c", pe.CategoryIds) && !u.CheckExisted("63f8325a1460b1502544101b", pe.CategoryIds) {
-		pe.CustomQueries = make(map[string]primitive.M)
-		pe.CustomQueries["$expr"] = bson.M{"$lt": bson.A{"$index", "$maxSupply"}}
-	}
+	//if !u.CheckExisted("6406e7abb90f7fc13f55490c", pe.CategoryIds) && !u.CheckExisted("63f8325a1460b1502544101b", pe.CategoryIds) {
+	//	pe.CustomQueries = make(map[string]primitive.M)
+	//	pe.CustomQueries["$expr"] = bson.M{"$lt": bson.A{"$index", "$maxSupply"}}
+	//}
 
 	projects, err := u.Repo.GetProjects(*pe)
 	if err != nil {
@@ -1620,17 +1619,17 @@ func (u Usecase) getNftContractDetailInternal(client *ethclient.Client, contract
 }
 
 func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*entity.Projects, error) {
-	var err error 
+	var err error
 	pe := &entity.Projects{}
 	zipLink := zipPayload.ZipLink
 
-	defer func  ()  {
+	defer func() {
 		now := time.Now().UTC()
 		status := entity.UzipStatusSuccess
 		message := ""
 		if err == nil {
 			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Project images are Unzipped][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink)))
-		}else{
+		} else {
 			status = entity.UzipStatusFail
 			message = err.Error()
 			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Error while unzip][project %s]", helpers.CreateProjectLink(pe.TokenID, pe.Name)), "", fmt.Sprintf("Project's images have been unzipped with %d files, zipLink: %s, error: %s", len(pe.Images), helpers.CreateTokenImageLink(zipLink), message))
@@ -1638,10 +1637,10 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 		up, err := u.Repo.GetProjectUnzip(zipPayload.ProjectID)
 		if err == nil && up != nil {
-			
+
 			up.Logs = append(up.Logs, entity.ProjectZipLinkLog{
-				Message: message,
-				Status: status,
+				Message:     message,
+				Status:      status,
 				CreatedTime: &now,
 			})
 
@@ -1654,23 +1653,23 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			}
 			logger.AtLog.Logger.Info("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Any("updated", updated))
 
-		}else{
+		} else {
 			unzipLog := &entity.ProjectZipLinks{
 				ProjectID: zipPayload.ProjectID,
-				ZipLink: zipPayload.ZipLink,
-				Status: status,
-				Message: message,
-				ReTries: 1,
+				ZipLink:   zipPayload.ZipLink,
+				Status:    status,
+				Message:   message,
+				ReTries:   1,
 			}
 
 			unzipLog.Logs = []entity.ProjectZipLinkLog{}
 			unzipLog.Logs = append(unzipLog.Logs, entity.ProjectZipLinkLog{
-				Message: message,
-				Status: status,
+				Message:     message,
+				Status:      status,
 				CreatedTime: &now,
 			})
 
-			err = u.Repo.CreateProjectUnzip(unzipLog) 
+			err = u.Repo.CreateProjectUnzip(unzipLog)
 			if err != nil {
 				logger.AtLog.Error("UnzipProjectFile.defer", zap.Any("projectID", zipPayload.ProjectID), zap.Error(err))
 			}
@@ -2357,7 +2356,7 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 	if req.CommitTxHash != nil {
 		p.CommitTxHash = *req.CommitTxHash
 	}
-	
+
 	if req.RevealTxHash != nil {
 		p.RevealTxHash = *req.RevealTxHash
 	}
