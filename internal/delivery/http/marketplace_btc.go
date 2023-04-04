@@ -312,10 +312,14 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
-
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	h.Usecase.JobMint_CheckTxMintSend()
+	h.Usecase.JobAution_GetListAuction()
+	// if err != nil {
+	// 	logger.AtLog.Logger.Error("h.Usecase.GetListDomainName", zap.Error(err))
+	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+	// 	return
+	// }
 
 	// h.Usecase.ResetEvenManager()
 
