@@ -421,10 +421,10 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	//statusStr := r.URL.Query().Get("status")
-	statusStr := "true"
-	isSyncedStr := "true"
-	// isSyncedStr := r.URL.Query().Get("isSynced")
+	statusStr := r.URL.Query().Get("status")
+	// statusStr := "true"
+	// isSyncedStr := "true"
+	isSyncedStr := r.URL.Query().Get("isSynced")
 
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
