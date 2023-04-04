@@ -20,7 +20,7 @@ import (
 
 func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
-	amountFaucet := big.NewInt(0.01 * 1e18) // todo: move to config
+	amountFaucet := big.NewInt(0.05 * 1e18) // todo: move to config
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
