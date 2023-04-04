@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/chromedp/chromedp"
 	"github.com/davecgh/go-spew/spew"
@@ -107,17 +108,20 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	spew.Dump(res)
 
-	var addressRegex = regexp.MustCompile(`^(0x)[a-zA-Z0-9]{40}$`) // payment address eth
+	if !strings.Contains(res, "DappsOnBitcoin") {
+		return "", errors.New("tweet data invalid")
+	}
 
-	parts := addressRegex.FindStringSubmatch(res)
-	if len(parts) == 0 {
-		fmt.Println("len(parts) == 0")
+	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
+
+	addressHex := addressRegex.FindString(res)
+	if len(addressHex) == 0 {
 		return "", errors.New("address not found")
 	}
 
-	fmt.Println("result: ", parts[0])
+	fmt.Println("result: ", addressHex)
 
-	return parts[0], nil
+	return addressHex, nil
 
 }
 func ByTestId(s string) string {
