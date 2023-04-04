@@ -486,18 +486,18 @@ func (u Usecase) JobMint_CheckBalance() error {
 	}
 
 	// get list btc to check a Batch
-	var batchBTCBalance []string
-	for _, item := range listPending {
-		if item.PayType == utils.NETWORK_BTC {
-			batchBTCBalance = append(batchBTCBalance, item.ReceiveAddress)
-		}
-	}
+	// var batchBTCBalance []string
+	// for _, item := range listPending {
+	// 	if item.PayType == utils.NETWORK_BTC {
+	// 		batchBTCBalance = append(batchBTCBalance, item.ReceiveAddress)
+	// 	}
+	// }
 
-	isRateLimitErr := false
-	balanceMaps, err := bs.BTCGetAddrInfoMulti(batchBTCBalance)
-	if err != nil && strings.Contains(err.Error(), "rate_limit") {
-		isRateLimitErr = true
-	}
+	// isRateLimitErr := false
+	// balanceMaps, err := bs.BTCGetAddrInfoMulti(batchBTCBalance)
+	// if err != nil && strings.Contains(err.Error(), "rate_limit") {
+	// 	isRateLimitErr = true
+	// }
 
 	for _, item := range listPending {
 
@@ -506,6 +506,8 @@ func (u Usecase) JobMint_CheckBalance() error {
 			continue
 		}
 
+		time.Sleep(1 * time.Second)
+
 		// check balance:
 		balance := big.NewInt(0)
 		confirm := -1
@@ -513,19 +515,20 @@ func (u Usecase) JobMint_CheckBalance() error {
 		if item.PayType == utils.NETWORK_BTC {
 
 			// remove this:
-			// balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
-			// fmt.Println("GetBalance btc response: ", balance, confirm, err)
+			balance, confirm, err = bs.GetBalance(item.ReceiveAddress)
+			fmt.Println("GetBalance btc response: ", balance, confirm, err)
 
-			if !isRateLimitErr {
-				balanceInfo, ok := balanceMaps[item.ReceiveAddress]
-				// If the key exists
-				if ok {
-					balance = big.NewInt(0).SetUint64(balanceInfo.Balance)
-					if len(balanceInfo.TxRefs) > 0 {
-						confirm = balanceInfo.TxRefs[0].Confirmations
-					}
-				}
-			} else if isRateLimitErr {
+			// if !isRateLimitErr {
+			// 	balanceInfo, ok := balanceMaps[item.ReceiveAddress]
+			// 	// If the key exists
+			// 	if ok {
+			// 		balance = big.NewInt(0).SetUint64(balanceInfo.Balance)
+			// 		if len(balanceInfo.TxRefs) > 0 {
+			// 			confirm = balanceInfo.TxRefs[0].Confirmations
+			// 		}
+			// 	}
+			// }
+			if err != nil {
 				// get balance from quicknode:
 				var balanceQuickNode *structure.BlockCypherWalletInfo
 				balanceQuickNode, err = btc.GetBalanceFromQuickNode(item.ReceiveAddress, u.Config.QuicknodeAPI)
@@ -554,8 +557,6 @@ func (u Usecase) JobMint_CheckBalance() error {
 
 		} else if item.PayType == utils.NETWORK_ETH {
 			// check eth balance:
-
-			time.Sleep(1 * time.Second)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -1199,6 +1200,7 @@ func (u Usecase) checkTxMintSend_ForOrdinal() error {
 	// get list pending tx:
 	// todo: need update platform for old records.
 	listTxToCheck, _ := u.Repo.ListMintNftBtcByStatusAndPlatform([]entity.StatusMint{entity.StatusMint_Minting}, utils.PLATFORM_ORDINAL)
+
 	if len(listTxToCheck) == 0 {
 		return nil
 	}
@@ -1206,14 +1208,15 @@ func (u Usecase) checkTxMintSend_ForOrdinal() error {
 	// get list btc to check a Batch
 	var batchBTCTx []string
 	for _, item := range listTxToCheck {
-		if item.PayType == utils.NETWORK_BTC {
-			batchBTCTx = append(batchBTCTx, item.TxMintNft)
-		}
+		batchBTCTx = append(batchBTCTx, item.TxMintNft)
 	}
 
 	var err error
 	isRateLimitErr := false
 	txInfoMaps, _, errFromCheckBatch := btc.CheckTxMultiBlockcypher(batchBTCTx, u.Config.BlockcypherToken)
+
+	fmt.Println("isRateLimitErr, errFromCheckBatch", txInfoMaps, errFromCheckBatch)
+
 	if errFromCheckBatch != nil {
 		if strings.Contains(errFromCheckBatch.Error(), "rate_limit") {
 			isRateLimitErr = true
@@ -1230,15 +1233,27 @@ func (u Usecase) checkTxMintSend_ForOrdinal() error {
 
 		if !isRateLimitErr && txInfoMaps != nil {
 			txInfo, ok := txInfoMaps[txToCheck]
+
+			fmt.Println("txInfo, ok", txInfo, ok)
+
 			// If the key exists
 			if ok {
 				confirm = int64(txInfo.Confirmations)
 			} else {
-				err = errors.New("tx invalid")
-				if errFromCheckBatch != nil {
-					err = errors.New(errFromCheckBatch.Error())
+				// err = errors.New("tx invalid")
+				// if errFromCheckBatch != nil {
+				// 	err = errors.New(errFromCheckBatch.Error())
+				// }
+				// go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
+				txInfoQn, err := btc.CheckTxfromQuickNode(txToCheck, u.Config.QuicknodeAPI)
+				if err == nil {
+					if txInfoQn != nil {
+						confirm = int64(txInfoQn.Result.Confirmations)
+					}
+
+				} else {
+					go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
 				}
-				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "bs.CheckTx: "+txToCheck, err.Error(), true)
 			}
 		} else {
 			txInfoQn, err := btc.CheckTxfromQuickNode(txToCheck, u.Config.QuicknodeAPI)
@@ -1251,6 +1266,8 @@ func (u Usecase) checkTxMintSend_ForOrdinal() error {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "CheckTxfromQuickNode from quicknode - with err", err.Error(), true)
 			}
 		}
+
+		fmt.Println("confirm===>", confirm)
 
 		// check confirm >= 1
 		if confirm >= 1 {
