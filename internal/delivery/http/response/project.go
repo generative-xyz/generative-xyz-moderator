@@ -48,6 +48,7 @@ type ProjectResp struct {
 	GenNFTAddr                string           `json:"genNFTAddr"`
 	ItemDesc                  string           `json:"itemDesc"`
 	Status                    bool             `json:"status"`
+	IsSynced                  bool             `json:"isSynced"`
 	IsFullChain               bool             `json:"isFullChain"`
 	NftTokenURI               string           `json:"projectURI"`
 	MintingInfo               NftMintingDetail `json:"mintingInfo"`
@@ -85,6 +86,8 @@ type ProjectResp struct {
 	CanCreateProposal         bool             `json:"canCreateProposal"`
 	ProposalSeqId             *uint            `json:"proposalSeqId"`
 	IsGenerative              bool             `json:"isGenerative"` // art by generative code or html file
+	TxHash                    string           `json:"txHash"`       // art by generative code or html file
+	TxHex                     string           `json:"txHex"`        // art by generative code or html file
 }
 
 type ReportProject struct {

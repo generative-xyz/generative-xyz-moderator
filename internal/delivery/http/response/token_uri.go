@@ -62,6 +62,7 @@ type InternalTokenURIResp struct {
 	OrdinalsData          *OrdinalsData    `json:"ordinalsData"`
 	NftTokenId            string           `json:"nftTokenId"`
 	InscribedBy           string           `json:"inscribedBy"`
+	Seed                  string           `json:"seed"`
 
 	// for buyable:
 	Buyable      bool   `json:"buyable"`
@@ -87,16 +88,16 @@ type InternalTokenTraitsResp struct {
 }
 
 type TokenActivityResp struct {
-	UUID         string           `json:"uuid"`
-	Type         int              `json:"type"`
-	Title        string           `json:"title"`
-	UserAAddress string           `json:"user_a_address"`
-	UserA        *ProfileResponse `json:"user_a"`
-	UserBAddress string           `json:"user_b_address"`
-	UserB        *ProfileResponse `json:"user_b"`
-	Amount       int64            `json:"amount"`
-	Time         *time.Time       `json:"time"`
-	TokenInfo    *InternalTokenURIResp    `json:"token_info"`
-	InscriptionID string			`json:"inscription_id"`
-	ProjectID string  				`json:"project_id"`
+	UUID          string                `json:"uuid"`
+	Type          int                   `json:"type"`
+	Title         string                `json:"title"`
+	UserAAddress  string                `json:"user_a_address"`
+	UserA         *ProfileResponse      `json:"user_a"`
+	UserBAddress  string                `json:"user_b_address"`
+	UserB         *ProfileResponse      `json:"user_b"`
+	Amount        int64                 `json:"amount"`
+	Time          *time.Time            `json:"time"`
+	TokenInfo     *InternalTokenURIResp `json:"token_info"`
+	InscriptionID string                `json:"inscription_id"`
+	ProjectID     string                `json:"project_id"`
 }

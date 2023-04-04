@@ -47,25 +47,6 @@ type uploadFileChan struct {
 	Err     error
 }
 
-func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects, error) {
-
-	pe := &entity.Projects{}
-	err := copier.Copy(pe, req)
-	if err != nil {
-		logger.AtLog.Error("CreateProject", zap.Any("err", err))
-		return nil, err
-	}
-
-	err = u.Repo.CreateProject(pe)
-	if err != nil {
-		logger.AtLog.Error("CreateProject", zap.Any("err", err))
-		return nil, err
-	}
-
-	logger.AtLog.Error("CreateProject", zap.Any("project", pe))
-	return pe, nil
-}
-
 func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Projects, error) {
 	logger.AtLog.Logger.Info("CreateBTCProject", zap.Any("CreateBtcProjectReq", zap.Any("req)", req)))
 
@@ -957,7 +938,7 @@ func (u Usecase) GetAllProjects(req structure.FilterProjects) (*entity.Paginatio
 		return nil, err
 	}
 
-	projects, err := u.Repo.GetProjects(*pe)
+	projects, err := u.Repo.GetAllRawProjects(*pe)
 	if err != nil {
 		logger.AtLog.Error("u.Repo.GetProjects", err.Error(), err)
 		return nil, err
@@ -2364,4 +2345,29 @@ func (u Usecase) GetProjectsFloorPrice(projects []string) (map[string]uint64, er
 		result[v.ID] = v.Floor
 	}
 	return result, nil
+}
+
+func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Projects, error) {
+	p, err := u.Repo.FindProjectByTxHash(*req.TxHash)
+	if err != nil {
+		logger.AtLog.Error("UpdateProjectHash", zap.Any("err.FindProjectBy", err))
+		return nil, err
+	}
+
+	if req.CommitTxHash != nil {
+		p.CommitTxHash = *req.CommitTxHash
+	}
+	
+	if req.RevealTxHash != nil {
+		p.RevealTxHash = *req.RevealTxHash
+	}
+
+	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	if err != nil {
+		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
+		return nil, err
+	}
+
+	logger.AtLog.Logger.Info("UpdateProject", zap.Any("project", p), zap.Any("updated", updated))
+	return p, nil
 }

@@ -187,6 +187,8 @@ definitions:
         type: integer
       closeMintUnixTimestamp:
         type: integer
+      commitTxHash:
+        type: string
       completeTime:
         type: integer
       contractAddress:
@@ -291,6 +293,8 @@ definitions:
         items:
           type: string
         type: array
+      revealTxHash:
+        type: string
       royalty:
         type: integer
       scripts:
@@ -342,6 +346,10 @@ definitions:
         items:
           $ref: '#/definitions/entity.TraitStat'
         type: array
+      txHash:
+        type: string
+      txHex:
+        type: string
       updated_at:
         type: string
       uuid:
@@ -446,6 +454,8 @@ definitions:
         type: string
       project_id_int:
         type: integer
+      seed:
+        type: string
       source:
         type: string
       stats:
@@ -744,6 +754,91 @@ definitions:
     required:
     - project_ids
     type: object
+  request.CreateETHProjectReq:
+    properties:
+      animationURL:
+        type: string
+      captureImageTime:
+        type: integer
+      categories:
+        items:
+          type: string
+        type: array
+      closeMintUnixTimestamp:
+        type: integer
+      commitTxHash:
+        type: string
+      creatorAddrr:
+        type: string
+      creatorAddrrBTC:
+        type: string
+      creatorName:
+        type: string
+      description:
+        type: string
+      isFullChain:
+        type: boolean
+      license:
+        type: string
+      limitMintPerProcess:
+        type: integer
+      limitSupply:
+        type: integer
+      maxSupply:
+        type: integer
+      mintPrice:
+        type: string
+      name:
+        type: string
+      openMintUnixTimestamp:
+        type: integer
+      reserveMintLimit:
+        type: integer
+      reserveMintPrice:
+        type: string
+      reservers:
+        items:
+          type: string
+        type: array
+      revealTxHash:
+        type: string
+      royalty:
+        type: integer
+      scripts:
+        items:
+          type: string
+        type: array
+      socialDiscord:
+        type: string
+      socialInstagram:
+        type: string
+      socialMedium:
+        type: string
+      socialTwitter:
+        type: string
+      socialWeb:
+        type: string
+      styles:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thirdPartyScripts:
+        items:
+          type: string
+        type: array
+      thumbnail:
+        type: string
+      tokenDescription:
+        type: string
+      txHash:
+        type: string
+      txHex:
+        type: string
+      zipLink:
+        type: string
+    type: object
   request.CreateEthWalletAddressReq:
     properties:
       projectID:
@@ -799,21 +894,6 @@ definitions:
       fileName:
         type: string
       group:
-        type: string
-    type: object
-  request.CreateProjectReq:
-    properties:
-      categories:
-        items:
-          type: string
-        type: array
-      contractAddress:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-      tokenID:
         type: string
     type: object
   request.CreateProposalReq:
@@ -1303,6 +1383,8 @@ definitions:
         type: integer
       project:
         $ref: '#/definitions/response.ProjectResp'
+      seed:
+        type: string
       sell_verified:
         type: boolean
       stats:
@@ -1489,6 +1571,8 @@ definitions:
         type: boolean
       isReviewing:
         type: boolean
+      isSynced:
+        type: boolean
       itemDesc:
         type: string
       license:
@@ -1570,6 +1654,12 @@ definitions:
         items:
           $ref: '#/definitions/response.TraitStat'
         type: array
+      txHash:
+        description: art by generative code or html file
+        type: string
+      txHex:
+        description: art by generative code or html file
+        type: string
       whiteListEthContracts:
         items:
           type: string
@@ -1766,6 +1856,17 @@ definitions:
       paymentAddress:
         type: string
       price:
+        type: string
+    type: object
+  structure.UpdateProjectHash:
+    properties:
+      commitTxHash:
+        type: string
+      contractAddress:
+        type: string
+      revealTxHash:
+        type: string
+      txHash:
         type: string
     type: object
 info:
@@ -2466,7 +2567,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2487,7 +2588,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2513,7 +2614,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2568,7 +2669,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2617,7 +2718,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -2989,7 +3090,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -3011,7 +3112,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3220,9 +3321,6 @@ paths:
           $ref: '#/definitions/request.CompressImageReq'
       produces:
       - application/json
-      responses:
-        "200":
-          description: OK
       security:
       - ApiKeyAuth: []
       summary: compress-image
@@ -3330,7 +3428,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: ""
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -3900,6 +3998,14 @@ paths:
         in: path
         name: walletAddress
         type: string
+      - description: status
+        in: query
+        name: status
+        type: boolean
+      - description: isSynced
+        in: query
+        name: isSynced
+        type: boolean
       - description: limit
         in: query
         name: limit
@@ -4031,12 +4137,12 @@ paths:
       - application/json
       description: Create projects
       parameters:
-      - description: Create profile request
+      - description: Create eth-project request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/request.CreateProjectReq'
+          $ref: '#/definitions/request.CreateETHProjectReq'
       produces:
       - application/json
       responses:
@@ -4044,9 +4150,11 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
       summary: Create project
       tags:
-      - Project
+      - ETH Project
   /project/{contractAddress}/{projectID}:
     delete:
       consumes:
@@ -4398,6 +4506,38 @@ paths:
       summary: get project's volumn
       tags:
       - Project
+  /project/{contractAddress}/tx-hash/{txHash}:
+    put:
+      consumes:
+      - application/json
+      description: Update project's hash via txHasg
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/structure.UpdateProjectHash'
+      - description: contract adress
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      - description: txHash adress
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Update project's hash
+      tags:
+      - Project
   /project/{genNFTAddr}/tokens:
     get:
       consumes:
@@ -4497,6 +4637,83 @@ paths:
       security:
       - Authorization: []
       summary: Update project
+      tags:
+      - Project
+  /project/all:
+    get:
+      consumes:
+      - application/json
+      description: get all projects without project's status
+      parameters:
+      - description: Filter project via contract address
+        in: query
+        name: contractAddress
+        type: string
+      - description: filter project via name
+        in: query
+        name: name
+        type: string
+      - description: filter project via category ids
+        in: query
+        name: category
+        type: string
+      - description: txHash
+        in: query
+        name: txHash
+        type: string
+      - description: commitTxHash
+        in: query
+        name: commitTxHash
+        type: string
+      - description: txHex
+        in: query
+        name: txHex
+        type: string
+      - description: revealTxHash
+        in: query
+        name: revealTxHash
+        type: string
+      - description: contractAddress
+        in: query
+        name: contractAddress
+        type: string
+      - description: status
+        in: query
+        name: status
+        type: boolean
+      - description: isSynced
+        in: query
+        name: isSynced
+        type: boolean
+      - description: isHidden
+        in: query
+        name: isHidden
+        type: boolean
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
+      - description: newest, oldest, priority-asc, priority-desc, trending-score
+        in: query
+        name: sort
+        type: string
+      - description: The cursor returned in the previous response (used for getting
+          the next page).
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get all projects
       tags:
       - Project
   /project/btc:

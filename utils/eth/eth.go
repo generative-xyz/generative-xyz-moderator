@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 )
 
 type Client struct {
@@ -239,6 +240,51 @@ func ConvertWeiFromEther(val float64) *big.Int {
 	return new(big.Int).Mul(big.NewInt(int64(val*1e3)), big.NewInt(1e15))
 }
 
+// transfer:
+func (c *Client) Transfer(senderPrivKey, receiverAddress string, amount *big.Int) (string, error) {
+	privateKey, err := crypto.HexToECDSA(senderPrivKey)
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", errors.Wrap(err, "s.ethClient.PendingNonceAt")
+	}
+
+	gasLimit := uint64(21000)
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "s.ethClient.SuggestGasPrice")
+	}
+
+	fee := new(big.Int)
+	fee.Mul(big.NewInt(int64(gasLimit)), gasPrice)
+
+	fmt.Println("fee: ", fee)
+
+	toAddress := common.HexToAddress(receiverAddress)
+	tx := types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, nil)
+
+	chainID, err := c.NetworkID(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "c.NetworkID")
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "types.SignTx")
+	}
+	err = c.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return "", errors.Wrap(err, "c.SendTransaction")
+	}
+	return signedTx.Hash().Hex(), nil
+}
+
 // Transfer max
 func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, string, error) {
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
@@ -337,7 +383,11 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0) // in wei
 	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
-	auth.GasPrice = gasPrice
+
+	if gasPrice != nil {
+		auth.GasPrice = gasPrice
+	}
+
 	// auth.GasLimit = gasLimit
 
 	// Create a new instance of the contract with the given address and ABI
@@ -364,4 +414,134 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
+}
+
+// mint on tc:
+func (c *Client) MintTC(contractAddress, privateKeyStr, toAddress string, chunks [][]byte) (string, error) {
+
+	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+	if err != nil {
+		fmt.Println("HexToECDSA err", err)
+		return "", err
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := c.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	gasPrice, err := c.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("gasPrice: ", gasPrice)
+
+	chainID, err := c.NetworkID(context.Background())
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
+	// auth.GasPrice = gasPrice
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return "", errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return "", errors.Wrap(err, "contract.Mint")
+	}
+
+	if projectContract.Index.Uint64() >= projectContract.MaxSupply.Uint64() {
+		err = errors.New("minted_out")
+		return "", errors.Wrap(err, "contract.Mint")
+	}
+
+	auth.Value = projectContract.MintPrice
+
+	tx, err := contract.Mint(auth, common.HexToAddress(toAddress), chunks)
+
+	if err != nil {
+		return "", errors.Wrap(err, "contract.Mint")
+	}
+
+	fmt.Printf("Transaction hash: %s\n", tx.Hash().Hex())
+
+	return tx.Hash().Hex(), nil
+}
+
+func (c *Client) GetProjectIndex(contractAddress string) (uint64, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return 0, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.Index.Uint64(), nil
+}
+func (c *Client) GetMaxSupply(contractAddress string) (uint64, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return 0, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.MaxSupply.Uint64(), nil
+}
+
+func (c *Client) CheckProjectIsMintedOut(contractAddress string) (bool, error) {
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return false, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	projectContract, err := contract.Project(nil)
+	if err != nil {
+		return false, errors.Wrap(err, "contract.Mint")
+	}
+
+	return projectContract.MaxSupply.Uint64() == projectContract.Index.Uint64(), nil
+}
+
+func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
+	ctx := context.Background()
+
+	receipt, err := c.GetClient().TransactionReceipt(ctx, common.HexToHash(tx))
+	if err != nil {
+		return nil, err
+	}
+
+	if receipt.Status > 0 {
+		return receipt.Logs[0].Topics[3].Big(), nil
+
+	}
+
+	return nil, nil
 }

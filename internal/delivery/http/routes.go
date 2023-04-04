@@ -78,7 +78,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project := api.PathPrefix("/project").Subrouter()
 	project.Use(h.MiddleWare.AuthorizationFunc)
 	project.HandleFunc("", h.getProjects).Methods("GET")
-	project.HandleFunc("", h.createProjects).Methods("POST")
+	project.HandleFunc("/all", h.getAllProjects).Methods("GET")
+	project.HandleFunc("", h.createEthProjects).Methods("POST")
 
 	project.HandleFunc("/random", h.getRandomProject).Methods("GET")
 	project.HandleFunc("/upcomming", h.getUpcommingProjects).Methods("GET")
@@ -91,6 +92,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.tokenTraits).Methods("GET")
 	project.HandleFunc("/{contractAddress}/tokens/{projectID}/token-traits", h.uploadTokenTraits).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
+	project.HandleFunc("/{contractAddress}/tx-hash/{txHash}", h.updateProjectHash).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
@@ -140,6 +142,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.Use(h.MiddleWare.AccessToken)
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
+	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
@@ -216,6 +219,10 @@ func (h *httpDelivery) RegisterV1Routes() {
 	mintNftBtc := api.PathPrefix("/mint-nft-btc").Subrouter()
 	mintNftBtc.HandleFunc("/get-mint-fee-rate-info/{fileSize}/{customRate}/{mintPrice}", h.getMintFeeRateInfos).Methods("GET")
 
+	// faucet:
+	faucet := api.PathPrefix("/faucet").Subrouter()
+	faucet.HandleFunc("/request", h.requestFaucet).Methods("POST")
+
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
 	// marketplaceBTC.HandleFunc("/list", h.btcMarketplaceListNFTs).Methods("GET")
@@ -235,7 +242,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	// marketplaceBTC.HandleFunc("/search", h.btcMarketplaceSearch).Methods("GET") //TODO: implement
 
-	// marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
+	marketplaceBTC.HandleFunc("/test-listen", h.btcTestListen).Methods("GET")
 
 	// marketplaceBTC.HandleFunc("/test-transfer", h.btcTestTransfer).Methods("POST")
 

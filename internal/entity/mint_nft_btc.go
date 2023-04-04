@@ -89,7 +89,7 @@ type MintNftBtc struct {
 
 	TxReceived   string `bson:"tx_received"` // tx received fund from user.
 	TxMintNft    string `bson:"tx_mint_nft"`
-	TxSendNft    string `bson:"tx_send_nft"`
+	TxSendNft    string `bson:"tx_send_nft"` // now user for tx mint on tc to btc
 	TxSendMaster string `bson:"tx_send_master"`
 	TxRefund     string `bson:"tx_refund"`
 
@@ -138,6 +138,11 @@ type MintNftBtc struct {
 	MintFee int `bson:"mint_fee"` // real mint fee
 
 	IsMerged bool `bson:"isMerged"` // with ord v5.1: mint = mint + send, 1 tx
+
+	IsCalledMintTc bool `bson:"isCalledMintTc"`
+
+	Platform     string `bson:"platform"` // ordinal/tc
+	TcTempWallet string `bson:"tc_temp_wallet"`
 
 	// for mint batch:
 	Quantity      int    `bson:"quantity"`
@@ -220,4 +225,26 @@ type MintFeeInfo struct {
 	EthPrice float64 `json:"ethPrice"`
 	BtcPrice float64 `json:"btcPrice"`
 	Decimal  int     `json:"decimal"`
+}
+
+// wallet temp:
+type StatusEvmTempWallets int
+
+const (
+	StatusEvmTempWallets_Free StatusEvmTempWallets = iota // 0: free
+	StatusEvmTempWallets_Busy                             // 1: busy
+)
+
+type EvmTempWallets struct {
+	BaseEntity    `bson:",inline"`
+	WalletAddress string `bson:"walletAddress"` // the wallet address
+	PrivateKey    string `bson:"privateKey"`    // private key (has encrypt).
+	Status        int    `bson:"status"`        // -1: invalid, 0: free, 1 busy
+}
+
+func (u EvmTempWallets) TableName() string {
+	return "evm_temp_wallets"
+}
+func (u EvmTempWallets) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
 }

@@ -93,6 +93,7 @@ type TokenUri struct {
 	GenNFTAddr          string            `bson:"gen_nft_addrress"`
 	Thumbnail           string            `bson:"thumbnail"`
 	ThumbnailCapturedAt *time.Time        `bson:"thumbnailCapturedAt"`
+	Seed                string            `bson:"seed"`
 
 	Stats TokenStats `bson:"stats" json:"stats"`
 
@@ -116,6 +117,15 @@ type TokenUri struct {
 	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 	CreatedMintActivity            bool          `bson:"created_mint_activity"`
 	CreatedTokenTx                 bool          `bson:"created_token_tx"`
+}
+
+
+type TokenFromBase64 struct {
+	Name                string            `bson:"name" json:"name"`
+	Description         string            `bson:"description" json:"description"`
+	Image               string            `bson:"image" json:"image"`
+	Attributes          []TokenUriAttrStr     	 	`bson:"attributes" json:"attributes"`
+	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
 }
 
 type AggregateTokenUriTraits struct {
@@ -151,6 +161,7 @@ type TokenUriListingFilter struct {
 	OwnerAddr             bool                 `bson:"ownerAddr" json:"ownerAddr"`
 	OwnerAddress          string               `bson:"owner_addrress" json:"owner_addrress"`
 	Owner                 TokenURIListingOwner `bson:"owner_object" json:"owner"`
+	OnwerInternal         TokenURIListingOwner `bson:"owner" json:"owner_internal"`
 	Project               struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`

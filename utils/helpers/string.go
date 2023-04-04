@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"math/big"
+	"mime"
 	"net/http"
 	"os"
 	"regexp"
@@ -322,4 +323,13 @@ func FileExtension(fileName string) string {
 		last = lastArr[len(lastArr) - 1]
 	}
 	return last
+}
+
+func FileType(fileType string) string {
+	fileType = strings.ReplaceAll(fileType, "data:","")
+	fileType = strings.ReplaceAll(fileType, ";base64","")
+	str, err :=  mime.ExtensionsByType(fileType)
+	
+	_ = err
+	return str[0]
 }

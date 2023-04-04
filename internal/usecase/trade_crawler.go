@@ -385,7 +385,22 @@ func (u Usecase) JobCrawlTokenTxNotFromTokenUri() error {
 				logger.AtLog.Logger.Info("JobCrawlTokenTxNotFromTokenUri.InsertTokenTx", zap.Any("tokenTx", zap.Any("tokenTx)", tokenTx)))
 			}
 		}
-		u.Repo.UpdateGlobalActivity(LAST_CRAWL_INSCRIPTION_INDEX_KEY, to)
+		minOf := func (vars ...int) int {
+			min := vars[0]
+		
+			for _, i := range vars {
+				if min > i {
+					min = i
+				}
+			}
+		
+			return min
+		}
+		mxInscriptionIndex := 0
+		for _, inscription := range tx.Data.Result {
+			mxInscriptionIndex = minOf(inscription.Inscription.Number, mxInscriptionIndex)
+		}
+		u.Repo.UpdateGlobalActivity(LAST_CRAWL_INSCRIPTION_INDEX_KEY, mxInscriptionIndex)
 		time.Sleep(time.Second)
 	}
 	return nil

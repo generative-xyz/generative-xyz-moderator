@@ -4,10 +4,12 @@ import (
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/utils/blockchain"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/config"
 	_pConnection "rederinghub.io/utils/connections"
 	"rederinghub.io/utils/delegate"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/googlecloud"
 	_logger "rederinghub.io/utils/logger"
 	"rederinghub.io/utils/oauth2service"
@@ -35,7 +37,11 @@ type Global struct {
 	OrdService          *ord_service.BtcOrd
 	OrdServiceDeveloper *ord_service.BtcOrd
 	Blockchain          blockchain.Blockchain
+	TcNetwotkchain      blockchain.TcNetwork
 	Slack               slack.Slack
 	DiscordClient       *discordclient.Client
 	DelegateService     *delegate.Service
+
+	TcClient, EthClient *eth.Client
+	BsClient            *btc.BlockcypherService
 }

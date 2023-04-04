@@ -117,6 +117,21 @@ func (r Repository) FindProjectByTokenIDs(tokenIds []string) ([]*entity.Projects
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), bson.D{{"txhash", txHash}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) FindProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
@@ -407,13 +422,36 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 	return resp, nil
 }
 
+func (r Repository) GetAllRawProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
+	confs := []entity.Projects{}
+	resp := &entity.Pagination{}
+	f := r.FilterProjectRaw(filter)
+	s := r.SortProjects()
+	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Result = confs
+	resp.Page = p.Pagination.Page
+	resp.Total = p.Pagination.Total
+	resp.PageSize = filter.Limit
+	return resp, nil
+}
+
 func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
-	f := bson.M{}
+	f := r.FilterProjectRaw(filter)
 	f["isSynced"] = true
 	//f[utils.KEY_DELETED_AT] = nil
 
 	//f["isHidden"] = false
 
+	return f
+}
+
+func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
+	f := bson.M{}
+	
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{
@@ -449,6 +487,40 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 		f["isHidden"] = *filter.IsHidden
 	}
 
+	if filter.IsSynced != nil {
+		f["isSynced"] = *filter.IsSynced
+	}
+
+	if filter.Status != nil {
+		f["status"] = *filter.Status
+	}
+	
+	if filter.TxHash != nil && *filter.TxHash != ""  {
+		f["txhash"] = *filter.TxHash
+	}
+	
+	if filter.TxHex != nil && *filter.TxHex != "" {
+		f["txHex"] = *filter.TxHex
+	}
+	
+	if filter.ContractAddress != nil && *filter.ContractAddress != ""  {
+		// f["contractAddress"] = strings.ToLower(*filter.ContractAddress)
+
+		f["contractAddress"] = bson.M{"$regex": primitive.Regex{
+			//Pattern:  *filter.WalletAddress,
+			Pattern: fmt.Sprintf(`^%s$`, *filter.ContractAddress),
+			Options: "i",
+		}}
+	}
+	
+	if filter.CommitTxHash != nil  {
+		f["commitTxHash"] = *filter.CommitTxHash
+	}
+	
+	if filter.RevealTxHash != nil && *filter.RevealTxHash != "" {
+		f["revealTxHash"] = *filter.RevealTxHash
+	}
+
 	if len(filter.CustomQueries) > 0 {
 		for key, query := range filter.CustomQueries {
 			f[key] = query
@@ -456,6 +528,8 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 	}
 
 	return f
+
+	
 }
 
 func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {
@@ -581,6 +655,11 @@ func (r Repository) SelectedProjectFields() bson.D {
 		{"ownerOf", 1},
 		{"ordinalsTx", 1},
 		{"inscribedBy", 1},
+		{"isSynced", 1},
+		{"txhash", 1},
+		{"txHex", 1},
+		{"commitTxHash", 1},
+		{"revealTxHash", 1},
 	}
 	return f
 }
@@ -1030,4 +1109,23 @@ func (r Repository) AggregateProjectsFloorPrice(projectIDs []string) ([]structur
 	}
 
 	return result, nil
+}
+
+func (r Repository) SetProjectIndex(projectID string, index int) error {
+	f := bson.D{
+		{Key: "tokenid", Value: projectID},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"index": index,
+		},
+	}
+
+	_, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), f, update)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
