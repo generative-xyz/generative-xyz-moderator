@@ -6,7 +6,7 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
-func (u Usecase) JobAution_GetListAuction() error {
+func (u Usecase) JobAuction_GetListAuction() error {
 	listMap, _ := u.EthClient.GetListDomainName(os.Getenv("AUCTION_CONTRACT")) // 0xB57BF9669186dCe8FbCe7E5EbeE41f210bb6a7Eb
 	if listMap != nil {
 		for _, v := range listMap {
