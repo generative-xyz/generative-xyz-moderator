@@ -88,7 +88,7 @@ func init() {
 
 // @title Generative.xyz APIs
 // @version 1.0.0
-// @description This is a sample server Autonomous devices management server.
+// @description This is a sample server Generative.
 
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header

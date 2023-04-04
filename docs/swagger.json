@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a sample server Autonomous devices management server.",
+        "description": "This is a sample server Generative.",
         "title": "Generative.xyz APIs",
         "contact": {},
         "version": "1.0.0"
@@ -3754,8 +3754,8 @@
                     },
                     {
                         "type": "string",
-                        "description": "contractAddress",
-                        "name": "contractAddress",
+                        "description": "walletAddress",
+                        "name": "walletAddress",
                         "in": "query"
                     },
                     {
