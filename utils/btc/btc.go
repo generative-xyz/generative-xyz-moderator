@@ -411,10 +411,10 @@ func batchStrings(values <-chan string, maxItems int) chan []string {
 func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMultiTx, []string, error) {
 	result := make(map[string]*GoBCYMultiTx)
 	var checkFailedTxs []string
-	checkFailedTxsMap := make(map[string]struct{})
+	// checkFailedTxsMap := make(map[string]struct{})
 	var respond []GoBCYMultiTx
 
-	var lock sync.Mutex
+	// var lock sync.Mutex
 	txChan := make(chan string)
 	go func() {
 		for _, tx := range txs {
@@ -428,7 +428,12 @@ func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMulti
 	for txList := range txsBatch {
 		txsBatchIdx++
 		query := strings.Join(txList, ";")
+		if len(txList) == 1 {
+			query += ";"
+		}
 		url := "https://api.blockcypher.com/v1/btc/main/txs/" + query + "&token=" + token
+
+		// fmt.Println("url==>", url)
 
 		req, _ := http.NewRequest("GET", url, nil)
 
@@ -443,41 +448,48 @@ func CheckTxMultiBlockcypher(txs []string, token string) (map[string]*GoBCYMulti
 
 		if res.StatusCode != http.StatusOK {
 
-			if res.StatusCode == 429 {
-				return nil, nil, errors.New("rate_limit") // do not remove/update
-			}
-			return nil, nil, errors.Errorf("CheckTxMultiBlockcypher Response status %d", res.StatusCode)
+			// if res.StatusCode == 429 {
+			// 	return nil, nil, errors.New("rate_limit") // do not remove/update
+			// }
+			// return nil, nil, errors.Errorf("CheckTxMultiBlockcypher Response status %d", res.StatusCode)
+
+			// continue
 		}
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return nil, nil, err
+			// return nil, nil, err
+			fmt.Println("err2: ", err)
+			continue
 		}
 
 		err = json.Unmarshal(body, &respond)
 		if err != nil {
 			err = fmt.Errorf("Unmarshal response error: %v", err)
-			return nil, nil, err
+			fmt.Println("err3: ", err)
+			// return nil, nil, err
+			continue
 		}
-		lock.Lock()
+		// lock.Lock()
+		fmt.Println("len(respond)", len(respond))
 		for _, txdetail := range respond {
 			if txdetail.Hash != "" {
 				result[txdetail.Hash] = &txdetail
 			}
 		}
-		lock.Unlock()
+		// lock.Unlock()
 		time.Sleep(1 * time.Second)
 	}
 
-	for _, tx := range txs {
-		if _, exist := result[tx]; !exist {
-			checkFailedTxsMap[tx] = struct{}{}
-		}
-	}
+	// for _, tx := range txs {
+	// 	if _, exist := result[tx]; !exist {
+	// 		checkFailedTxsMap[tx] = struct{}{}
+	// 	}
+	// }
 
-	for tx, _ := range checkFailedTxsMap {
-		checkFailedTxs = append(checkFailedTxs, tx)
-	}
+	// for tx, _ := range checkFailedTxsMap {
+	// 	checkFailedTxs = append(checkFailedTxs, tx)
+	// }
 
 	return result, checkFailedTxs, nil
 }
@@ -741,6 +753,10 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 
 		addressesStr := strings.Join(addressList[:], ";")
 
+		if len(addressList) == 1 {
+			addressesStr += ";"
+		}
+
 		fmt.Println("get address: ", addressesStr)
 
 		url := fmt.Sprintf("%s/%s?limit=1&unspentOnly=true&includeScript=false&token=%s", bs.chainEndpoint, addressesStr, bs.bcyToken)
@@ -753,7 +769,8 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 
 		if err != nil {
 			fmt.Println("BTC get UTXO failed", addressesStr, err.Error())
-			return balanceMap, err
+			// return balanceMap, err
+			continue
 		}
 
 		client := &http.Client{}
@@ -775,10 +792,11 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 
 		if res.StatusCode != http.StatusOK {
 
-			if res.StatusCode == 429 {
-				return balanceMap, errors.New("rate_limit")
-			}
-			return balanceMap, errors.New("GetUTXO Response status != 200")
+			// if res.StatusCode == 429 {
+			// 	return balanceMap, errors.New("rate_limit")
+			// }
+			// return balanceMap, errors.New("GetUTXO Response status != 200")
+			// continue
 		}
 
 		body, err := ioutil.ReadAll(res.Body)
@@ -786,7 +804,8 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 		json.Unmarshal(body, &result)
 		if err != nil {
 			fmt.Println("Read body failed", err.Error())
-			return balanceMap, errors.New("Read body failed")
+			// return balanceMap, errors.New("Read body failed")
+			continue
 		}
 
 		// convert to map:
