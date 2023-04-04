@@ -1152,7 +1152,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1186,7 +1186,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             },
@@ -1227,7 +1227,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1315,7 +1315,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1441,7 +1441,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -1978,7 +1978,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2014,7 +2014,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -2374,12 +2374,7 @@
                             "$ref": "#/definitions/request.CompressImageReq"
                         }
                     }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
+                ]
             }
         },
         "/inscribe/info/{ID}": {
@@ -2552,7 +2547,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": ""
                     }
                 }
             }
@@ -3463,6 +3458,18 @@
                         "in": "path"
                     },
                     {
+                        "type": "boolean",
+                        "description": "status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isSynced",
+                        "name": "isSynced",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "limit",
                         "name": "limit",
@@ -3652,7 +3659,46 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
                 "description": "Create projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ETH Project"
+                ],
+                "summary": "Create project",
+                "parameters": [
+                    {
+                        "description": "Create eth-project request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateETHProjectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/all": {
+            "get": {
+                "description": "get all projects without project's status",
                 "consumes": [
                     "application/json"
                 ],
@@ -3662,16 +3708,97 @@
                 "tags": [
                     "Project"
                 ],
-                "summary": "Create project",
+                "summary": "get all projects",
                 "parameters": [
                     {
-                        "description": "Create profile request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateProjectReq"
-                        }
+                        "type": "string",
+                        "description": "Filter project via contract address",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter project via category ids",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "txHash",
+                        "name": "txHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "commitTxHash",
+                        "name": "commitTxHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "txHex",
+                        "name": "txHex",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "revealTxHash",
+                        "name": "revealTxHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress",
+                        "name": "contractAddress",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isSynced",
+                        "name": "isSynced",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "isHidden",
+                        "name": "isHidden",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "newest, oldest, priority-asc, priority-desc, trending-score",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The cursor returned in the previous response (used for getting the next page).",
+                        "name": "cursor",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4162,6 +4289,54 @@
                         "type": "string",
                         "description": "token ID",
                         "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{contractAddress}/tx-hash/{txHash}": {
+            "put": {
+                "description": "Update project's hash via txHasg",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Update project's hash",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/structure.UpdateProjectHash"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "contract adress",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "txHash adress",
+                        "name": "txHash",
                         "in": "path",
                         "required": true
                     }
@@ -5722,6 +5897,9 @@
                 "closeMintUnixTimestamp": {
                     "type": "integer"
                 },
+                "commitTxHash": {
+                    "type": "string"
+                },
                 "completeTime": {
                     "type": "integer"
                 },
@@ -5877,6 +6055,9 @@
                         "type": "string"
                     }
                 },
+                "revealTxHash": {
+                    "type": "string"
+                },
                 "royalty": {
                     "type": "integer"
                 },
@@ -5952,6 +6133,12 @@
                     "items": {
                         "$ref": "#/definitions/entity.TraitStat"
                     }
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "txHex": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -6109,6 +6296,9 @@
                 },
                 "project_id_int": {
                     "type": "integer"
+                },
+                "seed": {
+                    "type": "string"
                 },
                 "source": {
                     "type": "string"
@@ -6562,6 +6752,134 @@
                 }
             }
         },
+        "request.CreateETHProjectReq": {
+            "type": "object",
+            "properties": {
+                "animationURL": {
+                    "type": "string"
+                },
+                "captureImageTime": {
+                    "type": "integer"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "closeMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "commitTxHash": {
+                    "type": "string"
+                },
+                "creatorAddrr": {
+                    "type": "string"
+                },
+                "creatorAddrrBTC": {
+                    "type": "string"
+                },
+                "creatorName": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "isFullChain": {
+                    "type": "boolean"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "limitMintPerProcess": {
+                    "type": "integer"
+                },
+                "limitSupply": {
+                    "type": "integer"
+                },
+                "maxSupply": {
+                    "type": "integer"
+                },
+                "mintPrice": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openMintUnixTimestamp": {
+                    "type": "integer"
+                },
+                "reserveMintLimit": {
+                    "type": "integer"
+                },
+                "reserveMintPrice": {
+                    "type": "string"
+                },
+                "reservers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "revealTxHash": {
+                    "type": "string"
+                },
+                "royalty": {
+                    "type": "integer"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "socialDiscord": {
+                    "type": "string"
+                },
+                "socialInstagram": {
+                    "type": "string"
+                },
+                "socialMedium": {
+                    "type": "string"
+                },
+                "socialTwitter": {
+                    "type": "string"
+                },
+                "socialWeb": {
+                    "type": "string"
+                },
+                "styles": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thirdPartyScripts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "tokenDescription": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "txHex": {
+                    "type": "string"
+                },
+                "zipLink": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateEthWalletAddressReq": {
             "type": "object",
             "properties": {
@@ -6645,29 +6963,6 @@
                     "type": "string"
                 },
                 "group": {
-                    "type": "string"
-                }
-            }
-        },
-        "request.CreateProjectReq": {
-            "type": "object",
-            "properties": {
-                "categories": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "contractAddress": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tokenID": {
                     "type": "string"
                 }
             }
@@ -7412,6 +7707,9 @@
                 "project": {
                     "$ref": "#/definitions/response.ProjectResp"
                 },
+                "seed": {
+                    "type": "string"
+                },
                 "sell_verified": {
                     "type": "boolean"
                 },
@@ -7695,6 +7993,9 @@
                 "isReviewing": {
                     "type": "boolean"
                 },
+                "isSynced": {
+                    "type": "boolean"
+                },
                 "itemDesc": {
                     "type": "string"
                 },
@@ -7815,6 +8116,14 @@
                     "items": {
                         "$ref": "#/definitions/response.TraitStat"
                     }
+                },
+                "txHash": {
+                    "description": "art by generative code or html file",
+                    "type": "string"
+                },
+                "txHex": {
+                    "description": "art by generative code or html file",
+                    "type": "string"
                 },
                 "whiteListEthContracts": {
                     "type": "array",
@@ -8116,6 +8425,23 @@
                     "type": "string"
                 },
                 "price": {
+                    "type": "string"
+                }
+            }
+        },
+        "structure.UpdateProjectHash": {
+            "type": "object",
+            "properties": {
+                "commitTxHash": {
+                    "type": "string"
+                },
+                "contractAddress": {
+                    "type": "string"
+                },
+                "revealTxHash": {
+                    "type": "string"
+                },
+                "txHash": {
                     "type": "string"
                 }
             }

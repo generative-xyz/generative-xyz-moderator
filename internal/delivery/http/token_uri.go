@@ -139,26 +139,27 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
-	aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
-	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
-	for _, i := range aresp {
-		if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
-			resp.OrdinalsData = &response.OrdinalsData{
-				Sat:         i.Inscription.Sat,
-				ContentType: i.Inscription.ContentType,
-				Timestamp:   i.Inscription.Timestamp,
-				Block:       i.Inscription.GenesisHeight,
+	if helpers.IsOrdinalProject(token.TokenID) {
+		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
+		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.AlgoliaSearchInscription", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		} else {
+			for _, i := range aresp {
+				if i.Inscription != nil && i.Inscription.ObjectId == token.TokenID {
+					resp.OrdinalsData = &response.OrdinalsData{
+						Sat:         i.Inscription.Sat,
+						ContentType: i.Inscription.ContentType,
+						Timestamp:   i.Inscription.Timestamp,
+						Block:       i.Inscription.GenesisHeight,
+					}
+					break
+				}
 			}
-			break
 		}
 	}
 
@@ -400,6 +401,8 @@ func (h *httpDelivery) TokensOfAProfile(w http.ResponseWriter, r *http.Request) 
 // @Accept  json
 // @Produce  json
 // @Param walletAddress path string false "Filter project via wallet address"
+// @Param status query bool false "status"
+// @Param isSynced query bool false "isSynced"
 // @Param limit query int false "limit"
 // @Param cursor query string false "The cursor returned in the previous response (used for getting the next page)."
 // @Success 200 {object} response.JsonResponse{}
@@ -418,9 +421,26 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	statusStr := r.URL.Query().Get("status")
+	isSyncedStr := r.URL.Query().Get("isSynced")
+
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
+
+	if statusStr != "" {
+		status, err := strconv.ParseBool(statusStr)
+		if err == nil {
+			f.Status = &status
+		}
+	}
+
+	if isSyncedStr != "" {
+		isSynced, err := strconv.ParseBool(isSyncedStr)
+		if err == nil {
+			f.IsSynced = &isSynced
+		}
+	}
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
@@ -556,7 +576,7 @@ func (h *httpDelivery) getTokens(f structure.FilterTokens) (*response.Pagination
 
 		listingInfo, err := h.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID(resp.TokenID)
 		if err != nil {
-			logger.AtLog.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID",zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokens.Usecase.Repo.GetDexBTCListingOrderPendingByInscriptionID", zap.Any("resp.TokenID", resp.TokenID), zap.Error(err))
 		} else {
 			if listingInfo.CancelTx == "" {
 				resp.Buyable = true
@@ -785,6 +805,10 @@ func (h *httpDelivery) tokenToResp(input *entity.TokenUri) (*response.InternalTo
 
 	resp.InscriptionIndex = input.InscriptionIndex
 	resp.OrderInscriptionIndex = input.OrderInscriptionIndex
+	resp.Seed = input.TokenID
+	if !strings.HasSuffix(resp.Seed, "i0") {
+		resp.Seed = input.Seed
+	}
 
 	//resp.Thumbnail = fmt.Sprintf("%s/%s/%s/%s",os.Getenv("DOMAIN"), "api/thumbnail", input.ContractAddress, input.TokenID)
 

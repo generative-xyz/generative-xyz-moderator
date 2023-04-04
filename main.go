@@ -10,9 +10,13 @@ import (
 
 	"go.uber.org/zap"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/delegate"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/redisv9"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gorilla/mux"
 	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
@@ -22,6 +26,7 @@ import (
 	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
 	httpHandler "rederinghub.io/internal/delivery/http"
 	"rederinghub.io/internal/delivery/pubsub"
+	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -41,6 +46,7 @@ var conf *config.Config
 var logger _logger.Ilogger
 var mongoConnection connections.IConnection
 var ethClient *blockchain.Blockchain
+var tcClient *blockchain.TcNetwork
 
 func init() {
 	c, err := config.NewConfig()
@@ -66,6 +72,12 @@ func init() {
 	ethClient, err = blockchain.NewBlockchain(c.BlockchainConfig)
 	if err != nil {
 		l.AtLog().Logger.Error("Cannot connect ethClient ", zap.Error(err))
+		panic(err)
+	}
+
+	tcClient, err = blockchain.NewTcNetwork(c.BlockchainConfig)
+	if err != nil {
+		log.Println("Cannot connect to tc client ", err)
 		panic(err)
 	}
 
@@ -128,6 +140,26 @@ func startServer() {
 		_logger.AtLog.Logger.Error("error initializing delegate service", zap.Error(err))
 		return
 	}
+
+	// init tc client
+	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing tcClient service", zap.Error(err))
+		return
+	}
+	tcClients := eth.NewClient(tcClientWrap)
+
+	// init eth client
+	ethClientWrap, err := ethclient.Dial(conf.BlockchainConfig.ETHEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing ethClients service", zap.Error(err))
+		return
+	}
+	ethClients := eth.NewClient(ethClientWrap)
+
+	// init blockcypher service:
+	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
+
 	// hybrid auth
 	auth2Service := oauth2service.NewAuth2()
 	g := global.Global{
@@ -142,6 +174,7 @@ func startServer() {
 		MoralisNFT:          *moralis,
 		CovalentNFT:         *covalent,
 		Blockchain:          *ethClient,
+		TcNetwotkchain:      *tcClient,
 		Slack:               *slack,
 		DiscordClient:       discordclient.NewCLient(),
 		Pubsub:              rPubsub,
@@ -149,6 +182,11 @@ func startServer() {
 		OrdServiceDeveloper: ordForDeveloper,
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
+
+		EthClient: ethClients, // for eth chain
+		TcClient:  tcClients,  // for tc chain
+		BsClient:  bsClient,   // for btc/blockcypher service
+
 	}
 
 	repo, err := repository.NewRepository(&g)
@@ -171,7 +209,7 @@ func startServer() {
 
 	uc, err := usecase.NewUsecase(&g, *repo)
 	if err != nil {
-		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase",  zap.Error(err))
+		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
 
@@ -194,6 +232,12 @@ func startServer() {
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
+	}
+
+	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
+	servers["txconsumer"] = delivery.AddedServer{
+		Server:  txConsumer,
+		Enabled: conf.TxConsumerConfig.Enabled,
 	}
 
 	// job init:

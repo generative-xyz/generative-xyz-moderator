@@ -111,6 +111,14 @@ type Projects struct {
 	InscribedBy              string             `bson:"inscribedBy"`
 	HtmlFile                 string             `bson:"htmlFile"`
 	LimitMintPerProcess      int                `bson:"limitMintPerProcess"`
+	TxHash                   string             `bson:"txhash"`
+	TxHex                    string             `bson:"txHex"`
+	CommitTxHash             string             `bson:"commitTxHash"`
+	RevealTxHash             string             `bson:"revealTxHash"`
+}
+
+func (p *Projects) IsMintTC() bool {
+	return p.TokenIDInt < 1000000
 }
 
 type ProjectsHaveMinted struct {
@@ -144,13 +152,20 @@ type ProjectMintingInfo struct {
 
 type FilterProjects struct {
 	BaseFilters
-	WalletAddress *string
-	Name          *string
-	IsHidden      *bool
-	CategoryIds   []string
-	TokenIds      []string
-	Ids           []string
-	CustomQueries map[string]bson.M
+	WalletAddress   *string
+	ContractAddress *string
+	Name            *string
+	IsHidden        *bool
+	Status          *bool
+	IsSynced        *bool
+	CategoryIds     []string
+	TokenIds        []string
+	Ids             []string
+	CustomQueries   map[string]bson.M
+	TxHash          *string
+	TxHex           *string
+	CommitTxHash    *string
+	RevealTxHash    *string
 }
 
 func (u Projects) TableName() string {

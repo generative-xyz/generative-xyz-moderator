@@ -9,6 +9,7 @@ import (
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/delegate"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/logger"
@@ -46,6 +47,8 @@ type Usecase struct {
 	gData               gData
 	DelegateService     *delegate.Service
 	RedisV9             redisv9.Client
+
+	TcClient, EthClient *eth.Client
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -67,6 +70,10 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.OrdServiceDeveloper = global.OrdServiceDeveloper
 	u.DelegateService = global.DelegateService
 	u.RedisV9 = global.RedisV9
+
+	u.TcClient = global.TcClient
+	u.EthClient = global.EthClient
+
 	return u, nil
 }
 

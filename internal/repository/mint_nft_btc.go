@@ -111,6 +111,24 @@ func (r Repository) ListMintNftBtcByStatus(statuses []entity.StatusMint) ([]enti
 
 	return resp, nil
 }
+func (r Repository) ListMintNftBtcByStatusAndPlatform(statuses []entity.StatusMint, platform string) ([]entity.MintNftBtc, error) {
+	resp := []entity.MintNftBtc{}
+	filter := bson.M{
+		"status":   bson.M{"$in": statuses},
+		"platform": bson.M{"$eq": platform},
+	}
+
+	cursor, err := r.DB.Collection(utils.MINT_NFT_BTC).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
 
 func (r Repository) UpdateMintNftBtc(model *entity.MintNftBtc) (*mongo.UpdateResult, error) {
 
@@ -303,5 +321,75 @@ func (r Repository) FindMintNftBtcByInscriptionID(inscriptionID string) (*entity
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	return resp, nil
+}
+
+// wallet:
+func (r Repository) FindEvmTempWalletsByID(uuid string) (*entity.MintNftBtc, error) {
+
+	resp := &entity.MintNftBtc{}
+	usr, err := r.FilterOne(entity.EvmTempWallets{}.TableName(), bson.D{{"uuid", uuid}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) InsertEvmTempWallets(data *entity.EvmTempWallets) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r Repository) GetMintFreeTempAddress() (*entity.EvmTempWallets, error) {
+	resp := &entity.EvmTempWallets{}
+	usr, err := r.FilterOne(entity.EvmTempWallets{}.TableName(), bson.D{{"status", entity.StatusEvmTempWallets_Free}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (r Repository) UpdateTcTempWalletAddress(address string, status entity.StatusEvmTempWallets) error {
+	filter := bson.D{
+		{Key: "walletAddress", Value: address},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status": status, // 0 free, 1 busy
+		},
+	}
+	_, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) ListEvmTempWallets() ([]entity.EvmTempWallets, error) {
+	resp := []entity.EvmTempWallets{}
+	filter := bson.M{}
+
+	cursor, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
 	return resp, nil
 }

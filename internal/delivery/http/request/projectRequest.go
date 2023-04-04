@@ -4,11 +4,13 @@ type ReportProjectReq struct {
 	OriginalLink string `json:"originalLink"`
 }
 
-type CreateProjectReq struct {
-	ContractAddress string   `json:"contractAddress"`
-	TokenID         string   `json:"tokenID"`
-	Tags            []string `json:"tags"`
-	Categories      []string `json:"categories"`
+type CreateETHProjectReq struct {
+	CreateBTCProjectReq
+	TxHash       string  `json:"txHash"`
+	TxHex        string  `json:"txHex"`
+	ZipLink      *string `json:"zipLink"`
+	CommitTxHash *string `bson:"commitTxHash"`
+	RevealTxHash *string `bson:"revealTxHash"`
 }
 
 type CreateBTCProjectReq struct {

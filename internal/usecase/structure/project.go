@@ -2,11 +2,18 @@ package structure
 
 type FilterProjects struct {
 	BaseFilters
-	WalletAddress *string
-	Name          *string
-	CategoryIds   []string
-	IsHidden      *bool
-	Ids           []string
+	WalletAddress   *string
+	ContractAddress *string
+	TxHash          *string
+	TxHex           *string
+	Name            *string
+	CategoryIds     []string
+	IsHidden        *bool
+	Status          *bool
+	IsSynced        *bool
+	Ids             []string
+	CommitTxHash    *string
+	RevealTxHash    *string
 }
 
 type FilterProposal struct {
@@ -24,10 +31,11 @@ type FilterProposalVote struct {
 }
 
 type CreateProjectReq struct {
-	ContractAddress string   `json:"contractAddress"`
-	TokenID         string   `json:"tokenID"`
-	Tags            []string `json:"tags"`
-	Categories      []string `json:"categories"`
+	CreateBtcProjectReq
+	TxHash       string  `json:"txHash"`
+	TxHex        string  `json:"txHex"`
+	ZipLink      *string `json:"ziplink"`
+	RevealTxHash *string `json:"revealTxHash"`
 }
 
 type CreateBtcProjectReq struct {
@@ -109,6 +117,13 @@ type UpdateProjectReq struct {
 	TokenID        string `json:"tokenID"`
 	Priority       *int   `json:"priority"`
 	ContracAddress string `json:"contractAddress"`
+}
+
+type UpdateProjectHash struct {
+	ContractAddress *string `json:"contractAddress"`
+	TxHash          *string `json:"txHash"`
+	CommitTxHash    *string `json:"commitTxHash"`
+	RevealTxHash    *string `json:"revealTxHash"`
 }
 
 type GetProjectReq struct {

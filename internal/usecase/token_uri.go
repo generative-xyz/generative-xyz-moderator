@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/contracts/bfs"
 
 	"github.com/chromedp/chromedp"
 	"github.com/ethereum/go-ethereum/common"
@@ -78,8 +81,13 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 
 	imageURL := token.AnimationURL
 	if len(imageURL) == 0 {
+		parsedImage := ""
+		if token.ParsedImage != nil {
+			parsedImage = *token.ParsedImage
+		}
+
 		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
+			ParsedImage: parsedImage,
 			Thumbnail:   token.Thumbnail,
 			Traits:      token.ParsedAttributes,
 			TraitsStr:   token.ParsedAttributesStr,
@@ -176,11 +184,20 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
 	logger.AtLog.Logger.Info("GetToken", zap.Any("req", zap.Any("req)", req)))
-	//contractAddress := strings.ToLower(req.ContractAddress)
 	tokenID := strings.ToLower(req.TokenID)
-
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
+		if !helpers.IsOrdinalProject(req.TokenID) {
+			//this was used for ETH (old flow), try to get DB
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				token, err2 := u.getTokenInfo(req)
+				if err2 != nil {
+					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err2))
+					return nil, err2
+				}
+				return token, nil
+			}
+		}
 		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
@@ -196,42 +213,49 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			tokenUri.Project.TokenId = inscribeBtc.TokenId
 		}
 	}
-	client := resty.New()
-	resp := &response.SearhcInscription{}
-	_, err = client.R().
-		EnableTrace().
-		SetResult(&resp).
-		Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
-	logger.AtLog.Logger.Info("incriptionData", zap.Any("data", zap.Any("resp)", resp)))
-	if err != nil {
-		logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
-		// return nil, err
-	}
 
-	tokenUri.Owner = nil
-	if resp.Address != "" {
-		tokenUri.OwnerAddr = resp.Address
-		user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
-		if err == nil {
-			tokenUri.Owner = user
+	if helpers.IsOrdinalProject(req.TokenID) {
+		client := resty.New()
+		resp := &response.SearhcInscription{}
+		_, err = client.R().
+			EnableTrace().
+			SetResult(&resp).
+			Get(fmt.Sprintf("%s/inscription/%s", u.Config.GenerativeExplorerApi, tokenUri.TokenID))
+		logger.AtLog.Logger.Info("incriptionData", zap.Any("data", zap.Any("resp)", resp)))
+		if err != nil {
+			logger.AtLog.Logger.Error("GetToken.Inscription", zap.Any("req", req), zap.String("action", "Inscription"), zap.Error(err))
+		} else {
+			tokenUri.Owner = nil
+			if resp.Address != "" {
+				tokenUri.OwnerAddr = resp.Address
+				user, err := u.Repo.FindUserByBtcAddressTaproot(resp.Address)
+				if err == nil {
+					tokenUri.Owner = user
+				}
+			}
+		}
+	} else {
+		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
+		if err1 == nil {
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
+		} else {
+			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
+			if err2 != nil {
+				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+			} else {
+				if addr != nil {
+					if tokenUri.OwnerAddr != addr.String() {
+						tokenUri.Owner = nil
+						tokenUri.OwnerAddr = addr.String()
+						user, err := u.Repo.FindUserByBtcAddressTaproot(addr.String())
+						if err == nil && user != nil {
+							tokenUri.Owner = user
+						}
+					}
+				}
+			}
 		}
 	}
-
-	//this was used for ETH (old flow)
-	// if err != nil {
-	// 	logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-	// 	if errors.Is(err, mongo.ErrNoDocuments) {
-	// 		token, err := u.getTokenInfo(req)
-	// 		if err != nil {
-	// 			logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
-	// 			return nil, err
-	// 		}
-	// 		return token, nil
-	// 	} else {
-	// 		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
-	// 		return nil, err
-	// 	}
-	// }
 
 	go func() {
 		if tokenUri.Thumbnail == "" {
@@ -279,7 +303,6 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	logger.AtLog.Logger.Info("req", zap.Any("req", req))
 	addr := common.HexToAddress(req.ContractAddress)
-	//fAddr := strings.ToLower(req.ContractAddress)
 	isUpdated := false
 
 	dataObject, err := u.Repo.FindTokenByTokenID(req.TokenID)
@@ -299,7 +322,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.EthDialer()
+	client, err := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
 		return nil, err
@@ -329,6 +352,9 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	go func(tokenDataChan chan structure.TokenDataChan, parentAddr common.Address, tokenID string) {
 		var err error
 		tok := &entity.TokenUri{}
+		fromBFS := false
+
+		tokeBFS := entity.TokenFromBase64{}
 
 		defer func() {
 			tokenDataChan <- structure.TokenDataChan{
@@ -341,6 +367,29 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "getNftProjectTokenUri"), zap.Error(err))
 			return
+		}
+		seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
+		if err != nil {
+			u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+			return
+		}
+		tok.Seed = *seed
+
+		if strings.Index(*tokenUriData, "data:application/json;base64,") == -1 {
+			if strings.Index(*tokenUriData, "bfs://") > -1 {
+				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
+				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, tok.Seed)
+				if err != nil {
+					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
+					return
+				}
+
+				fromBFS = true
+
+			} else {
+				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
+				return
+			}
 		}
 
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
@@ -357,11 +406,56 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		stringData = strings.ReplaceAll(stringData, "\r", "\\r")
 		stringData = strings.ReplaceAll(stringData, "\t", "\\t")
 
+		if fromBFS {
+			err = json.Unmarshal([]byte(stringData), &tokeBFS)
+			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+				return
+			}
+
+			imageURL := ""
+			imageArr := strings.Split(tokeBFS.Image, ",")
+			if len(imageArr) == 2 {
+				ext := helpers.FileType(imageArr[0])
+				fName := fmt.Sprintf("%s%s", tokenID, ext)
+				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
+				if err == nil {
+					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+				}
+			}
+
+			tok.Name = tokeBFS.Name
+			tok.Description = tokeBFS.Description
+			tok.Image = imageURL
+			tok.Thumbnail = imageURL
+			tok.ParsedImage = &imageURL
+			tok.AnimationURL = tokeBFS.AnimationURL
+			now := time.Now().UTC()
+			tok.ThumbnailCapturedAt = &now
+
+			attrs := []entity.TokenUriAttr{}
+			for _, attr := range tokeBFS.Attributes {
+				tmp := entity.TokenUriAttr{
+					TraitType: attr.TraitType,
+					Value:     attr.Value,
+				}
+
+				attrs = append(attrs, tmp)
+			}
+
+			tok.ParsedAttributes = attrs
+			tok.ParsedAttributesStr = tokeBFS.Attributes
+			tok.Attributes = ""
+
+			return
+		}
 		err = json.Unmarshal([]byte(stringData), tok)
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
+
+		//TOD - upload the base64 image into GCS
 
 	}(tokendatachan, parentAddr, req.TokenID)
 
@@ -377,7 +471,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			}
 		}()
 
-		nftMintedTime, err = u.GetNftMintedTime(structure.GetNftMintedTimeReq{
+		nftMintedTime, err = u.GetNftMintedTime(client, structure.GetNftMintedTimeReq{
 			ContractAddress: genNFTAddr,
 			TokenID:         req.TokenID,
 		})
@@ -393,10 +487,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
 
-	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress))
-	logger.AtLog.Logger.Info("dataObject.Creator", zap.Any("dataObject.Creator", dataObject.Creator))
-	logger.AtLog.Logger.Info("dataObject.TokenID", zap.Any("dataObject.TokenID", dataObject.TokenID))
-	logger.AtLog.Logger.Info("dataObject.ProjectID", zap.Any("dataObject.ProjectID", dataObject.ProjectID))
+	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.Any("dataObject.TokenID", dataObject.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
@@ -420,8 +511,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 			ownerAddr := strings.ToLower(nft.Owner)
 
-			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old", zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr))
-			logger.AtLog.Logger.Info("dataObject.OwnerAddr.new", zap.Any("ownerAddr", ownerAddr))
+			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old", zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr), zap.Any("ownerAddr", ownerAddr))
 			owner, err := u.Repo.FindUserByWalletAddress(ownerAddr)
 			if err != nil {
 				logger.AtLog.Logger.Error("err", zap.Error(err))
@@ -441,26 +531,54 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 	} else {
-		logger.AtLog.Logger.Error(" u.GetNftMintedTime", zap.Error(mftMintedTime.Err))
+		logger.AtLog.Logger.Error("u.GetNftMintedTime", zap.Error(mftMintedTime.Err))
 	}
 
 	tokenFChan := <-tokendatachan
 	if tokenFChan.Err == nil {
 		dataObject.Name = tokenFChan.Data.Name
+		if dataObject.Name == "" {
+			dataObject.Name = dataObject.TokenID
+		}
 		dataObject.Description = tokenFChan.Data.Description
-		dataObject.Image = tokenFChan.Data.Image
+
+		dataObject.Thumbnail = tokenFChan.Data.Image
+		if tokenFChan.Data.Image != "" {
+			dataObject.Image = tokenFChan.Data.Image
+		}
+
+		if tokenFChan.Data.Thumbnail != "" {
+			dataObject.Thumbnail = tokenFChan.Data.Thumbnail
+		}
+
+		if tokenFChan.Data.ParsedImage != nil && *tokenFChan.Data.ParsedImage != "" {
+			dataObject.ParsedImage = tokenFChan.Data.ParsedImage
+		}
+
+		if tokenFChan.Data.ThumbnailCapturedAt != nil {
+			dataObject.ThumbnailCapturedAt = tokenFChan.Data.ThumbnailCapturedAt
+		}
+
 		dataObject.AnimationURL = tokenFChan.Data.AnimationURL
 		dataObject.Attributes = tokenFChan.Data.Attributes
-		dataObject.Image = tokenFChan.Data.Image
+		dataObject.Seed = tokenFChan.Data.Seed
+
+		if len(tokenFChan.Data.ParsedAttributes) > 0 {
+			dataObject.ParsedAttributes = tokenFChan.Data.ParsedAttributes
+		}
+
+		if len(tokenFChan.Data.ParsedAttributesStr) > 0 {
+			dataObject.ParsedAttributesStr = tokenFChan.Data.ParsedAttributesStr
+		}
 
 	} else {
-		logger.AtLog.Logger.Error("tokenFChan.Err",zap.Error(tokenFChan.Err))
+		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), zap.Bool("true",true))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), zap.Bool("true", true))
 
 	isAddress := func(s *string) bool {
 		if s == nil {
@@ -470,7 +588,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	if dataObject.MinterAddress != nil {
-		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), zap.Bool("true",true))
+		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), zap.Bool("true", true))
 	}
 
 	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
@@ -502,6 +620,56 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	return dataObject, nil
 }
 
+func (u Usecase) getBFSData(client *ethclient.Client, bfsContract common.Address, gNft common.Address, seed string) (*string, error) {
+	bfsC, err := bfs.NewBfs(bfsContract, client)
+	if err != nil {
+		return nil, err
+	}
+	/*value, err := bfsC.Count(nil, gNft, seed)
+	if err != nil {
+		return nil, err
+	}*/
+
+	var bytesArr []byte
+	//if value.Cmp(big.NewInt(0)) > 0 {
+	nextChunks := big.NewInt(0)
+	for {
+		bytes, nextChunks, err := bfsC.Load(nil, gNft, seed, nextChunks)
+		if err != nil {
+			return nil, err
+		}
+		bytesArr = append(bytesArr, bytes...)
+		if nextChunks.Int64() == -1 {
+			break
+		}
+	}
+	//}
+
+	if len(bytesArr) > 0 {
+		result := "data:application/json;base64," + helpers.Base64Encode(bytesArr)
+		return &result, nil
+	}
+	return nil, errors.New("Invalid bfs data")
+}
+
+func (u Usecase) getSeedFromTokenId(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
+	gNft, err := generative_nft_contract.NewGenerativeNftContract(contractAddr, client)
+	if err != nil {
+		return nil, err
+	}
+	tokenID := new(big.Int)
+	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
+	if !ok {
+		return nil, errors.New("cannot convert tokenID")
+	}
+	val, err := gNft.TokenIdToHash(nil, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	result := "0x" + strings.ToUpper(hex.EncodeToString(val[:]))
+	return &result, nil
+}
+
 func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr common.Address, tokenIDStr string) (*string, error) {
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(tokenIDStr, 10)
@@ -514,7 +682,7 @@ func (u Usecase) getNftProjectTokenUri(client *ethclient.Client, contractAddr co
 		return nil, err
 	}
 
-	value, err := gNft.TokenGenerativeURI(nil, tokenID)
+	value, err := gNft.TokenURI(nil, tokenID)
 	if err != nil {
 		return nil, err
 	}
@@ -665,16 +833,25 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
-		iResp, err := genService.Inscription(item.TokenID)
-		if err == nil && iResp != nil {
-			item.OwnerAddress = iResp.Address
-			if iResp.Address != item.Owner.WalletAddressBTCTaproot {
-				item.Owner = entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot: iResp.Address,
-					WalletAddress:           "",
-					DisplayName:             "",
-					Avatar:                  "",
+		if helpers.IsOrdinalProject(item.TokenID) {
+			iResp, err := genService.Inscription(item.TokenID)
+			if err == nil && iResp != nil {
+				item.OwnerAddress = iResp.Address
+				if iResp.Address != item.Owner.WalletAddressBTCTaproot {
+					item.Owner = entity.TokenURIListingOwner{
+						WalletAddressBTCTaproot: iResp.Address,
+						WalletAddress:           "",
+						DisplayName:             "",
+						Avatar:                  "",
+					}
 				}
+			}
+		} else {
+			item.Owner = entity.TokenURIListingOwner{
+				WalletAddressBTCTaproot: item.OnwerInternal.WalletAddressBTCTaproot,
+				WalletAddress:           item.OnwerInternal.WalletAddress,
+				DisplayName:             item.OnwerInternal.DisplayName,
+				Avatar:                  item.OnwerInternal.Avatar,
 			}
 		}
 
