@@ -29,9 +29,9 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	chromePath := "google-chrome"
 
-	if u.Config.ENV == "develop" {
-		chromePath = ""
-	}
+	// if u.Config.ENV == "develop" {
+	// 	chromePath = ""
+	// }
 
 	address, err := getFaucetPaymentInfo(url, chromePath, eCH)
 	fmt.Println("address, err: ", address, err)
@@ -85,7 +85,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath(""),          // uncomment on the server.
+		chromedp.ExecPath(chromePath),  // uncomment on the server.
 		chromedp.Flag("headless", eCH), // false => open chrome. true on the server
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
