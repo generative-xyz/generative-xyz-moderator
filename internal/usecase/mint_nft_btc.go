@@ -746,11 +746,11 @@ func (u Usecase) JobMint_MintNftBtc() error {
 		// check platform to mint:
 		if item.Platform == utils.PLATFORM_ORDINAL {
 
-			return u.MintNftViaOrdinal(&item, p)
+			u.MintNftViaOrdinal(&item, p)
 
 		} else if item.Platform == utils.PLATFORM_TC {
 
-			return u.MintNftViaTrustlessComputer(&item, p)
+			u.MintNftViaTrustlessComputer(&item, p)
 		}
 	}
 
