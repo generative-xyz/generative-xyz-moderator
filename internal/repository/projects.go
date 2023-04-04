@@ -504,10 +504,16 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 	}
 	
 	if filter.ContractAddress != nil && *filter.ContractAddress != ""  {
-		f["contractAddress"] = *filter.ContractAddress
+		// f["contractAddress"] = strings.ToLower(*filter.ContractAddress)
+
+		f["contractAddress"] = bson.M{"$regex": primitive.Regex{
+			//Pattern:  *filter.WalletAddress,
+			Pattern: fmt.Sprintf(`^%s$`, *filter.ContractAddress),
+			Options: "i",
+		}}
 	}
 	
-	if filter.CommitTxHash != nil && *filter.CommitTxHash != "" {
+	if filter.CommitTxHash != nil  {
 		f["commitTxHash"] = *filter.CommitTxHash
 	}
 	
