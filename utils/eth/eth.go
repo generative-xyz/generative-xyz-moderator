@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
+	"github.com/wealdtech/go-ens/v3"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 )
 
@@ -544,4 +545,64 @@ func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
 	}
 
 	return nil, nil
+}
+
+type AuctionCollectionBidder struct {
+	Bidder   string
+	IsWinner bool
+	Amount   string
+	Ens      string
+}
+
+// totalBids
+func (c *Client) GetListDomainName(contractAddress string) (map[string]AuctionCollectionBidder, error) {
+
+	// domain, err := ens.ReverseResolve(c.GetClient(), common.HexToAddress("0x5555763613a12D8F3e73be831DFf8598089d3dCa"))
+
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return nil, err
+	// }
+
+	// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), common.HexToAddress("0x5555763613a12D8F3e73be831DFf8598089d3dCa")))
+	// fmt.Println("domain: ", domain)
+
+	mapENS := make(map[string]AuctionCollectionBidder)
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := NewAuction(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	totalBids, err := contract.TotalBids(nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.TotalBids")
+	}
+	listResponse, err := contract.ListBids(nil, big.NewInt(0), totalBids)
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.ListBids")
+	}
+	for _, item := range listResponse {
+
+		fmt.Println("get ens for: ", item.Bidder.Hex())
+
+		domain, err := ens.ReverseResolve(c.GetClient(), item.Bidder)
+
+		if err != nil {
+			domain = ""
+		}
+		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
+
+		auctionCollectionBidder := AuctionCollectionBidder{
+			Bidder:   item.Bidder.Hex(),
+			IsWinner: item.IsWinner,
+			Amount:   item.Amount.String(),
+			Ens:      domain,
+		}
+
+		mapENS[item.Bidder.Hex()] = auctionCollectionBidder
+
+	}
+	return mapENS, nil
 }
