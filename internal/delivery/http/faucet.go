@@ -33,8 +33,8 @@ func (h *httpDelivery) requestFaucet(w http.ResponseWriter, r *http.Request) {
 
 		err = errors.New("the recaptcha is required.")
 		logger.AtLog.Logger.Error("h.requestFaucet", zap.String("err", err.Error()))
-		// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		// return
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
 	}
 
 	if len(h.Usecase.Config.CaptcharSecret) > 0 {
@@ -43,8 +43,8 @@ func (h *httpDelivery) requestFaucet(w http.ResponseWriter, r *http.Request) {
 		err = captcha.Verify(reqBody.RecaptchaResponse)
 		if err != nil {
 			logger.AtLog.Logger.Error("h.requestFaucet.recaptcha.Verify", zap.String("err", err.Error()))
-			// h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-			// return
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
 		}
 	}
 
