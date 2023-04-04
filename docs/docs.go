@@ -3769,8 +3769,8 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "contractAddress",
-                        "name": "contractAddress",
+                        "description": "walletAddress",
+                        "name": "walletAddress",
                         "in": "query"
                     },
                     {
@@ -8487,7 +8487,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "/rederinghub.io/v1",
 	Schemes:     []string{},
 	Title:       "Generative.xyz APIs",
-	Description: "This is a sample server Autonomous devices management server.",
+	Description: "This is a sample server Generative.",
 }
 
 type s struct{}
