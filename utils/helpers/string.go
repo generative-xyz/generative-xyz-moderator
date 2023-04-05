@@ -331,5 +331,8 @@ func FileType(fileType string) string {
 	str, err :=  mime.ExtensionsByType(fileType)
 	
 	_ = err
+	if str[0] == ".jpe" {
+		return str[1]
+	}
 	return str[0]
 }
