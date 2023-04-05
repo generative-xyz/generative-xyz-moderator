@@ -16,6 +16,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/wealdtech/go-ens/v3"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
+	"rederinghub.io/utils/eth/contract/auctionv1"
+	"rederinghub.io/utils/eth/contract/auctionv2"
 )
 
 type Client struct {
@@ -550,12 +552,15 @@ func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
 type AuctionCollectionBidder struct {
 	Bidder   string
 	IsWinner bool
-	Amount   string
+	Amount   *big.Int
 	Ens      string
+
+	Quantity  int
+	UnitPrice uint64
 }
 
 // totalBids
-func (c *Client) GetListDomainName(contractAddress string) (map[string]AuctionCollectionBidder, error) {
+func (c *Client) GetListBidV1(contractAddress string) (map[string]AuctionCollectionBidder, error) {
 
 	// domain, err := ens.ReverseResolve(c.GetClient(), common.HexToAddress("0x5555763613a12D8F3e73be831DFf8598089d3dCa"))
 
@@ -570,7 +575,50 @@ func (c *Client) GetListDomainName(contractAddress string) (map[string]AuctionCo
 	mapENS := make(map[string]AuctionCollectionBidder)
 
 	// Create a new instance of the contract with the given address and ABI
-	contract, err := NewAuction(common.HexToAddress(contractAddress), c.GetClient())
+	contract, err := auctionv1.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	totalBids, err := contract.TotalBids(nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.TotalBids")
+	}
+	listResponse, err := contract.ListBids(nil, big.NewInt(0), totalBids)
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.ListBids")
+	}
+	for _, item := range listResponse {
+
+		fmt.Println("get ens for: ", item.Bidder.Hex())
+
+		domain, err := ens.ReverseResolve(c.GetClient(), item.Bidder)
+
+		if err != nil {
+			domain = ""
+		}
+		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
+
+		auctionCollectionBidder := AuctionCollectionBidder{
+			Bidder:    item.Bidder.Hex(),
+			IsWinner:  item.IsWinner,
+			Amount:    item.Amount,
+			Ens:       domain,
+			Quantity:  1,
+			UnitPrice: item.Amount.Uint64(),
+		}
+
+		mapENS[item.Bidder.Hex()] = auctionCollectionBidder
+
+	}
+	return mapENS, nil
+}
+func (c *Client) GetListBidV2(contractAddress string) (map[string]AuctionCollectionBidder, error) {
+
+	mapENS := make(map[string]AuctionCollectionBidder)
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := auctionv2.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
 	if err != nil {
 		return nil, errors.Wrap(err, "NewGenerativeNftContract")
 	}
@@ -597,8 +645,11 @@ func (c *Client) GetListDomainName(contractAddress string) (map[string]AuctionCo
 		auctionCollectionBidder := AuctionCollectionBidder{
 			Bidder:   item.Bidder.Hex(),
 			IsWinner: item.IsWinner,
-			Amount:   item.Amount.String(),
-			Ens:      domain,
+			Amount:   item.BidderInfo.Amount,
+
+			UnitPrice: item.BidderInfo.UnitPrice,
+			Quantity:  int(item.BidderInfo.Quantity),
+			Ens:       domain,
 		}
 
 		mapENS[item.Bidder.Hex()] = auctionCollectionBidder
