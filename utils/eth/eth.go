@@ -577,16 +577,16 @@ func (c *Client) GetListBidV1(contractAddress string) (map[string]AuctionCollect
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := auctionv1.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
 	if err != nil {
-		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+		return mapENS, errors.Wrap(err, "NewGenerativeNftContract")
 	}
 
 	totalBids, err := contract.TotalBids(nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "contract.TotalBids")
+		return mapENS, errors.Wrap(err, "contract.TotalBids")
 	}
 	listResponse, err := contract.ListBids(nil, big.NewInt(0), totalBids)
 	if err != nil {
-		return nil, errors.Wrap(err, "contract.ListBids")
+		return mapENS, errors.Wrap(err, "contract.ListBids")
 	}
 	for _, item := range listResponse {
 
@@ -620,16 +620,16 @@ func (c *Client) GetListBidV2(contractAddress string) (map[string]AuctionCollect
 	// Create a new instance of the contract with the given address and ABI
 	contract, err := auctionv2.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
 	if err != nil {
-		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+		return mapENS, errors.Wrap(err, "NewGenerativeNftContract")
 	}
 
 	totalBids, err := contract.TotalBids(nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "contract.TotalBids")
+		return mapENS, errors.Wrap(err, "contract.TotalBids")
 	}
 	listResponse, err := contract.ListBids(nil, big.NewInt(0), totalBids)
 	if err != nil {
-		return nil, errors.Wrap(err, "contract.ListBids")
+		return mapENS, errors.Wrap(err, "contract.ListBids")
 	}
 	for _, item := range listResponse {
 
