@@ -90,6 +90,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	fromBlock := lastProcessedBlock + 1
+	fromBlock = int64(1759)
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
@@ -97,11 +98,12 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock+int64(c.BatchLogSize))))
+	toBlock = int64(1765)
+	
 	if toBlock < fromBlock {
 		fromBlock = toBlock
 	}
 	
-	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("currentBlockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Int64("lastProcessedBlock",lastProcessedBlock))
 	logs, err := c.Blockchain.GetEventLogs(*big.NewInt(fromBlock), *big.NewInt(toBlock), c.Addresses)
 	if err != nil {
 		logger.AtLog.Logger.Error("err.GetEventLogs", zap.String("err", err.Error()))
@@ -111,7 +113,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("currentBlockNumber", blockNumber.Int64()), zap.Int64("fromBlock", fromBlock), zap.Int64("toBlock", toBlock), zap.Int64("lastProcessedBlock",lastProcessedBlock), zap.Int("log.number", len(logs)))
 	for _, _log := range logs {
 		// marketplace logs
-		logger.AtLog.Logger.Info("resolveTransaction", zap.Any("_log.Address", _log.Address.String()))
+		
 		//MAKET PLACE
 		// if strings.ToLower(_log.Address.String()) == c.Config.MarketplaceEvents.Contract {
 		// 	topic := strings.ToLower(_log.Topics[0].String())

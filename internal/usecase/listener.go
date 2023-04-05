@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -172,6 +173,12 @@ func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	blockNumber := chainLog.BlockNumber
 	logger.AtLog.Logger.Info(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog))
 	topics := chainLog.Topics
+
+	if len(topics) != 4 {
+		err := errors.New("This log is not a creating project log")
+		logger.AtLog.Logger.Error(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog), zap.Error(err))
+		return 
+	}
 
 	tokenIDStr := topics[3].Big().String()
 	tokenID, _ := strconv.Atoi(tokenIDStr)
