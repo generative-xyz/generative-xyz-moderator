@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"math/big"
 	"os"
 
@@ -12,21 +13,27 @@ func (u Usecase) JobAuction_GetListAuction() error {
 	contractV1 := os.Getenv("AUCTION_CONTRACT")
 	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
 
-	contractV1 = "0xd178cC5A4001fDecc6cBc0293C5Bed5e3887351D"
-	contractV2 = "0xdfd1EdD11748E14620EaE6F45093d5A25434e07a"
+	// contractV1 = "0xd178cC5A4001fDecc6cBc0293C5Bed5e3887351D"
+	// contractV2 = "0xdfd1EdD11748E14620EaE6F45093d5A25434e07a"
 
 	listMap1, _ := u.EthClient.GetListBidV1(contractV1)
-	listMap2, _ := u.EthClient.GetListBidV1(contractV2)
+	listMap2, _ := u.EthClient.GetListBidV2(contractV2)
 
 	for address, v := range listMap1 {
 
+		fmt.Println("address v1", address)
+
 		_, ok := listMap2[address]
+
+		fmt.Println("check exits in v2: ", ok)
+
 		if !ok {
 			// get item from db:
 			item, _ := u.Repo.FindAuctionCollectionBidderByAddress(v.Bidder)
 			if item == nil {
+				fmt.Println("address1 not exit db")
 				// insert:
-				u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
+				err := u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
 					Bidder:    v.Bidder,
 					IsWinner:  v.IsWinner,
 					Amount:    v.Amount.String(),
@@ -34,65 +41,59 @@ func (u Usecase) JobAuction_GetListAuction() error {
 					UnitPrice: big.NewInt(0).SetUint64(v.UnitPrice).String(),
 					Ens:       v.Ens,
 				})
+				fmt.Println("inserted address1 db, err:", err)
 			} else {
+				fmt.Println("address1 exit db, update now")
 				item.IsWinner = v.IsWinner
 				item.Amount = v.Amount.String()
 				item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
 				item.Ens = v.Ens
 				// update:
-				u.Repo.UpdateAuctionCollectionBidder(item)
+				_, err := u.Repo.UpdateAuctionCollectionBidder(item)
+				fmt.Println("update address1 db, err:", err)
 			}
 		}
 
 	}
 	for address, v := range listMap2 {
 
+		fmt.Println("address v2", address)
+
 		v1, ok := listMap1[address]
+
+		fmt.Println("check exits in v1: ", ok)
+
 		if !ok {
-			// get item from db:
-			item, _ := u.Repo.FindAuctionCollectionBidderByAddress(v.Bidder)
-			if item == nil {
-				// insert:
-				u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
-					Bidder:    v.Bidder,
-					IsWinner:  v.IsWinner,
-					Amount:    v.Amount.String(),
-					Quantity:  v.Quantity,
-					UnitPrice: big.NewInt(0).SetUint64(v.UnitPrice).String(),
-					Ens:       v.Ens,
-				})
-			} else {
-				item.IsWinner = v.IsWinner
-				item.Amount = v.Amount.String()
-				item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
-				item.Ens = v.Ens
-				// update:
-				u.Repo.UpdateAuctionCollectionBidder(item)
-			}
+
 		} else {
 			// merge:
+			fmt.Println("merge v2 vs v1 now ")
 			v.Amount = big.NewInt(0).Add(v.Amount, v1.Amount)
-			// get item from db:
-			item, _ := u.Repo.FindAuctionCollectionBidderByAddress(v.Bidder)
-			if item == nil {
-				// insert:
-				u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
-					Bidder:    v.Bidder,
-					IsWinner:  v.IsWinner,
-					Amount:    v.Amount.String(),
-					Quantity:  v.Quantity,
-					UnitPrice: big.NewInt(0).SetUint64(v.UnitPrice).String(),
-					Ens:       v.Ens,
-				})
-			} else {
-				item.IsWinner = v.IsWinner
-				item.Amount = v.Amount.String()
-				item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
-				item.Ens = v.Ens
-				// update:
-				u.Repo.UpdateAuctionCollectionBidder(item)
-			}
+		}
+		// get item from db:
+		item, _ := u.Repo.FindAuctionCollectionBidderByAddress(v.Bidder)
 
+		if item == nil {
+			fmt.Println("address2 not exit db")
+			// insert:
+			err := u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
+				Bidder:    v.Bidder,
+				IsWinner:  v.IsWinner,
+				Amount:    v.Amount.String(),
+				Quantity:  v.Quantity,
+				UnitPrice: big.NewInt(0).SetUint64(v.UnitPrice).String(),
+				Ens:       v.Ens,
+			})
+			fmt.Println("inserted address2 db, err:", err)
+		} else {
+			fmt.Println("address2 exit db, update now")
+			item.IsWinner = v.IsWinner
+			item.Amount = v.Amount.String()
+			item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
+			item.Ens = v.Ens
+			// update:
+			_, err := u.Repo.UpdateAuctionCollectionBidder(item)
+			fmt.Println("update address2 db, err:", err)
 		}
 
 	}
