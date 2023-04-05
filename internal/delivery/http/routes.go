@@ -333,6 +333,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auction := api.PathPrefix("/auction").Subrouter()
 	auction.HandleFunc("/list", h.getListAuction).Methods("GET")
 
+	discord := api.PathPrefix("/discord").Subrouter()
+	discord.HandleFunc("/new-bid", h.sendDiscordNewBid).Methods("POST")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
