@@ -403,11 +403,11 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 		stringData := string(data)
-		stringData = strings.ReplaceAll(stringData, "\n", "\\n")
-		stringData = strings.ReplaceAll(stringData, "\b", "\\b")
-		stringData = strings.ReplaceAll(stringData, "\f", "\\f")
-		stringData = strings.ReplaceAll(stringData, "\r", "\\r")
-		stringData = strings.ReplaceAll(stringData, "\t", "\\t")
+		stringData = strings.ReplaceAll(stringData, "\n", "")
+		stringData = strings.ReplaceAll(stringData, "\b", "")
+		stringData = strings.ReplaceAll(stringData, "\f", "")
+		stringData = strings.ReplaceAll(stringData, "\r", "")
+		stringData = strings.ReplaceAll(stringData, "\t", "")
 
 		if fromBFS {
 			err = json.Unmarshal([]byte(stringData), &tokeBFS)

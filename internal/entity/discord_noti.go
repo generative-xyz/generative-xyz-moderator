@@ -7,27 +7,30 @@ import (
 )
 
 type DiscordNotiStatus int
+
 const (
 	PENDING DiscordNotiStatus = 0
-	DONE	DiscordNotiStatus = 1
+	DONE    DiscordNotiStatus = 1
 	FAILED  DiscordNotiStatus = 2
 )
 
 type DiscordNotiType string
+
 const (
-	UNREGCONIZE DiscordNotiType = ""
-	NEW_AIRDROP DiscordNotiType = "new_airdrop"
-	NEW_SALE    DiscordNotiType = "new_sale"
-	NEW_LISTING DiscordNotiType = "new_listing"
-	NEW_MINT    DiscordNotiType = "new_mint"
-	NEW_PROJECT DiscordNotiType = "new_project"
+	UNREGCONIZE          DiscordNotiType = ""
+	NEW_AIRDROP          DiscordNotiType = "new_airdrop"
+	NEW_SALE             DiscordNotiType = "new_sale"
+	NEW_LISTING          DiscordNotiType = "new_listing"
+	NEW_MINT             DiscordNotiType = "new_mint"
+	NEW_PROJECT          DiscordNotiType = "new_project"
 	NEW_PROJECT_PROPOSED DiscordNotiType = "new_project_proposed"
 	NEW_PROJECT_APPROVED DiscordNotiType = "new_project_approved"
+	NEW_BID              DiscordNotiType = "new_bid"
 )
 
 type GetDiscordNotiReq struct {
-	Page int64
-	Limit int64
+	Page   int64
+	Limit  int64
 	Status *DiscordNotiStatus
 }
 
@@ -38,13 +41,13 @@ type DiscordNotiMeta struct {
 }
 
 type DiscordNoti struct {
-	BaseEntity    `bson:",inline"`
-	Message    DiscordMessage           `bson:"message"`
+	BaseEntity `bson:",inline"`
+	Message    DiscordMessage    `bson:"message"`
 	Status     DiscordNotiStatus `bson:"status"`
 	NumRetried int               `bson:"num_retried"`
-	Webhook    string `bson:"webhook"`
-	Type DiscordNotiType `bson:"type"`
-	Meta DiscordNotiMeta `bson:"meta"`
+	Webhook    string            `bson:"webhook"`
+	Type       DiscordNotiType   `bson:"type"`
+	Meta       DiscordNotiMeta   `bson:"meta"`
 }
 
 type DiscordMessage struct {
