@@ -1430,7 +1430,7 @@ func (u Usecase) getProjectDetailFromChain(req structure.GetProjectDetailMessage
 
 		addr := common.HexToAddress(req.ContractAddress)
 		// call to contract to get emotion
-		client, err := helpers.EthDialer()
+		client, err := helpers.TCDialer()
 		if err != nil {
 			logger.AtLog.Error("ethclient.Dial", err.Error(), err)
 			return nil, err

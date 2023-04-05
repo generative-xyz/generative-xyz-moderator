@@ -50,7 +50,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, errors.New("Token is empty")
 	}
 	resp := &structure.TokenAnimationURI{}
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", zap.Any("token)", token)))
+	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -65,7 +65,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
-		logger.AtLog.Logger.Error("RunAndCap", zap.Error(err))
+		logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 			imageURL = fileURI
 		}
-		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", zap.Any("uploaded)", uploaded)))
+		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
 	}
 
 	traits := make(map[string]interface{})
@@ -116,7 +116,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("RunAndCap", zap.Any("chromedp.Run", zap.Error(err)))
+		logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
 	}
 
 	for key, item := range traits {
@@ -146,9 +146,9 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
-				logger.AtLog.Logger.Error("RunAndCap", zap.Any("UploadBaseToBucket", zap.Error(err)))
+				logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
 			} else {
-				logger.AtLog.Logger.Info("RunAndCap", zap.Any("uploaded", zap.Any("uploaded)", uploaded)))
+				logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID),  zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
 		}
@@ -163,7 +163,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("resp", zap.Any("resp)", resp)))
+	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Any("fileURI", imageURL), zap.Any("resp", zap.Any("resp)", resp)))
 	return resp, nil
 }
 
@@ -192,13 +192,13 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				token, err2 := u.getTokenInfo(req)
 				if err2 != nil {
-					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err2))
+					logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("tokenID", tokenID), zap.String("action" , "getProjectDetailFromChain"), zap.Error(err2))
 					return nil, err2
 				}
 				return token, nil
 			}
 		}
-		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req), zap.String("action", "FindTokenBy"), zap.Error(err))
+		logger.AtLog.Logger.Error("GetToken", zap.Any("req", req),zap.String("tokenID", tokenID), zap.String("action", "FindTokenBy"), zap.Error(err))
 		return nil, err
 	}
 	if tokenUri.Project != nil && tokenUri.InscribedBy != "" {
@@ -237,11 +237,11 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	} else {
 		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
 		if err1 == nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
+			logger.AtLog.Logger.Error("getTokenInfo",zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
 		} else {
 			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
 			if err2 != nil {
-				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+				logger.AtLog.Logger.Error("getTokenInfo get ownerOf",zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
 			} else {
 				if addr != nil {
 					if tokenUri.OwnerAddr != addr.String() {
@@ -266,7 +266,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 			err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
 			if err != nil {
-				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+				logger.AtLog.Logger.Error("getTokenInfo",zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
 			}
 		}
 	}()
@@ -276,11 +276,13 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		if tokenUri.AnimationHtml == nil {
 			p, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
 			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo",zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
 				return
 			}
 
 			htmlUrl, err := u.parseAnimationURL(*p)
 			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo",zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
 				return
 			}
 
@@ -289,6 +291,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 
 			_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
 			if err != nil {
+				logger.AtLog.Logger.Error("getTokenInfo",zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
 				return
 			}
 		}
@@ -322,7 +325,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
+	client, err := helpers.TCDialer()
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
 		return nil, err
@@ -332,7 +335,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	tokenID, ok := tokenID.SetString(req.TokenID, 10)
 	if !ok {
 		err := errors.New("cannot convert tokenID")
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "tokenID.SetString"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.Error(err))
 		return nil, err
 	}
 	projectID := new(big.Int).Div(tokenID, big.NewInt(1000000))
@@ -341,7 +344,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		ProjectID:       projectID.String(),
 	})
 	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "getProjectDetailFromChain"), zap.Error(err))
 		return nil, err
 	}
 
@@ -365,12 +368,12 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 		tokenUriData, err := u.getNftProjectTokenUri(client, parentAddr, req.TokenID)
 		if err != nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "getNftProjectTokenUri"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.Error(err))
 			return
 		}
 		seed, err := u.getSeedFromTokenId(client, parentAddr, tokenID)
 		if err != nil {
-			u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("tokenUriData", tokenUriData), zap.Any("error", err))
+			u.Logger.ErrorAny("getTokenInfo not valid seed", zap.String("tokenID", req.TokenID), zap.Any("error", err))
 			return
 		}
 		tok.Seed = *seed
@@ -380,14 +383,14 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 				bfsContract := common.HexToAddress(os.Getenv("BFS_CONTRACT"))
 				tokenUriData, err = u.getBFSData(client, bfsContract, parentAddr, tok.Seed)
 				if err != nil {
-					u.Logger.ErrorAny("getTokenInfo  not valid seed", zap.Any("getBFSData", tokenUriData), zap.Any("error", err))
+					u.Logger.ErrorAny("getTokenInfo not valid seed", zap.Any("BFS_CONTRACT",os.Getenv("BFS_CONTRACT")), zap.String("tokenID", req.TokenID), zap.Any("error", err))
 					return
 				}
 
 				fromBFS = true
 
 			} else {
-				u.Logger.ErrorAny("getTokenInfo not valid", zap.Any("tokenUriData", tokenUriData))
+				u.Logger.ErrorAny("getTokenInfo not valid", zap.String("tokenID", req.TokenID))
 				return
 			}
 		}
@@ -395,7 +398,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		base64Str := strings.ReplaceAll(*tokenUriData, "data:application/json;base64,", "")
 		data, err := helpers.Base64Decode(base64Str)
 		if err != nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "helpers.Base64Decode"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.Error(err))
 			return
 		}
 
@@ -409,7 +412,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		if fromBFS {
 			err = json.Unmarshal([]byte(stringData), &tokeBFS)
 			if err != nil {
-				logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+				logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "json.Unmarshal"), zap.Error(err))
 				return
 			}
 
@@ -451,7 +454,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 		err = json.Unmarshal([]byte(stringData), tok)
 		if err != nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "json.Unmarshal"), zap.Error(err))
+			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
 
@@ -487,18 +490,18 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	dataObject.ProjectID = projectID.String()
 	dataObject.ProjectIDInt = projectID.Int64()
 
-	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.Any("dataObject.TokenID", dataObject.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
+	logger.AtLog.Logger.Info("dataObject.ContractAddress", zap.Any("dataObject.ContractAddress", dataObject.ContractAddress), zap.Any("dataObject.Creator", dataObject.Creator), zap.String("tokenID", req.TokenID), zap.Any("dataObject.ProjectID", dataObject.ProjectID))
 
 	project, err := u.Repo.FindProjectBy(dataObject.ContractAddress, dataObject.ProjectID)
 	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "findProjectBy"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.Error(err))
 		return nil, err
 	}
 
 	dataObject.Project = project
 	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
 	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "FindUserByWalletAddress"), zap.Error(err))
+		logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "FindUserByWalletAddress"), zap.Error(err))
 		creator = &entity.Users{}
 	}
 	dataObject.Creator = creator
@@ -511,7 +514,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 			ownerAddr := strings.ToLower(nft.Owner)
 
-			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old", zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr), zap.Any("ownerAddr", ownerAddr))
+			logger.AtLog.Logger.Info("dataObject.OwnerAddr.old",zap.String("tokenID", req.TokenID), zap.Any("dataObject.OwnerAddr", dataObject.OwnerAddr), zap.Any("ownerAddr", ownerAddr))
 			owner, err := u.Repo.FindUserByWalletAddress(ownerAddr)
 			if err != nil {
 				logger.AtLog.Logger.Error("err", zap.Error(err))
@@ -531,7 +534,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 	} else {
-		logger.AtLog.Logger.Error("u.GetNftMintedTime", zap.Error(mftMintedTime.Err))
+		logger.AtLog.Logger.Error("u.GetNftMintedTime",zap.String("tokenID", req.TokenID),  zap.Error(mftMintedTime.Err))
 	}
 
 	tokenFChan := <-tokendatachan
@@ -572,13 +575,13 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 	} else {
-		logger.AtLog.Logger.Error("tokenFChan.Err", zap.Error(tokenFChan.Err))
+		logger.AtLog.Logger.Error("tokenFChan.Err",zap.String("tokenID", req.TokenID), zap.Error(tokenFChan.Err))
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
 	dataObject.TokenIDMini = &tokIdMini
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr), zap.Bool("true", true))
+	logger.AtLog.Logger.Info(fmt.Sprintf("Data for minter address %v and OwnerAddr %v", dataObject.MinterAddress, dataObject.OwnerAddr),zap.String("tokenID", req.TokenID), zap.Bool("true", true))
 
 	isAddress := func(s *string) bool {
 		if s == nil {
@@ -588,7 +591,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	if dataObject.MinterAddress != nil {
-		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress), zap.Bool("true", true))
+		logger.AtLog.Logger.Info(fmt.Sprintf("Minter address %s", *dataObject.MinterAddress),zap.String("tokenID", req.TokenID), zap.Bool("true", true))
 	}
 
 	if !isAddress(dataObject.MinterAddress) && dataObject.OwnerAddr != "" {
