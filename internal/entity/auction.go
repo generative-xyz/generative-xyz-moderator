@@ -11,7 +11,13 @@ type AuctionCollectionBidder struct {
 	Bidder   string `bson:"bidder" json:"bidder"`
 	IsWinner bool   `bson:"isWinner" json:"isWinner"`
 	Amount   string `bson:"amount" json:"amount"`
-	Ens      string `bson:"ens" json:"ens"`
+
+	UnitPrice string `bson:"unitPrice" json:"unitPrice"`
+	Quantity  int    `bson:"quantity" json:"quantity"`
+
+	Contract string `bson:"contract" json:"contract"`
+
+	Ens string `bson:"ens" json:"ens"`
 }
 
 func (u AuctionCollectionBidder) TableName() string {
