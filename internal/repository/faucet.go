@@ -53,9 +53,24 @@ func (r Repository) FindFaucetByAddress(address string) (*entity.Faucet, error) 
 	}
 	return resp, nil
 }
+func (r Repository) FindFaucetByTwitterName(twitterName string) (*entity.Faucet, error) {
+	twitterName = strings.ToLower(twitterName)
+	resp := &entity.Faucet{}
+	usr, err := r.FilterOne(entity.Faucet{}.TableName(), bson.D{{"twitter_name", twitterName}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
 
 func (r Repository) InsertFaucet(data *entity.Faucet) error {
 	data.Address = strings.ToLower(data.Address)
+	data.TwitterName = strings.ToLower(data.TwitterName)
 	err := r.InsertOne(data.TableName(), data)
 	if err != nil {
 		return err
