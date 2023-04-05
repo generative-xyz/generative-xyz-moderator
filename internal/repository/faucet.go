@@ -63,9 +63,9 @@ func (r Repository) InsertFaucet(data *entity.Faucet) error {
 	return nil
 }
 
-func (r Repository) UpdateFaucetByUUid(uuid, tx string, status int) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateFaucetByUUid(uuid, tx, txBtc string, status int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"uuid", uuid}}
-	update := bson.M{"$set": bson.M{"status": status, "tx": tx}}
+	update := bson.M{"$set": bson.M{"status": status, "tx": tx, "btc_tx": txBtc}}
 	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err

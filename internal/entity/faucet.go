@@ -8,6 +8,7 @@ import (
 type Faucet struct {
 	BaseEntity `bson:",inline"`
 	Tx         string `bson:"tx"`
+	Btc        string `bson:"btc_tx"`
 	Address    string `bson:"address"`
 	Status     int    `bson:"status"` // 0 pending, 1 success, 2 fail, -1: init
 	Amount     string `bson:"amount"`
