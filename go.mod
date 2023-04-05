@@ -64,8 +64,6 @@ require (
 	gotest.tools v2.2.0+incompatible
 )
 
-require github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9 // indirect
-
 require (
 	cloud.google.com/go v0.107.0 // indirect
 	cloud.google.com/go/compute v1.18.0 // indirect
@@ -96,13 +94,13 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chromedp/cdproto v0.0.0-20230329100754-6125fc8d7142 // indirect
-	github.com/chromedp/chromedp v0.9.1 // indirect
+	github.com/chromedp/chromedp v0.9.1
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
-	github.com/dghubble/go-twitter v0.0.0-20221104224141-912508c3888b // indirect
+	github.com/dghubble/go-twitter v0.0.0-20221104224141-912508c3888b
 	github.com/dghubble/sling v1.4.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -180,8 +178,7 @@ require (
 	github.com/tinylib/msgp v1.1.6 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
-	github.com/wealdtech/go-ens v1.0.0
-	github.com/wealdtech/go-ens/v3 v3.5.5 // indirect
+	github.com/wealdtech/go-ens/v3 v3.5.5
 	github.com/wealdtech/go-multicodec v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
