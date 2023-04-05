@@ -15,6 +15,8 @@ type AuctionCollectionBidder struct {
 	UnitPrice string `bson:"unitPrice" json:"unitPrice"`
 	Quantity  int    `bson:"quantity" json:"quantity"`
 
+	Contract string `bson:"contract" json:"contract"`
+
 	Ens string `bson:"ens" json:"ens"`
 }
 
