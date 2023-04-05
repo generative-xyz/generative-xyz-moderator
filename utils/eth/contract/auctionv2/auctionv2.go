@@ -1,7 +1,7 @@
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
-package eth
+package auctionv2
 
 import (
 	"errors"
@@ -28,16 +28,24 @@ var (
 	_ = event.NewSubscription
 )
 
-// AuctionCollectionBidderResponse is an auto generated low-level Go binding around an user-defined struct.
-type AuctionCollectionBidderResponse struct {
-	Bidder   common.Address
-	IsWinner bool
-	Amount   *big.Int
+// AuctionCollection2Bidder is an auto generated low-level Go binding around an user-defined struct.
+type AuctionCollection2Bidder struct {
+	Amount    *big.Int
+	UnitPrice uint64
+	Index     uint32
+	Quantity  uint32
+}
+
+// AuctionCollection2BidderResponse is an auto generated low-level Go binding around an user-defined struct.
+type AuctionCollection2BidderResponse struct {
+	Bidder     common.Address
+	IsWinner   bool
+	BidderInfo AuctionCollection2Bidder
 }
 
 // AuctionMetaData contains all meta data concerning the Auction contract.
 var AuctionMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"endTime_\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"bidMinimum_\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"Bid\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"Refund\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_WINNERS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidMinimum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16[]\",\"name\":\"winnerList\",\"type\":\"uint16[]\"},{\"internalType\":\"bool\",\"name\":\"isFinal\",\"type\":\"bool\"}],\"name\":\"declareWinners\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"endTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"}],\"name\":\"getBidsByAddress\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"start\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"end\",\"type\":\"uint256\"}],\"name\":\"listBids\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isWinner\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structAuctionCollection.BidderResponse[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"refund\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalBids\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"winnerDeclared\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"withdrawPayment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"endTime_\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"bidMinimum_\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"singleAuction_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_WINNERS\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"unitPrice\",\"type\":\"uint64\"}],\"name\":\"bid\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bidMinimum\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32[]\",\"name\":\"winnerList\",\"type\":\"uint32[]\"},{\"internalType\":\"bool\",\"name\":\"isFinal\",\"type\":\"bool\"}],\"name\":\"declareWinners\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"endTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"}],\"name\":\"getBidsByAddress\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"start\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"end\",\"type\":\"uint256\"}],\"name\":\"listBids\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"bidder\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isWinner\",\"type\":\"bool\"},{\"components\":[{\"internalType\":\"uint128\",\"name\":\"amount\",\"type\":\"uint128\"},{\"internalType\":\"uint64\",\"name\":\"unitPrice\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"index\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"quantity\",\"type\":\"uint32\"}],\"internalType\":\"structAuctionCollection2.Bidder\",\"name\":\"bidderInfo\",\"type\":\"tuple\"}],\"internalType\":\"structAuctionCollection2.BidderResponse[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"refund\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"singleAuction\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalBids\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"winnerDeclared\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"withdrawPayment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // AuctionABI is the input ABI used to generate the binding from.
@@ -313,16 +321,16 @@ func (_Auction *AuctionCallerSession) GetBidsByAddress(bidder common.Address) (b
 
 // ListBids is a free data retrieval call binding the contract method 0x331a3655.
 //
-// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,uint256)[])
-func (_Auction *AuctionCaller) ListBids(opts *bind.CallOpts, start *big.Int, end *big.Int) ([]AuctionCollectionBidderResponse, error) {
+// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,(uint128,uint64,uint32,uint32))[])
+func (_Auction *AuctionCaller) ListBids(opts *bind.CallOpts, start *big.Int, end *big.Int) ([]AuctionCollection2BidderResponse, error) {
 	var out []interface{}
 	err := _Auction.contract.Call(opts, &out, "listBids", start, end)
 
 	if err != nil {
-		return *new([]AuctionCollectionBidderResponse), err
+		return *new([]AuctionCollection2BidderResponse), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]AuctionCollectionBidderResponse)).(*[]AuctionCollectionBidderResponse)
+	out0 := *abi.ConvertType(out[0], new([]AuctionCollection2BidderResponse)).(*[]AuctionCollection2BidderResponse)
 
 	return out0, err
 
@@ -330,15 +338,15 @@ func (_Auction *AuctionCaller) ListBids(opts *bind.CallOpts, start *big.Int, end
 
 // ListBids is a free data retrieval call binding the contract method 0x331a3655.
 //
-// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,uint256)[])
-func (_Auction *AuctionSession) ListBids(start *big.Int, end *big.Int) ([]AuctionCollectionBidderResponse, error) {
+// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,(uint128,uint64,uint32,uint32))[])
+func (_Auction *AuctionSession) ListBids(start *big.Int, end *big.Int) ([]AuctionCollection2BidderResponse, error) {
 	return _Auction.Contract.ListBids(&_Auction.CallOpts, start, end)
 }
 
 // ListBids is a free data retrieval call binding the contract method 0x331a3655.
 //
-// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,uint256)[])
-func (_Auction *AuctionCallerSession) ListBids(start *big.Int, end *big.Int) ([]AuctionCollectionBidderResponse, error) {
+// Solidity: function listBids(uint256 start, uint256 end) view returns((address,bool,(uint128,uint64,uint32,uint32))[])
+func (_Auction *AuctionCallerSession) ListBids(start *big.Int, end *big.Int) ([]AuctionCollection2BidderResponse, error) {
 	return _Auction.Contract.ListBids(&_Auction.CallOpts, start, end)
 }
 
@@ -371,6 +379,37 @@ func (_Auction *AuctionSession) Owner() (common.Address, error) {
 // Solidity: function owner() view returns(address)
 func (_Auction *AuctionCallerSession) Owner() (common.Address, error) {
 	return _Auction.Contract.Owner(&_Auction.CallOpts)
+}
+
+// SingleAuction is a free data retrieval call binding the contract method 0xd5a014f8.
+//
+// Solidity: function singleAuction() view returns(address)
+func (_Auction *AuctionCaller) SingleAuction(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Auction.contract.Call(opts, &out, "singleAuction")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// SingleAuction is a free data retrieval call binding the contract method 0xd5a014f8.
+//
+// Solidity: function singleAuction() view returns(address)
+func (_Auction *AuctionSession) SingleAuction() (common.Address, error) {
+	return _Auction.Contract.SingleAuction(&_Auction.CallOpts)
+}
+
+// SingleAuction is a free data retrieval call binding the contract method 0xd5a014f8.
+//
+// Solidity: function singleAuction() view returns(address)
+func (_Auction *AuctionCallerSession) SingleAuction() (common.Address, error) {
+	return _Auction.Contract.SingleAuction(&_Auction.CallOpts)
 }
 
 // TotalBids is a free data retrieval call binding the contract method 0x8b034136.
@@ -435,45 +474,45 @@ func (_Auction *AuctionCallerSession) WinnerDeclared() (bool, error) {
 	return _Auction.Contract.WinnerDeclared(&_Auction.CallOpts)
 }
 
-// Bid is a paid mutator transaction binding the contract method 0x1998aeef.
+// Bid is a paid mutator transaction binding the contract method 0xc261d456.
 //
-// Solidity: function bid() payable returns()
-func (_Auction *AuctionTransactor) Bid(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Auction.contract.Transact(opts, "bid")
+// Solidity: function bid(uint64 unitPrice) payable returns()
+func (_Auction *AuctionTransactor) Bid(opts *bind.TransactOpts, unitPrice uint64) (*types.Transaction, error) {
+	return _Auction.contract.Transact(opts, "bid", unitPrice)
 }
 
-// Bid is a paid mutator transaction binding the contract method 0x1998aeef.
+// Bid is a paid mutator transaction binding the contract method 0xc261d456.
 //
-// Solidity: function bid() payable returns()
-func (_Auction *AuctionSession) Bid() (*types.Transaction, error) {
-	return _Auction.Contract.Bid(&_Auction.TransactOpts)
+// Solidity: function bid(uint64 unitPrice) payable returns()
+func (_Auction *AuctionSession) Bid(unitPrice uint64) (*types.Transaction, error) {
+	return _Auction.Contract.Bid(&_Auction.TransactOpts, unitPrice)
 }
 
-// Bid is a paid mutator transaction binding the contract method 0x1998aeef.
+// Bid is a paid mutator transaction binding the contract method 0xc261d456.
 //
-// Solidity: function bid() payable returns()
-func (_Auction *AuctionTransactorSession) Bid() (*types.Transaction, error) {
-	return _Auction.Contract.Bid(&_Auction.TransactOpts)
+// Solidity: function bid(uint64 unitPrice) payable returns()
+func (_Auction *AuctionTransactorSession) Bid(unitPrice uint64) (*types.Transaction, error) {
+	return _Auction.Contract.Bid(&_Auction.TransactOpts, unitPrice)
 }
 
-// DeclareWinners is a paid mutator transaction binding the contract method 0x73432287.
+// DeclareWinners is a paid mutator transaction binding the contract method 0x82b55d81.
 //
-// Solidity: function declareWinners(uint16[] winnerList, bool isFinal) returns()
-func (_Auction *AuctionTransactor) DeclareWinners(opts *bind.TransactOpts, winnerList []uint16, isFinal bool) (*types.Transaction, error) {
+// Solidity: function declareWinners(uint32[] winnerList, bool isFinal) returns()
+func (_Auction *AuctionTransactor) DeclareWinners(opts *bind.TransactOpts, winnerList []uint32, isFinal bool) (*types.Transaction, error) {
 	return _Auction.contract.Transact(opts, "declareWinners", winnerList, isFinal)
 }
 
-// DeclareWinners is a paid mutator transaction binding the contract method 0x73432287.
+// DeclareWinners is a paid mutator transaction binding the contract method 0x82b55d81.
 //
-// Solidity: function declareWinners(uint16[] winnerList, bool isFinal) returns()
-func (_Auction *AuctionSession) DeclareWinners(winnerList []uint16, isFinal bool) (*types.Transaction, error) {
+// Solidity: function declareWinners(uint32[] winnerList, bool isFinal) returns()
+func (_Auction *AuctionSession) DeclareWinners(winnerList []uint32, isFinal bool) (*types.Transaction, error) {
 	return _Auction.Contract.DeclareWinners(&_Auction.TransactOpts, winnerList, isFinal)
 }
 
-// DeclareWinners is a paid mutator transaction binding the contract method 0x73432287.
+// DeclareWinners is a paid mutator transaction binding the contract method 0x82b55d81.
 //
-// Solidity: function declareWinners(uint16[] winnerList, bool isFinal) returns()
-func (_Auction *AuctionTransactorSession) DeclareWinners(winnerList []uint16, isFinal bool) (*types.Transaction, error) {
+// Solidity: function declareWinners(uint32[] winnerList, bool isFinal) returns()
+func (_Auction *AuctionTransactorSession) DeclareWinners(winnerList []uint32, isFinal bool) (*types.Transaction, error) {
 	return _Auction.Contract.DeclareWinners(&_Auction.TransactOpts, winnerList, isFinal)
 }
 
@@ -559,141 +598,6 @@ func (_Auction *AuctionSession) WithdrawPayment(receiver common.Address) (*types
 // Solidity: function withdrawPayment(address receiver) returns()
 func (_Auction *AuctionTransactorSession) WithdrawPayment(receiver common.Address) (*types.Transaction, error) {
 	return _Auction.Contract.WithdrawPayment(&_Auction.TransactOpts, receiver)
-}
-
-// AuctionBidIterator is returned from FilterBid and is used to iterate over the raw logs and unpacked data for Bid events raised by the Auction contract.
-type AuctionBidIterator struct {
-	Event *AuctionBid // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *AuctionBidIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(AuctionBid)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(AuctionBid)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *AuctionBidIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *AuctionBidIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// AuctionBid represents a Bid event raised by the Auction contract.
-type AuctionBid struct {
-	Arg0 common.Address
-	Arg1 *big.Int
-	Raw  types.Log // Blockchain specific contextual infos
-}
-
-// FilterBid is a free log retrieval operation binding the contract event 0xe684a55f31b79eca403df938249029212a5925ec6be8012e099b45bc1019e5d2.
-//
-// Solidity: event Bid(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) FilterBid(opts *bind.FilterOpts) (*AuctionBidIterator, error) {
-
-	logs, sub, err := _Auction.contract.FilterLogs(opts, "Bid")
-	if err != nil {
-		return nil, err
-	}
-	return &AuctionBidIterator{contract: _Auction.contract, event: "Bid", logs: logs, sub: sub}, nil
-}
-
-// WatchBid is a free log subscription operation binding the contract event 0xe684a55f31b79eca403df938249029212a5925ec6be8012e099b45bc1019e5d2.
-//
-// Solidity: event Bid(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) WatchBid(opts *bind.WatchOpts, sink chan<- *AuctionBid) (event.Subscription, error) {
-
-	logs, sub, err := _Auction.contract.WatchLogs(opts, "Bid")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(AuctionBid)
-				if err := _Auction.contract.UnpackLog(event, "Bid", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBid is a log parse operation binding the contract event 0xe684a55f31b79eca403df938249029212a5925ec6be8012e099b45bc1019e5d2.
-//
-// Solidity: event Bid(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) ParseBid(log types.Log) (*AuctionBid, error) {
-	event := new(AuctionBid)
-	if err := _Auction.contract.UnpackLog(event, "Bid", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
 }
 
 // AuctionOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the Auction contract.
@@ -843,141 +747,6 @@ func (_Auction *AuctionFilterer) WatchOwnershipTransferred(opts *bind.WatchOpts,
 func (_Auction *AuctionFilterer) ParseOwnershipTransferred(log types.Log) (*AuctionOwnershipTransferred, error) {
 	event := new(AuctionOwnershipTransferred)
 	if err := _Auction.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// AuctionRefundIterator is returned from FilterRefund and is used to iterate over the raw logs and unpacked data for Refund events raised by the Auction contract.
-type AuctionRefundIterator struct {
-	Event *AuctionRefund // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *AuctionRefundIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(AuctionRefund)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(AuctionRefund)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *AuctionRefundIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *AuctionRefundIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// AuctionRefund represents a Refund event raised by the Auction contract.
-type AuctionRefund struct {
-	Arg0 common.Address
-	Arg1 *big.Int
-	Raw  types.Log // Blockchain specific contextual infos
-}
-
-// FilterRefund is a free log retrieval operation binding the contract event 0xbb28353e4598c3b9199101a66e0989549b659a59a54d2c27fbb183f1932c8e6d.
-//
-// Solidity: event Refund(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) FilterRefund(opts *bind.FilterOpts) (*AuctionRefundIterator, error) {
-
-	logs, sub, err := _Auction.contract.FilterLogs(opts, "Refund")
-	if err != nil {
-		return nil, err
-	}
-	return &AuctionRefundIterator{contract: _Auction.contract, event: "Refund", logs: logs, sub: sub}, nil
-}
-
-// WatchRefund is a free log subscription operation binding the contract event 0xbb28353e4598c3b9199101a66e0989549b659a59a54d2c27fbb183f1932c8e6d.
-//
-// Solidity: event Refund(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) WatchRefund(opts *bind.WatchOpts, sink chan<- *AuctionRefund) (event.Subscription, error) {
-
-	logs, sub, err := _Auction.contract.WatchLogs(opts, "Refund")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(AuctionRefund)
-				if err := _Auction.contract.UnpackLog(event, "Refund", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseRefund is a log parse operation binding the contract event 0xbb28353e4598c3b9199101a66e0989549b659a59a54d2c27fbb183f1932c8e6d.
-//
-// Solidity: event Refund(address arg0, uint256 arg1)
-func (_Auction *AuctionFilterer) ParseRefund(log types.Log) (*AuctionRefund, error) {
-	event := new(AuctionRefund)
-	if err := _Auction.contract.UnpackLog(event, "Refund", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
