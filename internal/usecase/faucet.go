@@ -34,7 +34,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 	// 	chromePath = ""
 	// }
 
-	address, err := getFaucetPaymentInfo(url, chromePath, eCH)
+	address, twName, err := getFaucetPaymentInfo(url, chromePath, eCH)
 	fmt.Println("address, err: ", address, err)
 
 	if err != nil {
@@ -42,8 +42,19 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 		return "", err
 	}
 	// find address to faucet:
+	faucetItemByTwitterName, _ := u.Repo.FindFaucetByTwitterName(twName)
 	faucetItem, _ := u.Repo.FindFaucetByAddress(address)
 	if faucetItem != nil {
+
+		if faucetItemByTwitterName == nil {
+			err = errors.New("The account not match.")
+			return "", err
+		}
+		if faucetItem.TwitterName != faucetItemByTwitterName.TwitterName || faucetItem.Address != faucetItemByTwitterName.Address {
+			err = errors.New("The account not match.")
+			return "", err
+		}
+
 		if faucetItem.Status > 0 {
 			err = errors.New("The transaction already exists.")
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
@@ -51,10 +62,11 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 		}
 	} else {
 		faucetItem = &entity.Faucet{
-			Address: address,
-			Status:  0,
-			Tx:      "",
-			Amount:  amountFaucet.String(),
+			Address:     address,
+			TwitterName: twName,
+			Status:      0,
+			Tx:          "",
+			Amount:      amountFaucet.String(),
 		}
 		err = u.Repo.InsertFaucet(faucetItem)
 		if err != nil {
@@ -90,7 +102,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 }
 
 //////////
-func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
+func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, string, error) {
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),  // uncomment on the server.
@@ -110,25 +122,40 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	spew.Dump(res)
 
+	//https://twitter.com/2712_at1999/status/1643190049981480961
+
 	if !strings.Contains(res, "DappsOnBitcoin") {
-		return "", errors.New("tweet data invalid")
+		return "", "", errors.New("tweet data invalid")
 	}
 
-	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
+	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}")                // payment address eth
+	twNameRegex := regexp.MustCompile(`https://twitter.com/(\w+)/status/\d+`) // payment address eth
 
 	addressHex := addressRegex.FindString(res)
 	if len(addressHex) == 0 {
-		return "", errors.New("address not found")
+		return "", "", errors.New("address not found")
+	}
+
+	// Find the first match in the tweet URL
+	matchTwName := twNameRegex.FindStringSubmatch(url)
+
+	twName := ""
+
+	if len(matchTwName) >= 2 {
+		twName = matchTwName[1]
+		fmt.Println("twName:", twName) // Output: 2712_at1999
+	} else {
+		return "", "", errors.New("No username found in the tweet URL")
 	}
 
 	fmt.Println("result: ", addressHex)
 
-	return addressHex, nil
+	return addressHex, twName, nil
 
 }
 func ByTestId(s string) string {
