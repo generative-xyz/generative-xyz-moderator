@@ -73,7 +73,14 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.Transfer"), zap.Error(err))
 		return "", err
 	}
-	_, err = u.Repo.UpdateFaucetByUUid(faucetItem.UUID, tx, 1)
+	// submit raw data:
+	txBtc, err := u.SubmitTCToBtcChain(tx, 10)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.SubmitTCToBtcChain"), zap.Error(err))
+		// return "", err
+	}
+
+	_, err = u.Repo.UpdateFaucetByUUid(faucetItem.UUID, tx, txBtc, 1)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.UpdateFaucetByUUid"), zap.Error(err))
 		return "", err
