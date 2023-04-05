@@ -13,8 +13,8 @@ func (u Usecase) JobAuction_GetListAuction() error {
 	contractV1 := os.Getenv("AUCTION_CONTRACT")
 	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
 
-	// contractV1 = "0xd178cC5A4001fDecc6cBc0293C5Bed5e3887351D"
-	// contractV2 = "0xdfd1EdD11748E14620EaE6F45093d5A25434e07a"
+	// contractV1 = "0x678B7313E34350Ec233Df5Ee0F25EFEa5C88B29f"
+	// contractV2 = "0x90047bc21b0cf748507551fa1a29a40e912ce088"
 
 	listMap1, _ := u.EthClient.GetListBidV1(contractV1)
 	listMap2, _ := u.EthClient.GetListBidV2(contractV2)
