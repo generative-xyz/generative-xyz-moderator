@@ -90,7 +90,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	fromBlock := lastProcessedBlock + 1
-	fromBlock = int64(1759)
 	blockNumber, err := c.Blockchain.GetBlockNumber()
 	if err != nil {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
@@ -98,8 +97,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	toBlock := int64(math.Min(float64(blockNumber.Int64()), float64(fromBlock+int64(c.BatchLogSize))))
-	toBlock = int64(1765)
-	
 	if toBlock < fromBlock {
 		fromBlock = toBlock
 	}
