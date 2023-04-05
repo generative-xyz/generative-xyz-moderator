@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
-	"github.com/wealdtech/go-ens/v3"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/eth/contract/auctionv1"
 	"rederinghub.io/utils/eth/contract/auctionv2"
@@ -592,11 +591,10 @@ func (c *Client) GetListBidV1(contractAddress string) (map[string]AuctionCollect
 
 		fmt.Println("get ens for: ", item.Bidder.Hex())
 
-		domain, err := ens.ReverseResolve(c.GetClient(), item.Bidder)
+		domain := ""
 
-		if err != nil {
-			domain = ""
-		}
+		// domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
+
 		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
 
 		auctionCollectionBidder := AuctionCollectionBidder{
@@ -635,11 +633,10 @@ func (c *Client) GetListBidV2(contractAddress string) (map[string]AuctionCollect
 
 		fmt.Println("get ens for: ", item.Bidder.Hex())
 
-		domain, err := ens.ReverseResolve(c.GetClient(), item.Bidder)
+		domain := ""
 
-		if err != nil {
-			domain = ""
-		}
+		// domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
+
 		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
 
 		auctionCollectionBidder := AuctionCollectionBidder{
