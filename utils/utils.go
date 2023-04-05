@@ -4,12 +4,11 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strings"
-
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/url"
+	"strings"
 )
 
 func StringUnique(s []string) []string {
