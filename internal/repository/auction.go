@@ -51,10 +51,19 @@ func (r Repository) ListAuctionCollectionBidder() ([]entity.AuctionCollectionBid
 	f := bson.M{}
 
 	opts := options.Find()
+
 	cursor, err := r.DB.Collection(entity.AuctionCollectionBidder{}.TableName()).Find(context.TODO(), f, opts)
-	if err != nil {
-		return confs, err
-	}
+	// if err != nil {
+	// 	return confs, err
+	// }
+	// cursor, err := r.DB.Collection(entity.AuctionCollectionBidder{}.TableName()).Find(context.TODO(), f, &options.FindOptions{
+	// 	Sort: bson.D{{"unitPrice", -1}},
+	// 	// Limit: &limit,
+	// 	// Skip:  &offset,
+	// })
+	// if err != nil {
+	// 	return confs, err
+	// }
 
 	if err = cursor.All(context.TODO(), &confs); err != nil {
 		return confs, err
