@@ -565,13 +565,13 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 	}
 }
 
-func (u Usecase) NotifyNewBid(bidderBtcWalletTaprootAddress string, price float64) {
+func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 	logger.AtLog.Logger.Info(
 		"NotifyNewBid",
 		zap.Any("price", price),
 	)
 
-	bidder, err := u.Repo.FindUserByBtcAddressTaproot(bidderBtcWalletTaprootAddress)
+	bidder, err := u.Repo.FindUserByWalletAddress(ETHWalletAddress)
 	if err != nil {
 		logger.AtLog.Logger.Error("NotifyNewBid.FindUserByBtcAddress", zap.Error(err))
 		return
@@ -608,7 +608,7 @@ func (u Usecase) NotifyNewBid(bidderBtcWalletTaprootAddress string, price float6
 			Url:    fmt.Sprintf("%v/ai", domain),
 			Fields: fields,
 			Image: entity.Image{
-				Url: "https://cdn.generative.xyz/btc-projects/perceptron.png",
+				Url: "https://storage.googleapis.com/generative-static-prod/btc-projects/perceptrons.gif",
 			},
 		}},
 	}

@@ -212,9 +212,6 @@ func startServer() {
 		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
-	// test
-	//uc.NotifyNewBid("bc1py6uh5z655ljh5j98gdp2xet7nf6j65097vpvy4knwhcj2l5c8w4qfuzasn", 1)
-	//uc.JobSendDiscordNoti()
 
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:
