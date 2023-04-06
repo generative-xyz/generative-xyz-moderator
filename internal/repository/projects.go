@@ -425,7 +425,16 @@ func (r Repository) GetRecentWorksProjects(filter entity.FilterProjects) (*entit
 func (r Repository) GetAllRawProjects(filter entity.FilterProjects) (*entity.Pagination, error) {
 	confs := []entity.Projects{}
 	resp := &entity.Pagination{}
+
 	f := r.FilterProjectRaw(filter)
+
+	//only ETH project tokenID < 10000 will be applied this filter
+	if filter.IsSynced != nil && filter.Status != nil {
+		if *filter.IsSynced == false && *filter.Status == false {
+			f["tokenIDInt"] = bson.M{"$lt" : 1000000 }
+		}
+	}
+
 	s := r.SortProjects()
 	p, err := r.Paginate(utils.COLLECTION_PROJECTS, filter.Page, filter.Limit, f, r.SelectedProjectFields(), s, &confs)
 	if err != nil {

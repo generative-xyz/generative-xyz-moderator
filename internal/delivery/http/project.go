@@ -353,7 +353,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	hidden := false
 	f.IsHidden = &hidden
-	uProjects, err := h.Usecase.GetAllProjects(f)
+	uProjects, err := h.Usecase.GetProjects(f)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.GetProjects", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
