@@ -144,7 +144,7 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 	config, _ := u.Repo.FindConfig(key)
 	if config != nil {
 		config.Data = true
-		_, err = u.Repo.UpdateConfig(key, config)
+		_, err = u.Repo.UpdateConfig(config.UUID, config)
 	} else {
 		config = &entity.Configs{
 			Key:  key,
@@ -165,13 +165,19 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 			fmt.Println("err InsertConfig keySnapShot: ", err)
 		}
 		if configListSnapshot != nil {
-			listAuctionBid, err := u.Repo.ListAuctionCollectionBidder()
+			listAuctionBid, err := u.Repo.ListAuctionCollectionBidderShort()
+			fmt.Println("err ListAuctionCollectionBidder: ", err)
 			if listAuctionBid != nil {
+
+				// listAuctionBidJson, err := json.Marshal(listAuctionBid)
+				// if err == nil {
 				configListSnapshot.Data = listAuctionBid
+				// update:
+				_, err = u.Repo.UpdateConfig(configListSnapshot.UUID, configListSnapshot)
+				return err
+				// }
+
 			}
-			// update:
-			_, err = u.Repo.UpdateConfig(key, config)
-			return err
 
 		}
 
@@ -181,10 +187,18 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 }
 
 func (u Usecase) APIAuctionListSnapshot() interface{} {
-	config, _ := u.Repo.FindConfig("auction-list-snapshot")
-	if config != nil {
-		return config.Data
+
+	var result struct {
+		Key   string                                `bson:"key"`
+		Value string                                `bson:"value"`
+		Data  []entity.AuctionCollectionBidderShort `bson:"data"`
 	}
-	return nil
+
+	// var result entity.Configs2
+	err := u.Repo.FindConfig2("auction-list-snapshot", &result)
+	if err != nil {
+		return err
+	}
+	return result.Data
 
 }
