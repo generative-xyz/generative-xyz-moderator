@@ -14,8 +14,8 @@ func (u Usecase) JobAuction_GetListAuction() error {
 	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
 
 	// testnet
-	contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
-	contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
+	// contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
+	// contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
 
 	// contractV2 = "0x4922765c0145e353d0631f5fb9331ed8ba9ae9ba" // mainnet
 
@@ -151,6 +151,7 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 			Data: true,
 		}
 		err = u.Repo.InsertConfig(config)
+		fmt.Println("err InsertConfig declared: ", err)
 	}
 
 	if err == nil {
@@ -161,10 +162,10 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 				Key: keySnapShot,
 			}
 			err = u.Repo.InsertConfig(configListSnapshot)
-			fmt.Println("err: ", err)
+			fmt.Println("err InsertConfig keySnapShot: ", err)
 		}
 		if configListSnapshot != nil {
-			listAuctionBid, _ := u.Repo.ListAuctionCollectionBidder()
+			listAuctionBid, err := u.Repo.ListAuctionCollectionBidder()
 			if listAuctionBid != nil {
 				configListSnapshot.Data = listAuctionBid
 			}
