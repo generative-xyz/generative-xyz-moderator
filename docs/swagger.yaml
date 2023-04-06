@@ -1,5 +1,52 @@
 basePath: /rederinghub.io/v1
 definitions:
+  dao_artist.Status:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - Verifying
+    - Verified
+  dao_artist_voted.Status:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - Report
+    - Verify
+  dao_project.Status:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - Voting
+    - Executed
+    - Defeated
+  dao_project_voted.Status:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - Against
+    - Voted
+  entity.BaseEntity:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
   entity.DeveloperKey:
     properties:
       apiCompany:
@@ -29,21 +76,15 @@ definitions:
     type: object
   entity.FirebaseRegistrationToken:
     properties:
+      base_entity:
+        $ref: '#/definitions/entity.BaseEntity'
       created_at:
-        type: string
-      deleted_at:
         type: string
       device_type:
         type: string
-      id:
-        type: string
       registration_token:
         type: string
-      updated_at:
-        type: string
       user_wallet:
-        type: string
-      uuid:
         type: string
     type: object
   entity.InscribeBTCResp:
@@ -73,8 +114,9 @@ definitions:
       projectTokenId:
         type: string
       status:
+        allOf:
+        - $ref: '#/definitions/entity.StatusInscribe'
         description: status for record
-        type: integer
       tokenAddress:
         type: string
       tokenId:
@@ -193,8 +235,6 @@ definitions:
         type: integer
       contractAddress:
         type: string
-      created_at:
-        type: string
       created_by_collection_meta:
         type: boolean
       creatorAddrr:
@@ -205,8 +245,6 @@ definitions:
         type: string
       creatorProfile:
         $ref: '#/definitions/entity.Users'
-      deleted_at:
-        type: string
       description:
         type: string
       fromAuthentic:
@@ -216,8 +254,6 @@ definitions:
       hash:
         type: string
       htmlFile:
-        type: string
-      id:
         type: string
       images:
         description: if user uses links instead of animation URL
@@ -350,10 +386,6 @@ definitions:
         type: string
       txHex:
         type: string
-      updated_at:
-        type: string
-      uuid:
-        type: string
       whiteListEthContracts:
         description: if user uses links instead of animation URL
         items:
@@ -372,8 +404,71 @@ definitions:
       field:
         type: string
       type:
-        type: integer
+        $ref: '#/definitions/entity.SortType'
     type: object
+  entity.SortType:
+    enum:
+    - 1
+    - -1
+    type: integer
+    x-enum-varnames:
+    - SORT_ASC
+    - SORT_DESC
+  entity.StatusInscribe:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    type: integer
+    x-enum-comments:
+      StatusInscribe_Minted: '5: mint success'
+      StatusInscribe_Minting: '4: minting'
+      StatusInscribe_NeedToRefund: '12: Need to refund BTC'
+      StatusInscribe_NotEnoughBalance: '11: balance not enough'
+      StatusInscribe_Pending: '0: pending: waiting for fund'
+      StatusInscribe_ReceivedFund: '1: received fund from user (buyer)'
+      StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr: '2: sending btc from segwit
+        address to ord address'
+      StatusInscribe_SendingNFTToUser: '6: sending nft to user'
+      StatusInscribe_SentBTCFromSegwitAddrToOrdAdd: '3: send btc from segwit address
+        to ord address success, or ready to mint.'
+      StatusInscribe_SentNFTToUser: '7: send nft to user success: flow DONE'
+      StatusInscribe_TxMintFailed: '10: tx mint failed'
+      StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed: '8: send btc from segwit
+        address to ord address failed'
+      StatusInscribe_TxSendBTCToUserFailed: '9: send nft to user failed'
+    x-enum-varnames:
+    - StatusInscribe_Pending
+    - StatusInscribe_ReceivedFund
+    - StatusInscribe_SendingBTCFromSegwitAddrToOrdAddr
+    - StatusInscribe_SentBTCFromSegwitAddrToOrdAdd
+    - StatusInscribe_Minting
+    - StatusInscribe_Minted
+    - StatusInscribe_SendingNFTToUser
+    - StatusInscribe_SentNFTToUser
+    - StatusInscribe_TxSendBTCFromSegwitAddrToOrdAddrFailed
+    - StatusInscribe_TxSendBTCToUserFailed
+    - StatusInscribe_TxMintFailed
+    - StatusInscribe_NotEnoughBalance
+    - StatusInscribe_NeedToRefund
+  entity.TokenPaidType:
+    enum:
+    - eth
+    - btc
+    type: string
+    x-enum-varnames:
+    - ETH
+    - BIT
   entity.TokenStats:
     properties:
       price_int:
@@ -430,12 +525,13 @@ definitions:
       originalInscribedBy:
         type: string
       owner:
-        $ref: '#/definitions/entity.Users'
+        allOf:
+        - $ref: '#/definitions/entity.Users'
         description: accept duplicated data to query more faster
       ownerAddr:
         type: string
       paidType:
-        type: string
+        $ref: '#/definitions/entity.TokenPaidType'
       parsed_attributes:
         items:
           $ref: '#/definitions/entity.TokenUriAttr'
@@ -527,14 +623,10 @@ definitions:
         type: string
       created_at:
         type: string
-      deleted_at:
-        type: string
       display_name:
         type: string
       enable_notification:
         type: boolean
-      id:
-        type: string
       is_updated_avatar:
         type: boolean
       isAdmin:
@@ -547,10 +639,6 @@ definitions:
         $ref: '#/definitions/entity.ProfileSocial'
       stats:
         $ref: '#/definitions/entity.UserStats'
-      updated_at:
-        type: string
-      uuid:
-        type: string
       verifiedAt:
         type: string
       wallet_address:
@@ -592,7 +680,8 @@ definitions:
       metadata:
         type: string
       metadata_obj:
-        $ref: '#/definitions/nfts.MoralisTokenMetadata'
+        allOf:
+        - $ref: '#/definitions/nfts.MoralisTokenMetadata'
         description: Custom
       name:
         type: string
@@ -995,6 +1084,13 @@ definitions:
       originalLink:
         type: string
     type: object
+  request.SendNewBidNotifyRequest:
+    properties:
+      bid_price:
+        type: number
+      wallet_address:
+        type: string
+    type: object
   request.UpdateBTCProjectCategoriesReq:
     properties:
       categories:
@@ -1096,12 +1192,12 @@ definitions:
   request.VoteDaoArtistRequest:
     properties:
       status:
-        type: integer
+        $ref: '#/definitions/dao_artist_voted.Status'
     type: object
   request.VoteDaoProjectRequest:
     properties:
       status:
-        type: integer
+        $ref: '#/definitions/dao_project_voted.Status'
     type: object
   request.WithDrawItemRequest:
     properties:
@@ -1163,7 +1259,7 @@ definitions:
       seq_id:
         type: integer
       status:
-        type: integer
+        $ref: '#/definitions/dao_artist.Status'
       total_report:
         type: integer
       total_verify:
@@ -1184,7 +1280,7 @@ definitions:
       display_name:
         type: string
       status:
-        type: integer
+        $ref: '#/definitions/dao_artist_voted.Status'
     type: object
   response.DaoProject:
     properties:
@@ -1211,7 +1307,7 @@ definitions:
       seq_id:
         type: integer
       status:
-        type: integer
+        $ref: '#/definitions/dao_project.Status'
       total_against:
         type: integer
       total_vote:
@@ -1232,7 +1328,7 @@ definitions:
       display_name:
         type: string
       status:
-        type: integer
+        $ref: '#/definitions/dao_project_voted.Status'
     type: object
   response.FileRes:
     properties:
@@ -2567,7 +2663,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Artist
@@ -2588,7 +2684,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Get DAO Artist
@@ -2614,7 +2710,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Artist
@@ -2669,7 +2765,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create DAO Project
@@ -2718,7 +2814,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Vote DAO Project
@@ -3006,6 +3102,26 @@ paths:
       summary: BTC NFT Detail Inscribe
       tags:
       - Inscribe
+  /discord/new-bid:
+    post:
+      description: send new bid notification
+      parameters:
+      - description: Data for minify
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.SendNewBidNotifyRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: send new bid notification
+      tags:
+      - Discord
   /eth/receive-address:
     post:
       consumes:
@@ -3090,7 +3206,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token
@@ -3112,7 +3228,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: Create FCM Token Test Data
@@ -3321,6 +3437,7 @@ paths:
           $ref: '#/definitions/request.CompressImageReq'
       produces:
       - application/json
+      responses: {}
       security:
       - ApiKeyAuth: []
       summary: compress-image
@@ -3428,7 +3545,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ApiKeyAuth: []
       summary: BTC Retry Inscribe
@@ -4564,7 +4681,8 @@ paths:
         in: query
         name: tokenID
         type: string
-      - description: attributes
+      - collectionFormat: csv
+        description: attributes
         in: query
         items:
           type: string
