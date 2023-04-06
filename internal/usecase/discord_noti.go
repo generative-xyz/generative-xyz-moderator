@@ -589,7 +589,7 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 		})
 	}
 	fields = addFields(fields, "", "Category: AI", false)
-	fields = addFields(fields, "Bid Amount", fmt.Sprintf("%f ETH", price), false)
+	fields = addFields(fields, "Bid Amount", fmt.Sprintf("%.2f ETH", price), false)
 	fields = addFields(fields, "", "Perceptrons is an experimental collection of on-chain AI models. While many projects have stored outputs from AI models on-chain, Perceptrons attempts to store the actual AI models themselves, allowing users to query the artwork and run live image recognition tasks.", false)
 
 	domain := os.Getenv("DOMAIN")
@@ -597,7 +597,7 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 	if bidderName == "" {
 		bidderName = bidder.WalletAddress[:4] + "..." + bidder.WalletAddress[len(bidder.WalletAddress)-4:]
 	}
-	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s/profile/%s)", bidderName, domain, bidder.WalletAddressBTCTaproot), true)
+	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s/%s)", bidderName, "https://opensea.io", bidder.WalletAddress), true)
 
 	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
