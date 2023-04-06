@@ -71,3 +71,18 @@ func (r Repository) ListAuctionCollectionBidder() ([]entity.AuctionCollectionBid
 
 	return confs, nil
 }
+
+func (r Repository) ListAuctionCollectionBidderShort() ([]entity.AuctionCollectionBidderShort, error) {
+	confs := []entity.AuctionCollectionBidderShort{}
+	f := bson.M{}
+
+	opts := options.Find()
+
+	cursor, err := r.DB.Collection(entity.AuctionCollectionBidder{}.TableName()).Find(context.TODO(), f, opts)
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return confs, err
+	}
+
+	return confs, nil
+}

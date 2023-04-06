@@ -22,6 +22,18 @@ func (r Repository) FindConfig(key string) (*entity.Configs, error) {
 	}
 	return resp, nil
 }
+func (r Repository) FindConfig2(key string, result interface{}) error {
+	usr, err := r.FilterOne(entity.Configs{}.TableName(), bson.D{{"key", key}})
+	if err != nil {
+		return err
+	}
+
+	err = helpers.Transform(usr, result)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (r Repository) DeleteConfig(key string) (*mongo.DeleteResult, error) {
 	filter := bson.D{{"key", key}}
@@ -41,16 +53,16 @@ func (r Repository) InsertConfig(data *entity.Configs) error {
 	return nil
 }
 
-func (r Repository) ListConfigs(filter entity.FilterConfigs) (*entity.Pagination, error)  {
+func (r Repository) ListConfigs(filter entity.FilterConfigs) (*entity.Pagination, error) {
 	confs := []entity.Configs{}
 	resp := &entity.Pagination{}
 	f := bson.M{}
 
-	p, err := r.Paginate(utils.COLLECTION_CONFIGS, filter.Page, filter.Limit, f,bson.D{}, []Sort{}, &confs)
+	p, err := r.Paginate(utils.COLLECTION_CONFIGS, filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
-resp.Result = confs
+	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit
@@ -58,7 +70,7 @@ resp.Result = confs
 }
 
 func (r Repository) UpdateConfig(key string, conf *entity.Configs) (*mongo.UpdateResult, error) {
-	filter := bson.D{{"key", key}}
+	filter := bson.D{{"uuid", key}}
 	result, err := r.UpdateOne(conf.TableName(), filter, conf)
 	if err != nil {
 		return nil, err
