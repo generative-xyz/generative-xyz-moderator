@@ -1,0 +1,46 @@
+name: Docker dependencies cache
+
+on:
+  push:
+    branches: [
+      "master"
+    ]
+
+env:
+  DOCKER_REGISTRY: gcr.io
+  DOCKER_IMAGE_NAME: generative-365207/generative-moderator
+
+jobs:
+
+  build-cache:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build_and_cache
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get the tag name
+        id: get_tag_name
+        run: |
+          short_sha=$(echo $GITHUB_SHA | head -c 7)
+          echo "IMAGE_TAG=${GITHUB_REF_NAME}-${short_sha}" >> $GITHUB_ENV
+          echo "BUILD_ENV=production" >> $GITHUB_ENV
+
+      - name: Setup docker
+        uses: docker/setup-buildx-action@v2
+
+
+      - name: Build and cache
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: cache.Dockerfile
+          push: false
+          tags: |
+            ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}:cache-${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          target: deps
+          build-args: |
+            ENV=${{ env.BUILD_ENV }}
+            NEXT_PUBLIC_INFURAKEY=${{ secrets.NEXT_PUBLIC_INFURAKEY }}
