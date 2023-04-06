@@ -595,7 +595,7 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 	domain := os.Getenv("DOMAIN")
 	bidderName := bidder.DisplayName
 	if bidderName == "" {
-		bidderName = bidder.WalletAddressBTCTaproot[:9]
+		bidderName = bidder.WalletAddress[:4] + "..." + bidder.WalletAddress[len(bidder.WalletAddress)-4:]
 	}
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s/profile/%s)", bidderName, domain, bidder.WalletAddressBTCTaproot), true)
 
