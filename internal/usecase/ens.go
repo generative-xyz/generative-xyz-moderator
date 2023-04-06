@@ -14,8 +14,8 @@ func (u Usecase) JobAuction_GetListAuction() error {
 	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
 
 	// testnet
-	// contractV1 = "0x678B7313E34350Ec233Df5Ee0F25EFEa5C88B29f"
-	// contractV2 = "0x90047bc21b0cf748507551fa1a29a40e912ce088"
+	contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
+	contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
 
 	// contractV2 = "0x4922765c0145e353d0631f5fb9331ed8ba9ae9ba" // mainnet
 
@@ -120,4 +120,70 @@ func (u Usecase) JobAuction_GetListAuction() error {
 
 func (u Usecase) APIGetListAuction() ([]entity.AuctionCollectionBidder, error) {
 	return u.Repo.ListAuctionCollectionBidder()
+}
+
+func (u Usecase) APIAuctionCheckDeclared() bool {
+	key := "auction-declared"
+	config, _ := u.Repo.FindConfig(key)
+	if config != nil {
+		return config.Data.(bool)
+	} else {
+		config = &entity.Configs{
+			Key:  key,
+			Data: false,
+		}
+		u.Repo.InsertConfig(config)
+	}
+	return false
+
+}
+
+func (u Usecase) APIAuctionDeclaredNow() error {
+	key := "auction-declared"
+	var err error
+	config, _ := u.Repo.FindConfig(key)
+	if config != nil {
+		config.Data = true
+		_, err = u.Repo.UpdateConfig(key, config)
+	} else {
+		config = &entity.Configs{
+			Key:  key,
+			Data: true,
+		}
+		err = u.Repo.InsertConfig(config)
+	}
+
+	if err == nil {
+		keySnapShot := "auction-list-snapshot"
+		configListSnapshot, _ := u.Repo.FindConfig(keySnapShot)
+		if configListSnapshot == nil {
+			configListSnapshot = &entity.Configs{
+				Key: keySnapShot,
+			}
+			err = u.Repo.InsertConfig(configListSnapshot)
+			fmt.Println("err: ", err)
+		}
+		if configListSnapshot != nil {
+			listAuctionBid, _ := u.Repo.ListAuctionCollectionBidder()
+			if listAuctionBid != nil {
+				configListSnapshot.Data = listAuctionBid
+			}
+			// update:
+			_, err = u.Repo.UpdateConfig(key, config)
+			return err
+
+		}
+
+	}
+
+	return err
+}
+
+func (u Usecase) APIAuctionListSnapshot() interface{} {
+	config, _ := u.Repo.FindConfig("auction-list-snapshot")
+	if config != nil {
+		return config.Data
+	}
+	return nil
+
 }

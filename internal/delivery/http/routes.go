@@ -144,6 +144,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
 
+	admin.HandleFunc("/update-declared-now", h.updateDeclaredNow).Methods("POST") // auction
+
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
 
@@ -332,6 +334,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	auction := api.PathPrefix("/auction").Subrouter()
 	auction.HandleFunc("/list", h.getListAuction).Methods("GET")
+	auction.HandleFunc("/list-snapshot", h.listSnapshot).Methods("GET")
+	auction.HandleFunc("/check-declared", h.checkDeclared).Methods("GET")
 
 }
 
