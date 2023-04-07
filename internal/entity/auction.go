@@ -47,3 +47,19 @@ type AuctionWinnerList struct {
 	Quantity   int    `bson:"quantity" json:"quantity"`
 	MintPrice  int    `bson:"mintPrice" json:"mintPrice"`
 }
+
+// shared:
+type AuctionShared struct {
+	BaseEntity `bson:",inline" json:"-"`
+
+	Address string `bson:"address" json:"address"`
+	Status  int    `bson:"status" json:"status"`
+}
+
+func (u AuctionShared) TableName() string {
+	return "auction_shared"
+}
+
+func (u AuctionShared) ToBson() (*bson.D, error) {
+	return helpers.ToDoc(u)
+}
