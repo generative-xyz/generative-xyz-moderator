@@ -2,7 +2,6 @@ package entity
 
 import (
 	"go.mongodb.org/mongo-driver/bson"
-	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 )
 
@@ -20,7 +19,7 @@ type FilterConfigs struct {
 }
 
 func (u Configs) TableName() string {
-	return utils.COLLECTION_CONFIGS
+	return "configs"
 }
 
 func (u Configs) ToBson() (*bson.D, error) {

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -10,14 +11,7 @@ import (
 
 func (u Usecase) JobAuction_GetListAuction() error {
 
-	contractV1 := os.Getenv("AUCTION_CONTRACT")
-	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
-
-	// testnet
-	if u.Config.ENV == "develop" {
-		contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
-		contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
-	}
+	contractV1, contractV2 := u.GetBidContractV1V2()
 
 	listMap1, _ := u.EthClient.GetListBidV1(contractV1)
 	listMap2, _ := u.EthClient.GetListBidV2(contractV2)
@@ -127,12 +121,6 @@ func (u Usecase) APIAuctionCheckDeclared() bool {
 	config, _ := u.Repo.FindConfig(key)
 	if config != nil {
 		return config.Data.(bool)
-	} else {
-		config = &entity.Configs{
-			Key:  key,
-			Data: false,
-		}
-		u.Repo.InsertConfig(config)
 	}
 	return false
 
@@ -186,7 +174,7 @@ func (u Usecase) APIAuctionDeclaredNow() error {
 	return err
 }
 
-func (u Usecase) APIAuctionListSnapshot() interface{} {
+func (u Usecase) APIAuctionListSnapshot() []entity.AuctionCollectionBidderShort {
 
 	var result struct {
 		Key   string                                `bson:"key"`
@@ -197,7 +185,7 @@ func (u Usecase) APIAuctionListSnapshot() interface{} {
 	// var result:
 	err := u.Repo.FindConfigCustom("auction-list-snapshot", &result)
 	if err != nil {
-		return err
+		return []entity.AuctionCollectionBidderShort{}
 	}
 	return result.Data
 
@@ -219,4 +207,98 @@ func (u Usecase) GetAuctionListWinnerAddress() ([]entity.AuctionWinnerList, erro
 	}
 	return result.Data, nil
 
+}
+
+func (u Usecase) APIAuctionCrawlWinnerNow() error {
+
+	contractV1, contractV2 := u.GetBidContractV1V2()
+
+	key := "auction-declared"
+	var err error
+	configDeclared, err := u.Repo.FindConfig(key)
+
+	if err != nil {
+		return err
+
+	}
+
+	if configDeclared == nil {
+		return errors.New("declared first!")
+	}
+
+	if !configDeclared.Data.(bool) {
+		return errors.New("declared first.")
+	}
+
+	listSnapShot := u.APIAuctionListSnapshot()
+	if len(listSnapShot) == 0 {
+		return errors.New("snapshot first!")
+	}
+	// crawl now:
+	for _, bid := range listSnapShot {
+		// get getBidsByAddress to check winner and update list bidder address:
+		// v1:
+		bidInfo1, err := u.EthClient.GetBidsByAddressV1(contractV1, bid.Bidder)
+		if err != nil {
+			err = errors.New("GetBidsByAddressV1 for " + bid.Bidder + " err: " + err.Error())
+			fmt.Println(err)
+			continue
+		}
+		if bidInfo1 != nil {
+			if bidInfo1.IsWinner {
+				// get item from realtime db:
+				bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
+				if err != nil {
+					return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
+				}
+				bidFromDb.Quantity = bidInfo1.Quantity
+				bidFromDb.IsWinner = bidInfo1.IsWinner
+				// update:
+				_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
+				if err != nil {
+					return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
+				}
+			}
+
+		}
+		// v2:
+		bidInfo2, err := u.EthClient.GetBidsByAddressV1(contractV2, bid.Bidder)
+		if err != nil {
+			err = errors.New("GetBidsByAddressV2 for " + bid.Bidder + " err: " + err.Error())
+			fmt.Println(err)
+			continue
+		}
+		if bidInfo2 != nil {
+			if bidInfo2.IsWinner {
+				// get item from realtime db:
+				bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
+				if err != nil {
+					return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
+				}
+				bidFromDb.Quantity = bidInfo2.Quantity
+				bidFromDb.IsWinner = bidInfo2.IsWinner
+				// update:
+				_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
+				if err != nil {
+					return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
+				}
+			}
+
+		}
+
+	}
+
+	return err
+}
+
+func (u Usecase) GetBidContractV1V2() (string, string) {
+	contractV1 := os.Getenv("AUCTION_CONTRACT")
+	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")
+
+	// testnet
+	if u.Config.ENV == "develop" {
+		contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
+		contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
+	}
+	return contractV1, contractV2
 }
