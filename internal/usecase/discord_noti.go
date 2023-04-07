@@ -607,7 +607,7 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, unitPrice float64, quanti
 			bidderName = bidder.WalletAddress[:4] + "..." + bidder.WalletAddress[len(bidder.WalletAddress)-4:]
 		}
 	default:
-		CollectorUrl = domain + "/" + bidder.WalletAddressBTCTaproot
+		CollectorUrl = domain + "/profile/" + bidder.WalletAddressBTCTaproot
 		if bidderName == "" {
 			bidderName = bidder.WalletAddressBTCTaproot[:4] + "..." + bidder.WalletAddressBTCTaproot[len(bidder.WalletAddressBTCTaproot)-4:]
 		}
