@@ -431,7 +431,7 @@ func (r Repository) GetAllRawProjects(filter entity.FilterProjects) (*entity.Pag
 	//only ETH project tokenID < 10000 will be applied this filter
 	if filter.IsSynced != nil && filter.Status != nil {
 		if *filter.IsSynced == false && *filter.Status == false {
-			f["tokenIDInt"] = bson.M{"$lt" : 1000000 }
+			f["tokenIDInt"] = bson.M{"$lt": 1000000}
 		}
 	}
 
@@ -460,7 +460,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 
 func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
-	
+
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{
@@ -503,16 +503,16 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 	if filter.Status != nil {
 		f["status"] = *filter.Status
 	}
-	
-	if filter.TxHash != nil && *filter.TxHash != ""  {
+
+	if filter.TxHash != nil && *filter.TxHash != "" {
 		f["txhash"] = *filter.TxHash
 	}
-	
+
 	if filter.TxHex != nil && *filter.TxHex != "" {
 		f["txHex"] = *filter.TxHex
 	}
-	
-	if filter.ContractAddress != nil && *filter.ContractAddress != ""  {
+
+	if filter.ContractAddress != nil && *filter.ContractAddress != "" {
 		// f["contractAddress"] = strings.ToLower(*filter.ContractAddress)
 
 		f["contractAddress"] = bson.M{"$regex": primitive.Regex{
@@ -521,11 +521,11 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 			Options: "i",
 		}}
 	}
-	
-	if filter.CommitTxHash != nil  {
+
+	if filter.CommitTxHash != nil {
 		f["commitTxHash"] = *filter.CommitTxHash
 	}
-	
+
 	if filter.RevealTxHash != nil && *filter.RevealTxHash != "" {
 		f["revealTxHash"] = *filter.RevealTxHash
 	}
@@ -538,7 +538,6 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 
 	return f
 
-	
 }
 
 func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {
@@ -1137,4 +1136,40 @@ func (r Repository) SetProjectIndex(projectID string, index int) error {
 	}
 
 	return err
+}
+
+func (r Repository) FindEmptySourceProjects() ([]entity.Projects, error) {
+	var result []entity.Projects
+	filter := bson.M{"$or": []bson.M{
+		{"source": bson.M{"$exists": false}},
+		{"source": bson.M{"$type": 10}},
+	}}
+	cursor, err := r.DB.Collection(entity.Projects{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	for cursor.Next(context.Background()) {
+		var project entity.Projects
+		err = cursor.Decode(&project)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, project)
+	}
+
+	return result, nil
+}
+
+func (r Repository) SetProjectSource(tokenId, source string) error {
+	collection := entity.Projects{}.TableName()
+	filter := bson.D{{"tokenid", tokenId}}
+	sourceUpdate := bson.D{{"source", source}}
+	result, err := r.DB.Collection(collection).UpdateOne(context.TODO(), filter, bson.D{{"$set", sourceUpdate}})
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("no document matched the filter")
+	}
+	return nil
 }

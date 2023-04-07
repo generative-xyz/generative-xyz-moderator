@@ -1,8 +1,13 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/google/uuid"
+	"os"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -171,4 +176,77 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 	}
 
 	return nil
+}
+
+func (u Usecase) FixProjectEmptySource() error {
+	emptySourceProjects, err := u.Repo.FindEmptySourceProjects()
+	if err != nil {
+		return err
+	}
+
+	if len(emptySourceProjects) == 0 {
+		return nil
+	}
+
+	generativePath, err := u.getCollectionFolder("https://github.com/generative-xyz/ordinals-collections.git")
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	for _, p := range emptySourceProjects {
+		wg.Add(1)
+		go func(project entity.Projects) {
+			defer wg.Done()
+			meta, err := u.Repo.FindCollectionMetaByProjectId(project.TokenID)
+			if err != nil {
+				return
+			}
+			if project.Source != "" {
+				project.Source = meta.Source
+				if project.Source == "https://github.com/generative-xyz/ordinals-collections.git" {
+					path := generativePath
+					sourceName, err := u.getSourceFromProject(path, meta.Slug)
+					if err != nil || sourceName == "" {
+						return
+					}
+					project.Source = project.Source + "$$" + sourceName
+				}
+
+				u.Repo.SetProjectSource(project.TokenID, project.Source)
+				logger.AtLog.Logger.Info("FixProjectEmptySource", zap.Any("slug", meta.Slug), zap.Any("tokenid", project.TokenID), zap.Any("source", project.Source))
+			}
+		}(p)
+	}
+	wg.Wait()
+	os.RemoveAll(generativePath)
+	return nil
+}
+
+func (u Usecase) getCollectionFolder(source string) (string, error) {
+	uuid := uuid.New().String()
+	folderPath := fmt.Sprintf("/tmp/ordinals-collection-%s", uuid)
+
+	_, err := git.PlainClone(folderPath, false, &git.CloneOptions{
+		URL:      source,
+		Progress: os.Stdout,
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return folderPath, nil
+}
+
+func (u Usecase) getSourceFromProject(path, slug string) (string, error) {
+	name := ""
+	fileData, err := os.ReadFile(fmt.Sprintf("%s/collections/%s/meta.json", path, slug))
+	if err != nil {
+		return name, err
+	}
+	var meta entity.CollectionMeta
+	if err = json.Unmarshal(fileData, &meta); err != nil {
+		return name, err
+	}
+	name = meta.Source
+	return name, nil
 }

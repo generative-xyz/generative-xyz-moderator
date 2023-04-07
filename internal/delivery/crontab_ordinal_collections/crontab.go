@@ -126,6 +126,7 @@ func (h ScronOrdinalCollectionHandler) crawlOrdinalCollection(source string) err
 	for _, f := range collectionFolders {
 		h.syncCollection(fmt.Sprintf("%s/%s", collectionFoldersPath, f.Name()), source)
 	}
+	os.RemoveAll(folder_path)
 	return nil
 }
 
@@ -142,6 +143,13 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 	c.AddFunc("*/15 * * * *", func() {
 		source := "https://github.com/generative-xyz/ordinals-collections.git"
 		err := h.crawlOrdinalCollection(source)
+		if err != nil {
+			logger.AtLog.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", zap.Error(err))
+		}
+	})
+
+	c.AddFunc("0 */1 * * *", func() {
+		err := h.Usecase.FixProjectEmptySource()
 		if err != nil {
 			logger.AtLog.Logger.Error("DispatchCron.EveryFifteenMinutes.SyncGenerativeCollections", zap.Error(err))
 		}
