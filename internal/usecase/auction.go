@@ -14,8 +14,8 @@ func (u Usecase) ApiGetEns() error {
 	if listAuctionBid != nil {
 		for _, v := range listAuctionBid {
 			if len(v.Ens) == 0 {
-				ens, err := u.TcClient.GetEns(v.Bidder)
-				if err != nil && len(ens) > 0 {
+				ens, _ := u.TcClient.GetEns(v.Bidder)
+				if len(ens) > 0 {
 					v.Ens = ens
 					u.Repo.UpdateAuctionCollectionBidder(&v)
 				}
@@ -102,8 +102,8 @@ func (u Usecase) JobAuction_GetListAuction() error {
 			fmt.Println("address2 not exit db")
 
 			if len(v.Ens) == 0 {
-				ens, err := u.TcClient.GetEns(v.Bidder)
-				if err != nil && len(ens) > 0 {
+				ens, _ := u.TcClient.GetEns(v.Bidder)
+				if len(ens) > 0 {
 					v.Ens = ens
 				}
 			}
