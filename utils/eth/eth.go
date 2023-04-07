@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
+	"github.com/wealdtech/go-ens/v3"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/eth/contract/auctionv1"
 	"rederinghub.io/utils/eth/contract/auctionv2"
@@ -706,5 +707,20 @@ func (c *Client) GetBidsByAddressV2(contractAddress, address string) (*AuctionCo
 		UnitPrice: auctionCollection2Bidder.UnitPrice,
 		Quantity:  int(auctionCollection2Bidder.Quantity),
 	}, nil
+
+}
+
+func (c *Client) GetEns(address string) (string, error) {
+
+	domain, err := ens.ReverseResolve(c.GetClient(), common.HexToAddress(address))
+
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), common.HexToAddress("0x5555763613a12D8F3e73be831DFf8598089d3dCa")))
+	fmt.Println("domain: ", domain)
+	return domain, nil
 
 }
