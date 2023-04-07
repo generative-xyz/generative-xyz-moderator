@@ -46,7 +46,7 @@ func (u Usecase) JobAuction_GetListAuction() error {
 				item.Amount = v.Amount.String()
 				item.Quantity = v.Quantity
 				item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
-				item.Ens = v.Ens
+				// item.Ens = v.Ens
 				item.Contract = "v1"
 				// update:
 				_, err := u.Repo.UpdateAuctionCollectionBidder(item)
@@ -100,7 +100,7 @@ func (u Usecase) JobAuction_GetListAuction() error {
 			item.Amount = v.Amount.String()
 			item.Quantity = v.Quantity
 			item.UnitPrice = big.NewInt(0).SetUint64(v.UnitPrice).String()
-			item.Ens = v.Ens
+			// item.Ens = v.Ens
 			item.Contract = contract
 			// update:
 			_, err := u.Repo.UpdateAuctionCollectionBidder(item)
