@@ -135,7 +135,7 @@ func (r Repository) FindProjectByTxHash(txHash string) (*entity.Projects, error)
 func (r Repository) FindProjectBy(contractAddress string, tokenID string) (*entity.Projects, error) {
 	resp := &entity.Projects{}
 	contractAddress = strings.ToLower(contractAddress)
-	go r.findProjectBy(contractAddress, tokenID)
+	//go r.findProjectBy(contractAddress, tokenID) // ????
 
 	p, err := r.Cache.GetData(helpers.ProjectDetailKey(contractAddress, tokenID))
 	if err != nil {
@@ -1140,10 +1140,19 @@ func (r Repository) SetProjectIndex(projectID string, index int) error {
 
 func (r Repository) FindEmptySourceProjects() ([]entity.Projects, error) {
 	var result []entity.Projects
-	filter := bson.M{"$or": []bson.M{
+	orCode := bson.M{"$or": []bson.M{
 		{"source": bson.M{"$exists": false}},
 		{"source": bson.M{"$type": 10}},
 	}}
+	filter := bson.M{
+		"$and": []bson.M{
+			orCode,
+			{"isSynced": bson.M{"$eq": true}},
+			{"status": bson.M{"$eq": true}},
+			{"isHidden": bson.M{"$eq": false}},
+		},
+	}
+
 	cursor, err := r.DB.Collection(entity.Projects{}.TableName()).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err

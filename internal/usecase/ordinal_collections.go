@@ -197,11 +197,14 @@ func (u Usecase) FixProjectEmptySource() error {
 		wg.Add(1)
 		go func(project entity.Projects) {
 			defer wg.Done()
-			meta, err := u.Repo.FindCollectionMetaByProjectId(project.TokenID)
+			meta, err := u.Repo.FindCollectionMeta(map[string]interface{}{
+				"project_id":       project.TokenID,
+				"inscription_icon": project.InscriptionIcon,
+			})
 			if err != nil {
 				return
 			}
-			if project.Source != "" {
+			if meta.InscriptionIcon != "" {
 				project.Source = meta.Source
 				if project.Source == "https://github.com/generative-xyz/ordinals-collections.git" {
 					path := generativePath

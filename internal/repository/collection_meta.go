@@ -32,19 +32,19 @@ func (r Repository) FindCollectionMetaByInscriptionIcon(inscriptionIcon string) 
 	return resp, nil
 }
 
-func (r Repository) FindCollectionMetaByProjectId(projectID string) (*entity.CollectionMeta, error) {
-	resp := &entity.CollectionMeta{}
-	usr, err := r.FilterOne(entity.CollectionMeta{}.TableName(), bson.D{{Key: "project_id", Value: projectID}})
+func (r Repository) FindCollectionMeta(filters map[string]interface{}) (*entity.CollectionMeta, error) {
+	collectionName := entity.CollectionMeta{}.TableName()
+
+	filterData := make([]bson.M, 0)
+	for k, v := range filters {
+		filterData = append(filterData, bson.M{k: bson.M{"$eq": v}})
+	}
+	var meta entity.CollectionMeta
+	err := r.DB.Collection(collectionName).FindOne(context.TODO(), bson.M{"$or": filterData}).Decode(&meta)
 	if err != nil {
 		return nil, err
 	}
-
-	err = helpers.Transform(usr, resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return &meta, nil
 }
 
 func (r Repository) UpdateCollectionMeta(uuid string, updatedData map[string]interface{}) error {
