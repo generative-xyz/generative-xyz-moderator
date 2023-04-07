@@ -126,7 +126,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 	if err != nil {
 		return nil, err
 	}
-	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
+	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.EconomyFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
