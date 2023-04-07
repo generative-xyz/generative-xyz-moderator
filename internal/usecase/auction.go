@@ -318,6 +318,13 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 	return err
 }
 
+func (u Usecase) APIShareNow(address string) error {
+	err := u.Repo.InsertAuctionShared(&entity.AuctionShared{
+		Address: address,
+	})
+	return err
+}
+
 func (u Usecase) GetBidContractV1V2() (string, string) {
 	contractV1 := os.Getenv("AUCTION_CONTRACT")
 	contractV2 := os.Getenv("AUCTION_CONTRACT_v2")

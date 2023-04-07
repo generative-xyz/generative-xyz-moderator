@@ -101,3 +101,13 @@ func (r Repository) ListAuctionCollectionBidderShort() ([]entity.AuctionCollecti
 
 	return confs, nil
 }
+
+// shared:
+func (r Repository) InsertAuctionShared(data *entity.AuctionShared) error {
+	data.Address = strings.ToLower(data.Address)
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
