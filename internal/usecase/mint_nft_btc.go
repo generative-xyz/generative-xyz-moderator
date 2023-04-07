@@ -168,7 +168,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	// return list winner:
 	if strings.EqualFold(p.TokenID, bidProjectID) {
-		auctionWinnerList, _ := u.GetAuctionListWinnerAddress()
+		auctionWinnerList, _ := u.GetAuctionListWinnerAddressFromConfig()
 		if auctionWinnerList != nil && len(auctionWinnerList) > 0 {
 			for _, auctionWinner := range auctionWinnerList {
 				if strings.EqualFold(auctionWinner.Address, walletAddress.UserAddress) {

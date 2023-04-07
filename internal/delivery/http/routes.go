@@ -338,7 +338,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auction.HandleFunc("/list-snapshot", h.listSnapshot).Methods("GET")
 	auction.HandleFunc("/check-declared", h.checkDeclared).Methods("GET")
 
-	auction.HandleFunc("/list-winner", h.listBidWinner).Methods("GET")
+	auction.HandleFunc("/list-winner-config", h.listBidWinnerConfig).Methods("GET")
+
+	auction.HandleFunc("/list-winner-bid-list", h.listBidWinnerBigList).Methods("GET")
 
 	discord := api.PathPrefix("/discord").Subrouter()
 	discord.Use(h.MiddleWare.AuthorizationFunc)
