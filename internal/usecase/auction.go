@@ -332,8 +332,8 @@ func (u Usecase) GetBidContractV1V2() (string, string) {
 
 	// testnet
 	if u.Config.ENV == "develop" {
-		contractV1 = "0x367504f3d304c39154acafb769ad25d861fb78fb"
-		contractV2 = "0x3b724a99c9d427d0793b63088a39c19735208900"
+		contractV1 = "0x0E5D5aFf34C1D60Af09A566aB0c8e25ee801cE55"
+		contractV2 = "0x8f2b0521b76218a3657468700e90cba50568f3a8"
 	}
 	return contractV1, contractV2
 }
