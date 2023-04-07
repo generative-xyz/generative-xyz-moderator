@@ -35,7 +35,7 @@ func (h *httpDelivery) sendDiscordNewBid(w http.ResponseWriter, r *http.Request)
 		req.Quantity = 1
 	}
 
-	err = h.Usecase.NotifyNewBid(req.WalletAddress, req.BidPrice, req.Quantity)
+	err = h.Usecase.NotifyNewBid(req.WalletAddress, req.BidPrice, req.Quantity, req.CollectorRedirectTo)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, -1, err)
 		return
