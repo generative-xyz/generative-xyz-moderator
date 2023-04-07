@@ -71,3 +71,43 @@ func (r Repository) ListAuctionCollectionBidder() ([]entity.AuctionCollectionBid
 
 	return confs, nil
 }
+
+func (r Repository) ListAuctionCollectionBidderWinner() ([]entity.AuctionCollectionBidder, error) {
+	confs := []entity.AuctionCollectionBidder{}
+
+	filter := bson.D{{"isWinner", true}}
+
+	opts := options.Find()
+
+	cursor, err := r.DB.Collection(entity.AuctionCollectionBidder{}.TableName()).Find(context.TODO(), filter, opts)
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return confs, err
+	}
+
+	return confs, nil
+}
+
+func (r Repository) ListAuctionCollectionBidderShort() ([]entity.AuctionCollectionBidderShort, error) {
+	confs := []entity.AuctionCollectionBidderShort{}
+	f := bson.M{}
+
+	opts := options.Find()
+
+	cursor, err := r.DB.Collection(entity.AuctionCollectionBidder{}.TableName()).Find(context.TODO(), f, opts)
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return confs, err
+	}
+
+	return confs, nil
+}
+
+// shared:
+func (r Repository) InsertAuctionShared(data *entity.AuctionShared) error {
+	data.Address = strings.ToLower(data.Address)
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
