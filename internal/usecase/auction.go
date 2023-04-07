@@ -321,6 +321,7 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 func (u Usecase) APIShareNow(address string) error {
 	err := u.Repo.InsertAuctionShared(&entity.AuctionShared{
 		Address: address,
+		Status:  1,
 	})
 	return err
 }
