@@ -318,7 +318,7 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 			}
 		} else {
 			// v2:
-			bidInfo2, err := u.EthClient.GetBidsByAddressV1(contractV2, bid.Bidder)
+			bidInfo2, err := u.EthClient.GetBidsByAddressV2(contractV2, bid.Bidder)
 			fmt.Println("address v2:", bid.Bidder)
 			if err != nil {
 				err = errors.New("GetBidsByAddressV2 for " + bid.Bidder + " err: " + err.Error())
