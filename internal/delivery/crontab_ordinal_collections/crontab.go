@@ -60,12 +60,19 @@ func (h ScronOrdinalCollectionHandler) syncCollection(collectionFoldersPath stri
 	meta.Source = source
 	meta.WalletAddress = strings.ToLower(meta.WalletAddress)
 
-	_, err = h.Usecase.Repo.FindCollectionMetaByInscriptionIcon(meta.InscriptionIcon)
+	dbMeta, err := h.Usecase.Repo.FindCollectionMetaByInscriptionIcon(meta.InscriptionIcon)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			h.Usecase.Repo.InsertCollectionMeta(&meta)
 		} else {
 			return err
+		}
+	} else {
+		if dbMeta.Source == "" {
+			meta.Source = source
+			h.Usecase.Repo.UpdateCollectionMeta(dbMeta.UUID, map[string]interface{}{
+				"source": meta.Source,
+			})
 		}
 	}
 
