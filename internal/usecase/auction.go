@@ -269,7 +269,7 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 		if err != nil {
 			err = errors.New("GetBidsByAddressV1 for " + bid.Bidder + " err: " + err.Error())
 			fmt.Println(err)
-			continue
+			// continue
 		}
 		if bidInfo1 != nil {
 			if bidInfo1.IsWinner {
@@ -290,13 +290,15 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 		}
 		// v2:
 		bidInfo2, err := u.EthClient.GetBidsByAddressV1(contractV2, bid.Bidder)
+		fmt.Println("address v2:", bid.Bidder)
 		if err != nil {
 			err = errors.New("GetBidsByAddressV2 for " + bid.Bidder + " err: " + err.Error())
 			fmt.Println(err)
-			continue
+			// continue
 		}
 		if bidInfo2 != nil {
 			if bidInfo2.IsWinner {
+				fmt.Println("winner......")
 				// get item from realtime db:
 				bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
 				if err != nil {
