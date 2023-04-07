@@ -139,7 +139,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 	// check discount now:
 
-	discountFlag := false
+	discountFlagReserve := false
+	discountFlagBidWinner := false
 	discountLimit := -1
 	discountMintPrice := big.NewInt(0)
 
@@ -151,7 +152,7 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 
 				discountMintPrice, ok = big.NewInt(0).SetString(p.ReserveMintPrice, 10)
 				if ok {
-					discountFlag = true
+					discountFlagReserve = true
 					discountLimit = p.ReserveMintLimit
 				}
 				break
@@ -171,23 +172,23 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		if auctionWinnerList != nil && len(auctionWinnerList) > 0 {
 			for _, auctionWinner := range auctionWinnerList {
 				if strings.EqualFold(auctionWinner.Address, walletAddress.UserAddress) {
-					discountFlag = true
+					discountFlagBidWinner = true
 					discountMintPrice = big.NewInt(0) // mint free now, set it = auctionWinner.MintPrice if you need
 					discountLimit = auctionWinner.Quantity
 					break
 				}
 			}
 		}
-		if !discountFlag {
-			// not alow buy for this item:
-			err = errors.New("not alow for buy")
+		if !discountFlagBidWinner {
+			// not allowed buy for this item:
+			err = errors.New("You are not allowed to purchase this item.")
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.CheckBidBuy", zap.Error(err))
 			return nil, err
 		}
 	}
 
 	// have a good mint price:
-	if discountFlag {
+	if discountFlagReserve || discountFlagBidWinner {
 		// get list item mint:
 		countMinted := 0
 		mintReadyList, _ := u.Repo.GetLimitWhiteList(input.UserAddress, input.ProjectID)
@@ -219,6 +220,11 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 			mintPrice = big.NewInt(discountMintPrice.Int64())
 			walletAddress.IsDiscount = true
 			logger.AtLog.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", zap.Any("true", true))
+
+		} else {
+			if discountFlagBidWinner {
+				return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(discountMintPrice.Int64())/1e8))
+			}
 		}
 	}
 
