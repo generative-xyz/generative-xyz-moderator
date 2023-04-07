@@ -9,6 +9,23 @@ import (
 	"rederinghub.io/internal/entity"
 )
 
+func (u Usecase) ApiGetEns() error {
+	listAuctionBid, _ := u.Repo.ListAuctionCollectionBidder()
+	if listAuctionBid != nil {
+		for _, v := range listAuctionBid {
+			if len(v.Ens) == 0 {
+				ens, err := u.TcClient.GetEns(v.Bidder)
+				if err != nil && len(ens) > 0 {
+					v.Ens = ens
+					u.Repo.UpdateAuctionCollectionBidder(&v)
+				}
+			}
+		}
+
+	}
+	return nil
+}
+
 func (u Usecase) JobAuction_GetListAuction() error {
 
 	contractV1, contractV2 := u.GetBidContractV1V2()
@@ -83,6 +100,14 @@ func (u Usecase) JobAuction_GetListAuction() error {
 
 		if item == nil {
 			fmt.Println("address2 not exit db")
+
+			if len(v.Ens) == 0 {
+				ens, err := u.TcClient.GetEns(v.Bidder)
+				if err != nil && len(ens) > 0 {
+					v.Ens = ens
+				}
+			}
+
 			// insert:
 			err := u.Repo.InsertAuctionCollectionBidder(&entity.AuctionCollectionBidder{
 				Bidder:    v.Bidder,
