@@ -191,7 +191,7 @@ func (u Usecase) APIAuctionListSnapshot() []entity.AuctionCollectionBidderShort 
 
 }
 
-func (u Usecase) GetAuctionListWinnerAddress() ([]entity.AuctionWinnerList, error) {
+func (u Usecase) GetAuctionListWinnerAddressFromConfig() ([]entity.AuctionWinnerList, error) {
 
 	var auctionWinnerList []entity.AuctionWinnerList
 
@@ -206,6 +206,33 @@ func (u Usecase) GetAuctionListWinnerAddress() ([]entity.AuctionWinnerList, erro
 		return auctionWinnerList, err
 	}
 	return result.Data, nil
+
+}
+func (u Usecase) GetAuctionListWinnerAddressFromBidList() ([]entity.AuctionWinnerList, error) {
+
+	var auctionWinnerList []entity.AuctionWinnerList
+
+	listBid, _ := u.Repo.ListAuctionCollectionBidderWinner()
+	if listBid != nil {
+		for _, bid := range listBid {
+
+			auctionWinner := entity.AuctionWinnerList{
+				Address:    "",
+				EthAddress: bid.Bidder,
+				Quantity:   bid.Quantity,
+				MintPrice:  0,
+			}
+
+			// get user from user account:
+			// wallet_address
+			user, _ := u.Repo.FindUserByWalletAddress(bid.Bidder)
+			if user != nil {
+				auctionWinner.Address = user.WalletAddressBTCTaproot
+			}
+			auctionWinnerList = append(auctionWinnerList, auctionWinner)
+		}
+	}
+	return auctionWinnerList, nil
 
 }
 

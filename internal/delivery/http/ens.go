@@ -24,8 +24,14 @@ func (h *httpDelivery) listSnapshot(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
 }
 
-func (h *httpDelivery) listBidWinner(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) listBidWinnerConfig(w http.ResponseWriter, r *http.Request) {
 
-	list, _ := h.Usecase.GetAuctionListWinnerAddress()
+	list, _ := h.Usecase.GetAuctionListWinnerAddressFromConfig()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+}
+
+func (h *httpDelivery) listBidWinnerBigList(w http.ResponseWriter, r *http.Request) {
+
+	list, _ := h.Usecase.GetAuctionListWinnerAddressFromBidList()
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
 }

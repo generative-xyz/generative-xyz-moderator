@@ -42,7 +42,8 @@ type AuctionCollectionBidderShort struct {
 }
 
 type AuctionWinnerList struct {
-	Address   string `bson:"address" json:"address"`
-	Quantity  int    `bson:"quantity" json:"quantity"`
-	MintPrice int    `bson:"mintPrice" json:"mintPrice"`
+	Address    string `bson:"address" json:"address"`
+	EthAddress string `bson:"ethAddress" json:"ethAddress"`
+	Quantity   int    `bson:"quantity" json:"quantity"`
+	MintPrice  int    `bson:"mintPrice" json:"mintPrice"`
 }

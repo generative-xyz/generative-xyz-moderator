@@ -1148,7 +1148,7 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 		// return list winner:
 		if strings.EqualFold(c.TokenID, bidProjectID) {
-			auctionWinnerList, err := u.GetAuctionListWinnerAddress()
+			auctionWinnerList, err := u.GetAuctionListWinnerAddressFromConfig()
 			if err == nil {
 				c.AuctionWinnerList = auctionWinnerList
 			}
