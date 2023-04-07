@@ -116,7 +116,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 
 	fmt.Println("fastestFee", feeRateFromChain.FastestFee)
 	fmt.Println("halfHourFee", feeRateFromChain.HalfHourFee)
-	fmt.Println("hourFee", feeRateFromChain.HourFee)
+	fmt.Println("hourFee", feeRateFromChain.EconomyFee) // not use HourFee
 
 	fastestMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
 	if err != nil {
@@ -140,7 +140,7 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 		MintFeeInfo: fasterMintInfo,
 	}
 	levelFeeFullInfo["economy"] = FeeRateInfo{
-		FeeRate:     feeRateFromChain.HourFee,
+		FeeRate:     feeRateFromChain.EconomyFee,
 		MintFeeInfo: economyMintInfo,
 	}
 
@@ -164,7 +164,7 @@ func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress s
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err), zap.String("channelID", channelID), zap.String("title",title), zap.String("userAddress", userAddress))
+		logger.AtLog.Logger.Error("err", zap.Error(err), zap.String("channelID", channelID), zap.String("title", title), zap.String("userAddress", userAddress))
 	}
 }
 
