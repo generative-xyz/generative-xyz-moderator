@@ -40,3 +40,9 @@ type AuctionCollectionBidderShort struct {
 
 	Ens string `bson:"ens" json:"ens"`
 }
+
+type AuctionWinnerList struct {
+	Address   string `bson:"address" json:"address"`
+	Quantity  int    `bson:"quantity" json:"quantity"`
+	MintPrice int    `bson:"mintPrice" json:"mintPrice"`
+}
