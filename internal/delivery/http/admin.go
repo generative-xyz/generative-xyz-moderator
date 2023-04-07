@@ -336,7 +336,7 @@ func (h *httpDelivery) updateWinnerFromContract(w http.ResponseWriter, r *http.R
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	err = h.Usecase.APIAuctionDeclaredNow()
+	err = h.Usecase.APIAuctionCrawlWinnerNow()
 
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)

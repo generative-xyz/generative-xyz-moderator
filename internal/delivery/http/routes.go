@@ -144,7 +144,8 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
 
-	admin.HandleFunc("/update-declared-now", h.updateDeclaredNow).Methods("POST") // auction
+	admin.HandleFunc("/auction/update-declared-now", h.updateDeclaredNow).Methods("POST")          // auction
+	admin.HandleFunc("/auction/crawl-list-winner-now", h.updateWinnerFromContract).Methods("POST") // auction
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
@@ -337,7 +338,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	auction.HandleFunc("/list-snapshot", h.listSnapshot).Methods("GET")
 	auction.HandleFunc("/check-declared", h.checkDeclared).Methods("GET")
 
-	auction.HandleFunc("/list-winner", h.checkDeclared).Methods("GET")
+	auction.HandleFunc("/list-winner", h.listBidWinner).Methods("GET")
 
 	discord := api.PathPrefix("/discord").Subrouter()
 	discord.Use(h.MiddleWare.AuthorizationFunc)
