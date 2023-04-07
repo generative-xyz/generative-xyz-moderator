@@ -314,12 +314,12 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 }
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	// h.Usecase.JobAuction_GetListAuction()
-	// if err != nil {
-	// 	logger.AtLog.Logger.Error("h.Usecase.GetListBidV1", zap.Error(err))
-	// 	h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-	// 	return
-	// }
+	err := h.Usecase.ApiGetEns()
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.ApiGetEns", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 
 	// h.Usecase.ResetEvenManager()
 
