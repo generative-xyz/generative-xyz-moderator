@@ -565,16 +565,20 @@ func (u Usecase) NotifyCreateNewProjectToDiscord(project *entity.Projects, owner
 	}
 }
 
-func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
+func (u Usecase) NotifyNewBid(ETHWalletAddress string, unitPrice float64, quantity int, collectorRedictTo string) error {
 	logger.AtLog.Logger.Info(
 		"NotifyNewBid",
-		zap.Any("price", price),
+		zap.Any("price", unitPrice),
+		zap.Any("quantity", quantity),
+		zap.Any("ETHWalletAddress", ETHWalletAddress),
 	)
+
+	domain := os.Getenv("DOMAIN")
 
 	bidder, err := u.Repo.FindUserByWalletAddress(ETHWalletAddress)
 	if err != nil {
 		logger.AtLog.Logger.Error("NotifyNewBid.FindUserByBtcAddress", zap.Error(err))
-		return
+		return err
 	}
 
 	fields := make([]entity.Field, 0)
@@ -589,15 +593,30 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 		})
 	}
 	fields = addFields(fields, "", "Category: AI", false)
-	fields = addFields(fields, "Bid Amount", fmt.Sprintf("%f ETH", price), false)
-	fields = addFields(fields, "", "Perceptrons is an experimental collection of on-chain AI models. While many projects have stored outputs from AI models on-chain, Perceptrons attempts to store the actual AI models themselves, allowing users to query the artwork and run live image recognition tasks.", false)
 
-	domain := os.Getenv("DOMAIN")
 	bidderName := bidder.DisplayName
 	if bidderName == "" {
-		bidderName = bidder.WalletAddressBTCTaproot[:9]
+		bidderName = bidder.WalletAddress[:4] + "..." + bidder.WalletAddress[len(bidder.WalletAddress)-4:]
 	}
-	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s/profile/%s)", bidderName, domain, bidder.WalletAddressBTCTaproot), true)
+
+	CollectorUrl := ""
+	switch collectorRedictTo {
+	case "opensea":
+		CollectorUrl = "https://opensea.io/" + bidder.WalletAddress
+		if bidderName == "" {
+			bidderName = bidder.WalletAddress[:4] + "..." + bidder.WalletAddress[len(bidder.WalletAddress)-4:]
+		}
+	default:
+		CollectorUrl = domain + "/profile/" + bidder.WalletAddressBTCTaproot
+		if bidderName == "" {
+			bidderName = bidder.WalletAddressBTCTaproot[:4] + "..." + bidder.WalletAddressBTCTaproot[len(bidder.WalletAddressBTCTaproot)-4:]
+		}
+	}
+
+	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)", bidderName, CollectorUrl), true)
+	fields = addFields(fields, "Bid Amount", fmt.Sprintf("%.3f ETH", unitPrice), true)
+	fields = addFields(fields, "Quantity", fmt.Sprintf("%d", quantity), true)
+	fields = addFields(fields, "", "Perceptrons is an experimental collection of on-chain AI models. While many projects have stored outputs from AI models on-chain, Perceptrons attempts to store the actual AI models themselves, allowing users to query the artwork and run live image recognition tasks.", false)
 
 	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
@@ -624,6 +643,7 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, price float64) {
 	if err != nil {
 		logger.AtLog.Logger.Error("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
 	}
+	return nil
 }
 
 const MAX_SEND_DISCORD_RETRY_TIMES = 3
