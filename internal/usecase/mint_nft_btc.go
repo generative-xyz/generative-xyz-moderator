@@ -2735,3 +2735,71 @@ func (u Usecase) GenMintFreeTemAddress() (string, error) {
 
 	return txID, err
 }
+
+func (u Usecase) SubmitTCToBtcChain(tx string, feeRate int) (string, error) {
+
+	var resp struct {
+		Result string `json:"result"`
+		Error  *struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	payloadStr := fmt.Sprintf(`{
+			"jsonrpc": "2.0",
+			"method": "eth_inscribeTxWithTargetFeeRate",
+			"params": [
+				"%s",%d
+			],
+			"id": 1
+		}`, tx, feeRate)
+
+	payload := strings.NewReader(payloadStr)
+
+	fmt.Println("payloadStr: ", payloadStr)
+
+	// context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// defer cancel()
+	// status, err := u.TcClient.GetTransaction(context, item.TxMintNft)
+
+	// fmt.Println("GetTransaction tc tx: ", status, err)
+
+	// balance, err := u.TcClient.GetBalance(context, "0x232FdCd3a77A21F3C8b50F64ba56daFF80bBfA97")
+
+	// fmt.Println("balance, err: ", balance, err)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", u.Config.BlockchainConfig.TCEndpoint, payload)
+
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("body", string(body))
+
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Result) == 0 && resp.Error != nil {
+		// error:
+		return "", errors.New(resp.Error.Message)
+	}
+
+	// inscribe ok now:
+
+	return resp.Result, nil
+}

@@ -53,9 +53,24 @@ func (r Repository) FindFaucetByAddress(address string) (*entity.Faucet, error) 
 	}
 	return resp, nil
 }
+func (r Repository) FindFaucetByTwitterName(twitterName string) (*entity.Faucet, error) {
+	twitterName = strings.ToLower(twitterName)
+	resp := &entity.Faucet{}
+	usr, err := r.FilterOne(entity.Faucet{}.TableName(), bson.D{{"twitter_name", twitterName}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
 
 func (r Repository) InsertFaucet(data *entity.Faucet) error {
 	data.Address = strings.ToLower(data.Address)
+	data.TwitterName = strings.ToLower(data.TwitterName)
 	err := r.InsertOne(data.TableName(), data)
 	if err != nil {
 		return err
@@ -63,9 +78,9 @@ func (r Repository) InsertFaucet(data *entity.Faucet) error {
 	return nil
 }
 
-func (r Repository) UpdateFaucetByUUid(uuid, tx string, status int) (*mongo.UpdateResult, error) {
+func (r Repository) UpdateFaucetByUUid(uuid, tx, txBtc string, status int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"uuid", uuid}}
-	update := bson.M{"$set": bson.M{"status": status, "tx": tx}}
+	update := bson.M{"$set": bson.M{"status": status, "tx": tx, "btc_tx": txBtc}}
 	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
