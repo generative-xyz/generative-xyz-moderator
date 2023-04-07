@@ -215,3 +215,8 @@ type PubSubSendOtp struct {
 }
 
 const HttpContextTimeOut = time.Second * 15
+
+const (
+	BidProjectIDProd = "1002573"
+	BidProjectIDDev  = "1000362"
+)

@@ -22,7 +22,7 @@ func (r Repository) FindConfig(key string) (*entity.Configs, error) {
 	}
 	return resp, nil
 }
-func (r Repository) FindConfig2(key string, result interface{}) error {
+func (r Repository) FindConfigCustom(key string, result interface{}) error {
 	usr, err := r.FilterOne(entity.Configs{}.TableName(), bson.D{{"key", key}})
 	if err != nil {
 		return err

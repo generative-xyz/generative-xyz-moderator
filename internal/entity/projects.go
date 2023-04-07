@@ -115,6 +115,8 @@ type Projects struct {
 	TxHex                    string             `bson:"txHex"`
 	CommitTxHash             string             `bson:"commitTxHash"`
 	RevealTxHash             string             `bson:"revealTxHash"`
+
+	AuctionWinnerList []AuctionWinnerList `bson:"-" json:"auctionWinnerList"`
 }
 
 func (p *Projects) IsMintTC() bool {
