@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
@@ -31,10 +32,27 @@ func (r Repository) FindCollectionMetaByInscriptionIcon(inscriptionIcon string) 
 	return resp, nil
 }
 
-func (r Repository) FindUncreatedCollectionMeta() ([]entity.CollectionMeta, error) {	
+func (r Repository) UpdateCollectionMeta(uuid string, updatedData map[string]interface{}) error {
+	collection := entity.CollectionMeta{}.TableName()
+	filter := bson.D{{"uuid", uuid}}
+	updatingFields := bson.D{}
+	for k, v := range updatedData {
+		updatingFields = append(updatingFields, bson.E{Key: k, Value: v})
+	}
+	result, err := r.DB.Collection(collection).UpdateOne(context.TODO(), filter, bson.D{{"$set", updatingFields}})
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("no document matched the filter")
+	}
+	return nil
+}
+
+func (r Repository) FindUncreatedCollectionMeta() ([]entity.CollectionMeta, error) {
 	metas := []entity.CollectionMeta{}
 	f := bson.M{
-		"project_created" : bson.M{"$ne": true},
+		"project_created": bson.M{"$ne": true},
 	}
 	cursor, err := r.DB.Collection(entity.CollectionMeta{}.TableName()).Find(context.TODO(), f)
 	if err != nil {
@@ -50,7 +68,7 @@ func (r Repository) FindUncreatedCollectionMeta() ([]entity.CollectionMeta, erro
 
 func (r Repository) SetProjectCreatedMeta(meta entity.CollectionMeta) error {
 	f := bson.D{
-		{Key: "uuid", Value: meta.UUID,},
+		{Key: "uuid", Value: meta.UUID},
 	}
 
 	update := bson.M{
@@ -65,11 +83,11 @@ func (r Repository) SetProjectCreatedMeta(meta entity.CollectionMeta) error {
 	}
 
 	return err
-} 
+}
 
 func (r Repository) SetMetaMappedProjectID(meta entity.CollectionMeta, projectID string) error {
 	f := bson.D{
-		{Key: "uuid", Value: meta.UUID,},
+		{Key: "uuid", Value: meta.UUID},
 	}
 	update := bson.M{
 		"$set": bson.M{
@@ -87,7 +105,7 @@ func (r Repository) SetMetaMappedProjectID(meta entity.CollectionMeta, projectID
 
 func (r Repository) SetMetaProjectExisted(meta entity.CollectionMeta, existed bool) error {
 	f := bson.D{
-		{Key: "uuid", Value: meta.UUID,},
+		{Key: "uuid", Value: meta.UUID},
 	}
 	update := bson.M{
 		"$set": bson.M{
