@@ -703,6 +703,19 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 
 					respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, order.FeeRate, amountBTCFee)
 					if err != nil {
+						logData := make(map[string]interface{})
+						logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
+						logData["address"] = address
+						logData["listingOrder.RawPSBT"] = listingOrder.RawPSBT
+						logData["order.ReceiveAddress"] = order.ReceiveAddress
+						logData["listingOrder.Amount"] = listingOrder.Amount
+						logData["filteredUTXOs"] = filteredUTXOs
+						logData["order.FeeRate"] = order.FeeRate
+						logData["amountBTCFee"] = amountBTCFee
+						logData["respondData"] = respondData
+						logData["err"] = err
+
+						u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionViaAPI", Data: logData})
 						log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 						continue
 					}
