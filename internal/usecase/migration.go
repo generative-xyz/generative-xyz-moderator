@@ -1,15 +1,11 @@
 package usecase
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"strconv"
 	"strings"
 
-	"time"
-
-	"github.com/chromedp/chromedp"
 	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
@@ -20,6 +16,7 @@ type ChangeName struct {
 	OrderInsciptionID    int
 	NewOrderInsciptionID int
 	ArtworkName string
+	AnimationURL string
 }
 
 func (u Usecase) GetTokenArtworkName() {
@@ -45,44 +42,25 @@ func (u Usecase) GetTokenArtworkName() {
 		tmp := ChangeName{}
 		artworkName := ""
 
-		opts := append(chromedp.DefaultExecAllocatorOptions[:],
-			//chromedp.ExecPath("google-chrome"),
-			chromedp.Flag("headless", false),
-			chromedp.Flag("disable-gpu", false),
-			chromedp.Flag("no-first-run", true),
-		)
-		allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-		cctx, cancel := chromedp.NewContext(allocCtx)
-		 
-
+		
 		imageURL := token.AnimationURL
-
-		err = chromedp.Run(cctx,
-			chromedp.EmulateViewport(960, 960),
-			chromedp.Navigate(imageURL),
-			chromedp.Sleep(time.Second*time.Duration(25)),
-			//chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
-			chromedp.EvaluateAsDevTools("$artworkName", &artworkName),
-		)
-
-		if err != nil {
-			return
-		}
-
-		an := strings.ReplaceAll(artworkName, "Perceptron #","")
+		an := strings.ReplaceAll(imageURL, "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/","")
+		an = strings.ReplaceAll(an, ".html","")
 		aID, err := strconv.Atoi(an)
 		if err != nil {
 			return
 		}
+		aID ++
 
 		tmp.TokenID = token.TokenID
 		tmp.OrderInsciptionID = token.OrderInscriptionIndex
 		tmp.NewOrderInsciptionID = aID
 		tmp.ArtworkName = artworkName
+		tmp.AnimationURL = imageURL
 
 
 		resp = append(resp, tmp)
-		cancel()
+		
 	}
 
 	spew.Dump(resp)
