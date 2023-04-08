@@ -102,7 +102,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 		if len(projects) == 0 {
 			break
 		}
-		for _, project := range projects {
+		for _, project := range projects {			
 			processed++
 			_countView, err := u.Repo.CountViewActivity(project.TokenID)
 			if err != nil {
