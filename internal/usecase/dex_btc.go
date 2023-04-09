@@ -358,6 +358,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 					if inscriptionInfo != nil {
 						found := false
+						if strings.EqualFold(strings.ReplaceAll(inscriptionInfo.Satpoint, ":", "i"), order.InscriptionID) {
+							continue
+						}
 						curInscTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
 						for _, vIn := range order.Inputs {
 							vInTx := strings.Split(vIn, ":")[0]
@@ -381,11 +384,13 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+					continue
 				}
 
 				inputTxDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+					continue
 				}
 
 				if spentTxDetail.Result.Blocktime <= inputTxDetail.Result.Blocktime {
@@ -713,7 +718,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						logData["order.FeeRate"] = order.FeeRate
 						logData["amountBTCFee"] = amountBTCFee
 						logData["respondData"] = respondData
-						logData["err"] = err
+						logData["err"] = err.Error()
 
 						u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionViaAPI", Data: logData})
 						log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
