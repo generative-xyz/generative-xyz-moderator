@@ -393,6 +393,10 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					continue
 				}
 
+				if inputTxDetail.Result.Confirmations <= 0 {
+					continue
+				}
+
 				if spentTxDetail.Result.Blocktime <= inputTxDetail.Result.Blocktime {
 					log.Printf("JobWatchPendingDexBTCListing blocktime not valid %v %v\n", spentTx, inscriptionTx[0])
 					continue
