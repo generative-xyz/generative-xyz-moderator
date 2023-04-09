@@ -358,10 +358,12 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 					if inscriptionInfo != nil {
 						found := false
-						if strings.EqualFold(strings.ReplaceAll(inscriptionInfo.Satpoint, ":", "i"), order.InscriptionID) {
+						inscPoint := strings.Split(inscriptionInfo.Satpoint, ":")
+						if strings.EqualFold(strings.Join([]string{inscPoint[0], inscPoint[1]}, "i"), order.InscriptionID) {
 							continue
 						}
-						curInscTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
+
+						curInscTx := inscPoint[0]
 						for _, vIn := range order.Inputs {
 							vInTx := strings.Split(vIn, ":")[0]
 							if curInscTx == vInTx {
