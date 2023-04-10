@@ -2313,7 +2313,6 @@ func (u Usecase) GetProjectFirstSale(genNFTAddr string) string {
 	//u.Cache.Delete(helpers.ProjectFirstSaleKey(genNFTAddr))
 	cached, err := u.Cache.GetData(helpers.ProjectFirstSaleKey(genNFTAddr))
 	if err != nil || cached == nil {
-
 		newAmount := 0.0
 		data, err := u.Repo.AggregateBTCVolumn(genNFTAddr)
 		if err == nil && data != nil {
