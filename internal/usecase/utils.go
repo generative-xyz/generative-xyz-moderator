@@ -114,33 +114,50 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 		return nil, err
 	}
 
-	fmt.Println("fastestFee", feeRateFromChain.FastestFee)
-	fmt.Println("halfHourFee", feeRateFromChain.HalfHourFee)
-	fmt.Println("hourFee", feeRateFromChain.HourFee)
+	fastestFee := feeRateFromChain.FastestFee
+	fasterFee := feeRateFromChain.HalfHourFee
+	ecoFee := feeRateFromChain.EconomyFee // not use HourFee
 
-	fastestMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.FastestFee), btcRate, ethRate)
+	fmt.Println("fastestFee", fastestFee)
+	fmt.Println("fasterFee", fasterFee)
+	fmt.Println("ecoFee", ecoFee)
+
+	min := 4 // todo: move config
+
+	// set mint 5 if fee < 5.
+	if fastestFee < min {
+		fastestFee = min
+	}
+	if fasterFee < min {
+		fasterFee = min
+	}
+	if ecoFee < min {
+		ecoFee = min
+	}
+
+	fastestMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(fastestFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	fasterMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HalfHourFee), btcRate, ethRate)
+	fasterMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(fasterFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
-	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(feeRateFromChain.HourFee), btcRate, ethRate)
+	economyMintInfo, err := u.calMintFeeInfo(mintPrice, fileSize, int64(ecoFee), btcRate, ethRate)
 	if err != nil {
 		return nil, err
 	}
 
 	levelFeeFullInfo["fastest"] = FeeRateInfo{
-		FeeRate:     feeRateFromChain.FastestFee,
+		FeeRate:     fastestFee,
 		MintFeeInfo: fastestMintInfo,
 	}
 	levelFeeFullInfo["faster"] = FeeRateInfo{
-		FeeRate:     feeRateFromChain.HalfHourFee,
+		FeeRate:     fasterFee,
 		MintFeeInfo: fasterMintInfo,
 	}
 	levelFeeFullInfo["economy"] = FeeRateInfo{
-		FeeRate:     feeRateFromChain.HourFee,
+		FeeRate:     ecoFee,
 		MintFeeInfo: economyMintInfo,
 	}
 
@@ -164,7 +181,7 @@ func (u Usecase) NotifyWithChannel(channelID string, title string, userAddress s
 	c := fmt.Sprintf("%s", content)
 
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channelID, preText, title, c); err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err), zap.String("channelID", channelID), zap.String("title",title), zap.String("userAddress", userAddress))
+		logger.AtLog.Logger.Error("err", zap.Error(err), zap.String("channelID", channelID), zap.String("title", title), zap.String("userAddress", userAddress))
 	}
 }
 

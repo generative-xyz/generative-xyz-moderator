@@ -1140,6 +1140,19 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 		c.NetworkFeeEth = feeInfos["eth"].NetworkFee
 
 		c.MintPriceEth = feeInfos["eth"].MintPrice
+
+		bidProjectID := utils.BidProjectIDProd
+		if u.Config.ENV == "develop" {
+			bidProjectID = utils.BidProjectIDDev
+		}
+
+		// return list winner:
+		if strings.EqualFold(c.TokenID, bidProjectID) {
+			auctionWinnerList, err := u.GetAuctionListWinnerAddressFromConfig()
+			if err == nil {
+				c.AuctionWinnerList = auctionWinnerList
+			}
+		}
 	}
 
 	go func() {

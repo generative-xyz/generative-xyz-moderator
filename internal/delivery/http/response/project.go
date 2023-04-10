@@ -1,6 +1,10 @@
 package response
 
-import "time"
+import (
+	"time"
+
+	"rederinghub.io/internal/entity"
+)
 
 type TraitValueStat struct {
 	Value  string `json:"value"`
@@ -88,6 +92,8 @@ type ProjectResp struct {
 	IsGenerative              bool             `json:"isGenerative"` // art by generative code or html file
 	TxHash                    string           `json:"txHash"`       // art by generative code or html file
 	TxHex                     string           `json:"txHex"`        // art by generative code or html file
+
+	AuctionWinnerList []entity.AuctionWinnerList `json:"auctionWinnerList"`
 }
 
 type ReportProject struct {
