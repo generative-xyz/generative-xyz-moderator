@@ -34,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: cache.Dockerfile
+          file: Dockerfile
           push: false
           tags: |
             ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}:cache-${{ env.IMAGE_TAG }}
