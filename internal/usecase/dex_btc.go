@@ -713,16 +713,18 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
 					filteredBalance := uint64(0)
 					for _, v := range filteredUTXOs {
-						filteredBalance = v.Value
+						filteredBalance += v.Value
 					}
 					if filteredBalance <= amountBTCFee+listingOrder.Amount {
-						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", "", fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
+						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
 						time.Sleep(300 * time.Millisecond)
 						continue
 					}
 
 					respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, order.FeeRate, amountBTCFee)
 					if err != nil {
+						go u.NotifyWithChannel("C052CAWFB0D", "Create buy ", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
+
 						logData := make(map[string]interface{})
 						logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
 						logData["address"] = address
@@ -737,6 +739,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 
 						u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionViaAPI", Data: logData})
 						log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
+						time.Sleep(300 * time.Millisecond)
 						continue
 					}
 					if respondData.SplitTxRaw != "" {
@@ -1373,6 +1376,7 @@ func (u Usecase) filterUTXOInscription(utxos []btc.UTXOType) ([]btc.UTXOType, er
 	waitChan := make(chan struct{}, 10)
 	for _, output := range utxos {
 		wg.Add(1)
+		time.Sleep(10 * time.Millisecond)
 		waitChan <- struct{}{}
 		go func(op btc.UTXOType) {
 			defer func() {

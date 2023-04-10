@@ -107,6 +107,9 @@ func (h *httpDelivery) getAllProjects(w http.ResponseWriter, r *http.Request) {
 	txHex := r.URL.Query().Get("txHex")
 	contractAddress := r.URL.Query().Get("contractAddress")
 	walletAddress := r.URL.Query().Get("walletAddress")
+	if walletAddress == "" {
+		walletAddress = r.URL.Query().Get("creatorAddress")
+	}
 	isSyncedStr := r.URL.Query().Get("isSynced")
 	isHiddenStr := r.URL.Query().Get("isHidden")
 	statusStr := r.URL.Query().Get("status")
