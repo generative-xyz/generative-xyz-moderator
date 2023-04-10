@@ -897,6 +897,7 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 		"",
 		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
 	)
+	u.NewReportNoti(p, originalLink, iWalletAddress)
 
 	return p, nil
 }
