@@ -114,6 +114,14 @@ func Base64DecodeRaw(base64Str string, object interface{}) error {
 		return err
 	}
 
+	stringData := string(sDec)
+	stringData = strings.ReplaceAll(stringData, "\n", "")
+	stringData = strings.ReplaceAll(stringData, "\b", "")
+	stringData = strings.ReplaceAll(stringData, "\f", "")
+	stringData = strings.ReplaceAll(stringData, "\r", "")
+	stringData = strings.ReplaceAll(stringData, "\t", "")
+
+	sDec = []byte(stringData)
 	err = json.Unmarshal(sDec, &object)
 	if err != nil {
 		return err
