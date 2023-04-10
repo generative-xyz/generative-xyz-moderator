@@ -79,3 +79,19 @@ func (u Users) TableName() string {
 func (u Users) ToBson() (*bson.D, error) {
 	return helpers.ToDoc(u)
 }
+
+func (u Users) GetDisplayNameByTapRootAddress() string {
+	name := u.DisplayName
+	if name == "" {
+		name = u.WalletAddressBTCTaproot[0:4] + "..." + u.WalletAddressBTCTaproot[len(u.WalletAddressBTCTaproot)-4:]
+	}
+	return name
+}
+
+func (u Users) GetDisplayNameByWalletAddress() string {
+	name := u.DisplayName
+	if name == "" {
+		name = u.WalletAddress[0:4] + "..." + u.WalletAddress[len(u.WalletAddress)-4:]
+	}
+	return name
+}
