@@ -258,6 +258,12 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		return err
 	}
 
+	// check pending first:
+	recordsPending, _ := u.Repo.FindFaucetByStatus(2)
+	if len(recordsPending) > 0 {
+		return u.JobFaucet_CheckTx(recordsPending)
+	}
+
 	faucets, _ := u.Repo.FindFaucetByStatus(0)
 	fmt.Println("need faucet: ", len(faucets))
 
@@ -343,9 +349,9 @@ func (u Usecase) sendSlack(ids, funcName, requestMsgStr, errorStr string) {
 	}
 }
 
-func (u Usecase) JobFaucet_CheckTx() error {
-	recordsToCheck, _ := u.Repo.FindFaucetByStatus(2)
-	fmt.Println("need check tx: ", len(recordsToCheck))
+func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
+	// recordsToCheck, _ := u.Repo.FindFaucetByStatus(2)
+	// fmt.Println("need check tx: ", len(recordsToCheck))
 
 	mapCheckTxPass := make(map[string]bool)
 	mapCheckTxFalse := make(map[string]string)
