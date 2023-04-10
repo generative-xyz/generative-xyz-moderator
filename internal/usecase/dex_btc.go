@@ -711,6 +711,15 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					feeRate := order.FeeRate
 					amountBTCFee := uint64(0)
 					amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+					filteredBalance := uint64(0)
+					for _, v := range filteredUTXOs {
+						filteredBalance = v.Value
+					}
+					if filteredBalance <= amountBTCFee+listingOrder.Amount {
+						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", "", fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
+						time.Sleep(300 * time.Millisecond)
+						continue
+					}
 
 					respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, order.FeeRate, amountBTCFee)
 					if err != nil {
