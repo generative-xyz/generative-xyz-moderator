@@ -341,6 +341,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	name := r.URL.Query().Get("name")
 	categoriesRaw := r.URL.Query().Get("category")
+	creatorAddress := r.URL.Query().Get("creatorAddress")
 
 	categoryIds := strings.Split(categoriesRaw, ",")
 	if categoriesRaw == "" {
@@ -358,6 +359,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters = *baseF
 	f.Name = &name
 	f.CategoryIds = categoryIds
+	f.WalletAddress = &creatorAddress
 
 	hidden := false
 	f.IsHidden = &hidden
