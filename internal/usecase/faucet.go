@@ -267,6 +267,10 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	faucets, _ := u.Repo.FindFaucetByStatus(0)
 	fmt.Println("need faucet: ", len(faucets))
 
+	if len(faucets) == 0 {
+		return nil
+	}
+
 	// send TC:
 	destinations := make(map[string]*big.Int)
 
@@ -278,7 +282,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 	feeRateCurrent, err := u.getFeeRateFromChain()
 	if err == nil {
-		feeRate = feeRateCurrent.EconomyFee
+		feeRate = feeRateCurrent.HourFee
 	}
 
 	// get list again:
