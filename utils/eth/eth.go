@@ -590,11 +590,15 @@ func (c *Client) GetListBidV1(contractAddress string) (map[string]AuctionCollect
 	}
 	for _, item := range listResponse {
 
+		if item.Bidder.Hex() == "0x0000000000000000000000000000000000000000" {
+			continue
+		}
+
 		fmt.Println("get ens for: ", item.Bidder.Hex())
 
 		domain := ""
 
-		domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
+		// domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
 
 		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
 
@@ -632,11 +636,15 @@ func (c *Client) GetListBidV2(contractAddress string) (map[string]AuctionCollect
 	}
 	for _, item := range listResponse {
 
+		if item.Bidder.Hex() == "0x0000000000000000000000000000000000000000" {
+			continue
+		}
+
 		fmt.Println("get ens for: ", item.Bidder.Hex())
 
 		domain := ""
 
-		domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
+		// domain, _ = ens.ReverseResolve(c.GetClient(), item.Bidder)
 
 		// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), item.Bidder))
 
@@ -654,4 +662,65 @@ func (c *Client) GetListBidV2(contractAddress string) (map[string]AuctionCollect
 
 	}
 	return mapENS, nil
+}
+
+func (c *Client) GetBidsByAddressV1(contractAddress, address string) (*AuctionCollectionBidder, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := auctionv1.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	isWinner, unitPrice, err := contract.GetBidsByAddress(nil, common.HexToAddress(address))
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.GetBidsByAddress")
+	}
+
+	return &AuctionCollectionBidder{
+		Bidder:   address,
+		IsWinner: isWinner,
+		Amount:   unitPrice,
+
+		UnitPrice: unitPrice.Uint64(),
+		Quantity:  1,
+	}, nil
+
+}
+func (c *Client) GetBidsByAddressV2(contractAddress, address string) (*AuctionCollectionBidder, error) {
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := auctionv2.NewAuction(common.HexToAddress(contractAddress), c.GetClient())
+	if err != nil {
+		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	isWinner, auctionCollection2Bidder, err := contract.GetBidsByAddress(nil, common.HexToAddress(address))
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.GetBidsByAddress")
+	}
+
+	return &AuctionCollectionBidder{
+		Bidder:    address,
+		IsWinner:  isWinner,
+		Amount:    auctionCollection2Bidder.Amount,
+		UnitPrice: auctionCollection2Bidder.UnitPrice,
+		Quantity:  int(auctionCollection2Bidder.Quantity),
+	}, nil
+
+}
+
+func (c *Client) GetEns(address string) (string, error) {
+
+	domain, err := ens.ReverseResolve(c.GetClient(), common.HexToAddress(address))
+
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+
+	// fmt.Printf("The address is %s\n", ens.Format(c.GetClient(), common.HexToAddress("0x5555763613a12D8F3e73be831DFf8598089d3dCa")))
+	fmt.Println("domain: ", domain)
+	return domain, nil
+
 }

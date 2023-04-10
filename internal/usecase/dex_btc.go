@@ -358,7 +358,12 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}
 					if inscriptionInfo != nil {
 						found := false
-						curInscTx := strings.Split(inscriptionInfo.Satpoint, ":")[0]
+						inscPoint := strings.Split(inscriptionInfo.Satpoint, ":")
+						if strings.EqualFold(strings.Join([]string{inscPoint[0], inscPoint[1]}, "i"), order.InscriptionID) {
+							continue
+						}
+
+						curInscTx := inscPoint[0]
 						for _, vIn := range order.Inputs {
 							vInTx := strings.Split(vIn, ":")[0]
 							if curInscTx == vInTx {
@@ -381,11 +386,17 @@ func (u Usecase) watchPendingDexBTCListing() error {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+					continue
 				}
 
 				inputTxDetail, err := btc.CheckTxfromQuickNode(inscriptionTx[0], u.Config.QuicknodeAPI)
 				if err != nil {
 					log.Printf("JobWatchPendingDexBTCListing btc.CheckTxfromQuickNode(spentTx) %v %v\n", order.Inputs, err)
+					continue
+				}
+
+				if inputTxDetail.Result.Confirmations <= 0 {
+					continue
 				}
 
 				if spentTxDetail.Result.Blocktime <= inputTxDetail.Result.Blocktime {
@@ -700,9 +711,31 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					feeRate := order.FeeRate
 					amountBTCFee := uint64(0)
 					amountBTCFee = btc.EstimateTxFee(uint(len(listingOrder.Inputs)+3), uint(len(psbt.UnsignedTx.TxOut)+2), uint(feeRate)) + btc.EstimateTxFee(1, 2, uint(feeRate))
+					filteredBalance := uint64(0)
+					for _, v := range filteredUTXOs {
+						filteredBalance = v.Value
+					}
+					if filteredBalance <= amountBTCFee+listingOrder.Amount {
+						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", "", fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
+						time.Sleep(300 * time.Millisecond)
+						continue
+					}
 
 					respondData, err := btc.CreatePSBTToBuyInscriptionViaAPI(u.Config.DexBTCBuyService, address, listingOrder.RawPSBT, order.ReceiveAddress, listingOrder.Amount, filteredUTXOs, order.FeeRate, amountBTCFee)
 					if err != nil {
+						logData := make(map[string]interface{})
+						logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
+						logData["address"] = address
+						logData["listingOrder.RawPSBT"] = listingOrder.RawPSBT
+						logData["order.ReceiveAddress"] = order.ReceiveAddress
+						logData["listingOrder.Amount"] = listingOrder.Amount
+						logData["filteredUTXOs"] = filteredUTXOs
+						logData["order.FeeRate"] = order.FeeRate
+						logData["amountBTCFee"] = amountBTCFee
+						logData["respondData"] = respondData
+						logData["err"] = err.Error()
+
+						u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionViaAPI", Data: logData})
 						log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscription", order.ID, err)
 						continue
 					}

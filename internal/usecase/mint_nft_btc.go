@@ -137,52 +137,95 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 		mintPrice = big.NewInt(0)
 	}
 
-	// check whitelist price in project.reservers to get reserveMintPrice
+	// check discount now:
+
+	discountFlagReserve := false
+	discountFlagBidWinner := false
+	discountLimit := -1
+	discountMintPrice := big.NewInt(0)
+
+	// check discount whitelist price in project.reservers to get reserveMintPrice
 	if len(p.Reservers) > 0 {
 
 		for _, address := range p.Reservers {
 			if strings.EqualFold(address, walletAddress.UserAddress) {
 
-				reserveMintPrice, ok := big.NewInt(0).SetString(p.ReserveMintPrice, 10)
+				discountMintPrice, ok = big.NewInt(0).SetString(p.ReserveMintPrice, 10)
 				if ok {
-
-					// get list item mint:
-					countMinted := 0
-					mintReadyList, _ := u.Repo.GetLimitWhiteList(input.UserAddress, input.ProjectID)
-
-					for _, mItem := range mintReadyList {
-
-						if mItem.IsConfirm {
-							if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
-								countMinted += 1
-							}
-
-						} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
-							if time.Since(mItem.ExpiredAt) < 1*time.Second {
-								countMinted += mItem.Quantity
-							}
-						}
-					}
-					maxSlot := p.ReserveMintLimit - countMinted
-
-					fmt.Println("p.ReserveMintLimit: ", p.ReserveMintLimit)
-					fmt.Println("countMinted: ", countMinted)
-					fmt.Println("maxSlot: ", maxSlot)
-
-					if maxSlot > 0 {
-						if input.Quantity > maxSlot {
-							return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(reserveMintPrice.Int64())/1e8))
-						}
-
-						mintPrice = big.NewInt(reserveMintPrice.Int64())
-						walletAddress.IsDiscount = true
-						logger.AtLog.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", zap.Any("true", true))
-					}
+					discountFlagReserve = true
+					discountLimit = p.ReserveMintLimit
 				}
 				break
 			}
 		}
 
+	}
+	// check discount in bidder list:
+	bidProjectID := utils.BidProjectIDProd
+	if u.Config.ENV == "develop" {
+		bidProjectID = utils.BidProjectIDDev
+	}
+
+	// return list winner:
+	if strings.EqualFold(p.TokenID, bidProjectID) {
+		auctionWinnerList, _ := u.GetAuctionListWinnerAddressFromConfig()
+		if auctionWinnerList != nil && len(auctionWinnerList) > 0 {
+			for _, auctionWinner := range auctionWinnerList {
+				if strings.EqualFold(auctionWinner.Address, walletAddress.UserAddress) {
+					discountFlagBidWinner = true
+					discountMintPrice = big.NewInt(0) // mint free now, set it = auctionWinner.MintPrice if you need
+					discountLimit = auctionWinner.Quantity
+					break
+				}
+			}
+		}
+		if !discountFlagBidWinner {
+			// not allowed buy for this item:
+			err = errors.New("You are not allowed to purchase this item.")
+			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.CheckBidBuy", zap.Error(err))
+			return nil, err
+		}
+	}
+
+	// have a good mint price:
+	if discountFlagReserve || discountFlagBidWinner {
+		// get list item mint:
+		countMinted := 0
+		mintReadyList, _ := u.Repo.GetLimitWhiteList(input.UserAddress, input.ProjectID)
+
+		for _, mItem := range mintReadyList {
+
+			if mItem.IsConfirm {
+				if mItem.Status == entity.StatusMint_Minting || mItem.Status == entity.StatusMint_Minted || mItem.IsMinted {
+					countMinted += 1
+				}
+
+			} else if mItem.Status == entity.StatusMint_Pending || mItem.Status == entity.StatusMint_WaitingForConfirms {
+				if time.Since(mItem.ExpiredAt) < 1*time.Second {
+					countMinted += mItem.Quantity
+				}
+			}
+		}
+		maxSlot := discountLimit - countMinted
+
+		fmt.Println("discountLimit: ", discountLimit)
+		fmt.Println("countMinted: ", countMinted)
+		fmt.Println("maxSlot: ", maxSlot)
+
+		if maxSlot > 0 {
+			if input.Quantity > maxSlot {
+				return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(discountMintPrice.Int64())/1e8))
+			}
+
+			mintPrice = big.NewInt(discountMintPrice.Int64())
+			walletAddress.IsDiscount = true
+			logger.AtLog.Logger.Info("CreateMintReceiveAddress.walletAddress.IsDiscount", zap.Any("true", true))
+
+		} else {
+			if discountFlagBidWinner {
+				return nil, errors.New(fmt.Sprintf("You can mint up to %d items at the price of %.6f BTC.", maxSlot, float64(discountMintPrice.Int64())/1e8))
+			}
+		}
 	}
 
 	// cal fee:
@@ -2698,7 +2741,7 @@ func (u Usecase) SubmitTCToBtcChain(tx string, feeRate int) (string, error) {
 	var resp struct {
 		Result string `json:"result"`
 		Error  *struct {
-			Code    string `json:"code"`
+			Code    int    `json:"code"`
 			Message string `json:"message"`
 		} `json:"error"`
 	}
