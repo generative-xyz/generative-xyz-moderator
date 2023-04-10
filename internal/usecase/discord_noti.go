@@ -707,6 +707,7 @@ func (u Usecase) NewReportNoti(project *entity.Projects, reportLink, walletAddre
 	}
 
 	fields = addFields(fields, "Reporter", fmt.Sprintf("[%s](%s)", reporterName, domain+"/profile/"+reporter.WalletAddressBTCTaproot), false)
+	fields = addFields(fields, "Original Link", fmt.Sprintf("[%s](%s)", reportLink, reportLink), false)
 	fields = addFields(fields, "", project.Description, false)
 
 	parsedThumbnailUrl, err := url.Parse(project.Thumbnail)
