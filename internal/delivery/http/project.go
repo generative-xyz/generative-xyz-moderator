@@ -19,6 +19,10 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
+var specialProjectVolume = map[string]uint64{
+	"1002573": 263000000,
+}
+
 // UserCredits godoc
 // @Summary Create btc project
 // @Description Create btc project
@@ -242,9 +246,9 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 	// contractAddress := vars["contractAddress"]
 
 	projectID := vars["projectID"]
-
+	ignoreCache := r.URL.Query().Get("refresh") == "true"
 	cached, err := h.Cache.GetData(helpers.GenerateMKPDataKey(projectID))
-	if err != nil || cached == nil {
+	if ignoreCache || err != nil || cached == nil {
 		currentListing, err := h.Usecase.Repo.ProjectGetCurrentListingNumber(projectID)
 		if err != nil {
 			logger.AtLog.Logger.Error(" h.Usecase.Repo.ProjectGetCurrentListingNumber", zap.Error(err))
@@ -297,6 +301,10 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 		result.MintVolume = mintVolume
 		result.CEXVolume = volumeCEX
 
+		if additionalAmount, has := specialProjectVolume[projectID]; has {
+			result.TotalVolume += additionalAmount
+		}
+
 		h.Cache.SetData(helpers.GenerateMKPDataKey(projectID), result)
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 		return
@@ -333,6 +341,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 
 	name := r.URL.Query().Get("name")
 	categoriesRaw := r.URL.Query().Get("category")
+	creatorAddress := r.URL.Query().Get("creatorAddress")
 
 	categoryIds := strings.Split(categoriesRaw, ",")
 	if categoriesRaw == "" {
@@ -350,6 +359,7 @@ func (h *httpDelivery) getProjects(w http.ResponseWriter, r *http.Request) {
 	f.BaseFilters = *baseF
 	f.Name = &name
 	f.CategoryIds = categoryIds
+	f.WalletAddress = &creatorAddress
 
 	hidden := false
 	f.IsHidden = &hidden
@@ -657,7 +667,7 @@ func (h *httpDelivery) getRecentWorksProjects(w http.ResponseWriter, r *http.Req
 }
 
 // UserCredits godoc
-// @Summary Update project's hash 
+// @Summary Update project's hash
 // @Description Update project's hash via txHasg
 // @Tags Project
 // @Accept  json

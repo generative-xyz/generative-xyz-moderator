@@ -212,7 +212,7 @@ func startServer() {
 		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
-
+	
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:
 	h, _ := httpHandler.NewHandler(&g, *uc)
