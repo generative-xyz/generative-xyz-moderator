@@ -33,9 +33,9 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 	if len(matchTwName) >= 3 {
 
 		twName = matchTwName[1]
-		shareID := matchTwName[2]
-		fmt.Println("twName:", twName)   // Output: 2712_at1999
-		fmt.Println("shareID:", shareID) // Output: 1643190049981480961
+		sharedID = matchTwName[2]
+		fmt.Println("twName:", twName)    // Output: 2712_at1999
+		fmt.Println("shareID:", sharedID) // Output: 1643190049981480961
 
 	} else {
 		err := errors.New("The username or sharedID is not found in the tweet URL.")
