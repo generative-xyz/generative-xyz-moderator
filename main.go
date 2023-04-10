@@ -212,11 +212,7 @@ func startServer() {
 		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
-
-	p, _ := uc.Repo.FindProjectByTokenID("1000004")
-	uc.NewReportNoti(p, "https://generative.xyz/generative/1001001", "0x9936aeaf2f38b5963d9622fdc834150db2cf8857")
-	uc.JobSendDiscordNoti()
-
+	
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:
 	h, _ := httpHandler.NewHandler(&g, *uc)
