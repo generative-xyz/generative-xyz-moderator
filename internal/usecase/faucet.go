@@ -23,7 +23,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
-	twNameRegex := regexp.MustCompile(`https://twitter.com/(\w+)/status/\d+`) // tw username
+	twNameRegex := regexp.MustCompile(`https://twitter.com/(\w+)/status/(\d+)(?:\?s=\d+)?`)
 	// Find the first match in the tweet URL
 	matchTwName := twNameRegex.FindStringSubmatch(url)
 
