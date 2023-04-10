@@ -697,6 +697,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 					}
 
 					totalBalance := uint64(0)
+					totalBalance2 := walletInfo.Balance
 					for _, v := range utxos {
 						totalBalance = v.Value
 					}
@@ -721,7 +722,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						filteredBalance = v.Value
 					}
 					if filteredBalance <= amountBTCFee+listingOrder.Amount {
-						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v (totalBalance %v) <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, totalBalance, amountBTCFee, listingOrder.Amount))
+						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v (totalBalance %v/%v) <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, totalBalance, totalBalance2, amountBTCFee, listingOrder.Amount))
 						time.Sleep(300 * time.Millisecond)
 						continue
 					}
