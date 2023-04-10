@@ -696,6 +696,11 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						continue
 					}
 
+					totalBalance := uint64(0)
+					for _, v := range utxos {
+						totalBalance = v.Value
+					}
+
 					filteredUTXOs, err := u.filterUTXOInscription(utxos)
 					if err != nil {
 						log.Println("watchPendingDexBTCBuyETH filterUTXOInscription", order.ID, err)
@@ -716,7 +721,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						filteredBalance = v.Value
 					}
 					if filteredBalance <= amountBTCFee+listingOrder.Amount {
-						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", "", fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, listingOrder.Amount))
+						go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v (totalBalance %v) <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, totalBalance, amountBTCFee, listingOrder.Amount))
 						time.Sleep(300 * time.Millisecond)
 						continue
 					}
@@ -1373,6 +1378,7 @@ func (u Usecase) filterUTXOInscription(utxos []btc.UTXOType) ([]btc.UTXOType, er
 	waitChan := make(chan struct{}, 10)
 	for _, output := range utxos {
 		wg.Add(1)
+		time.Sleep(10 * time.Millisecond)
 		waitChan <- struct{}{}
 		go func(op btc.UTXOType) {
 			defer func() {
