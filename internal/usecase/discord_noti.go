@@ -18,7 +18,10 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
-const PerceptronProjectID = "1002573"
+const (
+	PerceptronProjectID = "1002573"
+	PFPsCategory        = "PFPs"
+)
 
 type addUserDiscordFieldReq struct {
 	Fields  []entity.Field
@@ -237,6 +240,9 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 		channels = append(channels, entity.NEW_SALE_PERCEPTRON)
 	} else if order.Amount > 0 {
 		channels = append(channels, entity.NEW_SALE_ART)
+		if category == PFPsCategory {
+			channels = append(channels, entity.NEW_MINT_PFPS)
+		}
 	}
 
 	for _, c := range channels {
