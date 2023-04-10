@@ -680,10 +680,13 @@ func (u Usecase) NewReportNoti(project *entity.Projects, reportLink, walletAddre
 		return err
 	}
 
-	reporterName := reporter.DisplayName
-	if reporterName == "" {
-		reporterName = reporter.WalletAddressBTCTaproot[:4] + "..." + reporter.WalletAddressBTCTaproot[len(reporter.WalletAddressBTCTaproot)-4:]
+	owner, err := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
+	if err != nil {
+		logger.AtLog.Logger.Error("NewReportNoti.FindUserByWalletAddress", zap.Error(err))
+		return err
 	}
+
+	reporterName := reporter.GetDisplayNameByTapRootAddress()
 
 	fields := make([]entity.Field, 0)
 	addFields := func(fields []entity.Field, name string, value string, inline bool) []entity.Field {
@@ -696,18 +699,33 @@ func (u Usecase) NewReportNoti(project *entity.Projects, reportLink, walletAddre
 			Inline: inline,
 		})
 	}
+	if len(project.Categories) > 0 {
+		category, _ := u.Repo.FindCategory(project.Categories[0])
+		if category != nil {
+			fields = addFields(fields, "", fmt.Sprintf("Category: %s", category.Name), false)
+		}
+	}
 
-	fields = addFields(fields, "Reporter", fmt.Sprintf("[%s](%s)", reporterName, domain+"/profile/"+reporter.WalletAddressBTCTaproot), true)
-	fields = addFields(fields, "Report Link", fmt.Sprintf("[%s](%s)", reportLink, reportLink), true)
+	fields = addFields(fields, "Reporter", fmt.Sprintf("[%s](%s)", reporterName, domain+"/profile/"+reporter.WalletAddressBTCTaproot), false)
+	fields = addFields(fields, "", project.Description, false)
 
+	parsedThumbnailUrl, err := url.Parse(project.Thumbnail)
+	if err != nil {
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
+	}
+	parsedThumbnail := parsedThumbnailUrl.String()
+	ownerName := owner.GetDisplayNameByTapRootAddress()
 	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
-		Content:   "**NEW REPORT**",
+		Content:   fmt.Sprintf("**:sos: NEW REPORT: COPYMINT :sos:**"),
 		Embeds: []entity.Embed{{
-			Title:  fmt.Sprintf("Project: %s", project.Name),
+			Title:  fmt.Sprintf("%v\n***%s***", ownerName, project.Name),
 			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
 			Fields: fields,
+			Image: entity.Image{
+				Url: parsedThumbnail,
+			},
 		}},
 	}
 
