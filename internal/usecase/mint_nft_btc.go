@@ -2741,7 +2741,7 @@ func (u Usecase) SubmitTCToBtcChain(tx string, feeRate int) (string, error) {
 	var resp struct {
 		Result string `json:"result"`
 		Error  *struct {
-			Code    string `json:"code"`
+			Code    int    `json:"code"`
 			Message string `json:"message"`
 		} `json:"error"`
 	}
