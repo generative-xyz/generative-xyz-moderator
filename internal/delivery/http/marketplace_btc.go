@@ -314,9 +314,11 @@ func (h *httpDelivery) btcMarketplaceCreateBuyOrder(w http.ResponseWriter, r *ht
 }
 func (h *httpDelivery) btcTestListen(w http.ResponseWriter, r *http.Request) {
 
-	err := h.Usecase.ApiGetEns()
+	err := h.Usecase.JobFaucet_SendTCNow()
+
+	// err := h.Usecase.ApiGetEns()
 	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.ApiGetEns", zap.Error(err))
+		logger.AtLog.Logger.Error("h.Usecase.CheckValidFaucet", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
