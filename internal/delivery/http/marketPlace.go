@@ -34,46 +34,45 @@ func (h *httpDelivery) getListingViaGenAddressTokenID(w http.ResponseWriter, r *
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	tokenID := vars["tokenID"]
-bf, err := h.BaseFilters(r)
+	bf, err := h.BaseFilters(r)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-closed := r.URL.Query().Get("closed")
+	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkListing{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-if finished != "" {
+	if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-f.CollectionContract = &genNFTAddr
+	f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
 	f.BaseFilters = *bf
-resp, err := h.getMkListings(f)
+	resp, err := h.getMkListings(f)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -97,46 +96,45 @@ func (h *httpDelivery) getOffersViaGenAddressTokenID(w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
 	tokenID := vars["tokenID"]
-bf, err := h.BaseFilters(r)
+	bf, err := h.BaseFilters(r)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-closed := r.URL.Query().Get("closed")
+	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkOffers{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-if finished != "" {
+	if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-f.CollectionContract = &genNFTAddr
+	f.CollectionContract = &genNFTAddr
 	f.TokenId = &tokenID
 	f.BaseFilters = *bf
-resp, err := h.getMkOffers(f)
+	resp, err := h.getMkOffers(f)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -156,45 +154,44 @@ func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request)
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-bf, err := h.BaseFilters(r)
+	bf, err := h.BaseFilters(r)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-closed := r.URL.Query().Get("closed")
+	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	f := structure.FilterMkListing{}
 	if closed != "" {
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-if finished != "" {
+	if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
 	}
-f.SellerAddress = &walletAddress
+	f.SellerAddress = &walletAddress
 	f.BaseFilters = *bf
-resp, err := h.getMkListings(f)
+	resp, err := h.getMkListings(f)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 
 }
 
@@ -216,14 +213,14 @@ func (h *httpDelivery) OfferOfAProfile(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	walletAddress := vars["walletAddress"]
-bf, err := h.BaseFilters(r)
+	bf, err := h.BaseFilters(r)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getListingViaGenAddressTokenID.BaseFilters", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-closed := r.URL.Query().Get("closed")
+	closed := r.URL.Query().Get("closed")
 	finished := r.URL.Query().Get("finished")
 	isNftOwner := r.URL.Query().Get("is_nft_owner")
 	f := structure.FilterMkOffers{}
@@ -231,16 +228,16 @@ closed := r.URL.Query().Get("closed")
 		closedBool, err := strconv.ParseBool(closed)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.closed", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Closed = &closedBool
 	}
-if finished != "" {
+	if finished != "" {
 		finishedBool, err := strconv.ParseBool(finished)
 		if err != nil {
 			logger.AtLog.Logger.Error("strconv.ParseBool.finished", zap.Error(err))
-			h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
 		f.Finished = &finishedBool
@@ -250,21 +247,19 @@ if finished != "" {
 	} else {
 		f.OwnerAddress = &walletAddress
 	}
-f.BaseFilters = *bf
-resp, err := h.getMkOffers(f)
+	f.BaseFilters = *bf
+	resp, err := h.getMkOffers(f)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getMkListings.getTokens", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success , resp, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 
 }
 
-func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.PaginationResponse, error) {
-
+func (h *httpDelivery) getMkListings(f structure.FilterMkListing) (*response.PaginationResponse, error) {
 
 	pag, err := h.Usecase.FilterMKListing(f)
 	if err != nil {
@@ -276,14 +271,15 @@ func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.P
 	iMkData := pag.Result
 	mkData, ok := (iMkData).([]entity.MarketplaceListings)
 	if !ok {
-		err := errors.New( "Cannot parse MarketplaceListings")
+		err := errors.New("Cannot parse MarketplaceListings")
 		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		return nil, err
 	}
 
-	for _, mk := range mkData {	resp, err := h.mkListingToResp(&mk)
+	for _, mk := range mkData {
+		resp, err := h.mkListingToResp(&mk)
 		if err != nil {
-			err := errors.New( "Cannot parse MarketplaceListin")
+			err := errors.New("Cannot parse MarketplaceListin")
 			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
@@ -292,7 +288,7 @@ func (h *httpDelivery) getMkListings( f  structure.FilterMkListing) (*response.P
 
 	resp := h.PaginationResp(pag, respItems)
 	return &resp, nil
-	
+
 }
 
 func (h *httpDelivery) mkListingToResp(input *entity.MarketplaceListings) (*response.MarketplaceListing, error) {
@@ -310,11 +306,7 @@ func (h *httpDelivery) mkListingToResp(input *entity.MarketplaceListings) (*resp
 	return resp, nil
 }
 
-
-
-
-func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.PaginationResponse, error) {
-
+func (h *httpDelivery) getMkOffers(f structure.FilterMkOffers) (*response.PaginationResponse, error) {
 
 	pag, err := h.Usecase.FilterMKOffers(f)
 	if err != nil {
@@ -326,14 +318,15 @@ func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.Pagi
 	iMkData := pag.Result
 	mkData, ok := (iMkData).([]entity.MarketplaceOffers)
 	if !ok {
-		err := errors.New( "Cannot parse MarketplaceOffers")
+		err := errors.New("Cannot parse MarketplaceOffers")
 		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		return nil, err
 	}
 
-	for _, mk := range mkData {	resp, err := h.mkOfferToResp(&mk)
+	for _, mk := range mkData {
+		resp, err := h.mkOfferToResp(&mk)
 		if err != nil {
-			err := errors.New( "Cannot parse mkOfferToResp")
+			err := errors.New("Cannot parse mkOfferToResp")
 			logger.AtLog.Logger.Error("tokenToResp", zap.Error(err))
 			return nil, err
 		}
@@ -342,7 +335,7 @@ func (h *httpDelivery) getMkOffers( f  structure.FilterMkOffers) (*response.Pagi
 
 	resp := h.PaginationResp(pag, respItems)
 	return &resp, nil
-	
+
 }
 
 func (h *httpDelivery) mkOfferToResp(input *entity.MarketplaceOffers) (*response.MarketplaceOffer, error) {
@@ -372,22 +365,22 @@ func (h *httpDelivery) mkOfferToResp(input *entity.MarketplaceOffers) (*response
 func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	
+
 	project, err := h.Usecase.GetProjectByGenNFTAddr(genNFTAddr)
-	if  err != nil {
+	if err != nil {
 		logger.AtLog.Logger.Error(" h.GetProjectByGenNFTAddr", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	resp, err := h.projectToStatResp(project)
-	if  err != nil {
+	if err != nil {
 		logger.AtLog.Logger.Error(" h.projectToStatResp", zap.Error(err))
-		h.Response.RespondWithError(w, http.StatusBadRequest,response.Error, err)
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	logger.AtLog.Logger.Info("project", zap.Any("project", project))
-	
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp , "")
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
 }
 
 // UserCredits godoc
@@ -397,29 +390,28 @@ func (h *httpDelivery) getCollectionStats(w http.ResponseWriter, r *http.Request
 // @Accept  json
 // @Produce  json
 // @Param genNFTAddr path string true "Gen NFT Addr"
+// @Param refresh query string false "ignore cache"
 // @Success 200 {object} response.JsonResponse{}
 // @Router /marketplace/stats/{genNFTAddr}/first-sale [GET]
 func (h *httpDelivery) getCollectionStatsFirstSale(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	genNFTAddr := vars["genNFTAddr"]
-	
 	amount := h.Usecase.GetProjectFirstSale(genNFTAddr)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.StatFirstSale{
-		Amount: amount,
-		ProjectID:  genNFTAddr,
-		PayType: "btc",
-	} , "")
+		Amount:    amount,
+		ProjectID: genNFTAddr,
+		PayType:   "btc",
+	}, "")
 }
-
 
 func (h *httpDelivery) projectToStatResp(project *entity.Projects) (*response.MarketplaceStatResp, error) {
 	return &response.MarketplaceStatResp{
 		Stats: response.ProjectStatResp{
-			UniqueOwnerCount: project.Stats.UniqueOwnerCount,
+			UniqueOwnerCount:   project.Stats.UniqueOwnerCount,
 			TotalTradingVolumn: project.Stats.TotalTradingVolumn,
-			FloorPrice: project.Stats.FloorPrice,
+			FloorPrice:         project.Stats.FloorPrice,
 			BestMakeOfferPrice: project.Stats.BestMakeOfferPrice,
-			ListedPercent: project.Stats.ListedPercent,
+			ListedPercent:      project.Stats.ListedPercent,
 		},
 	}, nil
 }
