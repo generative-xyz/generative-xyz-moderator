@@ -8,11 +8,14 @@ import (
 type Faucet struct {
 	BaseEntity  `bson:",inline"`
 	Tx          string `bson:"tx"`
-	Btc         string `bson:"btc_tx"`
+	BtcTx       string `bson:"btc_tx"`
+	Nonce       int64  `bson:"nonce"`
 	Address     string `bson:"address"`
 	TwitterName string `bson:"twitter_name"`
-	Status      int    `bson:"status"` // 0 pending, 1 success, 2 fail, -1: init
+	Status      int    `bson:"status"` // 0 pending, 1 have tx tc, 2 have tx btc, 3 success, 4 false.
 	Amount      string `bson:"amount"`
+	TwShareID   string `bson:"twitter_share_id"`
+	ErrLogs     string `bson:"err_logs"`
 }
 
 func (u Faucet) TableName() string {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,11 @@ import (
 	"rederinghub.io/utils"
 	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/logger"
+)
+
+const (
+	PerceptronProjectID = "1002573"
+	PFPsCategory        = "PFPs"
 )
 
 type addUserDiscordFieldReq struct {
@@ -181,8 +187,6 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	fields := make([]entity.Field, 0)
 
-	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
-
 	fields = addDiscordField(fields, "Sale Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
 
 	if buyerAddress != "" {
@@ -226,22 +230,39 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	logger.AtLog.Logger.Info("sending new sale message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
 
-	noti := entity.DiscordNoti{
-		Message:    discordMsg,
-		NumRetried: 0,
-		Status:     entity.PENDING,
-		Type:       entity.NEW_SALE,
-		Meta: entity.DiscordNotiMeta{
-			ProjectID:     project.TokenID,
-			InscriptionID: tokenUri.TokenID,
-		},
+	channels := []entity.DiscordNotiType{
+		entity.DISCORD_SALE_CHANNEL,
 	}
 
-	// create discord message
-	err = u.CreateDiscordNoti(noti)
-	if err != nil {
-		logger.AtLog.Logger.Error("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
-		return err
+	if tokenUri.ProjectID == PerceptronProjectID {
+		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+	}
+
+	if order.Amount > 0 {
+		if category == PFPsCategory {
+			channels = append(channels, entity.DISCORD_PFPS_CHANNEL)
+		} else {
+			channels = append(channels, entity.DISCORD_ART_CHANNEL)
+		}
+	}
+
+	for _, c := range channels {
+		noti := entity.DiscordNoti{
+			Message:    discordMsg,
+			NumRetried: 0,
+			Status:     entity.PENDING,
+			Type:       c,
+			Meta: entity.DiscordNotiMeta{
+				ProjectID:     project.TokenID,
+				InscriptionID: tokenUri.TokenID,
+			},
+		}
+
+		// create discord message
+		err = u.CreateDiscordNoti(noti)
+		if err != nil {
+			logger.AtLog.Logger.Error("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
+		}
 	}
 	return nil
 }
@@ -404,13 +425,11 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 		return
 	}
 
+	mintPrice := project.MintPrice
 	if v, ok := mintNftBtc.EstFeeInfo["btc"]; ok {
-		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(v.MintPrice), true)
-	} else {
-		fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(project.MintPrice), true)
+		mintPrice = v.MintPrice
 	}
-
-	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
+	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(mintPrice), true)
 
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
@@ -447,19 +466,36 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 
 	logger.AtLog.Logger.Info("sending new nft minted message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
 
-	noti := entity.DiscordNoti{
-		Message:    discordMsg,
-		NumRetried: 0,
-		Status:     entity.PENDING,
-		Type:       entity.NEW_MINT,
-		Meta: entity.DiscordNotiMeta{
-			ProjectID:     project.TokenID,
-			InscriptionID: tokenUri.TokenID,
-		},
+	channels := []entity.DiscordNotiType{
+		entity.NEW_MINT,
 	}
 
+	if project.TokenID == PerceptronProjectID {
+		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+	}
+
+	if value, err := strconv.Atoi(mintPrice); err == nil && value > 0 {
+		if category == PFPsCategory {
+			channels = append(channels, entity.DISCORD_PFPS_CHANNEL)
+		} else {
+			channels = append(channels, entity.DISCORD_ART_CHANNEL)
+		}
+	}
+
+	for _, c := range channels {
+		noti := entity.DiscordNoti{
+			Message:    discordMsg,
+			NumRetried: 0,
+			Status:     entity.PENDING,
+			Type:       c,
+			Meta: entity.DiscordNotiMeta{
+				ProjectID:     project.TokenID,
+				InscriptionID: tokenUri.TokenID,
+			},
+		}
+		err = u.CreateDiscordNoti(noti)
+	}
 	// create discord message
-	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		logger.AtLog.Logger.Error("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
 	}
@@ -642,6 +678,85 @@ func (u Usecase) NotifyNewBid(ETHWalletAddress string, unitPrice float64, quanti
 	err = u.CreateDiscordNoti(noti)
 	if err != nil {
 		logger.AtLog.Logger.Error("NotifyNFTMinted.CreateDiscordNoti", zap.Error(err))
+	}
+	return nil
+}
+
+func (u Usecase) NewReportNoti(project *entity.Projects, reportLink, walletAddress string) error {
+
+	logger.AtLog.Logger.Info("NewReportNoti", zap.Any("projectID", project.TokenID), zap.Any("walletAddress", walletAddress))
+	domain := os.Getenv("DOMAIN")
+
+	reporter, err := u.Repo.FindUserByWalletAddress(walletAddress)
+	if err != nil {
+		logger.AtLog.Logger.Error("NewReportNoti.FindUserByWalletAddress", zap.Error(err))
+		return err
+	}
+
+	owner, err := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
+	if err != nil {
+		logger.AtLog.Logger.Error("NewReportNoti.FindUserByWalletAddress", zap.Error(err))
+		return err
+	}
+
+	reporterName := reporter.GetDisplayNameByTapRootAddress()
+
+	fields := make([]entity.Field, 0)
+	addFields := func(fields []entity.Field, name string, value string, inline bool) []entity.Field {
+		if value == "" {
+			return fields
+		}
+		return append(fields, entity.Field{
+			Name:   name,
+			Value:  value,
+			Inline: inline,
+		})
+	}
+	if len(project.Categories) > 0 {
+		category, _ := u.Repo.FindCategory(project.Categories[0])
+		if category != nil {
+			fields = addFields(fields, "", fmt.Sprintf("Category: %s", category.Name), false)
+		}
+	}
+
+	fields = addFields(fields, "Reporter", fmt.Sprintf("[%s](%s)", reporterName, domain+"/profile/"+reporter.WalletAddressBTCTaproot), false)
+	fields = addFields(fields, "Original Work", fmt.Sprintf("[%s](%s)", reportLink, reportLink), false)
+	fields = addFields(fields, "", project.Description, false)
+
+	parsedThumbnailUrl, err := url.Parse(project.Thumbnail)
+	if err != nil {
+		logger.AtLog.Logger.Error("ErrorParseProjectThumbnailURL", zap.Error(err))
+	}
+	parsedThumbnail := parsedThumbnailUrl.String()
+	ownerName := owner.GetDisplayNameByTapRootAddress()
+	discordMsg := entity.DiscordMessage{
+		Username:  "Satoshi 27",
+		AvatarUrl: "",
+		Content:   fmt.Sprintf("**:sos: NEW REPORT: COPYMINT :sos:**"),
+		Embeds: []entity.Embed{{
+			Title:  fmt.Sprintf("%v\n***%s***", ownerName, project.Name),
+			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
+			Fields: fields,
+			Image: entity.Image{
+				Url: parsedThumbnail,
+			},
+		}},
+	}
+
+	noti := entity.DiscordNoti{
+		Message:    discordMsg,
+		NumRetried: 0,
+		Status:     entity.PENDING,
+		Type:       entity.DISCORD_DAO_CHANNEL,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+		},
+	}
+
+	// create discord message
+	err = u.CreateDiscordNoti(noti)
+	if err != nil {
+		logger.AtLog.Logger.Error("NewReportNoti.CreateDiscordNoti", zap.Error(err))
 	}
 	return nil
 }
