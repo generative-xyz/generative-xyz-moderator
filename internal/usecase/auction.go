@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"time"
 
 	"rederinghub.io/internal/entity"
 )
@@ -288,58 +289,61 @@ func (u Usecase) APIAuctionCrawlWinnerNow() error {
 	}
 	// crawl now:
 	for _, bid := range listSnapShot {
+		time.Sleep(500 * time.Millisecond)
 		// get getBidsByAddress to check winner and update list bidder address:
 		// v1:
-		bidInfo1, err := u.EthClient.GetBidsByAddressV1(contractV1, bid.Bidder)
-		if err != nil {
-			err = errors.New("GetBidsByAddressV1 for " + bid.Bidder + " err: " + err.Error())
-			fmt.Println(err)
-			// continue
-		}
-		if bidInfo1 != nil {
-			if bidInfo1.IsWinner {
-				// get item from realtime db:
-				bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
-				if err != nil {
-					return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
-				}
-				bidFromDb.Quantity = bidInfo1.Quantity
-				bidFromDb.IsWinner = bidInfo1.IsWinner
-				// update:
-				_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
-				if err != nil {
-					return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
-				}
+		if bid.Contract == "v1" {
+			bidInfo1, err := u.EthClient.GetBidsByAddressV1(contractV1, bid.Bidder)
+			if err != nil {
+				err = errors.New("GetBidsByAddressV1 for " + bid.Bidder + " err: " + err.Error())
+				fmt.Println(err)
+				// continue
 			}
+			if bidInfo1 != nil {
+				if bidInfo1.IsWinner {
+					// get item from realtime db:
+					bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
+					if err != nil {
+						return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
+					}
+					bidFromDb.Quantity = bidInfo1.Quantity
+					bidFromDb.IsWinner = bidInfo1.IsWinner
+					// update:
+					_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
+					if err != nil {
+						return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
+					}
+				}
 
-		}
-		// v2:
-		bidInfo2, err := u.EthClient.GetBidsByAddressV1(contractV2, bid.Bidder)
-		fmt.Println("address v2:", bid.Bidder)
-		if err != nil {
-			err = errors.New("GetBidsByAddressV2 for " + bid.Bidder + " err: " + err.Error())
-			fmt.Println(err)
-			// continue
-		}
-		if bidInfo2 != nil {
-			if bidInfo2.IsWinner {
-				fmt.Println("winner......")
-				// get item from realtime db:
-				bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
-				if err != nil {
-					return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
-				}
-				bidFromDb.Quantity = bidInfo2.Quantity
-				bidFromDb.IsWinner = bidInfo2.IsWinner
-				// update:
-				_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
-				if err != nil {
-					return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
-				}
 			}
+		} else {
+			// v2:
+			bidInfo2, err := u.EthClient.GetBidsByAddressV2(contractV2, bid.Bidder)
+			fmt.Println("address v2:", bid.Bidder)
+			if err != nil {
+				err = errors.New("GetBidsByAddressV2 for " + bid.Bidder + " err: " + err.Error())
+				fmt.Println(err)
+				// continue
+			}
+			if bidInfo2 != nil {
+				if bidInfo2.IsWinner {
+					fmt.Println("winner......")
+					// get item from realtime db:
+					bidFromDb, err := u.Repo.FindAuctionCollectionBidderByAddress(bid.Bidder)
+					if err != nil {
+						return errors.New("FindAuctionCollectionBidderByAddress: " + err.Error())
+					}
+					bidFromDb.Quantity = bidInfo2.Quantity
+					bidFromDb.IsWinner = bidInfo2.IsWinner
+					// update:
+					_, err = u.Repo.UpdateAuctionCollectionBidder(bidFromDb)
+					if err != nil {
+						return errors.New("UpdateAuctionCollectionBidder: " + err.Error())
+					}
+				}
 
+			}
 		}
-
 	}
 
 	return err

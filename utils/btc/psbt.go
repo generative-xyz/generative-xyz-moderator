@@ -803,20 +803,20 @@ func CreatePSBTToBuyInscriptionViaAPI(
 	json_data, err := json.Marshal(data)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	resp, err := http.Post(endpoint+"/api/createtxbuy", "application/json",
 		bytes.NewBuffer(json_data))
 
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	var res CreatePSBTToBuyInscriptionRespond
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	if res.TxHex == "" {
 		var resErr struct {
@@ -824,9 +824,9 @@ func CreatePSBTToBuyInscriptionViaAPI(
 		}
 		err = json.NewDecoder(resp.Body).Decode(&resErr)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
-		return nil, errors.New(resErr.Message)
+		return nil, errors.WithStack(errors.New(resErr.Message))
 	}
 	return &res, nil
 }

@@ -335,6 +335,7 @@ func (r Repository) AggregateBTCVolumn(projectID string) ([]entity.AggregateProj
 			Amount:    res.Amount,
 			Minted:    res.Minted,
 		}
+
 		confs = append(confs, tmp)
 	}
 

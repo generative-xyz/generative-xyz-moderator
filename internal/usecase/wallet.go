@@ -66,7 +66,7 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 	currentListing, err := u.Repo.GetDexBTCListingOrderUserPending(address)
 	if err != nil {
-		logger.AtLog.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending",  zap.Error(err))
+		logger.AtLog.Logger.Error("u.Repo.GetDexBTCListingOrderUserPending", zap.Error(err))
 	}
 	trackT2 := time.Since(t)
 
@@ -236,7 +236,6 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 									relatedPendingTxs, _ := u.Repo.GetPendingBTCSubmitTxByInscriptionID(listing.InscriptionID)
 									if len(relatedPendingTxs) > 0 {
 										inscWalletInfo.Buyable = false
-										inscWalletInfo.CurrentBuyTx = buyEth.BuyTx
 										inscWalletInfo.CurrentBuyTxTime = relatedPendingTxs[0].CreatedAt.Unix()
 									}
 								}
