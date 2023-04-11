@@ -19,6 +19,27 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
+func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
+	faucetItems, err := u.Repo.FindFaucetByTwitterNameOrAddress(address, address)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByTwitterName"), zap.Error(err))
+		return nil, err
+	}
+	for _, item := range faucetItems {
+		if len(item.Tx) > 0 {
+			item.Tx = "https://explorer.trustless.computer/" + item.Tx
+		}
+		item.StatusStr = "Pending"
+		if item.Status == 2 {
+			item.StatusStr = "Processing"
+		} else if item.Status == 3 {
+			item.StatusStr = "Success"
+		}
+	}
+	return faucetItems, nil
+
+}
+
 func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	// verify tw name:
@@ -184,7 +205,7 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 		fmt.Println("diff.Hours(): ", diff.Hours())
 
 		if diff.Hours() < maxHours {
-			err = errors.New(fmt.Sprintf("You can only request once within 24 hours. Please wait another %0.1f minutes.", maxHours-diff.Hours()))
+			err = errors.New(fmt.Sprintf("You can only request once within 24 hours. Please wait another %0.1f hours.", maxHours-diff.Hours()))
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 			return err
 		}
