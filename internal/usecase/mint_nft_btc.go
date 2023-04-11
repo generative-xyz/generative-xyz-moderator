@@ -321,7 +321,9 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
 	result := []structure.MintingInscription{}
 
-	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+	// listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndUserAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
 	if err != nil {
 		go u.trackMintNftBtcHistory("", "GetCurrentMintingByWalletAddress", "", 0, "ListMintNftBtcByStatusAndAddress", err.Error(), true)
 		return nil, err
