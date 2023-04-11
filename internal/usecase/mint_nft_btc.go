@@ -309,7 +309,11 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 	fmt.Println("mintItem.OriginUserAddress", mintItem.OriginUserAddress)
 
 	if !strings.EqualFold(wallet, mintItem.OriginUserAddress) {
-		return errors.New("perminsion denied")
+
+		if !strings.EqualFold(wallet, mintItem.UserAddress) {
+			return errors.New("permission denied")
+		}
+
 	}
 	if mintItem.Status != entity.StatusMint_Pending {
 		return errors.New("Can not cancel this, the item is in progress.")
