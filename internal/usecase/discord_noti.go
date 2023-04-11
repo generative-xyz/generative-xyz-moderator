@@ -236,6 +236,7 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	if tokenUri.ProjectID == PerceptronProjectID {
 		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+		time.Sleep(1 * time.Minute)
 	}
 
 	if order.Amount > 0 {
@@ -472,6 +473,8 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 
 	if project.TokenID == PerceptronProjectID {
 		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+		// wait for perception capture image before send noti to discord
+		time.Sleep(1 * time.Minute)
 	}
 
 	if value, err := strconv.Atoi(mintPrice); err == nil && value > 0 {
