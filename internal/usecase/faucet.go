@@ -19,6 +19,24 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
+func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
+	faucetItems, err := u.Repo.FindFaucetByTwitterNameOrAddress(address, address)
+	if err != nil {
+		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByTwitterName"), zap.Error(err))
+		return nil, err
+	}
+	for _, item := range faucetItems {
+		item.StatusStr = "Pending"
+		if item.Status == 2 {
+			item.StatusStr = "Processing"
+		} else if item.Status == 3 {
+			item.StatusStr = "Success"
+		}
+	}
+	return faucetItems, nil
+
+}
+
 func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	// verify tw name:
