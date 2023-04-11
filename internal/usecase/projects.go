@@ -69,8 +69,8 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 	pe.TokenIDInt = maxID
 	pe.TokenID = fmt.Sprintf("%d", maxID)
 	pe.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
-	pe.MintPrice = mPrice.String()
-	pe.ReserveMintPrice = mReserveMintPrice.String()
+	pe.MintPrice = mPrice
+	pe.ReserveMintPrice = mReserveMintPrice
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = true
 	if req.IsHidden != nil {
@@ -705,7 +705,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 
 	if req.ReserveMintPrice != nil && *req.ReserveMintPrice != "" {
 		mReserveMintPrice := helpers.StringToBTCAmount(*req.ReserveMintPrice)
-		p.ReserveMintPrice = mReserveMintPrice.String()
+		p.ReserveMintPrice = mReserveMintPrice
 	}
 
 	if req.MaxSupply != nil && *req.MaxSupply != 0 && *req.MaxSupply != p.MaxSupply {
@@ -742,7 +742,7 @@ func (u Usecase) UpdateBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 		// 	logger.AtLog.Error("pjID.minted", err.Error(), err)
 		// 	return nil, err
 		// }
-		p.MintPrice = reqMfFStr.String()
+		p.MintPrice = reqMfFStr
 	}
 
 	if req.CaptureImageTime != nil && *req.CaptureImageTime != 0 {
@@ -1851,7 +1851,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
 	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
-	pe.MintPrice = mPrice.String()
+	pe.MintPrice = mPrice
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = false
 	pe.Status = false
