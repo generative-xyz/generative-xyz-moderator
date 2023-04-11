@@ -7,15 +7,17 @@ import (
 
 type Faucet struct {
 	BaseEntity  `bson:",inline"`
-	Tx          string `bson:"tx"`
-	BtcTx       string `bson:"btc_tx"`
-	Nonce       int64  `bson:"nonce"`
-	Address     string `bson:"address"`
-	TwitterName string `bson:"twitter_name"`
-	Status      int    `bson:"status"` // 0 pending, 1 have tx tc, 2 have tx btc, 3 success, 4 false.
-	Amount      string `bson:"amount"`
-	TwShareID   string `bson:"twitter_share_id"`
-	ErrLogs     string `bson:"err_logs"`
+	Tx          string `bson:"tx" json:"tcTx"`
+	BtcTx       string `bson:"btc_tx" json:"btcTx"`
+	Nonce       int64  `bson:"nonce" json:"-"`
+	Address     string `bson:"address" json:"address"`
+	TwitterName string `bson:"twitter_name" json:"twitterName"`
+	Status      int    `bson:"status" json:"status"` // 0 pending, 1 have tx tc, 2 have tx btc, 3 success, 4 false.
+	Amount      string `bson:"amount" json:"amount"`
+	TwShareID   string `bson:"twitter_share_id" json:"twitterShareId"`
+	ErrLogs     string `bson:"err_logs" json:"-"`
+
+	StatusStr string `bson:"-" json:"status_str"`
 }
 
 func (u Faucet) TableName() string {
