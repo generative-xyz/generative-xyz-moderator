@@ -330,12 +330,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
 			log.Println("FindProjectByTokenID", item.ProjectID)
+			go u.trackMintNftBtcHistory(item.UUID, "GetCurrentMintingByWalletAddress", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
 			// return nil, err
 			continue
 		}
 		creator, err := u.Repo.FindUserByAddress(projectInfo.CreatorAddrr)
 		if err != nil {
 			log.Println("InscriptionsByOutputs.FindUserByAddress", err)
+			go u.trackMintNftBtcHistory(item.UUID, "GetCurrentMintingByWalletAddress", item.TableName(), item.Status, "FindUserByAddress", err.Error(), true)
 		}
 
 		status := ""
