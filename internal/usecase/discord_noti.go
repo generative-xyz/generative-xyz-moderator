@@ -187,8 +187,6 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 
 	fields := make([]entity.Field, 0)
 
-	fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
-
 	fields = addDiscordField(fields, "Sale Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
 
 	if buyerAddress != "" {
@@ -233,15 +231,18 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing, buyerAddress string) 
 	logger.AtLog.Logger.Info("sending new sale message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
 
 	channels := []entity.DiscordNotiType{
-		entity.NEW_SALE,
+		entity.DISCORD_SALE_CHANNEL,
 	}
 
 	if tokenUri.ProjectID == PerceptronProjectID {
-		channels = append(channels, entity.NEW_SALE_PERCEPTRON)
-	} else if order.Amount > 0 {
-		channels = append(channels, entity.NEW_SALE_ART)
+		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+	}
+
+	if order.Amount > 0 {
 		if category == PFPsCategory {
-			channels = append(channels, entity.NEW_MINT_PFPS)
+			channels = append(channels, entity.DISCORD_PFPS_CHANNEL)
+		} else {
+			channels = append(channels, entity.DISCORD_ART_CHANNEL)
 		}
 	}
 
@@ -430,8 +431,6 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 	}
 	fields = addFields(fields, "Mint Price", u.resolveMintPriceBTC(mintPrice), true)
 
-	fields = addFields(fields, "", u.resolveShortDescription(project.Description), false)
-
 	fields = addFields(fields, "Collector", fmt.Sprintf("[%s](%s)",
 		u.resolveShortName(minterDisplayName, btcUserAddr),
 		fmt.Sprintf("%s/profile/%s", domain, minterAddress),
@@ -471,8 +470,16 @@ func (u Usecase) NotifyNFTMinted(btcUserAddr string, inscriptionID string) {
 		entity.NEW_MINT,
 	}
 
+	if project.TokenID == PerceptronProjectID {
+		channels = append(channels, entity.DISCORD_PERCEPTRON_CHANNEL)
+	}
+
 	if value, err := strconv.Atoi(mintPrice); err == nil && value > 0 {
-		channels = append(channels, entity.NEW_MINT_PFPS)
+		if category == PFPsCategory {
+			channels = append(channels, entity.DISCORD_PFPS_CHANNEL)
+		} else {
+			channels = append(channels, entity.DISCORD_ART_CHANNEL)
+		}
 	}
 
 	for _, c := range channels {
@@ -740,7 +747,7 @@ func (u Usecase) NewReportNoti(project *entity.Projects, reportLink, walletAddre
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.PROJECT_REPORT,
+		Type:       entity.DISCORD_DAO_CHANNEL,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 		},
