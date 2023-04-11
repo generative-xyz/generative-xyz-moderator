@@ -125,7 +125,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 
 	go u.sendSlack("", "ApiCreateFaucet.NewFaucet", twName+"/"+address, "ok")
 
-	return "The request was submitted successfully. You will receive TC in around an hour.", nil
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
 
 	/*
 
