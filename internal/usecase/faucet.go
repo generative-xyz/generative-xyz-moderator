@@ -184,7 +184,7 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 		fmt.Println("diff.Hours(): ", diff.Hours())
 
 		if diff.Hours() < maxHours {
-			err = errors.New(fmt.Sprintf("You can only request once within 24 hours. Please wait another %0.1f minutes.", maxHours-diff.Hours()))
+			err = errors.New(fmt.Sprintf("You can only request once within 24 hours. Please wait another %0.1f hours.", maxHours-diff.Hours()))
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 			return err
 		}
