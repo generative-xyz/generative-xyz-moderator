@@ -26,6 +26,9 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 		return nil, err
 	}
 	for _, item := range faucetItems {
+		if len(item.Tx) > 0 {
+			item.Tx = "https://explorer.trustless.computer/" + item.Tx
+		}
 		item.StatusStr = "Pending"
 		if item.Status == 2 {
 			item.StatusStr = "Processing"
