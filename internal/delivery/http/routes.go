@@ -259,6 +259,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	wallet.HandleFunc("/txs", h.walletTrackedTx).Methods("GET")
 	wallet.HandleFunc("/submit-tx", h.submitTx).Methods("POST")
 
+	tc := api.PathPrefix("/tc").Subrouter()
+	tc.HandleFunc("/nfts/{address}", h.getNftsByAddress).Methods("GET")
+
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
 	inscriptionDex.Use(h.MiddleWare.AccessTokenPassThrough)
 	inscriptionDex.HandleFunc("/listing", h.dexBTCListing).Methods("POST")
