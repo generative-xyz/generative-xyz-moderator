@@ -53,12 +53,22 @@ func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
 		return nil, err
 	}
 
+	// var listContractID []string
+
 	for _, nft := range result.Data {
+
+		// listContractID = append(listContractID, nft.CollectionAddress)
+
 		// if len(nft.Image) > 0 {
 		// 	nft.Image += "/content"
 		// }
 		nft.Explorer = fmt.Sprintf("https://trustless.computer/inscription?contract=%s&id=%s", nft.CollectionAddress, nft.TokenID)
-		nft.ArtistName = "" // todo update late
+
+		p, _ := u.Repo.FindProjectByGenNFTAddr(nft.CollectionAddress)
+		if p != nil {
+			nft.ArtistName = p.Name
+		}
+
 	}
 	return result.Data, err
 }
