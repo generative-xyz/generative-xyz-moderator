@@ -47,6 +47,10 @@ func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
 		} `json:"data"`
 	}
 
+	if true {
+		return result.Data, nil
+	}
+
 	// parse:
 	err = json.Unmarshal(body, &result)
 	if err != nil {
