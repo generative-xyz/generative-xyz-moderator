@@ -683,7 +683,7 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 		Message:    discordMsg,
 		NumRetried: 0,
 		Status:     entity.PENDING,
-		Type:       entity.NEW_PROJECT_REPORT,
+		Type:       entity.NEW_PROJECT_VOTE,
 		Meta: entity.DiscordNotiMeta{
 			ProjectID: project.TokenID,
 		},
