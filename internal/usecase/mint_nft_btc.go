@@ -967,7 +967,7 @@ func (u Usecase) MintNftViaOrdinal(item *entity.MintNftBtc, p *entity.Projects) 
 	}
 
 	go u.NotifyWithChannel(os.Getenv("SLACK_MINT_CREATED_NFT_CHANNEL_ID"), fmt.Sprintf("[MintWith][%s][uuid: %s][projectID %s]", item.PayType, item.UUID, item.ProjectID), item.ReceiveAddress, fmt.Sprintf("Made mining transaction for %s, waiting network confirm %s", item.UserAddress, resp.Stdout))
-	go u.NotifyNFTMinted(item.OriginUserAddress, item.InscriptionID)
+	go u.NotifyNFTMinted(item.InscriptionID)
 
 	return nil
 }

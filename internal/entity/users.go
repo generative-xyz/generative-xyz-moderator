@@ -83,7 +83,7 @@ func (u Users) ToBson() (*bson.D, error) {
 func (u Users) GetDisplayNameByTapRootAddress() string {
 	name := u.DisplayName
 	if name == "" {
-		name = u.WalletAddressBTCTaproot[0:4] + "..." + u.WalletAddressBTCTaproot[len(u.WalletAddressBTCTaproot)-4:]
+		name = u.WalletAddressBTCTaproot[0:6] + "..." + u.WalletAddressBTCTaproot[len(u.WalletAddressBTCTaproot)-4:]
 	}
 	return name
 }
@@ -91,7 +91,7 @@ func (u Users) GetDisplayNameByTapRootAddress() string {
 func (u Users) GetDisplayNameByWalletAddress() string {
 	name := u.DisplayName
 	if name == "" {
-		name = u.WalletAddress[0:4] + "..." + u.WalletAddress[len(u.WalletAddress)-4:]
+		name = u.WalletAddress[0:6] + "..." + u.WalletAddress[len(u.WalletAddress)-4:]
 	}
 	return name
 }
