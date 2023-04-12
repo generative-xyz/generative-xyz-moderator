@@ -341,7 +341,7 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 }
 
 func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
-
+	time.Sleep(3 * time.Minute)
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
@@ -425,7 +425,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 			types = append(types, entity.NEW_MINT_ART)
 		}
 	}
-	time.Sleep(3 * time.Minute)
+
 	for _, t := range types {
 		notify := entity.DiscordNoti{
 			Message:    discordMsg,
@@ -799,7 +799,7 @@ func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
 		//project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "5e58ef796d97d920f8b0f07a36633efb97beeff8d8a19894803bec832edad1f4i0"
+		incriptionID := "48ace75807885f42ade68e2bc532ec8affd7870c58c4529108e05435e9ea40aai0"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
