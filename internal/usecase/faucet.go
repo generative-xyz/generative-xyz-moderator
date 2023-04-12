@@ -27,7 +27,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 	}
 	for _, item := range faucetItems {
 		if len(item.Tx) > 0 {
-			item.Tx = "https://explorer.trustless.computer/" + item.Tx
+			item.Tx = "https://explorer.trustless.computer/tx/" + item.Tx
 		}
 		item.StatusStr = "Pending"
 		if item.Status == 2 {
@@ -40,7 +40,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 
 }
 
-func (u Usecase) ApiCreateFaucet(url string) (string, error) {
+func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
@@ -64,7 +64,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 		return "", err
 	}
 	// check valid vs twName first:
-	err := u.CheckValidFaucet("no", twName)
+	err := u.CheckValidFaucet(addressInput, twName)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
@@ -74,7 +74,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 	// check sharedID exist:
 	sharedIDs, _ := u.Repo.FindFaucetBySharedID(sharedID)
 	if len(sharedIDs) > 0 {
-		err := errors.New("The shard ID already exists, please tweet a new one.")
+		err := errors.New("The tweet has already been used to claim the faucet. Please send out a new tweet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetBySharedID"), zap.Error(err))
 		go u.sendSlack("", "ApiCreateFaucet.FindFaucetBySharedID.sharedID", sharedID, err.Error())
 		return "", err
@@ -125,7 +125,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	go u.sendSlack("", "ApiCreateFaucet.NewFaucet", twName+"/"+address, "ok")
 
-	return "", nil
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
 
 	/*
 
@@ -205,7 +205,7 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 		fmt.Println("diff.Hours(): ", diff.Hours())
 
 		if diff.Hours() < maxHours {
-			err = errors.New(fmt.Sprintf("You can only request once within 24 hours. Please wait another %0.1f hours.", maxHours-diff.Hours()))
+			err = errors.New(fmt.Sprintf("The faucet only allows one request per day. Please try again later in %0.1f hours.", maxHours-diff.Hours()))
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 			return err
 		}
@@ -240,15 +240,15 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	spew.Dump(res)
 
-	if !strings.Contains(res, "DappsOnBitcoin") {
-		return "", errors.New("tweet data invalid")
+	if !strings.Contains(res, "@generative_xyz") {
+		return "", errors.New("Tweet not found. Please double-check and try again")
 	}
 
 	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
 
 	addressHex := addressRegex.FindString(res)
 	if len(addressHex) == 0 {
-		return "", errors.New("address not found")
+		return "", errors.New("Address not found.")
 	}
 
 	fmt.Println("result: ", addressHex)
@@ -282,7 +282,14 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	// check pending first:
 	recordsPending, _ := u.Repo.FindFaucetByStatus(2)
 	if len(recordsPending) > 0 {
-		return u.JobFaucet_CheckTx(recordsPending)
+		u.JobFaucet_CheckTx(recordsPending)
+
+	}
+
+	// check pending again:
+	recordsPending, _ = u.Repo.FindFaucetByStatus(2)
+	if len(recordsPending) > 0 {
+		return nil
 	}
 
 	faucets, _ := u.Repo.FindFaucetByStatus(0)
@@ -393,6 +400,7 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 			if status > 0 {
 				// pass:
 				mapCheckTxPass[item.Tx] = true
+				item.Status = 3
 				_, err = u.Repo.UpdateFaucet(item)
 				if err != nil {
 					go u.sendSlack(item.UUID, "JobFaucet_CheckTx.UpdateFaucet", "UpdateFaucet", err.Error())
