@@ -23,6 +23,7 @@ import (
 const (
 	MaxSendDiscordRetryTimes = 3
 	PerceptronProjectID      = "1002573"
+	PFPsCategory             = "PFPs"
 )
 
 type addUserDiscordFieldReq struct {
@@ -232,6 +233,8 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	if order.Amount > 0 {
 		if tokenUri.ProjectID == PerceptronProjectID {
 			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if category == PFPsCategory {
+			types = append(types, entity.NEW_SALE_PFPS)
 		} else {
 			types = append(types, entity.NEW_SALE_ART)
 		}
@@ -416,6 +419,8 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	if mintPriceInNum > 0 {
 		if tokenUri.ProjectID == PerceptronProjectID {
 			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if category == PFPsCategory {
+			types = append(types, entity.NEW_SALE_PFPS)
 		} else {
 			types = append(types, entity.NEW_SALE_ART)
 		}
