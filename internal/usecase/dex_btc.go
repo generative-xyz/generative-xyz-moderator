@@ -479,8 +479,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					}(order, u)
 
 					// Discord Notify NEW SALE
-					buyerAddress := order.Buyer
-					go u.NotifyNewSale(order, buyerAddress)
+					go u.NotifyNewSale(order)
 				} else {
 					log.Printf("JobWatchPendingDexBTCListing not valid match err %v\n", err)
 					txDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)

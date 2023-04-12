@@ -17,19 +17,18 @@ const (
 type DiscordNotiType string
 
 const (
-	UNREGCONIZE                DiscordNotiType = ""
-	NEW_AIRDROP                DiscordNotiType = "new_airdrop"
-	DISCORD_SALE_CHANNEL       DiscordNotiType = "new_sale"
-	DISCORD_PERCEPTRON_CHANNEL DiscordNotiType = "new_sale_perceptron"
-	DISCORD_ART_CHANNEL        DiscordNotiType = "new_sale_art"
-	NEW_LISTING                DiscordNotiType = "new_listing"
-	NEW_MINT                   DiscordNotiType = "new_mint"
-	DISCORD_PFPS_CHANNEL       DiscordNotiType = "new_mint_pfps"
-	DISCORD_DAO_CHANNEL        DiscordNotiType = "project_report"
-	NEW_PROJECT                DiscordNotiType = "new_project"
-	NEW_PROJECT_PROPOSED       DiscordNotiType = "new_project_proposed"
-	NEW_PROJECT_APPROVED       DiscordNotiType = "new_project_approved"
-	NEW_BID                    DiscordNotiType = "new_bid"
+	UNREGCONIZE          DiscordNotiType = ""
+	NEW_AIRDROP          DiscordNotiType = "new_airdrop"
+	NEW_SALE             DiscordNotiType = "new_sale"
+	NEW_LISTING          DiscordNotiType = "new_listing"
+	NEW_MINT             DiscordNotiType = "new_mint"
+	NEW_PROJECT          DiscordNotiType = "new_project"
+	NEW_PROJECT_PROPOSED DiscordNotiType = "new_project_proposed"
+	NEW_PROJECT_APPROVED DiscordNotiType = "new_project_approved"
+	NEW_BID              DiscordNotiType = "new_bid"
+	NEW_PROJECT_REPORT   DiscordNotiType = "new_project_report"
+	NEW_PROJECT_REMOVE   DiscordNotiType = "new_project_remove"
+	NEW_PROJECT_VOTE     DiscordNotiType = "new_project_vote"
 )
 
 type GetDiscordNotiReq struct {
@@ -42,6 +41,8 @@ type DiscordNotiMeta struct {
 	InscriptionID string `bson:"inscription_id"`
 	ProjectID     string `bson:"project_id"`
 	SentTo        string `bson:"sent_to"`
+	Category      string `bson:"category"`
+	Amount        uint64 `bson:"amount"`
 }
 
 type DiscordNoti struct {
