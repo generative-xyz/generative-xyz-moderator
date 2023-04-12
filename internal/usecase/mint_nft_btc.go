@@ -2712,7 +2712,7 @@ func (u Usecase) GenMintFreeTemAddress() (string, error) {
 	// get list again:
 	list, _ = u.Repo.ListEvmTempWallets()
 	for _, item := range list {
-		destinations[item.WalletAddress] = big.NewInt(0.5 * 1e18)
+		destinations[item.WalletAddress] = big.NewInt(5 * 1e18)
 	}
 
 	fmt.Println("destinations: ", destinations)
