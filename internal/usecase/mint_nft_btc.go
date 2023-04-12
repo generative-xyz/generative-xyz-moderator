@@ -1109,7 +1109,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 	}
 
 	// update make busy temp wallet:
-	u.Repo.UpdateTcTempWalletAddress(item.TcTempWallet, entity.StatusEvmTempWallets_Busy)
+	u.Repo.UpdateTcTempWalletAddress(tempWallet.WalletAddress, entity.StatusEvmTempWallets_Busy)
 
 	item.TxMintNft = tx
 	item.MintMessage = ""
