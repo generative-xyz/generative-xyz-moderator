@@ -48,9 +48,23 @@ func (h *httpDelivery) requestFaucet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result, err := h.Usecase.ApiCreateFaucet(reqBody.Url)
+	result, err := h.Usecase.ApiCreateFaucet(reqBody.Address, reqBody.Url)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) listFaucet(w http.ResponseWriter, r *http.Request) {
+
+	address := r.URL.Query().Get("address")
+
+	result, err := h.Usecase.ApiListCheckFaucet(address)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.ApiListCheckFaucet", zap.String("err", err.Error()))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
