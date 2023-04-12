@@ -443,7 +443,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 		Username: "Satoshi 27",
 	}
 	embed := entity.Embed{
-		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName)
+		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName),
 	}
 
 	if proposed {
@@ -669,7 +669,7 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 	discordMsg := entity.DiscordMessage{
 		Username:  "Satoshi 27",
 		AvatarUrl: "",
-		Content:   fmt.Sprintf("**NEW UPVOTE :arrow_up:**"),
+		Content:   fmt.Sprintf("**NEW VOTE :thumbsup:**"),
 		Embeds: []entity.Embed{{
 			Title:  fmt.Sprintf("%v\n***%s***", owner.GetDisplayNameByWalletAddress(), project.Name),
 			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
