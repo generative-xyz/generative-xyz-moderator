@@ -182,10 +182,12 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 
 	totalFaucet := len(faucetItems)
 
+	limitFaucet := 3
+
 	fmt.Println("totalFaucet: ", totalFaucet)
 
-	if totalFaucet >= 5 {
-		// check 5 times:
+	if totalFaucet >= limitFaucet {
+		// check times:
 		err = errors.New("You have reached the maximum faucet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 		return err
