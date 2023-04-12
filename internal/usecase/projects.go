@@ -233,7 +233,7 @@ func (u Usecase) CreateBTCProject(req structure.CreateBtcProjectReq) (*entity.Pr
 			)
 		}
 		if len(ids) > 0 {
-			u.NotifyCreateNewProjectToDiscord(pe, creatorAddrr, true, ids[0])
+			u.NotifyNewProject(pe, creatorAddrr, true, ids[0])
 		}
 	}
 
@@ -897,7 +897,7 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 		"",
 		fmt.Sprintf("Project %s has been report by user %s - original link: %s", p.Name, iWalletAddress, originalLink),
 	)
-	u.NewReportNoti(p, originalLink, iWalletAddress)
+	u.NotifiNewProjectReport(p, originalLink, iWalletAddress)
 
 	return p, nil
 }
@@ -1802,7 +1802,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 			return
 		}
 		if len(ids) > 0 {
-			u.NotifyCreateNewProjectToDiscord(pe, owner, true, ids[0])
+			u.NotifyNewProject(pe, owner, true, ids[0])
 		}
 		u.AirdropArtist(pe.TokenID, os.Getenv("AIRDROP_WALLET"), *owner, 3)
 	}()
@@ -1850,7 +1850,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
-	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	pe.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
 	pe.MintPrice = mPrice
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = false
