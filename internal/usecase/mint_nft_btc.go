@@ -309,7 +309,11 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 	fmt.Println("mintItem.OriginUserAddress", mintItem.OriginUserAddress)
 
 	if !strings.EqualFold(wallet, mintItem.OriginUserAddress) {
-		return errors.New("perminsion denied")
+
+		if !strings.EqualFold(wallet, mintItem.UserAddress) {
+			return errors.New("permission denied")
+		}
+
 	}
 	if mintItem.Status != entity.StatusMint_Pending {
 		return errors.New("Can not cancel this, the item is in progress.")
@@ -321,8 +325,11 @@ func (u Usecase) CancelMintNftBtc(wallet, uuid string) error {
 func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.MintingInscription, error) {
 	result := []structure.MintingInscription{}
 
-	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+	// listMintV2, err := u.Repo.ListMintNftBtcByStatusAndAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
+
+	listMintV2, err := u.Repo.ListMintNftBtcByStatusAndUserAddress(address, []entity.StatusMint{entity.StatusMint_Pending, entity.StatusMint_WaitingForConfirms, entity.StatusMint_ReceivedFund, entity.StatusMint_Minting, entity.StatusMint_Minted, entity.StatusMint_SendingNFTToUser, entity.StatusMint_NeedToRefund, entity.StatusMint_Refunding, entity.StatusMint_TxRefundFailed, entity.StatusMint_TxMintFailed})
 	if err != nil {
+		go u.trackMintNftBtcHistory("", "GetCurrentMintingByWalletAddress", "", 0, "ListMintNftBtcByStatusAndAddress", err.Error(), true)
 		return nil, err
 	}
 
@@ -330,12 +337,14 @@ func (u Usecase) GetCurrentMintingByWalletAddress(address string) ([]structure.M
 		projectInfo, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 		if err != nil {
 			log.Println("FindProjectByTokenID", item.ProjectID)
+			go u.trackMintNftBtcHistory(item.UUID, "GetCurrentMintingByWalletAddress", item.TableName(), item.Status, "FindProjectByTokenID", err.Error(), true)
 			// return nil, err
 			continue
 		}
 		creator, err := u.Repo.FindUserByAddress(projectInfo.CreatorAddrr)
 		if err != nil {
 			log.Println("InscriptionsByOutputs.FindUserByAddress", err)
+			go u.trackMintNftBtcHistory(item.UUID, "GetCurrentMintingByWalletAddress", item.TableName(), item.Status, "FindUserByAddress", err.Error(), true)
 		}
 
 		status := ""
@@ -1150,7 +1159,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallRPCEthInscribeTxWithTargetFeeRa
 	var resp struct {
 		Result string `json:"result"`
 		Error  *struct {
-			Code    string `json:"code"`
+			Code    int    `json:"code"`
 			Message string `json:"message"`
 		} `json:"error"`
 	}
