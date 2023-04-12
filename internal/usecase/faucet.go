@@ -27,7 +27,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 	}
 	for _, item := range faucetItems {
 		if len(item.Tx) > 0 {
-			item.Tx = "https://explorer.trustless.computer/" + item.Tx
+			item.Tx = "https://explorer.trustless.computer/tx/" + item.Tx
 		}
 		item.StatusStr = "Pending"
 		if item.Status == 2 {
@@ -40,7 +40,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 
 }
 
-func (u Usecase) ApiCreateFaucet(url string) (string, error) {
+func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
@@ -64,7 +64,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 		return "", err
 	}
 	// check valid vs twName first:
-	err := u.CheckValidFaucet("no", twName)
+	err := u.CheckValidFaucet(addressInput, twName)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
@@ -125,7 +125,7 @@ func (u Usecase) ApiCreateFaucet(url string) (string, error) {
 
 	go u.sendSlack("", "ApiCreateFaucet.NewFaucet", twName+"/"+address, "ok")
 
-	return "The request was submitted successfully. You will receive TC in around an hour.", nil
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
 
 	/*
 
@@ -240,7 +240,7 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	spew.Dump(res)
 
-	if !strings.Contains(res, "DappsOnBitcoin") {
+	if !strings.Contains(res, "@generative_xyz") {
 		return "", errors.New("Tweet not found. Please double-check and try again")
 	}
 
