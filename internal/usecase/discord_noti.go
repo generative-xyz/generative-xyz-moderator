@@ -22,6 +22,8 @@ import (
 
 const (
 	MaxSendDiscordRetryTimes = 3
+	PerceptronProjectID      = "1002573"
+	PFPsCategory             = "PFPs"
 )
 
 type addUserDiscordFieldReq struct {
@@ -208,12 +210,12 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 
 	if order.Amount == 0 {
-		embed.Title = fmt.Sprintf("%s - ***%s #%s***", ownerName, project.Name, tokenUri.InscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%s #%d***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
 	} else {
-		embed.Title = fmt.Sprintf("%s \n ***%s #%s***", ownerName, project.Name, tokenUri.InscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%s #%d***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
 			Url: parsedThumbnail,
 		}
@@ -227,23 +229,35 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 
 	logger.AtLog.Logger.Info("sending new sale message to discord", zap.Any("message", zap.Any("discordMsg)", discordMsg)))
-	noti := entity.DiscordNoti{
-		Message:    discordMsg,
-		NumRetried: 0,
-		Status:     entity.PENDING,
-		Type:       entity.NEW_SALE,
-		Meta: entity.DiscordNotiMeta{
-			ProjectID:     project.TokenID,
-			InscriptionID: tokenUri.TokenID,
-			Amount:        order.Amount,
-			Category:      category,
-		},
+	types := []entity.DiscordNotiType{entity.NEW_SALE}
+	if order.Amount > 0 {
+		if tokenUri.ProjectID == PerceptronProjectID {
+			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if category == PFPsCategory {
+			types = append(types, entity.NEW_SALE_PFPS)
+		} else {
+			types = append(types, entity.NEW_SALE_ART)
+		}
 	}
+	for _, t := range types {
+		noti := entity.DiscordNoti{
+			Message:    discordMsg,
+			NumRetried: 0,
+			Status:     entity.PENDING,
+			Type:       t,
+			Meta: entity.DiscordNotiMeta{
+				ProjectID:     project.TokenID,
+				InscriptionID: tokenUri.TokenID,
+				Amount:        order.Amount,
+				Category:      category,
+			},
+		}
 
-	// create discord message
-	err = u.CreateDiscordNoti(noti)
-	if err != nil {
-		logger.AtLog.Logger.Error("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
+		// create discord message
+		err = u.CreateDiscordNoti(noti)
+		if err != nil {
+			logger.AtLog.Logger.Error("NotifyNewSale.CreateDiscordNoti", zap.Error(err))
+		}
 	}
 
 	return nil
@@ -370,6 +384,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Inline:  true,
 		Domain:  domain,
 	})
+
 	parsedThumbnail := ""
 	parsedThumbnailUrl, _ := url.Parse(tokenUri.Thumbnail)
 	if parsedThumbnailUrl != nil {
@@ -400,20 +415,33 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Embeds:    []entity.Embed{embed},
 	}
 
-	notify := entity.DiscordNoti{
-		Message:    discordMsg,
-		NumRetried: 0,
-		Status:     entity.PENDING,
-		Type:       entity.NEW_MINT,
-		Meta: entity.DiscordNotiMeta{
-			ProjectID:     project.TokenID,
-			InscriptionID: tokenUri.TokenID,
-			Amount:        uint64(mintPriceInNum),
-			Category:      category,
-		},
+	types := []entity.DiscordNotiType{entity.NEW_SALE}
+	if mintPriceInNum > 0 {
+		if tokenUri.ProjectID == PerceptronProjectID {
+			types = append(types, entity.NEW_SALE_PERCEPTRON)
+		} else if category == PFPsCategory {
+			types = append(types, entity.NEW_SALE_PFPS)
+		} else {
+			types = append(types, entity.NEW_SALE_ART)
+		}
 	}
 	time.Sleep(3 * time.Minute)
-	err = u.CreateDiscordNoti(notify)
+	for _, t := range types {
+		notify := entity.DiscordNoti{
+			Message:    discordMsg,
+			NumRetried: 0,
+			Status:     entity.PENDING,
+			Type:       t,
+			Meta: entity.DiscordNotiMeta{
+				ProjectID:     project.TokenID,
+				InscriptionID: tokenUri.TokenID,
+				Amount:        uint64(mintPriceInNum),
+				Category:      category,
+			},
+		}
+		err = u.CreateDiscordNoti(notify)
+	}
+
 	return err
 }
 
@@ -783,7 +811,7 @@ func (u Usecase) TestSendNoti() {
 		//}
 
 		//u.NotifiNewProjectReport(project, domain, project.CreatorAddrr)
-		//u.NotifyNewSale(entity.DexBTCListing{
+		//u.Notifynewsale(entity.DexBTCListing{
 		//	SellerAddress: project.ContractAddress,
 		//	Buyer:         project.ContractAddress,
 		//	Amount:        100000000,
