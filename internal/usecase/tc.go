@@ -9,7 +9,7 @@ import (
 )
 
 func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
-	url := fmt.Sprintf("https://dapp.trustless.computer/dapp/api/nft-explorer/nfts?limit=1&page=2&owner=%s", address)
+	url := fmt.Sprintf("https://dapp.trustless.computer/dapp/api/nft-explorer/owner-address/%s/nfts", address)
 	method := "GET"
 
 	payload := strings.NewReader(``)
@@ -45,10 +45,6 @@ func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
 			Explorer          string `json:"explorer"`
 			ArtistName        string `json:"artist_name"`
 		} `json:"data"`
-	}
-
-	if true {
-		return result.Data, nil
 	}
 
 	// parse:
