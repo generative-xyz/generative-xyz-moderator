@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	PerceptronProjectID      = "1002573"
-	PFPsCategory             = "PFPs"
 	MaxSendDiscordRetryTimes = 3
 )
 
@@ -187,12 +185,14 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 		Key:     "Buyer",
 		Address: order.Buyer,
 		Inline:  true,
+		Domain:  domain,
 	})
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
 		Key:     "Seller",
 		Address: order.SellerAddress,
 		Inline:  true,
+		Domain:  domain,
 	})
 
 	parsedThumbnail := ""
@@ -368,6 +368,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Key:     "Collector",
 		Address: tokenUri.OwnerAddr,
 		Inline:  true,
+		Domain:  domain,
 	})
 	parsedThumbnail := ""
 	parsedThumbnailUrl, _ := url.Parse(tokenUri.Thumbnail)
@@ -381,12 +382,12 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	}
 
 	if mintPriceInNum == 0 {
-		embed.Title = fmt.Sprintf("%s - ***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
 	} else {
-		embed.Title = fmt.Sprintf("%s \n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
 			Url: parsedThumbnail,
 		}
@@ -441,10 +442,11 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 	discordMsg := entity.DiscordMessage{
 		Username: "Satoshi 27",
 	}
-	embed := entity.Embed{}
+	embed := entity.Embed{
+		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName)
+	}
 
 	if proposed {
-		embed.Title = fmt.Sprintf("%s \n ***%s***", owner.GetDisplayNameByWalletAddress(), collectionName)
 		embed.Url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
 		msgType = entity.NEW_PROJECT_PROPOSED
 		discordMsg.Content = "**NEW DROP PROPOSED ✋**"
@@ -454,7 +456,6 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 			Url: thumbnail,
 		}
 	} else {
-		embed.Title = fmt.Sprintf("%s - ***%s***", owner.GetDisplayNameByWalletAddress(), collectionName)
 		embed.Url = fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr)
 		msgType = entity.NEW_PROJECT_APPROVED
 		discordMsg.Content = "**NEW DROP APPROVED ✅**"
@@ -604,7 +605,7 @@ func (u Usecase) NotifiNewProjectReport(project *entity.Projects, reportLink, re
 		AvatarUrl: "",
 		Content:   fmt.Sprintf("**:sos: NEW REPORT: COPYMINT :sos:**"),
 		Embeds: []entity.Embed{{
-			Title:  fmt.Sprintf("%v - ***%s***", ownerName, project.Name),
+			Title:  fmt.Sprintf("%v\n***%s***", ownerName, project.Name),
 			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
 			Fields: fields,
 			Image: entity.Image{
@@ -670,7 +671,7 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 		AvatarUrl: "",
 		Content:   fmt.Sprintf("**NEW UPVOTE :arrow_up:**"),
 		Embeds: []entity.Embed{{
-			Title:  fmt.Sprintf("%v - ***%s***", owner.GetDisplayNameByWalletAddress(), project.Name),
+			Title:  fmt.Sprintf("%v\n***%s***", owner.GetDisplayNameByWalletAddress(), project.Name),
 			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
 			Fields: fields,
 			Thumbnail: entity.Thumbnail{
@@ -769,41 +770,41 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
-		project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "da5b8405a4cef84e9416868de1d8352e175a809439c391b6ac8fb00be0aa52eei0"
+		//project, _ := u.Repo.FindProjectByTokenID("1001001")
+		incriptionID := "5e58ef796d97d920f8b0f07a36633efb97beeff8d8a19894803bec832edad1f4i0"
 
-		user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
-		daoProject := &entity.DaoProject{}
-		u.Repo.FindOneBy(context.TODO(), daoProject.TableName(), bson.M{"_id": "642b921af46c66bdf68c2d82"}, daoProject)
-		vote := &entity.DaoProjectVoted{
-			CreatedBy:    project.CreatorAddrr,
-			DaoProjectId: daoProject.ProjectId,
-			Status:       1,
-		}
+		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
+		//daoProject := &entity.DaoProject{}
+		//u.Repo.FindOneBy(context.TODO(), daoProject.TableName(), bson.M{"_id": "642b921af46c66bdf68c2d82"}, daoProject)
+		//vote := &entity.DaoProjectVoted{
+		//	CreatedBy:    project.CreatorAddrr,
+		//	DaoProjectId: daoProject.ProjectId,
+		//	Status:       1,
+		//}
 
-		u.NotifiNewProjectReport(project, domain, project.CreatorAddrr)
-		u.NotifyNewSale(entity.DexBTCListing{
-			SellerAddress: project.ContractAddress,
-			Buyer:         project.ContractAddress,
-			Amount:        100000000,
-			InscriptionID: incriptionID,
-		})
-		u.NotifyNewSale(entity.DexBTCListing{
-			SellerAddress: project.ContractAddress,
-			Buyer:         project.ContractAddress,
-			Amount:        0,
-			InscriptionID: incriptionID,
-		})
+		//u.NotifiNewProjectReport(project, domain, project.CreatorAddrr)
+		//u.NotifyNewSale(entity.DexBTCListing{
+		//	SellerAddress: project.ContractAddress,
+		//	Buyer:         project.ContractAddress,
+		//	Amount:        100000000,
+		//	InscriptionID: incriptionID,
+		//})
+		//u.NotifyNewSale(entity.DexBTCListing{
+		//	SellerAddress: project.ContractAddress,
+		//	Buyer:         project.ContractAddress,
+		//	Amount:        0,
+		//	InscriptionID: incriptionID,
+		//})
 		u.NotifyNFTMinted(incriptionID)
-		u.NotifyNewProject(project, user, true, "proposalID")
-		u.NotifyNewProject(project, user, false, "proposalID")
-		u.NotifyNewProjectVote(daoProject, vote)
-		u.NotifyNewListing(entity.DexBTCListing{
-			SellerAddress: project.ContractAddress,
-			Buyer:         project.ContractAddress,
-			Amount:        100000000,
-			InscriptionID: incriptionID,
-		})
+		//u.NotifyNewProject(project, user, true, "proposalID")
+		//u.NotifyNewProject(project, user, false, "proposalID")
+		//u.NotifyNewProjectVote(daoProject, vote)
+		//u.NotifyNewListing(entity.DexBTCListing{
+		//	SellerAddress: project.ContractAddress,
+		//	Buyer:         project.ContractAddress,
+		//	Amount:        100000000,
+		//	InscriptionID: incriptionID,
+		//})
 		u.JobSendDiscordNoti()
 		fmt.Println("done")
 	}
