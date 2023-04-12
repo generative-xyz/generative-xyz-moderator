@@ -54,9 +54,9 @@ func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
 	}
 
 	for _, nft := range result.Data {
-		if len(nft.Image) > 0 {
-			nft.Image += "/content"
-		}
+		// if len(nft.Image) > 0 {
+		// 	nft.Image += "/content"
+		// }
 		nft.Explorer = fmt.Sprintf("https://trustless.computer/inscription?contract=%s&id=%s", nft.CollectionAddress, nft.TokenID)
 		nft.ArtistName = "" // todo update late
 	}
