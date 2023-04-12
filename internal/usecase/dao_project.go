@@ -258,6 +258,7 @@ func (s *Usecase) VoteDAOProject(ctx context.Context, id, userWallet string, req
 		return err
 	}
 
+	go s.NotifyNewProjectVote(daoProject, voteDaoProject)
 	_ = s.RedisV9.DelPrefix(ctx, rediskey.Beauty(entity.DaoProject{}.TableName()).WithParams("list").String())
 
 	if req.Status != dao_project_voted.Voted {
@@ -308,7 +309,7 @@ func (s *Usecase) processEnableProject(ctx context.Context, daoProject *entity.D
 		if err != nil {
 			logger.AtLog.Logger.Error("Update DAO project failed", zap.Error(err))
 		}
-		go s.NotifyCreateNewProjectToDiscord(project, &project.CreatorProfile, false, daoProject.UUID)
+		go s.NotifyNewProject(project, &project.CreatorProfile, false, daoProject.UUID)
 	}
 	return nil
 }
