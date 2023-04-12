@@ -209,12 +209,12 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 
 	if order.Amount == 0 {
-		embed.Title = fmt.Sprintf("%s\n***%s #%s***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%s #%d***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
 	} else {
-		embed.Title = fmt.Sprintf("%s\n***%s #%s***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
+		embed.Title = fmt.Sprintf("%s\n***%s #%d***", ownerName, project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
 			Url: parsedThumbnail,
 		}
