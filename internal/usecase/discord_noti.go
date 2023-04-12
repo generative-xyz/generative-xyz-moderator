@@ -415,14 +415,14 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Embeds:    []entity.Embed{embed},
 	}
 
-	types := []entity.DiscordNotiType{entity.NEW_SALE}
+	types := []entity.DiscordNotiType{entity.NEW_MINT}
 	if mintPriceInNum > 0 {
 		if tokenUri.ProjectID == PerceptronProjectID {
-			types = append(types, entity.NEW_SALE_PERCEPTRON)
+			types = append(types, entity.NEW_MINT_PERCEPTRON)
 		} else if category == PFPsCategory {
-			types = append(types, entity.NEW_SALE_PFPS)
+			types = append(types, entity.NEW_MINT_PFPS)
 		} else {
-			types = append(types, entity.NEW_SALE_ART)
+			types = append(types, entity.NEW_MINT_ART)
 		}
 	}
 	time.Sleep(3 * time.Minute)
