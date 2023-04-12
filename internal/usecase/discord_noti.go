@@ -366,7 +366,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
 		Key:     "Collector",
-		Address: owner.WalletAddress,
+		Address: tokenUri.OwnerAddr,
 		Inline:  true,
 	})
 	parsedThumbnail := ""
@@ -381,12 +381,12 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	}
 
 	if mintPriceInNum == 0 {
-		embed.Title = fmt.Sprintf("%s - ***%v #%s***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.InscriptionIndex)
+		embed.Title = fmt.Sprintf("%s - ***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
 	} else {
-		embed.Title = fmt.Sprintf("%s \n***%v #%s***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.InscriptionIndex)
+		embed.Title = fmt.Sprintf("%s \n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
 			Url: parsedThumbnail,
 		}
@@ -411,6 +411,7 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 			Category:      category,
 		},
 	}
+	time.Sleep(3 * time.Minute)
 	err = u.CreateDiscordNoti(notify)
 	return err
 }
