@@ -37,10 +37,10 @@ type File interface {
 }
 
 func (u Usecase) CreateMultipartUpload(ctx context.Context, group string, fileName string) (*string, error) {
-	//TODO 
+	//TODO
 	group = helpers.GenerateSlug(group)
-	group = fmt.Sprintf("%s-%d",group, time.Now().UTC().Nanosecond())
-	
+	group = fmt.Sprintf("%s-%d", group, time.Now().UTC().Nanosecond())
+
 	fileName = helpers.GenerateSlug(fileName)
 	uploadID, err := u.S3Adapter.CreateMultiplePartsUpload(ctx, "btc-projects/"+group, fileName)
 	return uploadID, err
@@ -137,7 +137,7 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 		return nil
 	})
 
-	client, err := helpers.EthDialer()
+	client, err := helpers.TCDialer()
 	if err != nil {
 		logger.AtLog.Logger.Error("ethclient.Dial", zap.Error(err))
 		return nil, err
@@ -157,11 +157,12 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 			return nil, err
 		}
 
-		out, err := m.String(fileInfo.MediaType, string(bytes))
+		/*out, err := m.String(fileInfo.MediaType, string(bytes))
 		if err != nil {
 			logger.AtLog.Logger.Error("m.String", zap.Error(err))
 			return nil, err
-		}
+		}*/
+		out := string(bytes)
 		deflate := u.Deflate([]byte(out))
 
 		script := helpers.Base64Encode(deflate)
@@ -181,7 +182,7 @@ func (u Usecase) DeflateString(input *structure.DeflateDataResp) error {
 
 	//TODO implement here
 
-	client, err := helpers.EthDialer()
+	client, err := helpers.TCDialer()
 	if err != nil {
 		logger.AtLog.Logger.Error("ethclient.Dial", zap.Error(err))
 		return err
@@ -218,13 +219,13 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 	projectName := r.FormValue("projectName")
 	_, handler, err := r.FormFile("file")
 	if err != nil {
-		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "FormFile") , zap.String("err", err.Error()))
+		logger.AtLog.Error("UploadProjectFiles", zap.String("action", "FormFile"), zap.String("err", err.Error()))
 		return nil, err
 	}
 
 	if handler.Size <= 0 {
 		err := errors.New("The uploaded file is empty")
-		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "Checkfilesize") , zap.String("err", err.Error()))
+		logger.AtLog.Error("UploadProjectFiles", zap.String("action", "Checkfilesize"), zap.String("err", err.Error()))
 		return nil, err
 	}
 
@@ -237,7 +238,7 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	uploaded, err := u.GCS.FileUploadToBucket(gf)
 	if err != nil {
-		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "FileUploadToBucket") , zap.String("err", err.Error()))
+		logger.AtLog.Error("UploadProjectFiles", zap.String("action", "FileUploadToBucket"), zap.String("err", err.Error()))
 		return nil, err
 	}
 
@@ -252,7 +253,7 @@ func (u Usecase) UploadProjectFiles(r *http.Request) (*entity.Files, error) {
 
 	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
 	if err != nil {
-		logger.AtLog.Error("UploadProjectFiles",zap.String("action", "InsertOne") , zap.String("err", err.Error()))
+		logger.AtLog.Error("UploadProjectFiles", zap.String("action", "InsertOne"), zap.String("err", err.Error()))
 		return nil, err
 	}
 

@@ -94,7 +94,7 @@ func GenerateSlug(key string) string {
 	return key
 }
 
-func ReplaceNonUTF8(filename string) string  {
+func ReplaceNonUTF8(filename string) string {
 	re := regexp.MustCompile("[^a-zA-Z0-9./:]")
 	return fmt.Sprintf(re.ReplaceAllString(filename, ""))
 }
@@ -166,7 +166,6 @@ func CreateProfileLink(walletAdress string, displayName string) string {
 	return fmt.Sprintf("<%s|%s>", link, name)
 }
 
-
 func CreateURLLink(link string, name string) string {
 	return fmt.Sprintf("<%s|%s>", link, name)
 }
@@ -176,12 +175,10 @@ func CreateTokenLink(projectID string, tokenID string, tokenName string) string 
 	return fmt.Sprintf("<%s|%s>", link, tokenName)
 }
 
-
 func CreateTokenImageLink(url string) string {
 	link := fmt.Sprintf("%s", url)
 	return fmt.Sprintf("<%s|%s>", link, "Review")
 }
-
 
 func CreateProjectLink(projectID string, priojectName string) string {
 	link := fmt.Sprintf("%s/generative/%s", os.Getenv("DOMAIN"), projectID)
@@ -294,7 +291,7 @@ func SliceStringContains(slice []string, target string) bool {
 	return false
 }
 
-func StringToBTCAmount(price string) *big.Float {
+func StringToBTCAmount(price string) string {
 	pow := math.Pow10(8)
 	powBig := big.NewFloat(0).SetFloat64(pow)
 
@@ -302,42 +299,43 @@ func StringToBTCAmount(price string) *big.Float {
 	mintPrice.SetString(price)
 	mintPrice.Mul(mintPrice, powBig)
 
-	return mintPrice
+	temp, _ := mintPrice.Int64()
+	return fmt.Sprintf("%v", temp)
 }
 
 func CalculateRefEarning(amount float64, percent int32) (string, string) {
-	artist1Earning := amount * float64(percent)/1000
-	generativeEarning :=  amount * float64(1000 - utils.PERCENT_EARNING)/1000
-	referralEarning := artist1Earning * float64(percent)/1000
-	return fmt.Sprintf("%d",int(referralEarning)), fmt.Sprintf("%d",int(generativeEarning))
+	artist1Earning := amount * float64(percent) / 1000
+	generativeEarning := amount * float64(1000-utils.PERCENT_EARNING) / 1000
+	referralEarning := artist1Earning * float64(percent) / 1000
+	return fmt.Sprintf("%d", int(referralEarning)), fmt.Sprintf("%d", int(generativeEarning))
 }
 
 func CalculateVolumEarning(amount float64, percent int32) (string, string) {
 	rate := float64(percent) / 1000
 	artist1Earning := amount * rate
-	generativeEarning :=  amount - artist1Earning
-	return fmt.Sprintf("%d",int(artist1Earning)), fmt.Sprintf("%d",int(generativeEarning))
+	generativeEarning := amount - artist1Earning
+	return fmt.Sprintf("%d", int(artist1Earning)), fmt.Sprintf("%d", int(generativeEarning))
 }
 
 func FileExtension(fileName string) string {
 	str := strings.Split(fileName, "/")
 	last := ""
 	if len(str) > 0 {
-		last = str[len(str) - 1]
+		last = str[len(str)-1]
 	}
 
 	lastArr := strings.Split(last, ".")
 	if len(lastArr) > 0 {
-		last = lastArr[len(lastArr) - 1]
+		last = lastArr[len(lastArr)-1]
 	}
 	return last
 }
 
 func FileType(fileType string) string {
-	fileType = strings.ReplaceAll(fileType, "data:","")
-	fileType = strings.ReplaceAll(fileType, ";base64","")
-	str, err :=  mime.ExtensionsByType(fileType)
-	
+	fileType = strings.ReplaceAll(fileType, "data:", "")
+	fileType = strings.ReplaceAll(fileType, ";base64", "")
+	str, err := mime.ExtensionsByType(fileType)
+
 	_ = err
 	if str[0] == ".jpe" {
 		return str[1]
