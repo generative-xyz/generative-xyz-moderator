@@ -137,7 +137,7 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 		return nil
 	})
 
-	client, err := helpers.EthDialer()
+	client, err := helpers.TCDialer()
 	if err != nil {
 		logger.AtLog.Logger.Error("ethclient.Dial", zap.Error(err))
 		return nil, err
@@ -157,11 +157,12 @@ func (u Usecase) MinifyFiles(input structure.MinifyDataResp) (*structure.MinifyD
 			return nil, err
 		}
 
-		out, err := m.String(fileInfo.MediaType, string(bytes))
+		/*out, err := m.String(fileInfo.MediaType, string(bytes))
 		if err != nil {
 			logger.AtLog.Logger.Error("m.String", zap.Error(err))
 			return nil, err
-		}
+		}*/
+		out := string(bytes)
 		deflate := u.Deflate([]byte(out))
 
 		script := helpers.Base64Encode(deflate)
