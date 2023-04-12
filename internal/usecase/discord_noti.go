@@ -362,7 +362,6 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 
 	fields = addDiscordField(fields, "Mint Price", u.resolveMintPriceBTC(mintPrice), true)
 	mintPriceInNum, _ := strconv.Atoi(mintPrice)
-	mintPriceInNum = 1
 
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
