@@ -834,7 +834,7 @@ func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
 		//project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi0"
+		//incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi0"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -858,7 +858,7 @@ func (u Usecase) TestSendNoti() {
 		//	Amount:        0,
 		//	InscriptionID: incriptionID,
 		//})
-		u.NotifyNFTMinted(incriptionID)
+		//u.NotifyNFTMinted(incriptionID)
 		//u.NotifyNewProject(project, user, true, "proposalID")
 		//u.NotifyNewProject(project, user, false, "proposalID")
 		//u.NotifyNewProjectVote(daoProject, vote)
