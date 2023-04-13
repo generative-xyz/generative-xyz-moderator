@@ -51,14 +51,28 @@ type DiscordNotiMeta struct {
 	Amount        uint64 `bson:"amount"`
 }
 
+type ImageSourceType int
+type ImagePosition int
+
+const (
+	ImageFromInscriptionID ImageSourceType = 1
+	ThumbNailPosition      ImagePosition   = 1
+	FullImagePosition      ImagePosition   = 2
+)
+
 type DiscordNoti struct {
-	BaseEntity `bson:",inline"`
-	Message    DiscordMessage    `bson:"message"`
-	Status     DiscordNotiStatus `bson:"status"`
-	NumRetried int               `bson:"num_retried"`
-	Webhook    string            `bson:"webhook"`
-	Type       DiscordNotiType   `bson:"type"`
-	Meta       DiscordNotiMeta   `bson:"meta"`
+	BaseEntity      `bson:",inline"`
+	Message         DiscordMessage    `bson:"message"`
+	Status          DiscordNotiStatus `bson:"status"`
+	NumRetried      int               `bson:"num_retried"`
+	Webhook         string            `bson:"webhook"`
+	Type            DiscordNotiType   `bson:"type"`
+	Meta            DiscordNotiMeta   `bson:"meta"`
+	RequireImage    bool              `bson:"require_image"`
+	ImageSourceType ImageSourceType   `bson:"image_source_type"`
+	ImageSourceID   string            `bson:"image_source_id"`
+	Note            string            `bson:"note"`
+	ImagePosition   ImagePosition     `bson:"image_position"`
 }
 
 type DiscordMessage struct {

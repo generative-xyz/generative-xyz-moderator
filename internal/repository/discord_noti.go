@@ -16,20 +16,26 @@ func (r Repository) CreateDiscordNoti(noti entity.DiscordNoti) error {
 	return nil
 }
 
-func (r Repository) GetDiscordNoties(req entity.GetDiscordNotiReq) (*entity.Pagination, error) {
-	confs := []entity.DiscordNoti{}
+func (r Repository) GetDiscordNotifications(req entity.GetDiscordNotiReq) (*entity.Pagination, error) {
+	confs := make([]entity.DiscordNoti, 0)
 	resp := &entity.Pagination{}
+
 	s := []Sort{
 		{SortBy: "created_at", Sort: entity.SORT_ASC},
 	}
+
 	f := bson.M{}
+
 	if req.Status != nil {
 		f["status"] = req.Status
 	}
+
 	p, err := r.Paginate(entity.DiscordNoti{}.TableName(), req.Page, req.Limit, f, bson.D{}, s, &confs)
+
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
@@ -52,12 +58,15 @@ func (r Repository) UpdateDiscordNotiAddRetry(id string) error {
 	return nil
 }
 
-func (r Repository) UpdateDiscordStatus(id string, status entity.DiscordNotiStatus) error {
+func (r Repository) UpdateDiscordStatus(id string, status entity.DiscordNotiStatus, note string) error {
 	filter := bson.M{
 		"uuid": id,
 	}
 	update := bson.M{
-		"$set": bson.M{"status": status},
+		"$set": bson.M{
+			"status": status,
+			"note":   note,
+		},
 	}
 	_, err := r.DB.Collection(entity.DiscordNoti{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
