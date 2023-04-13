@@ -567,6 +567,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"priority", 1},
 					{"inscription_index", 1},
 					{"order_inscription_index", 1},
+					{"token_id_int", 1},
 					{"sell_verified", 1},
 					{"thumbnail", 1},
 					{"buyable", 1},
