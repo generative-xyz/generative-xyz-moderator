@@ -141,3 +141,23 @@ func (r Repository) GetAllCronJobManagerByJobKey() ([]entity.CronJobManager, err
 
 	return resp, nil
 }
+
+//
+func (r Repository) UpdateCronJobManagerStatusByJobKey(jobKey string, status bool) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{Key: "job_key", Value: jobKey},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":     status,
+			"updated_at": time.Now(),
+		},
+	}
+	result, err := r.DB.Collection(entity.CronJobManager{}.TableName()).UpdateMany(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}

@@ -146,6 +146,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	admin.HandleFunc("/auction/update-declared-now", h.updateDeclaredNow).Methods("POST")          // auction
 	admin.HandleFunc("/auction/crawl-list-winner-now", h.updateWinnerFromContract).Methods("POST") // auction
+	admin.HandleFunc("/evm/update-enabled-job", h.updateWinnerFromContract).Methods("POST")        // auction
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
