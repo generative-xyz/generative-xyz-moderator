@@ -3,8 +3,7 @@ package usecase
 import (
 	"encoding/json"
 	"os"
-	"strconv"
-	"strings"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"rederinghub.io/internal/entity"
@@ -12,11 +11,14 @@ import (
 )
 
 type ChangeName struct {
-	TokenID              string
-	OrderInsciptionID    int
-	NewOrderInsciptionID int
-	ArtworkName string
+	TokenID      string
 	AnimationURL string
+	Thumbnail    string
+}
+
+type ChangeNameChan struct {
+	Err  error
+	Data *ChangeName
 }
 
 func (u Usecase) GetTokenArtworkName() {
@@ -38,29 +40,48 @@ func (u Usecase) GetTokenArtworkName() {
 	}
 
 	resp := []ChangeName{}
+	i := 0
+
+	chanChangeName := make(chan ChangeNameChan, len(tokens))
 	for _, token := range tokens {
-		tmp := ChangeName{}
-		artworkName := ""
 
-		
-		imageURL := token.AnimationURL
-		an := strings.ReplaceAll(imageURL, "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/","")
-		an = strings.ReplaceAll(an, ".html","")
-		aID, err := strconv.Atoi(an)
-		if err != nil {
-			return
+		go func(token entity.TokenUri, chanChangeName chan ChangeNameChan) {
+			tmp := &ChangeName{}
+			imageURL := token.AnimationURL
+
+			defer func() {
+				chanChangeName <- ChangeNameChan{
+					Err:  err,
+					Data: tmp,
+				}
+			}()
+
+			capResp, err := u.RunAndCap(&token)
+			if err != nil {
+				return
+			}
+
+			tmp.TokenID = token.TokenID
+			tmp.AnimationURL = imageURL
+			tmp.Thumbnail = capResp.Thumbnail
+		}(token, chanChangeName)
+
+		if i > 0 && i%10 == 0 {
+			time.Sleep(500 * time.Millisecond)
 		}
-		aID ++
 
-		tmp.TokenID = token.TokenID
-		tmp.OrderInsciptionID = token.OrderInscriptionIndex
-		tmp.NewOrderInsciptionID = aID
-		tmp.ArtworkName = artworkName
-		tmp.AnimationURL = imageURL
+		i++
 
+	}
 
-		resp = append(resp, tmp)
-		
+	for _, _ = range tokens {
+
+		dataFromChan := <-chanChangeName
+		if dataFromChan.Err != nil {
+			continue
+		}
+
+		resp = append(resp, *dataFromChan.Data)
 	}
 
 	spew.Dump(resp)
