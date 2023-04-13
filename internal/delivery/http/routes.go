@@ -261,6 +261,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	tc := api.PathPrefix("/tc").Subrouter()
 	tc.HandleFunc("/nfts/{address}", h.getNftsByAddress).Methods("GET")
+	tc.HandleFunc("/nfts-owner/{address}", h.getNftsByAddressFromTokenUri).Methods("GET")
 
 	inscriptionDex := api.PathPrefix("/dex").Subrouter()
 	inscriptionDex.Use(h.MiddleWare.AccessTokenPassThrough)
