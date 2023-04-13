@@ -501,6 +501,13 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	dataObject.Project = project
+	if nftProjectDetail.NftProjectDetail.IndexReserve != nil && nftProjectDetail.NftProjectDetail.Index != nil {
+		if project.MintingInfo.Index != nftProjectDetail.NftProjectDetail.Index.Int64() || project.MintingInfo.IndexReverse != nftProjectDetail.NftProjectDetail.IndexReserve.Int64() {
+			project.MintingInfo.Index = nftProjectDetail.NftProjectDetail.Index.Int64()
+			project.MintingInfo.IndexReverse = nftProjectDetail.NftProjectDetail.IndexReserve.Int64()
+			u.Repo.UpdateProjectIndexData(project.UUID, project.MintingInfo.Index, project.MintingInfo.IndexReverse)
+		}
+	}
 	creator, err := u.Repo.FindUserByWalletAddress(dataObject.CreatorAddr)
 	if err != nil {
 		logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "FindUserByWalletAddress"), zap.Error(err))
