@@ -454,6 +454,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			return
 		}
 		err = json.Unmarshal([]byte(stringData), tok)
+		tok.Name = ""
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
