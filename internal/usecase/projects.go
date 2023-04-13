@@ -1177,6 +1177,17 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 
 	}()
 
+	// get index if project in TC:
+	if c.IsMintTC() {
+		contract, _ := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(c.GenNFTAddr), u.TcClient.GetClient())
+		if contract != nil {
+			projectContract, err := contract.Project(nil)
+			if err == nil {
+				c.MintingInfo.Index = projectContract.Index.Int64()
+			}
+		}
+	}
+
 	// logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", zap.Any("c)", c)))
 	return c, nil
 }
