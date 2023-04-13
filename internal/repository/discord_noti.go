@@ -63,9 +63,9 @@ func (r Repository) UpdateDiscordStatus(id string, status entity.DiscordNotiStat
 		"uuid": id,
 	}
 	update := bson.M{
-		"$set": []bson.M{
-			{"status": status},
-			{"note": note},
+		"$set": bson.M{
+			"status": status,
+			"note":   note,
 		},
 	}
 	_, err := r.DB.Collection(entity.DiscordNoti{}.TableName()).UpdateOne(context.TODO(), filter, update)
