@@ -835,13 +835,38 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							log.Println("watchPendingDexBTCBuyETH filterUTXOInscription", order.ID, err)
 							continue
 						}
+						filteredBalance := uint64(0)
+						for _, v := range filteredUTXOs {
+							filteredBalance += v.Value
+						}
+
+						if filteredBalance <= amountBTC+amountBTCFee {
+							go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+							time.Sleep(300 * time.Millisecond)
+							continue
+						}
 
 						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
 						dataBytes, _ := json.Marshal(buyReqInfos)
 						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
+							go u.NotifyWithChannel("C052CAWFB0D", "Create buy ", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+
+							logData := make(map[string]interface{})
+							logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
+							logData["address"] = address
+							logData["order.ReceiveAddress"] = order.ReceiveAddress
+							logData["amountBTC"] = amountBTC
+							logData["filteredUTXOs"] = filteredUTXOs
+							logData["order.FeeRate"] = order.FeeRate
+							logData["amountBTCFee"] = amountBTCFee
+							logData["respondData"] = respondData
+							logData["err"] = err.Error()
+
+							u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionMultiViaAPI", Data: logData})
 							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
+							time.Sleep(300 * time.Millisecond)
 							continue
 						}
 						if respondData.SplitTxRaw != "" {
