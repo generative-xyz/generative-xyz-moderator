@@ -318,7 +318,7 @@ func (r Repository) UpdateMintNftBtcSubItemRefundOrDone(uuids []string, status e
 		}
 	}
 
-	result, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	result, err := r.DB.Collection(entity.MintNftBtc{}.TableName()).UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}

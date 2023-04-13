@@ -1282,3 +1282,19 @@ func (r Repository) FindTokenByTokenIds(tokenIDs []string) ([]entity.TokenUri, e
 
 	return tokens, nil
 }
+
+func (r Repository) UpdateTokenUriCreatorByUuid(uuid string, user *entity.Users) error {
+	filter := bson.D{
+		{Key: "uuid", Value: uuid},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"creator": user,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
