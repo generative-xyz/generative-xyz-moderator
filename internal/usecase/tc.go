@@ -80,6 +80,7 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 		CollectionAddress string `json:"collection_address"`
 		TokenID           string `json:"token_id"`
 		ProjectID         string `json:"project_id"`
+		ProjectName       string `json:"project_name"`
 		TokenNumber       *int   `json:"token_number"`
 		Name              string `json:"name"`
 		ContentType       string `json:"content_type"`
@@ -105,7 +106,8 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 				Name:              nft.Name,
 				Image:             nft.Thumbnail,
 				Explorer:          fmt.Sprintf("https://trustless.computer/inscription?contract=%s&id=%s", nft.ContractAddress, nft.TokenID),
-				ArtistName:        nft.Project.Name,
+				ArtistName:        nft.Creator.DisplayName,
+				ProjectName:       nft.Project.Name,
 			}
 			dataList = append(dataList, data)
 		}
