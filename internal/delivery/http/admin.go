@@ -345,3 +345,58 @@ func (h *httpDelivery) updateWinnerFromContract(w http.ResponseWriter, r *http.R
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
+
+// crontab on/off:
+func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	jobKey := vars["jobKey"]
+
+	status := true
+	statusStr := vars["status"]
+
+	if statusStr == "0" {
+		status = false
+	}
+
+	if len(jobKey) > 0 {
+		_, err = h.Usecase.Repo.UpdateCronJobManagerStatusByJobKey(jobKey, status)
+	} else {
+		err = errors.New("jobKey empty")
+	}
+
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+
+}

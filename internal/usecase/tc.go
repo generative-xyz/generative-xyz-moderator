@@ -109,6 +109,11 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 				ArtistName:        nft.Creator.DisplayName,
 				ProjectName:       nft.Project.Name,
 			}
+
+			if len(nft.Creator.DisplayName) == 0 {
+				data.ArtistName = nft.Project.CreatorProfile.DisplayName
+			}
+
 			dataList = append(dataList, data)
 		}
 	}
