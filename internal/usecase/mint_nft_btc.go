@@ -1448,7 +1448,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			})
 			// create mint activity:
 			go u.CreateMintActivity(item.InscriptionID, item.Amount)
-
+			go u.NotifyNFTMinted(item.InscriptionID)
 		} else {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "check tx confirm", 0, false)
 			continue

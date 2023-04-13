@@ -3,25 +3,24 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"net/url"
-	"os"
-	"rederinghub.io/utils/constants/dao_project_voted"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
+	"net/url"
+	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/constants/dao_project_voted"
 	discordclient "rederinghub.io/utils/discord"
 	"rederinghub.io/utils/logger"
+	"strconv"
+	"strings"
 )
 
 const (
 	MaxSendDiscordRetryTimes = 3
+	MaxFindImageRetryTimes   = 20
 	PerceptronProjectID      = "1002573"
 	PFPsCategory             = "PFPs"
 )
@@ -341,12 +340,12 @@ func (u Usecase) NotifyNewListing(order entity.DexBTCListing) error {
 }
 
 func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
-	time.Sleep(3 * time.Minute)
 	domain := os.Getenv("DOMAIN")
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
 		return err
 	}
+
 	project, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
 	if err != nil {
 		return err
@@ -395,12 +394,13 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 		Url:    fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
 		Fields: fields,
 	}
-
+	imagePos := entity.FullImagePosition
 	if mintPriceInNum == 0 {
 		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
+		imagePos = entity.ThumbNailPosition
 	} else {
 		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
@@ -439,10 +439,21 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 				Category:      category,
 			},
 		}
+
+		if parsedThumbnail == "" {
+			notify.RequireImage = true
+			notify.ImageSourceType = entity.ImageFromInscriptionID
+			notify.ImageSourceID = inscriptionID
+			notify.ImagePosition = imagePos
+		}
+
 		err = u.CreateDiscordNoti(notify)
+		if err != nil {
+			logger.AtLog.Error("notifyNFTMinted create discord notify failed", zap.Error(err))
+		}
 	}
 
-	return err
+	return nil
 }
 
 func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users, proposed bool, proposalID string) {
@@ -471,7 +482,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 		Username: "Satoshi 27",
 	}
 	embed := entity.Embed{
-		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName),
+		Title: fmt.Sprintf("%s\n***%s #%s***", owner.GetDisplayNameByWalletAddress(), collectionName, project.TokenID),
 	}
 
 	if proposed {
@@ -729,47 +740,71 @@ func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entit
 func (u Usecase) JobSendDiscordNoti() error {
 	logger.AtLog.Logger.Info("JobSendDiscordNoti.Start")
 	for page := int64(1); ; page++ {
+
 		status := entity.PENDING
-		logger.AtLog.Logger.Info("JobSendDiscordNoti.StartGetPendingMessages", zap.Any("page", zap.Any("page)", page)))
-		resp, err := u.Repo.GetDiscordNoties(entity.GetDiscordNotiReq{
+		resp, err := u.Repo.GetDiscordNotifications(entity.GetDiscordNotiReq{
 			Page:   page,
-			Limit:  10,
+			Limit:  5,
 			Status: &status,
 		})
 		if err != nil {
 			logger.AtLog.Logger.Error("JobSendDiscordNoti.ErrorWhenGetPendingNoties", zap.Any("page", page))
 			return errors.WithStack(err)
 		}
-		uNoties := resp.Result
-		noties := uNoties.([]entity.DiscordNoti)
-		logger.AtLog.Logger.Info("JobSendDiscordNoti.DoneGetPendingMessages", zap.Any("page", page), zap.Any("lenNoties", zap.Any("len(noties))", len(noties))))
-		if len(noties) == 0 {
+
+		notifies := resp.Result.([]entity.DiscordNoti)
+		if len(notifies) == 0 {
 			break
 		}
 
-		processed := 0
-
-		for _, noti := range noties {
-			processed += 1
+		for _, notify := range notifies {
 			discordMsg := &discordclient.Message{}
-			copier.Copy(discordMsg, noti.Message)
+			copier.Copy(discordMsg, notify.Message)
+			if notify.RequireImage {
+				imageURL, err := u.getImageSource(notify.ImageSourceID, notify.ImageSourceType)
+				if err != nil || imageURL == "" {
+					// skip in case image not founds
+					if notify.NumRetried > MaxFindImageRetryTimes {
+						u.Repo.UpdateDiscordStatus(notify.UUID, entity.FAILED, "failed to get image")
+						continue
+					}
+					u.Repo.UpdateDiscordNotiAddRetry(notify.UUID)
+					continue
+				}
+				if len(notify.Message.Embeds) > 0 {
+					switch notify.ImagePosition {
+					case entity.ThumbNailPosition:
+						discordMsg.Embeds[0].Thumbnail.Url = imageURL
+					case entity.FullImagePosition:
+						discordMsg.Embeds[0].Image.Url = imageURL
+					}
+				}
+			}
 			logger.AtLog.Logger.Info("sending new airdrop message to discord", zap.Any("discordMsg", discordMsg))
-			if err := u.DiscordClient.SendMessage(context.TODO(), noti.Webhook, *discordMsg); err != nil {
-				logger.AtLog.Logger.Error("JobSendDiscordNoti.errorSendingMessageToDiscord", zap.Error(err))
-				u.Repo.UpdateDiscordNotiAddRetry(noti.UUID)
-				if noti.NumRetried+1 == MaxSendDiscordRetryTimes {
-					u.Repo.UpdateDiscordStatus(noti.UUID, entity.FAILED)
+			if err := u.DiscordClient.SendMessage(context.TODO(), notify.Webhook, *discordMsg); err != nil {
+				u.Repo.UpdateDiscordNotiAddRetry(notify.UUID)
+				if notify.NumRetried+1 == MaxSendDiscordRetryTimes {
+					u.Repo.UpdateDiscordStatus(notify.UUID, entity.FAILED, "send message failed with error: "+err.Error())
 				}
 			} else {
-				u.Repo.UpdateDiscordStatus(noti.UUID, entity.DONE)
-			}
-			if processed%5 == 0 {
-				time.Sleep(1 * time.Second)
+				u.Repo.UpdateDiscordStatus(notify.UUID, entity.DONE, "sent")
 			}
 		}
 	}
 
 	return nil
+}
+
+func (u Usecase) getImageSource(ID string, ImageFrom entity.ImageSourceType) (string, error) {
+	switch ImageFrom {
+	case entity.ImageFromInscriptionID:
+		inscription, err := u.Repo.FindTokenByTokenID(ID)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		return inscription.Thumbnail, nil
+	}
+	return "", nil
 }
 
 func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
@@ -799,7 +834,7 @@ func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
 		//project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "48ace75807885f42ade68e2bc532ec8affd7870c58c4529108e05435e9ea40aai0"
+		//incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi0"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -823,7 +858,7 @@ func (u Usecase) TestSendNoti() {
 		//	Amount:        0,
 		//	InscriptionID: incriptionID,
 		//})
-		u.NotifyNFTMinted(incriptionID)
+		//u.NotifyNFTMinted(incriptionID)
 		//u.NotifyNewProject(project, user, true, "proposalID")
 		//u.NotifyNewProject(project, user, false, "proposalID")
 		//u.NotifyNewProjectVote(daoProject, vote)
