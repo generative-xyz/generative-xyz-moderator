@@ -72,3 +72,44 @@ func (u Usecase) GetNftsByAddress(address string) (interface{}, error) {
 	}
 	return result.Data, err
 }
+
+func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, error) {
+
+	type Data struct {
+		Collection        string `json:"collection"`
+		CollectionAddress string `json:"collection_address"`
+		TokenID           string `json:"token_id"`
+		ProjectID         string `json:"project_id"`
+		TokenNumber       *int   `json:"token_number"`
+		Name              string `json:"name"`
+		ContentType       string `json:"content_type"`
+		Image             string `json:"image"`
+		Explorer          string `json:"explorer"`
+		ArtistName        string `json:"artist_name"`
+	}
+
+	var dataList []*Data
+	listToken, _ := u.Repo.GetOwnerTokens(address)
+
+	fmt.Println("len(listToken) > 0", len(listToken) > 0)
+
+	if len(listToken) > 0 {
+		for _, nft := range listToken {
+
+			data := &Data{
+				Collection:        "",
+				CollectionAddress: nft.ContractAddress,
+				TokenID:           nft.TokenID,
+				TokenNumber:       nft.TokenIDMini,
+				ProjectID:         nft.ProjectID,
+				Name:              nft.Name,
+				Image:             nft.Thumbnail,
+				Explorer:          fmt.Sprintf("https://trustless.computer/inscription?contract=%s&id=%s", nft.ContractAddress, nft.TokenID),
+				ArtistName:        nft.Project.Name,
+			}
+			dataList = append(dataList, data)
+		}
+	}
+	return dataList, nil
+
+}

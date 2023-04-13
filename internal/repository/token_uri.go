@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"rederinghub.io/internal/entity"
@@ -780,6 +781,23 @@ func (r Repository) GetAllTokens() ([]entity.TokenUri, error) {
 
 	f := bson.M{}
 	//f[utils.KEY_DELETED_AT] = nil
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &tokens); err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (r Repository) GetOwnerTokens(ownerAddress string) ([]entity.TokenUri, error) {
+	tokens := []entity.TokenUri{}
+
+	f := bson.D{{Key: "owner_addrress", Value: strings.ToLower(ownerAddress)}}
+
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
 		return nil, err
