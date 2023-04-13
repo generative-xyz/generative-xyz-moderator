@@ -841,7 +841,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						}
 
 						if filteredBalance <= amountBTC+amountBTCFee {
-							go u.NotifyWithChannel("C052CAWFB0D", "Insufficient fund", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+							go u.NotifyWithChannel("C052CAWFB0D", "Multi Insufficient fund", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
 							time.Sleep(300 * time.Millisecond)
 							continue
 						}
@@ -851,7 +851,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
-							go u.NotifyWithChannel("C052CAWFB0D", "Create buy ", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+							go u.NotifyWithChannel("C052CAWFB0D", "Create multi buy ", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
 
 							logData := make(map[string]interface{})
 							logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
