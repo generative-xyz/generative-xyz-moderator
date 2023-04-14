@@ -388,7 +388,13 @@ func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if len(jobKey) > 0 {
+
+		fmt.Println("jobKey", jobKey)
+		fmt.Println("status", status)
+
 		_, err = h.Usecase.Repo.UpdateCronJobManagerStatusByJobKey(jobKey, status)
+
+		fmt.Println("err UpdateCronJobManagerStatusByJobKey", err)
 	} else {
 		err = errors.New("jobKey empty")
 	}

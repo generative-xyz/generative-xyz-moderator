@@ -144,13 +144,11 @@ func (r Repository) GetAllCronJobManagerByJobKey() ([]entity.CronJobManager, err
 
 //
 func (r Repository) UpdateCronJobManagerStatusByJobKey(jobKey string, status bool) (*mongo.UpdateResult, error) {
-	f := bson.D{
-		{Key: "job_key", Value: jobKey},
-	}
+	f := bson.M{"job_key": jobKey}
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":     status,
+			"enabled":    status,
 			"updated_at": time.Now(),
 		},
 	}
