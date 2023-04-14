@@ -235,7 +235,12 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.CreatorName = projectDetail.ProjectDetail.Creator
 	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
 	if projectDetail.ProjectDetail != nil && len(projectDetail.ProjectDetail.Desc) > 0 {
+		// try base64 decode
 		project.Description = projectDetail.ProjectDetail.Desc
+		temp, errDecode := helpers.Base64Decode(project.Description)
+		if errDecode == nil {
+			project.Description = string(temp)
+		}
 	}
 	project.Scripts = projectDetail.ProjectDetail.Scripts
 	project.ThirdPartyScripts = projectDetail.ProjectDetail.ScriptType
