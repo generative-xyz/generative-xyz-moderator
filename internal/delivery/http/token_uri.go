@@ -124,7 +124,7 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 				return
 			}
-			h.Response.ResponseImage(w, http.StatusOK, file)
+			h.Response.ResponseImage(w, http.StatusOK, file, resp.Header.Get("Content-Type"))
 		} else {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("empty image"))
 		}
