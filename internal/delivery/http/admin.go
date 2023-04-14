@@ -377,11 +377,11 @@ func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	vars := mux.Vars(r)
-	jobKey := vars["jobKey"]
+	jobKey := r.URL.Query().Get("jobKey")
 
 	status := true
-	statusStr := vars["status"]
+
+	statusStr := r.URL.Query().Get("status")
 
 	if statusStr == "0" {
 		status = false
