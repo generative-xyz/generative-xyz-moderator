@@ -37,13 +37,9 @@ import (
 )
 
 func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI, error) {
-	captureTimeout := entity.DEFAULT_CAPTURE_TIME
-	p, err := u.Repo.FindProjectByTokenID(token.ProjectID)
-	if err == nil && p != nil && p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != 0 {
-		captureTimeout = *p.CatureThumbnailDelayTime
-	}
-
-	captureTimeout = 60
+	//captureTimeout := entity.DEFAULT_CAPTURE_TIME
+	captureTimeout := 120
+	var err error
 
 	var buf []byte
 	attrs := []entity.TokenUriAttr{}
@@ -52,7 +48,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, errors.New("Token is empty")
 	}
 	resp := &structure.TokenAnimationURI{}
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
+
 	// if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 	// 	resp = &structure.TokenAnimationURI{
 	// 		ParsedImage: *token.ParsedImage,

@@ -3,6 +3,8 @@ package usecase
 import (
 	"encoding/json"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -11,9 +13,11 @@ import (
 )
 
 type ChangeName struct {
-	TokenID      string
-	AnimationURL string
-	Thumbnail    string
+	TokenID              string
+	AnimationURL         string
+	Thumbnail            string
+	OrderInsciptionID    int
+	NewOrderInsciptionID int
 }
 
 type ChangeNameChan struct {
@@ -61,13 +65,24 @@ func (u Usecase) GetTokenArtworkName() {
 				return
 			}
 
+			an := strings.ReplaceAll(imageURL, "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/", "")
+			an = strings.ReplaceAll(an, ".html", "")
+			aID, err := strconv.Atoi(an)
+			if err != nil {
+				return
+			}
+			aID++
+
 			tmp.TokenID = token.TokenID
 			tmp.AnimationURL = imageURL
 			tmp.Thumbnail = capResp.Thumbnail
+			tmp.OrderInsciptionID = token.OrderInscriptionIndex
+			tmp.NewOrderInsciptionID = aID
+
 		}(token, chanChangeName)
 
-		if i > 0 && i%10 == 0 {
-			time.Sleep(500 * time.Millisecond)
+		if i > 0 && i%20 == 0 {
+			time.Sleep(150 * time.Second)
 		}
 
 		i++
