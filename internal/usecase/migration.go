@@ -81,7 +81,7 @@ func (u Usecase) GetTokenArtworkName() {
 
 		}(token, chanChangeName)
 
-		if i > 0 && i%20 == 0 {
+		if i > 0 && i%5 == 0 {
 			time.Sleep(150 * time.Second)
 		}
 
