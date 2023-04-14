@@ -857,7 +857,7 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	f := bson.D{{
 		Key:   utils.KEY_PROJECT_ID,
 		Value: projectID,
-	}}
+	}, {"token_id", "9e7cf516c396bc11aea689c2f4b5898efa546796136421608183178b178dc426i0"}}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {

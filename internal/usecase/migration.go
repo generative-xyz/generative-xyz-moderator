@@ -1,10 +1,6 @@
 package usecase
 
 import (
-	"encoding/json"
-	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -26,19 +22,7 @@ type ChangeNameChan struct {
 }
 
 func (u Usecase) GetTokenArtworkName() {
-	bkFileName := "bk-1002573.json"
-	tokens := []entity.TokenUri{}
-	fc, err := os.ReadFile(bkFileName)
-	if err != nil {
-		tokens, err = u.Repo.GetAllTokensByProjectID("1002573")
-		if err != nil {
-			return
-		}
-
-		helpers.CreateFile(bkFileName, tokens)
-	}
-
-	err = json.Unmarshal(fc, &tokens)
+	tokens, err := u.Repo.GetAllTokensByProjectID("1003466")
 	if err != nil {
 		return
 	}
@@ -65,19 +49,10 @@ func (u Usecase) GetTokenArtworkName() {
 				return
 			}
 
-			an := strings.ReplaceAll(imageURL, "https://cdn.generative.xyz/btc-projects/aiseries:perceptrons-52561678/Perceptrons/", "")
-			an = strings.ReplaceAll(an, ".html", "")
-			aID, err := strconv.Atoi(an)
-			if err != nil {
-				return
-			}
-			aID++
-
 			tmp.TokenID = token.TokenID
 			tmp.AnimationURL = imageURL
 			tmp.Thumbnail = capResp.Thumbnail
 			tmp.OrderInsciptionID = token.OrderInscriptionIndex
-			tmp.NewOrderInsciptionID = aID
 
 		}(token, chanChangeName)
 

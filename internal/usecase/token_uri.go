@@ -65,7 +65,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		//chromedp.ExecPath("google-chrome"),
 		chromedp.Flag("headless", eCH),
-		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-first-run", true),
 	)
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
