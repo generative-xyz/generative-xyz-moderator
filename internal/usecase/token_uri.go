@@ -403,12 +403,12 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 
 		stringData := string(data)
-		stringData = strings.ReplaceAll(stringData, "\n", "")
-		stringData = strings.ReplaceAll(stringData, "\b", "")
-		stringData = strings.ReplaceAll(stringData, "\f", "")
-		stringData = strings.ReplaceAll(stringData, "\r", "")
-		stringData = strings.ReplaceAll(stringData, "\t", "")
-		stringData = strings.ReplaceAll(stringData, "\\'", "'")
+		//stringData = strings.ReplaceAll(stringData, "\n", "")
+		//stringData = strings.ReplaceAll(stringData, "\b", "")
+		//stringData = strings.ReplaceAll(stringData, "\f", "")
+		//stringData = strings.ReplaceAll(stringData, "\r", "")
+		//stringData = strings.ReplaceAll(stringData, "\t", "")
+		//stringData = strings.ReplaceAll(stringData, "\\'", "'")
 
 		if fromBFS {
 			err = json.Unmarshal([]byte(stringData), &tokeBFS)
@@ -455,12 +455,19 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		}
 		err = json.Unmarshal([]byte(stringData), tok)
 		tok.Name = ""
+		// try base64 decode description
+		if len(tok.Description) > 0 {
+			desc, errDecode := helpers.Base64Decode(tok.Description)
+			if errDecode == nil {
+				tok.Description = string(desc)
+			}
+		}
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", req.TokenID), zap.String("action", "json.Unmarshal"), zap.Error(err))
 			return
 		}
 
-		//TOD - upload the base64 image into GCS
+		//TODO - upload the base64 image into GCS
 
 	}(tokendatachan, parentAddr, req.TokenID)
 
