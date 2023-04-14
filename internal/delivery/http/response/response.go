@@ -33,7 +33,7 @@ type IHttpResponse interface {
 	RespondWithError(w http.ResponseWriter, httpCode int, appCode int, payload error)
 	RespondSuccess(w http.ResponseWriter, httpCode int, appCode int, payload interface{}, customerMessage string)
 	RespondWithoutContainer(w http.ResponseWriter, httpCode int, payload interface{})
-	ResponseImage(w http.ResponseWriter, httpCode int, file []byte)
+	ResponseImage(w http.ResponseWriter, httpCode int, file []byte, contentType string)
 }
 
 type JsonResponse struct {
@@ -104,8 +104,8 @@ func (h *httpResponse) RespondWithoutContainer(w http.ResponseWriter, httpCode i
 	}
 }
 
-func (h *httpResponse) ResponseImage(w http.ResponseWriter, httpCode int, file []byte) {
-	w.Header().Set("Content-Type", "application/octet-stream")
+func (h *httpResponse) ResponseImage(w http.ResponseWriter, httpCode int, file []byte, contentType string) {
+	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(httpCode)
 	_, err := w.Write(file)
 	if err != nil {
