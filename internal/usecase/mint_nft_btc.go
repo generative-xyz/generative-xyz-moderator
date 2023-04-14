@@ -1023,7 +1023,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 
 	// - Get project.AnimationURL
 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
-	err := helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
+	err := helpers.Base64DecodeRawTC(p.NftTokenUri, projectNftTokenUri)
 	if err != nil {
 		logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)

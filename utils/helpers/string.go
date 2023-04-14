@@ -114,13 +114,37 @@ func Base64DecodeRaw(base64Str string, object interface{}) error {
 		return err
 	}
 
-	stringData := string(sDec)
+	/*stringData := string(sDec)
 	stringData = strings.ReplaceAll(stringData, "\n", "")
 	stringData = strings.ReplaceAll(stringData, "\b", "")
 	stringData = strings.ReplaceAll(stringData, "\f", "")
 	stringData = strings.ReplaceAll(stringData, "\r", "")
 	stringData = strings.ReplaceAll(stringData, "\t", "")
 	//stringData = strings.ReplaceAll(stringData, "\\'", "'")
+
+	sDec = []byte(stringData)*/
+	err = json.Unmarshal(sDec, &object)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Base64DecodeRawTC(base64Str string, object interface{}) error {
+	base64Str = strings.ReplaceAll(base64Str, "data:application/json;base64,", "")
+	sDec, err := b64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		return err
+	}
+
+	stringData := string(sDec)
+	stringData = strings.ReplaceAll(stringData, "\n", "")
+	stringData = strings.ReplaceAll(stringData, "\b", "")
+	stringData = strings.ReplaceAll(stringData, "\f", "")
+	stringData = strings.ReplaceAll(stringData, "\r", "")
+	stringData = strings.ReplaceAll(stringData, "\t", "")
+	stringData = strings.ReplaceAll(stringData, "\\'", "'")
 
 	sDec = []byte(stringData)
 	err = json.Unmarshal(sDec, &object)

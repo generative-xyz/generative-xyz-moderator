@@ -263,7 +263,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 
 	// check is full chain
 	tokenUri := response.TokenURIResp{}
-	err = helpers.Base64DecodeRaw(project.NftTokenUri, &tokenUri)
+	err = helpers.Base64DecodeRawTC(project.NftTokenUri, &tokenUri)
 	if err != nil {
 		return nil, err
 	}
