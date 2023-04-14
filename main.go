@@ -213,9 +213,6 @@ func startServer() {
 		return
 	}
 
-	// testing purpose
-	//uc.TestSendNoti()
-
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:
 	h, _ := httpHandler.NewHandler(&g, *uc)
@@ -345,8 +342,9 @@ func startServer() {
 			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
 			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
 		}
-
 	}
+	// testing purpose
+	//uc.TestSendNoti()
 
 	// Block until we receive our signal.
 	<-c

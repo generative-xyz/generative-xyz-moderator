@@ -35,6 +35,8 @@ const (
 	NEW_PROJECT_REPORT   DiscordNotiType = "new_project_report"
 	NEW_PROJECT_REMOVE   DiscordNotiType = "new_project_remove"
 	NEW_PROJECT_VOTE     DiscordNotiType = "new_project_vote"
+
+	WaitingMintNotification = "waiting_mint_notification"
 )
 
 type GetDiscordNotiReq struct {
