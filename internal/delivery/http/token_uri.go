@@ -108,7 +108,7 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if captureInt != 0 {
+	if captureInt == 0 {
 		logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 		h.Response.RespondWithoutContainer(w, http.StatusOK, message.ParsedAttributes)
 	} else {
