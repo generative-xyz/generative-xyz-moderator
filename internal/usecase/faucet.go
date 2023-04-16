@@ -118,6 +118,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		Tx:          "",
 		Amount:      amountFaucet.String(),
 		TwShareID:   sharedID,
+		SharedLink:  url,
 	}
 	err = u.Repo.InsertFaucet(faucetItem)
 	if err != nil {
