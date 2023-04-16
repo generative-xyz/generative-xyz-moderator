@@ -491,13 +491,13 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 		Username: "Satoshi 27",
 	}
 	embed := entity.Embed{
-		Title: fmt.Sprintf("%s\n***%s #%s***", owner.GetDisplayNameByWalletAddress(), collectionName, project.TokenID),
+		Title: fmt.Sprintf("%s\n***%s***", owner.GetDisplayNameByWalletAddress(), collectionName),
 	}
 
 	if proposed {
 		embed.Url = fmt.Sprintf("%s/dao?tab=0&id=%s", domain, proposalID)
 		msgType = entity.NEW_PROJECT_PROPOSED
-		discordMsg.Content = "**NEW DROP PROPOSED ✋**"
+		discordMsg.Content = fmt.Sprintf("**NEW DROP PROPOSED #%s ✋**", project.TokenID[len(project.TokenID)-4:])
 		fields = addDiscordField(fields, "Category", category, false)
 		fields = addDiscordField(fields, "", u.resolveShortDescription(project.Description), false)
 		embed.Image = entity.Image{
@@ -506,7 +506,7 @@ func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users,
 	} else {
 		embed.Url = fmt.Sprintf("%s/generative/%s", domain, project.GenNFTAddr)
 		msgType = entity.NEW_PROJECT_APPROVED
-		discordMsg.Content = "**NEW DROP APPROVED ✅**"
+		discordMsg.Content = fmt.Sprintf("**NEW DROP APPROVED #%s ✅**", project.TokenID[len(project.TokenID)-4:])
 		embed.Thumbnail = entity.Thumbnail{
 			Url: thumbnail,
 		}
