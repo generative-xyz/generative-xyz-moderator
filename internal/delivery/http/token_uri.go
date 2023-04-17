@@ -169,7 +169,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
-	if helpers.IsOrdinalProject(token.TokenID) {
+	if helpers.IsOrdinalProjectToken(token.TokenID) {
 		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {

@@ -187,7 +187,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	tokenID := strings.ToLower(req.TokenID)
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err != nil {
-		if !helpers.IsOrdinalProject(req.TokenID) {
+		if !helpers.IsOrdinalProjectToken(req.TokenID) {
 			//this was used for ETH (old flow), try to get DB
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				token, err2 := u.getTokenInfo(req)
@@ -214,7 +214,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		}
 	}
 
-	if helpers.IsOrdinalProject(req.TokenID) {
+	if helpers.IsOrdinalProjectToken(req.TokenID) {
 		client := resty.New()
 		resp := &response.SearhcInscription{}
 		_, err = client.R().
@@ -852,7 +852,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
-		if helpers.IsOrdinalProject(item.TokenID) {
+		if helpers.IsOrdinalProjectToken(item.TokenID) {
 			iResp, err := genService.Inscription(item.TokenID)
 			if err == nil && iResp != nil {
 				item.OwnerAddress = iResp.Address
