@@ -469,6 +469,11 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 
 func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users, proposed bool, proposalID string) {
 
+	if proposed && !project.IsSynced {
+		err := fmt.Errorf("project is not listed on DAO")
+		logger.AtLog.Error("NotifyNewProject", zap.Error(err), zap.Any("project", project))
+	}
+
 	domain := os.Getenv("DOMAIN")
 
 	var category string
