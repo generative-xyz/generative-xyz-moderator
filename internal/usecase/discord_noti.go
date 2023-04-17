@@ -347,8 +347,10 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			err := u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
+			logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
+			err = u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
 			if err != nil {
+				logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID save cache Error", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
 				return err
 			}
 		}
