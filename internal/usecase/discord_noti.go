@@ -59,12 +59,12 @@ func (u Usecase) addUserDiscordField(req addUserDiscordFieldReq) []entity.Field 
 	}
 	var userStr string
 	if err == nil && user != nil {
-		address := user.WalletAddressBTC
+		address := user.WalletAddressBTCTaproot
 		if address == "" {
 			address = user.WalletAddress
 		}
 		if address == "" {
-			address = user.WalletAddressBTCTaproot
+			address = user.WalletAddressBTC
 		}
 		userStr = fmt.Sprintf("[%s](%s)",
 			u.resolveShortName(user.DisplayName, address),
