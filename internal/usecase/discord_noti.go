@@ -348,10 +348,10 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
-			err = u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
-			if err != nil {
+			cacheErr := u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
+			if cacheErr != nil {
 				logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID save cache Error", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
-				return err
+				return cacheErr
 			}
 		}
 		return err
@@ -873,7 +873,7 @@ func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
 		//project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi000000"
+		incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi93903000000"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -897,7 +897,10 @@ func (u Usecase) TestSendNoti() {
 		//	Amount:        0,
 		//	InscriptionID: incriptionID,
 		//})
-		u.NotifyNFTMinted(incriptionID)
+		if err := u.NotifyNFTMinted(incriptionID); err != nil {
+			logger.AtLog.Error("NotifyNFTMinted", zap.Error(err))
+		}
+
 		//u.NotifyNewProject(project, user, true, "proposalID")
 		//u.NotifyNewProject(project, user, false, "proposalID")
 		//u.NotifyNewProjectVote(daoProject, vote)
