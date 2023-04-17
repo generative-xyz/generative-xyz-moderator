@@ -157,6 +157,14 @@ func startServer() {
 	}
 	ethClients := eth.NewClient(ethClientWrap)
 
+	// init eth client for dex:
+	ethDexClientWrap, err := ethclient.Dial(conf.BlockchainConfig.ETHEndpointDex)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing ethDexClientWrap service", zap.Error(err))
+		return
+	}
+	ethClientDex := eth.NewClient(ethDexClientWrap)
+
 	// init blockcypher service:
 	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
 
@@ -183,9 +191,10 @@ func startServer() {
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
 
-		EthClient: ethClients, // for eth chain
-		TcClient:  tcClients,  // for tc chain
-		BsClient:  bsClient,   // for btc/blockcypher service
+		EthClient:    ethClients,   // for eth chain (for mint...)
+		EthClientDex: ethClientDex, // for eth chain (dex)
+		TcClient:     tcClients,    // for tc chain
+		BsClient:     bsClient,     // for btc/blockcypher service
 
 	}
 
@@ -212,9 +221,6 @@ func startServer() {
 		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
-
-	// testing purpose
-	//uc.TestSendNoti()
 
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:
@@ -345,8 +351,9 @@ func startServer() {
 			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
 			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
 		}
-
 	}
+	// testing purpose
+	//uc.TestSendNoti()
 
 	// Block until we receive our signal.
 	<-c

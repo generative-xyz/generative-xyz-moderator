@@ -15,7 +15,10 @@ type Faucet struct {
 	Status      int    `bson:"status" json:"status"` // 0 pending, 1 have tx tc, 2 have tx btc, 3 success, 4 false.
 	Amount      string `bson:"amount" json:"amount"`
 	TwShareID   string `bson:"twitter_share_id" json:"twitterShareId"`
-	ErrLogs     string `bson:"err_logs" json:"-"`
+
+	SharedLink string `bson:"shared_link" json:"shared_link"`
+
+	ErrLogs string `bson:"err_logs" json:"-"`
 
 	StatusStr string `bson:"-" json:"status_str"`
 }

@@ -10,9 +10,9 @@ env:
 
 jobs:
   build-and-push-to-gcr:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     concurrency:
-      group: build_production
+      group: '${{ github.workflow }} @ ${{ github.ref }}'
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v3

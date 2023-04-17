@@ -21,6 +21,10 @@ type IRedisCache interface {
 	GetData(key string) (*string, error)
 	Delete(key string) error
 	SetDataWithExpireTime(key string, value interface{}, exipredIn int) error //exipredIn second
+
+	HSet(key, field string, value interface{}) error
+	HKeys(key string) ([]string, error)
+	HDel(key, field string) error
 }
 
 type redisCache struct {
@@ -48,6 +52,30 @@ func NewRedisCache(cfg config.RedisConfig) (*redisCache, *redis.Client) {
 	return r, rdb
 }
 
+func (r *redisCache) HSet(key, field string, value interface{}) error {
+	err := r.client.HSet(key, field, value).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *redisCache) HDel(key, field string) error {
+	err := r.client.HDel(key, field).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *redisCache) HKeys(key string) ([]string, error) {
+	keys, err := r.client.HKeys(key).Result()
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
 func (r *redisCache) SetStringData(key string, value string) error {
 	timeD := time.Duration(int32(utils.DB_CACHE_EXPIRED_TIME)) * time.Second
 	err := r.client.Set(key, value, timeD).Err()
@@ -72,7 +100,7 @@ func (r *redisCache) SetData(key string, value interface{}) error {
 		return err
 	}
 
-	err = r.client.Set(key, valueByte, time.Second * time.Duration(utils.REDIS_CACHE_EXPIRED_TIME)).Err()
+	err = r.client.Set(key, valueByte, time.Second*time.Duration(utils.REDIS_CACHE_EXPIRED_TIME)).Err()
 	if err != nil {
 		return err
 	}
@@ -131,5 +159,5 @@ func (r *redisCache) GetAll() ([]string, error) {
 		keys = append(keys, key)
 	}
 
-	return  keys, err
+	return keys, err
 }

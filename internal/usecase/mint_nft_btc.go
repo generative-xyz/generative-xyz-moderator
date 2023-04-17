@@ -1023,7 +1023,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 
 	// - Get project.AnimationURL
 	projectNftTokenUri := &structure.ProjectAnimationUrl{}
-	err := helpers.Base64DecodeRaw(p.NftTokenUri, projectNftTokenUri)
+	err := helpers.Base64DecodeRawTC(p.NftTokenUri, projectNftTokenUri)
 	if err != nil {
 		logger.AtLog.Logger.Error("JobMint_MintNftBtc.Base64DecodeRaw", zap.Error(err))
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "Base64DecodeRaw", err.Error(), true)
@@ -1448,6 +1448,12 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			})
 			// create mint activity:
 			go u.CreateMintActivity(item.InscriptionID, item.Amount)
+			go func() {
+				notyErr := u.NotifyNFTMinted(item.InscriptionID)
+				if notyErr != nil {
+					logger.AtLog.Error("Mint TC nft error: ", zap.Error(notyErr), zap.String("token_id", item.InscriptionID))
+				}
+			}()
 
 		} else {
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "check tx confirm", 0, false)
@@ -2712,7 +2718,10 @@ func (u Usecase) GenMintFreeTemAddress() (string, error) {
 	// get list again:
 	list, _ = u.Repo.ListEvmTempWallets()
 	for _, item := range list {
-		destinations[item.WalletAddress] = big.NewInt(0.5 * 1e18)
+
+		amountSen, _ := big.NewInt(0).SetString("45000000000000000000", 10)
+
+		destinations[item.WalletAddress] = amountSen
 	}
 
 	fmt.Println("destinations: ", destinations)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -86,11 +87,20 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 	contractAddress := vars["contractAddress"]
 
 	tokenID := vars["tokenID"]
+	seed := r.URL.Query().Get("seed")
+	capture := r.URL.Query().Get("capture")
+	captureInt, err := strconv.Atoi(capture)
+	if err != nil {
+		captureInt = 60
+	} else {
+		captureInt = captureInt / 1000
+	}
 
 	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
-	}, 5)
+		Seed:            seed,
+	}, captureInt)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
@@ -98,10 +108,27 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := response.TokenTraitsResp{}
-	resp.Attributes = message.ParsedAttributes
-	logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
-	h.Response.RespondWithoutContainer(w, http.StatusOK, resp)
+	if captureInt == 0 {
+		logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
+		h.Response.RespondWithoutContainer(w, http.StatusOK, message.ParsedAttributes)
+	} else {
+		if len(message.Thumbnail) > 0 {
+			resp, e := http.Get(message.Thumbnail)
+			if e != nil {
+				log.Fatal(e)
+			}
+			defer resp.Body.Close()
+			file, err1 := io.ReadAll(resp.Body)
+			if err1 != nil {
+				logger.AtLog.Logger.Error("h.Usecase.GetToken", zap.Error(err))
+				h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+				return
+			}
+			h.Response.ResponseImage(w, http.StatusOK, file, resp.Header.Get("Content-Type"))
+		} else {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("empty image"))
+		}
+	}
 }
 
 // UserCredits godoc
@@ -142,7 +169,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
-	if helpers.IsOrdinalProject(token.TokenID) {
+	if helpers.IsOrdinalProjectToken(token.TokenID) {
 		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)
 		if err != nil {
@@ -427,7 +454,6 @@ func (h *httpDelivery) getProjectsByWallet(w http.ResponseWriter, r *http.Reques
 	f := structure.FilterProjects{}
 	f.BaseFilters = *baseF
 	f.WalletAddress = &walletAddress
-
 
 	//Pending project are not shown by default
 	if statusStr == "" {

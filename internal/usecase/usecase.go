@@ -6,6 +6,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/blockchain"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/delegate"
 	discordclient "rederinghub.io/utils/discord"
@@ -48,7 +49,8 @@ type Usecase struct {
 	DelegateService     *delegate.Service
 	RedisV9             redisv9.Client
 
-	TcClient, EthClient *eth.Client
+	TcClient, EthClient, EthClientDex *eth.Client
+	BsClient                          *btc.BlockcypherService
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -72,7 +74,9 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.RedisV9 = global.RedisV9
 
 	u.TcClient = global.TcClient
+	u.EthClientDex = global.EthClientDex
 	u.EthClient = global.EthClient
+	u.BsClient = global.BsClient
 
 	return u, nil
 }

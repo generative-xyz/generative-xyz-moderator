@@ -18,7 +18,6 @@ import (
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
@@ -312,7 +311,7 @@ func (u Usecase) watchPendingDexBTCListing() error {
 
 	preCheckTxs, err := u.preCheckPendingDexBTCListingTx(pendingOrders)
 	if err != nil {
-		log.Printf("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err\n", err.Error())
+		log.Println("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err", err.Error())
 	}
 	for _, order := range pendingOrders {
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
@@ -560,8 +559,6 @@ func (u Usecase) ListBuyAddress() (interface{}, error) {
 
 	var listAddrssObject []AddressObject
 
-	ethClient := eth.NewClient(nil)
-
 	listItem, err := u.Repo.ListAllDexBTCBuyETH()
 	if err != nil {
 		return nil, err
@@ -571,7 +568,7 @@ func (u Usecase) ListBuyAddress() (interface{}, error) {
 	}
 	for _, v := range listItem {
 
-		_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(v.ETHKey)
+		_, ethAddress, err := u.EthClientDex.GenerateAddressFromPrivKey(v.ETHKey)
 		if err != nil {
 			continue
 		}
@@ -592,31 +589,18 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 	}
 
 	quickNodeAPI := u.Config.QuicknodeAPI
-	ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
-	if err != nil {
-		log.Printf("watchPendingDexBTCBuyETH ethclientDial err %v\n", err)
-		return err
-	}
-	ethClient := eth.NewClient(ethClientWrap)
-	currentBlockHeight, err := ethClient.GetClient().BlockNumber(context.Background())
+	currentBlockHeight, err := u.EthClientDex.GetClient().BlockNumber(context.Background())
 	if err != nil {
 		log.Printf("watchPendingDexBTCBuyETH BlockNumber err %v\n", err)
 		return err
 	}
 	for _, order := range pendingOrders {
-		ethClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.ETHEndpoint)
-		if err != nil {
-			log.Printf("watchPendingDexBTCBuyETH ethclientDial err %v\n", err)
-			continue
-		}
-		ethClient := eth.NewClient(ethClientWrap)
-
 		switch order.Status {
 		case entity.StatusDEXBuy_Pending:
 			// check wallet receive enough funds
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_, ethAddress, err := ethClient.GenerateAddressFromPrivKey(order.ETHKey)
+			_, ethAddress, err := u.EthClientDex.GenerateAddressFromPrivKey(order.ETHKey)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH GenerateAddressFromPrivKey", order.ID, err)
 				continue
@@ -626,7 +610,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 				log.Println("watchPendingDexBTCBuyETH new(bigInt)", order.ID, order.AmountETH, err)
 				continue
 			}
-			balance, err := ethClient.GetBalance(ctx, ethAddress)
+			balance, err := u.EthClientDex.GetBalance(ctx, ethAddress)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH GetBalanceFromQuickNode", order.ID, ethAddress, err)
 				continue
@@ -834,13 +818,38 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 							log.Println("watchPendingDexBTCBuyETH filterUTXOInscription", order.ID, err)
 							continue
 						}
+						filteredBalance := uint64(0)
+						for _, v := range filteredUTXOs {
+							filteredBalance += v.Value
+						}
+
+						if filteredBalance <= amountBTC+amountBTCFee {
+							go u.NotifyWithChannel("C052CAWFB0D", "Multi Insufficient fund", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+							time.Sleep(300 * time.Millisecond)
+							continue
+						}
 
 						// respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, psbtList, order.ReceiveAddress, amountBTC, filteredUTXOs, order.FeeRate, amountBTCFee)
 						dataBytes, _ := json.Marshal(buyReqInfos)
 						log.Printf("watchPendingDexBTCBuyETH sending multi--buy %v %v %v\n", order.ID.Hex(), order.ToJsonString(), string(dataBytes))
 						respondData, err := btc.CreatePSBTToBuyInscriptionMultiViaAPI(u.Config.DexBTCBuyService, address, buyReqInfos, filteredUTXOs, order.FeeRate)
 						if err != nil {
+							go u.NotifyWithChannel("C052CAWFB0D", "Create multi buy ", address, fmt.Sprintf("filteredBalance %v <= amountBTCFee %v + listingOrder.Amount %v", filteredBalance, amountBTCFee, amountBTC))
+
+							logData := make(map[string]interface{})
+							logData["u.Config.DexBTCBuyService"] = u.Config.DexBTCBuyService
+							logData["address"] = address
+							logData["order.ReceiveAddress"] = order.ReceiveAddress
+							logData["amountBTC"] = amountBTC
+							logData["filteredUTXOs"] = filteredUTXOs
+							logData["order.FeeRate"] = order.FeeRate
+							logData["amountBTCFee"] = amountBTCFee
+							logData["respondData"] = respondData
+							logData["err"] = err.Error()
+
+							u.Repo.CreateDexBTCLog(&entity.DexBTCLog{Function: "CreatePSBTToBuyInscriptionMultiViaAPI", Data: logData})
 							log.Println("watchPendingDexBTCBuyETH CreatePSBTToBuyInscriptionMultiViaAPI", order.ID, err)
+							time.Sleep(300 * time.Millisecond)
 							continue
 						}
 						if respondData.SplitTxRaw != "" {
@@ -1046,7 +1055,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 
 		case entity.StatusDEXBuy_WaitingToRefund:
 			//send tx refund and update status to StatusDEXBuy_Refunding
-			txID, _, err := ethClient.TransferMax(order.ETHKey, order.RefundAddress)
+			txID, _, err := u.EthClientDex.TransferMax(order.ETHKey, order.RefundAddress)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH TransferMax", order.ID, order.RefundAddress, err)
 				return err
@@ -1065,7 +1074,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			txhash := common.HexToHash(order.RefundTx)
-			receipt, err := ethClient.GetClient().TransactionReceipt(ctx, txhash)
+			receipt, err := u.EthClientDex.GetClient().TransactionReceipt(ctx, txhash)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.RefundTx, err)
 				continue
@@ -1085,7 +1094,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			}
 		case entity.StatusDEXBuy_Bought:
 			// send eth to master and update status to StatusDEXBuy_SENDING_MASTER
-			txID, _, err := ethClient.TransferMax(order.ETHKey, u.Config.DexBTCMasterETHAddress)
+			txID, _, err := u.EthClientDex.TransferMax(order.ETHKey, u.Config.DexBTCMasterETHAddress)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH TransferMax", order.ID, u.Config.DexBTCMasterETHAddress, err)
 				return err
@@ -1104,7 +1113,7 @@ func (u Usecase) watchPendingDexBTCBuyETH() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			txhash := common.HexToHash(order.MasterTx)
-			receipt, err := ethClient.GetClient().TransactionReceipt(ctx, txhash)
+			receipt, err := u.EthClientDex.GetClient().TransactionReceipt(ctx, txhash)
 			if err != nil {
 				log.Println("watchPendingDexBTCBuyETH TransactionReceipt", order.ID, order.MasterTx, err)
 				continue

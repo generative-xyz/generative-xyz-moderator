@@ -568,6 +568,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 					{"priority", 1},
 					{"inscription_index", 1},
 					{"order_inscription_index", 1},
+					{"token_id_int", 1},
 					{"sell_verified", 1},
 					{"thumbnail", 1},
 					{"buyable", 1},
@@ -599,7 +600,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}}}},
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}, {"token_id_int", 1}}}},
 		bson.D{
 			{"$facet",
 				bson.D{

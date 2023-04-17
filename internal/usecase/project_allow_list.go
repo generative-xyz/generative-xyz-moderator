@@ -62,7 +62,7 @@ func (u Usecase) CreateProjectAllowList(req structure.CreateProjectAllowListReq)
 		u.NotifyWithChannel(os.Getenv("SLACK_ALLOW_LIST_CHANNEL"),
 			"",
 			"",
-			fmt.Sprintf("%s registered to Perceptrons as %s PUBLIC: %d AL: %d",
+			fmt.Sprintf("%s registered to Metaverse as %s PUBLIC: %d AL: %d",
 				helpers.CreateProfileLink(user.WalletAddressBTCTaproot, user.DisplayName), allowedBy, publicCount, totalCount-publicCount))
 	}(u, *user, *p, allowedBy)
 	return pe, nil

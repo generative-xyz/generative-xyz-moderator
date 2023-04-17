@@ -248,6 +248,26 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	return result, nil
 }
 
+func (r Repository) UpdateProjectFields(ID string, data map[string]interface{}) (*mongo.UpdateResult, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	updated := bson.M{}
+
+	for k, v := range data {
+		updated[k] = v
+	}
+
+	result, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), filter, bson.M{"$set": updated})
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r Repository) UpdateProjectAnimationHtml(ID string, animationHtml string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
 	update := bson.M{
@@ -269,6 +289,23 @@ func (r Repository) UpdateProjectMintedCount(ID string, mintedCount int32) (*mon
 	update := bson.M{
 		"$set": bson.M{
 			"stats.minted_count": mintedCount,
+		},
+	}
+	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r Repository) UpdateProjectIndexData(ID string, index int64, indexReverse int64) (*mongo.UpdateResult, error) {
+	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
+	update := bson.M{
+		"$set": bson.M{
+			"index":        index,
+			"indexReverse": indexReverse,
 		},
 	}
 	result, err := r.DB.Collection(utils.COLLECTION_PROJECTS).UpdateOne(context.TODO(), filter, update)
@@ -431,7 +468,7 @@ func (r Repository) GetAllRawProjects(filter entity.FilterProjects) (*entity.Pag
 	//only ETH project tokenID < 10000 will be applied this filter
 	if filter.IsSynced != nil && filter.Status != nil {
 		if *filter.IsSynced == false && *filter.Status == false {
-			f["tokenIDInt"] = bson.M{"$lt" : 1000000 }
+			f["tokenIDInt"] = bson.M{"$lt": 1000000}
 		}
 	}
 
@@ -460,7 +497,7 @@ func (r Repository) FilterProjects(filter entity.FilterProjects) bson.M {
 
 func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 	f := bson.M{}
-	
+
 	if filter.WalletAddress != nil {
 		if *filter.WalletAddress != "" {
 			f["creatorAddress"] = bson.M{"$regex": primitive.Regex{
@@ -503,16 +540,16 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 	if filter.Status != nil {
 		f["status"] = *filter.Status
 	}
-	
-	if filter.TxHash != nil && *filter.TxHash != ""  {
+
+	if filter.TxHash != nil && *filter.TxHash != "" {
 		f["txhash"] = *filter.TxHash
 	}
-	
+
 	if filter.TxHex != nil && *filter.TxHex != "" {
 		f["txHex"] = *filter.TxHex
 	}
-	
-	if filter.ContractAddress != nil && *filter.ContractAddress != ""  {
+
+	if filter.ContractAddress != nil && *filter.ContractAddress != "" {
 		// f["contractAddress"] = strings.ToLower(*filter.ContractAddress)
 
 		f["contractAddress"] = bson.M{"$regex": primitive.Regex{
@@ -521,11 +558,11 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 			Options: "i",
 		}}
 	}
-	
-	if filter.CommitTxHash != nil  {
+
+	if filter.CommitTxHash != nil {
 		f["commitTxHash"] = *filter.CommitTxHash
 	}
-	
+
 	if filter.RevealTxHash != nil && *filter.RevealTxHash != "" {
 		f["revealTxHash"] = *filter.RevealTxHash
 	}
@@ -538,7 +575,6 @@ func (r Repository) FilterProjectRaw(filter entity.FilterProjects) bson.M {
 
 	return f
 
-	
 }
 
 func (r Repository) FindProjectByGenNFTAddr(genNFTAddr string) (*entity.Projects, error) {

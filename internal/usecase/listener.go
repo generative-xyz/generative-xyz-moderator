@@ -169,15 +169,15 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 
 func (u Usecase) UpdateProjectWithListener(chainLog types.Log) {
 	txnHash := chainLog.TxHash.String()
-	
+
 	blockNumber := chainLog.BlockNumber
-	logger.AtLog.Logger.Info(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog))
+	logger.AtLog.Logger.Info(fmt.Sprintf("updateProjectWithListener.%s", txnHash), zap.String("txnHash", txnHash), zap.Any("chainLog", chainLog))
 	topics := chainLog.Topics
 
 	if len(topics) != 4 {
 		err := errors.New("This log is not a creating project log")
-		logger.AtLog.Logger.Error(fmt.Sprintf("updateProjectWithListener.%s",txnHash), zap.String("txnHash", txnHash) , zap.Any("chainLog", chainLog), zap.Error(err))
-		return 
+		logger.AtLog.Logger.Error(fmt.Sprintf("updateProjectWithListener.%s", txnHash), zap.String("txnHash", txnHash), zap.Any("chainLog", chainLog), zap.Error(err))
+		return
 	}
 
 	tokenIDStr := topics[3].Big().String()
@@ -234,7 +234,14 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	project.ContractAddress = contractAddr
 	project.CreatorName = projectDetail.ProjectDetail.Creator
 	project.CreatorAddrr = strings.ToLower(projectDetail.ProjectDetail.CreatorAddr.String())
-	project.Description = projectDetail.ProjectDetail.Desc
+	if projectDetail.ProjectDetail != nil && len(projectDetail.ProjectDetail.Desc) > 0 {
+		// try base64 decode
+		project.Description = projectDetail.ProjectDetail.Desc
+		temp, errDecode := helpers.Base64Decode(project.Description)
+		if errDecode == nil {
+			project.Description = string(temp)
+		}
+	}
 	project.Scripts = projectDetail.ProjectDetail.Scripts
 	project.ThirdPartyScripts = projectDetail.ProjectDetail.ScriptType
 	project.Styles = projectDetail.ProjectDetail.Styles
@@ -256,7 +263,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 
 	// check is full chain
 	tokenUri := response.TokenURIResp{}
-	err = helpers.Base64DecodeRaw(project.NftTokenUri, &tokenUri)
+	err = helpers.Base64DecodeRawTC(project.NftTokenUri, &tokenUri)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +312,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	project.Stats = *projectStat
 	project.TraitsStat = traitStat
 

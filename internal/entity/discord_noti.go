@@ -20,8 +20,14 @@ const (
 	UNREGCONIZE          DiscordNotiType = ""
 	NEW_AIRDROP          DiscordNotiType = "new_airdrop"
 	NEW_SALE             DiscordNotiType = "new_sale"
+	NEW_SALE_PERCEPTRON  DiscordNotiType = "new_sale_perceptron"
+	NEW_SALE_ART         DiscordNotiType = "new_sale_art"
+	NEW_SALE_PFPS        DiscordNotiType = "new_sale_pfps"
 	NEW_LISTING          DiscordNotiType = "new_listing"
 	NEW_MINT             DiscordNotiType = "new_mint"
+	NEW_MINT_PERCEPTRON  DiscordNotiType = "new_mint_perceptron"
+	NEW_MINT_ART         DiscordNotiType = "new_mint_art"
+	NEW_MINT_PFPS        DiscordNotiType = "new_mint_pfps"
 	NEW_PROJECT          DiscordNotiType = "new_project"
 	NEW_PROJECT_PROPOSED DiscordNotiType = "new_project_proposed"
 	NEW_PROJECT_APPROVED DiscordNotiType = "new_project_approved"
@@ -29,6 +35,8 @@ const (
 	NEW_PROJECT_REPORT   DiscordNotiType = "new_project_report"
 	NEW_PROJECT_REMOVE   DiscordNotiType = "new_project_remove"
 	NEW_PROJECT_VOTE     DiscordNotiType = "new_project_vote"
+
+	WaitingMintNotification = "waiting_mint_notification"
 )
 
 type GetDiscordNotiReq struct {
@@ -45,14 +53,28 @@ type DiscordNotiMeta struct {
 	Amount        uint64 `bson:"amount"`
 }
 
+type ImageSourceType int
+type ImagePosition int
+
+const (
+	ImageFromInscriptionID ImageSourceType = 1
+	ThumbNailPosition      ImagePosition   = 1
+	FullImagePosition      ImagePosition   = 2
+)
+
 type DiscordNoti struct {
-	BaseEntity `bson:",inline"`
-	Message    DiscordMessage    `bson:"message"`
-	Status     DiscordNotiStatus `bson:"status"`
-	NumRetried int               `bson:"num_retried"`
-	Webhook    string            `bson:"webhook"`
-	Type       DiscordNotiType   `bson:"type"`
-	Meta       DiscordNotiMeta   `bson:"meta"`
+	BaseEntity      `bson:",inline"`
+	Message         DiscordMessage    `bson:"message"`
+	Status          DiscordNotiStatus `bson:"status"`
+	NumRetried      int               `bson:"num_retried"`
+	Webhook         string            `bson:"webhook"`
+	Type            DiscordNotiType   `bson:"type"`
+	Meta            DiscordNotiMeta   `bson:"meta"`
+	RequireImage    bool              `bson:"require_image"`
+	ImageSourceType ImageSourceType   `bson:"image_source_type"`
+	ImageSourceID   string            `bson:"image_source_id"`
+	Note            string            `bson:"note"`
+	ImagePosition   ImagePosition     `bson:"image_position"`
 }
 
 type DiscordMessage struct {
