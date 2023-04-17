@@ -347,9 +347,11 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	tokenUri, err := u.Repo.FindTokenByTokenID(inscriptionID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			err := u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
-			if err != nil {
-				return err
+			logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
+			cacheErr := u.Cache.HSet(entity.WaitingMintNotification, inscriptionID, time.Now().Format(time.RFC3339))
+			if cacheErr != nil {
+				logger.AtLog.Error("NotifyNFTMinted.FindTokenByTokenID save cache Error", zap.Error(err), zap.Any("inscriptionID", inscriptionID))
+				return cacheErr
 			}
 		}
 		return err
@@ -466,6 +468,11 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 }
 
 func (u Usecase) NotifyNewProject(project *entity.Projects, owner *entity.Users, proposed bool, proposalID string) {
+
+	if proposed && !project.IsSynced {
+		err := fmt.Errorf("project is not listed on DAO")
+		logger.AtLog.Error("NotifyNewProject", zap.Error(err), zap.Any("project", project))
+	}
 
 	domain := os.Getenv("DOMAIN")
 
@@ -681,6 +688,65 @@ func (u Usecase) NotifiNewProjectReport(project *entity.Projects, reportLink, re
 	return nil
 }
 
+func (u Usecase) NotifiNewProjectHidden(project *entity.Projects) error {
+
+	domain := os.Getenv("DOMAIN")
+	owner, err := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
+	if err != nil {
+		return err
+	}
+
+	catName := ""
+	parsedThumbnail := ""
+	ownerName := owner.GetDisplayNameByTapRootAddress()
+
+	if len(project.Categories) > 0 {
+		category, _ := u.Repo.FindCategory(project.Categories[0])
+		if category != nil {
+			catName = category.Name
+		}
+	}
+
+	parsedThumbnailUrl, _ := url.Parse(project.Thumbnail)
+	if parsedThumbnailUrl != nil {
+		parsedThumbnail = parsedThumbnailUrl.String()
+	}
+
+	fields := make([]entity.Field, 0)
+
+	discordMsg := entity.DiscordMessage{
+		Username:  "Satoshi 27",
+		AvatarUrl: "",
+		Content:   fmt.Sprintf("**:sos: NEW DROP REMOVE :x:**"),
+		Embeds: []entity.Embed{{
+			Title:  fmt.Sprintf("%v\n***%s***", ownerName, project.Name),
+			Url:    fmt.Sprintf("%v/generative/%s", domain, project.TokenID),
+			Fields: fields,
+			Thumbnail: entity.Thumbnail{
+				Url: parsedThumbnail,
+			},
+		}},
+	}
+
+	noti := entity.DiscordNoti{
+		Message:    discordMsg,
+		NumRetried: 0,
+		Status:     entity.PENDING,
+		Type:       entity.NEW_PROJECT_REMOVE,
+		Meta: entity.DiscordNotiMeta{
+			ProjectID: project.TokenID,
+			Category:  catName,
+		},
+	}
+
+	// create discord message
+	err = u.CreateDiscordNoti(noti)
+	if err != nil {
+		logger.AtLog.Logger.Error("NotifiNewProjectReport.CreateDiscordNoti", zap.Error(err))
+	}
+	return nil
+}
+
 func (u Usecase) NotifyNewProjectVote(daoProject *entity.DaoProject, vote *entity.DaoProjectVoted) error {
 	project := &entity.Projects{}
 	if err := u.Repo.FindOneBy(context.TODO(), project.TableName(), bson.M{"_id": daoProject.ProjectId}, project); err != nil {
@@ -870,8 +936,8 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
-		//project, _ := u.Repo.FindProjectByTokenID("1001001")
-		incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi000000"
+		project, _ := u.Repo.FindProjectByTokenID("1001001")
+		//incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi93903000000"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -895,7 +961,10 @@ func (u Usecase) TestSendNoti() {
 		//	Amount:        0,
 		//	InscriptionID: incriptionID,
 		//})
-		u.NotifyNFTMinted(incriptionID)
+		//if err := u.NotifyNFTMinted(incriptionID); err != nil {
+		//	logger.AtLog.Error("NotifyNFTMinted", zap.Error(err))
+		//}
+		u.NotifiNewProjectHidden(project)
 		//u.NotifyNewProject(project, user, true, "proposalID")
 		//u.NotifyNewProject(project, user, false, "proposalID")
 		//u.NotifyNewProjectVote(daoProject, vote)
