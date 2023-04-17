@@ -3,12 +3,12 @@ package usecase
 import (
 	"errors"
 	"fmt"
+	"rederinghub.io/internal/repository"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
-	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/logger"
 )
 
@@ -118,57 +118,60 @@ func (u Usecase) CreateProjectsFromMetas() error {
 }
 
 func (u Usecase) CreateTokensFromCollectionInscriptions() error {
-	uncreatedInscription, err := u.Repo.FindUncreatedCollectionInscription()
-	if err != nil {
-		return err
-	}
-	logger.AtLog.Logger.Info("c len(uncreatedMetas)=%v", zap.Any("len(uncreatedInscription)", len(uncreatedInscription)))
-	processed := 0
-	for _, inscription := range uncreatedInscription {
-		logger.AtLog.Logger.Info(fmt.Sprintf("Trying to create token from collection inscription %s %s", inscription.Meta.Name, inscription.ID))
-		processed++
-
-		_, err = u.Repo.FindTokenByTokenID(inscription.ID)
+	found := 1
+	for found > 0 {
+		uncreatedInscription, err := u.Repo.FindUncreatedCollectionInscription()
 		if err != nil {
-			if !errors.Is(err, mongo.ErrNoDocuments) {
-				logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID "+inscription.ID, zap.Error(err))
-				continue
-			} else {
-				meta, err := u.Repo.FindCollectionMetaByInscriptionIcon(inscription.CollectionInscriptionIcon)
-				if err != nil {
-					logger.AtLog.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
-					continue
-				}
+			return err
+		}
+		found = len(uncreatedInscription)
+		logger.AtLog.Logger.Info("c len(uncreatedMetas)=%v", zap.Any("len(uncreatedInscription)", len(uncreatedInscription)))
+		processed := 0
+		for _, inscription := range uncreatedInscription {
+			logger.AtLog.Logger.Info(fmt.Sprintf("Trying to create token from collection inscription %s %s", inscription.Meta.Name, inscription.ID))
+			processed++
 
-				if meta.ProjectExisted {
-					u.Logger.LogAny("MetaProjectIsAlreadyExisted", zap.Any("meta", meta))
+			_, err = u.Repo.FindTokenByTokenID(inscription.ID)
+			if err != nil {
+				if !errors.Is(err, mongo.ErrNoDocuments) {
+					logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID "+inscription.ID, zap.Error(err))
 					continue
-				}
-
-				_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
-				if err != nil {
-					if !errors.Is(err, repository.ErrNoProjectsFound) {
-						logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+				} else {
+					meta, err := u.Repo.FindCollectionMetaByInscriptionIcon(inscription.CollectionInscriptionIcon)
+					if err != nil {
+						logger.AtLog.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
 						continue
 					}
-				} else {
-					logger.AtLog.Logger.Info(fmt.Sprintf("Done create token %s", inscription.ID))
+
+					if meta.ProjectExisted {
+						u.Logger.LogAny("MetaProjectIsAlreadyExisted", zap.Any("meta", meta))
+						continue
+					}
+
+					_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
+					if err != nil {
+						if !errors.Is(err, repository.ErrNoProjectsFound) {
+							logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+							continue
+						}
+					} else {
+						logger.AtLog.Logger.Info(fmt.Sprintf("Done create token %s", inscription.ID))
+					}
 				}
 			}
-		}
 
-		err = u.Repo.SetTokenCreatedInscription(inscription)
-		logger.AtLog.Logger.Info(fmt.Sprintf("Done set token created %s", inscription.ID))
+			err = u.Repo.SetTokenCreatedInscription(inscription)
+			logger.AtLog.Logger.Info(fmt.Sprintf("Done set token created %s", inscription.ID))
 
-		if err != nil {
-			logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
-			continue
-		}
+			if err != nil {
+				logger.AtLog.Logger.Error("u.CreateBTCTokenURIFromCollectionInscription", zap.Error(err))
+				continue
+			}
 
-		if processed%20 == 0 {
-			time.Sleep(1 * time.Second)
+			if processed%20 == 0 {
+				time.Sleep(1 * time.Second)
+			}
 		}
 	}
-
 	return nil
 }
