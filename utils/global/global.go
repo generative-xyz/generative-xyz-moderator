@@ -42,6 +42,6 @@ type Global struct {
 	DiscordClient       *discordclient.Client
 	DelegateService     *delegate.Service
 
-	TcClient, EthClient *eth.Client
-	BsClient            *btc.BlockcypherService
+	TcClient, EthClient, EthClientDex *eth.Client
+	BsClient                          *btc.BlockcypherService
 }
