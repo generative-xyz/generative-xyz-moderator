@@ -14,6 +14,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/constants/dao_project_voted"
 	discordclient "rederinghub.io/utils/discord"
+	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	"strconv"
 	"strings"
@@ -403,17 +404,23 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 
 	embed := entity.Embed{
 		Url:    fmt.Sprintf("%s/generative/%s/%s", domain, project.GenNFTAddr, tokenUri.TokenID),
+		Title:  fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex),
 		Fields: fields,
 	}
+
+	if !helpers.IsOrdinalProject(project.TokenID) {
+		embed.Url = fmt.Sprintf("%s/generative/%s/%s", domain, project.TokenID, tokenUri.TokenID)
+		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.TokenIDInt%1000000)
+	}
+
 	imagePos := entity.FullImagePosition
 	if mintPriceInNum == 0 {
-		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
+
 		embed.Thumbnail = entity.Thumbnail{
 			Url: parsedThumbnail,
 		}
 		imagePos = entity.ThumbNailPosition
 	} else {
-		embed.Title = fmt.Sprintf("%s\n***%v #%v***", owner.GetDisplayNameByWalletAddress(), project.Name, tokenUri.OrderInscriptionIndex)
 		embed.Image = entity.Image{
 			Url: parsedThumbnail,
 		}
@@ -936,8 +943,8 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
-		project, _ := u.Repo.FindProjectByTokenID("1001001")
-		//incriptionID := "ccb96527f0cfb59c5632e25a3793f093e1975c4e5602f9110c602d2a540a8dffi93903000000"
+		//project, _ := u.Repo.FindProjectByTokenID("1")
+		incriptionID := "7000001"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -961,10 +968,10 @@ func (u Usecase) TestSendNoti() {
 		//	Amount:        0,
 		//	InscriptionID: incriptionID,
 		//})
-		//if err := u.NotifyNFTMinted(incriptionID); err != nil {
-		//	logger.AtLog.Error("NotifyNFTMinted", zap.Error(err))
-		//}
-		u.NotifiNewProjectHidden(project)
+		if err := u.NotifyNFTMinted(incriptionID); err != nil {
+			logger.AtLog.Error("NotifyNFTMinted", zap.Error(err))
+		}
+		//u.NotifiNewProjectHidden(project)
 		//u.NotifyNewProject(project, user, true, "proposalID")
 		//u.NotifyNewProject(project, user, false, "proposalID")
 		//u.NotifyNewProjectVote(daoProject, vote)
