@@ -248,6 +248,26 @@ func (r Repository) UpdateProject(ID string, data *entity.Projects) (*mongo.Upda
 	return result, nil
 }
 
+func (r Repository) UpdateProjectFields(ID string, data map[string]interface{}) (*mongo.UpdateResult, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	filter := bson.D{{utils.KEY_UUID, ID}}
+	updated := bson.M{}
+
+	for k, v := range data {
+		updated[k] = v
+	}
+
+	result, err := r.DB.Collection(entity.Projects{}.TableName()).UpdateOne(context.TODO(), filter, bson.M{"$set": updated})
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r Repository) UpdateProjectAnimationHtml(ID string, animationHtml string) (*mongo.UpdateResult, error) {
 	filter := bson.D{{Key: utils.KEY_UUID, Value: ID}}
 	update := bson.M{
