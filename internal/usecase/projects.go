@@ -362,6 +362,9 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if !helpers.IsOrdinalProject(projectid) {
+		return nil, nil
+	}
 	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
@@ -403,6 +406,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if !helpers.IsOrdinalProject(projectid) {
+		return nil, nil
+	}
 	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
@@ -494,7 +500,7 @@ func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
 }
 
 func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") != "mainnet" {
+	if os.Getenv("ENV") != "mainnet" && true {
 		return nil, nil
 	}
 	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
@@ -547,7 +553,7 @@ func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feer
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") != "mainnet" {
+	if os.Getenv("ENV") != "mainnet" && true {
 		return nil, nil
 	}
 	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
@@ -882,8 +888,14 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	p.ReportUsers = append(p.ReportUsers, rep)
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
+		p.Status = false
+		u.NotifiNewProjectHidden(p)
 	}
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"isHidden": p.IsHidden,
+		"status":   p.Status,
+	})
 
 	if err != nil {
 		logger.AtLog.Error("UpdateProject.ReportProject", err.Error(), err)
@@ -1176,6 +1188,17 @@ func (u Usecase) GetProjectDetailWithFeeInfo(req structure.GetProjectDetailMessa
 		}
 
 	}()
+
+	// get index if project in TC:
+	if c.IsMintTC() {
+		contract, _ := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(c.GenNFTAddr), u.TcClient.GetClient())
+		if contract != nil {
+			projectContract, err := contract.Project(nil)
+			if err == nil {
+				c.MintingInfo.Index = projectContract.Index.Int64()
+			}
+		}
+	}
 
 	// logger.AtLog.Logger.Info("GetProjectDetail", zap.Any("project", zap.Any("c)", c)))
 	return c, nil
@@ -1850,7 +1873,7 @@ func (u Usecase) CreateProjectFromCollectionMeta(meta entity.CollectionMeta) (*e
 
 	thumbnail := fmt.Sprintf("https://generativeexplorer.com/content/%s", meta.InscriptionIcon)
 
-	pe.ContractAddress = os.Getenv("GENERATIVE_PROJECT")
+	pe.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
 	pe.MintPrice = mPrice
 	pe.NetworkFee = big.NewInt(u.networkFeeBySize(int64(300000 / 4))).String() // will update after unzip and check data or check from animation url
 	pe.IsHidden = false

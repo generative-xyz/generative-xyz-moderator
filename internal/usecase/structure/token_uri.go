@@ -17,6 +17,7 @@ import (
 type GetTokenMessageReq struct {
 	ContractAddress string
 	TokenID         string
+	Seed            string
 }
 
 type GetProjectDetailMessageReq struct {
@@ -113,22 +114,22 @@ type TokenUriAttrReq struct {
 
 type FilterTokens struct {
 	BaseFilters
-	Keyword         *string
-	ContractAddress *string
-	Search          *string
-	OwnerAddr       *string
-	CreatorAddr     *string
-	GenNFTAddr      *string
-	CollectionIDs   []string
-	TokenIDs        []string
-	Attributes      []TokenUriAttrReq
-	RarityAttributes      []TokenUriAttrReq
-	HasPrice        *bool
-	IsBuynow        *bool
-	FromPrice       *int64
-	ToPrice         *int64
-	Rarity          *string
-	Ids             []string
+	Keyword          *string
+	ContractAddress  *string
+	Search           *string
+	OwnerAddr        *string
+	CreatorAddr      *string
+	GenNFTAddr       *string
+	CollectionIDs    []string
+	TokenIDs         []string
+	Attributes       []TokenUriAttrReq
+	RarityAttributes []TokenUriAttrReq
+	HasPrice         *bool
+	IsBuynow         *bool
+	FromPrice        *int64
+	ToPrice          *int64
+	Rarity           *string
+	Ids              []string
 }
 
 func (f *FilterTokens) CreateFilter(r *http.Request) error {
@@ -219,7 +220,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 		}
 		f.ToPrice = &tPrice
 	}
-	
+
 	if isBuynow != "" {
 		isBuynowB, err := strconv.ParseBool(isBuynow)
 		if err != nil {
@@ -227,7 +228,7 @@ func (f *FilterTokens) CreateFilter(r *http.Request) error {
 		}
 		f.IsBuynow = &isBuynowB
 	}
-	
+
 	if rarity != "" {
 		f.Rarity = &rarity
 	}

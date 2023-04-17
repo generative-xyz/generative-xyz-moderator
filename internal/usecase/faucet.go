@@ -44,7 +44,8 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
-	twNameRegex := regexp.MustCompile(`https://twitter.com/(\w+)/status/(\d+)(?:\?s=\d+)?`)
+	// //https://twitter.com/abc/status/1647374585451663361?s=46&t=B7w70LBsAJFhv8XbJlpvCA
+	twNameRegex := regexp.MustCompile(`https?://(?:www\.)?twitter\.com/([^/]+)/status/(\d+)(?:\?.*)?$`)
 	// Find the first match in the tweet URL
 	matchTwName := twNameRegex.FindStringSubmatch(url)
 
@@ -117,6 +118,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		Tx:          "",
 		Amount:      amountFaucet.String(),
 		TwShareID:   sharedID,
+		SharedLink:  url,
 	}
 	err = u.Repo.InsertFaucet(faucetItem)
 	if err != nil {
