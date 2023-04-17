@@ -362,6 +362,9 @@ func (u Usecase) AirdropUpdateMintInfo(airDrop *entity.Airdrop, from string, fee
 }
 
 func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if !helpers.IsOrdinalProject(projectid) {
+		return nil, nil
+	}
 	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
@@ -403,6 +406,9 @@ func (u Usecase) AirdropArtist(projectid string, from string, receiver entity.Us
 }
 
 func (u Usecase) AirdropCollector(projectid string, mintedInscriptionId string, from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
+	if !helpers.IsOrdinalProject(projectid) {
+		return nil, nil
+	}
 	if os.Getenv("ENV") != "mainnet" {
 		return nil, nil
 	}
@@ -494,7 +500,7 @@ func (u Usecase) IsArtistABNewUserAirdrop(user *entity.Users) (bool, error) {
 }
 
 func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") != "mainnet" {
+	if os.Getenv("ENV") != "mainnet" && true {
 		return nil, nil
 	}
 	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {
@@ -547,7 +553,7 @@ func (u Usecase) AirdropArtistABNewUser(from string, receiver entity.Users, feer
 }
 
 func (u Usecase) AirdropTokenGatedNewUser(from string, receiver entity.Users, feerate int) (*entity.Airdrop, error) {
-	if os.Getenv("ENV") != "mainnet" {
+	if os.Getenv("ENV") != "mainnet" && true {
 		return nil, nil
 	}
 	if receiver.UUID == "" || receiver.WalletAddressBTCTaproot == "" {

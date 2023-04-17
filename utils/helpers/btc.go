@@ -58,9 +58,17 @@ func MagicHash(msg, messagePrefix string) (chainhash.Hash, error) {
 	return chainhash.DoubleHashH(bytes), nil
 }
 
-func IsOrdinalProject(tokenID string) bool {
+func IsOrdinalProjectToken(tokenID string) bool {
 	number, err1 := strconv.ParseUint(tokenID, 10, 64)
 	if err1 == nil && number/1000000 < 1000000 {
+		return false
+	}
+	return true
+}
+
+func IsOrdinalProject(projectId string) bool {
+	number, err1 := strconv.ParseUint(projectId, 10, 64)
+	if err1 == nil && number < 1000000 {
 		return false
 	}
 	return true
