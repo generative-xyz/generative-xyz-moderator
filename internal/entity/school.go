@@ -19,6 +19,7 @@ type AISchoolJob struct {
 	CompletedAt int64  `bson:"completed_at" json:"completed_at"`
 	ClearedAt   int64  `bson:"cleared_at" json:"cleared_at"`
 	CreatedBy   string `bson:"created_by" json:"created_by"`
+	Errors      string `bson:"errors" json:"errors"`
 }
 
 func (job AISchoolJob) TableName() string {
