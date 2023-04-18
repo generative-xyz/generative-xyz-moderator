@@ -1347,7 +1347,7 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 		return nil, err
 	}
 
-	owners := make(map[string]*entity.TokenURIListingOwner)
+	owners := make(map[string][]string)
 	tokenIDs := make(map[string]*string)
 	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
 	if err != nil {
@@ -1360,51 +1360,20 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 		tokenIDs[tokenID] = &token.OwnerAddress
 
 		if helpers.IsOrdinalProject(token.TokenID) {
-			iResp, err := genService.Inscription(tokenID)
-			if err == nil && iResp != nil {
-				//owner = iResp.Address
-				//owners[iResp.Address] = &entity.User{}
-
-				owners[iResp.Address] = &entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot: iResp.Address,
-					WalletAddress:           "",
-					DisplayName:             "",
-					Avatar:                  "",
-				}
+			iResp, _ := genService.Inscription(tokenID)
+			owner := &entity.TokenURIListingOwner{}
+			if iResp != nil {
+				owner.WalletAddressBTCTaproot = iResp.Address
 			} else {
-				owners[token.OwnerAddress] = &entity.TokenURIListingOwner{
-					WalletAddressBTCTaproot: token.Owner.WalletAddressBTCTaproot,
-					WalletAddress:           token.Owner.WalletAddress,
-					DisplayName:             token.Owner.DisplayName,
-					Avatar:                  token.Owner.Avatar,
-				}
+				owner.WalletAddressBTCTaproot = token.Owner.WalletAddressBTCTaproot
 			}
+
+			if _, has := owners[owner.WalletAddressBTCTaproot]; !has {
+				owners[owner.WalletAddressBTCTaproot] = []string{}
+			}
+			owners[owner.WalletAddressBTCTaproot] = append(owners[owner.WalletAddressBTCTaproot], tokenID)
 		}
 	}
-
-	_ = owners
-	_ = tokens
-
-	// entity.TokenURIListingOwner{
-	// 	WalletAddressBTCTaproot: iResp.Address,
-	// 	WalletAddress:           "",
-	// 	DisplayName:             "",
-	// 	Avatar:                  "",
-	// }
-
-	// genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
-	// for _, token := range tokens {
-	// 	owner := token.OwnerAddr
-	// 	tmpOwner := &entity.TokenURIListingOwner{}
-	// 	owners[owner] = tmpOwner
-
-	// 	tokenIDs[token.TokenID] = &owner
-
-	// }
-
-	// for _, tokenID := range tokenIDs {
-
-	// }
 
 	return owners, nil
 }
