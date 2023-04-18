@@ -888,8 +888,14 @@ func (u Usecase) ReportProject(tokenId, iWalletAddress, originalLink string) (*e
 	p.ReportUsers = append(p.ReportUsers, rep)
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
+		p.Status = false
+		u.NotifiNewProjectHidden(p)
 	}
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"isHidden": p.IsHidden,
+		"status":   p.Status,
+	})
 
 	if err != nil {
 		logger.AtLog.Error("UpdateProject.ReportProject", err.Error(), err)
