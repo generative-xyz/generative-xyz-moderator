@@ -201,11 +201,13 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					if internalInfo != nil {
 						inscWalletInfo.ProjectID = internalInfo.ProjectID
 						inscWalletInfo.Thumbnail = internalInfo.Thumbnail
-						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name", "creatorProfile.uuid"})
+						project, err := u.Repo.FindProjectByTokenIDCustomField(internalInfo.ProjectID, []string{"tokenid", "name", "creatorProfile.uuid", "status", "isSynced"})
 						if err != nil {
 							log.Println("InscriptionsByOutputs.FindProjectByTokenIDCustomField", err)
 						} else {
 							inscWalletInfo.ProjectName = project.Name
+							inscWalletInfo.ProjectStatus = project.Status
+							inscWalletInfo.ProjectSynced = project.IsSynced
 						}
 						creator, err := u.Repo.FindUserByID(project.CreatorProfile.UUID)
 						if err != nil {
