@@ -3,9 +3,10 @@ package http
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"os"
+
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/utils/logger"
@@ -35,10 +36,11 @@ func (h *httpDelivery) Capture(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
-			code, result, err := _req.PostRequest(fmt.Sprintf("%s/api/device/%s/renderer-set-image", os.Getenv("RENDER_DOMAIN"), req.ID), map[string]string{
+			renderURL := fmt.Sprintf("%s/api/device/%s/renderer-set-image", os.Getenv("RENDER_DOMAIN"), req.ID)
+			code, result, err := _req.PostToRenderer(renderURL, map[string]string{
 				"image_url": url,
 			})
-			logger.AtLog.Info("call to renderer-set-image ", zap.Error(err), zap.String("device_id", req.ID), zap.Int("code", code), zap.String("response", string(result)))
+			logger.AtLog.Info("call to renderer-set-image ", zap.Error(err), zap.String("renderURL", renderURL), zap.String("device_id", req.ID), zap.Int("code", code), zap.String("response", string(result)))
 
 			return response.CaptureResponse{
 				ImageUrl: url,
