@@ -1339,3 +1339,41 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, e
 	}
 	return tokenIdToToken, nil
 }
+
+func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, error) {
+	filter := &entity.FilterTokenUris{}
+	err := copier.Copy(filter, f)
+	if err != nil {
+		return nil, err
+	}
+
+	owners := make(map[string][]string)
+	tokenIDs := make(map[string]*string)
+	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
+	if err != nil {
+		return nil, err
+	}
+
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+	for _, token := range tokens {
+		tokenID := token.TokenID
+		tokenIDs[tokenID] = &token.OwnerAddress
+
+		if helpers.IsOrdinalProject(token.TokenID) {
+			iResp, _ := genService.Inscription(tokenID)
+			owner := &entity.TokenURIListingOwner{}
+			if iResp != nil {
+				owner.WalletAddressBTCTaproot = iResp.Address
+			} else {
+				owner.WalletAddressBTCTaproot = token.Owner.WalletAddressBTCTaproot
+			}
+
+			if _, has := owners[owner.WalletAddressBTCTaproot]; !has {
+				owners[owner.WalletAddressBTCTaproot] = []string{}
+			}
+			owners[owner.WalletAddressBTCTaproot] = append(owners[owner.WalletAddressBTCTaproot], tokenID)
+		}
+	}
+
+	return owners, nil
+}

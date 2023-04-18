@@ -119,13 +119,18 @@ type TokenUri struct {
 	CreatedTokenTx                 bool          `bson:"created_token_tx"`
 }
 
+type TokenUriOnwer struct {
+	TokenID      string               `bson:"token_id" json:"token_id"`
+	OwnerAddress string               `bson:"owner_addrress" json:"owner_addrress"` //owner btc adddress
+	Owner        TokenURIListingOwner `bson:"owner" json:"owner"`
+}
 
 type TokenFromBase64 struct {
-	Name                string            `bson:"name" json:"name"`
-	Description         string            `bson:"description" json:"description"`
-	Image               string            `bson:"image" json:"image"`
-	Attributes          []TokenUriAttrStr     	 	`bson:"attributes" json:"attributes"`
-	AnimationURL        string            `bson:"animation_url" json:"animation_url"`
+	Name         string            `bson:"name" json:"name"`
+	Description  string            `bson:"description" json:"description"`
+	Image        string            `bson:"image" json:"image"`
+	Attributes   []TokenUriAttrStr `bson:"attributes" json:"attributes"`
+	AnimationURL string            `bson:"animation_url" json:"animation_url"`
 }
 
 type AggregateTokenUriTraits struct {
