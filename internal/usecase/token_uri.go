@@ -1391,9 +1391,13 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 				}
 			}
 			owners[address].Count++
-
 		}
 	}
 
-	return owners, nil
+	var result []*tokenOwner
+	for _, v := range owners {
+		result = append(result, v)
+	}
+
+	return result, nil
 }
