@@ -3,13 +3,14 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"github.com/chromedp/chromedp"
 	"os"
-	"rederinghub.io/utils"
-	"rederinghub.io/utils/helpers"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/chromedp/chromedp"
+	"rederinghub.io/utils"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) CaptureContent(id, url string) (string, error) {
@@ -23,7 +24,7 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 		return "", err
 	}
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
+		//chromedp.ExecPath("google-chrome"),
 		chromedp.Flag("headless", eCH),
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
@@ -33,13 +34,13 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 	defer cancel()
 
 	var buf []byte
-	traits := make(map[string]interface{})
+	//traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(url),
 		chromedp.Sleep(time.Second*time.Duration(18)),
 		chromedp.CaptureScreenshot(&buf),
-		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+		//chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 	if err != nil {
 		return "", err
