@@ -97,6 +97,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/token", h.searchToken).Methods("GET")
+	project.HandleFunc("/{contractAddress}/{projectID}/token-onwers/analytics", h.AnalyticsTokenUriOwner).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")

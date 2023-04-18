@@ -34,6 +34,17 @@ definitions:
     x-enum-varnames:
     - Against
     - Voted
+  entity.AuctionWinnerList:
+    properties:
+      address:
+        type: string
+      ethAddress:
+        type: string
+      mintPrice:
+        type: integer
+      quantity:
+        type: integer
+    type: object
   entity.BaseEntity:
     properties:
       created_at:
@@ -219,6 +230,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       block_number_minted:
         type: string
       categories:
@@ -1088,6 +1103,10 @@ definitions:
     properties:
       bid_price:
         type: number
+      collector_redirect_to:
+        type: string
+      quantity:
+        type: integer
       wallet_address:
         type: string
     type: object
@@ -1616,6 +1635,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       blockNumberMinted:
         type: string
       btcFloorPrice:
@@ -3683,6 +3706,10 @@ paths:
         name: genNFTAddr
         required: true
         type: string
+      - description: ignore cache
+        in: query
+        name: refresh
+        type: string
       produces:
       - application/json
       responses:
@@ -4456,6 +4483,44 @@ paths:
       summary: Search Token
       tags:
       - Search
+  /project/{contractAddress}/{projectID}/token-onwers/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Calculate Token's Onwers by project
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Calculate Token's Onwers by project
+      tags:
+      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:
