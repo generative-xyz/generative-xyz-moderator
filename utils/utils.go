@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/http"
 	"net/url"
 	"strings"
 )
@@ -71,4 +72,17 @@ func MD5Ext(val interface{}) string {
 	jsonBytes, _ := json.Marshal(val)
 	result := fmt.Sprintf("%x", md5.Sum(jsonBytes))
 	return result
+}
+
+func IsImageURL(url string) bool {
+	response, err := http.Head(url)
+	if err != nil {
+		return false
+	}
+	defer response.Body.Close()
+
+	contentType := response.Header.Get("Content-Type")
+	contentType = strings.ToLower(contentType)
+
+	return strings.HasPrefix(contentType, "image/")
 }
