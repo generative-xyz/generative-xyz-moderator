@@ -1377,7 +1377,7 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 			}
 
 			user, _ := u.Repo.FindUserByBtcAddressTaproot(address)
-			if err != nil {
+			if user != nil {
 				name = user.DisplayName
 				avatar = user.Avatar
 			}
