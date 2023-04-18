@@ -1,10 +1,13 @@
 package structure
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 type AISchoolModelParams struct {
-	Name               string                     `json:"name"`
-	InputDimension     []int                      `json:"input_dimension"`
+	Name               string                     `json:"model_name"`
+	InputDimension     []int                      `json:"input_dim"`
 	Structure          []int                      `json:"structure"`
 	ActivationFunction string                     `json:"activation_name"`
 	Epoch              int                        `json:"epoch_num"`
@@ -52,7 +55,7 @@ func (params AISchoolModelParams) SelfValidate() error {
 		return errors.New("ActivationFunction must be filled")
 	}
 
-	switch params.ActivationFunction {
+	switch strings.ToLower(params.ActivationFunction) {
 	case "relu", "sigmoid", "tanh", "leaky_relu":
 	default:
 		return errors.New("ActivationFunction must be relu, sigmoid, tanh, or leaky_relu")
@@ -70,7 +73,7 @@ func (params AISchoolModelParams) SelfValidate() error {
 	}
 
 	if params.Augmentation != nil {
-		switch params.Augmentation.AugmentRandomFlip {
+		switch strings.ToLower(params.Augmentation.AugmentRandomFlip) {
 		case "horizontal", "vertical", "both", "none":
 		default:
 			return errors.New("AugmentRandomFlip must be horizontal, vertical, both, or none")
