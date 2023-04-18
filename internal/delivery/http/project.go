@@ -1133,7 +1133,7 @@ func (h *httpDelivery) getCountingAllowList(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// UserCredits godoc
+// AnalyticsTokenUriOwner godoc
 // @Summary Calculate Token's Onwers by project
 // @Description  Calculate Token's Onwers by project
 // @Tags Project
