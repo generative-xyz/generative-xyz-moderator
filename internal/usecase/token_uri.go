@@ -1347,7 +1347,14 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 		return nil, err
 	}
 
-	owners := make(map[string][]string)
+	type tokenOwner struct {
+		Address string `json:"address"`
+		Name    string `json:"name"`
+		Avatar  string `json:"avatar"`
+		Count   int    `json:"count"`
+	}
+
+	owners := make(map[string]*tokenOwner)
 	tokenIDs := make(map[string]*string)
 	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
 	if err != nil {
@@ -1361,17 +1368,26 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 
 		if helpers.IsOrdinalProject(token.TokenID) {
 			iResp, _ := genService.Inscription(tokenID)
-			owner := &entity.TokenURIListingOwner{}
+			var address, name, avatar string
 			if iResp != nil {
-				owner.WalletAddressBTCTaproot = iResp.Address
+				address = iResp.Address
 			} else {
-				owner.WalletAddressBTCTaproot = token.Owner.WalletAddressBTCTaproot
+				address = token.Owner.WalletAddressBTCTaproot
+				name = token.Owner.DisplayName
+				avatar = token.Owner.Avatar
+
 			}
 
-			if _, has := owners[owner.WalletAddressBTCTaproot]; !has {
-				owners[owner.WalletAddressBTCTaproot] = []string{}
+			if _, has := owners[address]; !has {
+				owners[address] = &tokenOwner{
+					Address: address,
+					Name:    name,
+					Avatar:  avatar,
+					Count:   1,
+				}
 			}
-			owners[owner.WalletAddressBTCTaproot] = append(owners[owner.WalletAddressBTCTaproot], tokenID)
+			owners[address].Count++
+
 		}
 	}
 
