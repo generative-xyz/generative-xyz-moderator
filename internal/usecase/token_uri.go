@@ -1339,3 +1339,72 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, e
 	}
 	return tokenIdToToken, nil
 }
+
+func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, error) {
+	filter := &entity.FilterTokenUris{}
+	err := copier.Copy(filter, f)
+	if err != nil {
+		return nil, err
+	}
+
+	owners := make(map[string]*entity.TokenURIListingOwner)
+	tokenIDs := make(map[string]*string)
+	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
+	if err != nil {
+		return nil, err
+	}
+
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+	for _, token := range tokens {
+		tokenID := token.TokenID
+		tokenIDs[tokenID] = &token.OwnerAddress
+
+		if helpers.IsOrdinalProject(token.TokenID) {
+			iResp, err := genService.Inscription(tokenID)
+			if err == nil && iResp != nil {
+				//owner = iResp.Address
+				//owners[iResp.Address] = &entity.User{}
+
+				owners[iResp.Address] = &entity.TokenURIListingOwner{
+					WalletAddressBTCTaproot: iResp.Address,
+					WalletAddress:           "",
+					DisplayName:             "",
+					Avatar:                  "",
+				}
+			} else {
+				owners[token.OwnerAddress] = &entity.TokenURIListingOwner{
+					WalletAddressBTCTaproot: token.Owner.WalletAddressBTCTaproot,
+					WalletAddress:           token.Owner.WalletAddress,
+					DisplayName:             token.Owner.DisplayName,
+					Avatar:                  token.Owner.Avatar,
+				}
+			}
+		}
+	}
+
+	_ = owners
+	_ = tokens
+
+	// entity.TokenURIListingOwner{
+	// 	WalletAddressBTCTaproot: iResp.Address,
+	// 	WalletAddress:           "",
+	// 	DisplayName:             "",
+	// 	Avatar:                  "",
+	// }
+
+	// genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+	// for _, token := range tokens {
+	// 	owner := token.OwnerAddr
+	// 	tmpOwner := &entity.TokenURIListingOwner{}
+	// 	owners[owner] = tmpOwner
+
+	// 	tokenIDs[token.TokenID] = &owner
+
+	// }
+
+	// for _, tokenID := range tokenIDs {
+
+	// }
+
+	return owners, nil
+}
