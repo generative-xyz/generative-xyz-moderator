@@ -2,16 +2,43 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/response"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils"
+	"rederinghub.io/utils/logger"
 )
 
 func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
+
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddress
+	}
+	if address == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
 
 	params := r.FormValue("params")
 
@@ -58,6 +85,7 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 		Params:      params,
 		DatasetUUID: file.UUID,
 		Status:      "waiting",
+		CreatedBy:   address,
 	}
 
 	err = h.Usecase.Repo.InsertAISChoolJob(&newJob)
@@ -69,42 +97,76 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uuid, "")
 }
 
-func (h *httpDelivery) schoolCheckProgress(w http.ResponseWriter, r *http.Request) {
-	jobID := r.URL.Query().Get("id")
-	if jobID == "" {
-		http.Error(w, "id cannot be empty", http.StatusBadRequest)
+func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddress
+	}
+	if address == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	result, err := h.Usecase.Repo.GetAISchoolJobByUUID(jobID)
+
+	jobList, err := h.Usecase.Repo.GetAISchoolJobByCreator(address, int64(limit), int64(offset))
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, response.AISchoolJobProgress{
-		result.Progress,
-		result.Status,
-	}, "")
+
+	result := []response.AISchoolJobProgress{}
+	for _, job := range jobList {
+		result = append(result, response.AISchoolJobProgress{
+			JobID:       job.JobID,
+			Status:      job.Status,
+			Progress:    job.Progress,
+			Output:      job.OutputLink,
+			CompletedAt: job.CompletedAt,
+		})
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
-func (h *httpDelivery) schoolDownload(w http.ResponseWriter, r *http.Request) {
-	jobID := r.URL.Query().Get("id")
-	if jobID == "" {
-		http.Error(w, "id cannot be empty", http.StatusBadRequest)
-		return
-	}
-	result, err := h.Usecase.Repo.GetAISchoolJobByUUID(jobID)
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	if result.Status != "done" {
-		http.Error(w, "Job is not done yet", http.StatusBadRequest)
-		return
-	}
-	file, err := h.Usecase.Repo.GetFileByUUID(result.OutputUUID)
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	http.ServeFile(w, r, file.URL)
-}
+// func (h *httpDelivery) schoolDownload(w http.ResponseWriter, r *http.Request) {
+// 	jobID := r.URL.Query().Get("id")
+// 	if jobID == "" {
+// 		http.Error(w, "id cannot be empty", http.StatusBadRequest)
+// 		return
+// 	}
+// 	result, err := h.Usecase.Repo.GetAISchoolJobByUUID(jobID)
+// 	if err != nil {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	if result.Status != "done" {
+// 		http.Error(w, "Job is not done yet", http.StatusBadRequest)
+// 		return
+// 	}
+// 	file, err := h.Usecase.Repo.GetFileByUUID(result.OutputUUID)
+// 	if err != nil {
+// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+// 		return
+// 	}
+// 	http.ServeFile(w, r, file.URL)
+// }
