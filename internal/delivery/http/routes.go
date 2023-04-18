@@ -356,6 +356,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	discord.Use(h.MiddleWare.AuthorizationFunc)
 	discord.HandleFunc("/new-bid", h.sendDiscordNewBid).Methods("POST")
 
+	aiSchool := api.PathPrefix("/ai-school").Subrouter()
+	aiSchool.HandleFunc("/check-progress", h.schoolCheckProgress).Methods("GET")
+	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
+	aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
