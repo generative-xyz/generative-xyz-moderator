@@ -1367,17 +1367,23 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 		tokenIDs[tokenID] = &token.OwnerAddress
 
 		if helpers.IsOrdinalProject(token.TokenID) {
-			iResp, _ := genService.Inscription(tokenID)
 			var address, name, avatar string
-			if iResp != nil {
-				address = iResp.Address
+			own, _ := u.Repo.FindUserByBtcAddressTaproot(token.Owner.WalletAddressBTCTaproot)
+			if own != nil {
+				address = own.WalletAddressBTCTaproot
+				name = own.DisplayName
+				avatar = own.Avatar
 			} else {
-				address = token.Owner.WalletAddressBTCTaproot
-				name = token.Owner.DisplayName
-				avatar = token.Owner.Avatar
+				iResp, _ := genService.Inscription(tokenID)
 
+				if iResp != nil {
+					address = iResp.Address
+				} else {
+					address = token.Owner.WalletAddressBTCTaproot
+					name = token.Owner.DisplayName
+					avatar = token.Owner.Avatar
+				}
 			}
-
 			if _, has := owners[address]; !has {
 				owners[address] = &tokenOwner{
 					Address: address,
