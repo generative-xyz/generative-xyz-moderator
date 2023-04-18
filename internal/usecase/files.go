@@ -300,3 +300,42 @@ func (u Usecase) UploadDatasetFile(r *http.Request, requestID string) (*entity.F
 	logger.AtLog.Logger.Info("inserted.FileModel", zap.Any("fileModel", fileModel))
 	return fileModel, nil
 }
+
+func (u Usecase) UploadFileInternal(r *http.Request, path string) (*entity.Files, error) {
+
+	_, handler, err := r.FormFile("file")
+	if err != nil {
+		logger.AtLog.Logger.Error("r.FormFile.File", zap.Error(err))
+		return nil, err
+	}
+
+	gf := googlecloud.GcsFile{
+		FileHeader: handler,
+		Path:       &path,
+	}
+
+	uploaded, err := u.GCS.FileUploadToBucket(gf)
+	if err != nil {
+		logger.AtLog.Logger.Error("u.GCS.FileUploadToBucke", zap.Error(err))
+		return nil, err
+	}
+
+	logger.AtLog.Logger.Info("uploaded", zap.Any("uploaded", uploaded))
+
+	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	fileModel := &entity.Files{
+		FileName: uploaded.Name,
+		FileSize: int(uploaded.Size),
+		MineType: uploaded.Minetype,
+		URL:      cdnURL,
+	}
+
+	err = u.Repo.InsertOne(fileModel.TableName(), fileModel)
+	if err != nil {
+		logger.AtLog.Logger.Error("u.Repo.InsertOne", zap.Error(err))
+		return nil, err
+	}
+
+	logger.AtLog.Logger.Info("inserted.FileModel", zap.Any("fileModel", fileModel))
+	return fileModel, nil
+}

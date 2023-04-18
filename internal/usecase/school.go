@@ -1,19 +1,23 @@
 package usecase
 
 import (
+	"archive/zip"
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/googlecloud"
 )
 
 type JobProgress struct {
@@ -94,9 +98,16 @@ func createAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams
 	if err := os.MkdirAll(basePath+jobID+"/dataset", os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(basePath+jobID+"/output", os.ModePerm); err != nil {
+
+	return nil
+}
+
+func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetGCPath string, gcs googlecloud.IGcstorage) error {
+	err := createAISchoolWorkFolder(jobID, params)
+	if err != nil {
 		return err
 	}
+
 	content, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -104,6 +115,29 @@ func createAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams
 	err = ioutil.WriteFile(basePath+jobID+"/params.json", content, 0644)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	dataseBytes, err := gcs.ReadFileFromBucket(datasetGCPath)
+	if err != nil {
+		return err
+	}
+
+	br := bytes.NewReader(dataseBytes)
+
+	zr, err := zip.NewReader(br, int64(len(dataseBytes)))
+	if err != nil {
+		return err
+	}
+	destination, err := filepath.Abs(basePath + jobID + "/dataset")
+	if err != nil {
+		return err
+	}
+
+	for _, f := range zr.File {
+		err := unzipFile(f, destination)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -125,6 +159,7 @@ func (job *AIJobInstance) Start() {
 	err := clearAISchoolWorkFolder(jobID)
 	if err != nil {
 		job.job.Errors = err.Error()
+		job.job.Status = "error"
 		err = job.u.Repo.UpdateAISchoolJob(job.job)
 		if err != nil {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
@@ -135,15 +170,29 @@ func (job *AIJobInstance) Start() {
 	err = json.Unmarshal([]byte(job.job.Params), &params)
 	if err != nil {
 		job.job.Errors = err.Error()
+		job.job.Status = "error"
 		err = job.u.Repo.UpdateAISchoolJob(job.job)
 		if err != nil {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
 	}
-	err = createAISchoolWorkFolder(jobID, params)
+
+	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
 	if err != nil {
 		job.job.Errors = err.Error()
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+	}
+
+	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
+	if err != nil {
+		job.job.Errors = err.Error()
+		job.job.Status = "error"
 		err = job.u.Repo.UpdateAISchoolJob(job.job)
 		if err != nil {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
@@ -168,6 +217,18 @@ func (job *AIJobInstance) Start() {
 	err = executeAISchoolJob(scriptPath, jobPath+"/params.json", jobPath+"/dataset", jobPath+"/output", job.progCh)
 	if err != nil {
 		job.job.Errors = err.Error()
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+	}
+	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
+	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPath+"/output", &cloudPath)
+	if err != nil {
+		job.job.Errors = err.Error()
+		job.job.Status = "error"
 		err = job.u.Repo.UpdateAISchoolJob(job.job)
 		if err != nil {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
@@ -175,6 +236,26 @@ func (job *AIJobInstance) Start() {
 		}
 	}
 
+	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+	fileModel := &entity.Files{
+		FileName: uploaded.Name,
+		FileSize: int(uploaded.Size),
+		MineType: uploaded.Minetype,
+		URL:      cdnURL,
+	}
+
+	err = job.u.Repo.InsertOne(fileModel.TableName(), fileModel)
+	if err != nil {
+		job.job.Errors = err.Error()
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+	}
+	job.job.OutputUUID = fileModel.UUID
+	job.job.OutputLink = fileModel.URL
 	job.job.CompletedAt = time.Now().Unix()
 	job.job.Status = "completed"
 	err = job.u.Repo.UpdateAISchoolJob(job.job)
