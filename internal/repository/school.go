@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 )
 
@@ -22,6 +23,15 @@ func (r Repository) GetAISchoolJobByUUID(uuid string) (*entity.AISchoolJob, erro
 		return nil, err
 	}
 	return job, nil
+}
+
+func (r Repository) GetAISchoolJobByCreator(address string, limit, offset int64) ([]entity.AISchoolJob, error) {
+	jobs := []entity.AISchoolJob{}
+	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"created_by": address}, &jobs, options.Find().SetSkip(offset).SetLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	return jobs, nil
 }
 
 func (r Repository) UpdateAISchoolJob(job *entity.AISchoolJob) error {
