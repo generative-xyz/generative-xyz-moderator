@@ -1383,7 +1383,6 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 					Address: address,
 					Name:    name,
 					Avatar:  avatar,
-					Count:   1,
 				}
 			}
 			owners[address].Count++
