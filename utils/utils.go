@@ -72,3 +72,11 @@ func MD5Ext(val interface{}) string {
 	result := fmt.Sprintf("%x", md5.Sum(jsonBytes))
 	return result
 }
+
+func MapToArray(m map[string]interface{}) []interface{} {
+	var result []interface{}
+	for _, v := range m {
+		result = append(result, v)
+	}
+	return result
+}
