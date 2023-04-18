@@ -357,6 +357,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	discord.Use(h.MiddleWare.AuthorizationFunc)
 	discord.HandleFunc("/new-bid", h.sendDiscordNewBid).Methods("POST")
 
+	photo := api.PathPrefix("/photo").Subrouter()
+	photo.Use(h.MiddleWare.AuthorizationFunc)
+	photo.HandleFunc("/capture", h.Capture).Methods("POST")
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
