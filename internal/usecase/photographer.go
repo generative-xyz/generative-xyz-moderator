@@ -23,7 +23,7 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 		return "", err
 	}
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		//chromedp.ExecPath("google-chrome"),
+		chromedp.ExecPath("google-chrome"),
 		chromedp.Flag("headless", eCH),
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
@@ -52,13 +52,14 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 		i := strings.Index(base64Image, ",")
 		if i >= 0 {
 			now := time.Now().UTC().Unix()
-			name := fmt.Sprintf("thumb/%s-%d.png", id, now)
+			name := fmt.Sprintf("capture/%s-%d.png", id, now)
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
 				return "", err
 			}
-			return uploaded.FullPath, nil
+			imageURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+			return imageURL, nil
 		}
 	}
 	return "", fmt.Errorf("capture error")
