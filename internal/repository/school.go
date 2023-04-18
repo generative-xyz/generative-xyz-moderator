@@ -50,3 +50,12 @@ func (r Repository) GetFileByUUID(id string) (*entity.Files, error) {
 	}
 	return file, nil
 }
+
+func (r Repository) GetAISchoolUnClearedJob(before int64) ([]entity.AISchoolJob, error) {
+	jobs := []entity.AISchoolJob{}
+	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"cleared_at": 0, "created_at": bson.M{"$lte": before}}, &jobs)
+	if err != nil {
+		return nil, err
+	}
+	return jobs, nil
+}

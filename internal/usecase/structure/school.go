@@ -3,20 +3,22 @@ package structure
 import "errors"
 
 type AISchoolModelParams struct {
-	Name                    string  `json:"name"`
-	DimensionWidth          int     `json:"dimension_width"`
-	DimensionHeight         int     `json:"dimension_height"`
-	HiddenLayer             []int   `json:"hidden_layer"`
-	ActivationFunction      string  `json:"activation_function"`
-	Epoch                   int     `json:"epoch"`
-	BatchSize               int     `json:"batch_size"`
-	ValidationSet           float64 `json:"validation_set"`
-	Augmentation            bool    `json:"augmentation"`
-	AugmentRandomFlip       string  `json:"augment_random_flip"`
-	AugmentRandomRotate     float64 `json:"augment_random_rotate"`
-	AugmentRandomZoom       float64 `json:"augment_random_zoom"`
-	AugmentRandomContrast   float64 `json:"augment_random_contrast"`
-	AugmentRandomBrightness float64 `json:"augment_random_brightness"`
+	Name               string                     `json:"name"`
+	InputDimension     []int                      `json:"input_dimension"`
+	Structure          []int                      `json:"structure"`
+	ActivationFunction string                     `json:"activation_name"`
+	Epoch              int                        `json:"epoch_num"`
+	BatchSize          int                        `json:"batch_size"`
+	ValidationPercent  float64                    `json:"val_percent"`
+	Augmentation       *AISchoolDataAugmentConfig `json:"data_augmentation_config"`
+}
+
+type AISchoolDataAugmentConfig struct {
+	AugmentRandomFlip       string  `json:"random_flip"`
+	AugmentRandomRotate     float64 `json:"random_rotation"`
+	AugmentRandomZoom       float64 `json:"random_zoom"`
+	AugmentRandomContrast   float64 `json:"random_contrast"`
+	AugmentRandomBrightness float64 `json:"random_brightness"`
 }
 
 func (params AISchoolModelParams) SelfValidate() error {
@@ -24,20 +26,24 @@ func (params AISchoolModelParams) SelfValidate() error {
 		return errors.New("Name must be filled")
 	}
 
-	if params.DimensionWidth < 10 || params.DimensionWidth > 32 {
+	if len(params.InputDimension) != 2 {
+		return errors.New("InputDimension must be 2")
+	}
+
+	if params.InputDimension[0] < 10 || params.InputDimension[0] > 32 {
 		return errors.New("DimensionWidth must be between 10 and 32")
 	}
 
-	if params.DimensionHeight < 10 || params.DimensionHeight > 32 {
+	if params.InputDimension[1] < 10 || params.InputDimension[1] > 32 {
 		return errors.New("DimensionHeight must be between 10 and 32")
 	}
 
-	if len(params.HiddenLayer) > 10 {
+	if len(params.Structure) > 10 {
 		return errors.New("HiddenLayer must be less than 10")
 	} else {
-		for _, hiddenLayer := range params.HiddenLayer {
-			if hiddenLayer < 1 || hiddenLayer > 20 {
-				return errors.New("HiddenLayer must be between 1 and 20")
+		for _, layer := range params.Structure {
+			if layer < 1 || layer > 20 {
+				return errors.New("Structure must be between 1 and 20")
 			}
 		}
 	}
@@ -52,8 +58,8 @@ func (params AISchoolModelParams) SelfValidate() error {
 		return errors.New("ActivationFunction must be relu, sigmoid, tanh, or leaky_relu")
 	}
 
-	if params.ValidationSet < 1 || params.ValidationSet > 20 {
-		return errors.New("ValidationSet must be between 1 and 20")
+	if params.ValidationPercent < 1 || params.ValidationPercent > 20 {
+		return errors.New("ValidationPercent must be between 1 and 20")
 	}
 
 	if params.Epoch < 1 || params.Epoch > 30 {
@@ -63,61 +69,25 @@ func (params AISchoolModelParams) SelfValidate() error {
 		return errors.New("BatchSize must be between 1 and 512")
 	}
 
-	if params.Augmentation {
-		switch params.AugmentRandomFlip {
+	if params.Augmentation != nil {
+		switch params.Augmentation.AugmentRandomFlip {
 		case "horizontal", "vertical", "both", "none":
 		default:
 			return errors.New("AugmentRandomFlip must be horizontal, vertical, both, or none")
 		}
-		if params.AugmentRandomRotate < 0 || params.AugmentRandomRotate > 0.5 {
+		if params.Augmentation.AugmentRandomRotate < 0 || params.Augmentation.AugmentRandomRotate > 0.5 {
 			return errors.New("AugmentRandomRotate must be between 1 and 0.5")
 		}
-		if params.AugmentRandomZoom < 0 || params.AugmentRandomZoom > 0.5 {
+		if params.Augmentation.AugmentRandomZoom < 0 || params.Augmentation.AugmentRandomZoom > 0.5 {
 			return errors.New("AugmentRandomZoom must be between 1 and 0.5")
 		}
-		if params.AugmentRandomContrast < 0 || params.AugmentRandomContrast > 0.5 {
+		if params.Augmentation.AugmentRandomContrast < 0 || params.Augmentation.AugmentRandomContrast > 0.5 {
 			return errors.New("AugmentRandomContrast must be between 1 and 0.5")
 		}
-		if params.AugmentRandomBrightness < 0 || params.AugmentRandomBrightness > 0.5 {
+		if params.Augmentation.AugmentRandomBrightness < 0 || params.Augmentation.AugmentRandomBrightness > 0.5 {
 			return errors.New("AugmentRandomBrightness must be between 1 and 0.5")
 		}
 	}
 
 	return nil
-}
-
-type AISchoolModelParamsExec struct {
-	Name                    string  `json:"name"`
-	DimensionWidth          int     `json:"dimension_width"`
-	DimensionHeight         int     `json:"dimension_height"`
-	HiddenLayer             []int   `json:"hidden_layer"`
-	ActivationFunction      string  `json:"activation_function"`
-	Epoch                   int     `json:"epoch"`
-	BatchSize               int     `json:"batch_size"`
-	ValidationSet           float64 `json:"validation_set"`
-	Augmentation            bool    `json:"augmentation"`
-	AugmentRandomFlip       string  `json:"augment_random_flip"`
-	AugmentRandomRotate     float64 `json:"augment_random_rotate"`
-	AugmentRandomZoom       float64 `json:"augment_random_zoom"`
-	AugmentRandomContrast   float64 `json:"augment_random_contrast"`
-	AugmentRandomBrightness float64 `json:"augment_random_brightness"`
-}
-
-func (params AISchoolModelParams) TransformToExec() *AISchoolModelParamsExec {
-	return &AISchoolModelParamsExec{
-		Name:                    params.Name,
-		DimensionWidth:          params.DimensionWidth,
-		DimensionHeight:         params.DimensionHeight,
-		HiddenLayer:             params.HiddenLayer,
-		ActivationFunction:      params.ActivationFunction,
-		Epoch:                   params.Epoch,
-		BatchSize:               params.BatchSize,
-		ValidationSet:           params.ValidationSet,
-		Augmentation:            params.Augmentation,
-		AugmentRandomFlip:       params.AugmentRandomFlip,
-		AugmentRandomRotate:     params.AugmentRandomRotate,
-		AugmentRandomZoom:       params.AugmentRandomZoom,
-		AugmentRandomContrast:   params.AugmentRandomContrast,
-		AugmentRandomBrightness: params.AugmentRandomBrightness,
-	}
 }
