@@ -83,7 +83,7 @@ func TestParsePSBTFromBase64(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "asdasd", args: args{
-			data: "cHNidP8BAF4CAAAAAV250MCfjiwSJas0NO8cvPiGPTPSWOiWr6N7jzousaeOAAAAAAD/////AegDAAAAAAAAIlEgGxz5T+DwrsJGRufyQoJG2ewRKchw2qz6eM1pTu9I+EwAAAAAAAEBK3YkAAAAAAAAIlEgGxz5T+DwrsJGRufyQoJG2ewRKchw2qz6eM1pTu9I+EwBCEMBQa7Bm4mP/Qo36HlXPe7s88tC+LUzqF4dzIZvsnKhJ9JwjK+PCPKb3pVr5dlDBIQxh0L+PLArhb+nl3ScKJ6qRwaDAAA=",
+			data: "cHNidP8BAKYCAAAAAoUKd8Tf8ltuW9p645k1JhetWQ8X5zrMLlsXjlm9gu4YAAAAAAD/////hQp3xN/yW25b2nrjmTUmF61ZDxfnOswuWxeOWb2C7hgBAAAAAP////8CKnsUAAAAAAAiACCIwu6TlCTHpGH0G4ew14P8fGpEkvWbyVu9E333plA71M6oAQAAAAAAFgAUuAlIk1YJWQjTmbnTAE5XnMoC9csAAAAAAAEBKxEUAAAAAAAAIlEgJXBAODuZyg7Fa9bQ9ZwXVmweQ17QmzT9voA3lMH3hdsBCEMBQfBpY6Gv9ZUdhWPNfB/RpSy0mKB+8CaZ7MBZCDNOHB057QY57XZQoRbSespGjHqewhED5VCy3vlFMYfYKuPhKn2DAAEBK+gDAAAAAAAAIlEgJXBAODuZyg7Fa9bQ9ZwXVmweQ17QmzT9voA3lMH3hdsBCEMBQRwhUpPSwiOY2e8mf0Yg3cy33ToYO+TG/7Yn/Utq3Qn497DjetKQMUbvU3BvYOy9fLLLMiwTT/4nPQFDbA0hEYyDAAAA",
 		}},
 	}
 	for _, tt := range tests {
@@ -95,6 +95,9 @@ func TestParsePSBTFromBase64(t *testing.T) {
 			}
 			gotBytes, _ := json.MarshalIndent(got, "", " ")
 			log.Println("got", string(gotBytes))
+
+			address, _ := GetAddressFromPKScript(got.UnsignedTx.TxOut[0].PkScript)
+			log.Println("address", address)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParsePSBTFromBase64() = %v, want %v", got, tt.want)
 			}
