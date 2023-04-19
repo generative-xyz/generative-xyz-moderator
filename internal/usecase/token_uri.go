@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1398,6 +1399,10 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 	for _, v := range owners {
 		result = append(result, v)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Count > result[j].Count
+	})
 
 	return result, nil
 }
