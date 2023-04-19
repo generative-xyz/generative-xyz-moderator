@@ -729,9 +729,9 @@ definitions:
     type: object
   request.CaptureRequest:
     properties:
-      id:
+      device_id:
         type: string
-      url:
+      display_url:
         type: string
     type: object
   request.CheckBalanceAddressReq:
@@ -1250,9 +1250,7 @@ definitions:
     type: object
   response.CaptureResponse:
     properties:
-      id:
-        type: string
-      url:
+      image_url:
         type: string
     type: object
   response.CategoryResp:
