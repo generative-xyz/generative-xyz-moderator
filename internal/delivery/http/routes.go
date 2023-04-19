@@ -357,7 +357,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	discord.HandleFunc("/new-bid", h.sendDiscordNewBid).Methods("POST")
 
 	aiSchool := api.PathPrefix("/ai-school").Subrouter()
-	inscriptionDex.Use(h.MiddleWare.AccessTokenPassThrough)
+	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")
 	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
