@@ -36,12 +36,13 @@ func (r Repository) FindCollectionInscriptionByInscriptionIcon(inscriptionIcon s
 }
 
 // Only get 1000 docs each time.
-func (r Repository) FindUncreatedCollectionInscription() ([]entity.CollectionInscription, error) {
-	inscriptions := []entity.CollectionInscription{}
+func (r Repository) FindUncreatedCollectionInscription(page int) ([]entity.CollectionInscription, error) {
+	inscriptions := make([]entity.CollectionInscription, 0)
 	f := bson.M{
 		"token_created": false,
 	}
 	opts := options.Find().SetLimit(1000)
+	opts.SetSkip(int64(page * 1000))
 	cursor, err := r.DB.Collection(entity.CollectionInscription{}.TableName()).Find(context.TODO(), f, opts)
 	if err != nil {
 		return nil, err
