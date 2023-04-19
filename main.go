@@ -109,7 +109,7 @@ func main() {
 }
 
 func startServer() {
-	logger.AtLog().Logger.Info("starting server ...")
+	fmt.Println("starting server ...")
 	cache, redisClient := redis.NewRedisCache(conf.Redis)
 	redisV9 := redisv9.NewClient(conf.Redis)
 	r := mux.NewRouter()
@@ -339,16 +339,16 @@ func startServer() {
 			if server.Server != nil {
 				go server.Server.StartServer()
 			}
-			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is enabled", name))
+			fmt.Printf("%s is enabled \n", name)
 		} else {
-			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is disabled", name))
+			fmt.Printf("%s is disabled \n", name)
 		}
 	}
 
 	// start a group cron:
 	if len(conf.CronTabList) > 0 {
 		for _, cronKey := range conf.CronTabList {
-			_logger.AtLog.Logger.Info(fmt.Sprintf("%s is running...", cronKey))
+			fmt.Printf("%s is running... \n", cronKey)
 			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
 		}
 	}
