@@ -6847,10 +6847,10 @@ const docTemplate = `{
         "request.CaptureRequest": {
             "type": "object",
             "properties": {
-                "id": {
+                "device_id": {
                     "type": "string"
                 },
-                "url": {
+                "display_url": {
                     "type": "string"
                 }
             }
@@ -7645,10 +7645,7 @@ const docTemplate = `{
         "response.CaptureResponse": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "url": {
+                "image_url": {
                     "type": "string"
                 }
             }
