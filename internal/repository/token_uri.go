@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"strings"
 
@@ -633,7 +632,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		return nil, errors.WithStack(err)
 	}
 	if len(tokens) > 0 {
-		log.Println("len(tokens)", len(tokens[0].TotalCount))
+		//log.Println("len(tokens)", len(tokens[0].TotalCount))
 
 		resp.Result = tokens[0].TotalData
 		resp.Page = filter.Page

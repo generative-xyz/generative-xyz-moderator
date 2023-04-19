@@ -80,7 +80,7 @@ func (u Usecase) getFeeRateFromChain() (*FeeRates, error) {
 		return nil, err
 	}
 
-	fmt.Println("responseData", string(responseData))
+	//fmt.Println("responseData", string(responseData))
 
 	feeRateObj := &FeeRates{}
 
@@ -118,9 +118,9 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 	fasterFee := feeRateFromChain.HalfHourFee
 	ecoFee := feeRateFromChain.EconomyFee // not use HourFee
 
-	fmt.Println("fastestFee", fastestFee)
-	fmt.Println("fasterFee", fasterFee)
-	fmt.Println("ecoFee", ecoFee)
+	// fmt.Println("fastestFee", fastestFee)
+	// fmt.Println("fasterFee", fasterFee)
+	// fmt.Println("ecoFee", ecoFee)
 
 	min := 4 // todo: move config
 
