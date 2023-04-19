@@ -54,38 +54,49 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+	usePFPDataset := false
 	_, datasetFile, err := r.FormFile("file")
 	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
+		usePFPDataset = true
 	}
-
-	dataset := datasetFile
-	datasetSize := dataset.Size
-	if datasetSize > 100000000 {
-		http.Error(w, "Dataset size must be less than 100MB", http.StatusBadRequest)
-		return
-	}
+	var newJob entity.AISchoolJob
 	uuid := uuid.NewString()
-	datasetName := dataset.Filename + "-" + uuid
+	if !usePFPDataset {
+		dataset := datasetFile
+		datasetSize := dataset.Size
+		if datasetSize > 100000000 {
+			http.Error(w, "Dataset size must be less than 100MB", http.StatusBadRequest)
+			return
+		}
+		datasetName := dataset.Filename + "-" + uuid
 
-	log.Println("datasetName", datasetName)
-	log.Println("datasetSize", datasetSize)
-	d, _ := json.MarshalIndent(paramsStruct, "", " ")
-	log.Println("paramsStruct", string(d))
-	file, err := h.Usecase.UploadDatasetFile(r, uuid)
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
-	}
-	log.Println("file", file)
+		log.Println("datasetName", datasetName)
+		log.Println("datasetSize", datasetSize)
+		d, _ := json.MarshalIndent(paramsStruct, "", " ")
+		log.Println("paramsStruct", string(d))
+		file, err := h.Usecase.UploadDatasetFile(r, uuid)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		log.Println("file", file)
 
-	newJob := entity.AISchoolJob{
-		JobID:       uuid,
-		Params:      params,
-		DatasetUUID: file.UUID,
-		Status:      "waiting",
-		CreatedBy:   address,
+		newJob = entity.AISchoolJob{
+			JobID:       uuid,
+			Params:      params,
+			DatasetUUID: file.UUID,
+			Status:      "waiting",
+			CreatedBy:   address,
+		}
+	} else {
+		newJob = entity.AISchoolJob{
+			JobID:         uuid,
+			Params:        params,
+			DatasetUUID:   "",
+			Status:        "waiting",
+			CreatedBy:     address,
+			UsePFPDataset: true,
+		}
 	}
 
 	err = h.Usecase.Repo.InsertAISChoolJob(&newJob)
