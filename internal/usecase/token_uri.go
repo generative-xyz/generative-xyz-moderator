@@ -1207,7 +1207,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
 	// find project by projectID
-	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
+	project, err := u.Repo.FindProjectByTokenID(meta.ProjectID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.AtLog.Logger.Error("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
