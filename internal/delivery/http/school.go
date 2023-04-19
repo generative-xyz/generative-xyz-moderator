@@ -137,12 +137,20 @@ func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request
 
 	result := []response.AISchoolJobProgress{}
 	for _, job := range jobList {
+		params := structure.AISchoolModelParams{}
+		err := json.Unmarshal([]byte(job.Params), &params)
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
 		result = append(result, response.AISchoolJobProgress{
 			JobID:       job.JobID,
 			Status:      job.Status,
 			Progress:    job.Progress,
 			Output:      job.OutputLink,
 			CompletedAt: job.CompletedAt,
+			CreatedAt:   job.CreatedAt.Unix(),
+			ModelName:   params.Name,
 		})
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
