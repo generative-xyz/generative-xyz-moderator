@@ -44,7 +44,6 @@ func (h *httpDelivery) Capture(w http.ResponseWriter, r *http.Request) {
 
 			return response.CaptureResponse{
 				ImageUrl: url,
-				ID:       req.ID,
 			}, nil
 
 		},
