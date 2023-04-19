@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/redis"
 )
 
 func (u Usecase) CaptureContent(id, url string) (string, error) {
@@ -64,4 +66,8 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("capture error")
+}
+
+func (u Usecase) PublishImageData(req request.CaptureRequest) error {
+	return u.PubSub.Producer(utils.PUBSUB_CAPTURE_THUMBNAIL, redis.PubSubPayload{Data: req})
 }

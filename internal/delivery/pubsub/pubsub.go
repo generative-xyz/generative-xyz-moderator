@@ -11,15 +11,15 @@ import (
 
 type PubsubHandler struct {
 	usecase usecase.Usecase
-	pubsub     redis.IPubSubClient
-	log logger.Ilogger
+	pubsub  redis.IPubSubClient
+	log     logger.Ilogger
 }
 
 func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *PubsubHandler {
 	return &PubsubHandler{
 		usecase: usecase,
-		pubsub:     pubsub,
-		log: log,
+		pubsub:  pubsub,
+		log:     log,
 	}
 }
 
@@ -27,6 +27,7 @@ func (h PubsubHandler) StartServer() {
 	names := []string{
 		utils.PUBSUB_TOKEN_THUMBNAIL,
 		utils.PUBSUB_PROJECT_UNZIP,
+		utils.PUBSUB_CAPTURE_THUMBNAIL,
 	}
 
 	h.pubsub.GetChannelNames(names...)
@@ -56,8 +57,12 @@ func (h PubsubHandler) StartServer() {
 		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
 			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
 			break
-		}}
+
+		case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
+			h.usecase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
+			break
+		}
+	}
 	<-ch
 	return
 }
-
