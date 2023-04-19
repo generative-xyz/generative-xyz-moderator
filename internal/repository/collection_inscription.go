@@ -21,7 +21,7 @@ func (r Repository) FindCollectionInscriptionByInscriptionIcon(inscriptionIcon s
 	inscriptions := []entity.CollectionInscription{}
 
 	f := bson.M{
-		"collection_inscription_icon" : inscriptionIcon,
+		"collection_inscription_icon": inscriptionIcon,
 	}
 	cursor, err := r.DB.Collection(utils.COLLECTION_COLLECTION_INSCRIPTION).Find(context.TODO(), f)
 	if err != nil {
@@ -36,10 +36,10 @@ func (r Repository) FindCollectionInscriptionByInscriptionIcon(inscriptionIcon s
 }
 
 // Only get 1000 docs each time.
-func (r Repository) FindUncreatedCollectionInscription() ([]entity.CollectionInscription, error) {	
+func (r Repository) FindUncreatedCollectionInscription() ([]entity.CollectionInscription, error) {
 	inscriptions := []entity.CollectionInscription{}
 	f := bson.M{
-		"token_created" : bson.M{"$ne": true},
+		"token_created": false,
 	}
 	opts := options.Find().SetLimit(1000)
 	cursor, err := r.DB.Collection(entity.CollectionInscription{}.TableName()).Find(context.TODO(), f, opts)
@@ -56,7 +56,7 @@ func (r Repository) FindUncreatedCollectionInscription() ([]entity.CollectionIns
 
 func (r Repository) SetTokenCreatedInscription(inscription entity.CollectionInscription) error {
 	f := bson.D{
-		{Key: "uuid", Value: inscription.UUID,},
+		{Key: "uuid", Value: inscription.UUID},
 	}
 
 	update := bson.M{
@@ -71,11 +71,11 @@ func (r Repository) SetTokenCreatedInscription(inscription entity.CollectionInsc
 	}
 
 	return err
-} 
+}
 
 func (r Repository) CountCollectionInscriptionByInscriptionIcon(inscriptionIcon string) (*int64, error) {
 	f := bson.M{
-		"collection_inscription_icon" : inscriptionIcon,
+		"collection_inscription_icon": inscriptionIcon,
 	}
 	count, err := r.DB.Collection(utils.COLLECTION_COLLECTION_INSCRIPTION).CountDocuments(context.TODO(), f)
 	if err != nil {
