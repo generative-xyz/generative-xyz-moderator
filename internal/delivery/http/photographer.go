@@ -36,7 +36,7 @@ func (h *httpDelivery) Capture(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
-			renderURL := fmt.Sprintf("%s/api/device/%s/renderer-set-image", os.Getenv("RENDER_DOMAIN"), req.ID)
+			renderURL := fmt.Sprintf("%s/api/v1/device/%s/renderer-set-image", os.Getenv("RENDER_DOMAIN"), req.ID)
 			code, result, err := _req.PostToRenderer(renderURL, map[string]string{
 				"image_url": url,
 			})
