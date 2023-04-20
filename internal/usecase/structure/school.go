@@ -56,9 +56,9 @@ func (params AISchoolModelParams) SelfValidate() error {
 	}
 
 	switch strings.ToLower(params.ActivationFunction) {
-	case "relu", "sigmoid", "tanh", "leaky_relu":
+	case "relu", "sigmoid", "tanh", "leakyrelu":
 	default:
-		return errors.New("ActivationFunction must be relu, sigmoid, tanh, or leaky_relu")
+		return errors.New("ActivationFunction must be relu, sigmoid, tanh, or leakyrelu")
 	}
 
 	if params.ValidationPercent < 1 || params.ValidationPercent > 20 {
