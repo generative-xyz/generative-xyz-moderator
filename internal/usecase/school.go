@@ -329,6 +329,9 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 		jobLog += fmt.Sprintln(m)
 		if strings.Contains(strings.ToLower(m), "epoch") {
 			epochStr := strings.Split(m, "Epoch ")
+			if len(epochStr) < 2 {
+				continue
+			}
 			epochs := strings.Split(epochStr[1], "/")
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
