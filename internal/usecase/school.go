@@ -120,7 +120,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	}
 
 	log.Println("Unzipping dataset: ", datasetGCPath)
-	dataseBytes, err := gcs.ReadFileFromBucket(datasetGCPath)
+	dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
 	if err != nil {
 		return err
 	}
@@ -172,6 +172,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 	params := structure.AISchoolModelParams{}
 	err = json.Unmarshal([]byte(job.job.Params), &params)
@@ -183,6 +184,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
@@ -194,6 +196,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
@@ -205,6 +208,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	job.progCh = progCh
@@ -229,6 +233,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	jobLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
@@ -241,6 +246,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
 	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output", &cloudPath)
@@ -252,6 +258,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
@@ -271,6 +278,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 	job.job.OutputUUID = fileModel.UUID
 	job.job.OutputLink = fileModel.URL
@@ -320,7 +328,8 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
-				return jobLog, err
+				errStr += fmt.Sprintln(err.Error())
+				return jobLog, errors.New(errStr)
 			}
 			progCh <- JobProgress{
 				Epoch: int(currentEpochInt),
