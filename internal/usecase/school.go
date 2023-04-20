@@ -113,16 +113,18 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	if err != nil {
 		return err
 	}
+	log.Println("Writing params to file: ", basePath+jobID+"/params.json")
 	err = ioutil.WriteFile(basePath+jobID+"/params.json", content, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Println("Unzipping dataset: ", datasetGCPath)
 	dataseBytes, err := gcs.ReadFileFromBucket(datasetGCPath)
 	if err != nil {
 		return err
 	}
-
+	log.Println("Dataset size: ", len(dataseBytes))
 	br := bytes.NewReader(dataseBytes)
 
 	zr, err := zip.NewReader(br, int64(len(dataseBytes)))
@@ -135,6 +137,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	}
 
 	for _, f := range zr.File {
+		log.Println("Unzipping", f.Name)
 		err := unzipFile(f, destination)
 		if err != nil {
 			return err
@@ -159,6 +162,7 @@ func (job *AIJobInstance) Start() {
 		close(progCh)
 	}()
 	jobID := job.job.JobID
+	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
 	if err != nil {
 		job.job.Errors = err.Error()
