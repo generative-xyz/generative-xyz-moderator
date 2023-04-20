@@ -237,7 +237,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			}
 		}
 	} else {
-		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
+		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
 		if err1 == nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
 		} else {
