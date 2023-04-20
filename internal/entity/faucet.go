@@ -16,6 +16,7 @@ type Faucet struct {
 	Amount      string `bson:"amount" json:"amount"`
 	TwShareID   string `bson:"twitter_share_id" json:"twitterShareId"`
 	FaucetType  string `bson:"faucet_type" json:"faucetType"`
+	UserTx      string `bson:"user_tx" json:"userTx"`
 	SharedLink  string `bson:"shared_link" json:"shared_link"`
 
 	ErrLogs string `bson:"err_logs" json:"-"`

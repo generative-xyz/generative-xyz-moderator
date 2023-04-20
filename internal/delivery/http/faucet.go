@@ -85,14 +85,15 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 	faucetStatus := make(map[string]interface{})
 
 	for _, item := range faucetItems {
-		resItem := response.FaucetStatusRes{
-			Txhash: item.Tx,
-			Status: item.StatusStr,
-		}
+		// resItem := response.FaucetStatusRes{
+		// 	CreatedAt: item.CreatedAt.Unix(),
+		// 	Txhash:    item.Tx,
+		// 	Status:    item.StatusStr,
+		// }
 		if item.FaucetType == "" {
-			faucetStatus["normal"] = resItem
+			faucetStatus["normal"] = item.StatusStr
 		} else {
-			faucetStatus[item.FaucetType] = resItem
+			faucetStatus[item.FaucetType] = item.StatusStr
 		}
 	}
 
