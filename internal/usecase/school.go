@@ -236,8 +236,9 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 
-	jobLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
+	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
 	job.job.Logs = jobLog
+	job.job.ErrLogs = jobErrLog
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -290,22 +291,23 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 }
-func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, error) {
+func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, string, error) {
 	// 1. Get params
 	// 2. Get dataset
 	// 3. Run job
 	// 4. Update job
 	jobLog := ""
+	jobErrLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
 	// cmd := exec.Command("ls", "-a")
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return jobLog, err
+		return jobLog, jobErrLog, err
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return jobLog, err
+		return jobLog, jobErrLog, err
 	}
 	cmd.Start()
 	scanner := bufio.NewScanner(stderr)
@@ -314,7 +316,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	for scanner.Scan() {
 		m := scanner.Text()
 		fmt.Println("err", m)
-		errStr += fmt.Sprintln(m)
+		jobErrLog += fmt.Sprintln(m)
 	}
 
 	scanner2 := bufio.NewScanner(stdout)
@@ -329,7 +331,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
 				errStr += fmt.Sprintln(err.Error())
-				return jobLog, errors.New(errStr)
+				continue
 			}
 			progCh <- JobProgress{
 				Epoch: int(currentEpochInt),
@@ -339,8 +341,8 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 
 	cmd.Wait()
 	if len(errStr) > 0 {
-		return jobLog, errors.New(errStr)
+		return jobLog, jobErrLog, errors.New(errStr)
 	}
 	time.Sleep(100 * time.Millisecond)
-	return jobLog, nil
+	return jobLog, jobErrLog, nil
 }

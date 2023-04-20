@@ -22,6 +22,7 @@ type AISchoolJob struct {
 	Errors        string `bson:"errors" json:"errors"`
 	UsePFPDataset bool   `bson:"use_pfp_dataset" json:"use_pfp_dataset"`
 	Logs          string `bson:"logs" json:"logs"`
+	ErrLogs       string `bson:"err_logs" json:"err_logs"`
 }
 
 func (job AISchoolJob) TableName() string {
