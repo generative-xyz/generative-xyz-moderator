@@ -236,7 +236,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 
-	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
+	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output.json", job.progCh)
 	job.job.Logs = jobLog
 	job.job.ErrLogs = jobErrLog
 	if err != nil {
@@ -250,7 +250,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
-	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output", &cloudPath)
+	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output.json", &cloudPath)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
