@@ -2,11 +2,16 @@ name: Docker develop build
 
 on:
   push:
-    branches: [ "staging", "develop", "develop_api"]
+    branches:
+      - "staging"
+      - "develop"
+      - "develop_api"
+      - "develop_ai_school"
 
 env:
   DOCKER_REGISTRY: gcr.io
   DOCKER_IMAGE_NAME: generative-365207/generative-moderator
+  DOCKERFILE_NAME: Dockerfile
 
 jobs:
   build-and-push-to-gcr:
@@ -19,14 +24,15 @@ jobs:
       - name: Get the tag name
         id: get_tag_name
         run: |
-          if [[ $GITHUB_REF_NAME == 'staging' || $GITHUB_REF_NAME == 'develop' ]]; then
-            short_sha=$(echo $GITHUB_SHA | head -c 7)
-            echo "IMAGE_TAG=${GITHUB_REF_NAME}-${short_sha}" >> $GITHUB_ENV
-            echo "BUILD_ENV=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-          else
-            echo "IMAGE_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-            echo "BUILD_ENV=production" >> $GITHUB_ENV
-          fi
+          short_sha=$(echo $GITHUB_SHA | head -c 7)
+          echo "IMAGE_TAG=${GITHUB_REF_NAME}-${short_sha}" >> $GITHUB_ENV
+          echo "BUILD_ENV=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
+      - name: Use ai-school.Dockerfile
+        id: set_dockerfile_ai_school
+        if: endsWith(github.ref, '_ai_school')
+        run: |
+          echo "DOCKERFILE_NAME=ai-school.Dockerfile" >> $GITHUB_ENV
 
       - name: Setup google auth
         id: "auth"
@@ -45,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ${{env.DOCKERFILE_NAME}}
           push: true
           tags: |
             ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}:latest
