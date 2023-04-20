@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -53,12 +54,15 @@ func (r Repository) GetAISchoolJobByStatus(status []string) ([]entity.AISchoolJo
 }
 
 func (r Repository) GetFileByUUID(id string) (*entity.Files, error) {
-	file := &entity.Files{}
-	err := r.Find(context.Background(), file.TableName(), bson.M{"uuid": id}, file)
+	file := []entity.Files{}
+	err := r.Find(context.Background(), entity.Files{}.TableName(), bson.M{"uuid": id}, &file)
 	if err != nil {
 		return nil, err
 	}
-	return file, nil
+	if len(file) == 0 {
+		return nil, errors.New("file not found")
+	}
+	return &file[0], nil
 }
 
 func (r Repository) GetAISchoolUnClearedJob(before int64) ([]entity.AISchoolJob, error) {

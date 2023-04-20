@@ -38,6 +38,7 @@ type IGcstorage interface {
 	FileUploadToBucketInternal(filePath string, cloudPath *string) (*GcsUploadedObject, error)
 	FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error)
 	ReadFileFromBucket(fileName string) ([]byte, error)
+	ReadFileFromBucketAbs(fileName string) ([]byte, error)
 	ReadFile(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
 	ReadFolder(name string) ([]*storage.ObjectAttrs, error)
@@ -299,7 +300,25 @@ func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 		return nil, fmt.Errorf("ioutil.ReadAll: %v", err)
 	}
 	return data, nil
+}
 
+func (g gcstorage) ReadFileFromBucketAbs(fileName string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
+	defer cancel()
+
+	// create reader
+	r, err := g.bucket.Object(fmt.Sprintf("%s", fileName)).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.Close()
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll: %v", err)
+	}
+	return data, nil
 }
 
 func (g gcstorage) ReadFile(fileName string) ([]byte, error) {

@@ -157,7 +157,7 @@ func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request
 		result = append(result, response.AISchoolJobProgress{
 			JobID:       job.JobID,
 			Status:      job.Status,
-			Progress:    job.Progress,
+			Progress:    job.Progress / params.Epoch * 100,
 			Output:      job.OutputLink,
 			CompletedAt: job.CompletedAt,
 			CreatedAt:   job.CreatedAt.Unix(),
