@@ -29,7 +29,7 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 	referreeID, ok := iUserID.(string)
 
 	if !ok {
-		err := errors.New( "Token is incorect")
+		err := errors.New("Token is incorect")
 		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -37,7 +37,6 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	referrerID := vars["referrerID"]
-	
 
 	err := h.Usecase.CreateReferral(referrerID, referreeID)
 
@@ -47,7 +46,6 @@ func (h *httpDelivery) createReferral(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 }
 
@@ -116,7 +114,6 @@ func (h *httpDelivery) getReferrals(w http.ResponseWriter, r *http.Request) {
 		pResp = append(pResp, *p)
 	}
 
-	
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, h.PaginationResp(uReferrals, pResp), "")
 }
 
@@ -136,12 +133,12 @@ func (h *httpDelivery) referralToResp(input *structure.ReferalResp) (*response.R
 	resp.Referree = *referree
 	resp.Referrer = *referrer
 	resp.ReferreeVolumn = response.ReferralVolumnResp{
-		Amount: input.ReferreeVolume.Amount,
+		Amount:     input.ReferreeVolume.Amount,
 		AmountType: input.ReferreeVolume.AmountType,
-		ProjectID: input.ReferreeVolume.ProjectID,
-		Percent: input.ReferreeVolume.Percent,
-		Earn: input.ReferreeVolume.Earn,
-		GenEarn:  input.ReferreeVolume.GenEarn,
+		ProjectID:  input.ReferreeVolume.ProjectID,
+		Percent:    input.ReferreeVolume.Percent,
+		Earn:       input.ReferreeVolume.Earn,
+		GenEarn:    input.ReferreeVolume.GenEarn,
 	}
 	return &resp, nil
 }

@@ -360,6 +360,12 @@ func (h *httpDelivery) RegisterV1Routes() {
 	photo := api.PathPrefix("/photo").Subrouter()
 	photo.Use(h.MiddleWare.AuthorizationFunc)
 	photo.HandleFunc("/capture", h.Capture).Methods("POST")
+	aiSchool := api.PathPrefix("/ai-school").Subrouter()
+	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
+	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")
+	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
+	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
