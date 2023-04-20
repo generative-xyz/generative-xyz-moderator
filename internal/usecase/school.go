@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -112,16 +113,18 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	if err != nil {
 		return err
 	}
+	log.Println("Writing params to file: ", basePath+jobID+"/params.json")
 	err = ioutil.WriteFile(basePath+jobID+"/params.json", content, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dataseBytes, err := gcs.ReadFileFromBucket(datasetGCPath)
+	log.Println("Unzipping dataset: ", datasetGCPath)
+	dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
 	if err != nil {
 		return err
 	}
-
+	log.Println("Dataset size: ", len(dataseBytes))
 	br := bytes.NewReader(dataseBytes)
 
 	zr, err := zip.NewReader(br, int64(len(dataseBytes)))
@@ -134,6 +137,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	}
 
 	for _, f := range zr.File {
+		log.Println("Unzipping", f.Name)
 		err := unzipFile(f, destination)
 		if err != nil {
 			return err
@@ -152,10 +156,13 @@ func clearAISchoolWorkFolder(jobID string) error {
 }
 
 func (job *AIJobInstance) Start() {
+	progCh := make(chan JobProgress)
 	defer func() {
 		job.IsCompleted = true
+		close(progCh)
 	}()
 	jobID := job.job.JobID
+	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
 	if err != nil {
 		job.job.Errors = err.Error()
@@ -165,6 +172,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 	params := structure.AISchoolModelParams{}
 	err = json.Unmarshal([]byte(job.job.Params), &params)
@@ -176,6 +184,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
@@ -187,6 +196,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
@@ -198,9 +208,9 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
-	progCh := make(chan JobProgress)
 	job.progCh = progCh
 	go func() {
 		for prog := range job.progCh {
@@ -214,7 +224,7 @@ func (job *AIJobInstance) Start() {
 	}()
 	scriptPath := os.Getenv("AI_SCHOOL_SCRIPT")
 	jobPath := basePath + jobID
-	err = executeAISchoolJob(scriptPath, jobPath+"/params.json", jobPath+"/dataset", jobPath+"/output", job.progCh)
+	jobPathAbs, err := filepath.Abs(jobPath)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -223,9 +233,24 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
+	}
+
+	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
+	job.job.Logs = jobLog
+	job.job.ErrLogs = jobErrLog
+	if err != nil {
+		job.job.Errors = err.Error()
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+		return
 	}
 	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
-	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPath+"/output", &cloudPath)
+	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output", &cloudPath)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -234,6 +259,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
@@ -253,6 +279,7 @@ func (job *AIJobInstance) Start() {
 			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
+		return
 	}
 	job.job.OutputUUID = fileModel.UUID
 	job.job.OutputLink = fileModel.URL
@@ -264,41 +291,47 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 }
-func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) error {
+func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, string, error) {
 	// 1. Get params
 	// 2. Get dataset
 	// 3. Run job
 	// 4. Update job
+	jobLog := ""
+	jobErrLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
 	// cmd := exec.Command("ls", "-a")
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return jobLog, jobErrLog, err
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return jobLog, jobErrLog, err
 	}
 	cmd.Start()
 	scanner := bufio.NewScanner(stderr)
 	scanner.Split(bufio.ScanLines)
+	errStr := ""
 	for scanner.Scan() {
 		m := scanner.Text()
 		fmt.Println("err", m)
+		jobErrLog += fmt.Sprintln(m)
 	}
 
 	scanner2 := bufio.NewScanner(stdout)
 	scanner2.Split(bufio.ScanLines)
 	for scanner2.Scan() {
 		m := scanner2.Text()
+		jobLog += fmt.Sprintln(m)
 		if strings.Contains(strings.ToLower(m), "epoch") {
 			epochStr := strings.Split(m, "Epoch ")
 			epochs := strings.Split(epochStr[1], "/")
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
-				return err
+				errStr += fmt.Sprintln(err.Error())
+				continue
 			}
 			progCh <- JobProgress{
 				Epoch: int(currentEpochInt),
@@ -307,7 +340,9 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	}
 
 	cmd.Wait()
+	if len(errStr) > 0 {
+		return jobLog, jobErrLog, errors.New(errStr)
+	}
 	time.Sleep(100 * time.Millisecond)
-	close(progCh)
-	return nil
+	return jobLog, jobErrLog, nil
 }
