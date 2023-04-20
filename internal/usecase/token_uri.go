@@ -184,8 +184,6 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 }
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
-	token, err2 := u.getTokenInfo(req)
-	return token, err2
 
 	logger.AtLog.Logger.Info("GetToken", zap.Any("req", zap.Any("req)", req)))
 	tokenID := strings.ToLower(req.TokenID)
@@ -427,7 +425,8 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 				ext := helpers.FileType(imageArr[0])
 				now := time.Now().UTC().UnixMicro()
 
-				fName := fmt.Sprintf("btc-projects/%d/%d-%s%s", projectID, now, tokenID, ext)
+				//fName := fmt.Sprintf("btc-projects/%d/%d-%s%s", projectID, now, tokenID, ext)
+				fName := fmt.Sprintf("thumb/%s-%d%s", tokenID, now, ext)
 				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
 				if err == nil {
 					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
