@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
@@ -34,8 +35,10 @@ const (
 )
 
 type IGcstorage interface {
+	FileUploadToBucketInternal(filePath string, cloudPath *string) (*GcsUploadedObject, error)
 	FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error)
 	ReadFileFromBucket(fileName string) ([]byte, error)
+	ReadFileFromBucketAbs(fileName string) ([]byte, error)
 	ReadFile(fileName string) ([]byte, error)
 	UploadBaseToBucket(base64Srting string, name string) (*GcsUploadedObject, error)
 	ReadFolder(name string) ([]*storage.ObjectAttrs, error)
@@ -227,6 +230,59 @@ func (g gcstorage) FileUploadToBucket(file GcsFile) (*GcsUploadedObject, error) 
 	return &result, nil
 }
 
+func (g gcstorage) FileUploadToBucketInternal(filePath string, cloudPath *string) (*GcsUploadedObject, error) {
+	ctx, cancel := context.WithTimeout(g.ctx, time.Second*300)
+	defer cancel()
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	now := time.Now().UTC().UnixNano()
+	fname := NormalizeFileName(file.Name())
+	fname = fmt.Sprintf("%d-%s", now, fname)
+	path := fmt.Sprintf("upload/%s", fname)
+	if cloudPath != nil {
+		if *cloudPath != "" {
+			path = fmt.Sprintf("%s/%s", *cloudPath, fname)
+		}
+	}
+
+	contentType, err := mimetype.DetectFile(filePath)
+
+	// create writer
+	sw := g.bucket.Object(path).NewWriter(ctx)
+	if contentType != nil {
+		sw.ContentType = contentType.String()
+	}
+
+	if _, err := io.Copy(sw, file); err != nil {
+		return nil, err
+	}
+
+	if err := sw.Close(); err != nil {
+		return nil, err
+	}
+
+	attrs := sw.Attrs()
+	u, err := url.Parse(g.bucketName + "/" + attrs.Name)
+	if err != nil {
+		return nil, err
+	}
+	fpath := u.EscapedPath()
+
+	result := GcsUploadedObject{
+		Name:     attrs.Name,
+		Minetype: attrs.ContentType,
+		Size:     attrs.Size,
+		Path:     fpath,
+		FullPath: attrs.MediaLink,
+	}
+	return &result, nil
+}
+
 func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
 	defer cancel()
@@ -244,7 +300,25 @@ func (g gcstorage) ReadFileFromBucket(fileName string) ([]byte, error) {
 		return nil, fmt.Errorf("ioutil.ReadAll: %v", err)
 	}
 	return data, nil
+}
 
+func (g gcstorage) ReadFileFromBucketAbs(fileName string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(g.ctx, time.Second*60)
+	defer cancel()
+
+	// create reader
+	r, err := g.bucket.Object(fmt.Sprintf("%s", fileName)).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.Close()
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll: %v", err)
+	}
+	return data, nil
 }
 
 func (g gcstorage) ReadFile(fileName string) ([]byte, error) {

@@ -172,6 +172,7 @@ const (
 	COLLECTION_TOKEN_TX                  string = "token_txs"
 	COLLECTION_DEX_BTC_TRACKING_INTERNAL string = "dex_btc_tracking_internal"
 	COLLECTION_GLOBAL_VARIABLE           string = "global_variables"
+	AI_SCHOOL_JOB                        string = "ai_school_jobs"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
