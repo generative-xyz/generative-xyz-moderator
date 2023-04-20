@@ -265,6 +265,7 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
+	job.job.Progress = params.Epoch
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
@@ -352,6 +353,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	if err != nil {
 		return jobLog, jobErrLog, err
 	}
+
 	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
 }
