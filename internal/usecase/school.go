@@ -152,8 +152,10 @@ func clearAISchoolWorkFolder(jobID string) error {
 }
 
 func (job *AIJobInstance) Start() {
+	progCh := make(chan JobProgress)
 	defer func() {
 		job.IsCompleted = true
+		close(progCh)
 	}()
 	jobID := job.job.JobID
 	err := clearAISchoolWorkFolder(jobID)
@@ -200,7 +202,6 @@ func (job *AIJobInstance) Start() {
 		}
 	}
 
-	progCh := make(chan JobProgress)
 	job.progCh = progCh
 	go func() {
 		for prog := range job.progCh {
