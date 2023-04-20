@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/encrypt"
+	"rederinghub.io/utils/eth/contract/tcartifact"
 	"rederinghub.io/utils/eth/contract/tcbns"
 	"rederinghub.io/utils/logger"
 )
@@ -121,6 +122,8 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (
 		Amount:      amountFaucet.String(),
 		TwShareID:   sharedID,
 		SharedLink:  url,
+		UserTx:      txhash,
+		FaucetType:  faucetType,
 	}
 	err = u.Repo.InsertFaucet(faucetItem)
 	if err != nil {
@@ -199,10 +202,9 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 
 	fmt.Println("totalFaucet: ", totalFaucet)
 	fmt.Println("filteredTotalFaucet: ", filteredTotalFaucet)
-	limitFaucet := 3
+	limitFaucet := 1
 	switch faucetType {
 	case "bns", "artifact":
-		limitFaucet = 1
 		//check valid mint tx
 		if txhash != "" {
 			// check tx:
@@ -244,19 +246,43 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 				}
 				haveEvent := false
 				for _, v := range txReceipt.Logs {
-					_, err := bnsContract.ParseNameRegistered(*v)
+					evt, err := bnsContract.ParseNameRegistered(*v)
 					if err != nil {
 						continue
 					}
-					haveEvent = true
+					if len(evt.Name) > 0 {
+						haveEvent = true
+						break
+					}
 				}
 				if !haveEvent {
 					return errors.New("invalid tx")
 				}
 			}
 			if strings.EqualFold(tx.To().String(), ArtifaceAddress) {
+				artifactAddress := common.HexToAddress(ArtifaceAddress)
 
+				artifactContract, err := tcartifact.NewNFT721(artifactAddress, u.TcClient.GetClient())
+				if err != nil {
+					return err
+				}
+				haveEvent := false
+				for _, v := range txReceipt.Logs {
+					evt, err := artifactContract.ParseTransfer(*v)
+					if err != nil {
+						continue
+					}
+					if strings.EqualFold(evt.To.String(), address) {
+						haveEvent = true
+						break
+					}
+				}
+				if !haveEvent {
+					return errors.New("invalid tx")
+				}
 			}
+		} else {
+			return errors.New("invalid tx")
 		}
 	}
 
