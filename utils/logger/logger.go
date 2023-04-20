@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"os"
-
 	"go.uber.org/zap"
 )
 
@@ -22,13 +20,7 @@ type logger struct {
 
 func NewLogger(enableDebug bool) *logger {
 	l := &logger{}
-	var log *autoLogger
-	if os.Getenv("LOG_FORMAT") == "text" {
-		log = InitLoggerDefaultDev()
-	} else {
-		// default format "json"
-		log = InitLoggerDefault(enableDebug)
-	}
+	log := InitLoggerDefault(enableDebug)
 	l.Module = log
 	return l
 }
