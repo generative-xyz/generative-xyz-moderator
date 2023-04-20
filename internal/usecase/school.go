@@ -189,20 +189,24 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-
-	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
-	if err != nil {
-		job.job.Errors = err.Error()
-		job.job.Status = "error"
-		err = job.u.Repo.UpdateAISchoolJob(job.job)
+	datasetPath := "generative-static-prod/ai-school-template/pfp-dataset.zip"
+	//
+	if !job.job.UsePFPDataset {
+		dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
 		if err != nil {
-			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			job.job.Errors = err.Error()
+			job.job.Status = "error"
+			err = job.u.Repo.UpdateAISchoolJob(job.job)
+			if err != nil {
+				// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+				return
+			}
 			return
 		}
-		return
+		datasetPath = dataset.FileName
 	}
 
-	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
+	err = prepAISchoolWorkFolder(jobID, params, datasetPath, job.u.GCS)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
