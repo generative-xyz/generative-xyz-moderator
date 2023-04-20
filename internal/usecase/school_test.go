@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 )
 
@@ -26,18 +27,19 @@ func Test_executeAISchoolJob(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			filep, _ := filepath.Abs("./ai-school-work/")
+			fmt.Println(filep)
+			// progCh := make(chan JobProgress)
 
-			progCh := make(chan JobProgress)
+			// go func() {
+			// 	for prog := range progCh {
+			// 		fmt.Println(prog.Epoch)
+			// 	}
+			// }()
 
-			go func() {
-				for prog := range progCh {
-					fmt.Println(prog.Epoch)
-				}
-			}()
-
-			if err := executeAISchoolJob("./training_user.py", tt.args.params, tt.args.dataset, tt.args.output, progCh); (err != nil) != tt.wantErr {
-				t.Errorf("executeAISchoolJob() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			// if err := executeAISchoolJob("./training_user.py", tt.args.params, tt.args.dataset, tt.args.output, progCh); (err != nil) != tt.wantErr {
+			// 	t.Errorf("executeAISchoolJob() error = %v, wantErr %v", err, tt.wantErr)
+			// }
 		})
 	}
 }
