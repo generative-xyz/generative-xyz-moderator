@@ -216,7 +216,8 @@ func (job *AIJobInstance) Start() {
 	}()
 	scriptPath := os.Getenv("AI_SCHOOL_SCRIPT")
 	jobPath := basePath + jobID
-	err = executeAISchoolJob(scriptPath, jobPath+"/params.json", jobPath+"/dataset", jobPath+"/output", job.progCh)
+	jobLog, err := executeAISchoolJob(scriptPath, jobPath+"/params.json", jobPath+"/dataset", jobPath+"/output", job.progCh)
+	job.job.Logs = jobLog
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -266,21 +267,22 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 }
-func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) error {
+func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, error) {
 	// 1. Get params
 	// 2. Get dataset
 	// 3. Run job
 	// 4. Update job
+	jobLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
 	// cmd := exec.Command("ls", "-a")
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return jobLog, err
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return jobLog, err
 	}
 	cmd.Start()
 	scanner := bufio.NewScanner(stderr)
@@ -296,13 +298,14 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	scanner2.Split(bufio.ScanLines)
 	for scanner2.Scan() {
 		m := scanner2.Text()
+		jobLog += fmt.Sprintln(m)
 		if strings.Contains(strings.ToLower(m), "epoch") {
 			epochStr := strings.Split(m, "Epoch ")
 			epochs := strings.Split(epochStr[1], "/")
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
-				return err
+				return jobLog, err
 			}
 			progCh <- JobProgress{
 				Epoch: int(currentEpochInt),
@@ -312,9 +315,8 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 
 	cmd.Wait()
 	if len(errStr) > 0 {
-		return errors.New(errStr)
+		return jobLog, errors.New(errStr)
 	}
 	time.Sleep(100 * time.Millisecond)
-	close(progCh)
-	return nil
+	return jobLog, nil
 }
