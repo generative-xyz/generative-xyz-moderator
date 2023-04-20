@@ -2,17 +2,14 @@ package usecase
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -307,51 +304,53 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	jobErrLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
-	// cmd := exec.Command("ls", "-a")
-	stderr, err := cmd.StderrPipe()
+	// stderr, err := cmd.StderrPipe()
+	// if err != nil {
+	// 	return jobLog, jobErrLog, err
+	// }
+	// stdout, err := cmd.StdoutPipe()
+	// if err != nil {
+	// 	return jobLog, jobErrLog, err
+	// }
+	// cmd.Start()
+	// scanner := bufio.NewScanner(stderr)
+	// scanner.Split(bufio.ScanLines)
+	// errStr := ""
+	// for scanner.Scan() {
+	// 	m := scanner.Text()
+	// 	fmt.Println("err", m)
+	// 	jobErrLog += fmt.Sprintln(m)
+	// }
+
+	// scanner2 := bufio.NewScanner(stdout)
+	// scanner2.Split(bufio.ScanLines)
+	// for scanner2.Scan() {
+	// 	m := scanner2.Text()
+	// 	jobLog += fmt.Sprintln(m)
+	// 	if strings.Contains(strings.ToLower(m), "epoch") {
+	// 		epochStr := strings.Split(m, "Epoch ")
+	// 		if len(epochStr) < 2 {
+	// 			continue
+	// 		}
+	// 		epochs := strings.Split(epochStr[1], "/")
+	// 		currentEpoch := epochs[0]
+	// 		currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
+	// 		if err != nil {
+	// 			errStr += fmt.Sprintln(err.Error())
+	// 			continue
+	// 		}
+	// 		progCh <- JobProgress{
+	// 			Epoch: int(currentEpochInt),
+	// 		}
+	// 	}
+	// }
+	// cmd.Wait()
+	// if len(errStr) > 0 {
+	// 	return jobLog, jobErrLog, errors.New(errStr)
+	// }
+	err := cmd.Run()
 	if err != nil {
 		return jobLog, jobErrLog, err
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return jobLog, jobErrLog, err
-	}
-	cmd.Start()
-	scanner := bufio.NewScanner(stderr)
-	scanner.Split(bufio.ScanLines)
-	errStr := ""
-	for scanner.Scan() {
-		m := scanner.Text()
-		fmt.Println("err", m)
-		jobErrLog += fmt.Sprintln(m)
-	}
-
-	scanner2 := bufio.NewScanner(stdout)
-	scanner2.Split(bufio.ScanLines)
-	for scanner2.Scan() {
-		m := scanner2.Text()
-		jobLog += fmt.Sprintln(m)
-		if strings.Contains(strings.ToLower(m), "epoch") {
-			epochStr := strings.Split(m, "Epoch ")
-			if len(epochStr) < 2 {
-				continue
-			}
-			epochs := strings.Split(epochStr[1], "/")
-			currentEpoch := epochs[0]
-			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
-			if err != nil {
-				errStr += fmt.Sprintln(err.Error())
-				continue
-			}
-			progCh <- JobProgress{
-				Epoch: int(currentEpochInt),
-			}
-		}
-	}
-
-	cmd.Wait()
-	if len(errStr) > 0 {
-		return jobLog, jobErrLog, errors.New(errStr)
 	}
 	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
