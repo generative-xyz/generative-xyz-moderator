@@ -189,7 +189,7 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-	datasetPath := "generative-static-prod/ai-school-template/pfp-dataset.zip"
+	datasetPath := "ai-school/e984b788-ad5a-4e9d-9e54-a2911a14760e/1681982560672572223-1681982560-data.zip"
 	//
 	if !job.job.UsePFPDataset {
 		dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
