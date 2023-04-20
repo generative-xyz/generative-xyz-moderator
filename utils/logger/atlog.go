@@ -138,12 +138,8 @@ func InitLoggerDefault(enableDebug bool) *autoLogger {
 		logLevel = "2"
 
 	}
-	zapLogLevel, err := zap.ParseAtomicLevel(logLevel)
-	if err == nil {
-		cfg.Level = zapLogLevel
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
-	}
+	//zapLogLevel, err := zap.ParseAtomicLevel(logLevel)
+	cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 
 	// build logger
 	logger, _ := cfg.Build()
