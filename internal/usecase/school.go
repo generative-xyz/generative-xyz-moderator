@@ -216,7 +216,18 @@ func (job *AIJobInstance) Start() {
 	}()
 	scriptPath := os.Getenv("AI_SCHOOL_SCRIPT")
 	jobPath := basePath + jobID
-	jobLog, err := executeAISchoolJob(scriptPath, jobPath+"/params.json", jobPath+"/dataset", jobPath+"/output", job.progCh)
+	jobPathAbs, err := filepath.Abs(jobPath)
+	if err != nil {
+		job.job.Errors = err.Error()
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+	}
+
+	jobLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
 	job.job.Logs = jobLog
 	if err != nil {
 		job.job.Errors = err.Error()
@@ -228,7 +239,7 @@ func (job *AIJobInstance) Start() {
 		}
 	}
 	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
-	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPath+"/output", &cloudPath)
+	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output", &cloudPath)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
