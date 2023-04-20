@@ -273,32 +273,34 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 		}
 	}()
 
-	go func() {
-		//upload animation URL
-		if tokenUri.AnimationHtml == nil {
-			p, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
-			if err != nil {
-				logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
-				return
-			}
+	//These code lines are used for create tokenUri.AnimationHtml, that was used by Frontend to improve security.
+	// We don't need them at this time
+	// go func() {
+	// 	//upload animation URL
+	// 	if tokenUri.AnimationHtml == nil {
+	// 		p, err := u.Repo.FindProjectByTokenID(tokenUri.ProjectID)
+	// 		if err != nil {
+	// 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
+	// 			return
+	// 		}
 
-			htmlUrl, err := u.parseAnimationURL(*p)
-			if err != nil {
-				logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
-				return
-			}
+	// 		htmlUrl, err := u.parseAnimationURL(*p)
+	// 		if err != nil {
+	// 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
+	// 			return
+	// 		}
 
-			animationHtml := fmt.Sprintf("%s?seed=%s", *htmlUrl, tokenUri.TokenID)
-			tokenUri.AnimationHtml = &animationHtml
+	// 		animationHtml := fmt.Sprintf("%s?seed=%s", *htmlUrl, tokenUri.TokenID)
+	// 		tokenUri.AnimationHtml = &animationHtml
 
-			_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
-			if err != nil {
-				logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
-				return
-			}
-		}
+	// 		_, err = u.Repo.UpdateOrInsertTokenUri(tokenUri.ContractAddress, tokenUri.TokenID, tokenUri)
+	// 		if err != nil {
+	// 			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.Error(err))
+	// 			return
+	// 		}
+	// 	}
 
-	}()
+	// }()
 
 	///logger.AtLog.Logger.Info("tokenUri", zap.Any("tokenUri", tokenUri))
 	return tokenUri, nil
