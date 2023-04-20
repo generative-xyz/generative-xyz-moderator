@@ -228,6 +228,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	faucet := api.PathPrefix("/faucet").Subrouter()
 	faucet.HandleFunc("/request", h.requestFaucet).Methods("POST")
 	faucet.HandleFunc("/list", h.listFaucet).Methods("GET")
+	faucet.HandleFunc("/status", h.getCurrentFaucetStep).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")

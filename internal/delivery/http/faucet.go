@@ -47,8 +47,7 @@ func (h *httpDelivery) requestFaucet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	result, err := h.Usecase.ApiCreateFaucet(reqBody.Address, reqBody.Url)
+	result, err := h.Usecase.ApiCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
@@ -70,4 +69,32 @@ func (h *httpDelivery) listFaucet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Request) {
+
+	address := r.URL.Query().Get("address")
+
+	faucetItems, err := h.Usecase.Repo.FindFaucetByTwitterNameOrAddress("", address)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getCurrentFaucetStep", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	faucetStatus := make(map[string]interface{})
+
+	for _, item := range faucetItems {
+		resItem := response.FaucetStatusRes{
+			Txhash: item.Tx,
+			Status: item.StatusStr,
+		}
+		if item.FaucetType == "" {
+			faucetStatus["normal"] = resItem
+		} else {
+			faucetStatus[item.FaucetType] = resItem
+		}
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, faucetStatus, "")
 }
