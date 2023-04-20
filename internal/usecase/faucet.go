@@ -81,7 +81,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		return "", err
 	}
 
-	amountFaucet := big.NewInt(0.05 * 1e18) // todo: move to config
+	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
@@ -308,7 +308,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 	var uuids []string
 
-	amountFaucet := big.NewInt(0.05 * 1e18) // todo: move to config
+	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
 
 	feeRate := 6
 
