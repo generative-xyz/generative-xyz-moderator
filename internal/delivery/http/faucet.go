@@ -90,6 +90,12 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 		// 	Txhash:    item.Tx,
 		// 	Status:    item.StatusStr,
 		// }
+		item.StatusStr = "Pending"
+		if item.Status == 2 {
+			item.StatusStr = "Processing"
+		} else if item.Status == 3 {
+			item.StatusStr = "Success"
+		}
 		if item.FaucetType == "" {
 			faucetStatus["normal"] = item.StatusStr
 		} else {
