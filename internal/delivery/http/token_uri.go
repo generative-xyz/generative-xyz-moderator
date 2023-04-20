@@ -197,8 +197,6 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fmt.Println("resp, err====>", resp, err)
-
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):
 		// nft, _ := h.Usecase.GetListingDetail(tokenID)
