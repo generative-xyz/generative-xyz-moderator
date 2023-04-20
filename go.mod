@@ -18,6 +18,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/ethereum/go-ethereum v1.11.5
+	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/go-git/go-git/v5 v5.6.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible

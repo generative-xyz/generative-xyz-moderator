@@ -1,0 +1,19 @@
+{
+    "name": "test",
+    "dimension_width": 10,
+    "dimension_height": 12,
+    "hidden_layer": [
+        1,
+        10
+    ],
+    "activation_function": "relu",
+    "epoch": 10,
+    "batch_size": 32,
+    "validation_set": 2,
+    "augmentation": true,
+    "augment_random_flip": "horizontal",
+    "augment_random_rotate": 0.2,
+    "augment_random_zoom": 0.2,
+    "augment_random_contrast": 0.2,
+    "augment_random_brightness": 0.2
+}
