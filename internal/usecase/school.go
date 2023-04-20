@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -284,9 +285,11 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	cmd.Start()
 	scanner := bufio.NewScanner(stderr)
 	scanner.Split(bufio.ScanLines)
+	errStr := ""
 	for scanner.Scan() {
 		m := scanner.Text()
 		fmt.Println("err", m)
+		errStr += fmt.Sprintln(m)
 	}
 
 	scanner2 := bufio.NewScanner(stdout)
@@ -308,6 +311,9 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	}
 
 	cmd.Wait()
+	if len(errStr) > 0 {
+		return errors.New(errStr)
+	}
 	time.Sleep(100 * time.Millisecond)
 	close(progCh)
 	return nil
