@@ -50,7 +50,9 @@ func (u Usecase) JobAIS_WatchPending() error {
 			delete(currentAIJobs, jobID)
 		}
 	}
-
+	if len(currentAIJobs) >= 10 {
+		return nil
+	}
 	for _, job := range jobList {
 		if job.Status == "waiting" {
 			jobParams := &structure.AISchoolModelParams{}
@@ -157,11 +159,12 @@ func clearAISchoolWorkFolder(jobID string) error {
 
 func (job *AIJobInstance) Start() {
 	progCh := make(chan JobProgress)
+	jobID := job.job.JobID
 	defer func() {
 		job.IsCompleted = true
 		close(progCh)
+		clearAISchoolWorkFolder(jobID)
 	}()
-	jobID := job.job.JobID
 	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
 	if err != nil {
