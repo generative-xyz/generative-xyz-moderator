@@ -82,7 +82,7 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	faucetStatus := make(map[string]interface{})
+	faucetStatus := make(map[string]string)
 
 	for _, item := range faucetItems {
 		// resItem := response.FaucetStatusRes{
