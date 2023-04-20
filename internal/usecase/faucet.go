@@ -204,7 +204,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 	fmt.Println("filteredTotalFaucet: ", filteredTotalFaucet)
 	limitFaucet := 1
 	switch faucetType {
-	case "bns", "artifact":
+	case "dapps":
 		//check valid mint tx
 		if txhash != "" {
 			// check tx:
