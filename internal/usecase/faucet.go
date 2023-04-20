@@ -13,9 +13,13 @@ import (
 
 	"github.com/chromedp/chromedp"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/encrypt"
+	"rederinghub.io/utils/eth/contract/tcartifact"
+	"rederinghub.io/utils/eth/contract/tcbns"
 	"rederinghub.io/utils/logger"
 )
 
@@ -40,7 +44,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 
 }
 
-func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
+func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
@@ -53,7 +57,6 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 	sharedID := ""
 
 	if len(matchTwName) >= 3 {
-
 		twName = matchTwName[1]
 		sharedID = matchTwName[2]
 		fmt.Println("twName:", twName)    // Output: 2712_at1999
@@ -65,7 +68,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		return "", err
 	}
 	// check valid vs twName first:
-	err := u.CheckValidFaucet(addressInput, twName)
+	err := u.CheckValidFaucet(addressInput, twName, txhash, faucetType)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
@@ -104,7 +107,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		return "", err
 	}
 
-	err = u.CheckValidFaucet(address, twName)
+	err = u.CheckValidFaucet(address, twName, txhash, faucetType)
 	if err != nil {
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.(address+twName)", address+","+twName, err.Error())
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
@@ -119,6 +122,8 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 		Amount:      amountFaucet.String(),
 		TwShareID:   sharedID,
 		SharedLink:  url,
+		UserTx:      txhash,
+		FaucetType:  faucetType,
 	}
 	err = u.Repo.InsertFaucet(faucetItem)
 	if err != nil {
@@ -174,7 +179,12 @@ func (u Usecase) ApiCreateFaucet(addressInput, url string) (string, error) {
 	*/
 }
 
-func (u Usecase) CheckValidFaucet(address, twName string) error {
+const (
+	BNSAddress      = "0x8b46F89BBA2B1c1f9eE196F43939476E79579798"
+	ArtifaceAddress = "0x16efdc6d3f977e39dac0eb0e123feffed4320bc0"
+)
+
+func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) error {
 	// find address to faucet:
 	faucetItems, err := u.Repo.FindFaucetByTwitterNameOrAddress(twName, address)
 	if err != nil {
@@ -183,18 +193,107 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 	}
 
 	totalFaucet := len(faucetItems)
-
-	limitFaucet := 3
+	filteredTotalFaucet := 0
+	for _, item := range faucetItems {
+		if item.FaucetType == faucetType {
+			filteredTotalFaucet++
+		}
+	}
 
 	fmt.Println("totalFaucet: ", totalFaucet)
+	fmt.Println("filteredTotalFaucet: ", filteredTotalFaucet)
+	limitFaucet := 1
+	switch faucetType {
+	case "bns", "artifact":
+		//check valid mint tx
+		if txhash != "" {
+			// check tx:
+			tx, isPending, err := u.TcClient.GetClient().TransactionByHash(context.Background(), common.HexToHash(txhash))
+			if err != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
+				return err
+			}
+			if isPending {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.isPending"), zap.Error(err))
+				return errors.New("tx is pending")
+			}
+			txReceipt, err := u.TcClient.GetClient().TransactionReceipt(context.Background(), common.HexToHash(txhash))
+			if err != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
+				return err
+			}
+			if txReceipt.Status == 0 {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.Status"), zap.Error(err))
+				return errors.New("tx status is 0")
+			}
 
-	if totalFaucet >= limitFaucet {
+			from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
+			if err != nil {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
+				return err
+			}
+
+			if !strings.EqualFold(from.String(), address) {
+				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
+				return errors.New("invalid sender")
+			}
+
+			if strings.EqualFold(tx.To().String(), BNSAddress) {
+				bnsAddress := common.HexToAddress(BNSAddress)
+				bnsContract, err := tcbns.NewBNS(bnsAddress, u.TcClient.GetClient())
+				if err != nil {
+					return err
+				}
+				haveEvent := false
+				for _, v := range txReceipt.Logs {
+					evt, err := bnsContract.ParseNameRegistered(*v)
+					if err != nil {
+						continue
+					}
+					if len(evt.Name) > 0 {
+						haveEvent = true
+						break
+					}
+				}
+				if !haveEvent {
+					return errors.New("invalid tx")
+				}
+			}
+			if strings.EqualFold(tx.To().String(), ArtifaceAddress) {
+				artifactAddress := common.HexToAddress(ArtifaceAddress)
+
+				artifactContract, err := tcartifact.NewNFT721(artifactAddress, u.TcClient.GetClient())
+				if err != nil {
+					return err
+				}
+				haveEvent := false
+				for _, v := range txReceipt.Logs {
+					evt, err := artifactContract.ParseTransfer(*v)
+					if err != nil {
+						continue
+					}
+					if strings.EqualFold(evt.To.String(), address) {
+						haveEvent = true
+						break
+					}
+				}
+				if !haveEvent {
+					return errors.New("invalid tx")
+				}
+			}
+		} else {
+			return errors.New("invalid tx")
+		}
+	}
+
+	if filteredTotalFaucet >= limitFaucet {
 		// check times:
 		err = errors.New("You have reached the maximum faucet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 		return err
 
 	}
+
 	if totalFaucet > 0 {
 		// last item:
 		lastItem := faucetItems[0]
@@ -218,7 +317,7 @@ func (u Usecase) CheckValidFaucet(address, twName string) error {
 	return nil
 }
 
-//////////
+// ////////
 func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
@@ -247,7 +346,6 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	if !strings.Contains(res, "@generative_xyz") {
 		return "", errors.New("Tweet not found. Please double-check and try again")
 	}
-
 	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
 
 	addressHex := addressRegex.FindString(res)
@@ -258,8 +356,46 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	fmt.Println("result: ", addressHex)
 
 	return addressHex, nil
-
 }
+
+func getFaucetInfo(url, chromePath string, eCH bool) (string, string, error) {
+
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath(chromePath),  // uncomment on the server.
+		chromedp.Flag("headless", eCH), // false => open chrome. true on the server
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("no-first-run", true),
+	)
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+
+	var res string
+	cctx, cancel := chromedp.NewContext(allocCtx)
+	defer cancel()
+	err := chromedp.Run(cctx,
+		chromedp.EmulateViewport(960, 960),
+		chromedp.Navigate(url),
+		chromedp.Text(ByTestId("tweetText"), &res, chromedp.ByQuery),
+	)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	spew.Dump(res)
+
+	if !strings.Contains(res, "@generative_xyz") {
+		return "", "", errors.New("Tweet not found. Please double-check and try again")
+	}
+	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
+
+	addressHex := addressRegex.FindString(res)
+
+	txRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{64}") // tx eth
+	txHex := txRegex.FindString(res)
+
+	return addressHex, txHex, nil
+}
+
 func ByTestId(s string) string {
 	return "[data-testid='" + s + "']"
 }
