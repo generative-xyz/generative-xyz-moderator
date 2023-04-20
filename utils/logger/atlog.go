@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -133,17 +134,18 @@ func InitLoggerDefault(enableDebug bool) *autoLogger {
 	cfg.OutputPaths = []string{"stdout"}
 	cfg.ErrorOutputPaths = []string{"stdout"}
 
-	logLevel := os.Getenv("LOG_LEVEL")
-	if logLevel == "" {
-		logLevel = "2"
+	logLevelStr := os.Getenv("LOG_LEVEL")
+	if logLevelStr == "" {
+		logLevelStr = "2"
+	}
+	logLevelInt, err := strconv.Atoi(logLevelStr)
+	if err != nil {
+		logLevelInt = 2
+	}
 
-	}
-	zapLogLevel, err := zap.ParseAtomicLevel(logLevel)
-	if err == nil {
-		cfg.Level = zapLogLevel
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
-	}
+	lLevel := zapcore.Level(logLevelInt)
+	//zapLogLevel, err := zap.ParseAtomicLevel(logLevel)
+	cfg.Level = zap.NewAtomicLevelAt(lLevel)
 
 	// build logger
 	logger, _ := cfg.Build()
