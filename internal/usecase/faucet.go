@@ -204,14 +204,14 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 	fmt.Println("filteredTotalFaucet: ", filteredTotalFaucet)
 	limitFaucet := 1
 	switch faucetType {
-	case "bns", "artifact":
+	case "dapps":
 		//check valid mint tx
 		if txhash != "" {
 			// check tx:
 			tx, isPending, err := u.TcClient.GetClient().TransactionByHash(context.Background(), common.HexToHash(txhash))
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
-				return err
+				return errors.New("tx not found")
 			}
 			if isPending {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.isPending"), zap.Error(err))

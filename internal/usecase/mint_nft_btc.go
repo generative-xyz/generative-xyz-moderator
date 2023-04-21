@@ -953,7 +953,11 @@ func (u Usecase) MintNftViaOrdinal(item *entity.MintNftBtc, p *entity.Projects) 
 	}
 
 	// update project:
-	_, err = u.Repo.UpdateProject(p.UUID, p)
+	//_, err = u.Repo.UpdateProject(p.UUID, p)
+	_, err = u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"images":           p.Images,
+		"processingImages": p.ProcessingImages,
+	})
 	if err != nil {
 		logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
@@ -1123,7 +1127,11 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 
 	// update project:
 	if len(urlToMint) > 0 {
-		_, err = u.Repo.UpdateProject(p.UUID, p)
+		//_, err = u.Repo.UpdateProject(p.UUID, p)
+		_, err = u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+			"images":           p.Images,
+			"processingImages": p.ProcessingImages,
+		})
 		if err != nil {
 			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
