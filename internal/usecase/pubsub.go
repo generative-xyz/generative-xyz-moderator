@@ -13,6 +13,9 @@ import (
 	_req "rederinghub.io/utils/request"
 )
 
+//Queue functions
+
+// Processing functions
 func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
