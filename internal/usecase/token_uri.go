@@ -1222,7 +1222,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	tokenUri := entity.TokenUri{}
-	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
 	tokenUri.TokenID = inscription.ID
 	blockNumberMinted := "31012412"
 	tokenUri.BlockNumberMinted = &blockNumberMinted
