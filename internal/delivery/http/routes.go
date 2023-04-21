@@ -365,6 +365,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")
 	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
+	aiSchool.HandleFunc("/search-dataset", h.schoolSearchDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
 
 }
