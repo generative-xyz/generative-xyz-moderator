@@ -2,11 +2,12 @@ package pubsub
 
 import (
 	"fmt"
-
+	redis2 "github.com/redis/go-redis/v9"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"time"
 )
 
 type PubsubHandler struct {
@@ -39,30 +40,52 @@ func (h PubsubHandler) StartServer() {
 		panic(err)
 	}
 
+	errCount := 0
+	processCount := 0
 	logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
-	// Go channel which receives messages.
-	ch := pubsub.Channel()
-	for msg := range ch {
-
-		chanName := msg.Channel
-		payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
+	for {
+		msg, err := pubsub.Receive()
 		if err != nil {
+			if err == redis2.ErrClosed {
+				panic("redis: pubsub connection closed")
+				return
+			}
+			if errCount > 0 {
+				time.Sleep(1 * time.Second)
+			}
+			errCount++
 			continue
 		}
+		errCount = 0
+		switch msg := msg.(type) {
+		case *redis2.Subscription, *redis2.Pong:
+		case *redis2.Message:
+			processCount++
+			go func(message *redis2.Message) {
+				h.handlerMessage(message)
+				processCount--
+			}(msg)
 
-		switch chanName {
-		case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
-			h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
-			break
-		case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
-			h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
-			break
-
-		case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
-			h.usecase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
-			break
+			for processCount >= 5 {
+				time.Sleep(1 * time.Second)
+			}
+		default:
+			logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - unknown message type: %s ", msg))
 		}
 	}
-	<-ch
 	return
+}
+func (h PubsubHandler) handlerMessage(msg *redis2.Message) error {
+	chanName := msg.Channel
+	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
+	return err
+	switch chanName {
+	case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
+		h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
+		h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
+	case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
+		h.usecase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
+	}
+	return nil
 }
