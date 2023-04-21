@@ -105,13 +105,13 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		newJob = entity.AISchoolJob{
-			JobID:             uuid,
-			Params:            params,
-			DatasetUUID:       "",
-			Status:            "waiting",
-			CreatedBy:         address,
-			UsePFPDataset:     usePFPDataset,
-			CustomDatasetUUID: customDataset,
+			JobID:              uuid,
+			Params:             params,
+			DatasetUUID:        "",
+			Status:             "waiting",
+			CreatedBy:          address,
+			UsePFPDataset:      usePFPDataset,
+			CustomDatasetsUUID: customDataset,
 		}
 	}
 
