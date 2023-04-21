@@ -34,6 +34,17 @@ definitions:
     x-enum-varnames:
     - Against
     - Voted
+  entity.AuctionWinnerList:
+    properties:
+      address:
+        type: string
+      ethAddress:
+        type: string
+      mintPrice:
+        type: integer
+      quantity:
+        type: integer
+    type: object
   entity.BaseEntity:
     properties:
       created_at:
@@ -219,6 +230,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       block_number_minted:
         type: string
       categories:
@@ -712,6 +727,13 @@ definitions:
         type: string
       traits: {}
     type: object
+  request.CaptureRequest:
+    properties:
+      device_id:
+        type: string
+      display_url:
+        type: string
+    type: object
   request.CheckBalanceAddressReq:
     properties:
       address:
@@ -1088,6 +1110,10 @@ definitions:
     properties:
       bid_price:
         type: number
+      collector_redirect_to:
+        type: string
+      quantity:
+        type: integer
       wallet_address:
         type: string
     type: object
@@ -1221,6 +1247,11 @@ definitions:
     properties:
       can_vote:
         type: boolean
+    type: object
+  response.CaptureResponse:
+    properties:
+      image_url:
+        type: string
     type: object
   response.CategoryResp:
     properties:
@@ -1616,6 +1647,10 @@ definitions:
     properties:
       animationHtml:
         type: string
+      auctionWinnerList:
+        items:
+          $ref: '#/definitions/entity.AuctionWinnerList'
+        type: array
       blockNumberMinted:
         type: string
       btcFloorPrice:
@@ -3683,6 +3718,10 @@ paths:
         name: genNFTAddr
         required: true
         type: string
+      - description: ignore cache
+        in: query
+        name: refresh
+        type: string
       produces:
       - application/json
       responses:
@@ -3924,6 +3963,35 @@ paths:
       summary: get ordinal template
       tags:
       - Ordinal collection
+  /photo/capture:
+    post:
+      consumes:
+      - application/json
+      description: captures url content as image
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.CaptureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: captures url content as image
+      tags:
+      - Photographer
   /profile:
     get:
       consumes:
@@ -4456,6 +4524,44 @@ paths:
       summary: Search Token
       tags:
       - Search
+  /project/{contractAddress}/{projectID}/token-onwers/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Calculate Token's Onwers by project
+      parameters:
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: search
+        in: query
+        name: search
+        type: string
+      - description: projectID request
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: contractAddress request
+        in: path
+        name: contractAddress
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Calculate Token's Onwers by project
+      tags:
+      - Project
   /project/{contractAddress}/tokens/{projectID}:
     get:
       consumes:

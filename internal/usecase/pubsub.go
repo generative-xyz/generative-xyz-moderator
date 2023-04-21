@@ -6,11 +6,16 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
+	_req "rederinghub.io/utils/request"
 )
 
+//Queue functions
+
+// Processing functions
 func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
@@ -77,4 +82,40 @@ func (u *Usecase) PubSubProjectUnzip(tracingInjection map[string]string, channel
 		return
 	}
 
+}
+
+func (u *Usecase) PubSubCaptureThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
+
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+	req := &request.CaptureRequest{}
+	err = json.Unmarshal(bytes, req)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+	url, err := u.CaptureContent(req.ID, req.Url)
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
+		return
+	}
+
+	renderURL := fmt.Sprintf("%s/api/v1/device/%s/renderer-set-image", os.Getenv("RENDER_DOMAIN"), req.ID)
+
+	postPayload := map[string]string{
+		"image_url": url,
+	}
+	code, result, err := _req.PostToRenderer(renderURL, postPayload)
+
+	if err != nil {
+		logger.AtLog.Error("PubSubProjectUnzip", zap.Int("code", code), zap.Any("postPayload", postPayload), zap.Error(err))
+		return
+	}
+	//logger.AtLog.Info("call to renderer-set-image ", zap.Error(err), zap.String("renderURL", renderURL), zap.String("device_id", req.ID), zap.Int("code", code), zap.String("response", string(result)))
+	fmt.Printf(`[POST] %s request {"display_url": "%s"}  - resp {"code": "%d", "result":"%v", "error": "%v" } \n`, renderURL, req.Url, code, string(result), err)
 }

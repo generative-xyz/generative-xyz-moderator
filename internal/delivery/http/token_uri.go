@@ -112,7 +112,7 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		logger.AtLog.Logger.Info("resp.message", zap.Any("message", message))
 		h.Response.RespondWithoutContainer(w, http.StatusOK, message.ParsedAttributes)
 	} else {
-		if len(message.Thumbnail) > 0 {
+		if len(message.Thumbnail) > 0 && !strings.Contains(message.Thumbnail, "trait") {
 			resp, e := http.Get(message.Thumbnail)
 			if e != nil {
 				log.Fatal(e)
@@ -196,8 +196,6 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-
-	fmt.Println("resp, err====>", resp, err)
 
 	if resp != nil {
 		// get nft listing detail to check buyable (contact Phuong):

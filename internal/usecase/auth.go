@@ -255,7 +255,7 @@ func (u Usecase) verify(signatureHex string, signer string, msgStr string) (bool
 	signerHex := recoveredAddr.Hex()
 	isVerified := strings.ToLower(signer) == strings.ToLower(signerHex)
 
-	logger.AtLog.Info("verify",  zap.Bool("isVerified", isVerified), zap.String("signerHex", signerHex), zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr),  zap.Any("recoveredAddr", recoveredAddr))
+	logger.AtLog.Info("verify", zap.Bool("isVerified", isVerified), zap.String("signerHex", signerHex), zap.String("signatureHex", signatureHex), zap.String("signer", signer), zap.String("msgStr", msgStr), zap.Any("recoveredAddr", recoveredAddr))
 	return isVerified, nil
 }
 
@@ -414,7 +414,10 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 			}
 			p.CreatorProfile = user
 
-			_, err := u.Repo.UpdateProject(p.UUID, &p)
+			_, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+				"creatorProfile": p.CreatorProfile,
+			})
+
 			if err != nil {
 				logger.AtLog.Logger.Error("UpdateUserProfile", zap.String("action", "GetAllProjects"), zap.String("userID", userID), zap.Any("data", data), zap.Error(err))
 				continue

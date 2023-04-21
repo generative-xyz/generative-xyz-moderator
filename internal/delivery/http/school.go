@@ -154,7 +154,7 @@ func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
 		}
-		result = append(result, response.AISchoolJobProgress{
+		jobData := response.AISchoolJobProgress{
 			JobID:       job.JobID,
 			Status:      job.Status,
 			Progress:    job.Progress / params.Epoch * 100,
@@ -162,7 +162,11 @@ func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request
 			CompletedAt: job.CompletedAt,
 			CreatedAt:   job.CreatedAt.Unix(),
 			ModelName:   params.Name,
-		})
+		}
+		if job.Status == "completed" {
+			jobData.Progress = 100
+		}
+		result = append(result, jobData)
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }

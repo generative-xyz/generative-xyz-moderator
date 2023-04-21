@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -183,6 +184,7 @@ func (u Usecase) GetTokenByTokenID(tokenID string, captureTimeout int) (*entity.
 }
 
 func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) (*entity.TokenUri, error) {
+
 	logger.AtLog.Logger.Info("GetToken", zap.Any("req", zap.Any("req)", req)))
 	tokenID := strings.ToLower(req.TokenID)
 	tokenUri, err := u.Repo.FindTokenByTokenID(tokenID)
@@ -235,9 +237,9 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			}
 		}
 	} else {
-		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT"))
-		if err1 == nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err1))
+		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
+		if err1 != nil {
+			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
 		} else {
 			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
 			if err2 != nil {
@@ -247,7 +249,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 					if tokenUri.OwnerAddr != addr.String() {
 						tokenUri.Owner = nil
 						tokenUri.OwnerAddr = addr.String()
-						user, err := u.Repo.FindUserByBtcAddressTaproot(addr.String())
+						user, err := u.Repo.FindUserByWalletAddress(addr.String())
 						if err == nil && user != nil {
 							tokenUri.Owner = user
 						}
@@ -421,7 +423,10 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 			imageArr := strings.Split(tokeBFS.Image, ",")
 			if len(imageArr) == 2 {
 				ext := helpers.FileType(imageArr[0])
-				fName := fmt.Sprintf("%s%s", tokenID, ext)
+				now := time.Now().UTC().UnixMicro()
+
+				//fName := fmt.Sprintf("btc-projects/%d/%d-%s%s", projectID, now, tokenID, ext)
+				fName := fmt.Sprintf("thumb/%s-%d%s", tokenID, now, ext)
 				uploaded, err := u.GCS.UploadBaseToBucket(imageArr[1], fName)
 				if err == nil {
 					imageURL = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
@@ -1206,7 +1211,7 @@ func (u Usecase) UpdateTokenThumbnail(req structure.UpdateTokenThumbnailReq) (*e
 // When go to this, you need to make sure that meta's project is created
 func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.CollectionMeta, inscription entity.CollectionInscription) (*entity.TokenUri, error) {
 	// find project by projectID
-	project, err := u.Repo.FindProjectByInscriptionIcon(meta.InscriptionIcon)
+	project, err := u.Repo.FindProjectByTokenID(meta.ProjectID)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.AtLog.Logger.Error("CanNotFindProjectByInscriptionIcon", zap.Any("inscriptionIcon", meta.InscriptionIcon))
@@ -1338,4 +1343,70 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, e
 		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
 	}
 	return tokenIdToToken, nil
+}
+
+func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, error) {
+	filter := &entity.FilterTokenUris{}
+	err := copier.Copy(filter, f)
+	if err != nil {
+		return nil, err
+	}
+
+	type tokenOwner struct {
+		Address string `json:"address"`
+		Name    string `json:"name"`
+		Avatar  string `json:"avatar"`
+		Count   int    `json:"count"`
+	}
+
+	owners := make(map[string]*tokenOwner)
+	tokenIDs := make(map[string]*string)
+	tokens, err := u.Repo.AnalyticsTokenUriOwner(*filter)
+	if err != nil {
+		return nil, err
+	}
+
+	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
+	for _, token := range tokens {
+		tokenID := token.TokenID
+		tokenIDs[tokenID] = &token.OwnerAddress
+
+		if helpers.IsOrdinalProject(token.TokenID) {
+			var address, name, avatar string
+
+			iResp, _ := genService.Inscription(tokenID)
+			if iResp != nil {
+				address = iResp.Address
+			} else {
+				address = token.Owner.WalletAddressBTCTaproot
+			}
+
+			user, _ := u.Repo.FindUserByBtcAddressTaproot(address)
+			if user != nil {
+				name = user.DisplayName
+				avatar = user.Avatar
+			}
+
+			if _, has := owners[address]; !has {
+				owners[address] = &tokenOwner{
+					Address: address,
+					Name:    name,
+					Avatar:  avatar,
+					Count:   0,
+				}
+			}
+			owners[address].Count++
+		}
+	}
+
+	var result []*tokenOwner
+	for _, v := range owners {
+		result = append(result, v)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Count > result[j].Count
+	})
+
+	return result, nil
 }

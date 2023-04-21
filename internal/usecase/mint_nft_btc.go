@@ -274,8 +274,8 @@ func (u Usecase) CreateMintReceiveAddress(input structure.MintNftBtcData) (*enti
 	walletAddress.Balance = "0"
 	walletAddress.ExpiredAt = time.Now().Add(time.Hour * time.Duration(expiredTime))
 
-	fmt.Println("feeInfos[eth].MintPriceBigIn", feeInfos["eth"].MintPriceBigInt)
-	fmt.Println("feeInfos[btc].MintPriceBigIn", feeInfos["btc"].MintPriceBigInt)
+	// fmt.Println("feeInfos[eth].MintPriceBigIn", feeInfos["eth"].MintPriceBigInt)
+	// fmt.Println("feeInfos[btc].MintPriceBigIn", feeInfos["btc"].MintPriceBigInt)
 
 	// for batch mint, update here:
 	walletAddress.Quantity = input.Quantity
@@ -953,7 +953,11 @@ func (u Usecase) MintNftViaOrdinal(item *entity.MintNftBtc, p *entity.Projects) 
 	}
 
 	// update project:
-	_, err = u.Repo.UpdateProject(p.UUID, p)
+	//_, err = u.Repo.UpdateProject(p.UUID, p)
+	_, err = u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"images":           p.Images,
+		"processingImages": p.ProcessingImages,
+	})
 	if err != nil {
 		logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
@@ -1123,7 +1127,11 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 
 	// update project:
 	if len(urlToMint) > 0 {
-		_, err = u.Repo.UpdateProject(p.UUID, p)
+		//_, err = u.Repo.UpdateProject(p.UUID, p)
+		_, err = u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+			"images":           p.Images,
+			"processingImages": p.ProcessingImages,
+		})
 		if err != nil {
 			logger.AtLog.Logger.Error("JobMint_MintNftBtc.UpdateProject", zap.Error(err))
 			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc", item.TableName(), item.Status, "JobMint_MintNftBtc.UpdateProject", err.Error(), true)
@@ -2410,7 +2418,7 @@ func (u Usecase) convertBTCToETHWithPriceEthBtc(amount string, btcPrice, ethPric
 // please donate P some money:
 func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, ethRate float64) (map[string]entity.MintFeeInfo, error) {
 
-	fmt.Println("fileSize, feeRate: ", fileSize, feeRate)
+	//fmt.Println("fileSize, feeRate: ", fileSize, feeRate)
 
 	listMintFeeInfo := make(map[string]entity.MintFeeInfo)
 
@@ -2453,7 +2461,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 		feeMintNft = big.NewInt(0).SetUint64(feeSendNft.Uint64())
 	}
 
-	fmt.Println("feeMintNft: ", feeMintNft)
+	//fmt.Println("feeMintNft: ", feeMintNft)
 
 	if btcRate <= 0 {
 		btcRate, err = helpers.GetExternalPrice("BTC")
@@ -2469,7 +2477,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 		}
 	}
 
-	fmt.Println("btcRate, ethRate", btcRate, ethRate)
+	//fmt.Println("btcRate, ethRate", btcRate, ethRate)
 
 	// total amount by BTC:
 	netWorkFee = netWorkFee.Add(feeMintNft, feeSendNft)  // + feeMintNft	+ feeSendNft
@@ -2499,7 +2507,7 @@ func (u Usecase) calMintFeeInfo(mintBtcPrice, fileSize, feeRate int64, btcRate, 
 		Decimal: 8,
 	}
 
-	fmt.Println("feeInfos[btc].MintPriceBigIn1", listMintFeeInfo["btc"].MintPriceBigInt)
+	//fmt.Println("feeInfos[btc].MintPriceBigIn1", listMintFeeInfo["btc"].MintPriceBigInt)
 
 	// 1. convert mint price btc to eth  ==========
 	mintPriceByEth, _, _, err := u.convertBTCToETHWithPriceEthBtc(fmt.Sprintf("%f", float64(mintPrice.Uint64())/1e8), btcRate, ethRate)

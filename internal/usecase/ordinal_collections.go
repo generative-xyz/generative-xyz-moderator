@@ -119,8 +119,9 @@ func (u Usecase) CreateProjectsFromMetas() error {
 
 func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 	found := 1
+	page := 0
 	for found > 0 {
-		uncreatedInscription, err := u.Repo.FindUncreatedCollectionInscription()
+		uncreatedInscription, err := u.Repo.FindUncreatedCollectionInscription(page)
 		if err != nil {
 			return err
 		}
@@ -131,7 +132,7 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 			logger.AtLog.Logger.Info(fmt.Sprintf("Trying to create token from collection inscription %s %s", inscription.Meta.Name, inscription.ID))
 			processed++
 
-			_, err = u.Repo.FindTokenByTokenID(inscription.ID)
+			_, err := u.Repo.FindTokenByTokenID(inscription.ID)
 			if err != nil {
 				if !errors.Is(err, mongo.ErrNoDocuments) {
 					logger.AtLog.Logger.Error("u.Repo.FindTokenByTokenID "+inscription.ID, zap.Error(err))
@@ -142,12 +143,6 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 						logger.AtLog.Logger.Error("u.Repo.FindCollectionMetaByInscriptionIcon", zap.Error(err))
 						continue
 					}
-
-					if meta.ProjectExisted {
-						u.Logger.LogAny("MetaProjectIsAlreadyExisted", zap.Any("meta", meta))
-						continue
-					}
-
 					_, err = u.CreateBTCTokenURIFromCollectionInscription(*meta, inscription)
 					if err != nil {
 						if !errors.Is(err, repository.ErrNoProjectsFound) {
@@ -172,6 +167,7 @@ func (u Usecase) CreateTokensFromCollectionInscriptions() error {
 				time.Sleep(1 * time.Second)
 			}
 		}
+		page++
 	}
 	return nil
 }

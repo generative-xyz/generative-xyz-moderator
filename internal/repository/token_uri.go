@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"strings"
 
@@ -633,7 +632,7 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 		return nil, errors.WithStack(err)
 	}
 	if len(tokens) > 0 {
-		log.Println("len(tokens)", len(tokens[0].TotalCount))
+		//log.Println("len(tokens)", len(tokens[0].TotalCount))
 
 		resp.Result = tokens[0].TotalData
 		resp.Page = filter.Page
@@ -1298,4 +1297,60 @@ func (r Repository) UpdateTokenUriCreatorByUuid(uuid string, user *entity.Users)
 		return err
 	}
 	return err
+}
+
+func (r Repository) AnalyticsTokenUriOwner(f entity.FilterTokenUris) ([]*entity.TokenUriOnwer, error) {
+	tokens := []*entity.TokenUriOnwer{}
+	//offset := (f.Page - 1) * f.Limit
+
+	filter := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"project_id", strings.ToLower(*f.GenNFTAddr)},
+					//{"token_id", "2d37dbe24f059cbe5004f76df10c8c1bebe3d88adc7229db4d462c05e42fd406i0"},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc"},
+					{"as", "owner"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner"},
+					{"includeArrayIndex", "string"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"token_id", 1},
+					{"owner_addrress", 1},
+					{"owner", 1},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Aggregate(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cursor.All((context.TODO()), &tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, err
 }
