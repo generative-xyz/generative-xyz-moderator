@@ -850,7 +850,12 @@ func (u Usecase) DeleteBTCProject(req structure.UpdateBTCProjectReq) (*entity.Pr
 	p.Status = false
 	p.IsHidden = true
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"isSynced": p.IsSynced,
+		"status":   p.Status,
+		"isHidden": p.IsHidden,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
@@ -882,7 +887,10 @@ func (u Usecase) SetCategoriesForBTCProject(req structure.UpdateBTCProjectReq) (
 		p.Categories = []string{req.Categories[0]}
 	}
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"categories": p.Categories,
+	})
 	if err != nil {
 		logger.AtLog.Error("updated", err.Error(), err)
 		return nil, err
@@ -907,7 +915,11 @@ func (u Usecase) UpdateProject(req structure.UpdateProjectReq) (*entity.Projects
 	if len(p.ReportUsers) >= u.Config.MaxReportCount {
 		p.IsHidden = true
 	}
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"priority": p.Priority,
+		"isHidden": p.IsHidden,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err
@@ -1849,7 +1861,16 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	pe.MaxFileSize = int64(maxSize)
 	pe.NetworkFee = networkFee.String()
 
-	updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	//updated, err := u.Repo.UpdateProject(pe.UUID, pe)
+	updated, err := u.Repo.UpdateProjectFields(pe.UUID, map[string]interface{}{
+		"images":      pe.Images,
+		"isFullChain": pe.IsFullChain,
+		"isHidden":    pe.IsHidden,
+		"status":      pe.Status,
+		"isSynced":    pe.IsSynced,
+		"maxFileSize": pe.MaxFileSize,
+		"networkFee":  pe.NetworkFee,
+	})
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 		return nil, err
@@ -2448,7 +2469,11 @@ func (u Usecase) UpdateProjectHash(req structure.UpdateProjectHash) (*entity.Pro
 		p.RevealTxHash = *req.RevealTxHash
 	}
 
-	updated, err := u.Repo.UpdateProject(p.UUID, p)
+	//updated, err := u.Repo.UpdateProject(p.UUID, p)
+	updated, err := u.Repo.UpdateProjectFields(p.UUID, map[string]interface{}{
+		"commitTxHash": p.CommitTxHash,
+		"revealTxHash": p.RevealTxHash,
+	})
 	if err != nil {
 		logger.AtLog.Error("UpdateProject", zap.Any("err.UpdateProject", err))
 		return nil, err

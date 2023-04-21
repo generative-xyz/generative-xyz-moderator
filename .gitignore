@@ -36,3 +36,7 @@ internal/usecase/usecase_test.go
 utils/config/generative-firebase.json
 test.go
 internal/usecase/cron_handler_test.go
+
+test_main/
+internal/usecase/testing_uc.go
+internal/repository/testing_repository.go
