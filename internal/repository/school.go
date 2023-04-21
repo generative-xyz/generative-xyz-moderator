@@ -73,3 +73,15 @@ func (r Repository) GetAISchoolUnClearedJob(before int64) ([]entity.AISchoolJob,
 	}
 	return jobs, nil
 }
+
+func (r Repository) GetPresetDatasetByUUID(id string) (*entity.AISchoolPresetDataset, error) {
+	file := []entity.AISchoolPresetDataset{}
+	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"uuid": id}, &file)
+	if err != nil {
+		return nil, err
+	}
+	if len(file) == 0 {
+		return nil, errors.New("file not found")
+	}
+	return &file[0], nil
+}
