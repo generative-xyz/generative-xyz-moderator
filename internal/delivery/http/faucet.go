@@ -99,6 +99,9 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 		if item.FaucetType == "" {
 			faucetStatus["normal"] = item.StatusStr
 		} else {
+			if item.FaucetType == "dapps" {
+				item.FaucetType = "bns"
+			}
 			faucetStatus[item.FaucetType] = item.StatusStr
 		}
 	}
