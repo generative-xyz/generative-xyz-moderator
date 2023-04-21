@@ -380,6 +380,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 					spentTx = txStatus.Outputs[idx].SpentBy
 				}
 			}
+			if strings.Contains(order.InscriptionID, spentTx) {
+				continue
+			}
 
 			if spentTx != "" {
 				spentTxDetail, err := btc.CheckTxfromQuickNode(spentTx, u.Config.QuicknodeAPI)
