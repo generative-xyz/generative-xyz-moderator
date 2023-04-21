@@ -78,7 +78,9 @@ func (h PubsubHandler) StartServer() {
 func (h PubsubHandler) handlerMessage(msg *redis2.Message) error {
 	chanName := msg.Channel
 	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
-	return err
+	if err != nil {
+		return err
+	}
 	switch chanName {
 	case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
 		h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
