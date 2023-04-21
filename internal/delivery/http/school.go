@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,6 +16,14 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 )
+
+func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Request) {
+	text := r.URL.Query().Get("text")
+	if text == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("text cannot be empty"))
+		return
+	}
+}
 
 func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 
@@ -55,9 +64,15 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	usePFPDataset := false
+	customDataset := []string{}
 	_, datasetFile, err := r.FormFile("file")
 	if err != nil {
-		usePFPDataset = true
+		datasetStr := r.FormValue("datasets")
+		if datasetStr == "" {
+			usePFPDataset = true
+		} else {
+			customDataset = strings.Split(datasetStr, ",")
+		}
 	}
 	var newJob entity.AISchoolJob
 	uuid := uuid.NewString()
@@ -90,12 +105,13 @@ func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		newJob = entity.AISchoolJob{
-			JobID:         uuid,
-			Params:        params,
-			DatasetUUID:   "",
-			Status:        "waiting",
-			CreatedBy:     address,
-			UsePFPDataset: true,
+			JobID:             uuid,
+			Params:            params,
+			DatasetUUID:       "",
+			Status:            "waiting",
+			CreatedBy:         address,
+			UsePFPDataset:     usePFPDataset,
+			CustomDatasetUUID: customDataset,
 		}
 	}
 
