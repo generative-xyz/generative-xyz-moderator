@@ -2796,6 +2796,12 @@ const docTemplate = `{
                         "name": "genNFTAddr",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ignore cache",
+                        "name": "refresh",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3166,6 +3172,57 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.CategoryResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/photo/capture": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "captures url content as image",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "captures url content as image",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CaptureRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
                                         }
                                     }
                                 }
@@ -4674,6 +4731,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}/token-onwers/analytics": {
+            "get": {
+                "description": "Calculate Token's Onwers by project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Calculate Token's Onwers by project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -5708,6 +5822,23 @@ const docTemplate = `{
                 "Voted"
             ]
         },
+        "entity.AuctionWinnerList": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "ethAddress": {
+                    "type": "string"
+                },
+                "mintPrice": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
         "entity.BaseEntity": {
             "type": "object",
             "properties": {
@@ -5985,6 +6116,12 @@ const docTemplate = `{
             "properties": {
                 "animationHtml": {
                     "type": "string"
+                },
+                "auctionWinnerList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.AuctionWinnerList"
+                    }
                 },
                 "block_number_minted": {
                     "type": "string"
@@ -6707,6 +6844,17 @@ const docTemplate = `{
                 "traits": {}
             }
         },
+        "request.CaptureRequest": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "string"
+                },
+                "display_url": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CheckBalanceAddressReq": {
             "type": "object",
             "properties": {
@@ -7281,6 +7429,12 @@ const docTemplate = `{
                 "bid_price": {
                     "type": "number"
                 },
+                "collector_redirect_to": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
                 "wallet_address": {
                     "type": "string"
                 }
@@ -7485,6 +7639,14 @@ const docTemplate = `{
             "properties": {
                 "can_vote": {
                     "type": "boolean"
+                }
+            }
+        },
+        "response.CaptureResponse": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
                 }
             }
         },
@@ -8082,6 +8244,12 @@ const docTemplate = `{
             "properties": {
                 "animationHtml": {
                     "type": "string"
+                },
+                "auctionWinnerList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.AuctionWinnerList"
+                    }
                 },
                 "blockNumberMinted": {
                     "type": "string"

@@ -2,17 +2,14 @@ package usecase
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -50,7 +47,9 @@ func (u Usecase) JobAIS_WatchPending() error {
 			delete(currentAIJobs, jobID)
 		}
 	}
-
+	if len(currentAIJobs) >= 10 {
+		return nil
+	}
 	for _, job := range jobList {
 		if job.Status == "waiting" {
 			jobParams := &structure.AISchoolModelParams{}
@@ -157,11 +156,12 @@ func clearAISchoolWorkFolder(jobID string) error {
 
 func (job *AIJobInstance) Start() {
 	progCh := make(chan JobProgress)
+	jobID := job.job.JobID
 	defer func() {
 		job.IsCompleted = true
 		close(progCh)
+		clearAISchoolWorkFolder(jobID)
 	}()
-	jobID := job.job.JobID
 	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
 	if err != nil {
@@ -186,20 +186,24 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-
-	dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
-	if err != nil {
-		job.job.Errors = err.Error()
-		job.job.Status = "error"
-		err = job.u.Repo.UpdateAISchoolJob(job.job)
+	datasetPath := "ai-school/e984b788-ad5a-4e9d-9e54-a2911a14760e/1681982560672572223-1681982560-data.zip"
+	//
+	if !job.job.UsePFPDataset {
+		dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
 		if err != nil {
-			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			job.job.Errors = err.Error()
+			job.job.Status = "error"
+			err = job.u.Repo.UpdateAISchoolJob(job.job)
+			if err != nil {
+				// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+				return
+			}
 			return
 		}
-		return
+		datasetPath = dataset.FileName
 	}
 
-	err = prepAISchoolWorkFolder(jobID, params, dataset.FileName, job.u.GCS)
+	err = prepAISchoolWorkFolder(jobID, params, datasetPath, job.u.GCS)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -236,7 +240,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 
-	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output", job.progCh)
+	jobLog, jobErrLog, err := executeAISchoolJob(scriptPath, jobPathAbs+"/params.json", jobPathAbs+"/dataset", jobPathAbs+"/output.json", job.progCh)
 	job.job.Logs = jobLog
 	job.job.ErrLogs = jobErrLog
 	if err != nil {
@@ -250,7 +254,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 	cloudPath := fmt.Sprintf("ai-school/%s", job.job.JobID)
-	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output", &cloudPath)
+	uploaded, err := job.u.GCS.FileUploadToBucketInternal(jobPathAbs+"/output.json", &cloudPath)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -261,6 +265,7 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
+	job.job.Progress = params.Epoch
 
 	cdnURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
 	fileModel := &entity.Files{
@@ -300,49 +305,55 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	jobErrLog := ""
 	args := fmt.Sprintf("%v -c %v -d %v -o %v", scriptPath, params, dataset, output)
 	cmd := exec.Command("python3", strings.Split(args, " ")...)
-	// cmd := exec.Command("ls", "-a")
-	stderr, err := cmd.StderrPipe()
+	// stderr, err := cmd.StderrPipe()
+	// if err != nil {
+	// 	return jobLog, jobErrLog, err
+	// }
+	// stdout, err := cmd.StdoutPipe()
+	// if err != nil {
+	// 	return jobLog, jobErrLog, err
+	// }
+	// cmd.Start()
+	// scanner := bufio.NewScanner(stderr)
+	// scanner.Split(bufio.ScanLines)
+	// errStr := ""
+	// for scanner.Scan() {
+	// 	m := scanner.Text()
+	// 	fmt.Println("err", m)
+	// 	jobErrLog += fmt.Sprintln(m)
+	// }
+
+	// scanner2 := bufio.NewScanner(stdout)
+	// scanner2.Split(bufio.ScanLines)
+	// for scanner2.Scan() {
+	// 	m := scanner2.Text()
+	// 	jobLog += fmt.Sprintln(m)
+	// 	if strings.Contains(strings.ToLower(m), "epoch") {
+	// 		epochStr := strings.Split(m, "Epoch ")
+	// 		if len(epochStr) < 2 {
+	// 			continue
+	// 		}
+	// 		epochs := strings.Split(epochStr[1], "/")
+	// 		currentEpoch := epochs[0]
+	// 		currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
+	// 		if err != nil {
+	// 			errStr += fmt.Sprintln(err.Error())
+	// 			continue
+	// 		}
+	// 		progCh <- JobProgress{
+	// 			Epoch: int(currentEpochInt),
+	// 		}
+	// 	}
+	// }
+	// cmd.Wait()
+	// if len(errStr) > 0 {
+	// 	return jobLog, jobErrLog, errors.New(errStr)
+	// }
+	err := cmd.Run()
 	if err != nil {
 		return jobLog, jobErrLog, err
 	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return jobLog, jobErrLog, err
-	}
-	cmd.Start()
-	scanner := bufio.NewScanner(stderr)
-	scanner.Split(bufio.ScanLines)
-	errStr := ""
-	for scanner.Scan() {
-		m := scanner.Text()
-		fmt.Println("err", m)
-		jobErrLog += fmt.Sprintln(m)
-	}
 
-	scanner2 := bufio.NewScanner(stdout)
-	scanner2.Split(bufio.ScanLines)
-	for scanner2.Scan() {
-		m := scanner2.Text()
-		jobLog += fmt.Sprintln(m)
-		if strings.Contains(strings.ToLower(m), "epoch") {
-			epochStr := strings.Split(m, "Epoch ")
-			epochs := strings.Split(epochStr[1], "/")
-			currentEpoch := epochs[0]
-			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
-			if err != nil {
-				errStr += fmt.Sprintln(err.Error())
-				continue
-			}
-			progCh <- JobProgress{
-				Epoch: int(currentEpochInt),
-			}
-		}
-	}
-
-	cmd.Wait()
-	if len(errStr) > 0 {
-		return jobLog, jobErrLog, errors.New(errStr)
-	}
 	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
 }

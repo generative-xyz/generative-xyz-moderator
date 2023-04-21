@@ -97,6 +97,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/token", h.searchToken).Methods("GET")
+	project.HandleFunc("/{contractAddress}/{projectID}/token-onwers/analytics", h.AnalyticsTokenUriOwner).Methods("GET")
 
 	project.HandleFunc("/{contractAddress}/{projectID}/categories", h.updateBTCProjectcategories).Methods("PUT")
 	// project.HandleFunc("/{genNFTAddr}/tokens", h.TokensOfAProject).Methods("GET")
@@ -227,6 +228,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	faucet := api.PathPrefix("/faucet").Subrouter()
 	faucet.HandleFunc("/request", h.requestFaucet).Methods("POST")
 	faucet.HandleFunc("/list", h.listFaucet).Methods("GET")
+	faucet.HandleFunc("/status", h.getCurrentFaucetStep).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
@@ -356,6 +358,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	discord.Use(h.MiddleWare.AuthorizationFunc)
 	discord.HandleFunc("/new-bid", h.sendDiscordNewBid).Methods("POST")
 
+	photo := api.PathPrefix("/photo").Subrouter()
+	photo.Use(h.MiddleWare.AuthorizationFunc)
+	photo.HandleFunc("/capture", h.Capture).Methods("POST")
 	aiSchool := api.PathPrefix("/ai-school").Subrouter()
 	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")

@@ -1132,3 +1132,47 @@ func (h *httpDelivery) getCountingAllowList(w http.ResponseWriter, r *http.Reque
 		}, "")
 	}
 }
+
+// AnalyticsTokenUriOwner godoc
+// @Summary Calculate Token's Onwers by project
+// @Description  Calculate Token's Onwers by project
+// @Tags Project
+// @Accept  json
+// @Produce  json
+// @Param page query string false "page"
+// @Param limit query int false "limit"
+// @Param search query string false "search"
+// @Param projectID path string true "projectID request"
+// @Param contractAddress path string true "contractAddress request"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /project/{contractAddress}/{projectID}/token-onwers/analytics [GET]
+func (h *httpDelivery) AnalyticsTokenUriOwner(w http.ResponseWriter, r *http.Request) {
+	f := structure.FilterTokens{}
+	err := f.CreateFilter(r)
+	if err != nil {
+		logger.AtLog.Logger.Error("AnalyticsTokenUriOwner", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	vars := mux.Vars(r)
+	projectID := vars["projectID"]
+	f.GenNFTAddr = &projectID
+	bf, err := h.BaseFilters(r)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.BaseFilters", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	f.BaseFilters = *bf
+	resp, err := h.Usecase.AnalyticsTokenUriOwner(f)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.getProfileNfts.getTokens", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	//
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+}
