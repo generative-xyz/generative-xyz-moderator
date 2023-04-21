@@ -1430,7 +1430,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			}
 
 			// update make free temp wallet:
-			u.Repo.UpdateTcTempWalletAddress(item.TcTempWallet, entity.StatusEvmTempWallets_Free)
+			u.Repo.MakeFreeTcTempWalletAddress(item.TcTempWallet)
 
 			// update token uri auto:
 			p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
@@ -2652,19 +2652,23 @@ func (u Usecase) ConvertImageToByteArrayToMintTC(imageURL string) ([][]byte, err
 func (u Usecase) GetMintFreeTemAddress() *entity.EvmTempWallets {
 	// mutex := u.RedisV9.GetRedSyncClient().NewMutex("GetMintFreeTemAddress")
 
-	var freeWallet *entity.EvmTempWallets
+	// var freeWallet *entity.EvmTempWallets
 
 	// if err := mutex.Lock(); err != nil {
 	// 	fmt.Println("can not lock")
 	// 	return nil
 	// }
 
-	freeWallet, _ = u.Repo.GetMintFreeTempAddress()
+	list, _ := u.Repo.GetListTempAddress()
+
+	if len(list) == 0 {
+		return nil
+	}
 
 	// if ok, err := mutex.Unlock(); !ok || err != nil {
 	// 	fmt.Println("can not unlock")
 	// }
-	return freeWallet
+	return &list[0]
 }
 
 func (u Usecase) GenMintFreeTemAddress() (string, error) {
