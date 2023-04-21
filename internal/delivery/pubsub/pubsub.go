@@ -2,7 +2,8 @@ package pubsub
 
 import (
 	"fmt"
-	redis2 "github.com/redis/go-redis/v9"
+	redis2 "github.com/go-redis/redis"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
@@ -10,21 +11,21 @@ import (
 	"time"
 )
 
-type PubsubHandler struct {
-	usecase usecase.Usecase
+type Handler struct {
+	useCase usecase.Usecase
 	pubsub  redis.IPubSubClient
 	log     logger.Ilogger
 }
 
-func NewPubsubHandler(usecase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *PubsubHandler {
-	return &PubsubHandler{
-		usecase: usecase,
+func NewPubsubHandler(useCase usecase.Usecase, pubsub redis.IPubSubClient, log logger.Ilogger) *Handler {
+	return &Handler{
+		useCase: useCase,
 		pubsub:  pubsub,
 		log:     log,
 	}
 }
 
-func (h PubsubHandler) StartServer() {
+func (h Handler) StartServer() {
 	names := []string{
 		utils.PUBSUB_TOKEN_THUMBNAIL,
 		utils.PUBSUB_PROJECT_UNZIP,
@@ -46,10 +47,6 @@ func (h PubsubHandler) StartServer() {
 	for {
 		msg, err := pubsub.Receive()
 		if err != nil {
-			if err == redis2.ErrClosed {
-				panic("redis: pubsub connection closed")
-				return
-			}
 			if errCount > 0 {
 				time.Sleep(1 * time.Second)
 			}
@@ -57,37 +54,41 @@ func (h PubsubHandler) StartServer() {
 			continue
 		}
 		errCount = 0
-		switch msg := msg.(type) {
-		case *redis2.Subscription, *redis2.Pong:
-		case *redis2.Message:
+		if m, ok := msg.(*redis2.Message); ok {
 			processCount++
 			go func(message *redis2.Message) {
 				h.handlerMessage(message)
 				processCount--
-			}(msg)
+			}(m)
 
 			for processCount >= 5 {
 				time.Sleep(1 * time.Second)
 			}
-		default:
-			logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - unknown message type: %s ", msg))
 		}
 	}
 	return
 }
-func (h PubsubHandler) handlerMessage(msg *redis2.Message) error {
+func (h Handler) handlerMessage(msg *redis2.Message) error {
+	defer func() {
+		if rcv := recover(); rcv != nil {
+			logger.AtLog.Error("panic error", zap.Any("recover", rcv))
+		}
+	}()
+
 	chanName := msg.Channel
+	logger.AtLog.Info("pubsubHandler.handlerMessage", zap.String("channel", chanName), zap.Any("payload", msg.Payload))
+
 	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
 	if err != nil {
 		return err
 	}
 	switch chanName {
 	case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
-		h.usecase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
+		h.useCase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
 	case h.pubsub.GetChannelName(utils.PUBSUB_PROJECT_UNZIP):
-		h.usecase.PubSubProjectUnzip(tracingInjection, chanName, payload)
+		h.useCase.PubSubProjectUnzip(tracingInjection, chanName, payload)
 	case h.pubsub.GetChannelName(utils.PUBSUB_CAPTURE_THUMBNAIL):
-		h.usecase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
+		h.useCase.PubSubCaptureThumbnail(tracingInjection, chanName, payload)
 	}
 	return nil
 }
