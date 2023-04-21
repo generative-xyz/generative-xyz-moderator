@@ -99,6 +99,12 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 			err = btc.SendTxBlockStream(tx.Raw)
 			if err != nil {
 				log.Printf("watchPendingBTCTxSubmit SendTxBlockStream err %v\n", err)
+				tx.Status = entity.StatusBTCTransactionSubmit_Failed
+				_, err = u.Repo.UpdateBTCTxSubmitStatus(&tx)
+				if err != nil {
+					log.Printf("watchPendingBTCTxSubmit UpdateBTCTxSubmitStatus err %v\n", err)
+					continue
+				}
 				continue
 			}
 			tx.Status = entity.StatusBTCTransactionSubmit_Pending
