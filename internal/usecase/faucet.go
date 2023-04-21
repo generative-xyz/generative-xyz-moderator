@@ -68,7 +68,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (
 		return "", err
 	}
 	// check valid vs twName first:
-	err := u.CheckValidFaucet(addressInput, twName, txhash, faucetType)
+	specFaucetType, err := u.CheckValidFaucet(addressInput, twName, txhash, faucetType)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
@@ -107,7 +107,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (
 		return "", err
 	}
 
-	err = u.CheckValidFaucet(address, twName, txhash, faucetType)
+	specFaucetType, err = u.CheckValidFaucet(address, twName, txhash, faucetType)
 	if err != nil {
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.(address+twName)", address+","+twName, err.Error())
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
@@ -123,7 +123,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (
 		TwShareID:   sharedID,
 		SharedLink:  url,
 		UserTx:      txhash,
-		FaucetType:  faucetType,
+		FaucetType:  specFaucetType,
 	}
 	err = u.Repo.InsertFaucet(faucetItem)
 	if err != nil {
@@ -184,12 +184,12 @@ const (
 	ArtifaceAddress = "0x16efdc6d3f977e39dac0eb0e123feffed4320bc0"
 )
 
-func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) error {
+func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (string, error) {
 	// find address to faucet:
 	faucetItems, err := u.Repo.FindFaucetByTwitterNameOrAddress(twName, address)
 	if err != nil {
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByTwitterName"), zap.Error(err))
-		return err
+		return "", err
 	}
 
 	totalFaucet := len(faucetItems)
@@ -203,6 +203,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 	fmt.Println("totalFaucet: ", totalFaucet)
 	fmt.Println("filteredTotalFaucet: ", filteredTotalFaucet)
 	limitFaucet := 1
+	specFaucetType := ""
 	switch faucetType {
 	case "dapps":
 		//check valid mint tx
@@ -211,38 +212,38 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 			tx, isPending, err := u.TcClient.GetClient().TransactionByHash(context.Background(), common.HexToHash(txhash))
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
-				return errors.New("tx not found")
+				return specFaucetType, errors.New("tx not found")
 			}
 			if isPending {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.isPending"), zap.Error(err))
-				return errors.New("tx is pending")
+				return specFaucetType, errors.New("tx is pending")
 			}
 			txReceipt, err := u.TcClient.GetClient().TransactionReceipt(context.Background(), common.HexToHash(txhash))
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
-				return err
+				return specFaucetType, err
 			}
 			if txReceipt.Status == 0 {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.Status"), zap.Error(err))
-				return errors.New("tx status is 0")
+				return specFaucetType, errors.New("tx status is 0")
 			}
 
 			from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
-				return err
+				return specFaucetType, err
 			}
 
 			if !strings.EqualFold(from.String(), address) {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
-				return errors.New("invalid sender")
+				return specFaucetType, errors.New("invalid sender")
 			}
 
 			if strings.EqualFold(tx.To().String(), BNSAddress) {
 				bnsAddress := common.HexToAddress(BNSAddress)
 				bnsContract, err := tcbns.NewBNS(bnsAddress, u.TcClient.GetClient())
 				if err != nil {
-					return err
+					return specFaucetType, err
 				}
 				haveEvent := false
 				for _, v := range txReceipt.Logs {
@@ -251,12 +252,13 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 						continue
 					}
 					if len(evt.Name) > 0 {
+						specFaucetType = "bns"
 						haveEvent = true
 						break
 					}
 				}
 				if !haveEvent {
-					return errors.New("invalid tx")
+					return specFaucetType, errors.New("invalid tx")
 				}
 			}
 			if strings.EqualFold(tx.To().String(), ArtifaceAddress) {
@@ -264,7 +266,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 
 				artifactContract, err := tcartifact.NewNFT721(artifactAddress, u.TcClient.GetClient())
 				if err != nil {
-					return err
+					return specFaucetType, err
 				}
 				haveEvent := false
 				for _, v := range txReceipt.Logs {
@@ -273,16 +275,17 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 						continue
 					}
 					if strings.EqualFold(evt.To.String(), address) {
+						specFaucetType = "artifact"
 						haveEvent = true
 						break
 					}
 				}
 				if !haveEvent {
-					return errors.New("invalid tx")
+					return specFaucetType, errors.New("invalid tx")
 				}
 			}
 		} else {
-			return errors.New("invalid tx")
+			return specFaucetType, errors.New("invalid tx")
 		}
 	}
 
@@ -290,7 +293,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 		// check times:
 		err = errors.New("You have reached the maximum faucet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
-		return err
+		return specFaucetType, err
 
 	}
 
@@ -310,11 +313,11 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 		if diff.Hours() < maxHours {
 			err = errors.New(fmt.Sprintf("The faucet only allows one request per day. Please try again later in %0.1f hours.", maxHours-diff.Hours()))
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
-			return err
+			return specFaucetType, err
 		}
 
 	}
-	return nil
+	return specFaucetType, nil
 }
 
 // ////////
