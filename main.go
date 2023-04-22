@@ -236,92 +236,19 @@ func startServer() {
 		Enabled: conf.StartPubsub,
 	}
 
-	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase.
+	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase and crontab db config.
 	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
 	servers["ordinal_collections_crontab"] = delivery.AddedServer{
 		Server:  ordinalCron,
 		Enabled: conf.Crontab.OrdinalCollectionEnabled,
 	}
 
+	// TODO move all function to Usercase and crontab db config.
 	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
 	}
-
-	// job init:
-	/*
-			txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-			cron := crontab.NewScronHandler(&g, *uc)
-			btcCron := crontab_btc.NewScronBTCHandler(&g, *uc)
-			mkCron := crontab_marketplace.NewScronMarketPlace(&g, *uc)
-			inscribeCron := incribe_btc.NewScronBTCHandler(&g, *uc)
-			mintNftBtcCron := mint_nft_btc.NewCronMintNftBtcHandler(&g, *uc)
-			trendingCron := crontab_trending.NewScronTrendingHandler(&g, *uc)
-			ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-			inscriptionIndexCron := crontab_inscription_info.NewScronInscriptionInfoHandler(&g, *uc)
-			dexBTCCron := dex_btc_cron.NewScronDexBTCHandler(&g, *uc)
-
-		ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-
-			servers["developer_inscribe"] = delivery.AddedServer{
-				Server:  developerInscribeCron,
-				Enabled: conf.Crontab.CrontabDeveloperInscribeEnabled,
-			}
-
-			servers["txconsumer"] = delivery.AddedServer{
-				Server:  txConsumer,
-				Enabled: conf.TxConsumerConfig.Enabled,
-			}
-
-			servers["crontab"] = delivery.AddedServer{
-				Server:  cron,
-				Enabled: conf.Crontab.Enabled,
-			}
-
-			servers["btc_crontab"] = delivery.AddedServer{
-				Server:  btcCron,
-				Enabled: conf.Crontab.BTCEnabled,
-			}
-
-			servers["btc_crontab_v2"] = delivery.AddedServer{
-				Server:  inscribeCron,
-				Enabled: conf.Crontab.BTCV2Enabled,
-			}
-
-			servers["mint_nft_btc"] = delivery.AddedServer{
-				Server:  mintNftBtcCron,
-				Enabled: conf.Crontab.MintNftBtcEnabled,
-			}
-
-			servers["marketplace_crontab"] = delivery.AddedServer{
-				Server:  mkCron,
-				Enabled: conf.Crontab.MarketPlaceEnabled,
-			}
-
-			servers["trending_crontab"] = delivery.AddedServer{
-				Server:  trendingCron,
-				Enabled: conf.Crontab.TrendingEnabled,
-			}
-
-			servers["ordinal_collections_crontab"] = delivery.AddedServer{
-				Server:  ordinalCron,
-				Enabled: conf.Crontab.OrdinalCollectionEnabled,
-			}
-			servers["inscription_index_crontab"] = delivery.AddedServer{
-				Server:  inscriptionIndexCron,
-				Enabled: conf.Crontab.InscriptionIndexEnabled,
-			}
-
-			servers["dex_btc_cron"] = delivery.AddedServer{
-				Server:  dexBTCCron,
-				Enabled: conf.Crontab.DexBTCEnabled,
-			}
-			servers["pubsub"] = delivery.AddedServer{
-			Server:  ph,
-			Enabled: conf.StartPubsub,
-		}
-	*/
 
 	//var wait time.Duration
 	c := make(chan os.Signal, 1)

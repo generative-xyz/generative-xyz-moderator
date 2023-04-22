@@ -108,3 +108,17 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, faucetStatus, "")
 }
+
+func (h *httpDelivery) getNonces(w http.ResponseWriter, r *http.Request) {
+
+	address := r.URL.Query().Get("address")
+
+	result, err := h.Usecase.ApiFaucetGetNonce(address)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.ApiFaucetGetNonce", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}

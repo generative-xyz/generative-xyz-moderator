@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (r Repository) FindMintNftBtc(key string) (*entity.MintNftBtc, error) {
@@ -367,7 +368,7 @@ func (r Repository) InsertEvmTempWallets(data *entity.EvmTempWallets) error {
 	return nil
 }
 
-func (r Repository) GetMintFreeTempAddress() (*entity.EvmTempWallets, error) {
+func (r Repository) GetMintFreeTempAddress1() (*entity.EvmTempWallets, error) {
 	resp := &entity.EvmTempWallets{}
 	usr, err := r.FilterOne(entity.EvmTempWallets{}.TableName(), bson.D{{"status", entity.StatusEvmTempWallets_Free}})
 	if err != nil {
@@ -380,6 +381,25 @@ func (r Repository) GetMintFreeTempAddress() (*entity.EvmTempWallets, error) {
 	}
 	return resp, nil
 }
+func (r Repository) GetListTempAddress() ([]entity.EvmTempWallets, error) {
+	confs := []entity.EvmTempWallets{}
+	f := bson.M{}
+
+	cursor, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).Find(context.TODO(), f, &options.FindOptions{
+		Sort: bson.D{{"usedCount", 1}},
+		// Limit: &limit,
+		// Skip:  &offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &confs); err != nil {
+		return nil, err
+	}
+
+	return confs, nil
+}
 
 func (r Repository) UpdateTcTempWalletAddress(address string, status entity.StatusEvmTempWallets) error {
 	filter := bson.D{
@@ -389,6 +409,23 @@ func (r Repository) UpdateTcTempWalletAddress(address string, status entity.Stat
 		"$set": bson.M{
 			"status": status, // 0 free, 1 busy
 		},
+	}
+	_, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) MakeFreeTcTempWalletAddress(address string) error {
+	filter := bson.D{
+		{Key: "walletAddress", Value: address},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"status": entity.StatusEvmTempWallets_Free, // 0 free, 1 busy
+		},
+		"$inc": bson.M{"usedCount": 1},
 	}
 	_, err := r.DB.Collection(entity.EvmTempWallets{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
