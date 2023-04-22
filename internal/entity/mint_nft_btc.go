@@ -240,6 +240,7 @@ type EvmTempWallets struct {
 	WalletAddress string `bson:"walletAddress"` // the wallet address
 	PrivateKey    string `bson:"privateKey"`    // private key (has encrypt).
 	Status        int    `bson:"status"`        // -1: invalid, 0: free, 1 busy
+	UsedCount     int    `bson:"usedCount"`     // the number of minting
 }
 
 func (u EvmTempWallets) TableName() string {
