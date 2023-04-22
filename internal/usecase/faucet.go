@@ -15,13 +15,37 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/encrypt"
+	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/eth/contract/tcartifact"
 	"rederinghub.io/utils/eth/contract/tcbns"
 	"rederinghub.io/utils/logger"
 )
+
+func (u Usecase) ApiFaucetGetNonce(address string) ([]uint64, error) {
+	var nonces []uint64
+
+	nonce1, err := u.TcClient.PendingNonceAt(context.Background(), common.HexToAddress(address))
+	if err != nil {
+		return nonces, err
+	}
+	nonces = append(nonces, nonce1)
+	tcClientWrap, err := ethclient.Dial(u.Config.BlockchainConfig.TCPublicEndpoint)
+	if err != nil {
+		return nonces, err
+	}
+	tcPulicClient := eth.NewClient(tcClientWrap)
+	nonce2, err := tcPulicClient.PendingNonceAt(context.Background(), common.HexToAddress(address))
+	if err != nil {
+		return nonces, err
+	}
+	nonces = append(nonces, nonce2)
+	return nonces, nil
+
+}
 
 func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 	faucetItems, err := u.Repo.FindFaucetByTwitterNameOrAddress(address, address)

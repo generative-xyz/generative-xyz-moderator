@@ -181,9 +181,10 @@ type Chain struct {
 }
 
 type BlockchainConfig struct {
-	ETHEndpoint    string
-	ETHEndpointDex string
-	TCEndpoint     string
+	ETHEndpoint      string
+	ETHEndpointDex   string
+	TCEndpoint       string
+	TCPublicEndpoint string
 }
 
 type TxConsumerConfig struct {
@@ -315,9 +316,10 @@ func NewConfig(filePaths ...string) (*Config, error) {
 			Chain: os.Getenv("COVALENT_CHAIN"),
 		},
 		BlockchainConfig: BlockchainConfig{
-			ETHEndpoint:    os.Getenv("ETH_ENDPOINT"),
-			ETHEndpointDex: os.Getenv("ETH_ENDPOINT_DEX"),
-			TCEndpoint:     os.Getenv("TC_ENDPOINT"),
+			ETHEndpoint:      os.Getenv("ETH_ENDPOINT"),
+			ETHEndpointDex:   os.Getenv("ETH_ENDPOINT_DEX"),
+			TCEndpoint:       os.Getenv("TC_ENDPOINT"),
+			TCPublicEndpoint: os.Getenv("TC_ENDPOINT_PUBLIC"),
 		},
 		TxConsumerConfig: TxConsumerConfig{
 			Enabled:       enabled,
