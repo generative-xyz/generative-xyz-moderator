@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,9 +17,11 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/googlecloud"
+	"rederinghub.io/utils/logger"
 )
 
 type JobProgress struct {
@@ -376,6 +379,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 }
 
 func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) (*entity.AISchoolPresetDataset, error) {
+	creator = strings.ToLower(creator)
 	newDataset := &entity.AISchoolPresetDataset{
 		Name:        name,
 		Creator:     creator,
@@ -392,15 +396,37 @@ func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size in
 	return newDataset, nil
 }
 
-// TODO AISCHOOL
 func (u *Usecase) DeleteDataset(address, uuid string) error {
-	return nil
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": nil,
+		"creator":    address,
+		"uuid":       uuid,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets)
+	if err != nil {
+		return err
+	}
+	if len(datasets) == 0 {
+		return errors.New("Dataset not found")
+	}
+	dataset := datasets[0]
+	_, err = u.Repo.SoftDelete(&dataset)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	err = u.DeleteFile(dataset.FileUUID)
+	return err
 }
 
 func (u *Usecase) ListDataset(address string, limit, offset int64) ([]entity.AISchoolPresetDataset, error) {
+	address = strings.ToLower(address)
 	datasets := []entity.AISchoolPresetDataset{}
 	filter := bson.M{
-		"creator": address,
+		"deleted_at": nil,
+		"creator":    address,
 	}
 	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets, options.Find().SetSkip(offset).SetLimit(limit))
 	if err != nil {
