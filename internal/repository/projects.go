@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -373,6 +374,26 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 	projects := []entity.Projects{}
 	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r Repository) GetTCProject(excludeIDs []common.Address) ([]entity.Projects, error) {
+	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
+
+	if len(excludeIDs) > 0 {
+		filter["genNFTAddr"] = bson.M{"$nin": excludeIDs}
+	}
+
+	var projects []entity.Projects
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
