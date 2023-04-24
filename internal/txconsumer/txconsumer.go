@@ -2,17 +2,19 @@ package txconsumer
 
 import (
 	"fmt"
+	"math/big"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
-	"math/big"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"strconv"
-	"time"
 )
 
 type HttpTxConsumer struct {
@@ -21,6 +23,7 @@ type HttpTxConsumer struct {
 	CronJobPeriod             int32
 	BatchLogSize              int32
 	Addresses                 []common.Address
+	FetchedAddress            []string
 	Cache                     redis.IRedisCache
 	Logger                    logger.Ilogger
 	RedisKey                  string
@@ -35,6 +38,7 @@ func NewHttpTxConsumer(global *global.Global, uc usecase.Usecase, cfg config.Con
 	txConsumer.BatchLogSize = cfg.TxConsumerConfig.BatchLogSize
 	txConsumer.Addresses = make([]common.Address, 0)
 	for _, address := range cfg.TxConsumerConfig.Addresses {
+		txConsumer.FetchedAddress = append(txConsumer.FetchedAddress, strings.ToLower(address))
 		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
 	}
 	txConsumer.Cache = global.Cache
@@ -104,41 +108,42 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			zap.Int64("to block", ProcessingBlockTo),
 			zap.Int64("logs", int64(len(logs))))
 
-		//for _, _log := range logs {
-		//
-		//	address := strings.ToLower(_log.Address.String())
-		//	topic := strings.ToLower(_log.Topics[0].String())
-		//
-		//	switch address {
-		//	case c.Config.MarketplaceEvents.Contract:
-		//		switch topic {
-		//		case c.Config.MarketplaceEvents.PurchaseToken:
-		//			err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-		//		case c.Config.MarketplaceEvents.MakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
-		//		case c.Config.MarketplaceEvents.AcceptMakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-		//		case c.Config.MarketplaceEvents.CancelListing:
-		//			err = c.Usecase.ResolveMarketplaceCancelListing(_log)
-		//		case c.Config.MarketplaceEvents.CancelMakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
-		//		case c.Config.MarketplaceEvents.ListToken:
-		//			err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-		//		}
-		//	case c.Config.DAOEvents.Contract:
-		//		switch topic {
-		//		case c.Config.DAOEvents.ProposalCreated:
-		//			err = c.Usecase.DAOProposalCreated(_log)
-		//		case c.Config.DAOEvents.CastVote:
-		//			err = c.Usecase.DAOCastVote(_log)
-		//		}
-		//	default:
-		//		switch topic {
-		//		case c.Config.DAOEvents.TransferNFTSignature:
-		//			c.Usecase.UpdateProjectWithListener(_log)
-		//		}
-		//	}
-		//}
+		for _, _log := range logs {
+
+			address := strings.ToLower(_log.Address.String())
+			topic := strings.ToLower(_log.Topics[0].String())
+
+			switch address {
+			case c.Config.MarketplaceEvents.Contract:
+				switch topic {
+				case c.Config.MarketplaceEvents.PurchaseToken:
+					err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+					//case c.Config.MarketplaceEvents.MakeOffer:
+					//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
+					//case c.Config.MarketplaceEvents.AcceptMakeOffer:
+					//	err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+					//case c.Config.MarketplaceEvents.CancelListing:
+					//	err = c.Usecase.ResolveMarketplaceCancelListing(_log)
+					//case c.Config.MarketplaceEvents.CancelMakeOffer:
+					//	err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
+					//case c.Config.MarketplaceEvents.ListToken:
+					//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+					//
+				}
+			case c.Config.DAOEvents.Contract:
+				//switch topic {
+				//case c.Config.DAOEvents.ProposalCreated:
+				//	err = c.Usecase.DAOProposalCreated(_log)
+				//case c.Config.DAOEvents.CastVote:
+				//	err = c.Usecase.DAOCastVote(_log)
+				//}
+			default:
+				switch topic {
+				case c.Config.DAOEvents.TransferNFTSignature:
+					c.Usecase.UpdateProjectWithListener(_log)
+				}
+			}
+		}
 
 		if ProcessingBlockTo < lastBlockOnChain.Int64() {
 			ProcessingBlock = ProcessingBlockTo + 1
@@ -153,14 +158,24 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 }
 
 func (c *HttpTxConsumer) getTcAddress() error {
+	savedMap := make(map[common.Address]bool)
 
-	projects, err := c.Usecase.Repo.GetTCProject(c.Addresses)
+	for _, address := range c.Addresses {
+		savedMap[address] = true
+	}
+
+	projects, err := c.Usecase.Repo.GetTCProject(c.FetchedAddress)
 	if err != nil {
 		return err
 	}
 
 	for _, project := range projects {
-		c.Addresses = append(c.Addresses, common.HexToAddress(project.GenNFTAddr))
+		address := common.HexToAddress(project.GenNFTAddr)
+		if savedMap[address] {
+			savedMap[address] = true
+			c.Addresses = append(c.Addresses, common.HexToAddress(project.GenNFTAddr))
+			c.FetchedAddress = append(c.FetchedAddress, project.GenNFTAddr)
+		}
 	}
 	return nil
 }

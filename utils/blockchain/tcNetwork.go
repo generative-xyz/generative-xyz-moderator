@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+
 	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/logger"
