@@ -86,14 +86,14 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	for ProcessingBlock <= lastBlockOnChain.Int64() {
-
-		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlock + 1))
+		ProcessingBlockTo := ProcessingBlock + int64(c.BatchLogSize)
+		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlockTo))
 		if err != nil {
 			logger.AtLog.Logger.Error("err.GetEventLogs", zap.String("err", err.Error()))
 			return err
 		}
 
-		logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("processing block number", ProcessingBlock))
+		logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("processing block from number", ProcessingBlock), zap.Int64("processing block to number", ProcessingBlockTo))
 		if len(logs) > 0 {
 			fmt.Println("logs", logs)
 		}
@@ -104,7 +104,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 			switch topic {
 			//case c.Config.MarketplaceEvents.PurchaseToken:
-			//	err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+			//err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
 			//case c.Config.MarketplaceEvents.MakeOffer:
 			//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
 			//case c.Config.MarketplaceEvents.AcceptMakeOffer:
@@ -123,8 +123,8 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
 			}
 		}
-		if ProcessingBlock < lastBlockOnChain.Int64() {
-			ProcessingBlock++
+		if ProcessingBlockTo < lastBlockOnChain.Int64() {
+			ProcessingBlock = ProcessingBlockTo + 1
 			c.setLastProcessedBlock(ProcessingBlock)
 		} else {
 			break
