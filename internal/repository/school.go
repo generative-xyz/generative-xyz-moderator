@@ -102,3 +102,11 @@ func (r Repository) FindPresetDatasetByName(name string) ([]entity.AISchoolPrese
 	}
 	return files, nil
 }
+
+func (r Repository) CreateDataset(data *entity.AISchoolPresetDataset) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
+}

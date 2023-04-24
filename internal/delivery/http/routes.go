@@ -365,8 +365,11 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool := api.PathPrefix("/ai-school").Subrouter()
 	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")
-	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
+
 	aiSchool.HandleFunc("/search-dataset", h.schoolSearchDataset).Methods("GET")
+	aiSchool.HandleFunc("/upload-dataset", h.schoolUploadDataset).Methods("POST")
+	aiSchool.HandleFunc("/submit-model", h.schoolSubmitModel).Methods("POST")
+	aiSchool.HandleFunc("/delete-dataset", h.schoolDeleteDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
 
 }
