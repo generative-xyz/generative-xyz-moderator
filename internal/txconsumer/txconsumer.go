@@ -81,7 +81,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
 		return err
 	}
-	ProcessingBlock = 0
 
 	// get new block from db
 	lastBlockOnChain, err := c.Blockchain.GetBlockNumber()
@@ -116,8 +115,8 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 			switch address {
 			case c.Config.MarketplaceEvents.Contract:
-			//switch topic {
-			case c.Config.MarketplaceEvents.PurchaseToken:
+				//switch topic {
+				//case c.Config.MarketplaceEvents.PurchaseToken:
 				//err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
 				//case c.Config.MarketplaceEvents.MakeOffer:
 				//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
@@ -141,7 +140,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			case "0xe08811c6AB1B27526fA9F889907D65f441ADF124": // master project
 				switch topic {
 				case c.Config.BlockChainEvent.TransferNFT:
-					//c.Usecase.UpdateProjectWithListener(_log)
+					c.Usecase.UpdateProjectWithListener(_log)
 				}
 			default:
 				switch topic {
