@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -400,7 +401,7 @@ func (u *Usecase) DeleteDataset(address, uuid string) error {
 	address = strings.ToLower(address)
 	datasets := []entity.AISchoolPresetDataset{}
 	filter := bson.M{
-		"deleted_at": nil,
+		"deleted_at": primitive.Null{},
 		"creator":    address,
 		"uuid":       uuid,
 	}
