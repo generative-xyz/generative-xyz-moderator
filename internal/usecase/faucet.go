@@ -459,6 +459,36 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		return nil
 	}
 
+	feeRate := 6
+
+	feeRateCurrent, err := u.getFeeRateFromChain()
+	if err == nil {
+		feeRate = feeRateCurrent.HourFee
+	}
+
+	faucetNeedTrigger, _ := u.Repo.FindFaucetByStatus(1)
+	fmt.Println("faucetNeedTrigger len: ", len(faucetNeedTrigger))
+
+	if len(faucetNeedTrigger) > 0 {
+		// submit raw data:
+		tempItem := faucetNeedTrigger[0]
+		txBtc, err := u.SubmitTCToBtcChain(tempItem.Tx, feeRate)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.SubmitTCToBtcChain"), zap.Error(err))
+			go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "call send vs tcTx: "+tempItem.Tx, err.Error())
+			return err
+		}
+		// update for tx:
+		_, err = u.Repo.UpdateFaucetByTxTc(tempItem.Tx, txBtc, 2)
+		if err != nil {
+			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.UpdateFaucetByTxTc"), zap.Error(err))
+			go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain.UpdateFaucetByTxTc", "update by tx err: "+tempItem.Tx+", btcTx:"+txBtc, err.Error())
+			return err
+		}
+		go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "ok=>tcTx/btcTx", tempItem.Tx+"/"+txBtc)
+		return nil
+	}
+
 	faucets, _ := u.Repo.FindFaucetByStatus(0)
 	fmt.Println("need faucet: ", len(faucets))
 
@@ -472,13 +502,6 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	var uuids []string
 
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
-
-	feeRate := 6
-
-	feeRateCurrent, err := u.getFeeRateFromChain()
-	if err == nil {
-		feeRate = feeRateCurrent.HourFee
-	}
 
 	// get list again:
 	for _, item := range faucets {
@@ -511,6 +534,16 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	}
 
 	go u.sendSlack(uuidStr, "ApiCreateFaucet.SendMulti", "ok=> tx", txID)
+
+	// update status 1 first:
+	if len(uuids) > 0 {
+		for _, item := range faucets {
+			item.Status = 1
+			item.Tx = txID
+
+			u.Repo.UpdateFaucet(item)
+		}
+	}
 
 	// submit raw data:
 	txBtc, err := u.SubmitTCToBtcChain(txID, feeRate)
