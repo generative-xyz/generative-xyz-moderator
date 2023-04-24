@@ -141,6 +141,14 @@ func startServer() {
 		return
 	}
 
+	// init tc client public
+	tcClientPublicWrap, err := ethclient.Dial(conf.BlockchainConfig.TCPublicEndpoint)
+	if err != nil {
+		_logger.AtLog.Logger.Error("error initializing tcClient public service", zap.Error(err))
+		return
+	}
+	tcClientPublic := eth.NewClient(tcClientPublicWrap)
+
 	// init tc client
 	tcClientWrap, err := ethclient.Dial(conf.BlockchainConfig.TCEndpoint)
 	if err != nil {
@@ -191,10 +199,11 @@ func startServer() {
 		DelegateService:     delegateService,
 		RedisV9:             redisV9,
 
-		EthClient:    ethClients,   // for eth chain (for mint...)
-		EthClientDex: ethClientDex, // for eth chain (dex)
-		TcClient:     tcClients,    // for tc chain
-		BsClient:     bsClient,     // for btc/blockcypher service
+		EthClient:          ethClients,     // for eth chain (for mint...)
+		EthClientDex:       ethClientDex,   // for eth chain (dex)
+		TcClient:           tcClients,      // for tc chain
+		TcClientPublicNode: tcClientPublic, // for tc chain
+		BsClient:           bsClient,       // for btc/blockcypher service
 
 	}
 

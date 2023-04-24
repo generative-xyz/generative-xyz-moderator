@@ -38,7 +38,7 @@ type projectStatChan struct {
 }
 
 func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -61,7 +61,7 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -82,7 +82,7 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error 
 }
 
 func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -105,7 +105,7 @@ func (u Usecase) ResolveMarketplaceMakeOffer(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -126,7 +126,7 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
@@ -147,7 +147,7 @@ func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 }
 
 func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
-	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.Blockchain.GetClient())
+	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err

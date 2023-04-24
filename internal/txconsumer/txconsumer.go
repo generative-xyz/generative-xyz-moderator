@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -105,41 +106,42 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			zap.Int64("to block", ProcessingBlockTo),
 			zap.Int64("logs", int64(len(logs))))
 
-		//for _, _log := range logs {
-		//
-		//	address := strings.ToLower(_log.Address.String())
-		//	topic := strings.ToLower(_log.Topics[0].String())
-		//
-		//	switch address {
-		//	case c.Config.MarketplaceEvents.Contract:
-		//		switch topic {
-		//		case c.Config.MarketplaceEvents.PurchaseToken:
-		//			err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-		//		case c.Config.MarketplaceEvents.MakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
-		//		case c.Config.MarketplaceEvents.AcceptMakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-		//		case c.Config.MarketplaceEvents.CancelListing:
-		//			err = c.Usecase.ResolveMarketplaceCancelListing(_log)
-		//		case c.Config.MarketplaceEvents.CancelMakeOffer:
-		//			err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
-		//		case c.Config.MarketplaceEvents.ListToken:
-		//			err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-		//		}
-		//	case c.Config.DAOEvents.Contract:
-		//		switch topic {
-		//		case c.Config.DAOEvents.ProposalCreated:
-		//			err = c.Usecase.DAOProposalCreated(_log)
-		//		case c.Config.DAOEvents.CastVote:
-		//			err = c.Usecase.DAOCastVote(_log)
-		//		}
-		//	default:
-		//		switch topic {
-		//		case c.Config.DAOEvents.TransferNFTSignature:
-		//			c.Usecase.UpdateProjectWithListener(_log)
-		//		}
-		//	}
-		//}
+		for _, _log := range logs {
+
+			address := strings.ToLower(_log.Address.String())
+			topic := strings.ToLower(_log.Topics[0].String())
+
+			switch address {
+			case c.Config.MarketplaceEvents.Contract:
+				// switch topic {
+				// case c.Config.MarketplaceEvents.PurchaseToken:
+				//err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				//case c.Config.MarketplaceEvents.MakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
+				//case c.Config.MarketplaceEvents.AcceptMakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+				//case c.Config.MarketplaceEvents.CancelListing:
+				//	err = c.Usecase.ResolveMarketplaceCancelListing(_log)
+				//case c.Config.MarketplaceEvents.CancelMakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
+				// case c.Config.MarketplaceEvents.ListToken:
+				// 	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+
+				// }
+			case c.Config.DAOEvents.Contract:
+				//switch topic {
+				//case c.Config.DAOEvents.ProposalCreated:
+				//	err = c.Usecase.DAOProposalCreated(_log)
+				//case c.Config.DAOEvents.CastVote:
+				//	err = c.Usecase.DAOCastVote(_log)
+				//}
+			default:
+				switch topic {
+				case c.Config.DAOEvents.TransferNFTSignature:
+					c.Usecase.UpdateProjectWithListener(_log)
+				}
+			}
+		}
 
 		if ProcessingBlockTo < lastBlockOnChain.Int64() {
 			ProcessingBlock = ProcessingBlockTo + 1
