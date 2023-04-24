@@ -34,9 +34,13 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 	result := []response.AISchoolPresetDataset{}
 	for _, file := range files {
 		result = append(result, response.AISchoolPresetDataset{
-			Name:      file.Name,
-			Thumbnail: file.Thumbnail,
-			UUID:      file.UUID,
+			Name:        file.Name,
+			Thumbnail:   file.Thumbnail,
+			UUID:        file.UUID,
+			Creator:     file.Creator,
+			IsPrivate:   file.IsPrivate,
+			Size:        file.Size,
+			NumOfAssets: file.NumOfAssets,
 		})
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
