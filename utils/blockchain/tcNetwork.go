@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
@@ -39,15 +38,14 @@ func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 	return header.Number, nil
 }
 
-
-func (a *TcNetwork) GetBlock () (*types.Header, error) {
+func (a *TcNetwork) GetBlock() (*types.Header, error) {
 	return a.client.HeaderByNumber(context.Background(), nil)
 }
 
-func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses []common.Address) ([]types.Log, error) {
+func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: &fromBlock,
-		ToBlock: &toBlock, 
+		ToBlock:   &toBlock,
 		//Addresses: addresses,
 	}
 	logs, err := a.client.FilterLogs(context.Background(), query)
