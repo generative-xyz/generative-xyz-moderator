@@ -370,6 +370,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool.HandleFunc("/upload-dataset", h.schoolUploadDataset).Methods("POST")
 	aiSchool.HandleFunc("/submit-model", h.schoolSubmitModel).Methods("POST")
 	aiSchool.HandleFunc("/delete-dataset", h.schoolDeleteDataset).Methods("GET")
+	aiSchool.HandleFunc("/list-dataset", h.schoolListDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
 
 }
