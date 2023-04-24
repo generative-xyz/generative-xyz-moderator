@@ -372,7 +372,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	return jobLog, jobErrLog, nil
 }
 
-func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) error {
+func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) (*entity.AISchoolPresetDataset, error) {
 	newDataset := &entity.AISchoolPresetDataset{
 		Name:        name,
 		Creator:     creator,
@@ -384,9 +384,9 @@ func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size in
 	}
 	err := u.Repo.InsertOne(newDataset.TableName(), newDataset)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return newDataset, nil
 }
 
 // TODO AISCHOOL
