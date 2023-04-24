@@ -81,6 +81,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		logger.AtLog.Logger.Error("resolveTransaction", zap.Any("err", err))
 		return err
 	}
+	ProcessingBlock = 0
 
 	// get new block from db
 	lastBlockOnChain, err := c.Blockchain.GetBlockNumber()
@@ -115,32 +116,41 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 			switch address {
 			case c.Config.MarketplaceEvents.Contract:
-				switch topic {
-				case c.Config.MarketplaceEvents.PurchaseToken:
-					err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-					//case c.Config.MarketplaceEvents.MakeOffer:
-					//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
-					//case c.Config.MarketplaceEvents.AcceptMakeOffer:
-					//	err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-					//case c.Config.MarketplaceEvents.CancelListing:
-					//	err = c.Usecase.ResolveMarketplaceCancelListing(_log)
-					//case c.Config.MarketplaceEvents.CancelMakeOffer:
-					//	err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
-					//case c.Config.MarketplaceEvents.ListToken:
-					//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-					//
-				}
-			case c.Config.DAOEvents.Contract:
-				//switch topic {
-				//case c.Config.DAOEvents.ProposalCreated:
-				//	err = c.Usecase.DAOProposalCreated(_log)
-				//case c.Config.DAOEvents.CastVote:
-				//	err = c.Usecase.DAOCastVote(_log)
+			//switch topic {
+			case c.Config.MarketplaceEvents.PurchaseToken:
+				err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				//case c.Config.MarketplaceEvents.MakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
+				//case c.Config.MarketplaceEvents.AcceptMakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+				//case c.Config.MarketplaceEvents.CancelListing:
+				//	err = c.Usecase.ResolveMarketplaceCancelListing(_log)
+				//case c.Config.MarketplaceEvents.CancelMakeOffer:
+				//	err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
+				//case c.Config.MarketplaceEvents.ListToken:
+				//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+				//
 				//}
+			case c.Config.DAOEvents.Contract:
+			//switch topic {
+			//case c.Config.DAOEvents.ProposalCreated:
+			//	err = c.Usecase.DAOProposalCreated(_log)
+			//case c.Config.DAOEvents.CastVote:
+			//	err = c.Usecase.DAOCastVote(_log)
+			//}
+			case "0xe08811c6AB1B27526fA9F889907D65f441ADF124": // master project
+				switch topic {
+				case c.Config.BlockChainEvent.TransferNFT:
+					//c.Usecase.UpdateProjectWithListener(_log)
+				}
 			default:
 				switch topic {
-				case c.Config.DAOEvents.TransferNFTSignature:
-					c.Usecase.UpdateProjectWithListener(_log)
+				case c.Config.BlockChainEvent.TransferNFT:
+					// handle transfer
+					err := c.Usecase.UpdateTokenOwner(_log)
+					if err != nil {
+						logger.AtLog.Error("err.UpdateTokenOwner", zap.String("err", err.Error()))
+					}
 				}
 			}
 		}
@@ -158,9 +168,9 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 }
 
 func (c *HttpTxConsumer) getTcAddress() error {
-	savedMap := make(map[common.Address]bool)
+	savedMap := make(map[string]bool)
 
-	for _, address := range c.Addresses {
+	for _, address := range c.FetchedAddress {
 		savedMap[address] = true
 	}
 
@@ -171,9 +181,9 @@ func (c *HttpTxConsumer) getTcAddress() error {
 
 	for _, project := range projects {
 		address := common.HexToAddress(project.GenNFTAddr)
-		if savedMap[address] {
-			savedMap[address] = true
-			c.Addresses = append(c.Addresses, common.HexToAddress(project.GenNFTAddr))
+		if !savedMap[project.GenNFTAddr] {
+			savedMap[project.GenNFTAddr] = true
+			c.Addresses = append(c.Addresses, address)
 			c.FetchedAddress = append(c.FetchedAddress, project.GenNFTAddr)
 		}
 	}
