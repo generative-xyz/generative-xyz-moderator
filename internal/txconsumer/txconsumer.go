@@ -118,7 +118,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			case c.Config.MarketplaceEvents.Contract:
 			//switch topic {
 			case c.Config.MarketplaceEvents.PurchaseToken:
-				err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				//err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
 				//case c.Config.MarketplaceEvents.MakeOffer:
 				//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
 				//case c.Config.MarketplaceEvents.AcceptMakeOffer:

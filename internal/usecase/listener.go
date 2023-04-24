@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 
 	"rederinghub.io/internal/delivery/http/response"
 
@@ -351,6 +352,7 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log) error {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
 	}
+
 	event, err := contract.ParseTransfer(chainLog)
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot parse purchase token event", zap.Error(err))
@@ -363,7 +365,7 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log) error {
 		return err
 	}
 
-	err = u.Repo.UpdateTokenOwnerAddr(token.TokenID, event.To.String())
+	err = u.Repo.UpdateTokenOwnerAddr(token.TokenID, strings.ToLower(event.To.String()))
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
 	}
