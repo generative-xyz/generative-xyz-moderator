@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -385,7 +384,7 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 	return projects, nil
 }
 
-func (r Repository) GetTCProject(excludeIDs []common.Address) ([]entity.Projects, error) {
+func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error) {
 	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
 
 	if len(excludeIDs) > 0 {

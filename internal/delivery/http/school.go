@@ -23,6 +23,21 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("text cannot be empty"))
 		return
 	}
+
+	files, err := h.Usecase.Repo.FindPresetDatasetByName(text)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result := []response.AISchoolPresetDataset{}
+	for _, file := range files {
+		result = append(result, response.AISchoolPresetDataset{
+			Name:      file.Name,
+			Thumbnail: file.Thumbnail,
+			UUID:      file.UUID,
+		})
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, files, "")
 }
 
 func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {

@@ -197,7 +197,7 @@ func (job *AIJobInstance) Start() {
 		if job.job.DatasetUUID == "" {
 			if len(job.job.CustomDatasetsUUID) > 0 {
 				for _, datasetUUID := range job.job.CustomDatasetsUUID {
-					dataset, err := job.u.Repo.GetPresetDatasetByUUID(datasetUUID)
+					dataset, err := job.u.Repo.GetPresetDatasetByID(datasetUUID)
 					if err != nil {
 						job.job.Errors = err.Error()
 						job.job.Status = "error"
