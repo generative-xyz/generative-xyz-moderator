@@ -412,7 +412,7 @@ func (h *httpDelivery) schoolDeleteDataset(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	datasetUUID := r.FormValue("uuid")
+	datasetUUID := r.URL.Query().Get("uuid")
 	err := h.Usecase.DeleteDataset(datasetUUID, address)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
