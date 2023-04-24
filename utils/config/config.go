@@ -206,9 +206,10 @@ type MarketplaceEvents struct {
 }
 
 type DAOEvents struct {
-	Contract        string
-	ProposalCreated string
-	CastVote        string
+	Contract             string
+	ProposalCreated      string
+	CastVote             string
+	TransferNFTSignature string
 }
 
 type GENToken struct {
@@ -338,9 +339,10 @@ func NewConfig(filePaths ...string) (*Config, error) {
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
 		DAOEvents: DAOEvents{
-			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
-			Contract:        os.Getenv("DAO_PROPOSAL_CONTRACT"),
-			CastVote:        os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
+			ProposalCreated:      os.Getenv("DAO_PROPOSAL_CREATED"),
+			Contract:             os.Getenv("DAO_PROPOSAL_CONTRACT"),
+			CastVote:             os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
+			TransferNFTSignature: os.Getenv("TRANSFER_NFT_SIGNATURE"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{
