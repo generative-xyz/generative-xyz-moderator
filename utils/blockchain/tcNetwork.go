@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"os"
 
@@ -42,11 +43,11 @@ func (a *TcNetwork) GetBlock() (*types.Header, error) {
 	return a.client.HeaderByNumber(context.Background(), nil)
 }
 
-func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int) ([]types.Log, error) {
+func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses []common.Address) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: &fromBlock,
 		ToBlock:   &toBlock,
-		//Addresses: addresses,
+		Addresses: addresses,
 	}
 	logs, err := a.client.FilterLogs(context.Background(), query)
 	if err != nil {
