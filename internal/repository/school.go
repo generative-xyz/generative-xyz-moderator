@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 )
@@ -84,4 +85,16 @@ func (r Repository) GetPresetDatasetByUUID(id string) (*entity.AISchoolPresetDat
 		return nil, errors.New("file not found")
 	}
 	return &file[0], nil
+}
+
+func (r Repository) FindPresetDatasetByName(name string) ([]entity.AISchoolPresetDataset, error) {
+	files := []entity.AISchoolPresetDataset{}
+	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"name": primitive.Regex{Pattern: name, Options: "i"}}, files)
+	if err != nil {
+		return nil, err
+	}
+	if len(files) == 0 {
+		return nil, errors.New("files not found")
+	}
+	return files, nil
 }
