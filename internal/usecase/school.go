@@ -402,7 +402,7 @@ func (u *Usecase) ListDataset(address string, limit, offset int64) ([]entity.AIS
 	filter := bson.M{
 		"creator": address,
 	}
-	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, datasets, options.Find().SetSkip(offset).SetLimit(limit))
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets, options.Find().SetSkip(offset).SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}
