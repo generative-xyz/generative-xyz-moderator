@@ -11,6 +11,24 @@ import (
 	"rederinghub.io/utils/helpers"
 )
 
+func (r Repository) ListFaucetByStatus(statuses []int) ([]*entity.Faucet, error) {
+	resp := []*entity.Faucet{}
+	filter := bson.M{
+		"status": bson.M{"$in": statuses},
+	}
+
+	cursor, err := r.DB.Collection(entity.Faucet{}.TableName()).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func (r Repository) FindFaucetByStatus(status int) ([]*entity.Faucet, error) {
 	var resp []*entity.Faucet
 	filter := bson.D{{"status", status}}
@@ -156,6 +174,17 @@ func (r Repository) FindFaucetByTwitterNameOrAddress(twitterName, address string
 func (r Repository) UpdateFaucet(faucet *entity.Faucet) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"uuid", faucet.UUID}}
 	result, err := r.UpdateOne(entity.Faucet{}.TableName(), filter, faucet)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r Repository) UpdateFaucetByTxTc(tx, txBtc string, status int) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"tx", tx}}
+	update := bson.M{"$set": bson.M{"status": status, "btc_tx": txBtc}}
+	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
