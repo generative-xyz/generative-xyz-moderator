@@ -21,13 +21,34 @@ import (
 )
 
 func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Request) {
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddress
+	}
+	if address == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
 	text := r.URL.Query().Get("text")
 	if text == "" {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("text cannot be empty"))
 		return
 	}
 
-	files, err := h.Usecase.Repo.FindPresetDatasetByName(text)
+	files, err := h.Usecase.Repo.FindPresetDatasetByName(text, address)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -412,7 +433,7 @@ func (h *httpDelivery) schoolDeleteDataset(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
 		return
 	}
-	datasetUUID := r.FormValue("uuid")
+	datasetUUID := r.URL.Query().Get("uuid")
 	err := h.Usecase.DeleteDataset(datasetUUID, address)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
