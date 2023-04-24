@@ -31,6 +31,7 @@ type Config struct {
 	TxConsumerConfig      TxConsumerConfig
 	MarketplaceEvents     MarketplaceEvents
 	DAOEvents             DAOEvents
+	BlockChainEvent       BlockChainEvent
 	TimeResyncProjectStat int32
 	Slack                 slack.Config
 	Crontab               CronTabConfig
@@ -206,12 +207,13 @@ type MarketplaceEvents struct {
 }
 
 type DAOEvents struct {
-	Contract             string
-	ProposalCreated      string
-	CastVote             string
-	TransferNFTSignature string
+	Contract        string
+	ProposalCreated string
+	CastVote        string
 }
-
+type BlockChainEvent struct {
+	TransferNFT string
+}
 type GENToken struct {
 	Contract string
 }
@@ -339,10 +341,12 @@ func NewConfig(filePaths ...string) (*Config, error) {
 			CancelMakeOffer: os.Getenv("MARKETPLACE_CANCEL_MAKE_OFFER"),
 		},
 		DAOEvents: DAOEvents{
-			ProposalCreated:      os.Getenv("DAO_PROPOSAL_CREATED"),
-			Contract:             os.Getenv("DAO_PROPOSAL_CONTRACT"),
-			CastVote:             os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
-			TransferNFTSignature: os.Getenv("TRANSFER_NFT_SIGNATURE"),
+			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
+			Contract:        os.Getenv("DAO_PROPOSAL_CONTRACT"),
+			CastVote:        os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
+		},
+		BlockChainEvent: BlockChainEvent{
+			TransferNFT: os.Getenv("TRANSFER_NFT_SIGNATURE"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{
