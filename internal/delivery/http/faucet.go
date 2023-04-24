@@ -75,7 +75,7 @@ func (h *httpDelivery) getCurrentFaucetStep(w http.ResponseWriter, r *http.Reque
 
 	address := r.URL.Query().Get("address")
 
-	faucetItems, err := h.Usecase.Repo.FindFaucetByTwitterNameOrAddress("", address)
+	faucetItems, err := h.Usecase.Repo.FindFaucetByTwitterNameOrAddress(address, address)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.getCurrentFaucetStep", zap.String("err", err.Error()))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
