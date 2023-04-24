@@ -93,7 +93,7 @@ func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDatas
 
 func (r Repository) FindPresetDatasetByName(name string) ([]entity.AISchoolPresetDataset, error) {
 	files := []entity.AISchoolPresetDataset{}
-	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"name": primitive.Regex{Pattern: name, Options: "i"}}, files)
+	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"name": primitive.Regex{Pattern: name, Options: "i"}}, &files)
 	if err != nil {
 		return nil, err
 	}
