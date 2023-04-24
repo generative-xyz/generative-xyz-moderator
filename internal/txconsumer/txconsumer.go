@@ -2,17 +2,19 @@ package txconsumer
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"math/big"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/global"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type HttpTxConsumer struct {
@@ -20,12 +22,12 @@ type HttpTxConsumer struct {
 	DefaultLastProcessedBlock int64
 	CronJobPeriod             int32
 	BatchLogSize              int32
-	//Addresses                 []common.Address
-	Cache    redis.IRedisCache
-	Logger   logger.Ilogger
-	RedisKey string
-	Usecase  usecase.Usecase
-	Config   *config.Config
+	Addresses                 []common.Address
+	Cache                     redis.IRedisCache
+	Logger                    logger.Ilogger
+	RedisKey                  string
+	Usecase                   usecase.Usecase
+	Config                    *config.Config
 }
 
 func NewHttpTxConsumer(global *global.Global, uc usecase.Usecase, cfg config.Config) (*HttpTxConsumer, error) {
@@ -33,10 +35,10 @@ func NewHttpTxConsumer(global *global.Global, uc usecase.Usecase, cfg config.Con
 	txConsumer.DefaultLastProcessedBlock = cfg.TxConsumerConfig.StartBlock
 	txConsumer.CronJobPeriod = cfg.TxConsumerConfig.CronJobPeriod
 	txConsumer.BatchLogSize = cfg.TxConsumerConfig.BatchLogSize
-	//txConsumer.Addresses = make([]common.Address, 0)
-	//for _, address := range cfg.TxConsumerConfig.Addresses {
-	//	txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
-	//}
+	txConsumer.Addresses = make([]common.Address, 0)
+	for _, address := range cfg.TxConsumerConfig.Addresses {
+		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
+	}
 	txConsumer.Cache = global.Cache
 	txConsumer.Logger = global.Logger
 	txConsumer.Blockchain = global.TcNetwotkchain
@@ -87,7 +89,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 	for ProcessingBlock <= lastBlockOnChain.Int64() {
 		ProcessingBlockTo := ProcessingBlock + int64(c.BatchLogSize)
-		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlockTo))
+		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlockTo), c.Addresses)
 		if err != nil {
 			logger.AtLog.Logger.Error("err.GetEventLogs", zap.String("err", err.Error()))
 			return err
