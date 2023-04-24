@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -304,14 +305,26 @@ func (h *httpDelivery) schoolUploadDataset(w http.ResponseWriter, r *http.Reques
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	numOfAssets := len(zr.File)
-	err = h.Usecase.CreateDataset(file.UUID, file.FileName, datasetName, address, file.FileSize, numOfAssets, isPrivate)
+	numOfAssets := 0
+
+	for _, fileInfo := range zr.File {
+		if strings.Index(strings.ToLower(fileInfo.Name), strings.ToLower("__MACOSX")) > -1 {
+			continue
+		}
+
+		if strings.Index(strings.ToLower(fileInfo.Name), strings.ToLower(".DS_Store")) > -1 {
+			continue
+		}
+		numOfAssets++
+	}
+
+	created, err := h.Usecase.CreateDataset(file.UUID, file.FileName, datasetName, address, file.FileSize, numOfAssets, isPrivate)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "", "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, created.UUID, "")
 }
 
 func (h *httpDelivery) schoolSubmitModel(w http.ResponseWriter, r *http.Request) {
