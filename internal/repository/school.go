@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 )
@@ -72,4 +73,40 @@ func (r Repository) GetAISchoolUnClearedJob(before int64) ([]entity.AISchoolJob,
 		return nil, err
 	}
 	return jobs, nil
+}
+
+func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDataset, error) {
+	file := []entity.AISchoolPresetDataset{}
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	err = r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"_id": objID}, &file)
+	if err != nil {
+		return nil, err
+	}
+	if len(file) == 0 {
+		return nil, errors.New("file not found")
+	}
+	return &file[0], nil
+}
+
+func (r Repository) FindPresetDatasetByName(name string) ([]entity.AISchoolPresetDataset, error) {
+	files := []entity.AISchoolPresetDataset{}
+	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"name": primitive.Regex{Pattern: name, Options: "i"}}, &files)
+	if err != nil {
+		return nil, err
+	}
+	if len(files) == 0 {
+		return nil, errors.New("files not found")
+	}
+	return files, nil
+}
+
+func (r Repository) CreateDataset(data *entity.AISchoolPresetDataset) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -47,7 +47,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 			delete(currentAIJobs, jobID)
 		}
 	}
-	if len(currentAIJobs) >= 10 {
+	if len(currentAIJobs) >= 2 {
 		return nil
 	}
 	for _, job := range jobList {
@@ -102,7 +102,7 @@ func createAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams
 	return nil
 }
 
-func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetGCPath string, gcs googlecloud.IGcstorage) error {
+func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetsGCPath []string, gcs googlecloud.IGcstorage) error {
 	err := createAISchoolWorkFolder(jobID, params)
 	if err != nil {
 		return err
@@ -117,29 +117,33 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	if err != nil {
 		log.Fatal(err)
 	}
+	for _, datasetGCPath := range datasetsGCPath {
+		gcPathParts := strings.Split(datasetGCPath, "/")
+		filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
 
-	log.Println("Unzipping dataset: ", datasetGCPath)
-	dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
-	if err != nil {
-		return err
-	}
-	log.Println("Dataset size: ", len(dataseBytes))
-	br := bytes.NewReader(dataseBytes)
-
-	zr, err := zip.NewReader(br, int64(len(dataseBytes)))
-	if err != nil {
-		return err
-	}
-	destination, err := filepath.Abs(basePath + jobID + "/dataset")
-	if err != nil {
-		return err
-	}
-
-	for _, f := range zr.File {
-		log.Println("Unzipping", f.Name)
-		err := unzipFile(f, destination)
+		log.Println("Unzipping dataset: ", datasetGCPath)
+		dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
 		if err != nil {
 			return err
+		}
+		log.Println("Dataset size: ", len(dataseBytes))
+		br := bytes.NewReader(dataseBytes)
+
+		zr, err := zip.NewReader(br, int64(len(dataseBytes)))
+		if err != nil {
+			return err
+		}
+		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + filenameParts[0])
+		if err != nil {
+			return err
+		}
+
+		for _, f := range zr.File {
+			log.Println("Unzipping", f.Name)
+			err := unzipFile(f, destination)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -186,24 +190,34 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-	datasetPath := "ai-school/e984b788-ad5a-4e9d-9e54-a2911a14760e/1681982560672572223-1681982560-data.zip"
-	//
-	if !job.job.UsePFPDataset {
-		dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
-		if err != nil {
-			job.job.Errors = err.Error()
-			job.job.Status = "error"
-			err = job.u.Repo.UpdateAISchoolJob(job.job)
+	datasetsPath := []string{}
+	if len(job.job.Datasets) > 0 {
+		for _, datasetUUID := range job.job.Datasets {
+			dataset, err := job.u.Repo.GetPresetDatasetByID(datasetUUID)
 			if err != nil {
-				// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+				job.job.Errors = err.Error()
+				job.job.Status = "error"
+				err = job.u.Repo.UpdateAISchoolJob(job.job)
+				if err != nil {
+					// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+					return
+				}
 				return
 			}
+			datasetsPath = append(datasetsPath, dataset.DatasetURI)
+		}
+	} else {
+		job.job.Errors = "No dataset provided"
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 			return
 		}
-		datasetPath = dataset.FileName
+		return
 	}
 
-	err = prepAISchoolWorkFolder(jobID, params, datasetPath, job.u.GCS)
+	err = prepAISchoolWorkFolder(jobID, params, datasetsPath, job.u.GCS)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
@@ -356,4 +370,26 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 
 	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
+}
+
+func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) error {
+	newDataset := &entity.AISchoolPresetDataset{
+		Name:        name,
+		Creator:     creator,
+		IsPrivate:   isPrivate,
+		FileUUID:    fileUUID,
+		DatasetURI:  fileURI,
+		Size:        size,
+		NumOfAssets: numOfAssets,
+	}
+	err := u.Repo.InsertOne(newDataset.TableName(), newDataset)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TODO AISCHOOL
+func (u *Usecase) DeleteDataset(address, uuid string) error {
+	return nil
 }

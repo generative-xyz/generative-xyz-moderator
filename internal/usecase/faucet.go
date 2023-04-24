@@ -235,7 +235,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) er
 			tx, isPending, err := u.TcClient.GetClient().TransactionByHash(context.Background(), common.HexToHash(txhash))
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash"), zap.Error(err))
-				return err
+				return errors.New("tx not found")
 			}
 			if isPending {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.isPending"), zap.Error(err))
