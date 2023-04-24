@@ -37,7 +37,7 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 		result = append(result, response.AISchoolPresetDataset{
 			Name:        file.Name,
 			Thumbnail:   file.Thumbnail,
-			UUID:        file.UUID,
+			UUID:        file.ID.Hex(),
 			Creator:     file.Creator,
 			IsPrivate:   file.IsPrivate,
 			Size:        file.Size,
@@ -420,4 +420,54 @@ func (h *httpDelivery) schoolDeleteDataset(w http.ResponseWriter, r *http.Reques
 	}
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, "ok", "")
+}
+
+func (h *httpDelivery) schoolListDataset(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		ctx := r.Context()
+		iUserID := ctx.Value(utils.SIGNED_USER_ID)
+		userID, ok := iUserID.(string)
+		if !ok {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+			return
+		}
+		userInfo, err := h.Usecase.UserProfile(userID)
+		if err != nil {
+			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		address = userInfo.WalletAddress
+	}
+	if address == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
+		return
+	}
+	datasets, err := h.Usecase.ListDataset(address, int64(limit), int64(offset))
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result := []response.AISchoolPresetDataset{}
+	for _, dataset := range datasets {
+		result = append(result, response.AISchoolPresetDataset{
+			Name:        dataset.Name,
+			Thumbnail:   dataset.Thumbnail,
+			UUID:        dataset.UUID,
+			Creator:     dataset.Creator,
+			IsPrivate:   dataset.IsPrivate,
+			Size:        dataset.Size,
+			NumOfAssets: dataset.NumOfAssets,
+		})
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
