@@ -117,10 +117,10 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			//	err = c.Usecase.DAOProposalCreated(_log)
 			//case c.Config.DAOEvents.CastVote:
 			//	err = c.Usecase.DAOCastVote(_log)
-			//case c.Config.DAOEvents.TransferNFTSignature:
-			//	c.Usecase.UpdateProjectWithListener(_log)
-			//case c.Config.MarketplaceEvents.ListToken:
-			//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+			case c.Config.DAOEvents.TransferNFTSignature:
+				c.Usecase.UpdateProjectWithListener(_log)
+				//case c.Config.MarketplaceEvents.ListToken:
+				//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
 			}
 		}
 		if ProcessingBlockTo < lastBlockOnChain.Int64() {
