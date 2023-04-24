@@ -434,7 +434,7 @@ func (h *httpDelivery) schoolDeleteDataset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	datasetUUID := r.URL.Query().Get("uuid")
-	err := h.Usecase.DeleteDataset(datasetUUID, address)
+	err := h.Usecase.DeleteDataset(address, datasetUUID)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
