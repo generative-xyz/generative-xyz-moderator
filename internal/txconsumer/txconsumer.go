@@ -93,10 +93,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			return err
 		}
 
-		logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("processing block from number", ProcessingBlock), zap.Int64("processing block to number", ProcessingBlockTo))
-		if len(logs) > 0 {
-			fmt.Println("logs", logs)
-		}
+		logger.AtLog.Logger.Info("resolveTransaction", zap.Int64("from block", ProcessingBlock), zap.Int64("to block", ProcessingBlockTo))
 		for _, _log := range logs {
 
 			topic := strings.ToLower(_log.Topics[0].String())
@@ -127,6 +124,8 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			ProcessingBlock = ProcessingBlockTo + 1
 			c.setLastProcessedBlock(ProcessingBlock)
 		} else {
+			ProcessingBlock = lastBlockOnChain.Int64() + 1
+			c.setLastProcessedBlock(ProcessingBlock)
 			break
 		}
 	}
