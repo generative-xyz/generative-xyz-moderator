@@ -91,14 +91,32 @@ func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDatas
 	return &file[0], nil
 }
 
-func (r Repository) FindPresetDatasetByName(name string) ([]entity.AISchoolPresetDataset, error) {
+func (r Repository) FindPresetDatasetByName(name, creator string) ([]entity.AISchoolPresetDataset, error) {
 	files := []entity.AISchoolPresetDataset{}
-	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"name": primitive.Regex{Pattern: name, Options: "i"}}, &files)
+	filter := bson.D{
+		{"deleted_at", primitive.Null{}},
+		{"name", bson.D{{"$regex", primitive.Regex{Pattern: name, Options: "i"}}}},
+		{"$or",
+			bson.A{
+				bson.D{
+					{"$and",
+						bson.A{
+							bson.D{{"creator", creator}},
+							bson.D{{"is_private", true}},
+						},
+					},
+				},
+				bson.D{{"is_private", false}},
+			},
+		},
+	}
+	result, err := r.DB.Collection(entity.AISchoolPresetDataset{}.TableName()).Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
 	}
-	if len(files) == 0 {
-		return nil, errors.New("files not found")
+	err = result.All(context.Background(), &files)
+	if err != nil {
+		return nil, err
 	}
 	return files, nil
 }
