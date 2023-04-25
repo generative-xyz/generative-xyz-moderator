@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"gopkg.in/ezzarghili/recaptcha-go.v4"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/delivery/http/response"
+	faucetconst "rederinghub.io/utils/constants/faucet"
 	"rederinghub.io/utils/logger"
 )
 
@@ -67,6 +69,18 @@ func (h *httpDelivery) listFaucet(w http.ResponseWriter, r *http.Request) {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) getFaucetConfig(w http.ResponseWriter, r *http.Request) {
+	result := response.FaucetConfigRes{
+		FaucetAmounts: make(map[string]string),
+	}
+
+	result.FaucetAmounts["normal"] = fmt.Sprintf("%f", float64(faucetconst.NormalFaucetAmount)/float64(1e18))
+	result.FaucetAmounts["bns"] = fmt.Sprintf("%f", float64(faucetconst.BNSFaucetAmount)/float64(1e18))
+	result.FaucetAmounts["artifact"] = fmt.Sprintf("%f", float64(faucetconst.ArtifactFaucetAmount)/float64(1e18))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
