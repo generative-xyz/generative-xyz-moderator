@@ -1497,18 +1497,13 @@ func (u Usecase) getProjectDetailFromChainWithoutCache(req structure.GetProjectD
 
 	addr := common.HexToAddress(req.ContractAddress)
 	// call to contract to get emotion
-	client, err := helpers.TCDialer()
-	if err != nil {
-		logger.AtLog.Error("ethclient.Dial", err.Error(), err)
-		return nil, err
-	}
 
 	projectID := new(big.Int)
 	projectID, ok := projectID.SetString(req.ProjectID, 10)
 	if !ok {
 		return nil, errors.New("cannot convert tokenID")
 	}
-	contractDetail, err := u.getNftContractDetailInternal(client, addr, *projectID)
+	contractDetail, err := u.getNftContractDetailInternal(u.TcClientPublicNode.GetClient(), addr, *projectID)
 	if err != nil {
 		logger.AtLog.Error("u.getNftContractDetailInternal", err.Error(), err)
 		return nil, err

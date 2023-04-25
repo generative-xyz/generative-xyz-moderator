@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
@@ -97,12 +97,6 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 	}
 
 	for ProcessingBlock <= lastBlockOnChain.Int64() {
-		err = c.getTcAddress()
-		if err != nil {
-			logger.AtLog.Logger.Error("err.getTcAddress", zap.String("err", err.Error()))
-			return err
-		}
-
 		ProcessingBlockTo := ProcessingBlock + int64(c.BatchLogSize)
 		logs, err := c.Blockchain.GetEventLogs(*big.NewInt(ProcessingBlock), *big.NewInt(ProcessingBlockTo), c.Addresses)
 		if err != nil {
@@ -115,6 +109,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			zap.Int64("to block", ProcessingBlockTo),
 			zap.Int64("logs", int64(len(logs))))
 
+		spew.Dump(logs)
 		for _, _log := range logs {
 
 			address := strings.ToLower(_log.Address.String())
@@ -143,14 +138,14 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 				//case c.Config.DAOEvents.CastVote:
 				//	err = c.Usecase.DAOCastVote(_log)
 				//}
-			case os.Getenv("GENERATIVE_PROJECT"): // master project
+			case strings.ToLower(os.Getenv("GENERATIVE_PROJECT")): // master project
 				switch topic {
-				case c.Config.BlockChainEvent.TransferNFT:
+				case strings.ToLower(c.Config.BlockChainEvent.TransferNFT):
 					c.Usecase.UpdateProjectWithListener(_log)
 				}
 			default:
 				switch topic {
-				case c.Config.BlockChainEvent.TransferNFT:
+				case strings.ToLower(c.Config.BlockChainEvent.TransferNFT):
 					// handle transfer
 					err := c.Usecase.UpdateTokenOwner(_log, c.Blockchain)
 					if err != nil {
@@ -203,6 +198,6 @@ func (c *HttpTxConsumer) StartServer() {
 		if err != nil {
 			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err", err.Error()))
 		}
-		time.Sleep(1 * time.Minute)
+		//time.Sleep(1 * time.Minute)
 	}
 }
