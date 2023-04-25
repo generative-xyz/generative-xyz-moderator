@@ -3,7 +3,9 @@ package usecase
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,9 +15,14 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/googlecloud"
+	"rederinghub.io/utils/logger"
 )
 
 type JobProgress struct {
@@ -117,7 +124,6 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	if err != nil {
 		log.Fatal(err)
 	}
-	// "ai-school/e984b788-ad5a-4e9d-9e54-a2911a14760e/1681982560672572223-1681982560-data.zip"
 	for _, datasetGCPath := range datasetsGCPath {
 		gcPathParts := strings.Split(datasetGCPath, "/")
 		filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
@@ -191,37 +197,10 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-	datasetsPath := []string{"ai-school/e984b788-ad5a-4e9d-9e54-a2911a14760e/1681982560672572223-1681982560-data.zip"}
-	//
-	if !job.job.UsePFPDataset {
-		if job.job.DatasetUUID == "" {
-			if len(job.job.CustomDatasetsUUID) > 0 {
-				for _, datasetUUID := range job.job.CustomDatasetsUUID {
-					dataset, err := job.u.Repo.GetPresetDatasetByUUID(datasetUUID)
-					if err != nil {
-						job.job.Errors = err.Error()
-						job.job.Status = "error"
-						err = job.u.Repo.UpdateAISchoolJob(job.job)
-						if err != nil {
-							// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
-							return
-						}
-						return
-					}
-					datasetsPath = append(datasetsPath, dataset.DatasetURI)
-				}
-			} else {
-				job.job.Errors = "No dataset provided"
-				job.job.Status = "error"
-				err = job.u.Repo.UpdateAISchoolJob(job.job)
-				if err != nil {
-					// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
-					return
-				}
-				return
-			}
-		} else {
-			dataset, err := job.u.Repo.GetFileByUUID(job.job.DatasetUUID)
+	datasetsPath := []string{}
+	if len(job.job.Datasets) > 0 {
+		for _, datasetUUID := range job.job.Datasets {
+			dataset, err := job.u.Repo.GetPresetDatasetByID(datasetUUID)
 			if err != nil {
 				job.job.Errors = err.Error()
 				job.job.Status = "error"
@@ -232,8 +211,17 @@ func (job *AIJobInstance) Start() {
 				}
 				return
 			}
-			datasetsPath = []string{dataset.FileName}
+			datasetsPath = append(datasetsPath, dataset.DatasetURI)
 		}
+	} else {
+		job.job.Errors = "No dataset provided"
+		job.job.Status = "error"
+		err = job.u.Repo.UpdateAISchoolJob(job.job)
+		if err != nil {
+			// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
+			return
+		}
+		return
 	}
 
 	err = prepAISchoolWorkFolder(jobID, params, datasetsPath, job.u.GCS)
@@ -389,4 +377,61 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 
 	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
+}
+
+func (u *Usecase) CreateDataset(fileUUID, fileURI, name, creator string, size int, numOfAssets int, isPrivate bool) (*entity.AISchoolPresetDataset, error) {
+	creator = strings.ToLower(creator)
+	newDataset := &entity.AISchoolPresetDataset{
+		Name:        name,
+		Creator:     creator,
+		IsPrivate:   isPrivate,
+		FileUUID:    fileUUID,
+		DatasetURI:  fileURI,
+		Size:        size,
+		NumOfAssets: numOfAssets,
+	}
+	err := u.Repo.InsertOne(newDataset.TableName(), newDataset)
+	if err != nil {
+		return nil, err
+	}
+	return newDataset, nil
+}
+
+func (u *Usecase) DeleteDataset(address, uuid string) error {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": primitive.Null{},
+		"creator":    address,
+		"uuid":       uuid,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets)
+	if err != nil {
+		return err
+	}
+	if len(datasets) == 0 {
+		return errors.New("Dataset not found")
+	}
+	dataset := datasets[0]
+	_, err = u.Repo.SoftDelete(&dataset)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	err = u.DeleteFile(dataset.FileUUID)
+	return err
+}
+
+func (u *Usecase) ListDataset(address string, limit, offset int64) ([]entity.AISchoolPresetDataset, error) {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": nil,
+		"creator":    address,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets, options.Find().SetSkip(offset).SetLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	return datasets, nil
 }

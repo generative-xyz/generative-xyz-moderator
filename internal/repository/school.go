@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 )
@@ -74,9 +75,13 @@ func (r Repository) GetAISchoolUnClearedJob(before int64) ([]entity.AISchoolJob,
 	return jobs, nil
 }
 
-func (r Repository) GetPresetDatasetByUUID(id string) (*entity.AISchoolPresetDataset, error) {
+func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDataset, error) {
 	file := []entity.AISchoolPresetDataset{}
-	err := r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"uuid": id}, &file)
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	err = r.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), bson.M{"_id": objID}, &file)
 	if err != nil {
 		return nil, err
 	}
@@ -84,4 +89,42 @@ func (r Repository) GetPresetDatasetByUUID(id string) (*entity.AISchoolPresetDat
 		return nil, errors.New("file not found")
 	}
 	return &file[0], nil
+}
+
+func (r Repository) FindPresetDatasetByName(name, creator string) ([]entity.AISchoolPresetDataset, error) {
+	files := []entity.AISchoolPresetDataset{}
+	filter := bson.D{
+		{"deleted_at", primitive.Null{}},
+		{"name", bson.D{{"$regex", primitive.Regex{Pattern: name, Options: "i"}}}},
+		{"$or",
+			bson.A{
+				bson.D{
+					{"$and",
+						bson.A{
+							bson.D{{"creator", creator}},
+							bson.D{{"is_private", true}},
+						},
+					},
+				},
+				bson.D{{"is_private", false}},
+			},
+		},
+	}
+	result, err := r.DB.Collection(entity.AISchoolPresetDataset{}.TableName()).Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	err = result.All(context.Background(), &files)
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (r Repository) CreateDataset(data *entity.AISchoolPresetDataset) error {
+	err := r.InsertOne(data.TableName(), data)
+	if err != nil {
+		return err
+	}
+	return nil
 }

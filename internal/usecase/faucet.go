@@ -252,7 +252,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 				return specFaucetType, errors.New("tx status is 0")
 			}
 
-			from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
+			from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 			if err != nil {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
 				return specFaucetType, err
@@ -375,9 +375,11 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	}
 	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
 
-	addressHex := addressRegex.FindString(res)
+	res = strings.ToLower(res)
+	texts := strings.Split(res, "my tc address is")
+	addressHex := addressRegex.FindString(texts[1])
 	if len(addressHex) == 0 {
-		return "", errors.New("Address not found.")
+		panic(err)
 	}
 
 	fmt.Println("result: ", addressHex)
