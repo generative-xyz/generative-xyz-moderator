@@ -93,21 +93,13 @@ func (u Usecase) JobSyncProjectTrending() error {
 	}
 
 	var processed int64
-	for page := int64(1); ; page++ {
-		baseFilter := entity.BaseFilters{
-			Limit: 10,
-			Page:  page,
-		}
-		f := entity.FilterProjects{}
-		f.BaseFilters = baseFilter
-		logger.AtLog.Logger.Info("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", zap.Any("page)", page)))
-		resp, err := u.Repo.GetProjects(f)
+	for page := 1; ; page++ {
+
+		projects, err := u.Repo.GetProjectsPerPage(page, 100)
 		if err != nil {
 			logger.AtLog.Logger.Error("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
-		uProjects := resp.Result
-		projects := uProjects.([]entity.Projects)
 		logger.AtLog.Logger.Info("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", zap.Any("len(projects))", len(projects))))
 		if len(projects) == 0 {
 			break
