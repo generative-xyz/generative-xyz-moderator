@@ -226,3 +226,20 @@ func (s Repository) CountDAOProjectVoteByStatus(ctx context.Context, daoProjectI
 	}
 	return 0
 }
+func (s Repository) GetNewDAOProjectListedIn7Day(ctx context.Context) ([]entity.DaoProject, error) {
+	filter := bson.M{
+		"$and": []bson.M{
+			{"status": dao_project.Executed},
+			{"updated_at": bson.M{"$gte": time.Now().AddDate(0, 0, -7)}},
+		},
+	}
+	var result []entity.DaoProject
+	cursor, err := s.DB.Collection(entity.DaoProject{}.TableName()).Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if err = cursor.All(ctx, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
