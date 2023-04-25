@@ -300,22 +300,24 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarketplaceLibPurchaseToken) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
-	logger.AtLog.Logger.Info("purchase token offeringId", zap.Any("offeringID", offeringID))
+	logger.AtLog.Logger.Info("PurchaseToken", zap.String("offeringID", offeringID))
 
 	err := u.Repo.PurchaseTokenByOfferingID(offeringID)
 	if err != nil {
-		logger.AtLog.Logger.Error("u.PurchaseToken.AcceptOfferByOfferingID", zap.Error(err))
+		logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 		return err
 	}
 
 	getToken := func(offeringID string) (*entity.TokenUri, error) {
 		listing, err := u.Repo.FindListingByOfferingID(offeringID)
 		if err != nil {
+			logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 			return nil, err
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
+			logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 			return nil, err
 		}
 
@@ -324,7 +326,7 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 
 	err = u.UpdateTokenOnwer("purchased", offeringID, getToken, event.Buyer)
 	if err != nil {
-		logger.AtLog.Logger.Error("u.PurchaseToken.UpdateTokenOnwer", zap.Error(err))
+		logger.AtLog.Logger.Error("PurchaseToken", zap.Error(err))
 		return err
 	}
 
@@ -434,10 +436,11 @@ func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMar
 func (u Usecase) CancelListing(event *generative_marketplace_lib.GenerativeMarketplaceLibCancelListing) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
-	logger.AtLog.Logger.Info("cancel listing offeringId", zap.Any("offeringID", offeringID))
+	logger.AtLog.Logger.Info("CancelListing", zap.String("offeringID", offeringID))
 
 	err := u.Repo.CancelListingByOfferingID(offeringID)
 	if err != nil {
+		logger.AtLog.Logger.Error("CancelListing", zap.String("offeringID", offeringID), zap.Error(err))
 		return err
 	}
 
@@ -449,19 +452,19 @@ func (u Usecase) CancelListing(event *generative_marketplace_lib.GenerativeMarke
 
 		listing, err := u.Repo.FindListingByOfferingID(offeringID)
 		if err != nil {
-			logger.AtLog.Logger.Error("cancelListing.FindListingByOfferingID", zap.Error(err))
+			logger.AtLog.Logger.Error("CancelListing", zap.String("offeringID", offeringID), zap.Error(err))
 			return
 		}
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
 		if err != nil {
-			logger.AtLog.Logger.Error("cancelListing.FindUserByWalletAddress", zap.Error(err))
+			logger.AtLog.Logger.Error("CancelListing", zap.String("offeringID", offeringID), zap.Error(err))
 			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
-			logger.AtLog.Logger.Error("cancelListing.FindTokenByGenNftAddr", zap.Error(err))
+			logger.AtLog.Logger.Error("CancelListing", zap.String("offeringID", offeringID), zap.Error(err))
 			return
 		}
 
@@ -470,7 +473,7 @@ func (u Usecase) CancelListing(event *generative_marketplace_lib.GenerativeMarke
 		title := fmt.Sprintf("User %s cancelled offer %s", helpers.CreateProfileLink(profile.WalletAddress, profile.DisplayName), offeringID)
 
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+			logger.AtLog.Logger.Error("CancelListing", zap.String("offeringID", offeringID), zap.Error(err))
 		}
 	}(done)
 	<-done
