@@ -370,16 +370,15 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 
 	spew.Dump(res)
 
-	if !strings.Contains(res, "@generative_xyz") {
-		return "", errors.New("Tweet not found. Please double-check and try again")
-	}
+	// if !strings.Contains(res, "@generative_xyz") {
+	// 	return "", errors.New("Tweet not found. Please double-check and try again")
+	// }
 	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
-
 	res = strings.ToLower(res)
 	texts := strings.Split(res, "my tc address is:")
 	addressHex := addressRegex.FindString(texts[1])
 	if len(addressHex) == 0 {
-		panic(err)
+		return "", errors.New("invalid address")
 	}
 
 	fmt.Println("result: ", addressHex)
