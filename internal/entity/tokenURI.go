@@ -161,6 +161,8 @@ type TokenUriListingFilter struct {
 	OrderID               primitive.ObjectID   `bson:"orderID" json:"orderID"`
 	Price                 int64                `bson:"priceBTC" json:"priceBTC"`
 	PriceETH              string               `bson:"priceETH" json:"priceETH"`
+	PriceBRC20            string               `bson:"priceBRC20" json:"-"`
+	PriceBRC20Address     string               `bson:"priceBRC20Address" json:"-"`
 	Buyable               bool                 `bson:"buyable" json:"buyable"`
 	SellVerified          bool                 `bson:"sell_verified" json:"sell_verified"`
 	OwnerAddr             bool                 `bson:"ownerAddr" json:"ownerAddr"`
@@ -171,7 +173,13 @@ type TokenUriListingFilter struct {
 		TokenID string `bson:"tokenid" json:"tokenID"`
 		Royalty int64  `bson:"royalty" json:"royalty"`
 	} `bson:"project" json:"project"`
-	NftTokenID string `bson:"nftTokenId" json:"nftTokenId"`
+	PriceBRC20Obj PriceBRC20Obj `json:"priceBrc20"`
+	NftTokenID    string        `bson:"nftTokenId" json:"nftTokenId"`
+}
+
+type PriceBRC20Obj struct {
+	Value   string `json:"value"`
+	Address string `json:"address"`
 }
 
 type TokenURIListingOwner struct {

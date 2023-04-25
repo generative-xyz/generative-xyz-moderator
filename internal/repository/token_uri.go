@@ -164,7 +164,7 @@ func (r Repository) FilterTokenUri(filter entity.FilterTokenUris) (*entity.Pagin
 }
 
 func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
-	tokens := []entity.TokenUriListingPage{}
+	tokens := []*entity.TokenUriListingPage{}
 	resp := &entity.Pagination{}
 
 	f := r.filterToken(filter)
@@ -648,12 +648,12 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 }
 
 func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
-	tokens := []entity.TokenUriListingPage{}
+	tokens := []*entity.TokenUriListingPage{}
 	resp := &entity.Pagination{}
 
 	f := r.filterToken(filter)
 	if filter.SortBy == "" {
-		filter.SortBy = "priceBTC"
+		filter.SortBy = "priceBRC20"
 	}
 
 	if len(filter.Ids) != 0 {
@@ -663,9 +663,9 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 		}
 	}
 
-	listingAmountDefault := -1
-	if filter.SortBy == "priceBTC" && filter.Sort == 1 {
-		listingAmountDefault = 99999999999999
+	listingAmountDefault := "-1"
+	if filter.SortBy == "priceBRC20" && filter.Sort == 1 {
+		listingAmountDefault = "99999999999999"
 	}
 
 	dexBtcMatch := bson.D{
@@ -809,7 +809,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 							},
 						},
 					},
-					{"priceBTC",
+					{"priceBRC20",
 						bson.D{
 							{"$cond",
 								bson.D{
@@ -837,6 +837,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 						},
 					},
 					{"orderID", "$listing._id"},
+					{"priceBRC20Address", "$listing.erc_20_token"},
 				},
 			},
 		},
@@ -858,7 +859,8 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 					{"sell_verified", 1},
 					{"thumbnail", 1},
 					{"buyable", 1},
-					{"priceBTC", 1},
+					{"priceBRC20", 1},
+					{"priceBRC20Address", 1},
 					{"orderID", 1},
 					{"nftTokenId", 1},
 					{"project.tokenid", 1},
