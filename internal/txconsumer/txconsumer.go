@@ -122,27 +122,27 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 			switch address {
 			case c.Config.MarketplaceEvents.Contract:
-				switch topic {
-				case c.Config.MarketplaceEvents.PurchaseToken:
-					c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-				case c.Config.MarketplaceEvents.MakeOffer:
-					c.Usecase.ResolveMarketplaceMakeOffer(_log)
-				case c.Config.MarketplaceEvents.AcceptMakeOffer:
-					c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-				case c.Config.MarketplaceEvents.CancelListing:
-					c.Usecase.ResolveMarketplaceCancelListing(_log)
-				case c.Config.MarketplaceEvents.CancelMakeOffer:
-					c.Usecase.ResolveMarketplaceCancelOffer(_log)
-				case c.Config.MarketplaceEvents.ListToken:
-					c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-				}
+				//switch topic {
+				//case c.Config.MarketplaceEvents.PurchaseToken:
+				//	c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				//case c.Config.MarketplaceEvents.MakeOffer:
+				//	c.Usecase.ResolveMarketplaceMakeOffer(_log)
+				//case c.Config.MarketplaceEvents.AcceptMakeOffer:
+				//	c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+				//case c.Config.MarketplaceEvents.CancelListing:
+				//	c.Usecase.ResolveMarketplaceCancelListing(_log)
+				//case c.Config.MarketplaceEvents.CancelMakeOffer:
+				//	c.Usecase.ResolveMarketplaceCancelOffer(_log)
+				//case c.Config.MarketplaceEvents.ListToken:
+				//	c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+				//}
 			case c.Config.DAOEvents.Contract:
-			//switch topic {
-			//case c.Config.DAOEvents.ProposalCreated:
-			//	err = c.Usecase.DAOProposalCreated(_log)
-			//case c.Config.DAOEvents.CastVote:
-			//	err = c.Usecase.DAOCastVote(_log)
-			//}
+				//switch topic {
+				//case c.Config.DAOEvents.ProposalCreated:
+				//	err = c.Usecase.DAOProposalCreated(_log)
+				//case c.Config.DAOEvents.CastVote:
+				//	err = c.Usecase.DAOCastVote(_log)
+				//}
 			case os.Getenv("GENERATIVE_PROJECT"): // master project
 				switch topic {
 				case c.Config.BlockChainEvent.TransferNFT:
@@ -152,7 +152,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 				switch topic {
 				case c.Config.BlockChainEvent.TransferNFT:
 					// handle transfer
-					err := c.Usecase.UpdateTokenOwner(_log)
+					err := c.Usecase.UpdateTokenOwner(_log, c.Blockchain)
 					if err != nil {
 						logger.AtLog.Error("err.UpdateTokenOwner", zap.String("err", err.Error()))
 					}
