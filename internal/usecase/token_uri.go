@@ -891,6 +891,11 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				DisplayName:             item.OnwerInternal.DisplayName,
 				Avatar:                  item.OnwerInternal.Avatar,
 			}
+
+			item.PriceBRC20Obj = entity.PriceBRC20Obj{
+				Value:   item.PriceBRC20,
+				Address: item.PriceBRC20Address,
+			}
 		}
 
 		//spew.Dump(iResp)
