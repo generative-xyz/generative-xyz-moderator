@@ -116,22 +116,22 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			topic := strings.ToLower(_log.Topics[0].String())
 
 			switch address {
-			case c.Config.MarketplaceEvents.Contract:
-				//switch topic {
-				//case c.Config.MarketplaceEvents.PurchaseToken:
-				//	c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-				//case c.Config.MarketplaceEvents.MakeOffer:
-				//	c.Usecase.ResolveMarketplaceMakeOffer(_log)
-				//case c.Config.MarketplaceEvents.AcceptMakeOffer:
-				//	c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-				//case c.Config.MarketplaceEvents.CancelListing:
-				//	c.Usecase.ResolveMarketplaceCancelListing(_log)
-				//case c.Config.MarketplaceEvents.CancelMakeOffer:
-				//	c.Usecase.ResolveMarketplaceCancelOffer(_log)
-				//case c.Config.MarketplaceEvents.ListToken:
-				//	c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-				//}
-			case c.Config.DAOEvents.Contract:
+			case strings.ToLower(c.Config.MarketplaceEvents.Contract):
+			//switch topic {
+			//case c.Config.MarketplaceEvents.PurchaseToken:
+			//	c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+			//case c.Config.MarketplaceEvents.MakeOffer:
+			//	c.Usecase.ResolveMarketplaceMakeOffer(_log)
+			//case c.Config.MarketplaceEvents.AcceptMakeOffer:
+			//	c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+			//case c.Config.MarketplaceEvents.CancelListing:
+			//	c.Usecase.ResolveMarketplaceCancelListing(_log)
+			//case c.Config.MarketplaceEvents.CancelMakeOffer:
+			//	c.Usecase.ResolveMarketplaceCancelOffer(_log)
+			//case c.Config.MarketplaceEvents.ListToken:
+			//	c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+			//}
+			case strings.ToLower(c.Config.DAOEvents.Contract):
 				//switch topic {
 				//case c.Config.DAOEvents.ProposalCreated:
 				//	err = c.Usecase.DAOProposalCreated(_log)
