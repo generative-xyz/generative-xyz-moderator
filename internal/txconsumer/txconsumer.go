@@ -3,6 +3,7 @@ package txconsumer
 import (
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ import (
 )
 
 type HttpTxConsumer struct {
-	Blockchain                blockchain.TcNetwork
+	Blockchain                *blockchain.TcNetwork
 	DefaultLastProcessedBlock int64
 	CronJobPeriod             int32
 	BatchLogSize              int32
@@ -41,9 +42,15 @@ func NewHttpTxConsumer(global *global.Global, uc usecase.Usecase, cfg config.Con
 		txConsumer.FetchedAddress = append(txConsumer.FetchedAddress, strings.ToLower(address))
 		txConsumer.Addresses = append(txConsumer.Addresses, common.HexToAddress(address))
 	}
+
+	tcClient, err := blockchain.NewTcPublicNodeNetwork()
+	if err != nil {
+		return nil, err
+	}
+
 	txConsumer.Cache = global.Cache
 	txConsumer.Logger = global.Logger
-	txConsumer.Blockchain = global.TcNetwotkchain
+	txConsumer.Blockchain = tcClient
 	txConsumer.RedisKey = "tx-consumer"
 	txConsumer.Usecase = uc
 	txConsumer.Config = &cfg
@@ -115,21 +122,20 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 
 			switch address {
 			case c.Config.MarketplaceEvents.Contract:
-				//switch topic {
-				//case c.Config.MarketplaceEvents.PurchaseToken:
-				//err = c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-				//case c.Config.MarketplaceEvents.MakeOffer:
-				//	err = c.Usecase.ResolveMarketplaceMakeOffer(_log)
-				//case c.Config.MarketplaceEvents.AcceptMakeOffer:
-				//	err = c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-				//case c.Config.MarketplaceEvents.CancelListing:
-				//	err = c.Usecase.ResolveMarketplaceCancelListing(_log)
-				//case c.Config.MarketplaceEvents.CancelMakeOffer:
-				//	err = c.Usecase.ResolveMarketplaceCancelOffer(_log)
-				//case c.Config.MarketplaceEvents.ListToken:
-				//	err = c.Usecase.ResolveMarketplaceListTokenEvent(_log)
-				//
-				//}
+				switch topic {
+				case c.Config.MarketplaceEvents.PurchaseToken:
+					c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				case c.Config.MarketplaceEvents.MakeOffer:
+					c.Usecase.ResolveMarketplaceMakeOffer(_log)
+				case c.Config.MarketplaceEvents.AcceptMakeOffer:
+					c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+				case c.Config.MarketplaceEvents.CancelListing:
+					c.Usecase.ResolveMarketplaceCancelListing(_log)
+				case c.Config.MarketplaceEvents.CancelMakeOffer:
+					c.Usecase.ResolveMarketplaceCancelOffer(_log)
+				case c.Config.MarketplaceEvents.ListToken:
+					c.Usecase.ResolveMarketplaceListTokenEvent(_log)
+				}
 			case c.Config.DAOEvents.Contract:
 			//switch topic {
 			//case c.Config.DAOEvents.ProposalCreated:
@@ -137,7 +143,7 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			//case c.Config.DAOEvents.CastVote:
 			//	err = c.Usecase.DAOCastVote(_log)
 			//}
-			case "0xe08811c6AB1B27526fA9F889907D65f441ADF124": // master project
+			case os.Getenv("GENERATIVE_PROJECT"): // master project
 				switch topic {
 				case c.Config.BlockChainEvent.TransferNFT:
 					c.Usecase.UpdateProjectWithListener(_log)
