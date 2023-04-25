@@ -339,3 +339,17 @@ func (u Usecase) UploadFileInternal(r *http.Request, path string) (*entity.Files
 	logger.AtLog.Logger.Info("inserted.FileModel", zap.Any("fileModel", fileModel))
 	return fileModel, nil
 }
+
+func (u Usecase) DeleteFile(uuid string) error {
+	file, err := u.Repo.GetFileByUUID(uuid)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	_, err = u.Repo.SoftDelete(file)
+	if err != nil {
+		logger.AtLog.Logger.Error("DeleteFile", zap.Error(err))
+		return err
+	}
+	return nil
+}

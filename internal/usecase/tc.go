@@ -87,6 +87,8 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 		Image             string `json:"image"`
 		Explorer          string `json:"explorer"`
 		ArtistName        string `json:"artist_name"`
+		GenNftAddress     string `json:"gen_nft_addrress"`
+		Royalty           int    `json:"royalty"`
 	}
 
 	var dataList []*Data
@@ -96,6 +98,10 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 
 	if len(listToken) > 0 {
 		for _, nft := range listToken {
+			royalty := 0
+			if nft.Project != nil {
+				royalty = nft.Project.Royalty
+			}
 
 			data := &Data{
 				Collection:        "",
@@ -108,6 +114,8 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 				Explorer:          fmt.Sprintf("https://trustless.computer/inscription?contract=%s&id=%s", nft.ContractAddress, nft.TokenID),
 				ArtistName:        nft.Creator.DisplayName,
 				ProjectName:       nft.Project.Name,
+				GenNftAddress:     nft.GenNFTAddr,
+				Royalty:           royalty,
 			}
 
 			if len(nft.Creator.DisplayName) == 0 {

@@ -384,6 +384,26 @@ func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Proje
 	return projects, nil
 }
 
+func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error) {
+	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
+
+	if len(excludeIDs) > 0 {
+		filter["genNFTAddr"] = bson.M{"$nin": excludeIDs}
+	}
+
+	var projects []entity.Projects
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
 func (r Repository) GetAllProjectsWithSelectedFields() ([]entity.Projects, error) {
 	projects := []entity.Projects{}
 	f := bson.M{}
