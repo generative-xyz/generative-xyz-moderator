@@ -66,19 +66,19 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParsePurchaseToken(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 
 	err = u.PurchaseToken(event)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 	}
 
 	return nil
@@ -131,19 +131,19 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParseCancelListing(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 
 	err = u.CancelListing(event)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 	}
 
 	return nil

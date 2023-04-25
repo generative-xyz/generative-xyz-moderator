@@ -23,7 +23,7 @@ func (r Repository) FindListingByOfferingID(offeringID string) (*entity.Marketpl
 	resp := &entity.MarketplaceListings{}
 
 	f := bson.D{
-		{Key: "offering_id", Value: offeringID,},
+		{Key: "offering_id", Value: offeringID},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_LISTINGS, f)
@@ -40,8 +40,8 @@ func (r Repository) FindListingByOfferingID(offeringID string) (*entity.Marketpl
 
 func (r Repository) PurchaseTokenByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
-f := bson.D{
-		{Key: "offering_id", Value: offeringID,},
+	f := bson.D{
+		{Key: "offering_id", Value: offeringID},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_LISTINGS, f)
@@ -57,13 +57,13 @@ f := bson.D{
 	obj.Finished = true
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-return err
+	return err
 }
 
 func (r Repository) CancelListingByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
 	f := bson.D{
-		{Key: "offering_id", Value: offeringID,},
+		{Key: "offering_id", Value: offeringID},
 	}
 
 	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_LISTINGS, f)
@@ -78,7 +78,7 @@ func (r Repository) CancelListingByOfferingID(offeringID string) error {
 
 	obj.Closed = true
 	_, err = r.UpdateOne(obj.TableName(), f, obj)
-return err
+	return err
 }
 
 func (r Repository) filterListings(filter entity.FilterMarketplaceListings) bson.M {
@@ -90,47 +90,47 @@ func (r Repository) filterListings(filter entity.FilterMarketplaceListings) bson
 			f["collection_contract"] = *filter.CollectionContract
 		}
 	}
-if filter.TokenId != nil {
+	if filter.TokenId != nil {
 		if *filter.TokenId != "" {
 			f["token_id"] = *filter.TokenId
 		}
 	}
-if filter.Erc20Token != nil {
+	if filter.Erc20Token != nil {
 		if *filter.Erc20Token != "" {
 			f["erc_20_token"] = *filter.Erc20Token
 		}
 	}
-if filter.SellerAddress != nil {
+	if filter.SellerAddress != nil {
 		if *filter.SellerAddress != "" {
 			f["seller"] = *filter.SellerAddress
 		}
 	}
-if filter.Closed != nil {
+	if filter.Closed != nil {
 		f["closed"] = *filter.Closed
 	}
-if filter.Finished != nil {
+	if filter.Finished != nil {
 		f["finished"] = *filter.Finished
 	}
-return f
+	return f
 }
 
-func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceListings) (*entity.Pagination, error)  {
+func (r Repository) FilterMarketplaceListings(filter entity.FilterMarketplaceListings) (*entity.Pagination, error) {
 	confs := []entity.MarketplaceListings{}
 	resp := &entity.Pagination{}
 	f := r.filterListings(filter)
 
-	p, err := r.Paginate(utils.COLLECTION_MARKETPLACE_LISTINGS, filter.Page, filter.Limit, f,bson.D{}, []Sort{}, &confs)
+	p, err := r.Paginate(utils.COLLECTION_MARKETPLACE_LISTINGS, filter.Page, filter.Limit, f, bson.D{}, []Sort{}, &confs)
 	if err != nil {
 		return nil, err
 	}
-resp.Result = confs
+	resp.Result = confs
 	resp.Page = p.Pagination.Page
 	resp.Total = p.Pagination.Total
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
 
-func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.MarketplaceListings, error)  {
+func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.MarketplaceListings, error) {
 	resp := []entity.MarketplaceListings{}
 	filter := entity.FilterMarketplaceListings{
 		SellerAddress: &sellerAddress,
@@ -153,7 +153,7 @@ func (r Repository) GetListingBySeller(sellerAddress string) ([]entity.Marketpla
 func (r Repository) GetAllListingByCollectionContract(contract string) ([]entity.MarketplaceListings, error) {
 	listings := []entity.MarketplaceListings{}
 	f := bson.D{{
-		Key: utils.KEY_LISTING_CONTRACT,
+		Key:   utils.KEY_LISTING_CONTRACT,
 		Value: contract,
 	}}
 
@@ -183,12 +183,12 @@ func (r Repository) GetAllListings() ([]entity.MarketplaceListings, error) {
 	}
 
 	return listings, nil
-} 
+}
 
 func (r Repository) GetAllActiveListings() ([]entity.MarketplaceListings, error) {
 	listings := []entity.MarketplaceListings{}
 	f := bson.D{{
-		Key: "closed",
+		Key:   "closed",
 		Value: false,
 	}}
 
@@ -202,11 +202,11 @@ func (r Repository) GetAllActiveListings() ([]entity.MarketplaceListings, error)
 	}
 
 	return listings, nil
-} 
+}
 
 func (r Repository) UpdateListingOwnerAddress(offeringID string, ownerAddress string) (*mongo.UpdateResult, error) {
 	f := bson.D{
-		{Key: "offering_id", Value: offeringID,},
+		{Key: "offering_id", Value: offeringID},
 	}
 
 	update := bson.M{
