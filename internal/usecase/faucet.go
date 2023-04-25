@@ -325,29 +325,28 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 		err = errors.New("This Twitter account already claimed the faucet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 		return specFaucetType, err
-
 	}
 
-	if totalFaucet > 0 {
-		// last item:
-		lastItem := faucetItems[0]
+	// if totalFaucet > 0 {
+	// 	// last item:
+	// 	lastItem := faucetItems[0]
 
-		t1 := lastItem.CreatedAt
-		t2 := time.Now()
+	// 	t1 := lastItem.CreatedAt
+	// 	t2 := time.Now()
 
-		diff := t2.Sub(*t1)
+	// 	diff := t2.Sub(*t1)
 
-		maxHours := float64(24)
+	// 	maxHours := float64(24)
 
-		fmt.Println("diff.Hours(): ", diff.Hours())
+	// 	fmt.Println("diff.Hours(): ", diff.Hours())
 
-		if diff.Hours() < maxHours {
-			err = errors.New(fmt.Sprintf("The faucet only allows one request per day. Please try again later in %0.1f hours.", maxHours-diff.Hours()))
-			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
-			return specFaucetType, err
-		}
+	// 	if diff.Hours() < maxHours {
+	// 		err = errors.New(fmt.Sprintf("The faucet only allows one request per day. Please try again later in %0.1f hours.", maxHours-diff.Hours()))
+	// 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
+	// 		return specFaucetType, err
+	// 	}
 
-	}
+	// }
 	return specFaucetType, nil
 }
 
