@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
+	faucetconst "rederinghub.io/utils/constants/faucet"
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/eth"
 	"rederinghub.io/utils/eth/contract/tcartifact"
@@ -68,7 +69,7 @@ func (u Usecase) ApiListCheckFaucet(address string) ([]*entity.Faucet, error) {
 
 }
 
-func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (string, error) {
+func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source string) (string, error) {
 
 	// verify tw name:
 	// //https://twitter.com/2712_at1999/status/1643190049981480961
@@ -110,6 +111,12 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType string) (
 
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
 
+	switch source {
+	case "special":
+		if faucetType == "" {
+			amountFaucet = big.NewInt(faucetconst.SpecialFaucetAmount)
+		}
+	}
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
 		logger.AtLog.Logger.Error("ApiCreateFaucet.ParseBool", zap.Error(err))
