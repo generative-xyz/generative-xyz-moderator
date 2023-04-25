@@ -251,13 +251,13 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
 		if err != nil {
-			logger.AtLog.Logger.Error("cancelListing.FindUserByWalletAddress", zap.Error(err))
+			logger.AtLog.Logger.Error("ListToken", zap.Error(err))
 			return
 		}
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
-			logger.AtLog.Logger.Error("cancelListing.FindTokenByGenNftAddr", zap.Error(err))
+			logger.AtLog.Logger.Error("ListToken", zap.Error(err))
 			return
 		}
 
@@ -277,7 +277,7 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 			// if error is no document -> create
 			err := u.Repo.CreateMarketplaceListing(&listing)
 			if err != nil {
-				logger.AtLog.Logger.Error("error when create marketplace listing", zap.Error(err))
+				logger.AtLog.Logger.Error("ListToken", zap.Error(err))
 				return err
 			}
 
@@ -287,11 +287,12 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 
 			return nil
 		} else {
+			logger.AtLog.Logger.Error("ListToken", zap.String("listing.OfferingId", listing.OfferingId))
 			return err
 		}
 	} else {
 		// listing is already created
-		logger.AtLog.Logger.Info("list token offeringId", zap.Any("listing.OfferingId", listing.OfferingId))
+		logger.AtLog.Logger.Error("ListToken", zap.String("listing.OfferingId", listing.OfferingId))
 		return errors.New("listing is already created")
 	}
 }
