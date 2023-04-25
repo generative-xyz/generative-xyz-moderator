@@ -669,13 +669,14 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 	}
 
 	dexBtcMatch := bson.D{
-		{"matched", false},
-		{"cancelled", false},
+		{"closed", false},
+		{"finished", false},
 	}
 
 	addNoneBuyItems := true
-	filterPendingBuyETH := bson.D{{"$gte", 0}}
-	filterPendingBuyBTC := bson.D{{"$gte", 0}}
+
+	// filterPendingBuyETH := bson.D{{"$gte", 0}}
+	// filterPendingBuyBTC := bson.D{{"$gte", 0}}
 	if filter.IsBuynow != nil {
 		if *filter.IsBuynow == true {
 			addNoneBuyItems = false
@@ -687,12 +688,12 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 	isFilterPrice := false
 	if filter.FromPrice != nil {
 		isFilterPrice = true
-		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$gte", *filter.FromPrice}}}})
+		priceFilter = append(priceFilter, bson.D{{"price", bson.D{{"$gte", *filter.FromPrice}}}})
 	}
 
 	if filter.ToPrice != nil {
 		isFilterPrice = true
-		priceFilter = append(priceFilter, bson.D{{"amount", bson.D{{"$lte", *filter.ToPrice}}}})
+		priceFilter = append(priceFilter, bson.D{{"price", bson.D{{"$lte", *filter.ToPrice}}}})
 	}
 
 	if isFilterPrice {
@@ -701,10 +702,10 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 		addNoneBuyItems = false
 	}
 	//buyable only
-	if !addNoneBuyItems {
-		filterPendingBuyETH = bson.D{{"$eq", 0}}
-		filterPendingBuyBTC = bson.D{{"$eq", 0}}
-	}
+	// if !addNoneBuyItems {
+	// 	filterPendingBuyETH = bson.D{{"$eq", 0}}
+	// 	filterPendingBuyBTC = bson.D{{"$eq", 0}}
+	// }
 
 	f2 := bson.A{
 		bson.D{{"$match", f}},
@@ -747,9 +748,9 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 		bson.D{
 			{"$lookup",
 				bson.D{
-					{"from", "dex_btc_listing"},
+					{"from", "marketplace_listings"},
 					{"localField", "token_id"},
-					{"foreignField", "inscription_id"},
+					{"foreignField", "token_id"},
 					{"let",
 						bson.D{
 							{"cancelled", "$cancelled"},
@@ -777,161 +778,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 				},
 			},
 		},
-		bson.D{
-			{"$lookup",
-				bson.D{
-					{"from", "dex_btc_buy_eth"},
-					{"let", bson.D{{"token_id", "$token_id"}}},
-					{"pipeline",
-						bson.A{
-							bson.D{
-								{"$addFields",
-									bson.D{
-										{"matched",
-											bson.D{
-												{"$eq",
-													bson.A{
-														"$inscription_id",
-														"$$token_id",
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-							bson.D{
-								{"$addFields",
-									bson.D{
-										{"matched_multi",
-											bson.D{
-												{"$reduce",
-													bson.D{
-														{"input", "$inscription_list"},
-														{"initialValue", false},
-														{"in",
-															bson.D{
-																{"$cond",
-																	bson.A{
-																		bson.D{
-																			{"$eq",
-																				bson.A{
-																					"$$this",
-																					"$$token_id",
-																				},
-																			},
-																		},
-																		true,
-																		"$$value",
-																	},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-							bson.D{
-								{"$match",
-									bson.D{
-										{"$or",
-											bson.A{
-												bson.D{{"matched", true}},
-												bson.D{{"matched_multi", true}},
-											},
-										},
-										{"status",
-											bson.D{
-												{"$in",
-													bson.A{
-														1,
-														2,
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-							bson.D{{"$limit", 1}},
-						},
-					},
-					{"as", "listing_eth"},
-				},
-			},
-		},
-		bson.D{
-			{"$lookup",
-				bson.D{
-					{"from", "btc_tx_submit"},
-					{"let", bson.D{{"token_id", "$token_id"}}},
-					{"pipeline",
-						bson.A{
-							bson.D{
-								{"$addFields",
-									bson.D{
-										{"matched_multi",
-											bson.D{
-												{"$reduce",
-													bson.D{
-														{"input", "$related_inscriptions"},
-														{"initialValue", false},
-														{"in",
-															bson.D{
-																{"$cond",
-																	bson.A{
-																		bson.D{
-																			{"$eq",
-																				bson.A{
-																					"$$this",
-																					"$$token_id",
-																				},
-																			},
-																		},
-																		true,
-																		"$$value",
-																	},
-																},
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-							bson.D{
-								{"$match",
-									bson.D{
-										{"$or",
-											bson.A{
-												bson.D{{"matched_multi", true}},
-											},
-										},
-										{"status",
-											bson.D{
-												{"$in",
-													bson.A{
-														0,
-														1,
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-							bson.D{{"$limit", 1}},
-						},
-					},
-					{"as", "buying_btc"},
-				},
-			},
-		},
+
 		bson.D{
 			{"$addFields",
 				bson.D{
@@ -941,39 +788,17 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 								bson.D{
 									{"if",
 										bson.D{
-											{"$or",
+											{"$eq",
 												bson.A{
 													bson.D{
-														{"$eq",
+														{"$ifNull",
 															bson.A{
-																bson.D{
-																	{"$ifNull",
-																		bson.A{
-																			"$listing",
-																			0,
-																		},
-																	},
-																},
+																"$listing",
 																0,
 															},
 														},
 													},
-													bson.D{
-														{"$gt",
-															bson.A{
-																bson.D{{"$size", "$listing_eth"}},
-																0,
-															},
-														},
-													},
-													bson.D{
-														{"$gt",
-															bson.A{
-																bson.D{{"$size", "$buying_btc"}},
-																0,
-															},
-														},
-													},
+													0,
 												},
 											},
 										},
@@ -990,54 +815,32 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 								bson.D{
 									{"if",
 										bson.D{
-											{"$or",
+											{"$eq",
 												bson.A{
 													bson.D{
-														{"$eq",
+														{"$ifNull",
 															bson.A{
-																bson.D{
-																	{"$ifNull",
-																		bson.A{
-																			"$listing",
-																			0,
-																		},
-																	},
-																},
+																"$listing",
 																0,
 															},
 														},
 													},
-													bson.D{
-														{"$gt",
-															bson.A{
-																bson.D{{"$size", "$listing_eth"}},
-																0,
-															},
-														},
-													},
-													bson.D{
-														{"$gt",
-															bson.A{
-																bson.D{{"$size", "$buying_btc"}},
-																0,
-															},
-														},
-													},
+													0,
 												},
 											},
 										},
 									},
 									{"then", listingAmountDefault},
-									{"else", "$listing.amount"},
+									{"else", "$listing.price"},
 								},
 							},
 						},
 					},
 					{"orderID", "$listing._id"},
-					{"sell_verified", "$listing.verified"},
 				},
 			},
 		},
+
 		bson.D{
 			{"$project",
 				bson.D{
@@ -1066,23 +869,10 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
 					{"owner_object.display_name", 1},
-					{"listing_eth_size", bson.D{{"$size", "$listing_eth"}}},
-					{"buying_btc_size", bson.D{{"$size", "$buying_btc"}}},
 				},
 			},
 		},
-		bson.D{
-			{"$match",
-				bson.D{
-					{"$and",
-						bson.A{
-							bson.D{{"listing_eth_size", filterPendingBuyETH}},
-							bson.D{{"buying_btc_size", filterPendingBuyBTC}},
-						},
-					},
-				},
-			},
-		},
+
 		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}, {"token_id_int", 1}}}},
 		bson.D{
 			{"$facet",
