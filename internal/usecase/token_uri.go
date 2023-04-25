@@ -883,6 +883,8 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 						Avatar:                  "",
 					}
 				}
+
+				item.Royalty = item.Project.Royalty
 			}
 		} else {
 			item.Owner = entity.TokenURIListingOwner{
@@ -896,6 +898,8 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				Value:   item.PriceBRC20,
 				Address: item.PriceBRC20Address,
 			}
+
+			item.Royalty = item.Project.Royalty
 		}
 
 		//spew.Dump(iResp)
