@@ -315,7 +315,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 
 	if filteredTotalFaucet >= limitFaucet {
 		// check times:
-		err = errors.New("This Twitter account is already linked to another wallet address.")
+		err = errors.New("This Twitter account already claimed the faucet.")
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.FindFaucetByAddress"), zap.Error(err))
 		return specFaucetType, err
 
