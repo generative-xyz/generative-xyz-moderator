@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"rederinghub.io/utils/blockchain"
 	"strconv"
 	"strings"
 	"time"
@@ -65,19 +66,19 @@ func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParsePurchaseToken(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 		return err
 	}
 
 	err = u.PurchaseToken(event)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
 	}
 
 	return nil
@@ -130,19 +131,19 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParseCancelListing(chainLog)
 	if err != nil {
-		logger.AtLog.Logger.Error("cannot parse cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 		return err
 	}
 
 	err = u.CancelListing(event)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("fail when resolve cancel listing event", zap.Error(err))
+		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 	}
 
 	return nil
@@ -346,7 +347,7 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 	return project, nil
 }
 
-func (u Usecase) UpdateTokenOwner(chainLog types.Log) error {
+func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcNetwork) error {
 	contract, err := generative_nft_contract.NewGenerativeNftContract(chainLog.Address, u.TcClientPublicNode.GetClient())
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
@@ -364,13 +365,33 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log) error {
 		logger.AtLog.Logger.Error("cannot find token", zap.Error(err))
 		return err
 	}
+	project, err := u.Repo.FindProjectByTokenID(token.ProjectID)
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot find project", zap.Error(err))
+		return err
+	}
+
+	blockInfo, err := blockchain.GetBlockByNumber(*big.NewInt(int64(chainLog.BlockNumber)))
+	if err != nil {
+		logger.AtLog.Logger.Error("cannot get block info", zap.Error(err))
+		return err
+	}
 
 	err = u.Repo.UpdateTokenOwnerAddr(token.TokenID, strings.ToLower(event.To.String()))
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve purchase token event", zap.Error(err))
 	}
 
-	return nil
+	return u.Repo.InsertTokenActivity(&entity.TokenActivity{
+		Type:          entity.TokenTransfer,
+		Title:         "Transfer",
+		UserAAddress:  event.From.String(),
+		UserBAddress:  event.To.String(),
+		InscriptionID: project.InscriptionIcon,
+		ProjectID:     token.ProjectID,
+		TokenInfo:     token,
+		Time:          &blockInfo.ReceivedAt,
+	})
 
 }
 
