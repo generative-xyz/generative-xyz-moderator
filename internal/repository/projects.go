@@ -368,6 +368,22 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
+func (r Repository) GetProjectsPerPage(page, limit int) ([]entity.Projects, error) {
+	var result []entity.Projects
+
+	options := options.Find()
+	options.SetSkip(int64((page - 1) * limit))
+	options.SetLimit(int64(limit))
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.Background(), bson.M{}, options)
+	if err != nil {
+		return nil, err
+	}
+	if cursor.All(context.Background(), &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error) {
 	projects := []entity.Projects{}
