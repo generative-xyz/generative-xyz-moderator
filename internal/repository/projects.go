@@ -73,6 +73,24 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenIDOrGenNFTAddr(key string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	f := bson.D{{"$or", bson.A{
+		bson.M{"tokenid": key},
+		bson.M{"genNFTAddr": key},
+	}}}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindProjectByTokenIDCustomField(tokenID string, fields []string) (*entity.Projects, error) {
 	projectField := bson.D{
 		{"_id", 1},
