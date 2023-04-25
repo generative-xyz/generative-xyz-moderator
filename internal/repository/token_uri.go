@@ -647,6 +647,280 @@ func (r Repository) FilterTokenUriNew(filter entity.FilterTokenUris) (*entity.Pa
 	return resp, nil
 }
 
+func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.Pagination, error) {
+	tokens := []entity.TokenUriListingPage{}
+	resp := &entity.Pagination{}
+
+	f := r.filterToken(filter)
+	if filter.SortBy == "" {
+		filter.SortBy = "priceBTC"
+	}
+
+	if len(filter.Ids) != 0 {
+		objectIDs, err := utils.StringsToObjects(filter.Ids)
+		if err == nil {
+			f["_id"] = bson.M{"$in": objectIDs}
+		}
+	}
+
+	listingAmountDefault := -1
+	if filter.SortBy == "priceBTC" && filter.Sort == 1 {
+		listingAmountDefault = 99999999999999
+	}
+
+	dexBtcMatch := bson.D{
+		{"closed", false},
+		{"finished", false},
+	}
+
+	addNoneBuyItems := true
+
+	// filterPendingBuyETH := bson.D{{"$gte", 0}}
+	// filterPendingBuyBTC := bson.D{{"$gte", 0}}
+	if filter.IsBuynow != nil {
+		if *filter.IsBuynow == true {
+			addNoneBuyItems = false
+		}
+	}
+
+	priceFilter := bson.A{}
+
+	isFilterPrice := false
+	if filter.FromPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"price", bson.D{{"$gte", *filter.FromPrice}}}})
+	}
+
+	if filter.ToPrice != nil {
+		isFilterPrice = true
+		priceFilter = append(priceFilter, bson.D{{"price", bson.D{{"$lte", *filter.ToPrice}}}})
+	}
+
+	if isFilterPrice {
+		dexBtcMatchAnd := bson.E{"$and", priceFilter}
+		dexBtcMatch = append(dexBtcMatch, dexBtcMatchAnd)
+		addNoneBuyItems = false
+	}
+	//buyable only
+	// if !addNoneBuyItems {
+	// 	filterPendingBuyETH = bson.D{{"$eq", 0}}
+	// 	filterPendingBuyBTC = bson.D{{"$eq", 0}}
+	// }
+
+	f2 := bson.A{
+		bson.D{{"$match", f}},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "users"},
+					{"localField", "owner_addrress"},
+					{"foreignField", "wallet_address_btc_taproot"},
+					{"as", "owner_object"},
+					{"let",
+						bson.D{
+							{"wallet_address_btc_taproot", "$wallet_address_btc_taproot"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									bson.D{
+										{"wallet_address_btc_taproot", bson.D{{"$ne", ""}, {"$exists", true}}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$owner_object"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "marketplace_listings"},
+					{"localField", "token_id"},
+					{"foreignField", "token_id"},
+					{"let",
+						bson.D{
+							{"cancelled", "$cancelled"},
+							{"matched", "$matched"},
+						},
+					},
+					{"pipeline",
+						bson.A{
+							bson.D{
+								{"$match",
+									dexBtcMatch,
+								},
+							},
+						},
+					},
+					{"as", "listing"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$listing"},
+					{"preserveNullAndEmptyArrays", addNoneBuyItems},
+				},
+			},
+		},
+
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"buyable",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", false},
+									{"else", true},
+								},
+							},
+						},
+					},
+					{"priceBTC",
+						bson.D{
+							{"$cond",
+								bson.D{
+									{"if",
+										bson.D{
+											{"$eq",
+												bson.A{
+													bson.D{
+														{"$ifNull",
+															bson.A{
+																"$listing",
+																0,
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
+									{"then", listingAmountDefault},
+									{"else", "$listing.price"},
+								},
+							},
+						},
+					},
+					{"orderID", "$listing._id"},
+				},
+			},
+		},
+
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 1},
+					{"token_id", 1},
+					{"name", 1},
+					{"gen_nft_addrress", 1},
+					{"contract_address", 1},
+					{"project_id", 1},
+					{"image", 1},
+					{"priority", 1},
+					{"inscription_index", 1},
+					{"order_inscription_index", 1},
+					{"token_id_int", 1},
+					{"sell_verified", 1},
+					{"thumbnail", 1},
+					{"buyable", 1},
+					{"priceBTC", 1},
+					{"orderID", 1},
+					{"nftTokenId", 1},
+					{"project.tokenid", 1},
+					{"project.royalty", 1},
+					{"owner_addrress", 1},
+					{"owner", 1},
+					{"owner_object.wallet_address", 1},
+					{"owner_object.wallet_address_btc_taproot", 1},
+					{"owner_object.avatar", 1},
+					{"owner_object.display_name", 1},
+				},
+			},
+		},
+
+		bson.D{{"$sort", bson.D{{filter.SortBy, filter.Sort}, {"order_inscription_index", 1}, {"token_id_int", 1}}}},
+		bson.D{
+			{"$facet",
+				bson.D{
+					{"totalData",
+						bson.A{
+							bson.D{{"$match", bson.D{}}},
+							bson.D{{"$skip", (filter.Page - 1) * filter.Limit}},
+							bson.D{{"$limit", filter.Limit}},
+						},
+					},
+					{"totalCount",
+						bson.A{
+							bson.D{{"$count", "count"}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// t, err := r.Aggregate(entity.TokenUri{}.TableName(), filter.Page, filter.Limit, f2, r.SelectedTokenFieldsNew(), r.SortToken(filter), &tokens)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	cursor, err := r.DB.Collection(entity.TokenUri{}.TableName()).Aggregate(context.TODO(), f2)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err = cursor.All((context.TODO()), &tokens); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if len(tokens) > 0 {
+		//log.Println("len(tokens)", len(tokens[0].TotalCount))
+
+		resp.Result = tokens[0].TotalData
+		resp.Page = filter.Page
+		if len(tokens[0].TotalCount) > 0 {
+			resp.Total = tokens[0].TotalCount[0].Count
+		}
+		resp.TotalPage = resp.Total / filter.Limit
+		resp.PageSize = filter.Limit
+	}
+
+	//resp.PageSize = filter.Limit
+	return resp, nil
+}
+
 func (r Repository) filterToken(filter entity.FilterTokenUris) bson.M {
 	f := bson.M{}
 	//f[utils.KEY_DELETED_AT] = nil

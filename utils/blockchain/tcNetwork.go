@@ -29,6 +29,16 @@ func NewTcNetwork(cfg config.BlockchainConfig) (*TcNetwork, error) {
 	}, nil
 }
 
+func NewTcPublicNodeNetwork() (*TcNetwork, error) {
+	ethereumClient, err := ethclient.Dial(os.Getenv("TC_ENDPOINT_PUBLIC"))
+	if err != nil {
+		return nil, err
+	}
+	return &TcNetwork{
+		client: ethereumClient,
+	}, nil
+}
+
 func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 	header, err := a.client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -36,7 +46,7 @@ func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header", header))
+	logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header.Number", header.Number))
 	return header.Number, nil
 }
 

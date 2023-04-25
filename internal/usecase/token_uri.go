@@ -804,6 +804,13 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	p, err := u.Repo.FindProjectByTokenIDOrGenNFTAddr(*filter.GenNFTAddr)
+	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+		return nil, err
+	}
+
+	isOrdinal := helpers.IsOrdinalProject(p.TokenId)
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
 	if filter.Rarity != nil && *filter.Rarity != "" {
@@ -819,17 +826,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		maxInt, _ := strconv.Atoi(max)
 
 		groupTraits := make(map[string][]string)
-		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
-		if err == nil {
-			traits := p.TraitsStat
-			for _, trait := range traits {
-				values := trait.TraitValuesStat
+		traits := p.TraitsStat
+		for _, trait := range traits {
+			values := trait.TraitValuesStat
 
-				for _, value := range values {
-					if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
-						groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
+			for _, value := range values {
+				if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+					groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
 
-					}
 				}
 			}
 		}
@@ -842,15 +846,25 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		}
 	}
 
-	err := copier.Copy(pe, filter)
+	err = copier.Copy(pe, filter)
 	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
 		return nil, err
 	}
 
-	tokens, err := u.Repo.FilterTokenUriNew(*pe)
-	if err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err))
-		return nil, err
+	tokens := &entity.Pagination{}
+	if isOrdinal {
+		tokens, err = u.Repo.FilterTokenUriNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
+	} else {
+		tokens, err = u.Repo.FilterTokenUriTCNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
 	}
 
 	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
