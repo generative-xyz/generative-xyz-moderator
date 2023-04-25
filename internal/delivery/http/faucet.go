@@ -81,6 +81,7 @@ func (h *httpDelivery) getFaucetConfig(w http.ResponseWriter, r *http.Request) {
 	result.FaucetAmounts["normal"] = fmt.Sprintf("%.1f", float64(faucetconst.NormalFaucetAmount)/float64(1e18))
 	result.FaucetAmounts["bns"] = fmt.Sprintf("%.1f", float64(faucetconst.BNSFaucetAmount)/float64(1e18))
 	result.FaucetAmounts["artifact"] = fmt.Sprintf("%.1f", float64(faucetconst.ArtifactFaucetAmount)/float64(1e18))
+	result.FaucetAmounts["special"] = fmt.Sprintf("%.1f", float64(faucetconst.SpecialFaucetAmount)/float64(1e18))
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
