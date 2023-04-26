@@ -82,7 +82,7 @@ func (u Usecase) processFragmentData(ctx context.Context, filePath, tokenID stri
 	return fmt.Errorf("file fragment already exists")
 }
 
-func (u Usecase) CreateFileFromFragment(ctx context.Context, tokenID string, filePath string) error {
+func (u Usecase) CreateFileFromFragments(ctx context.Context, tokenID string, filePath string) error {
 
 	defer func() {
 		if err := recover(); err != nil {
