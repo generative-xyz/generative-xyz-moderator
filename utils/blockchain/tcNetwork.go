@@ -46,7 +46,7 @@ func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header.Number", header.Number))
+	//logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header.Number", header.Number))
 	return header.Number, nil
 }
 
