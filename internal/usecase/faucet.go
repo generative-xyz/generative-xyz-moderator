@@ -398,7 +398,7 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, string, err
 	if strings.Contains(res, "my transaction id is:") {
 		txRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{64}") // payment address eth
 		texts := strings.Split(res, "my transaction id is:")
-		addressHex = txRegex.FindString(texts[1])
+		txHex = txRegex.FindString(texts[1])
 	}
 
 	fmt.Println("result: ", addressHex, txHex)
