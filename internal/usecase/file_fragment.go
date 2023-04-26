@@ -10,26 +10,58 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/logger"
+	"sync"
 )
 
 const ChunkSize = 350 * 1024
 
 func (u Usecase) JobFragmentBigFile() {
-	panic("implement me")
+	ctx := context.TODO()
+	for page := 1; ; page++ {
+		jobs, err := u.Repo.FindFragmentJobs(ctx, repository.TokenFragmentJobFilter{
+			Status:   entity.FragmentJobStatusPending,
+			PageSize: 5,
+			Page:     page,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("Error finding fragment jobs", zap.Error(err))
+			break
+		}
+
+		if len(jobs) == 0 {
+			break
+		}
+
+		var wg sync.WaitGroup
+		for _, j := range jobs {
+			wg.Add(1)
+			go func(job entity.TokenFragmentJob) {
+				defer wg.Done()
+				if count, err := u.FragmentFile(context.Background(), job.TokenId, job.FilePath); err != nil {
+					logger.AtLog.Logger.Error("Error fragmenting file", zap.Error(err), zap.String("TokenId", job.TokenId), zap.String("filePath", job.FilePath))
+					u.Repo.UpdateFragmentJobStatus(ctx, job.UUID, entity.FragmentJobStatusError, fmt.Sprintf("Error fragmenting file: %s", err.Error()))
+				} else {
+					u.Repo.UpdateFragmentJobStatus(ctx, job.UUID, entity.FragmentJobStatusDone, fmt.Sprintf("Fragmented %d chunks", count))
+				}
+
+			}(j)
+		}
+		wg.Wait()
+	}
 }
 
-func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) error {
+func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) (int, error) {
 
 	_, err := u.Repo.FindTokenByTokenID(TokenId)
 	if err != nil {
 		logger.AtLog.Logger.Error("Error finding token_uri", zap.Error(err), zap.String("TokenId", TokenId))
-		return err
+		return 0, err
 	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		logger.AtLog.Logger.Error("Error opening file", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
-		return err
+		return 0, err
 	}
 	defer file.Close()
 
@@ -44,21 +76,21 @@ func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) err
 				break
 			}
 			logger.AtLog.Logger.Error("Error reading file", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
-			return err
+			return 0, err
 		}
 
 		// Process the chunk of data as needed
 		// The buffer[:n] contains the actual data read from the file
 		if err = u.processFragmentData(ctx, filePath, TokenId, sequence, buffer[:index]); err != nil {
 			logger.AtLog.Logger.Error("Error processing data", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
-			return err
+			return 0, err
 		}
 
 		// increment sequence
 		sequence++
 	}
 	logger.AtLog.Logger.Info("File fragmented", zap.String("filePath", filePath), zap.String("TokenId", TokenId), zap.Int("total fragments", sequence))
-	return nil
+	return sequence, nil
 }
 
 func (u Usecase) processFragmentData(ctx context.Context, filePath, tokenID string, sequence int, data []byte) error {
