@@ -93,12 +93,12 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 		return "", err
 	}
 	// check valid vs twName first:
-	specFaucetType, err := u.CheckValidFaucet(addressInput, twName, txhash, faucetType)
-	if err != nil {
-		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
-		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
-		return "", err
-	}
+	// specFaucetType, err := u.CheckValidFaucet(addressInput, twName, txhash, faucetType)
+	// if err != nil {
+	// 	logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
+	// 	go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.twName", twName, err.Error())
+	// 	return "", err
+	// }
 
 	// check sharedID exist:
 	sharedIDs, _ := u.Repo.FindFaucetBySharedID(sharedID)
@@ -128,8 +128,8 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 	// if u.Config.ENV == "develop" {
 	// 	chromePath = ""
 	// }
-
-	address, err := getFaucetPaymentInfo(url, chromePath, eCH)
+	var address string
+	address, txhash, err = getFaucetPaymentInfo(url, chromePath, eCH)
 	fmt.Println("address, err: ", address, err)
 
 	if err != nil {
@@ -137,8 +137,11 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.getFaucetPaymentInfo"), zap.Error(err))
 		return "", err
 	}
+	if txhash != "" {
+		address = addressInput
+	}
 
-	specFaucetType, err = u.CheckValidFaucet(address, twName, txhash, faucetType)
+	specFaucetType, err := u.CheckValidFaucet(address, twName, txhash, faucetType)
 	if err != nil {
 		go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.(address+twName)", address+","+twName, err.Error())
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.checkValidFaucet"), zap.Error(err))
@@ -351,7 +354,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 }
 
 // ////////
-func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
+func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, string, error) {
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.ExecPath(chromePath),  // uncomment on the server.
@@ -371,7 +374,7 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	spew.Dump(res)
@@ -379,17 +382,23 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, error) {
 	// if !strings.Contains(res, "@generative_xyz") {
 	// 	return "", errors.New("Tweet not found. Please double-check and try again")
 	// }
-	addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
+	var addressHex string
+	var txHex string
 	res = strings.ToLower(res)
-	texts := strings.Split(res, "my tc address is:")
-	addressHex := addressRegex.FindString(texts[1])
-	if len(addressHex) == 0 {
-		return "", errors.New("invalid address")
+	if strings.Contains(res, "my tc address is:") {
+		addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
+		texts := strings.Split(res, "my tc address is:")
+		addressHex = addressRegex.FindString(texts[1])
+	}
+	if strings.Contains(res, "my transaction id is:") {
+		txRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{64}") // payment address eth
+		texts := strings.Split(res, "my transaction id is:")
+		addressHex = txRegex.FindString(texts[1])
 	}
 
-	fmt.Println("result: ", addressHex)
+	fmt.Println("result: ", addressHex, txHex)
 
-	return addressHex, nil
+	return addressHex, txHex, nil
 }
 
 func getFaucetInfo(url, chromePath string, eCH bool) (string, string, error) {
