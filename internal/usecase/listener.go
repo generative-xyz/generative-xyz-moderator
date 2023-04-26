@@ -120,7 +120,7 @@ func (u Usecase) ResolveMarketplaceAcceptOfferEvent(chainLog types.Log) error {
 		return err
 	}
 
-	err = u.AcceptMakeOffer(event)
+	err = u.AcceptMakeOffer(event, chainLog.BlockNumber)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve accept offer event", zap.Error(err))
@@ -147,6 +147,9 @@ func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 		logger.AtLog.Logger.Error("ResolveMarketplaceCancelListing", zap.Error(err))
 	}
 
+	blockNumber := chainLog.BlockNumber
+	u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenCancelListing, "Cancel Listing")
+
 	return nil
 }
 
@@ -162,7 +165,7 @@ func (u Usecase) ResolveMarketplaceCancelOffer(chainLog types.Log) error {
 		return err
 	}
 
-	err = u.CancelOffer(event)
+	err = u.CancelOffer(event, chainLog.BlockNumber)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("fail when resolve cancel offer event", zap.Error(err))
