@@ -176,6 +176,9 @@ type TokenUriListingFilter struct {
 	PriceBRC20Obj PriceBRC20Obj `json:"priceBrc20"`
 	NftTokenID    string        `bson:"nftTokenId" json:"nftTokenId"`
 	Royalty       int64         `json:"royalty"`
+	TokenIDMini   int           `bson:"token_id_mini"`
+	ProjectName   string        `bson:"project_name"`
+	CreatorName   string        `bson:"creator_name"`
 }
 
 type PriceBRC20Obj struct {
