@@ -117,6 +117,8 @@ type TokenUri struct {
 	OriginalInscribedBy            string        `bson:"originalInscribedBy"`
 	CreatedMintActivity            bool          `bson:"created_mint_activity"`
 	CreatedTokenTx                 bool          `bson:"created_token_tx"`
+	Buyable                        bool          `bson:"-"`
+	PriceBrc20                     PriceBRC20Obj `bson:"-"`
 }
 
 type TokenUriOnwer struct {

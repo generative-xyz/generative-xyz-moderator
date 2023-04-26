@@ -237,26 +237,49 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			}
 		}
 	} else {
-		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
-		if err1 != nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
+		//client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
+		//if err1 != nil {
+		//	logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
+		//} else {
+		//	addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
+		//	if err2 != nil {
+		//		logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+		//	} else {
+		//		if addr != nil {
+		//			if tokenUri.OwnerAddr != addr.String() {
+		//				tokenUri.Owner = nil
+		//				tokenUri.OwnerAddr = addr.String()
+		//				user, err := u.Repo.FindUserByWalletAddress(addr.String())
+		//				if err == nil && user != nil {
+		//					tokenUri.Owner = user
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		user, err := u.Repo.FindUserByWalletAddress(tokenUri.OwnerAddr)
+		if err == nil && user != nil {
+			tokenUri.Owner = user
+		}
+
+		mkl, err := u.Repo.FindActivateListingByTokenID(tokenID)
+		if err == nil && mkl != nil {
+			tokenUri.Buyable = true
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      mkl.Price,
+				Address:    mkl.Erc20Token,
+				OfferingID: mkl.OfferingId,
+			}
 		} else {
-			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
-			if err2 != nil {
-				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
-			} else {
-				if addr != nil {
-					if tokenUri.OwnerAddr != addr.String() {
-						tokenUri.Owner = nil
-						tokenUri.OwnerAddr = addr.String()
-						user, err := u.Repo.FindUserByWalletAddress(addr.String())
-						if err == nil && user != nil {
-							tokenUri.Owner = user
-						}
-					}
-				}
+			tokenUri.Buyable = false
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      "",
+				Address:    "",
+				OfferingID: "",
 			}
 		}
+
 	}
 
 	go func() {

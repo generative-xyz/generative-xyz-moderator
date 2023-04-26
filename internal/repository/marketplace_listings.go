@@ -38,6 +38,27 @@ func (r Repository) FindListingByOfferingID(offeringID string) (*entity.Marketpl
 	return resp, nil
 }
 
+func (r Repository) FindActivateListingByTokenID(tokenID string) (*entity.MarketplaceListings, error) {
+	resp := &entity.MarketplaceListings{}
+
+	f := bson.D{
+		{Key: "token_id", Value: tokenID},
+		{Key: "closed", Value: false},
+		{Key: "finished", Value: false},
+	}
+
+	listing, err := r.FilterOne(utils.COLLECTION_MARKETPLACE_LISTINGS, f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(listing, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) PurchaseTokenByOfferingID(offeringID string) error {
 	obj := &entity.MarketplaceListings{}
 	f := bson.D{
