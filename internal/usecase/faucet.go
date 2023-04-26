@@ -137,6 +137,11 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 		logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.getFaucetPaymentInfo"), zap.Error(err))
 		return "", err
 	}
+	if address == "" && txhash == "" {
+		err := errors.New("The address or txhash is not found in the tweet URL.")
+		return "", err
+	}
+
 	if txhash != "" {
 		address = addressInput
 	}
