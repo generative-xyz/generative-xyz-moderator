@@ -29,3 +29,24 @@ type TokenFileFragment struct {
 func (m TokenFileFragment) TableName() string {
 	return utils.TOKEN_FILE_FRAGMENT
 }
+
+type TokenFragmentJobStatus int
+
+const (
+	FragmentJobStatusPending TokenFragmentJobStatus = iota + 1
+	FragmentJobStatusProcessing
+	FragmentJobStatusDone
+	FragmentJobStatusError
+)
+
+type TokenFragmentJob struct {
+	BaseEntity `bson:",inline" json:"base_entity"`
+	TokenId    string                 `json:"token_id" bson:"token_id"`
+	FilePath   string                 `json:"file_path" bson:"file_path"`
+	Status     TokenFragmentJobStatus `json:"status" bson:"status"`
+	Note       string                 `json:"note" bson:"note"`
+}
+
+func (m TokenFragmentJob) TableName() string {
+	return utils.TOKEN_FILE_FRAGMENT_JOB
+}
