@@ -118,8 +118,9 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 				Buyable:           nft.Buyable,
 				Royalty:           int(nft.Royalty),
 				PriceBRC20: entity.PriceBRC20Obj{
-					Value:   nft.PriceBRC20,
-					Address: nft.PriceBRC20Address,
+					Value:      nft.PriceBRC20,
+					Address:    nft.PriceBRC20Address,
+					OfferingID: nft.OfferingID,
 				},
 			}
 

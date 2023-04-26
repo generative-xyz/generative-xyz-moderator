@@ -179,11 +179,13 @@ type TokenUriListingFilter struct {
 	TokenIDMini   int           `bson:"token_id_mini"`
 	ProjectName   string        `bson:"project_name"`
 	CreatorName   string        `bson:"creator_name"`
+	OfferingID    string        `bson:"offering_id"`
 }
 
 type PriceBRC20Obj struct {
-	Value   string `json:"value"`
-	Address string `json:"address"`
+	Value      string `json:"value"`
+	Address    string `json:"address"`
+	OfferingID string `json:"offering_id"`
 }
 
 type TokenURIListingOwner struct {

@@ -663,7 +663,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 		}
 	}
 
-	listingAmountDefault := "-1"
+	listingAmountDefault := "0"
 	if filter.SortBy == "priceBRC20" && filter.Sort == 1 {
 		listingAmountDefault = "99999999999999"
 	}
@@ -838,6 +838,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 					},
 					{"orderID", "$listing._id"},
 					{"priceBRC20Address", "$listing.erc_20_token"},
+					{"offering_id", "$listing.offering_id"},
 				},
 			},
 		},
@@ -867,6 +868,7 @@ func (r Repository) FilterTokenUriTCNew(filter entity.FilterTokenUris) (*entity.
 					{"project.royalty", 1},
 					{"owner_addrress", 1},
 					{"owner", 1},
+					{"offering_id", 1},
 					{"owner_object.wallet_address", 1},
 					{"owner_object.wallet_address_btc_taproot", 1},
 					{"owner_object.avatar", 1},
@@ -1197,6 +1199,7 @@ func (r Repository) GetOwnerTokens(ownerAddress string) ([]*entity.TokenUriListi
 					},
 					{"project_name", "$project.name"},
 					{"creator_name", "$project.creatorProfile.display_name"},
+					{"offering_id", "$listing.offering_id"},
 				},
 			},
 		},
@@ -1224,6 +1227,7 @@ func (r Repository) GetOwnerTokens(ownerAddress string) ([]*entity.TokenUriListi
 					{"project", 1},
 					{"project_name", 1},
 					{"creator_name", 1},
+					{"offering_id", 1},
 				},
 			},
 		},
