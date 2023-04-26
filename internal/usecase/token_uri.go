@@ -895,8 +895,9 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 			}
 
 			item.PriceBRC20Obj = entity.PriceBRC20Obj{
-				Value:   item.PriceBRC20,
-				Address: item.PriceBRC20Address,
+				Value:      item.PriceBRC20,
+				Address:    item.PriceBRC20Address,
+				OfferingID: item.OfferingID,
 			}
 
 			item.Royalty = item.Project.Royalty
