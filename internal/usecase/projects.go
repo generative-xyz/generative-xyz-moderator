@@ -1713,6 +1713,7 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	var err error
 	pe := &entity.Projects{}
 	zipLink := zipPayload.ZipLink
+	isBigFile := false
 
 	defer func() {
 		now := time.Now().UTC()
@@ -1844,9 +1845,26 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		}
 
 	}
+
+	//check project has big file ($gt: 350kb):
+	// project only has 1 uploaded file, its size is greater than 350kb
+	if len(images) == 1 {
+
+		//Only calculate image field of json
+		if strings.Contains(images[0], "json") {
+			maxSize = helpers.Base64ImageSizeFromJSONURL(images[0])
+		}
+
+		//350kb = 350000 bytes
+		if maxSize > uint64(350000) {
+			isBigFile = true
+		}
+	}
+
 	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
+	pe.IsBigFile = isBigFile
 
 	networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 	pe.MaxFileSize = int64(maxSize)
