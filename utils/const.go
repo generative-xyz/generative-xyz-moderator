@@ -174,6 +174,7 @@ const (
 	COLLECTION_GLOBAL_VARIABLE           string = "global_variables"
 	AI_SCHOOL_JOB                        string = "ai_school_jobs"
 	AI_SCHOOL_DATASET                    string = "ai_school_dataset"
+	TOKEN_FILE_FRAGMENT                  string = "token_file_fragments"
 
 	MINT_NFT_BTC string = "mint_nft_btc"
 
