@@ -104,8 +104,9 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 		}
 
 		logger.AtLog.Logger.Info("resolveTransaction",
-			zap.Int64("from block", ProcessingBlock),
-			zap.Int64("to block", ProcessingBlockTo),
+			zap.Int64("fromFlock", ProcessingBlock),
+			zap.Int64("toBlock", ProcessingBlockTo),
+			zap.Int64("lastBlockOnChain", lastBlockOnChain.Int64()),
 			zap.Int64("logs", int64(len(logs))))
 
 		for _, _log := range logs {
@@ -116,16 +117,16 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			switch address {
 			case strings.ToLower(c.Config.MarketplaceEvents.Contract):
 				switch topic {
-				// case strings.ToLower(c.Config.MarketplaceEvents.PurchaseToken):
-				// 	c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
-				// case strings.ToLower(c.Config.MarketplaceEvents.MakeOffer):
-				// 	c.Usecase.ResolveMarketplaceMakeOffer(_log)
-				// case strings.ToLower(c.Config.MarketplaceEvents.AcceptMakeOffer):
-				// 	c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
-				// case strings.ToLower(c.Config.MarketplaceEvents.CancelListing):
-				// 	c.Usecase.ResolveMarketplaceCancelListing(_log)
-				// case strings.ToLower(c.Config.MarketplaceEvents.CancelMakeOffer):
-				// 	c.Usecase.ResolveMarketplaceCancelOffer(_log)
+				case strings.ToLower(c.Config.MarketplaceEvents.PurchaseToken):
+					c.Usecase.ResolveMarketplacePurchaseTokenEvent(_log)
+				case strings.ToLower(c.Config.MarketplaceEvents.MakeOffer):
+					c.Usecase.ResolveMarketplaceMakeOffer(_log)
+				case strings.ToLower(c.Config.MarketplaceEvents.AcceptMakeOffer):
+					c.Usecase.ResolveMarketplaceAcceptOfferEvent(_log)
+				case strings.ToLower(c.Config.MarketplaceEvents.CancelListing):
+					c.Usecase.ResolveMarketplaceCancelListing(_log)
+				case strings.ToLower(c.Config.MarketplaceEvents.CancelMakeOffer):
+					c.Usecase.ResolveMarketplaceCancelOffer(_log)
 				case strings.ToLower(c.Config.MarketplaceEvents.ListToken):
 					c.Usecase.ResolveMarketplaceListTokenEvent(_log)
 				}
