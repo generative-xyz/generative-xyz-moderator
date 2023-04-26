@@ -264,7 +264,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 			}
 			if txReceipt.Status == 0 {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.TransactionByHash.Status"), zap.Error(err))
-				return specFaucetType, errors.New("tx status is 0")
+				return specFaucetType, errors.New("tx have failed status")
 			}
 
 			from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
@@ -275,7 +275,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 
 			if !strings.EqualFold(from.String(), address) {
 				logger.AtLog.Logger.Error(fmt.Sprintf("CheckValidFaucet.Sender"), zap.Error(err))
-				return specFaucetType, errors.New("invalid sender")
+				return specFaucetType, errors.New("requestor is not tx sender")
 			}
 
 			if strings.EqualFold(tx.To().String(), BNSAddress) {
@@ -297,7 +297,7 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 					}
 				}
 				if !haveEvent {
-					return specFaucetType, errors.New("invalid tx")
+					return specFaucetType, errors.New("tx is not mint artifact/bns")
 				}
 			}
 			if strings.EqualFold(tx.To().String(), ArtifaceAddress) {
@@ -320,11 +320,11 @@ func (u Usecase) CheckValidFaucet(address, twName, txhash, faucetType string) (s
 					}
 				}
 				if !haveEvent {
-					return specFaucetType, errors.New("invalid tx")
+					return specFaucetType, errors.New("tx is not mint artifact/bns")
 				}
 			}
 		} else {
-			return specFaucetType, errors.New("invalid tx")
+			return specFaucetType, errors.New("tx not found in tweet")
 		}
 	}
 
