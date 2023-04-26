@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"rederinghub.io/utils/blockchain"
 	"strconv"
 	"strings"
 	"time"
+
+	"rederinghub.io/utils/blockchain"
 
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 
@@ -42,13 +43,13 @@ type projectStatChan struct {
 
 func (u Usecase) ResolveMarketplaceListTokenEvent(chainLog types.Log) error {
 	marketplaceContract, err := generative_marketplace_lib.NewGenerativeMarketplaceLib(chainLog.Address, u.TcClientPublicNode.GetClient())
+	blocknumber := chainLog.BlockNumber
+
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot init marketplace contract", zap.Error(err))
 		return err
 	}
 	event, err := marketplaceContract.ParseListingToken(chainLog)
-	blocknumber := chainLog.BlockNumber
-
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot parse list token event", zap.Error(err))
 		return err
