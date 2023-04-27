@@ -21,6 +21,14 @@ import (
 )
 
 func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
 	address := r.URL.Query().Get("address")
 	if address == "" {
 		ctx := r.Context()
@@ -48,7 +56,7 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	files, err := h.Usecase.Repo.FindPresetDatasetByName(text, address)
+	files, err := h.Usecase.Repo.FindPresetDatasetByName(text, address, int64(limit), int64(offset))
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
