@@ -1425,13 +1425,23 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 			if iResp != nil {
 				address = iResp.Address
 			} else {
-				address = token.Owner.WalletAddressBTCTaproot
-			}
-
-			user, _ := u.Repo.FindUserByBtcAddressTaproot(address)
-			if user != nil {
-				name = user.DisplayName
-				avatar = user.Avatar
+				if token.Owner.WalletAddressBTCTaproot != "" {
+					user, _ := u.Repo.FindUserByBtcAddressTaproot(token.Owner.WalletAddressBTCTaproot)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else if token.OwnerAddress != "" {
+					user, _ := u.Repo.FindUserByWalletAddress(token.OwnerAddress)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else {
+					continue
+				}
 			}
 
 			if _, has := owners[address]; !has {
