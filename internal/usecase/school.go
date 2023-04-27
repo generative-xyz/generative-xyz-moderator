@@ -109,7 +109,7 @@ func createAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams
 	return nil
 }
 
-func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetsGCPath []string, gcs googlecloud.IGcstorage) error {
+func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, datasetsGCPath map[string]string, gcs googlecloud.IGcstorage) error {
 	err := createAISchoolWorkFolder(jobID, params)
 	if err != nil {
 		return err
@@ -124,9 +124,10 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, datasetGCPath := range datasetsGCPath {
-		gcPathParts := strings.Split(datasetGCPath, "/")
-		filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
+	for datasetName, datasetGCPath := range datasetsGCPath {
+		// gcPathParts := strings.Split(datasetGCPath, "/")
+		// filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
+		datasetNameStr := strings.ReplaceAll(datasetName, " ", "_")
 
 		log.Println("Unzipping dataset: ", datasetGCPath)
 		dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
@@ -140,7 +141,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 		if err != nil {
 			return err
 		}
-		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + filenameParts[0])
+		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + datasetNameStr)
 		if err != nil {
 			return err
 		}
@@ -197,7 +198,8 @@ func (job *AIJobInstance) Start() {
 		}
 		return
 	}
-	datasetsPath := []string{}
+	// datasetsPath := []string{}
+	datasetsPathMap := make(map[string]string)
 	if len(job.job.Datasets) > 0 {
 		for _, datasetUUID := range job.job.Datasets {
 			dataset, err := job.u.Repo.GetPresetDatasetByID(datasetUUID)
@@ -211,7 +213,8 @@ func (job *AIJobInstance) Start() {
 				}
 				return
 			}
-			datasetsPath = append(datasetsPath, dataset.DatasetURI)
+			datasetsPathMap[dataset.Name] = dataset.DatasetURI
+			// datasetsPath = append(datasetsPath, dataset.DatasetURI)
 		}
 	} else {
 		job.job.Errors = "No dataset provided"
@@ -224,7 +227,7 @@ func (job *AIJobInstance) Start() {
 		return
 	}
 
-	err = prepAISchoolWorkFolder(jobID, params, datasetsPath, job.u.GCS)
+	err = prepAISchoolWorkFolder(jobID, params, datasetsPathMap, job.u.GCS)
 	if err != nil {
 		job.job.Errors = err.Error()
 		job.job.Status = "error"
