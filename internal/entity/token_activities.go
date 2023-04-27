@@ -16,6 +16,9 @@ const (
 	TokenCancelListing TokenActivityType = 2
 	TokenMatched       TokenActivityType = 3
 	TokenTransfer      TokenActivityType = 4
+	TokenMakeOffer     TokenActivityType = 5
+	TokenCancelOffer   TokenActivityType = 6
+	TokenAcceptOffer   TokenActivityType = 7
 )
 
 type TokenActivity struct {
