@@ -1,8 +1,10 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 	"sync"
 
@@ -282,6 +284,7 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 			}
 
 			sendMessage(listing)
+			u.TokenActivites(blocknumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenListing, "Listing")
 
 			// TODO: @dac add update collection stats here
 
@@ -383,6 +386,8 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 			}
 
 			sendMessage(offer)
+
+			u.TokenActivites(blocknumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenMakeOffer, "Make offer")
 			// TODO: @dac add update collection stats here
 			return nil
 		} else {
@@ -399,7 +404,7 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 	return nil
 }
 
-func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibAcceptMakeOffer) error {
+func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibAcceptMakeOffer, blockNumber uint64) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	logger.AtLog.Logger.Info("accept make offer offeringId", zap.Any("offeringID", offeringID))
@@ -430,6 +435,8 @@ func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMar
 	}
 
 	// TODO: @dac add update collection stats here
+	u.TokenActivites(blockNumber, event.Data.TokenId.String(), "", strings.ToLower(event.Buyer.String()), entity.TokenAcceptOffer, "Accept offer")
+
 	return nil
 }
 
@@ -482,7 +489,7 @@ func (u Usecase) CancelListing(event *generative_marketplace_lib.GenerativeMarke
 	return nil
 }
 
-func (u Usecase) CancelOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibCancelMakeOffer) error {
+func (u Usecase) CancelOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibCancelMakeOffer, blockNumber uint64) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	logger.AtLog.Logger.Info("cancel make offer offeringId", zap.Any("offeringID", offeringID))
@@ -524,6 +531,8 @@ func (u Usecase) CancelOffer(event *generative_marketplace_lib.GenerativeMarketp
 		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
 			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
 		}
+
+		u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenCancelOffer, "Cancel offer")
 
 	}(done)
 	<-done
@@ -726,4 +735,25 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offer
 	// TODO: @dac add update collection stats here
 
 	return nil
+}
+
+func (u Usecase) TokenActivites(blocknumber uint64, tokenID string, fromWallet string, toWallet string, action entity.TokenActivityType, title string) {
+	bn := big.NewInt(int64(blocknumber))
+	blockInfo, err := u.TcClientPublicNode.BlockByNumber(context.Background(), bn)
+
+	tok, err := u.Repo.FindTokenByTokenID(tokenID)
+	if err == nil {
+		//token activities here
+		err = u.Repo.InsertTokenActivity(&entity.TokenActivity{
+			Type:          action,
+			Title:         title,
+			UserAAddress:  fromWallet,
+			UserBAddress:  toWallet,
+			InscriptionID: tokenID,
+			ProjectID:     tok.ProjectID,
+			Time:          &blockInfo.ReceivedAt,
+		})
+	} else {
+		logger.AtLog.Logger.Error("TokenActivites", zap.String("FindTokenByTokenID", tokenID), zap.Error(err))
+	}
 }
