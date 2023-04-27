@@ -1074,15 +1074,20 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		urlToMint = baseUrl.String()
 	}
 
-	// create byte data:
+	// create byte data
 	var byteData [][]byte
-	if len(urlToMint) > 0 {
-		byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
-			return nil
+
+	//if project doesn't have bigfile (file > 350000 bytes 350kb)
+	if !p.IsBigFile {
+		if len(urlToMint) > 0 {
+			byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
+				return nil
+			}
 		}
 	}
+
 	// fmt.Println("byteData", byteData)
 
 	// get free temp wallet:
