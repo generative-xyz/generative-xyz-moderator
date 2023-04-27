@@ -31,6 +31,7 @@ type Config struct {
 	TxConsumerConfig      TxConsumerConfig
 	MarketplaceEvents     MarketplaceEvents
 	DAOEvents             DAOEvents
+	BlockChainEvent       BlockChainEvent
 	TimeResyncProjectStat int32
 	Slack                 slack.Config
 	Crontab               CronTabConfig
@@ -181,9 +182,10 @@ type Chain struct {
 }
 
 type BlockchainConfig struct {
-	ETHEndpoint    string
-	ETHEndpointDex string
-	TCEndpoint     string
+	ETHEndpoint      string
+	ETHEndpointDex   string
+	TCEndpoint       string
+	TCPublicEndpoint string
 }
 
 type TxConsumerConfig struct {
@@ -209,7 +211,9 @@ type DAOEvents struct {
 	ProposalCreated string
 	CastVote        string
 }
-
+type BlockChainEvent struct {
+	TransferNFT string
+}
 type GENToken struct {
 	Contract string
 }
@@ -315,9 +319,10 @@ func NewConfig(filePaths ...string) (*Config, error) {
 			Chain: os.Getenv("COVALENT_CHAIN"),
 		},
 		BlockchainConfig: BlockchainConfig{
-			ETHEndpoint:    os.Getenv("ETH_ENDPOINT"),
-			ETHEndpointDex: os.Getenv("ETH_ENDPOINT_DEX"),
-			TCEndpoint:     os.Getenv("TC_ENDPOINT"),
+			ETHEndpoint:      os.Getenv("ETH_ENDPOINT"),
+			ETHEndpointDex:   os.Getenv("ETH_ENDPOINT_DEX"),
+			TCEndpoint:       os.Getenv("TC_ENDPOINT"),
+			TCPublicEndpoint: os.Getenv("TC_ENDPOINT_PUBLIC"),
 		},
 		TxConsumerConfig: TxConsumerConfig{
 			Enabled:       enabled,
@@ -339,6 +344,9 @@ func NewConfig(filePaths ...string) (*Config, error) {
 			ProposalCreated: os.Getenv("DAO_PROPOSAL_CREATED"),
 			Contract:        os.Getenv("DAO_PROPOSAL_CONTRACT"),
 			CastVote:        os.Getenv("DAO_PROPOSAL_CAST_VOTE"),
+		},
+		BlockChainEvent: BlockChainEvent{
+			TransferNFT: os.Getenv("TRANSFER_NFT_SIGNATURE"),
 		},
 		TimeResyncProjectStat: int32(timeResyncProjectStat),
 		Slack: slack.Config{

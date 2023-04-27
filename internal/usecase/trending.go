@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -11,6 +12,7 @@ const (
 	INF_TRENDING_SCORE                  int64 = 9223372036854775807 // max int64 value
 	SATOSHI_EACH_BTC                    int64 = 100000000
 	TRENDING_SCORE_EACH_BTC_VOLUMN      int64 = 1000000
+	TRENDING_SCORE_NEW_PROJECT          int64 = 50000
 	TRENDING_SCORE_EACH_OPENING_LISTING int64 = 300
 	TRENDING_SCORE_EACH_MINT            int64 = 10
 	TRENDING_SCORE_EACH_VIEW            int64 = 1
@@ -21,7 +23,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 	// All btc activities, which include Mint and Buy activity
 	// Mapping from projectID to latest two week's volumn in satoshi
 	fromProjectIDToRecentVolumn := map[string]int64{}
-	for page := int64(1);; page++ {
+	for page := int64(1); ; page++ {
 		logger.AtLog.Logger.Info("JobSyncProjectTrending.StartGetpagingBtcActivities", zap.Any("page", zap.Any("page)", page)))
 		resp, err := u.Repo.GetRecentBTCActivity(page, 100)
 		if err != nil {
@@ -81,23 +83,23 @@ func (u Usecase) JobSyncProjectTrending() error {
 		}
 	}
 
-	var processed int64
+	daoExecutedProject := make(map[string]bool)
+	daoProjects, err := u.Repo.GetNewDAOProjectListedIn7Day(context.TODO())
+	if err != nil {
+		return err
+	}
+	for _, daoProject := range daoProjects {
+		daoExecutedProject[daoProject.ProjectId.Hex()] = true
+	}
 
-	for page := int64(1); ; page++ {
-		baseFilter := entity.BaseFilters{
-			Limit: 10,
-			Page:  page,
-		}
-		f := entity.FilterProjects{}
-		f.BaseFilters = baseFilter
-		logger.AtLog.Logger.Info("JobSyncProjectTrending.StartGetpagingProjects", zap.Any("page", zap.Any("page)", page)))
-		resp, err := u.Repo.GetProjects(f)
+	var processed int64
+	for page := 1; ; page++ {
+
+		projects, err := u.Repo.GetProjectsPerPage(page, 100)
 		if err != nil {
 			logger.AtLog.Logger.Error("JobSyncProjectTrending.ErrorWhenGetPagingProjects", zap.Any("err", err.Error()))
 			break
 		}
-		uProjects := resp.Result
-		projects := uProjects.([]entity.Projects)
 		logger.AtLog.Logger.Info("JobSyncProjectTrending.GetpagingProjects", zap.Any("page", page), zap.Any("projectCount", zap.Any("len(projects))", len(projects))))
 		if len(projects) == 0 {
 			break
@@ -114,8 +116,8 @@ func (u Usecase) JobSyncProjectTrending() error {
 			}
 			volumnInSatoshi := fromProjectIDToRecentVolumn[project.TokenID] + fromProjectIDToListingVolumn[project.TokenID]
 			logger.AtLog.Logger.Info(
-				"JobSyncProjectTrending.Volumn", 
-				zap.String("project", project.TokenID), 
+				"JobSyncProjectTrending.Volumn",
+				zap.String("project", project.TokenID),
 				zap.Any("mintVolumn", fromProjectIDToRecentVolumn[project.TokenID]),
 				zap.Any("tradeVolumn", fromProjectIDToListingVolumn[project.TokenID]),
 			)
@@ -139,6 +141,10 @@ func (u Usecase) JobSyncProjectTrending() error {
 			trendingScore += int64(volumnInBtc * float64(TRENDING_SCORE_EACH_BTC_VOLUMN))
 			trendingScore += numActivity * TRENDING_SCORE_EACH_MINT
 			trendingScore += numListings * TRENDING_SCORE_EACH_OPENING_LISTING
+			if daoExecutedProject[project.UUID] {
+				trendingScore += TRENDING_SCORE_NEW_PROJECT
+			}
+
 			if project.MintingInfo.Index == project.MaxSupply {
 				if numListings == 0 {
 					trendingScore /= 5
@@ -150,6 +156,7 @@ func (u Usecase) JobSyncProjectTrending() error {
 			if project.MintPrice == "0" {
 				trendingScore /= 5
 			}
+
 			isWhitelistedProject := false
 			isBoostedProject := false
 			// check if this project is whitelisted in top of trending
