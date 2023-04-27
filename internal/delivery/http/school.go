@@ -298,6 +298,15 @@ func (h *httpDelivery) schoolUploadDataset(w http.ResponseWriter, r *http.Reques
 
 	log.Println("datasetName", datasetName)
 	log.Println("datasetSize", datasetSize)
+	quota, err := h.Usecase.GetUserDatasetQuota(address)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if int64(quota)+datasetSize > 200000000 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Dataset quota exceeded"))
+		return
+	}
 
 	datasetPath := fmt.Sprintf("ai-school-dataset/%s/%s", address, datasetName)
 

@@ -435,3 +435,21 @@ func (u *Usecase) ListDataset(address string, limit, offset int64) ([]entity.AIS
 	}
 	return datasets, nil
 }
+
+func (u *Usecase) GetUserDatasetQuota(address string) (int, error) {
+	address = strings.ToLower(address)
+	datasets := []entity.AISchoolPresetDataset{}
+	filter := bson.M{
+		"deleted_at": nil,
+		"creator":    address,
+	}
+	err := u.Repo.Find(context.Background(), entity.AISchoolPresetDataset{}.TableName(), filter, &datasets)
+	if err != nil {
+		return 0, err
+	}
+	totalSize := 0
+	for _, dataset := range datasets {
+		totalSize += dataset.Size
+	}
+	return totalSize, nil
+}
