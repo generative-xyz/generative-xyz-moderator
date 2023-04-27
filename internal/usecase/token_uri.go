@@ -237,26 +237,49 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 			}
 		}
 	} else {
-		client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
-		if err1 != nil {
-			logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
+		//client, err1 := helpers.ChainDialer(os.Getenv("TC_ENDPOINT_PUBLIC"))
+		//if err1 != nil {
+		//	logger.AtLog.Logger.Error("getTokenInfo", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "EthDialer"), zap.String("dial", os.Getenv("TC_ENDPOINT_PUBLIC")), zap.Error(err1))
+		//} else {
+		//	addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
+		//	if err2 != nil {
+		//		logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
+		//	} else {
+		//		if addr != nil {
+		//			if tokenUri.OwnerAddr != addr.String() {
+		//				tokenUri.Owner = nil
+		//				tokenUri.OwnerAddr = addr.String()
+		//				user, err := u.Repo.FindUserByWalletAddress(addr.String())
+		//				if err == nil && user != nil {
+		//					tokenUri.Owner = user
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+
+		user, err := u.Repo.FindUserByWalletAddress(tokenUri.OwnerAddr)
+		if err == nil && user != nil {
+			tokenUri.Owner = user
+		}
+
+		mkl, err := u.Repo.FindActivateListingByTokenID(tokenID)
+		if err == nil && mkl != nil {
+			tokenUri.Buyable = true
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      mkl.Price,
+				Address:    mkl.Erc20Token,
+				OfferingID: mkl.OfferingId,
+			}
 		} else {
-			addr, err2 := u.ownerOf(client, common.HexToAddress(tokenUri.GenNFTAddr), tokenID)
-			if err2 != nil {
-				logger.AtLog.Logger.Error("getTokenInfo get ownerOf", zap.String("tokenID", tokenID), zap.Any("req", req), zap.String("action", "ownerOf"), zap.Error(err2))
-			} else {
-				if addr != nil {
-					if tokenUri.OwnerAddr != addr.String() {
-						tokenUri.Owner = nil
-						tokenUri.OwnerAddr = addr.String()
-						user, err := u.Repo.FindUserByWalletAddress(addr.String())
-						if err == nil && user != nil {
-							tokenUri.Owner = user
-						}
-					}
-				}
+			tokenUri.Buyable = false
+			tokenUri.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      "",
+				Address:    "",
+				OfferingID: "",
 			}
 		}
+
 	}
 
 	go func() {
@@ -804,6 +827,13 @@ func (u Usecase) FilterTokens(filter structure.FilterTokens) (*entity.Pagination
 
 func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Pagination, error) {
 	pe := &entity.FilterTokenUris{}
+	p, err := u.Repo.FindProjectByTokenIDOrGenNFTAddr(*filter.GenNFTAddr)
+	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+		return nil, err
+	}
+
+	isOrdinal := helpers.IsOrdinalProject(p.TokenId)
 
 	//filerAttrs := []structure.TokenUriAttrReq{}
 	if filter.Rarity != nil && *filter.Rarity != "" {
@@ -819,17 +849,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		maxInt, _ := strconv.Atoi(max)
 
 		groupTraits := make(map[string][]string)
-		p, err := u.Repo.FindProjectByTokenID(*filter.GenNFTAddr)
-		if err == nil {
-			traits := p.TraitsStat
-			for _, trait := range traits {
-				values := trait.TraitValuesStat
+		traits := p.TraitsStat
+		for _, trait := range traits {
+			values := trait.TraitValuesStat
 
-				for _, value := range values {
-					if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
-						groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
+			for _, value := range values {
+				if value.Rarity >= int32(minInt) && value.Rarity <= int32(maxInt) {
+					groupTraits[trait.TraitName] = append(groupTraits[trait.TraitName], value.Value)
 
-					}
 				}
 			}
 		}
@@ -842,15 +869,25 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 		}
 	}
 
-	err := copier.Copy(pe, filter)
+	err = copier.Copy(pe, filter)
 	if err != nil {
+		logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
 		return nil, err
 	}
 
-	tokens, err := u.Repo.FilterTokenUriNew(*pe)
-	if err != nil {
-		logger.AtLog.Logger.Error("err", zap.Error(err))
-		return nil, err
+	tokens := &entity.Pagination{}
+	if isOrdinal {
+		tokens, err = u.Repo.FilterTokenUriNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
+	} else {
+		tokens, err = u.Repo.FilterTokenUriTCNew(*pe)
+		if err != nil {
+			logger.AtLog.Error("FilterTokensNew", zap.Any("filter", filter), zap.Error(err))
+			return nil, err
+		}
 	}
 
 	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
@@ -869,6 +906,8 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 						Avatar:                  "",
 					}
 				}
+
+				item.Royalty = item.Project.Royalty
 			}
 		} else {
 			item.Owner = entity.TokenURIListingOwner{
@@ -877,6 +916,14 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				DisplayName:             item.OnwerInternal.DisplayName,
 				Avatar:                  item.OnwerInternal.Avatar,
 			}
+
+			item.PriceBRC20Obj = entity.PriceBRC20Obj{
+				Value:      item.PriceBRC20,
+				Address:    item.PriceBRC20Address,
+				OfferingID: item.OfferingID,
+			}
+
+			item.Royalty = item.Project.Royalty
 		}
 
 		//spew.Dump(iResp)
@@ -1222,7 +1269,7 @@ func (u Usecase) CreateBTCTokenURIFromCollectionInscription(meta entity.Collecti
 	}
 
 	tokenUri := entity.TokenUri{}
-	tokenUri.ContractAddress = project.ContractAddress
+	tokenUri.ContractAddress = os.Getenv("GENERATIVE_BTC_PROJECT")
 	tokenUri.TokenID = inscription.ID
 	blockNumberMinted := "31012412"
 	tokenUri.BlockNumberMinted = &blockNumberMinted
@@ -1378,13 +1425,23 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 			if iResp != nil {
 				address = iResp.Address
 			} else {
-				address = token.Owner.WalletAddressBTCTaproot
-			}
-
-			user, _ := u.Repo.FindUserByBtcAddressTaproot(address)
-			if user != nil {
-				name = user.DisplayName
-				avatar = user.Avatar
+				if token.Owner.WalletAddressBTCTaproot != "" {
+					user, _ := u.Repo.FindUserByBtcAddressTaproot(token.Owner.WalletAddressBTCTaproot)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else if token.OwnerAddress != "" {
+					user, _ := u.Repo.FindUserByWalletAddress(token.OwnerAddress)
+					if user != nil {
+						name = user.DisplayName
+						avatar = user.Avatar
+						address = user.WalletAddressBTCTaproot
+					}
+				} else {
+					continue
+				}
 			}
 
 			if _, has := owners[address]; !has {
