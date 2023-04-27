@@ -38,7 +38,7 @@ type AIJobInstance struct {
 	progCh       chan JobProgress
 }
 
-var currentAIJobs map[string]AIJobInstance
+var currentAIJobs map[string]*AIJobInstance
 
 func (u Usecase) JobAIS_WatchPending() error {
 	jobList, err := u.Repo.GetAISchoolJobByStatus([]string{"running", "waiting"})
@@ -47,7 +47,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 	}
 
 	if currentAIJobs == nil {
-		currentAIJobs = make(map[string]AIJobInstance)
+		currentAIJobs = make(map[string]*AIJobInstance)
 	}
 	for jobID, job := range currentAIJobs {
 		if job.IsCompleted {
@@ -77,7 +77,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 				u:   u,
 				job: &job,
 			}
-			currentAIJobs[job.JobID] = newJob
+			currentAIJobs[job.JobID] = &newJob
 			job.Status = "running"
 			job.ExecutedAt = time.Now().Unix()
 			err = u.Repo.UpdateAISchoolJob(&job)
@@ -326,6 +326,7 @@ func (job *AIJobInstance) Start() {
 		// go u.Slack.SendMessageToSlackWithChannel("Error", "Error while updating job status: "+err.Error(), "error")
 		return
 	}
+	return
 }
 func executeAISchoolJob(scriptPath string, params string, dataset string, output string, progCh chan JobProgress) (string, string, error) {
 	// 1. Get params
