@@ -466,9 +466,13 @@ func (u *Usecase) GetUserDatasetQuota(address string) (int, error) {
 }
 
 func removeContents(dir string) error {
-	d, err := os.Open(dir)
+	jobPathAbs, err := filepath.Abs(dir)
 	if err != nil {
 		return err
+	}
+	d, err := os.Open(jobPathAbs)
+	if err != nil {
+		return nil
 	}
 	defer d.Close()
 	names, err := d.Readdirnames(-1)
