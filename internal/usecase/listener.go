@@ -76,7 +76,7 @@ func (u Usecase) ResolveMarketplacePurchaseTokenEvent(chainLog types.Log) error 
 		return err
 	}
 
-	err = u.PurchaseToken(event)
+	err = u.PurchaseToken(event, chainLog.BlockNumber)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("ResolveMarketplacePurchaseTokenEvent", zap.Error(err))
