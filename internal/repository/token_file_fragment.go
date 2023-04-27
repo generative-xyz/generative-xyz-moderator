@@ -106,9 +106,8 @@ func (r Repository) CreateFragmentJob(ctx context.Context, job *entity.TokenFrag
 		return fmt.Errorf("file path is required")
 	}
 
-	now := time.Now()
 	id := primitive.NewObjectID()
-	job.CreatedAt = &now
+	job.CreatedAt = time.Now()
 
 	job.BaseEntity = entity.BaseEntity{
 		ID:   id,
