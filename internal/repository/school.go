@@ -94,19 +94,25 @@ func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDatas
 func (r Repository) FindPresetDatasetByName(name, creator string) ([]entity.AISchoolPresetDataset, error) {
 	files := []entity.AISchoolPresetDataset{}
 	filter := bson.D{
-		{"deleted_at", primitive.Null{}},
-		{"name", bson.D{{"$regex", primitive.Regex{Pattern: name, Options: "i"}}}},
+		{"name", bson.D{{"$regex", primitive.Regex{Pattern: "a", Options: "i"}}}},
 		{"$or",
 			bson.A{
 				bson.D{
 					{"$and",
 						bson.A{
-							bson.D{{"creator", creator}},
+							bson.D{{"creator", "0x3fc4053980c04ea4c517d82afbbb1cedbbbaa15b"}},
 							bson.D{{"is_private", true}},
 						},
 					},
 				},
-				bson.D{{"is_private", false}},
+				bson.D{
+					{"$or",
+						bson.A{
+							bson.D{{"is_private", false}},
+							bson.D{{"is_private", primitive.Null{}}},
+						},
+					},
+				},
 			},
 		},
 	}
