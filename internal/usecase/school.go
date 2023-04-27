@@ -57,6 +57,12 @@ func (u Usecase) JobAIS_WatchPending() error {
 	if len(currentAIJobs) >= 2 {
 		return nil
 	}
+	if len(currentAIJobs) == 0 {
+		err := os.RemoveAll("./ai-school-work")
+		if err != nil {
+			return err
+		}
+	}
 	for _, job := range jobList {
 		if job.Status == "waiting" {
 			jobParams := &structure.AISchoolModelParams{}
@@ -83,7 +89,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 		if job.Status == "running" {
 			if _, exist := currentAIJobs[job.JobID]; !exist {
 				job.Status = "waiting"
-				job.ExecutedAt = 0
+				// job.ExecutedAt = 0
 				job.Progress = 0
 				err = u.Repo.UpdateAISchoolJob(&job)
 				if err != nil {
