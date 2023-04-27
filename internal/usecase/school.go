@@ -59,7 +59,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 		return nil
 	}
 	if len(currentAIJobs) == 0 {
-		err := os.RemoveAll("./ai-school-work")
+		err := removeContents("./ai-school-work")
 		if err != nil {
 			return err
 		}
@@ -129,7 +129,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 	log.Println("Writing params to file: ", basePath+jobID+"/params.json")
 	err = ioutil.WriteFile(basePath+jobID+"/params.json", content, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	for datasetName, datasetGCPath := range datasetsGCPath {
 		// gcPathParts := strings.Split(datasetGCPath, "/")
@@ -463,4 +463,23 @@ func (u *Usecase) GetUserDatasetQuota(address string) (int, error) {
 		totalSize += dataset.Size
 	}
 	return totalSize, nil
+}
+
+func removeContents(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
