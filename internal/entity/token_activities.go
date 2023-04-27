@@ -19,6 +19,7 @@ const (
 	TokenMakeOffer     TokenActivityType = 5
 	TokenCancelOffer   TokenActivityType = 6
 	TokenAcceptOffer   TokenActivityType = 7
+	TokenPurchase      TokenActivityType = 8
 )
 
 type TokenActivity struct {
@@ -34,6 +35,7 @@ type TokenActivity struct {
 	InscriptionID string            `bson:"inscription_id" json:"inscription_id"`
 	ProjectID     string            `bson:"project_id" json:"project_id"`
 	TokenInfo     *TokenUri         `bson:"-" json:"token_info"`
+	BlockNumber   uint64            `bson:"block_number" json:"block_number"`
 }
 
 type FilterTokenActivities struct {

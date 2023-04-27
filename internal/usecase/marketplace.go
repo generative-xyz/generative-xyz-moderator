@@ -300,7 +300,7 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 	}
 }
 
-func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarketplaceLibPurchaseToken) error {
+func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarketplaceLibPurchaseToken, blockNumber uint64) error {
 
 	offeringID := strings.ToLower(fmt.Sprintf("%x", event.OfferingId))
 	logger.AtLog.Logger.Info("PurchaseToken", zap.String("offeringID", offeringID))
@@ -317,6 +317,8 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 			logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 			return nil, err
 		}
+
+		u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Buyer.String()), "", entity.TokenPurchase, "Purchase token")
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
@@ -733,7 +735,6 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offer
 	}
 
 	// TODO: @dac add update collection stats here
-
 	return nil
 }
 
@@ -752,6 +753,7 @@ func (u Usecase) TokenActivites(blocknumber uint64, tokenID string, fromWallet s
 			InscriptionID: tokenID,
 			ProjectID:     tok.ProjectID,
 			Time:          &blockInfo.ReceivedAt,
+			BlockNumber:   blocknumber,
 		})
 	} else {
 		logger.AtLog.Logger.Error("TokenActivites", zap.String("FindTokenByTokenID", tokenID), zap.Error(err))
