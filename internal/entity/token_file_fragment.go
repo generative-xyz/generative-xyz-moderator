@@ -45,6 +45,7 @@ type TokenFragmentJob struct {
 	FilePath   string                 `json:"file_path" bson:"file_path"`
 	Status     TokenFragmentJobStatus `json:"status" bson:"status"`
 	Note       string                 `json:"note" bson:"note"`
+	CreatedAt  time.Time              `json:"created_at" bson:"created_at"`
 }
 
 func (m TokenFragmentJob) TableName() string {
