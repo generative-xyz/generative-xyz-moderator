@@ -61,9 +61,12 @@ func (u Usecase) JobAIS_WatchPending() error {
 		return nil
 	}
 	if len(currentAIJobs) == 0 {
-		err := removeContents("./ai-school-work")
-		if err != nil {
-			return err
+		disableCleanup := os.Getenv("DISABLE_CLEANUP")
+		if disableCleanup == "" || disableCleanup == "false" {
+			err := removeContents("./ai-school-work")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	for _, job := range jobList {
