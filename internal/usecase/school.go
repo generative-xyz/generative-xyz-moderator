@@ -159,6 +159,9 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 		}
 
 		for _, f := range zr.File {
+			if strings.Contains(f.Name, "__MACOSX") {
+				continue
+			}
 			log.Println("Unzipping", f.Name)
 			err := unzipFile(f, destination)
 			if err != nil {
