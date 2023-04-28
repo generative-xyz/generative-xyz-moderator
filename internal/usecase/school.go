@@ -57,7 +57,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 		}
 	}
 	if len(currentAIJobs) >= 2 {
-		log.Println("Too many jobs running", len(currentAIJobs))
+		log.Println("too many jobs running", len(currentAIJobs))
 		return nil
 	}
 	if len(currentAIJobs) == 0 {
