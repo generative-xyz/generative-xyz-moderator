@@ -42,10 +42,9 @@ type AggragetedProject struct {
 	Amount int64               `bson:"amount"`
 }
 type AggragetedProjectID struct {
-	ProjectID    string `bson:"projectID"`
-	ProjectName  string `bson:"projectName"`
-	Timestamp    string `bson:"timestamp"`
-	Erc20Address string `bson:"erc20Address"`
+	ProjectID   string `bson:"projectID"`
+	ProjectName string `bson:"projectName"`
+	Timestamp   string `bson:"timestamp"`
 }
 
 type DexVolumeInscriptionMetadata struct {
