@@ -229,6 +229,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	faucet.HandleFunc("/request", h.requestFaucet).Methods("POST")
 	faucet.HandleFunc("/list", h.listFaucet).Methods("GET")
 	faucet.HandleFunc("/status", h.getCurrentFaucetStep).Methods("GET")
+	faucet.HandleFunc("/config", h.getFaucetConfig).Methods("GET")
 	faucet.HandleFunc("/nonces", h.getNonces).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
@@ -365,8 +366,12 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool := api.PathPrefix("/ai-school").Subrouter()
 	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")
-	aiSchool.HandleFunc("/upload", h.schoolUpload).Methods("POST")
+
 	aiSchool.HandleFunc("/search-dataset", h.schoolSearchDataset).Methods("GET")
+	aiSchool.HandleFunc("/upload-dataset", h.schoolUploadDataset).Methods("POST")
+	aiSchool.HandleFunc("/submit-model", h.schoolSubmitModel).Methods("POST")
+	aiSchool.HandleFunc("/delete-dataset", h.schoolDeleteDataset).Methods("GET")
+	aiSchool.HandleFunc("/list-dataset", h.schoolListDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
 
 }

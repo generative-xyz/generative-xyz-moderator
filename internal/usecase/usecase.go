@@ -49,8 +49,8 @@ type Usecase struct {
 	DelegateService     *delegate.Service
 	RedisV9             redisv9.Client
 
-	TcClient, EthClient, EthClientDex *eth.Client
-	BsClient                          *btc.BlockcypherService
+	TcClient, TcClientPublicNode, EthClient, EthClientDex *eth.Client
+	BsClient                                              *btc.BlockcypherService
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -74,6 +74,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.RedisV9 = global.RedisV9
 
 	u.TcClient = global.TcClient
+	u.TcClientPublicNode = global.TcClientPublicNode
 	u.EthClientDex = global.EthClientDex
 	u.EthClient = global.EthClient
 	u.BsClient = global.BsClient
