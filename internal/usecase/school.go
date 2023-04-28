@@ -184,7 +184,10 @@ func (job *AIJobInstance) Start() {
 	defer func() {
 		job.IsCompleted = true
 		close(progCh)
-		clearAISchoolWorkFolder(jobID)
+		disableCleanup := os.Getenv("DISABLE_CLEANUP")
+		if disableCleanup == "" || disableCleanup == "false" {
+			clearAISchoolWorkFolder(jobID)
+		}
 	}()
 	log.Println("Starting job: ", jobID)
 	err := clearAISchoolWorkFolder(jobID)
