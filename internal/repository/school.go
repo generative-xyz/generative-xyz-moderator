@@ -29,7 +29,7 @@ func (r Repository) GetAISchoolJobByUUID(uuid string) (*entity.AISchoolJob, erro
 
 func (r Repository) GetAISchoolJobByCreator(address string, limit, offset int64) ([]entity.AISchoolJob, error) {
 	jobs := []entity.AISchoolJob{}
-	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"created_by": address}, &jobs, options.Find().SetSkip(offset).SetLimit(limit))
+	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"created_by": address}, &jobs, options.Find().SetSort(bson.D{{"created_at", -1}}).SetSkip(offset).SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}
