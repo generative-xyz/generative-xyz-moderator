@@ -134,10 +134,10 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 		return err
 	}
 	for datasetName, datasetGCPath := range datasetsGCPath {
-		// gcPathParts := strings.Split(datasetGCPath, "/")
-		// filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
-		datasetNameStr := strings.ReplaceAll(datasetName, " ", "_")
-
+		gcPathParts := strings.Split(datasetGCPath, "/")
+		filenameParts := strings.Split(gcPathParts[len(gcPathParts)-1], ".")
+		// datasetNameStr := strings.ReplaceAll(datasetName, " ", "_")
+		_ = datasetName
 		log.Println("Unzipping dataset: ", datasetGCPath)
 		dataseBytes, err := gcs.ReadFileFromBucketAbs(datasetGCPath)
 		if err != nil {
@@ -150,7 +150,7 @@ func prepAISchoolWorkFolder(jobID string, params structure.AISchoolModelParams, 
 		if err != nil {
 			return err
 		}
-		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + datasetNameStr)
+		destination, err := filepath.Abs(basePath + jobID + "/dataset/" + filenameParts[0])
 		if err != nil {
 			return err
 		}
@@ -363,7 +363,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 		m := scanner2.Text()
 		jobLog += fmt.Sprintln(m)
 		if strings.Contains(strings.ToLower(m), "epoch") {
-			epochStr := strings.Split(m, "Epoch ")
+			epochStr := strings.Split(m, "epoch ")
 			if len(epochStr) < 2 {
 				continue
 			}
