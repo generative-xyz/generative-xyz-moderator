@@ -57,7 +57,7 @@ func (u Usecase) JobAIS_WatchPending() error {
 		}
 	}
 	if len(currentAIJobs) >= 2 {
-		log.Println("Too many jobs running", len(currentAIJobs))
+		log.Println("too many jobs running", len(currentAIJobs))
 		return nil
 	}
 	if len(currentAIJobs) == 0 {
@@ -376,7 +376,7 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 			if len(epochStr) < 2 {
 				continue
 			}
-			epochs := strings.Split(epochStr[1], "/")
+			epochs := strings.Split(epochStr[1], ":")
 			currentEpoch := epochs[0]
 			currentEpochInt, err := strconv.ParseInt(currentEpoch, 10, 64)
 			if err != nil {
@@ -396,8 +396,6 @@ func executeAISchoolJob(scriptPath string, params string, dataset string, output
 	// if err != nil {
 	// 	return jobLog, jobErrLog, err
 	// }
-
-	time.Sleep(100 * time.Millisecond)
 	return jobLog, jobErrLog, nil
 }
 
