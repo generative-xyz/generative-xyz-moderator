@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-resty/resty/v2"
@@ -236,6 +237,9 @@ func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.Item
 }
 
 func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
+	//TODO - DEBUG
+	u.TokenActivites(blocknumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenListing, "Listing")
+
 	listing := entity.MarketplaceListings{
 		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
 		CollectionContract: strings.ToLower(event.Data.CollectionContract.String()),
@@ -742,6 +746,9 @@ func (u Usecase) TokenActivites(blocknumber uint64, amount int64, erc20Address s
 	bn := big.NewInt(int64(blocknumber))
 	blockInfo, err := u.TcClientPublicNode.BlockByNumber(context.Background(), bn)
 
+	blockTime := blockInfo.Header().Time
+	tm := time.Unix(int64(blockTime), 0).UTC()
+
 	tok, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err == nil {
 		//token activities here
@@ -754,7 +761,7 @@ func (u Usecase) TokenActivites(blocknumber uint64, amount int64, erc20Address s
 			Erc20Address:  erc20Address,
 			InscriptionID: tokenID,
 			ProjectID:     tok.ProjectID,
-			Time:          &blockInfo.ReceivedAt,
+			Time:          &tm,
 			BlockNumber:   blocknumber,
 		})
 	} else {
