@@ -237,8 +237,6 @@ func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.Item
 }
 
 func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
-	//TODO - DEBUG
-	u.TokenActivites(blocknumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenListing, "Listing")
 
 	listing := entity.MarketplaceListings{
 		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
