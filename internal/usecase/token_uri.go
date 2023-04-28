@@ -350,12 +350,7 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	//tokenImageChan := make(chan structure.TokenAnimationURIChan, 1)
 
 	// call to contract to get emotion
-	client, err := helpers.TCDialer()
-	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "EthDialer"), zap.Error(err))
-		return nil, err
-	}
-
+	client := u.TcClientPublicNode.GetClient()
 	tokenID := new(big.Int)
 	tokenID, ok := tokenID.SetString(req.TokenID, 10)
 	if !ok {

@@ -318,7 +318,7 @@ func (h *httpDelivery) schoolUploadDataset(w http.ResponseWriter, r *http.Reques
 
 	datasetPath := fmt.Sprintf("ai-school-dataset/%s/%s", address, datasetName)
 
-	file, err := h.Usecase.UploadDatasetFile(r, datasetPath)
+	file, err := h.Usecase.UploadDatasetFile(r, datasetPath, datasetName)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return

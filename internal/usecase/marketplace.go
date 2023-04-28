@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-resty/resty/v2"
@@ -236,6 +237,7 @@ func (uc Usecase) ListItemListing(filter *structure.BaseFilters) ([]*entity.Item
 }
 
 func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketplaceLibListingToken, blocknumber uint64) error {
+
 	listing := entity.MarketplaceListings{
 		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
 		CollectionContract: strings.ToLower(event.Data.CollectionContract.String()),
@@ -284,7 +286,7 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 			}
 
 			sendMessage(listing)
-			u.TokenActivites(blocknumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenListing, "Listing")
+			u.TokenActivites(blocknumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenListing, "Listing")
 
 			// TODO: @dac add update collection stats here
 
@@ -310,6 +312,7 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 		logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 		return err
 	}
+	u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Buyer.String()), "", entity.TokenPurchase, "Purchase token")
 
 	getToken := func(offeringID string) (*entity.TokenUri, error) {
 		listing, err := u.Repo.FindListingByOfferingID(offeringID)
@@ -317,8 +320,6 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 			logger.AtLog.Logger.Error("PurchaseToken", zap.String("offeringID", offeringID), zap.Error(err))
 			return nil, err
 		}
-
-		u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Buyer.String()), "", entity.TokenPurchase, "Purchase token")
 
 		token, err := u.Repo.FindTokenByGenNftAddr(listing.CollectionContract, listing.TokenId)
 		if err != nil {
@@ -335,6 +336,7 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 		return err
 	}
 
+	u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), strings.ToLower(event.Buyer.String()), entity.TokenTransfer, "Transfer token")
 	return nil
 }
 
@@ -389,7 +391,7 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 
 			sendMessage(offer)
 
-			u.TokenActivites(blocknumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenMakeOffer, "Make offer")
+			u.TokenActivites(blocknumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenMakeOffer, "Make offer")
 			// TODO: @dac add update collection stats here
 			return nil
 		} else {
@@ -437,7 +439,7 @@ func (u Usecase) AcceptMakeOffer(event *generative_marketplace_lib.GenerativeMar
 	}
 
 	// TODO: @dac add update collection stats here
-	u.TokenActivites(blockNumber, event.Data.TokenId.String(), "", strings.ToLower(event.Buyer.String()), entity.TokenAcceptOffer, "Accept offer")
+	u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), "", strings.ToLower(event.Buyer.String()), entity.TokenAcceptOffer, "Accept offer")
 
 	return nil
 }
@@ -534,7 +536,7 @@ func (u Usecase) CancelOffer(event *generative_marketplace_lib.GenerativeMarketp
 			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
 		}
 
-		u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenCancelOffer, "Cancel offer")
+		u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Buyer.String()), "", entity.TokenCancelOffer, "Cancel offer")
 
 	}(done)
 	<-done
@@ -738,9 +740,12 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offer
 	return nil
 }
 
-func (u Usecase) TokenActivites(blocknumber uint64, tokenID string, fromWallet string, toWallet string, action entity.TokenActivityType, title string) {
+func (u Usecase) TokenActivites(blocknumber uint64, amount int64, erc20Address string, tokenID string, fromWallet string, toWallet string, action entity.TokenActivityType, title string) {
 	bn := big.NewInt(int64(blocknumber))
 	blockInfo, err := u.TcClientPublicNode.BlockByNumber(context.Background(), bn)
+
+	blockTime := blockInfo.Header().Time
+	tm := time.Unix(int64(blockTime), 0).UTC()
 
 	tok, err := u.Repo.FindTokenByTokenID(tokenID)
 	if err == nil {
@@ -750,9 +755,11 @@ func (u Usecase) TokenActivites(blocknumber uint64, tokenID string, fromWallet s
 			Title:         title,
 			UserAAddress:  fromWallet,
 			UserBAddress:  toWallet,
+			Amount:        amount,
+			Erc20Address:  erc20Address,
 			InscriptionID: tokenID,
 			ProjectID:     tok.ProjectID,
-			Time:          &blockInfo.ReceivedAt,
+			Time:          &tm,
 			BlockNumber:   blocknumber,
 		})
 	} else {
