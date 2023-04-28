@@ -148,7 +148,7 @@ func (u Usecase) ResolveMarketplaceCancelListing(chainLog types.Log) error {
 	}
 
 	blockNumber := chainLog.BlockNumber
-	u.TokenActivites(blockNumber, event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenCancelListing, "Cancel Listing")
+	u.TokenActivites(blockNumber, event.Data.Price.Int64(), strings.ToLower(event.Data.Erc20Token.String()), event.Data.TokenId.String(), strings.ToLower(event.Data.Seller.String()), "", entity.TokenCancelListing, "Cancel Listing")
 
 	return nil
 }
@@ -375,7 +375,7 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcN
 		return err
 	}
 
-	blockInfo, err := blockchain.GetBlockByNumber(*big.NewInt(int64(chainLog.BlockNumber)))
+	blockInfo, err := blockchain.GetClient().BlockByNumber(context.Background(), big.NewInt(int64(chainLog.BlockNumber)))
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot get block info", zap.Error(err))
 		return err

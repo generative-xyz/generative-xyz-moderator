@@ -31,7 +31,7 @@ func (r Repository) ListFaucetByStatus(statuses []int) ([]*entity.Faucet, error)
 
 func (r Repository) FindFaucetByStatus(status int) ([]*entity.Faucet, error) {
 	var resp []*entity.Faucet
-	filter := bson.D{{"status", status}}
+	filter := bson.D{{"status", status}, {"faucet_type", bson.D{{"$ne", "dev"}}}}
 	cursor, err := r.DB.Collection(entity.Faucet{}.TableName()).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err

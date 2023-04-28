@@ -67,7 +67,7 @@ func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses [
 	return logs, nil
 }
 
-func (a *TcNetwork) GetBlockByNumber(blockNumber big.Int) (*types.Block, error) {
+func (a *TcNetwork) blockInGetBlockByNumber(blockNumber big.Int) (*types.Block, error) {
 	block, err := a.client.BlockByNumber(context.Background(), &blockNumber)
 	if err != nil {
 		return nil, err

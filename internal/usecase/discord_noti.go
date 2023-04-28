@@ -434,10 +434,10 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	}
 
 	types := []entity.DiscordNotiType{entity.NEW_MINT}
-	if mintPriceInNum > 0 {
-		if tokenUri.ProjectID == PerceptronProjectID {
-			types = append(types, entity.NEW_MINT_PERCEPTRON)
-		} else if category == PFPsCategory {
+	if tokenUri.ProjectID == PerceptronProjectID {
+		types = append(types, entity.NEW_MINT_PERCEPTRON)
+	} else if mintPriceInNum > 0 {
+		if category == PFPsCategory {
 			types = append(types, entity.NEW_MINT_PFPS)
 		} else {
 			types = append(types, entity.NEW_MINT_ART)
