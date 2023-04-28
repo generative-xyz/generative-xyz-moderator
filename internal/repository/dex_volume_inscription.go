@@ -430,6 +430,95 @@ func (r Repository) AggregateVolumnCollection(filter *entity.AggerateChartForPro
 	return result, nil
 }
 
+func (r Repository) AggregateVolumnCollectionTC(filter *entity.AggerateChartForProject) ([]entity.AggragetedProject, error) {
+	f := bson.A{
+		bson.D{
+			{"$match",
+				bson.D{
+					{"project_id", filter.ProjectID},
+					{"type", 8},
+					{"time", bson.D{{"$gte", filter.FromDate}}},
+					{"time", bson.D{{"$lte", filter.ToDate}}},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "projects"},
+					{"localField", "project_id"},
+					{"foreignField", "tokenid"},
+					{"as", "project"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$project"},
+					{"includeArrayIndex", "string"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{
+			{"$lookup",
+				bson.D{
+					{"from", "token_uri"},
+					{"localField", "inscription_id"},
+					{"foreignField", "token_id"},
+					{"as", "token_uri"},
+				},
+			},
+		},
+		bson.D{
+			{"$unwind",
+				bson.D{
+					{"path", "$token_uri"},
+					{"includeArrayIndex", "string"},
+					{"preserveNullAndEmptyArrays", true},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id",
+						bson.D{
+							{"projectID", "$project_id"},
+							{"projectName", "$project.name"},
+							{"erc20Address", "$erc_20_address"},
+							{"timestamp",
+								bson.D{
+									{"$dateToString",
+										bson.D{
+											{"format", "%Y-%m-%d"},
+											{"date", "$time"},
+										},
+									},
+								},
+							},
+						},
+					},
+					{"amount", bson.D{{"$sum", "$amount"}}},
+				},
+			},
+		},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenActivity{}.TableName()).Aggregate(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []entity.AggragetedProject{}
+	if err = cursor.All((context.TODO()), &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) AggregateVolumnToken(filter *entity.AggerateChartForToken) ([]entity.AggragetedToken, error) {
 	f := bson.A{
 		bson.D{
