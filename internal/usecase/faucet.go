@@ -156,6 +156,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 		}
 	} else {
 		specFaucetType = "dev"
+		address = addressInput
 	}
 
 	faucetItem := &entity.Faucet{
