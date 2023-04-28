@@ -73,6 +73,24 @@ func (r Repository) FindProjectByTokenID(tokenID string) (*entity.Projects, erro
 	return resp, nil
 }
 
+func (r Repository) FindProjectByTokenIDOrGenNFTAddr(key string) (*entity.Projects, error) {
+	resp := &entity.Projects{}
+	f := bson.D{{"$or", bson.A{
+		bson.M{"tokenid": key},
+		bson.M{"genNFTAddr": key},
+	}}}
+	usr, err := r.FilterOne(entity.Projects{}.TableName(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (r Repository) FindProjectByTokenIDCustomField(tokenID string, fields []string) (*entity.Projects, error) {
 	projectField := bson.D{
 		{"_id", 1},
@@ -368,11 +386,47 @@ func (r Repository) GetProjects(filter entity.FilterProjects) (*entity.Paginatio
 	resp.PageSize = filter.Limit
 	return resp, nil
 }
+func (r Repository) GetProjectsPerPage(page, limit int) ([]entity.Projects, error) {
+	var result []entity.Projects
+
+	options := options.Find()
+	options.SetSkip(int64((page - 1) * limit))
+	options.SetLimit(int64(limit))
+
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.Background(), bson.M{}, options)
+	if err != nil {
+		return nil, err
+	}
+	if cursor.All(context.Background(), &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 func (r Repository) GetAllProjects(filter entity.FilterProjects) ([]entity.Projects, error) {
 	projects := []entity.Projects{}
 	f := r.FilterProjects(filter)
 	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), f)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r Repository) GetTCProject(excludeIDs []string) ([]entity.Projects, error) {
+	filter := bson.M{"tokenIDInt": bson.M{"$lt": 1000000}}
+
+	if len(excludeIDs) > 0 {
+		filter["genNFTAddr"] = bson.M{"$nin": excludeIDs}
+	}
+
+	var projects []entity.Projects
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

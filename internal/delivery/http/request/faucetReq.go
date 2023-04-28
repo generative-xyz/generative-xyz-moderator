@@ -6,4 +6,5 @@ type FaucetReq struct {
 	RecaptchaResponse string `json:"g-recaptcha-response"`
 	Type              string `json:"type"`
 	Txhash            string `json:"txhash"`
+	Source            string `json:"source"`
 }

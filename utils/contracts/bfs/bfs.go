@@ -31,7 +31,7 @@ var (
 
 // BfsMetaData contains all meta data concerning the Bfs contract.
 var BfsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"FileExists\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"bfsId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"chunks\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"}],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"dataStorage\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"}],\"name\":\"getId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"}],\"name\":\"load\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"FileExists\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidBfsResult\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidURI\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"bfsId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"uri\",\"type\":\"string\"}],\"name\":\"FileStored\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"version\",\"type\":\"uint8\"}],\"name\":\"Initialized\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"bfsId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"chunks\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"}],\"name\":\"count\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"dataStorage\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"filenames\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllAddresses\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"getAllFilenames\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"}],\"name\":\"getId\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"}],\"name\":\"load\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"uri\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"}],\"name\":\"loadWithUri\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"},{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"filename\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chunkIndex\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"}],\"name\":\"store\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // BfsABI is the input ABI used to generate the binding from.
@@ -304,6 +304,99 @@ func (_Bfs *BfsCallerSession) DataStorage(arg0 common.Address, arg1 string, arg2
 	return _Bfs.Contract.DataStorage(&_Bfs.CallOpts, arg0, arg1, arg2)
 }
 
+// Filenames is a free data retrieval call binding the contract method 0xc9b09659.
+//
+// Solidity: function filenames(address , uint256 ) view returns(string)
+func (_Bfs *BfsCaller) Filenames(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (string, error) {
+	var out []interface{}
+	err := _Bfs.contract.Call(opts, &out, "filenames", arg0, arg1)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// Filenames is a free data retrieval call binding the contract method 0xc9b09659.
+//
+// Solidity: function filenames(address , uint256 ) view returns(string)
+func (_Bfs *BfsSession) Filenames(arg0 common.Address, arg1 *big.Int) (string, error) {
+	return _Bfs.Contract.Filenames(&_Bfs.CallOpts, arg0, arg1)
+}
+
+// Filenames is a free data retrieval call binding the contract method 0xc9b09659.
+//
+// Solidity: function filenames(address , uint256 ) view returns(string)
+func (_Bfs *BfsCallerSession) Filenames(arg0 common.Address, arg1 *big.Int) (string, error) {
+	return _Bfs.Contract.Filenames(&_Bfs.CallOpts, arg0, arg1)
+}
+
+// GetAllAddresses is a free data retrieval call binding the contract method 0x9516a104.
+//
+// Solidity: function getAllAddresses() view returns(address[])
+func (_Bfs *BfsCaller) GetAllAddresses(opts *bind.CallOpts) ([]common.Address, error) {
+	var out []interface{}
+	err := _Bfs.contract.Call(opts, &out, "getAllAddresses")
+
+	if err != nil {
+		return *new([]common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]common.Address)).(*[]common.Address)
+
+	return out0, err
+
+}
+
+// GetAllAddresses is a free data retrieval call binding the contract method 0x9516a104.
+//
+// Solidity: function getAllAddresses() view returns(address[])
+func (_Bfs *BfsSession) GetAllAddresses() ([]common.Address, error) {
+	return _Bfs.Contract.GetAllAddresses(&_Bfs.CallOpts)
+}
+
+// GetAllAddresses is a free data retrieval call binding the contract method 0x9516a104.
+//
+// Solidity: function getAllAddresses() view returns(address[])
+func (_Bfs *BfsCallerSession) GetAllAddresses() ([]common.Address, error) {
+	return _Bfs.Contract.GetAllAddresses(&_Bfs.CallOpts)
+}
+
+// GetAllFilenames is a free data retrieval call binding the contract method 0xbf1450df.
+//
+// Solidity: function getAllFilenames(address addr) view returns(string[])
+func (_Bfs *BfsCaller) GetAllFilenames(opts *bind.CallOpts, addr common.Address) ([]string, error) {
+	var out []interface{}
+	err := _Bfs.contract.Call(opts, &out, "getAllFilenames", addr)
+
+	if err != nil {
+		return *new([]string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]string)).(*[]string)
+
+	return out0, err
+
+}
+
+// GetAllFilenames is a free data retrieval call binding the contract method 0xbf1450df.
+//
+// Solidity: function getAllFilenames(address addr) view returns(string[])
+func (_Bfs *BfsSession) GetAllFilenames(addr common.Address) ([]string, error) {
+	return _Bfs.Contract.GetAllFilenames(&_Bfs.CallOpts, addr)
+}
+
+// GetAllFilenames is a free data retrieval call binding the contract method 0xbf1450df.
+//
+// Solidity: function getAllFilenames(address addr) view returns(string[])
+func (_Bfs *BfsCallerSession) GetAllFilenames(addr common.Address) ([]string, error) {
+	return _Bfs.Contract.GetAllFilenames(&_Bfs.CallOpts, addr)
+}
+
 // GetId is a free data retrieval call binding the contract method 0x8a5ca90b.
 //
 // Solidity: function getId(address addr, string filename) view returns(uint256)
@@ -367,6 +460,59 @@ func (_Bfs *BfsCallerSession) Load(addr common.Address, filename string, chunkIn
 	return _Bfs.Contract.Load(&_Bfs.CallOpts, addr, filename, chunkIndex)
 }
 
+// LoadWithUri is a free data retrieval call binding the contract method 0xabb15219.
+//
+// Solidity: function loadWithUri(string uri, uint256 chunkIndex) view returns(bytes, int256)
+func (_Bfs *BfsCaller) LoadWithUri(opts *bind.CallOpts, uri string, chunkIndex *big.Int) ([]byte, *big.Int, error) {
+	var out []interface{}
+	err := _Bfs.contract.Call(opts, &out, "loadWithUri", uri, chunkIndex)
+
+	if err != nil {
+		return *new([]byte), *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+	out1 := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+
+	return out0, out1, err
+
+}
+
+// LoadWithUri is a free data retrieval call binding the contract method 0xabb15219.
+//
+// Solidity: function loadWithUri(string uri, uint256 chunkIndex) view returns(bytes, int256)
+func (_Bfs *BfsSession) LoadWithUri(uri string, chunkIndex *big.Int) ([]byte, *big.Int, error) {
+	return _Bfs.Contract.LoadWithUri(&_Bfs.CallOpts, uri, chunkIndex)
+}
+
+// LoadWithUri is a free data retrieval call binding the contract method 0xabb15219.
+//
+// Solidity: function loadWithUri(string uri, uint256 chunkIndex) view returns(bytes, int256)
+func (_Bfs *BfsCallerSession) LoadWithUri(uri string, chunkIndex *big.Int) ([]byte, *big.Int, error) {
+	return _Bfs.Contract.LoadWithUri(&_Bfs.CallOpts, uri, chunkIndex)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x8129fc1c.
+//
+// Solidity: function initialize() returns()
+func (_Bfs *BfsTransactor) Initialize(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Bfs.contract.Transact(opts, "initialize")
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x8129fc1c.
+//
+// Solidity: function initialize() returns()
+func (_Bfs *BfsSession) Initialize() (*types.Transaction, error) {
+	return _Bfs.Contract.Initialize(&_Bfs.TransactOpts)
+}
+
+// Initialize is a paid mutator transaction binding the contract method 0x8129fc1c.
+//
+// Solidity: function initialize() returns()
+func (_Bfs *BfsTransactorSession) Initialize() (*types.Transaction, error) {
+	return _Bfs.Contract.Initialize(&_Bfs.TransactOpts)
+}
+
 // Store is a paid mutator transaction binding the contract method 0x928a4b3e.
 //
 // Solidity: function store(string filename, uint256 chunkIndex, bytes _data) returns()
@@ -386,4 +532,296 @@ func (_Bfs *BfsSession) Store(filename string, chunkIndex *big.Int, _data []byte
 // Solidity: function store(string filename, uint256 chunkIndex, bytes _data) returns()
 func (_Bfs *BfsTransactorSession) Store(filename string, chunkIndex *big.Int, _data []byte) (*types.Transaction, error) {
 	return _Bfs.Contract.Store(&_Bfs.TransactOpts, filename, chunkIndex, _data)
+}
+
+// BfsFileStoredIterator is returned from FilterFileStored and is used to iterate over the raw logs and unpacked data for FileStored events raised by the Bfs contract.
+type BfsFileStoredIterator struct {
+	Event *BfsFileStored // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BfsFileStoredIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BfsFileStored)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BfsFileStored)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BfsFileStoredIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BfsFileStoredIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BfsFileStored represents a FileStored event raised by the Bfs contract.
+type BfsFileStored struct {
+	Addr       common.Address
+	Filename   string
+	ChunkIndex *big.Int
+	BfsId      *big.Int
+	Uri        string
+	Raw        types.Log // Blockchain specific contextual infos
+}
+
+// FilterFileStored is a free log retrieval operation binding the contract event 0x3570439426bde556b3a1036679abf502ade483de5bc63fe5578a687650c96bdd.
+//
+// Solidity: event FileStored(address indexed addr, string filename, uint256 chunkIndex, uint256 indexed bfsId, string uri)
+func (_Bfs *BfsFilterer) FilterFileStored(opts *bind.FilterOpts, addr []common.Address, bfsId []*big.Int) (*BfsFileStoredIterator, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	var bfsIdRule []interface{}
+	for _, bfsIdItem := range bfsId {
+		bfsIdRule = append(bfsIdRule, bfsIdItem)
+	}
+
+	logs, sub, err := _Bfs.contract.FilterLogs(opts, "FileStored", addrRule, bfsIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &BfsFileStoredIterator{contract: _Bfs.contract, event: "FileStored", logs: logs, sub: sub}, nil
+}
+
+// WatchFileStored is a free log subscription operation binding the contract event 0x3570439426bde556b3a1036679abf502ade483de5bc63fe5578a687650c96bdd.
+//
+// Solidity: event FileStored(address indexed addr, string filename, uint256 chunkIndex, uint256 indexed bfsId, string uri)
+func (_Bfs *BfsFilterer) WatchFileStored(opts *bind.WatchOpts, sink chan<- *BfsFileStored, addr []common.Address, bfsId []*big.Int) (event.Subscription, error) {
+
+	var addrRule []interface{}
+	for _, addrItem := range addr {
+		addrRule = append(addrRule, addrItem)
+	}
+
+	var bfsIdRule []interface{}
+	for _, bfsIdItem := range bfsId {
+		bfsIdRule = append(bfsIdRule, bfsIdItem)
+	}
+
+	logs, sub, err := _Bfs.contract.WatchLogs(opts, "FileStored", addrRule, bfsIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BfsFileStored)
+				if err := _Bfs.contract.UnpackLog(event, "FileStored", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseFileStored is a log parse operation binding the contract event 0x3570439426bde556b3a1036679abf502ade483de5bc63fe5578a687650c96bdd.
+//
+// Solidity: event FileStored(address indexed addr, string filename, uint256 chunkIndex, uint256 indexed bfsId, string uri)
+func (_Bfs *BfsFilterer) ParseFileStored(log types.Log) (*BfsFileStored, error) {
+	event := new(BfsFileStored)
+	if err := _Bfs.contract.UnpackLog(event, "FileStored", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// BfsInitializedIterator is returned from FilterInitialized and is used to iterate over the raw logs and unpacked data for Initialized events raised by the Bfs contract.
+type BfsInitializedIterator struct {
+	Event *BfsInitialized // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *BfsInitializedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(BfsInitialized)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(BfsInitialized)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *BfsInitializedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *BfsInitializedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// BfsInitialized represents a Initialized event raised by the Bfs contract.
+type BfsInitialized struct {
+	Version uint8
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterInitialized is a free log retrieval operation binding the contract event 0x7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498.
+//
+// Solidity: event Initialized(uint8 version)
+func (_Bfs *BfsFilterer) FilterInitialized(opts *bind.FilterOpts) (*BfsInitializedIterator, error) {
+
+	logs, sub, err := _Bfs.contract.FilterLogs(opts, "Initialized")
+	if err != nil {
+		return nil, err
+	}
+	return &BfsInitializedIterator{contract: _Bfs.contract, event: "Initialized", logs: logs, sub: sub}, nil
+}
+
+// WatchInitialized is a free log subscription operation binding the contract event 0x7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498.
+//
+// Solidity: event Initialized(uint8 version)
+func (_Bfs *BfsFilterer) WatchInitialized(opts *bind.WatchOpts, sink chan<- *BfsInitialized) (event.Subscription, error) {
+
+	logs, sub, err := _Bfs.contract.WatchLogs(opts, "Initialized")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(BfsInitialized)
+				if err := _Bfs.contract.UnpackLog(event, "Initialized", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseInitialized is a log parse operation binding the contract event 0x7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498.
+//
+// Solidity: event Initialized(uint8 version)
+func (_Bfs *BfsFilterer) ParseInitialized(log types.Log) (*BfsInitialized, error) {
+	event := new(BfsInitialized)
+	if err := _Bfs.contract.UnpackLog(event, "Initialized", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }

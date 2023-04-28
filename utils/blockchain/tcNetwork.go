@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+
 	"go.uber.org/zap"
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/logger"
@@ -28,6 +29,16 @@ func NewTcNetwork(cfg config.BlockchainConfig) (*TcNetwork, error) {
 	}, nil
 }
 
+func NewTcPublicNodeNetwork() (*TcNetwork, error) {
+	ethereumClient, err := ethclient.Dial(os.Getenv("TC_ENDPOINT_PUBLIC"))
+	if err != nil {
+		return nil, err
+	}
+	return &TcNetwork{
+		client: ethereumClient,
+	}, nil
+}
+
 func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 	header, err := a.client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -35,20 +46,19 @@ func (a *TcNetwork) GetBlockNumber() (*big.Int, error) {
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header", header))
+	//logger.AtLog.Logger.Info("GetBlockNumber", zap.Any("header.Number", header.Number))
 	return header.Number, nil
 }
 
-
-func (a *TcNetwork) GetBlock () (*types.Header, error) {
+func (a *TcNetwork) GetBlock() (*types.Header, error) {
 	return a.client.HeaderByNumber(context.Background(), nil)
 }
 
 func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses []common.Address) ([]types.Log, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: &fromBlock,
-		ToBlock: &toBlock, 
-		//Addresses: addresses,
+		ToBlock:   &toBlock,
+		Addresses: addresses,
 	}
 	logs, err := a.client.FilterLogs(context.Background(), query)
 	if err != nil {
@@ -57,7 +67,7 @@ func (a *TcNetwork) GetEventLogs(fromBlock big.Int, toBlock big.Int, addresses [
 	return logs, nil
 }
 
-func (a *TcNetwork) GetBlockByNumber(blockNumber big.Int) (*types.Block, error) {
+func (a *TcNetwork) blockInGetBlockByNumber(blockNumber big.Int) (*types.Block, error) {
 	block, err := a.client.BlockByNumber(context.Background(), &blockNumber)
 	if err != nil {
 		return nil, err
