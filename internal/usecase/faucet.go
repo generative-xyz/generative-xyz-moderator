@@ -147,7 +147,7 @@ func (u Usecase) ApiCreateFaucet(addressInput, url, txhash, faucetType, source s
 		address = addressInput
 	}
 	var specFaucetType string
-	if contractAddress == "" {
+	if contractAddress == "" || (contractAddress != "" && faucetType != "dev") {
 		specFaucetType, err = u.CheckValidFaucet(address, twName, txhash, faucetType)
 		if err != nil {
 			go u.sendSlack("", "ApiCreateFaucet.CheckValidFaucet.(address+twName)", address+","+twName, err.Error())
@@ -409,9 +409,9 @@ func getFaucetPaymentInfo(url, chromePath string, eCH bool) (string, string, str
 		texts := strings.Split(res, "my transaction id is:")
 		txHex = txRegex.FindString(texts[1])
 	}
-	if strings.Contains(res, "contract address: ") {
+	if strings.Contains(res, "contract address:") {
 		addressRegex := regexp.MustCompile("(0x)?[0-9a-fA-F]{40}") // payment address eth
-		texts := strings.Split(res, "contract address: ")
+		texts := strings.Split(res, "contract address:")
 		contractAddress = addressRegex.FindString(texts[1])
 	}
 
