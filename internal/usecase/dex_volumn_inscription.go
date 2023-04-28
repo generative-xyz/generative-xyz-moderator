@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
+	"rederinghub.io/utils/helpers"
 )
 
 func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*structure.AggragetedCollectionVolumnResp, error) {
@@ -14,24 +15,31 @@ func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*
 		return nil, err
 	}
 
-	res, err := u.Repo.AggregateVolumnCollection(pe)
-	if err != nil {
-		return nil, err
+	res := []entity.AggragetedProject{}
+	if helpers.IsOrdinalProject(*req.ProjectID) {
+		res, err = u.Repo.AggregateVolumnCollection(pe)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		res, err = u.Repo.AggregateVolumnCollectionTC(pe)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	resp := []structure.AggragetedCollection{}
-	for _, item := range res{
+	for _, item := range res {
 		tmp := structure.AggragetedCollection{
-			ProjectID: item.ID.ProjectID,
+			ProjectID:   item.ID.ProjectID,
 			ProjectName: item.ID.ProjectName,
-			Timestamp: item.ID.Timestamp,
-			Amount: item.Amount,
-
+			Timestamp:   item.ID.Timestamp,
+			Amount:      item.Amount,
 		}
 
 		resp = append(resp, tmp)
 	}
-	
+
 	return &structure.AggragetedCollectionVolumnResp{Volumns: resp}, nil
 }
 
@@ -49,16 +57,15 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	}
 
 	resp := []structure.AggragetedTokenURI{}
-	for _, item := range res{
+	for _, item := range res {
 		tmp := structure.AggragetedTokenURI{
-			TokenID: item.ID.TokenID,
+			TokenID:   item.ID.TokenID,
 			Timestamp: item.ID.Timestamp,
-			Amount: item.Amount,
-
+			Amount:    item.Amount,
 		}
 
 		resp = append(resp, tmp)
 	}
-	
+
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
