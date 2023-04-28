@@ -1525,11 +1525,7 @@ func (u Usecase) getProjectDetailFromChain(req structure.GetProjectDetailMessage
 
 		addr := common.HexToAddress(req.ContractAddress)
 		// call to contract to get emotion
-		client, err := helpers.TCDialer()
-		if err != nil {
-			logger.AtLog.Error("ethclient.Dial", err.Error(), err)
-			return nil, err
-		}
+		client := u.TcClientPublicNode.GetClient()
 
 		projectID := new(big.Int)
 		projectID, ok := projectID.SetString(req.ProjectID, 10)

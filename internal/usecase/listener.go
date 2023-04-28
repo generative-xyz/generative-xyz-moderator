@@ -375,7 +375,7 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcN
 		return err
 	}
 
-	blockInfo, err := blockchain.GetBlockByNumber(*big.NewInt(int64(chainLog.BlockNumber)))
+	blockInfo, err := blockchain.GetClient().BlockByNumber(context.Background(), big.NewInt(int64(chainLog.BlockNumber)))
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot get block info", zap.Error(err))
 		return err
