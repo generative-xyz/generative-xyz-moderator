@@ -31,10 +31,11 @@ func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*
 	resp := []structure.AggragetedCollection{}
 	for _, item := range res {
 		tmp := structure.AggragetedCollection{
-			ProjectID:   item.ID.ProjectID,
-			ProjectName: item.ID.ProjectName,
-			Timestamp:   item.ID.Timestamp,
-			Amount:      item.Amount,
+			ProjectID:    item.ID.ProjectID,
+			ProjectName:  item.ID.ProjectName,
+			Timestamp:    item.ID.Timestamp,
+			Amount:       item.Amount,
+			Erc20Address: item.ID.Erc20Address,
 		}
 
 		resp = append(resp, tmp)
