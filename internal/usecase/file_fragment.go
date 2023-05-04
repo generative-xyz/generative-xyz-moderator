@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,12 +13,14 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/logger"
+	"strings"
 	"sync"
 	"time"
 )
@@ -73,15 +76,36 @@ func (u Usecase) JobStoreTokenFiles() {
 		}
 
 		for _, file := range fragments {
-			sendAddress, err := u.StoreFileInTC(&file)
+			storeAddress, err := u.StoreFileInTC(&file)
 			if err != nil {
 				logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
 			} else {
+				now := time.Now()
+				file.TxStoreNft = *storeAddress
+				file.Status = entity.FileFragmentStatusProcessing
+				file.UploadedAt = &now
 				u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
 					"status":       entity.FileFragmentStatusProcessing,
-					"tx_store_nft": *sendAddress,
+					"tx_store_nft": *storeAddress,
 					"uploaded_at":  time.Now(),
 				})
+				var txSendAddress *string = nil
+				for {
+					var err error
+					txSendAddress, err = u.getTxSendNft(&file)
+					if err != nil {
+						logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
+					}
+					if txSendAddress != nil {
+						file.TxSendNft = *txSendAddress
+						u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
+							"tx_send_nft": file.TxSendNft,
+						})
+						break
+					}
+					time.Sleep(5 * time.Second)
+				}
+
 			}
 		}
 	}
@@ -100,7 +124,7 @@ func (u Usecase) JobStoreTokenFiles() {
 		for _, file := range fragments {
 			wg.Add(1)
 			go func(file *entity.TokenFileFragment) {
-				success, err := u.CheckStoreStatus(file)
+				success, err := u.checkUploadDone(file)
 				if err != nil {
 					logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
 				} else if success {
@@ -111,6 +135,10 @@ func (u Usecase) JobStoreTokenFiles() {
 			}(&file)
 		}
 	}
+}
+
+func (u Usecase) checkUploadDone(file *entity.TokenFileFragment) (bool, error) {
+	return true, nil
 }
 
 func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) {
@@ -180,8 +208,61 @@ func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) 
 	return &TxSendNft, nil
 }
 
-func (u Usecase) CheckStoreStatus(file *entity.TokenFileFragment) (bool, error) {
+func (u Usecase) getTxSendNft(file *entity.TokenFileFragment) (*string, error) {
+	var resp struct {
+		Result string `json:"result"`
+		Error  *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
 
+	payloadStr := fmt.Sprintf(`{
+			"jsonrpc": "2.0",
+			"method": "eth_inscribeTxWithTargetFeeRate",
+			"params": [
+				"%s",%d
+			],
+			"id": 1
+		}`, file.TxStoreNft, 6)
+
+	payload := strings.NewReader(payloadStr)
+
+	fmt.Println("payloadStr: ", payloadStr)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", u.Config.BlockchainConfig.TCEndpoint, payload)
+
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("body", string(body))
+
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Result) == 0 && resp.Error != nil {
+		return nil, err
+	}
+
+	// inscribe ok now:
+	btcTx := resp.Result
+	return &btcTx, nil
 }
 
 func (u Usecase) GetStoreAddress() (*common.Address, error) {
