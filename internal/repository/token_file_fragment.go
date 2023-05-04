@@ -96,6 +96,21 @@ func (r Repository) FindTokenFileFragments(ctx context.Context, filter TokenFile
 	return result, nil
 }
 
+func (r Repository) UpdateFileFragmentStatus(ctx context.Context, id string, updateFields map[string]interface{}) error {
+	filter := bson.M{"uuid": id}
+	updatedQuery := bson.M{}
+	for k, v := range updateFields {
+		updatedQuery[k] = v
+	}
+
+	_, err := r.DB.Collection(utils.TOKEN_FILE_FRAGMENT).UpdateOne(ctx, filter, bson.M{"$set": updatedQuery})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r Repository) CreateFragmentJob(ctx context.Context, job *entity.TokenFragmentJob) error {
 
 	if job.TokenId == "" {
