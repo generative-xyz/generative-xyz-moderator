@@ -59,12 +59,18 @@ func (u Usecase) JobStoreTokenFiles() {
 			Status:   entity.FileFragmentStatusCreated,
 			PageSize: 10,
 		})
-		var wg sync.WaitGroup
+		if err != nil {
+			logger.AtLog.Logger.Error("Error finding file fragments", zap.Error(err))
+			break
+		}
+
 		noun, err := u.GetBlockChainNonce()
 		if err != nil {
 			logger.AtLog.Logger.Error("Error getting nonce", zap.Error(err))
 			break
 		}
+
+		var wg sync.WaitGroup
 		for index, file := range fragments {
 			wg.Add(1)
 			go func(file *entity.TokenFileFragment, noun int) {
@@ -81,9 +87,39 @@ func (u Usecase) JobStoreTokenFiles() {
 			}(&file, noun+index)
 		}
 	}
+
+	for page := 1; ; page++ {
+		fragments, err := u.Repo.FindTokenFileFragments(ctx, repository.TokenFileFragmentFileter{
+			Page:     page,
+			Status:   entity.FileFragmentStatusProcessing,
+			PageSize: 10,
+		})
+		if err != nil {
+			logger.AtLog.Logger.Error("Error finding token file fragments", zap.Error(err))
+			break
+		}
+		var wg sync.WaitGroup
+		for _, file := range fragments {
+			wg.Add(1)
+			go func(file *entity.TokenFileFragment) {
+				success, err := u.CheckStoreStatus(file)
+				if err != nil {
+					logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
+				} else if success {
+					u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
+						"status": entity.FileFragmentStatusDone,
+					})
+				}
+			}(&file)
+		}
+	}
 }
 
 func (u Usecase) StoreFileInBlockChain(file *entity.TokenFileFragment, nonce int) (string, error) {
+	panic("Not implemented")
+}
+
+func (u Usecase) CheckStoreStatus(file *entity.TokenFileFragment) (bool, error) {
 	panic("Not implemented")
 }
 
