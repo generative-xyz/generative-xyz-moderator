@@ -2910,6 +2910,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Is closed, default all",
+                        "name": "closed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is finished, default all",
+                        "name": "finished",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "sort by field",
                         "name": "sort_by",
@@ -6044,6 +6056,20 @@ const docTemplate = `{
                 }
             }
         },
+        "entity.PriceBRC20Obj": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "offering_id": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -6496,6 +6522,9 @@ const docTemplate = `{
                 "block_number_minted": {
                     "type": "string"
                 },
+                "buyable": {
+                    "type": "boolean"
+                },
                 "contract_address": {
                     "type": "string"
                 },
@@ -6584,6 +6613,9 @@ const docTemplate = `{
                 },
                 "parsed_image": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priority": {
                     "type": "integer"
@@ -8025,6 +8057,9 @@ const docTemplate = `{
                 },
                 "priceBTC": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priceETH": {
                     "type": "string"
