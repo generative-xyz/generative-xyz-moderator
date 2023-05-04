@@ -8,8 +8,7 @@ import (
 type FileFragmentStatus int
 
 const (
-	FileFragmentStatusCreated FileFragmentStatus = iota + 1
-	FileFragmentStatusProcessing
+	FileFragmentStatusPending FileFragmentStatus = iota + 1
 	FileFragmentStatusDone
 	FileFragmentStatusError
 )
