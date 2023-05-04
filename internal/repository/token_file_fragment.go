@@ -83,7 +83,7 @@ func (r Repository) FindTokenFileFragments(ctx context.Context, filter TokenFile
 	options := options.Find()
 	options.SetSkip(int64((filter.Page - 1) * limit))
 	options.SetLimit(int64(limit))
-	options.SetSort(bson.M{"sequence": 1})
+	options.SetSort(bson.M{"created_at": 1})
 
 	cursor, err := r.DB.Collection(utils.TOKEN_FILE_FRAGMENT).Find(ctx, queryFilter, options)
 	if err != nil {

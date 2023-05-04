@@ -67,7 +67,7 @@ func (u Usecase) JobStoreTokenFiles() {
 	for page := 1; ; page++ {
 		fragments, err := u.Repo.FindTokenFileFragments(ctx, repository.TokenFileFragmentFileter{
 			Page:     page,
-			Status:   entity.FileFragmentStatusCreated,
+			Status:   entity.FileFragmentStatusPending,
 			PageSize: 10,
 		})
 		if err != nil {
@@ -76,19 +76,23 @@ func (u Usecase) JobStoreTokenFiles() {
 		}
 
 		for _, chunk := range fragments {
-			storeAddress, err := u.StoreFileInTC(&chunk)
-			if err != nil {
-				logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
-			} else {
-				now := time.Now()
-				chunk.TxStoreNft = *storeAddress
-				chunk.Status = entity.FileFragmentStatusProcessing
-				chunk.UploadedAt = &now
-				u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
-					"status":       chunk.Status,
-					"tx_store_nft": chunk.TxStoreNft,
-					"uploaded_at":  chunk.UploadedAt,
-				})
+			if chunk.TxStoreNft == "" {
+				storeAddress, err := u.StoreFileInTC(&chunk)
+				if err != nil {
+					logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
+					break
+				} else {
+					now := time.Now()
+					chunk.TxStoreNft = *storeAddress
+					chunk.UploadedAt = &now
+					u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
+						"tx_store_nft": chunk.TxStoreNft,
+						"uploaded_at":  chunk.UploadedAt,
+					})
+				}
+			}
+
+			if chunk.TxSendNft == "" {
 				var txSendAddress *string = nil
 				for {
 					var err error
@@ -105,19 +109,20 @@ func (u Usecase) JobStoreTokenFiles() {
 					}
 					time.Sleep(5 * time.Second)
 				}
+			}
 
-				done := false
-				for !done {
-					success, err := u.checkUploadDone(&chunk)
-					if err != nil {
-						logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
-					} else if success {
-						u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
-							"status": entity.FileFragmentStatusDone,
-						})
-					}
+			done := false
+			for !done {
+				success, err := u.checkUploadDone(&chunk)
+				if err != nil {
+					logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
+				} else if success {
+					u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
+						"status": entity.FileFragmentStatusDone,
+					})
 				}
 			}
+
 		}
 	}
 }
@@ -353,7 +358,7 @@ func (u Usecase) processFragmentData(ctx context.Context, filePath, tokenID stri
 			file = &entity.TokenFileFragment{
 				TokenId:  tokenID,
 				Sequence: sequence,
-				Status:   entity.FileFragmentStatusCreated,
+				Status:   entity.FileFragmentStatusPending,
 				FilePath: filePath,
 				Data:     data,
 			}
