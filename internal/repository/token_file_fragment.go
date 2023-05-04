@@ -178,3 +178,12 @@ func (r Repository) FindFragmentJobs(ctx context.Context, filter TokenFragmentJo
 	return jobs, nil
 
 }
+
+func (r Repository) GetStoreWallet() (*entity.StoreFileWallet, error) {
+	var wallet *entity.StoreFileWallet
+	err := r.DB.Collection(entity.StoreFileWallet{}.TableName()).FindOne(context.Background(), bson.M{}).Decode(&wallet)
+	if err != nil {
+		return nil, err
+	}
+	return wallet, nil
+}
