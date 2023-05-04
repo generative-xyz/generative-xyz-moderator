@@ -123,7 +123,21 @@ func (u Usecase) JobStoreTokenFiles() {
 }
 
 func (u Usecase) checkUploadDone(file *entity.TokenFileFragment) (bool, error) {
-	return true, nil
+	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	status, err := u.TcClient.GetTransaction(context, file.TxStoreNft)
+
+	fmt.Println("GetTransaction status, err ", file.TxStoreNft, status, err)
+
+	if err == nil {
+		if status > 0 {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	}
+
+	return false, err
 }
 
 func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) {
