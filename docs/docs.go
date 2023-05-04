@@ -5590,6 +5590,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/tokens/{tokenID}/minting-info": {
+            "get": {
+                "description": "get token minting info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get token minting info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tokens/{tokenID}/thumbnail": {
             "post": {
                 "description": "Update token's thumbnail",
@@ -6044,6 +6076,20 @@ const docTemplate = `{
                 }
             }
         },
+        "entity.PriceBRC20Obj": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "offering_id": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -6189,6 +6235,9 @@ const docTemplate = `{
                 },
                 "inscriptionIcon": {
                     "type": "string"
+                },
+                "isBigFile": {
+                    "type": "boolean"
                 },
                 "isFullChain": {
                     "type": "boolean"
@@ -6496,6 +6545,9 @@ const docTemplate = `{
                 "block_number_minted": {
                     "type": "string"
                 },
+                "buyable": {
+                    "type": "boolean"
+                },
                 "contract_address": {
                     "type": "string"
                 },
@@ -6584,6 +6636,9 @@ const docTemplate = `{
                 },
                 "parsed_image": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priority": {
                     "type": "integer"
@@ -8025,6 +8080,9 @@ const docTemplate = `{
                 },
                 "priceBTC": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priceETH": {
                     "type": "string"

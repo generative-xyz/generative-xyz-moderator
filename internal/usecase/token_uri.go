@@ -1457,3 +1457,20 @@ func (u Usecase) AnalyticsTokenUriOwner(f structure.FilterTokens) (interface{}, 
 
 	return result, nil
 }
+
+func (u Usecase) GetTokenMintingInfo(tokenID string) ([]entity.TokenFileFragment, error) {
+
+	tokenID = strings.ToLower(tokenID)
+
+	tokenFileFragments, err := u.Repo.FindTokenFileFragments(context.Background(), repository.TokenFileFragmentFileter{
+		TokenID: tokenID,
+	})
+	if err != nil {
+		logger.AtLog.Logger.Error("err", zap.Error(err))
+		return nil, err
+	}
+
+	///logger.AtLog.Logger.Info("tokenUri", zap.Any("tokenUri", tokenUri))
+	logger.AtLog.Logger.Info("tokenID", zap.Any("tokenID", tokenID), zap.Int("tokenFileFragments", len(tokenFileFragments)))
+	return tokenFileFragments, nil
+}
