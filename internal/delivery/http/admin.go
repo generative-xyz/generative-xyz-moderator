@@ -406,3 +406,57 @@ func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
 
 }
+
+func (h *httpDelivery) requestFaucetAdmin(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+
+	fmt.Println("iWalletAddress", iWalletAddress)
+
+	userWalletAddr, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("Wallet address is incorect")
+		logger.AtLog.Logger.Error("ctx.Value.Token", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	fmt.Println("userWalletAddr", userWalletAddr)
+
+	// check admin user:
+	profile, err := h.Usecase.GetUserProfileByWalletAddress(userWalletAddr)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetUserProfileByWalletAddress(", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if !profile.IsAdmin {
+		err := errors.New("permission denied")
+		logger.AtLog.Logger.Error("permission", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	var reqBody request.FaucetReq
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&reqBody)
+	if err != nil {
+		logger.AtLog.Logger.Error("httpDelivery.requestFaucet.Decode", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if len(reqBody.Url) == 0 {
+		err = errors.New("url invalid")
+		logger.AtLog.Logger.Error("h.requestFaucet", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result, err := h.Usecase.ApiAdminCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type, reqBody.Source)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}

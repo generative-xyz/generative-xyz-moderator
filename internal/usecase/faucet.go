@@ -664,3 +664,48 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 	return nil
 
 }
+
+// admin:
+func (u Usecase) ApiAdminCreateFaucet(addressInput, url, txhash, faucetType, source string) (string, error) {
+
+	// verify tw name:
+	// //https://twitter.com/2712_at1999/status/1643190049981480961
+	// //https://twitter.com/abc/status/1647374585451663361?s=46&t=B7w70LBsAJFhv8XbJlpvCA
+	twNameRegex := regexp.MustCompile(`https?://(?:www\.)?twitter\.com/([^/]+)/status/(\d+)(?:\?.*)?$`)
+	// Find the first match in the tweet URL
+	matchTwName := twNameRegex.FindStringSubmatch(url)
+
+	twName := ""
+	sharedID := ""
+
+	if len(matchTwName) >= 3 {
+		twName = matchTwName[1]
+		sharedID = matchTwName[2]
+		fmt.Println("twName:", twName)    // Output: 2712_at1999
+		fmt.Println("shareID:", sharedID) // Output: 1643190049981480961
+
+	}
+
+	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
+
+	faucetItem := &entity.Faucet{
+		Address:     addressInput,
+		TwitterName: twName,
+		Status:      0,
+		Tx:          "",
+		Amount:      amountFaucet.String(),
+		TwShareID:   sharedID,
+		SharedLink:  url,
+		UserTx:      txhash,
+		FaucetType:  faucetType,
+	}
+	err := u.Repo.InsertFaucet(faucetItem)
+	if err != nil {
+		return "", err
+	}
+
+	go u.sendSlack("", "ApiAdminCreateFaucet.NewFaucet", twName+"/"+addressInput, "ok")
+
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
+
+}
