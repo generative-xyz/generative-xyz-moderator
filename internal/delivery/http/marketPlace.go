@@ -203,6 +203,8 @@ func (h *httpDelivery) ListingOfAProfile(w http.ResponseWriter, r *http.Request)
 // @Produce  json
 // @Param walletAddress path string true "Wallet address"
 // @Param is_nft_owner query string false "If is_nft_owner == true, get offer that offer to walletAddress's nft"
+// @Param closed query bool false "Is closed, default all"
+// @Param finished query bool false "Is finished, default all"
 // @Param sort_by query string false "sort by field"
 // @Param sort query int false "1: ASC, -1: DESC"
 // @Param limit query int false "limit default 10"
