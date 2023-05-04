@@ -4,14 +4,18 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"io"
+	"math/big"
 	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/utils/contracts/generative_nft_contract"
 	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/logger"
 	"sync"
@@ -68,21 +72,15 @@ func (u Usecase) JobStoreTokenFiles() {
 			break
 		}
 
-		noun, err := u.GetTCNonce()
-		if err != nil {
-			logger.AtLog.Logger.Error("Error getting nonce", zap.Error(err))
-			break
-		}
-
-		for index, file := range fragments {
-			address, err := u.StoreFileInTC(&file, uint64(index+1)+noun)
+		for _, file := range fragments {
+			sendAddress, err := u.StoreFileInTC(&file)
 			if err != nil {
 				logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
 			} else {
 				u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
-					"status":        entity.FileFragmentStatusProcessing,
-					"store_address": address,
-					"uploaded_at":   time.Now(),
+					"status":       entity.FileFragmentStatusProcessing,
+					"tx_store_nft": *sendAddress,
+					"uploaded_at":  time.Now(),
 				})
 			}
 		}
@@ -115,12 +113,75 @@ func (u Usecase) JobStoreTokenFiles() {
 	}
 }
 
-func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment, nonce uint64) (string, error) {
-	panic("Not implemented")
+func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) {
+
+	tempWallet, err := u.Repo.GetStoreWallet()
+	if err != nil {
+		return nil, fmt.Errorf("no wallet available")
+	}
+
+	privateKeyDeCrypt, err := encrypt.DecryptToString(tempWallet.PrivateKey, os.Getenv("SECRET_KEY"))
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyDeCrypt)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := u.TcClient.PendingNonceAt(context.Background(), fromAddress)
+
+	if err != nil {
+		return nil, err
+	}
+
+	gasPrice, err := u.TcClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("gasPrice: ", gasPrice)
+
+	chainID, err := u.TcClient.NetworkID(context.Background())
+	if err != nil {
+		return nil, errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return nil, errors.Wrap(err, "crypto.HexToECDSA")
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+
+	// Create a new instance of the contract with the given address and ABI
+	contract, err := generative_nft_contract.NewGenerativeNftContract(fromAddress, u.TcClient.GetClient())
+	if err != nil {
+		return nil, errors.Wrap(err, "NewGenerativeNftContract")
+	}
+
+	tokenIdInt := new(big.Int)
+	tokenIdInt, ok := tokenIdInt.SetString(file.TokenId, 10)
+	if !ok {
+		return nil, fmt.Errorf("error converting token id to big int")
+	}
+
+	tx, err := contract.Store(auth, tokenIdInt, big.NewInt(int64(file.Sequence)), file.Data)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "contract.Mint")
+	}
+
+	TxSendNft := tx.Hash().Hex()
+	return &TxSendNft, nil
 }
 
 func (u Usecase) CheckStoreStatus(file *entity.TokenFileFragment) (bool, error) {
-	panic("Not implemented")
+
 }
 
 func (u Usecase) GetStoreAddress() (*common.Address, error) {
