@@ -1148,6 +1148,17 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
 	}
+
+	if p.IsBigFile {
+		preText := fmt.Sprintf("[Mint Big File] - Project is minted by %s", item.OriginUserAddress)
+		content := fmt.Sprintf("ProjectID: %s", helpers.CreateTokenLink(p.TokenId, p.TokenId, p.Name))
+		title := fmt.Sprintf("TxHash: %s", item.TxMintNft)
+
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_BIG_FILE"), preText, title, content); err != nil {
+			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		}
+	}
+
 	return nil
 }
 
