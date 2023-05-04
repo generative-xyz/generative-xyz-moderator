@@ -2,13 +2,17 @@ package usecase
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"io"
 	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/utils/encrypt"
 	"rederinghub.io/utils/logger"
 	"sync"
 	"time"
@@ -64,27 +68,23 @@ func (u Usecase) JobStoreTokenFiles() {
 			break
 		}
 
-		noun, err := u.GetBlockChainNonce()
+		noun, err := u.GetTCNonce()
 		if err != nil {
 			logger.AtLog.Logger.Error("Error getting nonce", zap.Error(err))
 			break
 		}
 
-		var wg sync.WaitGroup
 		for index, file := range fragments {
-			wg.Add(1)
-			go func(file *entity.TokenFileFragment, noun int) {
-				address, err := u.StoreFileInBlockChain(file, noun)
-				if err != nil {
-					logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
-				} else {
-					u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
-						"status":        entity.FileFragmentStatusProcessing,
-						"store_address": address,
-						"uploaded_at":   time.Now(),
-					})
-				}
-			}(&file, noun+index)
+			address, err := u.StoreFileInTC(&file, uint64(index+1)+noun)
+			if err != nil {
+				logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
+			} else {
+				u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
+					"status":        entity.FileFragmentStatusProcessing,
+					"store_address": address,
+					"uploaded_at":   time.Now(),
+				})
+			}
 		}
 	}
 
@@ -115,7 +115,7 @@ func (u Usecase) JobStoreTokenFiles() {
 	}
 }
 
-func (u Usecase) StoreFileInBlockChain(file *entity.TokenFileFragment, nonce int) (string, error) {
+func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment, nonce uint64) (string, error) {
 	panic("Not implemented")
 }
 
@@ -123,9 +123,40 @@ func (u Usecase) CheckStoreStatus(file *entity.TokenFileFragment) (bool, error) 
 	panic("Not implemented")
 }
 
-func (u Usecase) GetBlockChainNonce() (int, error) {
-	// Todo get nonce from blockchain
-	var nonce int
+func (u Usecase) GetStoreAddress() (*common.Address, error) {
+	// get free temp wallet:
+	tempWallet, err := u.Repo.GetStoreWallet()
+	if err != nil {
+		return nil, fmt.Errorf("no wallet available")
+	}
+	privateKeyDeCrypt, err := encrypt.DecryptToString(tempWallet.PrivateKey, os.Getenv("SECRET_KEY"))
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyDeCrypt)
+	if err != nil {
+		fmt.Println("HexToECDSA err", err)
+		return nil, err
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, _ := publicKey.(*ecdsa.PublicKey)
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	return &fromAddress, nil
+}
+
+func (u Usecase) GetTCNonce() (uint64, error) {
+
+	address, err := u.GetStoreAddress()
+	if err != nil {
+		return 0, err
+	}
+
+	nonce, err := u.TcClient.PendingNonceAt(context.Background(), *address)
+	if err != nil {
+		return 0, err
+	}
 
 	return nonce, nil
 }
