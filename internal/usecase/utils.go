@@ -326,3 +326,11 @@ func unzipFile(f *zip.File, destination string) error {
 	}
 	return nil
 }
+
+func Commas(s string) string {
+	n := len(s)
+	if n < 4 {
+		return s
+	}
+	return Commas(s[:n-3]) + "," + s[n-3:]
+}
