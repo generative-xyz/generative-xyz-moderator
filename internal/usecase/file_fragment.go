@@ -128,9 +128,9 @@ func (u Usecase) JobStoreTokenFiles() {
 }
 
 func (u Usecase) checkUploadDone(file *entity.TokenFileFragment) (bool, error) {
-	context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	status, err := u.TcClient.GetTransaction(context, file.TxStoreNft)
+	status, err := u.TcClient.GetTransaction(ctx, file.TxStoreNft)
 
 	fmt.Println("GetTransaction status, err ", file.TxStoreNft, status, err)
 
