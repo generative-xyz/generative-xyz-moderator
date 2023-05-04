@@ -11,6 +11,7 @@ import (
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/utils/logger"
 	"sync"
+	"time"
 )
 
 const ChunkSize = 350 * 1024
@@ -48,6 +49,49 @@ func (u Usecase) JobFragmentBigFile() {
 		}
 		wg.Wait()
 	}
+}
+
+func (u Usecase) JobStoreTokenFiles() {
+	ctx := context.Background()
+	for page := 1; ; page++ {
+		fragments, err := u.Repo.FindTokenFileFragments(ctx, repository.TokenFileFragmentFileter{
+			Page:     page,
+			Status:   entity.FileFragmentStatusCreated,
+			PageSize: 10,
+		})
+		var wg sync.WaitGroup
+		noun, err := u.GetBlockChainNonce()
+		if err != nil {
+			logger.AtLog.Logger.Error("Error getting nonce", zap.Error(err))
+			break
+		}
+		for index, file := range fragments {
+			wg.Add(1)
+			go func(file *entity.TokenFileFragment, noun int) {
+				address, err := u.StoreFileInBlockChain(file, noun)
+				if err != nil {
+					logger.AtLog.Logger.Error("Error storing file in blockchain", zap.Error(err), zap.String("TokenId", file.TokenId), zap.Int("sequence", file.Sequence))
+				} else {
+					u.Repo.UpdateFileFragmentStatus(ctx, file.TokenId, map[string]interface{}{
+						"status":        entity.FileFragmentStatusProcessing,
+						"store_address": address,
+						"uploaded_at":   time.Now(),
+					})
+				}
+			}(&file, noun+index)
+		}
+	}
+}
+
+func (u Usecase) StoreFileInBlockChain(file *entity.TokenFileFragment, nonce int) (string, error) {
+	panic("Not implemented")
+}
+
+func (u Usecase) GetBlockChainNonce() (int, error) {
+	// Todo get nonce from blockchain
+	var nonce int
+
+	return nonce, nil
 }
 
 func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) (int, error) {

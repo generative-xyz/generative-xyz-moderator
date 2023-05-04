@@ -15,15 +15,16 @@ const (
 )
 
 type TokenFileFragment struct {
-	BaseEntity `bson:",inline" json:"base_entity"`
-	TokenId    string             `json:"token_id" bson:"token_id"`
-	FilePath   string             `json:"file_path" bson:"file_path"`
-	Sequence   int                `json:"sequence" bson:"sequence"`
-	Data       []byte             `json:"data" bson:"data"`
-	Status     FileFragmentStatus `json:"status" bson:"status"`
-	Note       string             `json:"note" bson:"note"`
-	UploadTime *time.Time         `json:"upload_time" bson:"upload_time"`
-	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
+	BaseEntity   `bson:",inline" json:"base_entity"`
+	TokenId      string             `json:"token_id" bson:"token_id"`
+	FilePath     string             `json:"file_path" bson:"file_path"`
+	Sequence     int                `json:"sequence" bson:"sequence"`
+	Data         []byte             `json:"data" bson:"data"`
+	Status       FileFragmentStatus `json:"status" bson:"status"`
+	Note         string             `json:"note" bson:"note"`
+	UploadedAt   *time.Time         `json:"uploaded_at" bson:"uploaded_at"`
+	StoreAddress string             `json:"store_address" bson:"store_address"`
+	CreatedAt    time.Time          `json:"created_at" bson:"created_at"`
 }
 
 func (m TokenFileFragment) TableName() string {
