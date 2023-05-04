@@ -538,10 +538,20 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	var uuids []string
 
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
+	maxFaucet := big.NewInt(2 * 1e18)      // todo: move to config
 
 	// get list again:
 	for _, item := range faucets {
-		destinations[item.Address] = amountFaucet
+
+		amount, ok := big.NewInt(0).SetString(item.Amount, 10)
+		if !ok {
+			amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
+		}
+		if amount.Uint64() > maxFaucet.Uint64() || amount.Uint64() == 0 {
+			amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
+		}
+
+		destinations[item.Address] = amount
 		uuids = append(uuids, item.UUID)
 	}
 
@@ -705,6 +715,39 @@ func (u Usecase) ApiAdminCreateFaucet(addressInput, url, txhash, faucetType, sou
 	}
 
 	go u.sendSlack("", "ApiAdminCreateFaucet.NewFaucet", twName+"/"+addressInput, "ok")
+
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
+
+}
+
+func (u Usecase) ApiAdminCreateBatchFaucet(addresses []string, url, types string, amount float64) (string, error) {
+
+	if amount == 0 || amount > 2 {
+		amount = 0.1
+	}
+
+	uint64Value := amount * 1e18
+
+	amountFaucet := big.NewInt(0).SetUint64(uint64(uint64Value))
+
+	fmt.Println("amountFaucet: ", amountFaucet)
+
+	for _, address := range addresses {
+		faucetItem := &entity.Faucet{
+			Address:    address,
+			Status:     0,
+			Tx:         "",
+			Amount:     amountFaucet.String(),
+			SharedLink: url,
+			FaucetType: types,
+		}
+		err := u.Repo.InsertFaucet(faucetItem)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	go u.sendSlack("", "ApiAdminCreateBatchFaucet.NewFaucet", strings.Join(addresses, ","), "ok")
 
 	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
 

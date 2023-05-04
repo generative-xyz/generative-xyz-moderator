@@ -437,7 +437,7 @@ func (h *httpDelivery) requestFaucetAdmin(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var reqBody request.FaucetReq
+	var reqBody request.FaucetAdminReq
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&reqBody)
 	if err != nil {
@@ -451,12 +451,25 @@ func (h *httpDelivery) requestFaucetAdmin(w http.ResponseWriter, r *http.Request
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	result, err := h.Usecase.ApiAdminCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type, reqBody.Source)
-	if err != nil {
-		logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
+
+	if len(reqBody.ListAddress) > 0 {
+		result, err := h.Usecase.ApiAdminCreateBatchFaucet(reqBody.ListAddress, reqBody.Url, reqBody.Type, reqBody.Amount)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
+	} else {
+		result, err := h.Usecase.ApiAdminCreateFaucet(reqBody.Address, reqBody.Url, reqBody.Txhash, reqBody.Type, reqBody.Source)
+		if err != nil {
+			logger.AtLog.Logger.Error("h.Usecase.GetFaucetPaymentInfo", zap.String("err", err.Error()))
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+
+		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 	}
 
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
