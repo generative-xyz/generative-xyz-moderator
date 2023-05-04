@@ -341,6 +341,11 @@ func (u Usecase) PurchaseToken(event *generative_marketplace_lib.GenerativeMarke
 }
 
 func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketplaceLibMakeOffer, blocknumber uint64) error {
+	tok, err := u.Repo.FindTokenByTokenID(event.Data.TokenId.String())
+	if err != nil {
+		logger.AtLog.Logger.Error("MakeOffer.FindTokenByTokenID", zap.Error(err))
+		return err
+	}
 
 	offer := entity.MarketplaceOffers{
 		OfferingId:         strings.ToLower(fmt.Sprintf("%x", event.OfferingId)),
@@ -353,6 +358,7 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 		Finished:           false,
 		DurationTime:       event.Data.DurationTime.String(),
 		BlockNumber:        blocknumber,
+		OwnerAddress:       &tok.OwnerAddr,
 	}
 
 	sendMessage := func(offer entity.MarketplaceOffers) {
@@ -379,7 +385,7 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 	}
 
 	// check if listing is created or not
-	_, err := u.Repo.FindOfferByOfferingID(offer.OfferingId)
+	_, err = u.Repo.FindOfferByOfferingID(offer.OfferingId)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// if error is no document -> create
