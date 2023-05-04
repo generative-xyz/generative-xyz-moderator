@@ -52,27 +52,27 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 	resp := &structure.TokenAnimationURI{}
 	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail:   token.Thumbnail,
-			Traits:      token.ParsedAttributes,
-			TraitsStr:   token.ParsedAttributesStr,
-			CapturedAt:  token.ThumbnailCapturedAt,
-			IsUpdated:   false,
-		}
-		return resp, nil
-	}
+	//if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
+	//	resp = &structure.TokenAnimationURI{
+	//		ParsedImage: *token.ParsedImage,
+	//		Thumbnail:   token.Thumbnail,
+	//		Traits:      token.ParsedAttributes,
+	//		TraitsStr:   token.ParsedAttributesStr,
+	//		CapturedAt:  token.ThumbnailCapturedAt,
+	//		IsUpdated:   false,
+	//	}
+	//	return resp, nil
+	//}
 
-	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
-	if err != nil {
-		logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
-		return nil, err
-	}
+	//eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	//if err != nil {
+	//	logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
+	//	return nil, err
+	//}
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
-		chromedp.Flag("headless", eCH),
+		//chromedp.ExecPath("google-chrome"),
+		chromedp.Flag("headless", false),
 		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("no-first-run", true),
 	)
@@ -97,7 +97,8 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		}
 		return resp, nil
 	}
-	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
+	//if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
+	if true {
 		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
 		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
 		if err == nil {

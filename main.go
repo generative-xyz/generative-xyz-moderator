@@ -1,15 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"log"
 	"os"
-	"os/signal"
-	"time"
-
-	"go.uber.org/zap"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/delegate"
 	"rederinghub.io/utils/eth"
@@ -21,12 +17,6 @@ import (
 	migrate "github.com/xakep666/mongo-migrate"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
-	"rederinghub.io/internal/delivery"
-	"rederinghub.io/internal/delivery/crontabManager"
-	"rederinghub.io/internal/delivery/crontab_ordinal_collections"
-	httpHandler "rederinghub.io/internal/delivery/http"
-	"rederinghub.io/internal/delivery/pubsub"
-	"rederinghub.io/internal/delivery/txserver"
 	"rederinghub.io/internal/repository"
 	"rederinghub.io/internal/usecase"
 	_ "rederinghub.io/mongo/migrate"
@@ -231,84 +221,6 @@ func startServer() {
 		return
 	}
 
-	servers := make(map[string]delivery.AddedServer)
-	// api fixed run:
-	h, _ := httpHandler.NewHandler(&g, *uc)
-	servers["http"] = delivery.AddedServer{
-		Server:  h,
-		Enabled: conf.StartHTTP,
-	}
-
-	ph := pubsub.NewPubsubHandler(*uc, rPubsub, logger)
-	servers["pubsub"] = delivery.AddedServer{
-		Server:  ph,
-		Enabled: conf.StartPubsub,
-	}
-
-	// job ORDINAL_COLLECTION_CRONTAB_START: @Dac TODO move all function to Usercase and crontab db config.
-	ordinalCron := crontab_ordinal_collections.NewScronOrdinalCollectionHandler(&g, *uc)
-	servers["ordinal_collections_crontab"] = delivery.AddedServer{
-		Server:  ordinalCron,
-		Enabled: conf.Crontab.OrdinalCollectionEnabled,
-	}
-
-	// TODO move all function to Usercase and crontab db config.
-	txConsumer, _ := txserver.NewTxServer(&g, *uc, *conf)
-	servers["txconsumer"] = delivery.AddedServer{
-		Server:  txConsumer,
-		Enabled: conf.TxConsumerConfig.Enabled,
-	}
-
-	//var wait time.Duration
-	c := make(chan os.Signal, 1)
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-
-	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
-	signal.Notify(c, os.Interrupt)
-
-	// Run our server in a goroutine so that it doesn't block.
-	for name, server := range servers {
-		if server.Enabled {
-			if server.Server != nil {
-				go server.Server.StartServer()
-			}
-			fmt.Printf("%s is enabled \n", name)
-		} else {
-			fmt.Printf("%s is disabled \n", name)
-		}
-	}
-
-	// start a group cron:
-	if len(conf.CronTabList) > 0 {
-		for _, cronKey := range conf.CronTabList {
-			fmt.Printf("%s is running... \n", cronKey)
-			crontabManager.NewCrontabManager(cronKey, &g, *uc).StartServer()
-		}
-	}
-	// testing purpose
-	//uc.TestSendNoti()
-
-	// Block until we receive our signal.
-	<-c
-	wait := time.Second
-	// // Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
-	defer cancel()
-	// // Doesn't block if no connections, but will otherwise wait
-	// // until the timeout deadline.
-	// err := srv.Shutdown(ctx)
-	// if err != nil {
-	// 	logger.AtLog.Logger.Error("httpDelivery.StartServer - Server can not shutdown", err)
-	// 	return
-	// }
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	<-ctx.Done() //if your application should wait for other services
-	// to finalize based on context cancellation.
-	_logger.AtLog.Logger.Warn("httpDelivery.StartServer - server is shutting down")
-	tracer.Stop()
-	os.Exit(0)
-
+	data := make(map[string]string)
+	uc.PubSubCreateTokenThumbnail(data, "", structure.TokenImagePayload{TokenID: "68b9f406d4b61332286e97cbff0aa4dbbbdbadb6c473f0ff1a28ead7365af1cfi0", ContractAddress: "0x0000000000000000000000000000000000000000"})
 }
