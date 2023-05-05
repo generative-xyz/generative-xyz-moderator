@@ -648,15 +648,22 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 		logger.AtLog.Logger.Info("getTokenInfo", zap.Any("req", req), zap.Any("updated", updated))
 	}
 
-	//capture image
-	payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
-		TokenID:         dataObject.TokenID,
-		ContractAddress: dataObject.ContractAddress,
-	}}
+	if !project.IsBigFile {
+		//capture image
+		payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
+			TokenID:         dataObject.TokenID,
+			ContractAddress: dataObject.ContractAddress,
+		}}
 
-	err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
-	if err != nil {
-		logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+		err = u.PubSub.Producer(utils.PUBSUB_TOKEN_THUMBNAIL, payload)
+		if err != nil {
+			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "u.PubSub.Producer"), zap.Error(err))
+		}
+	} else {
+		u.Repo.CreateFragmentJob(context.TODO(), &entity.TokenFragmentJob{
+			TokenId:  req.TokenID,
+			FilePath: project.ProcessingImages[0],
+		})
 	}
 
 	return dataObject, nil
