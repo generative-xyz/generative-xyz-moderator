@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -538,7 +539,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	var uuids []string
 
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
-	maxFaucet := big.NewInt(2 * 1e18)      // todo: move to config
+	maxFaucet := big.NewInt(7 * 1e18)      // todo: move to config
 
 	// get list again:
 	for _, item := range faucets {
@@ -751,4 +752,52 @@ func (u Usecase) ApiAdminCreateBatchFaucet(addresses []string, url, types string
 
 	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
 
+}
+
+func (u Usecase) ApiAdminCreateMapFaucet(addressAmountMap map[string]float64, url, types string) (string, error) {
+
+	if len(addressAmountMap) == 0 {
+		return "", nil
+	}
+	var totalAmount float64
+
+	for address, amount := range addressAmountMap {
+
+		totalAmount += amount
+
+		uint64Value := amount * 1e18
+
+		amountFaucet := big.NewInt(0).SetUint64(uint64(uint64Value))
+
+		fmt.Println("amountFaucet: ", amountFaucet)
+		fmt.Println("address: ", address)
+
+		faucetItem := &entity.Faucet{
+			Address:    address,
+			Status:     0,
+			Tx:         "",
+			Amount:     amountFaucet.String(),
+			SharedLink: url,
+			FaucetType: types,
+		}
+		err := u.Repo.InsertFaucet(faucetItem)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	go u.sendSlack("", "ApiAdminCreateBatchFaucet.NewFaucet", createKeyValuePairs(addressAmountMap), fmt.Sprintf("total: %.4f", totalAmount))
+	fmt.Println(fmt.Sprintf("total: %.4f", totalAmount))
+
+	return "The request was submitted successfully. You will receive TC after 1-2 block confirmations (10~20 minutes).", nil
+
+}
+
+func createKeyValuePairs(m map[string]float64) string {
+	b := new(bytes.Buffer)
+	for key, value := range m {
+		fmt.Fprintf(b, "%s=\"%f\"\n", key, value)
+	}
+	fmt.Println("b.String()", b.String())
+	return b.String()
 }
