@@ -68,17 +68,14 @@ func (r Repository) FindTokenFileFragments(ctx context.Context, filter TokenFile
 		filter.Page++
 	}
 
-	// required token id
-	if filter.TokenID == "" {
-		return nil, fmt.Errorf("token id is required")
-	}
-
 	var result []entity.TokenFileFragment
 
+	queryFilter := bson.M{}
 	// init filter
-	queryFilter := bson.M{
-		"token_id": filter.TokenID,
+	if filter.TokenID != "" {
+		queryFilter["token_id"] = filter.TokenID
 	}
+
 	if filter.Sequence > 0 {
 		queryFilter["sequence"] = filter.Sequence
 	}

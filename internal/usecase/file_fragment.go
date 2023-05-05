@@ -85,7 +85,8 @@ func (u Usecase) JobStoreTokenFiles() {
 					now := time.Now()
 					chunk.TxStoreNft = *storeAddress
 					chunk.UploadedAt = &now
-					u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
+					// failed -> test later
+					u.Repo.UpdateFileFragmentStatus(ctx, chunk.UUID, map[string]interface{}{
 						"tx_store_nft": chunk.TxStoreNft,
 						"uploaded_at":  chunk.UploadedAt,
 					})
@@ -102,7 +103,7 @@ func (u Usecase) JobStoreTokenFiles() {
 					}
 					if txSendAddress != nil {
 						chunk.TxSendNft = *txSendAddress
-						u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
+						u.Repo.UpdateFileFragmentStatus(ctx, chunk.UUID, map[string]interface{}{
 							"tx_send_nft": chunk.TxSendNft,
 						})
 						break
@@ -117,10 +118,12 @@ func (u Usecase) JobStoreTokenFiles() {
 				if err != nil {
 					logger.AtLog.Logger.Error("Error storing chunk in blockchain", zap.Error(err), zap.String("TokenId", chunk.TokenId), zap.Int("sequence", chunk.Sequence))
 				} else if success {
-					u.Repo.UpdateFileFragmentStatus(ctx, chunk.TokenId, map[string]interface{}{
+					u.Repo.UpdateFileFragmentStatus(ctx, chunk.UUID, map[string]interface{}{
 						"status": entity.FileFragmentStatusDone,
 					})
+					break
 				}
+				time.Sleep(60 * time.Second)
 			}
 
 		}
@@ -146,6 +149,11 @@ func (u Usecase) checkUploadDone(file *entity.TokenFileFragment) (bool, error) {
 }
 
 func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) {
+
+	tokenUri, err := u.Repo.FindTokenByTokenID(file.TokenId)
+	if err != nil {
+		return nil, err
+	}
 
 	tempWallet, err := u.Repo.GetStoreWallet()
 	if err != nil {
@@ -191,7 +199,7 @@ func (u Usecase) StoreFileInTC(file *entity.TokenFileFragment) (*string, error) 
 	auth.Nonce = big.NewInt(int64(nonce))
 
 	// Create a new instance of the contract with the given address and ABI
-	contract, err := generative_nft_contract.NewGenerativeNftContract(fromAddress, u.TcClient.GetClient())
+	contract, err := generative_nft_contract.NewGenerativeNftContract(common.HexToAddress(tokenUri.GenNFTAddr), u.TcClient.GetClient())
 	if err != nil {
 		return nil, errors.Wrap(err, "NewGenerativeNftContract")
 	}
