@@ -25,7 +25,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		logger.AtLog.Logger.Error(fmt.Sprintf("CreateProject.%s", pe.TokenId), zap.Error(err))
 		return nil, err
 	}
-
+	isBigFile := false
 	//process ziplink
 	if req.ZipLink != nil && *req.ZipLink != "" {
 		imageLinks, maxSize, err := u.ProcessEthZip(*req.ZipLink)
@@ -38,6 +38,16 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		networkFee := big.NewInt(u.networkFeeBySize(int64(maxSize / 4))) // will update after unzip and check data
 		pe.MaxFileSize = int64(maxSize)
 		pe.NetworkFee = networkFee.String()
+
+		//Only TC projects are allowed
+		//check project has big file ($gt: 350kb):
+		// project only has 1 uploaded file, its size is greater than 350kb
+		if len(imageLinks) == 1 { //350kb = 350000 bytes
+			// size of the json file
+			if maxSize > uint64(350000) {
+				isBigFile = true
+			}
+		}
 	}
 
 	if req.CaptureImageTime == nil {
@@ -45,6 +55,7 @@ func (u Usecase) CreateProject(req structure.CreateProjectReq) (*entity.Projects
 		pe.CatureThumbnailDelayTime = &cap
 	}
 
+	pe.IsBigFile = isBigFile
 	pe.IsHidden = true
 	pe.Status = false
 	pe.IsSynced = false
@@ -76,11 +87,11 @@ func (u Usecase) ProcessEthZip(zipLink string) ([]string, uint64, error) {
 		if strings.Index(path, "http") != -1 {
 			continue
 		}
-		
+
 		if strings.Index(path, "storage.googleapis.com") != -1 {
 			continue
 		}
-		
+
 		if strings.Index(path, os.Getenv("GCS_BUCKET")) != -1 {
 			continue
 		}

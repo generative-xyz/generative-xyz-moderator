@@ -1846,18 +1846,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 
 	}
 
-	//Only TC projects are allowed
-	//check project has big file ($gt: 350kb):
-	// project only has 1 uploaded file, its size is greater than 350kb
-	if !helpers.IsOrdinalProject(zipPayload.ProjectID) { //TC projects
-		if len(images) == 1 { //350kb = 350000 bytes
-			// size of the json file
-			if maxSize > uint64(350000) {
-				isBigFile = true
-			}
-		}
-	}
-
 	pe.IsHidden = true
 	pe.Status = true
 	pe.IsSynced = true
