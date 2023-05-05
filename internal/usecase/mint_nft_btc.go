@@ -1419,6 +1419,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 		} else {
 			// if error maybe tx is pending or rejected
 			// TODO check timeout to detect tx is rejected or not.
+			go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "tc.CheckTx.txInfo: "+txToCheck, err.Error(), true)
 		}
 
 		// check confirm >= 1
@@ -1442,6 +1443,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			_, err = u.Repo.UpdateMintNftBtc(&item)
 			if err != nil {
 				fmt.Printf("Could not UpdateMintNftBtc id %s - with err: %v", item.ID, err)
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "can not UpdateMintNftBtc", err.Error(), true)
 				continue
 			}
 
