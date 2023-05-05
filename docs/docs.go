@@ -5602,6 +5602,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/tokens/{tokenID}/minting-info": {
+            "get": {
+                "description": "get token minting info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenUri"
+                ],
+                "summary": "get token minting info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "tokenID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tokens/{tokenID}/thumbnail": {
             "post": {
                 "description": "Update token's thumbnail",
@@ -6215,6 +6247,9 @@ const docTemplate = `{
                 },
                 "inscriptionIcon": {
                     "type": "string"
+                },
+                "isBigFile": {
+                    "type": "boolean"
                 },
                 "isFullChain": {
                     "type": "boolean"
