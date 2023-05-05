@@ -19,6 +19,13 @@ type TokenFileFragmentFileter struct {
 	PageSize int
 }
 
+type AggregateTokenMintingInfo struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+	All     int    `bson:"all" json:"all"`
+	Pending int    `bson:"pending" json:"pending"`
+	Done    int    `bson:"done" json:"done"`
+}
+
 type TokenFragmentJobFilter struct {
 	Status   entity.TokenFragmentJobStatus
 	Page     int
@@ -186,4 +193,77 @@ func (r Repository) GetStoreWallet() (*entity.StoreFileWallet, error) {
 		return nil, err
 	}
 	return wallet, nil
+}
+
+func (r Repository) AggregateMintingInfo(ctx context.Context, tokenID string) ([]AggregateTokenMintingInfo, error) {
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"token_id", tokenID}}}},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"token_id", 1},
+					{"status", 1},
+					{"pending",
+						bson.D{
+							{"$cond",
+								bson.A{
+									bson.D{
+										{"$eq",
+											bson.A{
+												"$status",
+												1,
+											},
+										},
+									},
+									1,
+									0,
+								},
+							},
+						},
+					},
+					{"done",
+						bson.D{
+							{"$cond",
+								bson.A{
+									bson.D{
+										{"$eq",
+											bson.A{
+												"$status",
+												2,
+											},
+										},
+									},
+									1,
+									0,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", bson.D{{"token_id", "$token_id"}}},
+					{"all", bson.D{{"$sum", 1}}},
+					{"pending", bson.D{{"$sum", "$pending"}}},
+					{"done", bson.D{{"$sum", "$done"}}},
+				},
+			},
+		},
+		bson.D{{"$addFields", bson.D{{"token_id", "$_id.token_id"}}}},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenFileFragment{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []AggregateTokenMintingInfo{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
 }
