@@ -288,6 +288,8 @@ definitions:
         type: string
       inscriptionIcon:
         type: string
+      isBigFile:
+        type: boolean
       isFullChain:
         type: boolean
       isHidden:
@@ -5496,6 +5498,27 @@ paths:
       summary: get token uri data
       tags:
       - Tokens
+  /tokens/{tokenID}/minting-info:
+    get:
+      consumes:
+      - application/json
+      description: get token minting info
+      parameters:
+      - description: token ID
+        in: path
+        name: tokenID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: get token minting info
+      tags:
+      - TokenUri
   /tokens/{tokenID}/thumbnail:
     post:
       consumes:

@@ -1012,3 +1012,25 @@ func (h *httpDelivery) getVolumnByWallet(w http.ResponseWriter, r *http.Request)
 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uProjects, "")
 }
+
+// UserCredits godoc
+// @Summary get token minting info
+// @Description get token minting info
+// @Tags TokenUri
+// @Param tokenID path string true "token ID"
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.JsonResponse{}
+// @Router /tokens/{tokenID}/minting-info [GET]
+func (h *httpDelivery) tokenMintingInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	tokenID := vars["tokenID"]
+	resp, err := h.Usecase.GetTokenMintingInfo(tokenID)
+	if err != nil {
+		logger.AtLog.Logger.Error("h.Usecase.GetTokenMintingInfo", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, resp, "")
+
+}

@@ -1074,15 +1074,20 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		urlToMint = baseUrl.String()
 	}
 
-	// create byte data:
+	// create byte data
 	var byteData [][]byte
-	if len(urlToMint) > 0 {
-		byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
-		if err != nil {
-			go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
-			return nil
+
+	//if project doesn't have bigfile (file > 350000 bytes 350kb)
+	if !p.IsBigFile {
+		if len(urlToMint) > 0 {
+			byteData, err = u.ConvertImageToByteArrayToMintTC(urlToMint)
+			if err != nil {
+				go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "ConvertImageToByteArrayToMintTC", err.Error(), true)
+				return nil
+			}
 		}
 	}
+
 	// fmt.Println("byteData", byteData)
 
 	// get free temp wallet:
@@ -1143,6 +1148,17 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, tx, err.Error(), true)
 		return nil
 	}
+
+	if p.IsBigFile {
+		preText := fmt.Sprintf("[Mint Big File] - Project is minted by %s", item.OriginUserAddress)
+		content := fmt.Sprintf("ProjectID: %s", helpers.CreateTokenLink(p.TokenId, p.TokenId, p.Name))
+		title := fmt.Sprintf("TxHash: %s", item.TxMintNft)
+
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_BIG_FILE"), preText, title, content); err != nil {
+			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		}
+	}
+
 	return nil
 }
 
@@ -2314,8 +2330,11 @@ func (u *Usecase) trackMintNftBtcHistory(id, name, table string, status interfac
 		responseMsgStr := fmt.Sprintf("%v", responseMsg)
 
 		preText := fmt.Sprintf("[App: %s][recordID %s] - %s", os.Getenv("JAEGER_SERVICE_NAME"), id, requestMsgStr)
-
-		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_NFT_CHANNEL_ID"), preText, name, responseMsgStr); err != nil {
+		slackChannel := os.Getenv("SLACK_MINT_BIG_FILE")
+		if slackChannel == "" {
+			slackChannel = os.Getenv("SLACK_MINT_NFT_CHANNEL_ID")
+		}
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(slackChannel, preText, name, responseMsgStr); err != nil {
 			fmt.Println("s.Slack.SendMessageToSlack err", err)
 		}
 	}
