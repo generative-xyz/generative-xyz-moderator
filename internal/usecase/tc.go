@@ -1,10 +1,12 @@
 package usecase
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"rederinghub.io/internal/repository"
 	"strings"
 
 	"rederinghub.io/internal/entity"
@@ -93,8 +95,13 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 		GenNftAddress     string               `json:"gen_nft_addrress"`
 		Royalty           int                  `json:"royalty"`
 		PriceBRC20        entity.PriceBRC20Obj `json:"priceBrc20"`
+
+		//Used for big file
+		MintingInfo repository.AggregateTokenMintingInfo `json:"minting_info"`
+		IsMinting   bool                                 `json:"is_minting"`
 	}
 
+	ctx := context.Background()
 	var dataList []*Data
 	listToken, _ := u.Repo.GetOwnerTokens(address)
 
@@ -122,6 +129,23 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 					Address:    nft.PriceBRC20Address,
 					OfferingID: nft.OfferingID,
 				},
+				IsMinting: false,
+				MintingInfo: repository.AggregateTokenMintingInfo{
+					All:     0,
+					Done:    0,
+					Pending: 0,
+				},
+			}
+
+			mintingInfo, err := u.Repo.AggregateMintingInfo(ctx, nft.TokenID)
+			if err == nil {
+				if len(mintingInfo) >= 1 {
+					mtinfo := mintingInfo[0]
+					data.MintingInfo = mtinfo
+					if mtinfo.Done < mtinfo.All {
+						data.IsMinting = true
+					}
+				}
 			}
 
 			dataList = append(dataList, data)
