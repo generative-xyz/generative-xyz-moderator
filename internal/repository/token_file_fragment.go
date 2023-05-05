@@ -19,6 +19,13 @@ type TokenFileFragmentFileter struct {
 	PageSize int
 }
 
+type AggregateTokenMintingInfo struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+	All     int    `bson:"all" json:"all"`
+	Pending int    `bson:"pending" json:"pending"`
+	Done    int    `bson:"done" json:"done"`
+}
+
 type TokenFragmentJobFilter struct {
 	Status   entity.TokenFragmentJobStatus
 	Page     int
@@ -83,7 +90,7 @@ func (r Repository) FindTokenFileFragments(ctx context.Context, filter TokenFile
 	options := options.Find()
 	options.SetSkip(int64((filter.Page - 1) * limit))
 	options.SetLimit(int64(limit))
-	options.SetSort(bson.M{"sequence": 1})
+	options.SetSort(bson.M{"created_at": 1})
 
 	cursor, err := r.DB.Collection(utils.TOKEN_FILE_FRAGMENT).Find(ctx, queryFilter, options)
 	if err != nil {
@@ -94,6 +101,21 @@ func (r Repository) FindTokenFileFragments(ctx context.Context, filter TokenFile
 		return nil, err
 	}
 	return result, nil
+}
+
+func (r Repository) UpdateFileFragmentStatus(ctx context.Context, id string, updateFields map[string]interface{}) error {
+	filter := bson.M{"uuid": id}
+	updatedQuery := bson.M{}
+	for k, v := range updateFields {
+		updatedQuery[k] = v
+	}
+
+	_, err := r.DB.Collection(utils.TOKEN_FILE_FRAGMENT).UpdateOne(ctx, filter, bson.M{"$set": updatedQuery})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r Repository) CreateFragmentJob(ctx context.Context, job *entity.TokenFragmentJob) error {
@@ -162,4 +184,86 @@ func (r Repository) FindFragmentJobs(ctx context.Context, filter TokenFragmentJo
 
 	return jobs, nil
 
+}
+
+func (r Repository) GetStoreWallet() (*entity.StoreFileWallet, error) {
+	var wallet *entity.StoreFileWallet
+	err := r.DB.Collection(entity.StoreFileWallet{}.TableName()).FindOne(context.Background(), bson.M{}).Decode(&wallet)
+	if err != nil {
+		return nil, err
+	}
+	return wallet, nil
+}
+
+func (r Repository) AggregateMintingInfo(ctx context.Context, tokenID string) ([]AggregateTokenMintingInfo, error) {
+	f := bson.A{
+		bson.D{{"$match", bson.D{{"token_id", tokenID}}}},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"token_id", 1},
+					{"status", 1},
+					{"pending",
+						bson.D{
+							{"$cond",
+								bson.A{
+									bson.D{
+										{"$eq",
+											bson.A{
+												"$status",
+												1,
+											},
+										},
+									},
+									1,
+									0,
+								},
+							},
+						},
+					},
+					{"done",
+						bson.D{
+							{"$cond",
+								bson.A{
+									bson.D{
+										{"$eq",
+											bson.A{
+												"$status",
+												2,
+											},
+										},
+									},
+									1,
+									0,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$group",
+				bson.D{
+					{"_id", bson.D{{"token_id", "$token_id"}}},
+					{"all", bson.D{{"$sum", 1}}},
+					{"pending", bson.D{{"$sum", "$pending"}}},
+					{"done", bson.D{{"$sum", "$done"}}},
+				},
+			},
+		},
+		bson.D{{"$addFields", bson.D{{"token_id", "$_id.token_id"}}}},
+	}
+
+	cursor, err := r.DB.Collection(entity.TokenFileFragment{}.TableName()).Aggregate(ctx, f)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregation := []AggregateTokenMintingInfo{}
+	if err = cursor.All(ctx, &aggregation); err != nil {
+		return nil, err
+	}
+
+	return aggregation, nil
 }
