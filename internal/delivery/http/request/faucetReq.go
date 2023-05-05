@@ -10,11 +10,12 @@ type FaucetReq struct {
 }
 
 type FaucetAdminReq struct {
-	Url         string   `json:"url"`
-	Address     string   `json:"address"`
-	Type        string   `json:"type"`
-	Txhash      string   `json:"txhash"`
-	Source      string   `json:"source"`
-	ListAddress []string `json:"listAddress"`
-	Amount      float64  `json:"amount"`
+	Url         string             `json:"url"`
+	Address     string             `json:"address"`
+	Type        string             `json:"type"`
+	Txhash      string             `json:"txhash"`
+	Source      string             `json:"source"`
+	ListAddress []string           `json:"listAddress"`
+	MapAddress  map[string]float64 `json:"mapAddress"`
+	Amount      float64            `json:"amount"`
 }
