@@ -1414,7 +1414,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 				confirm = 1
 
 			} else {
-				return nil
+				continue
 			}
 		} else {
 			// if error maybe tx is pending or rejected
@@ -1454,7 +1454,7 @@ func (u Usecase) checkTxMintSend_ForTc() error {
 			p, err := u.Repo.FindProjectByTokenID(item.ProjectID)
 			if err != nil {
 				go u.trackMintNftBtcHistory(item.UUID, "JobMint_CheckTxMintSend", item.TableName(), item.Status, "project not found", "", true)
-				return err
+				continue
 			}
 
 			projectIndex, err := u.TcClient.GetProjectIndex(p.GenNFTAddr)
