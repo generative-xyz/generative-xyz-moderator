@@ -676,6 +676,15 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 	}
 
 	if isUpdated {
+		if project.IsBigFile {
+			dataObject.Thumbnail = project.Thumbnail
+			// TODO:
+			//linkToJson := project.ProcessingImages[0]
+			//_ = linkToJson
+			//tokeBFS := entity.TokenFromBase64{}
+			//err = json.Unmarshal([]byte(linkToJson), &tokeBFS)
+			// store google cloud
+		}
 		updated, err := u.Repo.UpdateOrInsertTokenUri(dataObject.ContractAddress, dataObject.TokenID, dataObject)
 		if err != nil {
 			logger.AtLog.Logger.Error("getTokenInfo", zap.Any("req", req), zap.String("action", "UpdateOrInsertTokenUri"), zap.Error(err))
