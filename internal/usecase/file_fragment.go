@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const ChunkSize = 350 // * 1024
+const ChunkSize = 350 * 1024
 
 func (u Usecase) JobFragmentBigFile() {
 	ctx := context.TODO()
