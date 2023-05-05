@@ -21,6 +21,14 @@ import (
 )
 
 func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil {
+		offset = 0
+	}
 	address := r.URL.Query().Get("address")
 	if address == "" {
 		ctx := r.Context()
@@ -48,7 +56,7 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	files, err := h.Usecase.Repo.FindPresetDatasetByName(text, address)
+	files, err := h.Usecase.Repo.FindPresetDatasetByName(text, address, int64(limit), int64(offset))
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
@@ -67,105 +75,6 @@ func (h *httpDelivery) schoolSearchDataset(w http.ResponseWriter, r *http.Reques
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
-
-// func (h *httpDelivery) schoolUpload(w http.ResponseWriter, r *http.Request) {
-
-// 	address := r.URL.Query().Get("address")
-// 	if address == "" {
-// 		ctx := r.Context()
-// 		iUserID := ctx.Value(utils.SIGNED_USER_ID)
-// 		userID, ok := iUserID.(string)
-// 		if !ok {
-// 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
-// 			return
-// 		}
-// 		userInfo, err := h.Usecase.UserProfile(userID)
-// 		if err != nil {
-// 			logger.AtLog.Logger.Error("httpDelivery.mintStatus.Usecase.UserProfile", zap.Error(err))
-// 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-// 			return
-// 		}
-// 		address = userInfo.WalletAddress
-// 	}
-// 	if address == "" {
-// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("address or accessToken cannot be empty"))
-// 		return
-// 	}
-
-// 	params := r.FormValue("params")
-
-// 	var paramsStruct structure.AISchoolModelParams
-
-// 	err := json.Unmarshal([]byte(params), &paramsStruct)
-// 	if err != nil {
-// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-// 		return
-// 	}
-// 	err = paramsStruct.SelfValidate()
-// 	if err != nil {
-// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-// 		return
-// 	}
-// 	usePFPDataset := false
-// 	customDataset := []string{}
-// 	_, datasetFile, err := r.FormFile("file")
-// 	if err != nil {
-// 		datasetStr := r.FormValue("datasets")
-// 		if datasetStr == "" {
-// 			usePFPDataset = true
-// 		} else {
-// 			customDataset = strings.Split(datasetStr, ",")
-// 		}
-// 	}
-// 	var newJob entity.AISchoolJob
-// 	uuid := uuid.NewString()
-// 	if !usePFPDataset {
-// 		dataset := datasetFile
-// 		datasetSize := dataset.Size
-// 		if datasetSize > 100000000 {
-// 			http.Error(w, "Dataset size must be less than 100MB", http.StatusBadRequest)
-// 			return
-// 		}
-// 		datasetName := dataset.Filename + "-" + uuid
-
-// 		log.Println("datasetName", datasetName)
-// 		log.Println("datasetSize", datasetSize)
-// 		d, _ := json.MarshalIndent(paramsStruct, "", " ")
-// 		log.Println("paramsStruct", string(d))
-// 		file, err := h.Usecase.UploadDatasetFile(r, uuid)
-// 		if err != nil {
-// 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-// 			return
-// 		}
-// 		log.Println("file", file)
-
-// 		newJob = entity.AISchoolJob{
-// 			JobID:       uuid,
-// 			Params:      params,
-// 			DatasetUUID: file.UUID,
-// 			Status:      "waiting",
-// 			CreatedBy:   address,
-// 		}
-// 	} else {
-// 		newJob = entity.AISchoolJob{
-// 			JobID:              uuid,
-// 			Params:             params,
-// 			DatasetUUID:        "",
-// 			Status:             "waiting",
-// 			CreatedBy:          address,
-// 			UsePFPDataset:      usePFPDataset,
-// 			CustomDatasetsUUID: customDataset,
-// 		}
-// 	}
-
-// 	err = h.Usecase.Repo.InsertAISChoolJob(&newJob)
-// 	if err != nil {
-// 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-// 		return
-// 	}
-
-// 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, uuid, "")
-// }
 
 func (h *httpDelivery) schoolListProgress(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -298,10 +207,19 @@ func (h *httpDelivery) schoolUploadDataset(w http.ResponseWriter, r *http.Reques
 
 	log.Println("datasetName", datasetName)
 	log.Println("datasetSize", datasetSize)
+	quota, err := h.Usecase.GetUserDatasetQuota(address)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if int64(quota)+datasetSize > 200000000 {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("Dataset quota exceeded"))
+		return
+	}
 
 	datasetPath := fmt.Sprintf("ai-school-dataset/%s/%s", address, datasetName)
 
-	file, err := h.Usecase.UploadDatasetFile(r, datasetPath)
+	file, err := h.Usecase.UploadDatasetFile(r, datasetPath, datasetName)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return

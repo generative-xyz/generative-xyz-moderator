@@ -16,6 +16,10 @@ const (
 	TokenCancelListing TokenActivityType = 2
 	TokenMatched       TokenActivityType = 3
 	TokenTransfer      TokenActivityType = 4
+	TokenMakeOffer     TokenActivityType = 5
+	TokenCancelOffer   TokenActivityType = 6
+	TokenAcceptOffer   TokenActivityType = 7
+	TokenPurchase      TokenActivityType = 8
 )
 
 type TokenActivity struct {
@@ -27,10 +31,12 @@ type TokenActivity struct {
 	UserBAddress  string            `bson:"user_b_address" json:"user_b_address"`
 	UserB         *Users            `bson:"-" json:"user_b"`
 	Amount        int64             `bson:"amount" json:"amount"`
+	Erc20Address  string            `bson:"erc_20_address" json:"erc_20_address"`
 	Time          *time.Time        `bson:"time" json:"time"`
 	InscriptionID string            `bson:"inscription_id" json:"inscription_id"`
 	ProjectID     string            `bson:"project_id" json:"project_id"`
 	TokenInfo     *TokenUri         `bson:"-" json:"token_info"`
+	BlockNumber   uint64            `bson:"block_number" json:"block_number"`
 }
 
 type FilterTokenActivities struct {

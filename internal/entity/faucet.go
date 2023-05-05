@@ -19,8 +19,8 @@ type Faucet struct {
 	UserTx      string `bson:"user_tx" json:"userTx"`
 	SharedLink  string `bson:"shared_link" json:"shared_link"`
 	Source      string `bson:"source" json:"source"`
-
-	ErrLogs string `bson:"err_logs" json:"-"`
+	Contract    string `bson:"contract" json:"contract"`
+	ErrLogs     string `bson:"err_logs" json:"-"`
 
 	StatusStr string `bson:"-" json:"status_str"`
 }
