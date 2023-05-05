@@ -2330,8 +2330,11 @@ func (u *Usecase) trackMintNftBtcHistory(id, name, table string, status interfac
 		responseMsgStr := fmt.Sprintf("%v", responseMsg)
 
 		preText := fmt.Sprintf("[App: %s][recordID %s] - %s", os.Getenv("JAEGER_SERVICE_NAME"), id, requestMsgStr)
-
-		if _, _, err := u.Slack.SendMessageToSlackWithChannel(os.Getenv("SLACK_MINT_NFT_CHANNEL_ID"), preText, name, responseMsgStr); err != nil {
+		slackChannel := os.Getenv("SLACK_MINT_BIG_FILE")
+		if slackChannel == "" {
+			slackChannel = os.Getenv("SLACK_MINT_NFT_CHANNEL_ID")
+		}
+		if _, _, err := u.Slack.SendMessageToSlackWithChannel(slackChannel, preText, name, responseMsgStr); err != nil {
 			fmt.Println("s.Slack.SendMessageToSlack err", err)
 		}
 	}
