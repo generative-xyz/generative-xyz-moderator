@@ -307,7 +307,7 @@ func (u Usecase) GetTCNonce() (uint64, error) {
 	return nonce, nil
 }
 
-func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) (int, error) {
+func (u Usecase) FragmentFile(ctx context.Context, TokenId, url string) (int, error) {
 
 	_, err := u.Repo.FindTokenByTokenID(TokenId)
 	if err != nil {
@@ -315,38 +315,49 @@ func (u Usecase) FragmentFile(ctx context.Context, TokenId, filePath string) (in
 		return 0, err
 	}
 
-	file, err := os.Open(filePath)
+	// Send a GET request with the Range header
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logger.AtLog.Logger.Error("Error opening file", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
 		return 0, err
 	}
-	defer file.Close()
+	req.Header.Set("Range", "bytes=0-")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	// Check if server supports partial content
+	if resp.StatusCode != http.StatusPartialContent {
+		return 0, fmt.Errorf("server does not support partial content")
+	}
 
 	// Create a buffer to read chunks of 350KB at a time
 	buffer := make([]byte, ChunkSize)
 	sequence := 0
 	for {
 		// Read from the file into the buffer
-		index, err := file.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			logger.AtLog.Logger.Error("Error reading file", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
+		// Read chunk from response body
+		index, err := resp.Body.Read(buffer)
+		if err != nil && err != io.EOF {
 			return 0, err
+		}
+		if index == 0 {
+			break
 		}
 
 		// Process the chunk of data as needed
 		// The buffer[:n] contains the actual data read from the file
-		if err = u.processFragmentData(ctx, filePath, TokenId, sequence, buffer[:index]); err != nil {
-			logger.AtLog.Logger.Error("Error processing data", zap.Error(err), zap.String("filePath", filePath), zap.String("TokenId", TokenId))
+		if err = u.processFragmentData(ctx, url, TokenId, sequence, buffer[:index]); err != nil {
+			logger.AtLog.Logger.Error("Error processing data", zap.Error(err), zap.String("filePath", url), zap.String("TokenId", TokenId))
 			return 0, err
 		}
 
 		// increment sequence
 		sequence++
 	}
-	logger.AtLog.Logger.Info("File fragmented", zap.String("filePath", filePath), zap.String("TokenId", TokenId), zap.Int("total fragments", sequence))
+	logger.AtLog.Logger.Info("File fragmented", zap.String("filePath", url), zap.String("TokenId", TokenId), zap.Int("total fragments", sequence))
 	return sequence, nil
 }
 
