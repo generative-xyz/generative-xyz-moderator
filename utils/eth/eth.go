@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -542,10 +543,12 @@ func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
 	}
 
 	if receipt.Status > 0 {
-		return receipt.Logs[0].Topics[3].Big(), nil
-
+		for _, rLog := range receipt.Logs {
+			if strings.ToLower(rLog.Topics[0].String()) == strings.ToLower(topic) {
+				return receipt.Logs[0].Topics[3].Big(), nil
+			}
+		}
 	}
-
 	return nil, nil
 }
 
