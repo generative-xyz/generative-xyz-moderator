@@ -545,7 +545,7 @@ func (c *Client) GetNftIDFromTx(tx, topic string) (*big.Int, error) {
 	if receipt.Status > 0 {
 		for _, rLog := range receipt.Logs {
 			if strings.ToLower(rLog.Topics[0].String()) == strings.ToLower(topic) {
-				return receipt.Logs[0].Topics[3].Big(), nil
+				return rLog.Topics[3].Big(), nil
 			}
 		}
 	}
