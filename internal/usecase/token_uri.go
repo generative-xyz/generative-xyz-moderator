@@ -615,6 +615,42 @@ func (u Usecase) getTokenInfo(req structure.GetTokenMessageReq) (*entity.TokenUr
 
 	} else {
 		logger.AtLog.Logger.Error("tokenFChan.Err", zap.String("tokenID", req.TokenID), zap.Error(tokenFChan.Err))
+
+		if project.IsBigFile {
+			dataObject.Thumbnail = project.Thumbnail
+			jsonFile := project.ProcessingImages[0]
+			fileName := strings.ReplaceAll(jsonFile, "https://cdn.generative.xyz/", "")
+			bytes, err := u.GCS.ReadFile(fileName)
+
+			if err == nil {
+				tokeBFS := entity.TokenFromBase64{}
+				err := json.Unmarshal(bytes, &tokeBFS)
+				if err == nil {
+					base64Image := tokeBFS.Image
+					i := strings.Index(base64Image, ",")
+					if i >= 0 {
+						now := time.Now().UTC().Unix()
+						name := fmt.Sprintf("thumb/%s-%d.png", dataObject.TokenID, now)
+						base64Image = base64Image[i+1:]
+						uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+						if err != nil {
+							logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", dataObject.TokenID), zap.Error(err))
+						} else {
+							logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", dataObject.TokenID), zap.Any("uploaded", uploaded))
+							thumbnail := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+							dataObject.Thumbnail = thumbnail
+							isUpdated = true
+						}
+					}
+
+				} else {
+					logger.AtLog.Logger.Error("json.Unmarshal", zap.Error(err))
+				}
+
+			} else {
+				logger.AtLog.Logger.Error("u.GCS.ReadFile", zap.String("fileName", fileName), zap.Error(err))
+			}
+		}
 	}
 
 	tokIdMini := dataObject.TokenIDInt % 100000
