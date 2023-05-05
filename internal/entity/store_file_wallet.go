@@ -7,8 +7,8 @@ import (
 
 type StoreFileWallet struct {
 	BaseEntity    `bson:",inline"`
-	WalletAddress string `bson:"walletAddress"` // the wallet address
-	PrivateKey    string `bson:"privateKey"`    // private key (has encrypt).
+	WalletAddress string `bson:"wallet_address"` // the wallet address
+	PrivateKey    string `bson:"private_key"`    // private key (has encrypt).
 }
 
 func (u StoreFileWallet) TableName() string {
