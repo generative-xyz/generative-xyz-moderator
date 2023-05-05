@@ -929,7 +929,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 	}
 
 	genService := generativeexplorer.NewGenerativeExplorer(u.Cache)
-
+	ctx := context.Background()
 	resp := []entity.TokenUriListingFilter{}
 	for _, item := range tokens.Result.([]entity.TokenUriListingFilter) {
 		if helpers.IsOrdinalProjectToken(item.TokenID) {
@@ -946,6 +946,8 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				}
 
 				item.Royalty = item.Project.Royalty
+				item.IsMinting = false
+				item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
 			}
 		} else {
 			item.Owner = entity.TokenURIListingOwner{
@@ -962,6 +964,24 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 			}
 
 			item.Royalty = item.Project.Royalty
+			item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
+			item.IsMinting = false
+
+			mintingInfo, err := u.Repo.AggregateMintingInfo(ctx, item.TokenID)
+			if err == nil {
+				if len(mintingInfo) >= 1 {
+					mtinfo := mintingInfo[0]
+					item.MintingInfo = entity.MintingInfo{
+						All:     mtinfo.All,
+						Done:    mtinfo.Done,
+						Pending: mtinfo.Pending,
+					}
+					if mtinfo.Done < mtinfo.All {
+						item.IsMinting = true
+					}
+				}
+			}
+
 		}
 
 		//spew.Dump(iResp)
