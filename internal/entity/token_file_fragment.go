@@ -8,8 +8,7 @@ import (
 type FileFragmentStatus int
 
 const (
-	FileFragmentStatusCreated FileFragmentStatus = iota + 1
-	FileFragmentStatusProcessing
+	FileFragmentStatusPending FileFragmentStatus = iota + 1
 	FileFragmentStatusDone
 	FileFragmentStatusError
 )
@@ -22,7 +21,9 @@ type TokenFileFragment struct {
 	Data       []byte             `json:"data" bson:"data"`
 	Status     FileFragmentStatus `json:"status" bson:"status"`
 	Note       string             `json:"note" bson:"note"`
-	UploadTime *time.Time         `json:"upload_time" bson:"upload_time"`
+	UploadedAt *time.Time         `json:"uploaded_at" bson:"uploaded_at"`
+	TxSendNft  string             `bson:"tx_send_nft" json:"tx_send_nft"`
+	TxStoreNft string             `bson:"tx_store_nft" json:"tx_store_nft"`
 	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
 }
 
