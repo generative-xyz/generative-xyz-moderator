@@ -182,6 +182,15 @@ type TokenUriListingFilter struct {
 	ProjectName   string        `bson:"project_name"`
 	CreatorName   string        `bson:"creator_name"`
 	OfferingID    string        `bson:"offering_id"`
+	IsMinting     bool          `bson:"-" json:"is_minting"`
+	MintingInfo   MintingInfo   `bson:"-" json:"minting_info"`
+}
+
+type MintingInfo struct {
+	TokenID string `bson:"token_id" json:"token_id"`
+	All     int    `bson:"all" json:"all"`
+	Pending int    `bson:"pending" json:"pending"`
+	Done    int    `bson:"done" json:"done"`
 }
 
 type PriceBRC20Obj struct {
