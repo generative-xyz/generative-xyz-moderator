@@ -2910,6 +2910,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "Is closed, default all",
+                        "name": "closed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Is finished, default all",
+                        "name": "finished",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "sort by field",
                         "name": "sort_by",

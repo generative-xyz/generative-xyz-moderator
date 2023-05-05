@@ -1079,6 +1079,7 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 
 	filterMoralisTokens := func(datas []nfts.MoralisToken) []nfts.MoralisToken {
 		results := make([]nfts.MoralisToken, 0, len(datas))
+
 		for _, data := range datas {
 			if data.IsERC1155Type() {
 				continue
@@ -1091,6 +1092,40 @@ func (u Usecase) ListNftFromMoralis(ctx context.Context, userId, userWallet, del
 					InscriptionID:  val.InscriptionID,
 				}
 			}
+
+			if data.Metadata == nil || data.MetadataString == nil {
+				key := fmt.Sprintf("authentic.%s.%s", data.TokenAddress, data.TokenID)
+				cached, err := u.Cache.GetData(key)
+				if err != nil || cached == nil {
+					resp, err := http.Get(data.TokenUri)
+					if err == nil {
+						body, err := io.ReadAll(resp.Body)
+						if err == nil {
+							jsonString := string(body)
+							jsonData := &nfts.MoralisTokenMetadata{}
+							err = json.Unmarshal(body, jsonData)
+							if err == nil {
+								data.Metadata = jsonData
+								data.MetadataString = &jsonString
+
+								u.Cache.SetStringData(key, jsonString)
+							}
+
+						}
+						resp.Body.Close()
+					}
+				} else {
+					bytes := []byte(*cached)
+					jsonData := &nfts.MoralisTokenMetadata{}
+					err = json.Unmarshal(bytes, jsonData)
+					if err == nil {
+						data.Metadata = jsonData
+						data.MetadataString = cached
+					}
+				}
+
+			}
+
 			results = append(results, data)
 		}
 		return results

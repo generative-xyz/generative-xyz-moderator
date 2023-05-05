@@ -145,6 +145,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auto-listing", h.autoListing).Methods("POST")
 	admin.HandleFunc("/check-refund", h.checkRefundMintBtc).Methods("POST")
 	admin.HandleFunc("/gen-temp-address", h.getMintFreeTemAddress).Methods("POST")
+	admin.HandleFunc("/faucet", h.requestFaucetAdmin).Methods("POST")
 
 	admin.HandleFunc("/auction/update-declared-now", h.updateDeclaredNow).Methods("POST")          // auction
 	admin.HandleFunc("/auction/crawl-list-winner-now", h.updateWinnerFromContract).Methods("POST") // auction

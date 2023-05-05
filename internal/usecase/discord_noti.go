@@ -156,6 +156,16 @@ func (u Usecase) NotifyNewAirdrop(airdrop *entity.Airdrop) error {
 	return nil
 }
 
+func (u Usecase) getBTCPriceInString(amount float64) string {
+	btcPrice, _ := helpers.GetExternalPrice("BTC")
+	usdPrice := 0.0
+	usdPriceString := "0"
+	if btcPrice != 0 {
+		usdPrice = amount * (btcPrice / 100000000)
+		usdPriceString = Commas(fmt.Sprintf("%v", int64(usdPrice)))
+	}
+	return usdPriceString
+}
 func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 
 	domain := os.Getenv("DOMAIN")
@@ -183,8 +193,9 @@ func (u Usecase) NotifyNewSale(order entity.DexBTCListing) error {
 	}
 	ownerName := owner.GetDisplayNameByWalletAddress()
 
+	usdPriceString := u.getBTCPriceInString(float64(order.Amount))
 	fields := make([]entity.Field, 0)
-	fields = addDiscordField(fields, "Sale Price", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), true)
+	fields = addDiscordField(fields, "Sale Price", fmt.Sprintf("%v ($%s USD)", u.resolveMintPriceBTC(fmt.Sprintf("%v", order.Amount)), usdPriceString), true)
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
 		Key:     "Buyer",
@@ -384,9 +395,9 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 			mintPrice = v.MintPrice
 		}
 	}
-
-	fields = addDiscordField(fields, "Mint Price", u.resolveMintPriceBTC(mintPrice), true)
 	mintPriceInNum, _ := strconv.Atoi(mintPrice)
+	usdPriceString := u.getBTCPriceInString(float64(mintPriceInNum))
+	fields = addDiscordField(fields, "Mint Price", fmt.Sprintf("%v ($%s USD)", u.resolveMintPriceBTC(mintPrice), usdPriceString), true)
 
 	fields = u.addUserDiscordField(addUserDiscordFieldReq{
 		Fields:  fields,
@@ -434,10 +445,10 @@ func (u Usecase) NotifyNFTMinted(inscriptionID string) error {
 	}
 
 	types := []entity.DiscordNotiType{entity.NEW_MINT}
-	if mintPriceInNum > 0 {
-		if tokenUri.ProjectID == PerceptronProjectID {
-			types = append(types, entity.NEW_MINT_PERCEPTRON)
-		} else if category == PFPsCategory {
+	if tokenUri.ProjectID == PerceptronProjectID {
+		types = append(types, entity.NEW_MINT_PERCEPTRON)
+	} else if mintPriceInNum > 0 {
+		if category == PFPsCategory {
 			types = append(types, entity.NEW_MINT_PFPS)
 		} else {
 			types = append(types, entity.NEW_MINT_ART)
@@ -943,8 +954,8 @@ func (u Usecase) CreateDiscordNoti(noti entity.DiscordNoti) error {
 func (u Usecase) TestSendNoti() {
 	domain := os.Getenv("DOMAIN")
 	if domain == "https://devnet.generative.xyz" {
-		//project, _ := u.Repo.FindProjectByTokenID("1")
-		incriptionID := "7000001"
+		//project, _ := u.Repo.FindProjectByTokenID("1001421")
+		incriptionID := "9925b5626058424d2fc93760fb3f86064615c184ac86b2d0c58180742683c2afi0"
 
 		//user, _ := u.Repo.FindUserByWalletAddress(project.CreatorAddrr)
 		//daoProject := &entity.DaoProject{}
@@ -956,10 +967,10 @@ func (u Usecase) TestSendNoti() {
 		//}
 
 		//u.NotifiNewProjectReport(project, domain, project.CreatorAddrr)
-		//u.Notifynewsale(entity.DexBTCListing{
+		//u.NotifyNewSale(entity.DexBTCListing{
 		//	SellerAddress: project.ContractAddress,
 		//	Buyer:         project.ContractAddress,
-		//	Amount:        100000000,
+		//	Amount:        23000093,
 		//	InscriptionID: incriptionID,
 		//})
 		//u.NotifyNewSale(entity.DexBTCListing{

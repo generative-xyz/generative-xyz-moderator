@@ -3807,6 +3807,14 @@ paths:
         in: query
         name: is_nft_owner
         type: string
+      - description: Is closed, default all
+        in: query
+        name: closed
+        type: boolean
+      - description: Is finished, default all
+        in: query
+        name: finished
+        type: boolean
       - description: sort by field
         in: query
         name: sort_by

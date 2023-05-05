@@ -29,7 +29,7 @@ func (r Repository) GetAISchoolJobByUUID(uuid string) (*entity.AISchoolJob, erro
 
 func (r Repository) GetAISchoolJobByCreator(address string, limit, offset int64) ([]entity.AISchoolJob, error) {
 	jobs := []entity.AISchoolJob{}
-	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"created_by": address}, &jobs, options.Find().SetSkip(offset).SetLimit(limit))
+	err := r.Find(context.Background(), entity.AISchoolJob{}.TableName(), bson.M{"created_by": address}, &jobs, options.Find().SetSort(bson.D{{"created_at", -1}}).SetSkip(offset).SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}
@@ -91,10 +91,9 @@ func (r Repository) GetPresetDatasetByID(id string) (*entity.AISchoolPresetDatas
 	return &file[0], nil
 }
 
-func (r Repository) FindPresetDatasetByName(name, creator string) ([]entity.AISchoolPresetDataset, error) {
+func (r Repository) FindPresetDatasetByName(name, creator string, limit, offset int64) ([]entity.AISchoolPresetDataset, error) {
 	files := []entity.AISchoolPresetDataset{}
 	filter := bson.D{
-		{"deleted_at", primitive.Null{}},
 		{"name", bson.D{{"$regex", primitive.Regex{Pattern: name, Options: "i"}}}},
 		{"$or",
 			bson.A{
@@ -106,11 +105,18 @@ func (r Repository) FindPresetDatasetByName(name, creator string) ([]entity.AISc
 						},
 					},
 				},
-				bson.D{{"is_private", false}},
+				bson.D{
+					{"$or",
+						bson.A{
+							bson.D{{"is_private", false}},
+							bson.D{{"is_private", primitive.Null{}}},
+						},
+					},
+				},
 			},
 		},
 	}
-	result, err := r.DB.Collection(entity.AISchoolPresetDataset{}.TableName()).Find(context.Background(), filter)
+	result, err := r.DB.Collection(entity.AISchoolPresetDataset{}.TableName()).Find(context.Background(), filter, options.Find().SetSkip(offset).SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}
