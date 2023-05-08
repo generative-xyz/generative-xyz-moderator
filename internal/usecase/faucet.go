@@ -522,9 +522,12 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 				if err != nil {
 					go u.sendSlack(tempItem.UUID, "JobFaucet_CheckTx.UpdateFaucet", "UpdateFaucet", err.Error())
 				}
+				go u.sendSlack(tempItem.UUID, "JobFaucet_CheckTx.UpdateStatusFaucetByTxTc", "Update status 3 before Re-Trigger: ", tempItem.Tx)
 				return nil
 			}
 
+		} else {
+			go u.sendSlack(tempItem.UUID, "JobFaucet_CheckTx.GetTransaction", "CheckTxBefore Re-Trigger: ", err.Error())
 		}
 
 		txBtc, err := u.SubmitTCToBtcChain(tempItem.Tx, feeRate)
