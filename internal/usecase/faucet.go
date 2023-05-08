@@ -509,6 +509,24 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	if len(faucetNeedTrigger) > 0 {
 		// submit raw data:
 		tempItem := faucetNeedTrigger[0]
+
+		// check tx tc first:
+		context, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		status, err := u.TcClient.GetTransaction(context, tempItem.Tx)
+		fmt.Println("GetTransaction status, err ", tempItem.Tx, status, err)
+		if err == nil {
+			if status > 0 {
+				// pass:
+				_, err = u.Repo.UpdateStatusFaucetByTxTc(tempItem.Tx, 3)
+				if err != nil {
+					go u.sendSlack(tempItem.UUID, "JobFaucet_CheckTx.UpdateFaucet", "UpdateFaucet", err.Error())
+				}
+				return nil
+			}
+
+		}
+
 		txBtc, err := u.SubmitTCToBtcChain(tempItem.Tx, feeRate)
 		if err != nil {
 			logger.AtLog.Logger.Error(fmt.Sprintf("ApiCreateFaucet.SubmitTCToBtcChain"), zap.Error(err))

@@ -192,6 +192,17 @@ func (r Repository) UpdateFaucetByTxTc(tx, txBtc string, status int) (*mongo.Upd
 	return result, nil
 }
 
+func (r Repository) UpdateStatusFaucetByTxTc(tx string, status int) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"tx", tx}}
+	update := bson.M{"$set": bson.M{"status": status}}
+	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (r Repository) ListFaucetPending() ([]entity.Faucet, error) {
 	faucets := []entity.Faucet{}
 	f := bson.M{}
