@@ -184,7 +184,7 @@ func (r Repository) UpdateFaucet(faucet *entity.Faucet) (*mongo.UpdateResult, er
 func (r Repository) UpdateFaucetByTxTc(tx, txBtc string, status int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"tx", tx}}
 	update := bson.M{"$set": bson.M{"status": status, "btc_tx": txBtc}}
-	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (r Repository) UpdateFaucetByTxTc(tx, txBtc string, status int) (*mongo.Upd
 func (r Repository) UpdateStatusFaucetByTxTc(tx string, status int) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"tx", tx}}
 	update := bson.M{"$set": bson.M{"status": status}}
-	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateOne(context.TODO(), filter, update)
+	result, err := r.DB.Collection(entity.Faucet{}.TableName()).UpdateMany(context.TODO(), filter, update)
 	if err != nil {
 		return nil, err
 	}
