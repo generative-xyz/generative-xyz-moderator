@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
@@ -33,6 +34,16 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 	volumeAmount := 0.0 //earning
 	widthDrawAmount := 0.0
 	refAmount := 0.0
+
+	project, err := u.Repo.FindTokenByTokenID(wr.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.ToLower(project.CreatorAddr) != strings.ToLower(walletAddress) {
+		err := errors.New(fmt.Sprintf("Yout don't have permission to make withdraw to this collection"))
+		return nil, err
+	}
 
 	requestEarnings, err := strconv.ParseFloat(wr.Amount, 10)
 	if err != nil {
@@ -311,7 +322,7 @@ func (u Usecase) FilterWidthdraw(data structure.FilterWithdraw) (*entity.Paginat
 }
 
 func (u Usecase) UpdateWithdraw(UUID string, status int) error {
-	logger.AtLog.Logger.Info("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status",  status))
+	logger.AtLog.Logger.Info("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status))
 	err := u.Repo.UpdateWithDrawStatus(UUID, status)
 	if err != nil {
 		logger.AtLog.Logger.Error("UpdateWithdraw", zap.String("UUID", UUID), zap.Int("status", status), zap.Error(err))
