@@ -70,7 +70,35 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	}
 	trackT2 := time.Since(t)
 
-	inscriptions, outputInscMap, err := u.InscriptionsByOutputs(outcoins, currentListing)
+	keyInscriptions := fmt.Sprintf("walletinfo.inscriptions.%s", address)
+	keyOutputInscMap := fmt.Sprintf("walletinfo.outputInscMap.%s", address)
+
+	inscriptions := make(map[string][]structure.WalletInscriptionInfo)
+	outputInscMap := make(map[string][]structure.WalletInscriptionByOutput)
+
+	cached, err := u.Cache.Exists(keyInscriptions)
+	if cached != nil && *cached == false {
+		inscriptions, outputInscMap, err = u.InscriptionsByOutputs(outcoins, currentListing)
+		if err != nil {
+			return nil, err
+		}
+
+		u.Cache.SetDataWithExpireTime(keyInscriptions, inscriptions, 900)   //15 min
+		u.Cache.SetDataWithExpireTime(keyOutputInscMap, outputInscMap, 900) //15 min
+	}
+
+	cachedInscriptions, _ := u.Cache.GetData(keyInscriptions)
+	cachedOutputInscMap, _ := u.Cache.GetData(keyOutputInscMap)
+
+	byteInscriptions := []byte(*cachedInscriptions)
+	byteOutputInscMap := []byte(*cachedOutputInscMap)
+
+	err = json.Unmarshal(byteInscriptions, &inscriptions)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(byteOutputInscMap, &outputInscMap)
 	if err != nil {
 		return nil, err
 	}
