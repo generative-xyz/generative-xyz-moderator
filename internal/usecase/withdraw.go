@@ -35,12 +35,12 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 	widthDrawAmount := 0.0
 	refAmount := 0.0
 
-	project, err := u.Repo.FindTokenByTokenID(wr.ID)
+	project, err := u.Repo.FindProjectByTokenIDOrGenNFTAddr(wr.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	if strings.ToLower(project.CreatorAddr) != strings.ToLower(walletAddress) {
+	if strings.ToLower(project.CreatorAddrr) != strings.ToLower(walletAddress) {
 		err := errors.New(fmt.Sprintf("Yout don't have permission to make withdraw to this collection"))
 		return nil, err
 	}
