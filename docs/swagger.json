@@ -4792,6 +4792,57 @@
                 }
             }
         },
+        "/project/{contractAddress}/{projectID}/{walletAddress}/allow-list-gm": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Create project's allow list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Create project's allow list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "contractAddress request",
+                        "name": "contractAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "projectID request",
+                        "name": "projectID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "walletAddress request",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/project/{genNFTAddr}/tokens": {
             "get": {
                 "description": "get tokens by project address",
@@ -4841,7 +4892,6 @@
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "csv",
                         "description": "attributes",
                         "name": "attributes",
                         "in": "query"
