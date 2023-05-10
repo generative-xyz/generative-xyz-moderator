@@ -95,6 +95,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	project.HandleFunc("/{contractAddress}/{projectID}", h.updateProject).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/tx-hash/{txHash}", h.updateProjectHash).Methods("PUT")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.createProjectAllowList).Methods("POST")
+	project.HandleFunc("/{contractAddress}/{projectID}/allow-list-gm", h.createProjectAllowListGM).Methods("POST")
 	project.HandleFunc("/{contractAddress}/{projectID}/allow-list", h.getProjectAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/counting-allow-list", h.getCountingAllowList).Methods("GET")
 	project.HandleFunc("/{contractAddress}/{projectID}/token", h.searchToken).Methods("GET")
