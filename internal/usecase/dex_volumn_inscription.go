@@ -134,7 +134,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
-	btcRate, err := helpers.GetExternalPrice("btc")
+	btcRate, err := helpers.GetExternalPrice(string(entity.BIT))
 	resp, err := u.MempoolService.AddressTransactions(gmWallet)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 
 	resp1 := &structure.AnalyticsProjectDeposit{
 		Value:        fmt.Sprintf("%d", total),
-		Currency:     "btc",
+		Currency:     string(entity.BIT),
 		CurrencyRate: btcRate,
 		UsdtValue:    usdt,
 		Items:        analyticItems,
@@ -210,7 +210,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				Err:   err,
 			}
 		}()
-		wallets, err := u.Repo.FindNewCityGmByType("eth")
+		wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 		if err == nil {
 			for _, wallet := range wallets {
 				temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, false)
@@ -271,7 +271,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				Err:   err,
 			}
 		}()
-		wallets, err := u.Repo.FindNewCityGmByType("btc")
+		wallets, err := u.Repo.FindNewCityGmByType(string(entity.BIT))
 		if err == nil {
 			for _, wallet := range wallets {
 				temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address, false)
