@@ -215,6 +215,24 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 		fromWallets := []string{
 			"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
 			"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
+			"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
+			"0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526",
+			"0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340",
+			"0x7729A5Cfe2b008B7B19525a10420E6f53941D2a4",
+			"0x4bF946271EEf390AC8c864A01F0D69bF3b858569",
+			"0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac",
+			"0x597c32011116c94994619Cf6De15b3Fdc061a983",
+			"0xB18278584bD3e41DB25453EE3c7DeDfc84040420",
+			"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
+			"0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3",
+			"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
+			"0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70",
+			"0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446",
+			"0xbf22409c832E944CeF2B33d9929b8905163Ae5d4",
+			"0xda9979247dC98023C0Ff6A59BC7C91bB627d4934",
+			"0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61",
+			"0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30",
+			"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
 		}
 		for _, wallet := range fromWallets {
 			temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, true)
@@ -269,6 +287,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			if !ok {
 				result.MapItems[item.From] = &etherscan.AddressTxItemResponse{
 					From:      item.From,
+					To:        item.To,
 					UsdtValue: item.UsdtValue,
 				}
 			} else {
