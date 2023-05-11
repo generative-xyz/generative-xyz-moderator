@@ -169,6 +169,7 @@ type AnalyticsProjectDeposit struct {
 	CurrencyRate float64                            `json:"currencyRate"`
 	UsdtValue    float64                            `json:"usdtValue"`
 	Items        []*etherscan.AddressTxItemResponse `json:"items"`
+	MapItems     map[string]*etherscan.AddressTxItemResponse
 }
 
 type AnalyticsProjectDepositChan struct {

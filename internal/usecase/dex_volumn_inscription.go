@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
+	"rederinghub.io/external/etherscan"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -98,12 +99,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		for _, item := range ethTx.Result {
 			item.From = tcAddress
 			itemTotalEth := utils.GetValue(item.Value, 18)
-			itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
-			item.UsdtValue = itemUsdtValue
-			item.ExtraPercent = 0
-			// TODO item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
-			// TODO percent := itemUsdtValue / usdtValue
-			// TODO item.Percent = float64(percent)
+			item.UsdtValue = utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
 		}
 
 		resp := &structure.AnalyticsProjectDeposit{}
@@ -175,15 +171,42 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 		}
 	}(btcDataChan)
 
-	dataFromChan := <-ethDataChan
-	if dataFromChan.Err != nil {
-		return nil, dataFromChan.Err
-	}
-
+	ethDataFromChan := <-ethDataChan
 	btcDataFromChan := <-btcDataChan
-	if btcDataFromChan.Err != nil {
-		return nil, btcDataFromChan.Err
+
+	result := &structure.AnalyticsProjectDeposit{}
+	if ethDataFromChan.Err == nil {
+		result.Items = append(result.Items, ethDataFromChan.Value.Items...)
+		result.UsdtValue += ethDataFromChan.Value.UsdtValue
 	}
 
-	return dataFromChan.Value, nil
+	if btcDataFromChan.Err == nil {
+		result.Items = append(result.Items, btcDataFromChan.Value.Items...)
+		result.UsdtValue += btcDataFromChan.Value.UsdtValue
+	}
+
+	if len(result.Items) > 0 {
+		for _, item := range result.Items {
+			_, ok := result.MapItems[item.From]
+			if !ok {
+				result.MapItems[item.From] = &etherscan.AddressTxItemResponse{
+					From:      item.From,
+					UsdtValue: item.UsdtValue,
+				}
+			} else {
+				result.MapItems[item.From].UsdtValue += item.UsdtValue
+			}
+		}
+		result.Items = []*etherscan.AddressTxItemResponse{}
+		for _, item := range result.MapItems {
+			result.Items = append(result.Items, item)
+		}
+		for _, item := range result.Items {
+			item.ExtraPercent = 0
+			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+			item.Percent = float64(item.UsdtValue / result.UsdtValue)
+		}
+	}
+
+	return result, nil
 }
