@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+	"rederinghub.io/utils"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -35,4 +37,18 @@ func (r Repository) FindNewCityGmByUserAddress(userAddress, typeReq string) (*en
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (r Repository) FindNewCityGmByType(typeReq string) ([]entity.NewCityGm, error) {
+	var projects []entity.NewCityGm
+	cursor, err := r.DB.Collection(utils.COLLECTION_PROJECTS).Find(context.TODO(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }
