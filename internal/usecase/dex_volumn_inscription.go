@@ -132,11 +132,11 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			}
 			counting := 0
 			for _, item := range ethTx.Result {
-				if oldData {
-					if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
-						continue
-					}
+				//if oldData {
+				if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
+					continue
 				}
+				//}
 				items = append(items, &etherscan.AddressTxItemResponse{
 					From:      tcAddress,
 					To:        gmAddress,
@@ -173,9 +173,8 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
-	return nil, errors.New("rate limit")
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc1.gmAddress." + tcWallet + "." + gmWallet)
+	key := fmt.Sprintf("gm-collections.deposit.btc2.gmAddress." + tcWallet + "." + gmWallet)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
@@ -201,68 +200,102 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		u.Cache.SetDataWithExpireTime(keyRate, btcRate, 60*60) // cache by 1 hour
 	}
 
-	resp, err := u.MempoolService.AddressTransactions(gmWallet)
-	time.Sleep(time.Millisecond * 500)
-	if err != nil {
-		return nil, err
-	}
+	analyticItems := []*etherscan.AddressTxItemResponse{}
+	if oldData {
+		resp, err := u.MempoolService.AddressTransactions(gmWallet)
+		time.Sleep(time.Millisecond * 500)
+		if err != nil {
+			return nil, err
+		}
 
-	vouts := []mempool_space.AddressTxItemResponseVout{}
-	for _, item := range resp {
-		if item.Status.Confirmed {
-			if oldData {
-				isContinue := true
-				for _, v := range item.Vin {
-					if strings.ToLower(v.Prevout.Scriptpubkey_address) == strings.ToLower(tcWallet) {
-						isContinue = false
+		vouts := []mempool_space.AddressTxItemResponseVout{}
+		for _, item := range resp {
+			if item.Status.Confirmed {
+				if oldData {
+					isContinue := true
+					for _, v := range item.Vin {
+						if strings.ToLower(v.Prevout.Scriptpubkey_address) == strings.ToLower(tcWallet) {
+							isContinue = false
+						}
+					}
+					if isContinue {
+						continue
 					}
 				}
-				if isContinue {
-					continue
-				}
-			}
-			vs := item.Vout
-			for _, v := range vs {
-				if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
-					vouts = append(vouts, v)
+				vs := item.Vout
+				for _, v := range vs {
+					if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
+						vouts = append(vouts, v)
+					}
 				}
 			}
 		}
-	}
 
-	analyticItems := []*etherscan.AddressTxItemResponse{}
-	total := int64(0)
-	for _, vout := range vouts {
-		value := fmt.Sprintf("%d", vout.Value)
-		analyticItem := &etherscan.AddressTxItemResponse{
-			From:     tcWallet,
-			To:       vout.ScriptpubkeyAddress,
-			Value:    value,
-			Currency: string(entity.BIT),
+		total := int64(0)
+		for _, vout := range vouts {
+			analyticItem := &etherscan.AddressTxItemResponse{
+				From:      tcWallet,
+				To:        vout.ScriptpubkeyAddress,
+				Value:     fmt.Sprintf("%d", vout.Value),
+				Currency:  string(entity.BIT),
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", vout.Value), 8)), btcRate),
+			}
+
+			total += vout.Value
+			analyticItems = append(analyticItems, analyticItem)
 		}
 
-		itemTotalEth := utils.GetValue(value, 8)
-		itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), btcRate)
-		analyticItem.UsdtValue = itemUsdtValue
+		amount := fmt.Sprintf("%d", total)
 
-		total += vout.Value
-		analyticItems = append(analyticItems, analyticItem)
+		amountF := utils.GetValue(amount, float64(8))
+		usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
+
+		resp1 := &structure.AnalyticsProjectDeposit{
+			Value:        fmt.Sprintf("%d", total),
+			Currency:     string(entity.BIT),
+			CurrencyRate: btcRate,
+			UsdtValue:    usdt,
+			Items:        analyticItems,
+		}
+		u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
+		return resp1, nil
+	} else {
+		_, bs, err := u.buildBTCClient()
+		if err != nil {
+			return nil, err
+		}
+		balance, confirm, err := bs.GetBalance(gmWallet)
+		time.Sleep(time.Millisecond * 100)
+		if err != nil {
+			return nil, err
+		}
+		if balance.Cmp(big.NewInt(0)) > 0 {
+			if confirm == 0 {
+				return nil, errors.New("not confirm - " + gmWallet)
+			}
+			amount := fmt.Sprintf("%d", balance)
+			amountF := utils.GetValue(amount, float64(8))
+			usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
+			item := &etherscan.AddressTxItemResponse{
+				From:      tcWallet,
+				To:        gmWallet,
+				Value:     fmt.Sprintf("%d", balance),
+				Currency:  string(entity.BIT),
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", balance), 8)), btcRate),
+			}
+			analyticItems = append(analyticItems, item)
+			resp1 := &structure.AnalyticsProjectDeposit{
+				Value:        fmt.Sprintf("%d", balance),
+				Currency:     string(entity.BIT),
+				CurrencyRate: btcRate,
+				UsdtValue:    usdt,
+				Items:        analyticItems,
+			}
+			u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
+			return resp1, nil
+		}
+		return nil, errors.New("not balance - " + gmWallet)
 	}
-
-	amount := fmt.Sprintf("%d", total)
-
-	amountF := utils.GetValue(amount, float64(8))
-	usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
-
-	resp1 := &structure.AnalyticsProjectDeposit{
-		Value:        fmt.Sprintf("%d", total),
-		Currency:     string(entity.BIT),
-		CurrencyRate: btcRate,
-		UsdtValue:    usdt,
-		Items:        analyticItems,
-	}
-	u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
-	return resp1, nil
 }
 
 func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
