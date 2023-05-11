@@ -303,7 +303,10 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
-	if err != nil {
+	if !useCaching || err != nil {
+		if useCaching {
+			return nil, err
+		}
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
 		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
 
