@@ -219,7 +219,7 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		return 30.0
 	}
 
-	tcBalance, err := u.TcClient.GetBalance(context.TODO(), address)
+	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
 	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
 		return 20.0
 	}
