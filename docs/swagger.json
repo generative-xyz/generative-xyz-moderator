@@ -671,7 +671,7 @@
         },
         "/charts/collections/{projectID}/charts": {
             "get": {
-                "description": "get list CollectionListing",
+                "description": "GM deposit analytics",
                 "consumes": [
                     "application/json"
                 ],
@@ -680,6 +680,43 @@
                 ],
                 "tags": [
                     "CollectionListing"
+                ],
+                "summary": "GM deposit analytics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "projectID",
+                        "name": "projectID",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/charts/gm-collections/deposit": {
+            "get": {
+                "description": "get list CollectionListing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
                 ],
                 "summary": "CollectionListing",
                 "parameters": [
@@ -4892,6 +4929,7 @@
                         "items": {
                             "type": "string"
                         },
+                        "collectionFormat": "csv",
                         "description": "attributes",
                         "name": "attributes",
                         "in": "query"
