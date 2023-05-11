@@ -118,7 +118,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	return nil, errors.New("not balance")
 }
 
-func (u Usecase) GetChartDataBTCForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string) (*structure.AnalyticsProjectDeposit, error) {
 	btcRate, err := helpers.GetExternalPrice("btc")
 	_ = btcRate
 	_ = err
@@ -162,8 +162,17 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				Err:   err,
 			}
 		}()
-
-		data, err = u.GetChartDataBTCForGMCollection()
+		wallets, err := u.Repo.FindNewCityGmByType("btc")
+		if err != nil {
+			for _, wallet := range wallets {
+				temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address)
+				if err != nil && temp != nil {
+					data.Items = append(data.Items, temp.Items...)
+					data.UsdtValue += temp.UsdtValue
+					data.Value += temp.Value
+				}
+			}
+		}
 	}(btcDataChan)
 
 	dataFromChan := <-ethDataChan
