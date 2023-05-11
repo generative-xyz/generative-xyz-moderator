@@ -2420,6 +2420,30 @@ paths:
     get:
       consumes:
       - application/json
+      description: GM deposit analytics
+      parameters:
+      - description: projectID
+        in: path
+        name: projectID
+        type: string
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: GM deposit analytics
+      tags:
+      - CollectionListing
+  /charts/gm-collections/deposit:
+    get:
+      consumes:
+      - application/json
       description: get list CollectionListing
       parameters:
       - description: projectID
@@ -2439,7 +2463,7 @@ paths:
             $ref: '#/definitions/response.JsonResponse'
       summary: CollectionListing
       tags:
-      - CollectionListing
+      - Charts
   /charts/tokens/{tokenID}/charts:
     get:
       consumes:
@@ -4845,7 +4869,8 @@ paths:
         in: query
         name: tokenID
         type: string
-      - description: attributes
+      - collectionFormat: csv
+        description: attributes
         in: query
         items:
           type: string

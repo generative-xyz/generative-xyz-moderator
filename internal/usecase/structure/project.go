@@ -160,3 +160,11 @@ type ProjectFloorPrice struct {
 	ID    string `bson:"_id" json:"id"`
 	Floor uint64 `bson:"floor" json:"floor"`
 }
+
+type AnalyticsProjectDeposit struct {
+	Value        string      `json:"value"`
+	Currency     string      `json:"currency"`
+	CurrencyRate float64     `json:"currencyRate"`
+	UsdtValue    float64     `json:"usdtValue"`
+	Items        interface{} `json:"items"`
+}
