@@ -263,6 +263,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
 					data.Value += temp.Value
+					data.CurrencyRate = temp.CurrencyRate
 				}
 			}
 		}
