@@ -382,7 +382,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			result.UsdtValue = usdtValue
 		}
 
-		u.Cache.SetDataWithExpireTime(key, result, 300)
+		u.Cache.SetDataWithExpireTime(key, result, 1800)
 		return result, nil
 	}
 
