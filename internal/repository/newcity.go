@@ -59,7 +59,7 @@ func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, 
 		"status": bson.M{"$in": statuses},
 	}
 
-	cursor, err := r.DB.Collection(entity.Faucet{}.TableName()).Find(context.TODO(), filter)
+	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}

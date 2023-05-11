@@ -110,7 +110,11 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 	var returnData []*entity.NewCityGm
 
-	list, _ := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx, 3 confirm
+	list, err := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx, 3 confirm
+
+	if err != nil {
+		return nil, err
+	}
 
 	ethWithdrawAddrses := os.Getenv("GM_ETH_WITHDRAW_ADDRESS")
 
@@ -120,7 +124,6 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 	if len(list) > 0 {
 		for _, item := range list {
-			// hardcode for test withdraw funds:
 
 			if item.Type == utils.NETWORK_ETH {
 
@@ -131,6 +134,8 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 				if balance != nil && balance.Cmp(big.NewInt(0)) > 0 {
 
+					fmt.Println("balance: ", balance)
+
 					// update balance
 					item.NativeAmount = append(item.NativeAmount, balance.String())
 					_, err := u.Repo.UpdateNewCityGm(item)
@@ -138,6 +143,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 						return nil, err
 					}
 
+					// hardcode for test withdraw funds:
 					if item.UserAddress == ethWithdrawAddrses {
 						// send all:
 						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
@@ -155,6 +161,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 						_ = value
 
 						item.TxNatives = append(item.NativeAmount, tx)
+						item.Status = 2 // tx pending
 						_, err = u.Repo.UpdateNewCityGm(item)
 						if err != nil {
 							return nil, err
