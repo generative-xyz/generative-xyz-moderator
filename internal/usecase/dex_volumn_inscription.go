@@ -240,6 +240,8 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				gmAddress = "0x360382fa386dB659a96557A2c7F9Ce7195de024E"
 			}
 			fromWallets := []string{
+				"0x2c7aFd015A4080C835139E94D0f624bE552b9c66",
+				"0x46Ad79eFd29B4212eE2dB32153c682Db06614Ce5",
 				"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
 				"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
 				"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
