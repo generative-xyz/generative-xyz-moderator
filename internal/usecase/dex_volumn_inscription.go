@@ -8,6 +8,8 @@ import (
 	"math/big"
 	"os"
 	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
+
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -131,11 +133,52 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string) (*structure.AnalyticsProjectDeposit, error) {
 	btcRate, err := helpers.GetExternalPrice("btc")
-	_ = btcRate
-	_ = err
+	resp, err := u.MempoolService.AddressTransactions(gmWallet)
+	if err != nil {
+		return nil, err
+	}
 
-	resp := &structure.AnalyticsProjectDeposit{}
-	return resp, nil
+	vouts := []mempool_space.AddressTxItemResponseVout{}
+	for _, item := range resp {
+		vs := item.Vout
+		for _, v := range vs {
+			if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
+				vouts = append(vouts, v)
+			}
+		}
+	}
+
+	analyticItems := []*etherscan.AddressTxItemResponse{}
+	total := int64(0)
+	for _, vout := range vouts {
+		value := fmt.Sprintf("%d", vout.Value)
+		analyticItem := &etherscan.AddressTxItemResponse{
+			From:  "",
+			To:    vout.ScriptpubkeyAddress,
+			Value: value,
+		}
+
+		itemTotalEth := utils.GetValue(value, 8)
+		itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), btcRate)
+		analyticItem.UsdtValue = itemUsdtValue
+
+		total += vout.Value
+		analyticItems = append(analyticItems, analyticItem)
+	}
+
+	amount := fmt.Sprintf("%d", total)
+
+	amountF := utils.GetValue(amount, float64(8))
+	usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
+
+	resp1 := &structure.AnalyticsProjectDeposit{
+		Value:        fmt.Sprintf("%d", total),
+		Currency:     "btc",
+		CurrencyRate: btcRate,
+		UsdtValue:    usdt,
+		Items:        analyticItems,
+	}
+	return resp1, nil
 }
 
 func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
@@ -193,7 +236,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			}
 		}()
 		wallets, err := u.Repo.FindNewCityGmByType("btc")
-		if err != nil {
+		if err == nil {
 			for _, wallet := range wallets {
 				temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address)
 				if err != nil && temp != nil {
