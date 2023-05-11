@@ -79,7 +79,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	ethRate, err := helpers.GetExternalPrice(string(entity.ETH))
 	if err != nil {
 		return nil, err
@@ -99,14 +99,18 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	if totalEth > 0 {
 		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
 		counting := 0
+		var items []*etherscan.AddressTxItemResponse
 		for _, item := range ethTx.Result {
-			if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
-				continue
+			if oldData {
+				if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
+					continue
+				}
 			}
-			item.From = tcAddress
-			item.To = gmAddress
-			itemTotalEth := utils.GetValue(item.Value, 18)
-			item.UsdtValue = utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
+			items = append(items, &etherscan.AddressTxItemResponse{
+				From:      tcAddress,
+				To:        gmAddress,
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
+			})
 			counting++
 		}
 		if counting == 0 {
@@ -118,7 +122,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp.Currency = string(entity.ETH)
 		resp.Value = ethBL.Result
 		resp.UsdtValue = usdtValue
-		resp.Items = ethTx.Result
+		resp.Items = items
 
 		return resp, nil
 	}
@@ -148,16 +152,17 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			}
 		}()
 		wallets, err := u.Repo.FindNewCityGmByType("eth")
-		if err != nil {
+		if err == nil {
 			for _, wallet := range wallets {
-				temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address)
-				if err != nil && temp != nil {
+				temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, false)
+				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
 					data.Value += temp.Value
 				}
 			}
 		}
+		err = nil
 
 		// for old
 		gmAddress := os.Getenv("GM_ETH_ADDERSS")
@@ -166,10 +171,11 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 		}
 		fromWallets := []string{
 			"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
+			"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
 		}
 		for _, wallet := range fromWallets {
-			temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress)
-			if err != nil && temp != nil {
+			temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, true)
+			if err == nil && temp != nil {
 				data.Items = append(data.Items, temp.Items...)
 				data.UsdtValue += temp.UsdtValue
 				data.Value += temp.Value
@@ -203,17 +209,18 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 	btcDataFromChan := <-btcDataChan
 
 	result := &structure.AnalyticsProjectDeposit{}
-	if ethDataFromChan.Err == nil {
+	if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
 		result.Items = append(result.Items, ethDataFromChan.Value.Items...)
 		result.UsdtValue += ethDataFromChan.Value.UsdtValue
 	}
 
-	if btcDataFromChan.Err == nil {
+	if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
 		result.Items = append(result.Items, btcDataFromChan.Value.Items...)
 		result.UsdtValue += btcDataFromChan.Value.UsdtValue
 	}
 
 	if len(result.Items) > 0 {
+		result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 		for _, item := range result.Items {
 			_, ok := result.MapItems[item.From]
 			if !ok {
@@ -230,16 +237,18 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			result.Items = append(result.Items, item)
 		}
 		usdtExtra := 0.0
+		usdtValue := 0.0
 		for _, item := range result.Items {
 			item.ExtraPercent = u.GetExtraPercent(item.From)
 			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
 			usdtExtra += item.UsdtValueExtra
-
+			usdtValue += item.UsdtValue
 		}
 		for _, item := range result.Items {
-			item.Percent = item.UsdtValueExtra / usdtExtra
+			item.Percent = item.UsdtValueExtra / usdtExtra * 100
 			item.GMReceive = item.Percent * 80000
 		}
+		result.UsdtValue = usdtValue
 	}
 
 	return result, nil
