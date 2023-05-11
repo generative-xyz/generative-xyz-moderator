@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"math/big"
 	"os"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
-
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -135,6 +135,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
+	return nil, errors.New("rate limit")
 	btcRate, err := helpers.GetExternalPrice(string(entity.BIT))
 	resp, err := u.MempoolService.AddressTransactions(gmWallet)
 	if err != nil {
@@ -201,6 +202,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
+	u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
 	if err != nil {
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
@@ -224,6 +226,9 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 						data.UsdtValue += temp.UsdtValue
 						data.Value += temp.Value
 						data.CurrencyRate = temp.CurrencyRate
+					}
+					if err != nil {
+						u.Logger.ErrorAny("GetChartDataEthForGMCollection", zap.Any("err", err))
 					}
 				}
 			}
@@ -264,6 +269,9 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					data.Value += temp.Value
 					data.CurrencyRate = temp.CurrencyRate
 				}
+				if err != nil {
+					u.Logger.ErrorAny("GetChartDataEthForGMCollection", zap.Any("err", err))
+				}
 			}
 		}(ethDataChan)
 
@@ -280,11 +288,14 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			if err == nil {
 				for _, wallet := range wallets {
 					temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address, false)
-					if err != nil && temp != nil {
+					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
 						data.Value += temp.Value
 						data.CurrencyRate = temp.CurrencyRate
+					}
+					if err != nil {
+						u.Logger.ErrorAny("GetChartDataBTCForGMCollection", zap.Any("err", err))
 					}
 				}
 			}
@@ -309,6 +320,9 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					data.UsdtValue += temp.UsdtValue
 					data.Value += temp.Value
 					data.CurrencyRate = temp.CurrencyRate
+				}
+				if err != nil {
+					u.Logger.ErrorAny("GetChartDataBTCForGMCollection", zap.Any("err", err))
 				}
 			}
 
