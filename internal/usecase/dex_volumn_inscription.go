@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
+	"math/big"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
@@ -202,11 +204,30 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			result.Items = append(result.Items, item)
 		}
 		for _, item := range result.Items {
-			item.ExtraPercent = 0
+			item.ExtraPercent = u.getExtraPercent(item.From)
 			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
 			item.Percent = float64(item.UsdtValue / result.UsdtValue)
 		}
 	}
 
 	return result, nil
+}
+
+func (u Usecase) getExtraPercent(address string) float64 {
+	user, err := u.Repo.FindUserByWalletAddress(address)
+	if err == nil && user.UUID != "" {
+		return 30.0
+	}
+
+	tcBalance, err := u.TcClient.GetBalance(context.TODO(), address)
+	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
+		return 20.0
+	}
+
+	allow, err := u.Repo.GetProjectAllowList("999998", address)
+	if err == nil && allow.UUID != "" {
+		return 10.0
+	}
+
+	return 0.0
 }
