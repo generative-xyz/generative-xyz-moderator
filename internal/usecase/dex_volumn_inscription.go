@@ -138,9 +138,9 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
-	return nil, errors.New("rate limit")
 	btcRate, err := helpers.GetExternalPrice(string(entity.BIT))
 	resp, err := u.MempoolService.AddressTransactions(gmWallet)
+	time.Sleep(time.Millisecond * 500)
 	if err != nil {
 		return nil, err
 	}
