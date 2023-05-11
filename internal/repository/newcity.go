@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
 )
@@ -38,6 +39,20 @@ func (r Repository) FindNewCityGmByUserAddress(userAddress, typeReq string) (*en
 	return resp, nil
 }
 
+func (r Repository) FindNewCityGmByType(typeReq string) ([]entity.NewCityGm, error) {
+	var projects []entity.NewCityGm
+	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), bson.D{{"type", typeReq}})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
 func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, error) {
 	resp := []*entity.NewCityGm{}
 	filter := bson.M{
@@ -54,4 +69,14 @@ func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, 
 	}
 
 	return resp, nil
+}
+
+func (r Repository) UpdateNewCityGm(newCityGm *entity.NewCityGm) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"uuid", newCityGm.UUID}}
+	result, err := r.UpdateOne(entity.NewCityGm{}.TableName(), filter, newCityGm)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

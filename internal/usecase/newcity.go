@@ -108,6 +108,8 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 // admin
 func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
+	var returnData []*entity.NewCityGm
+
 	list, _ := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx, 3 confirm
 
 	ethWithdrawAddrses := os.Getenv("GM_ETH_WITHDRAW_ADDRESS")
@@ -119,19 +121,24 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 	if len(list) > 0 {
 		for _, item := range list {
 			// hardcode for test withdraw funds:
-			if item.UserAddress == ethWithdrawAddrses {
-				if item.Type == utils.NETWORK_ETH {
 
-					// check balance:
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
-					balance, _ := u.EthClient.GetBalance(ctx, item.Address)
+			if item.Type == utils.NETWORK_ETH {
 
-					if balance != nil && balance.Cmp(big.NewInt(0)) > 0 {
+				// check balance:
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				balance, _ := u.EthClient.GetBalance(ctx, item.Address)
 
-						// update balance
-						item.NativeAmount = append(item.NativeAmount, balance.String())
+				if balance != nil && balance.Cmp(big.NewInt(0)) > 0 {
 
+					// update balance
+					item.NativeAmount = append(item.NativeAmount, balance.String())
+					_, err := u.Repo.UpdateNewCityGm(item)
+					if err != nil {
+						return nil, err
+					}
+
+					if item.UserAddress == ethWithdrawAddrses {
 						// send all:
 						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
 						if err != nil {
@@ -145,12 +152,24 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
 							continue
 						}
+						_ = value
+
+						item.TxNatives = append(item.NativeAmount, tx)
+						_, err = u.Repo.UpdateNewCityGm(item)
+						if err != nil {
+							return nil, err
+						}
+
+						returnData = append(returnData, item)
 					}
 
-				} else if item.Type == utils.NETWORK_BTC {
-					// todo
 				}
+
+			} else if item.Type == utils.NETWORK_BTC {
+				// todo
 			}
+
 		}
 	}
+	return returnData, nil
 }

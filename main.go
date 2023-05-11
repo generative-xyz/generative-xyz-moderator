@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
 	"time"
 
 	"go.uber.org/zap"
@@ -174,6 +175,7 @@ func startServer() {
 	}
 	ethClientDex := eth.NewClient(ethDexClientWrap)
 	eScan := etherscan.NewEtherscanService(conf, cache)
+	mpService := mempool_space.NewMempoolService(conf, cache)
 	// init blockcypher service:
 	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
 
@@ -206,6 +208,7 @@ func startServer() {
 		TcClientPublicNode: tcClientPublic, // for tc chain
 		BsClient:           bsClient,       // for btc/blockcypher service
 		EtherscanService:   eScan,
+		MempoolService:     mpService,
 	}
 
 	repo, err := repository.NewRepository(&g)
