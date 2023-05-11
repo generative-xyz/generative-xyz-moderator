@@ -74,7 +74,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataEthForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
 	ethRate, err := helpers.GetExternalPrice(string(entity.ETH))
 	if err != nil {
 		return nil, err
@@ -110,4 +110,27 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 	resp.Items = ethTx.Result
 
 	return resp, nil
+}
+
+func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+	ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
+	go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
+		data := &structure.AnalyticsProjectDeposit{}
+		var err error
+		defer func() {
+			ethDataChan <- structure.AnalyticsProjectDepositChan{
+				Value: data,
+				Err:   err,
+			}
+		}()
+
+		data, err = u.GetChartDataEthForGMCollection()
+	}(ethDataChan)
+
+	dataFromChan := <-ethDataChan
+	if dataFromChan.Err != nil {
+		return nil, dataFromChan.Err
+	}
+
+	return dataFromChan.Value, nil
 }
