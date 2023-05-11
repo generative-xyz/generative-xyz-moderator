@@ -2,6 +2,7 @@ package global
 
 import (
 	"rederinghub.io/external/etherscan"
+	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/utils/blockchain"
@@ -46,4 +47,5 @@ type Global struct {
 	TcClient, TcClientPublicNode, EthClient, EthClientDex *eth.Client
 	BsClient                                              *btc.BlockcypherService
 	EtherscanService                                      *etherscan.EtherscanService
+	MempoolService                                        *mempool_space.MempoolService
 }

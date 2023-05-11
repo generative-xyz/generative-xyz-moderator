@@ -114,8 +114,19 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	return resp, nil
 }
 
+func (u Usecase) GetChartDataBTCForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+	btcRate, err := helpers.GetExternalPrice("btc")
+	_ = btcRate
+	_ = err
+
+	resp := &structure.AnalyticsProjectDeposit{}
+	return resp, nil
+}
+
 func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
 	ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
+	btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
+
 	go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
 		data := &structure.AnalyticsProjectDeposit{}
 		var err error
@@ -129,10 +140,27 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 
 		data, err = u.GetChartDataEthForGMCollection("", "")
 	}(ethDataChan)
+	go func(btcDataChan chan structure.AnalyticsProjectDepositChan) {
+		data := &structure.AnalyticsProjectDeposit{}
+		var err error
+		defer func() {
+			btcDataChan <- structure.AnalyticsProjectDepositChan{
+				Value: data,
+				Err:   err,
+			}
+		}()
+
+		data, err = u.GetChartDataBTCForGMCollection()
+	}(btcDataChan)
 
 	dataFromChan := <-ethDataChan
 	if dataFromChan.Err != nil {
 		return nil, dataFromChan.Err
+	}
+
+	btcDataFromChan := <-btcDataChan
+	if btcDataFromChan.Err != nil {
+		return nil, btcDataFromChan.Err
 	}
 
 	return dataFromChan.Value, nil
