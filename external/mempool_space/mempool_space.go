@@ -29,12 +29,12 @@ func NewMempoolService(conf *config.Config, cache redis.IRedisCache) *MempoolSer
 
 func (m MempoolService) generateUrl(path string) string {
 
-	fullUrl := fmt.Sprintf("%s?%s", m.serverURL, path)
+	fullUrl := fmt.Sprintf("%s/%s", m.serverURL, path)
 	return fullUrl
 }
 
 func (m MempoolService) AddressTransactions(address string) ([]AddressTxItemResponse, error) {
-	path := fmt.Sprintf(TxAddressURL, "address")
+	path := fmt.Sprintf(TxAddressURL, address)
 	fullUrl := m.generateUrl(path)
 	data, _, err := m.request(fullUrl, "GET", nil, nil)
 	if err != nil {
