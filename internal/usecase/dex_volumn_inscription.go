@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"rederinghub.io/internal/entity"
@@ -80,38 +81,41 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	}
 
 	//gmAddress := os.Getenv("GM_ETH_ADDERSS")
-	//ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
-	//if err != nil {
-	//	return nil, err
-	//}
+	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
+	if err != nil {
+		return nil, err
+	}
 
 	ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	//totalEth := utils.GetValue(ethBL.Result, 18)
-	//usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
+	totalEth := utils.GetValue(ethBL.Result, 18)
+	if totalEth > 0 {
+		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
 
-	for _, item := range ethTx.Result {
-		item.From = tcAddress
-		itemTotalEth := utils.GetValue(item.Value, 18)
-		itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
-		item.UsdtValue = itemUsdtValue
-		item.ExtraPercent = 0
-		// TODO item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
-		// TODO percent := itemUsdtValue / usdtValue
-		// TODO item.Percent = float64(percent)
+		for _, item := range ethTx.Result {
+			item.From = tcAddress
+			itemTotalEth := utils.GetValue(item.Value, 18)
+			itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
+			item.UsdtValue = itemUsdtValue
+			item.ExtraPercent = 0
+			// TODO item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+			// TODO percent := itemUsdtValue / usdtValue
+			// TODO item.Percent = float64(percent)
+		}
+
+		resp := &structure.AnalyticsProjectDeposit{}
+		resp.CurrencyRate = ethRate
+		resp.Currency = string(entity.ETH)
+		resp.Value = ethBL.Result
+		resp.UsdtValue = usdtValue
+		resp.Items = ethTx.Result
+
+		return resp, nil
 	}
-
-	resp := &structure.AnalyticsProjectDeposit{}
-	//resp.CurrencyRate = ethRate
-	//resp.Currency = string(entity.ETH)
-	//resp.Value = ethBL.Result
-	//resp.UsdtValue = usdtValue
-	resp.Items = ethTx.Result
-
-	return resp, nil
+	return nil, errors.New("not balance")
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
@@ -136,10 +140,19 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				Err:   err,
 			}
 		}()
-		// TODO call database to get list and loop
-
-		data, err = u.GetChartDataEthForGMCollection("", "")
+		wallets, err := u.Repo.FindNewCityGmByType("eth")
+		if err != nil {
+			for _, wallet := range wallets {
+				temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address)
+				if err != nil && temp != nil {
+					data.Items = append(data.Items, temp.Items...)
+					data.UsdtValue += temp.UsdtValue
+					data.Value += temp.Value
+				}
+			}
+		}
 	}(ethDataChan)
+
 	go func(btcDataChan chan structure.AnalyticsProjectDepositChan) {
 		data := &structure.AnalyticsProjectDeposit{}
 		var err error
