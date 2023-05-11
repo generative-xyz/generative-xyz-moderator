@@ -21,4 +21,5 @@ type AddressTxItemResponse struct {
 	ExtraPercent   float64 `json:"extra_percent"`
 	Percent        float64 `json:"percent"`
 	GMReceive      float64 `json:"gm_receive"`
+	Currency       string  `json:"currency"`
 }
