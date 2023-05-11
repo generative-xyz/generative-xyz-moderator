@@ -3,7 +3,6 @@ package usecase
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
-	"os"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -74,39 +73,42 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataEthForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string) (*structure.AnalyticsProjectDeposit, error) {
 	ethRate, err := helpers.GetExternalPrice(string(entity.ETH))
 	if err != nil {
 		return nil, err
 	}
 
-	gmAddress := os.Getenv("GM_ETH_ADDERSS")
-	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
-	if err != nil {
-		return nil, err
-	}
+	//gmAddress := os.Getenv("GM_ETH_ADDERSS")
+	//ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	totalEth := utils.GetValue(ethBL.Result, 18)
-	usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
+	//totalEth := utils.GetValue(ethBL.Result, 18)
+	//usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
 
 	for _, item := range ethTx.Result {
+		item.From = tcAddress
 		itemTotalEth := utils.GetValue(item.Value, 18)
 		itemUsdtValue := utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
-		percent := itemUsdtValue / usdtValue
-		item.Percent = float64(percent)
 		item.UsdtValue = itemUsdtValue
+		item.ExtraPercent = 0
+		// TODO item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+		// TODO percent := itemUsdtValue / usdtValue
+		// TODO item.Percent = float64(percent)
 	}
 
 	resp := &structure.AnalyticsProjectDeposit{}
-	resp.CurrencyRate = ethRate
-	resp.Currency = string(entity.ETH)
-	resp.Value = ethBL.Result
-	resp.UsdtValue = usdtValue
+	//resp.CurrencyRate = ethRate
+	//resp.Currency = string(entity.ETH)
+	//resp.Value = ethBL.Result
+	//resp.UsdtValue = usdtValue
 	resp.Items = ethTx.Result
 
 	return resp, nil
@@ -123,8 +125,9 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 				Err:   err,
 			}
 		}()
+		// TODO call database to get list and loop
 
-		data, err = u.GetChartDataEthForGMCollection()
+		data, err = u.GetChartDataEthForGMCollection("", "")
 	}(ethDataChan)
 
 	dataFromChan := <-ethDataChan
