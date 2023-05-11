@@ -15,6 +15,19 @@ type NewCityGm struct {
 
 	Status int    `bson:"status" json:"status"`
 	Type   string `bson:"type" json:"type"`
+
+	NativeAmount []string `bson:"native_amounts" json:"nativeAmounts"`
+
+	TokenAmounts []TokenAmounts `bson:"token_amounts" json:"tokenAmounts"`
+
+	TxNative []string `bson:"tx_natives" json:"txNatives"`
+
+	TxTokens []string `bson:"tx_tokens" json:"txTokens"`
+}
+
+type TokenAmounts struct {
+	Token  string `bson:"token" json:"token"`
+	Amount string `bson:"amount" json:"amount"`
 }
 
 func (u NewCityGm) TableName() string {
