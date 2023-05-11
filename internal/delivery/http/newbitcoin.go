@@ -21,7 +21,7 @@ func (h *httpDelivery) requestGM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.Usecase.ApiCreateNewGM(reqBody.Address, reqBody.Type)
+	result, err := h.Usecase.ApiCreateNewGM(reqBody.Address)
 	if err != nil {
 		logger.AtLog.Logger.Error("h.Usecase.requestGM", zap.String("err", err.Error()))
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
