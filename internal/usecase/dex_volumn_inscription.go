@@ -15,6 +15,7 @@ import (
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -84,25 +85,46 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 }
 
 func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
-	ethRate, err := helpers.GetExternalPrice(string(entity.ETH))
-	if err != nil {
-		return nil, err
+	// try from cache
+	key := fmt.Sprintf("gm-collections.deposit.eth1.gmAddress." + tcAddress + "." + gmAddress)
+	result := &structure.AnalyticsProjectDeposit{}
+	//u.Cache.Delete(key)
+	cached, err := u.Cache.GetData(key)
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			return result, nil
+		}
+	}
+
+	// try from cache
+	keyRate := fmt.Sprintf("gm-collections.deposit.eth.rate")
+	var ethRate float64
+	cachedETHRate, err := u.Cache.GetData(keyRate)
+	if err == nil {
+		ethRate, _ = strconv.ParseFloat(*cachedETHRate, 64)
+	}
+	if ethRate == 0 {
+		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
+		if err != nil {
+			return nil, err
+		}
+		u.Cache.SetDataWithExpireTime(keyRate, ethRate, 60*60) // cache by 1 hour
 	}
 
 	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
-	time.Sleep(time.Millisecond * 150)
-	if err != nil {
-		return nil, err
-	}
-
-	ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
-	time.Sleep(time.Millisecond * 250)
+	time.Sleep(time.Millisecond * 100)
 	if err != nil {
 		return nil, err
 	}
 
 	totalEth := utils.GetValue(ethBL.Result, 18)
 	if totalEth > 0 {
+		ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
+		time.Sleep(time.Millisecond * 100)
+		if err != nil {
+			return nil, err
+		}
 		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
 		counting := 0
 		var items []*etherscan.AddressTxItemResponse
@@ -122,7 +144,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			counting++
 		}
 		if counting == 0 {
-			return nil, errors.New("not balance")
+			return nil, errors.New("not balance - " + gmAddress)
 		}
 
 		resp := &structure.AnalyticsProjectDeposit{}
@@ -132,13 +154,41 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
+		u.Cache.SetDataWithExpireTime(key, resp, 24*60*60) // cache by 1 day
 		return resp, nil
 	}
-	return nil, errors.New("not balance")
+	return nil, errors.New("not balance - " + gmAddress)
 }
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
-	btcRate, err := helpers.GetExternalPrice(string(entity.BIT))
+	return nil, errors.New("rate limit")
+	// try from cache
+	key := fmt.Sprintf("gm-collections.deposit.btc.gmAddress." + tcWallet + "." + gmWallet)
+	result := &structure.AnalyticsProjectDeposit{}
+	//u.Cache.Delete(key)
+	cached, err := u.Cache.GetData(key)
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			return result, nil
+		}
+	}
+
+	// try from cache
+	keyRate := fmt.Sprintf("gm-collections.deposit.btc.rate")
+	var btcRate float64
+	cachedETHRate, err := u.Cache.GetData(keyRate)
+	if err == nil {
+		btcRate, _ = strconv.ParseFloat(*cachedETHRate, 64)
+	}
+	if btcRate == 0 {
+		btcRate, err := helpers.GetExternalPrice(string(entity.BIT))
+		if err != nil {
+			return nil, err
+		}
+		u.Cache.SetDataWithExpireTime(keyRate, btcRate, 60*60) // cache by 1 hour
+	}
+
 	resp, err := u.MempoolService.AddressTransactions(gmWallet)
 	time.Sleep(time.Millisecond * 500)
 	if err != nil {
@@ -199,10 +249,11 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		UsdtValue:    usdt,
 		Items:        analyticItems,
 	}
+	u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
 	return resp1, nil
 }
 
-func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
