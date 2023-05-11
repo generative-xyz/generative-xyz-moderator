@@ -203,10 +203,16 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 		for _, item := range result.MapItems {
 			result.Items = append(result.Items, item)
 		}
+		usdtExtra := 0.0
 		for _, item := range result.Items {
 			item.ExtraPercent = u.GetExtraPercent(item.From)
 			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
-			item.Percent = float64(item.UsdtValue / result.UsdtValue)
+			usdtExtra += item.UsdtValueExtra
+
+		}
+		for _, item := range result.Items {
+			item.Percent = item.UsdtValueExtra / usdtExtra
+			item.GMReceive = item.Percent * 80000
 		}
 	}
 
