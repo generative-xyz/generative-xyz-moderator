@@ -20,7 +20,7 @@ type NewCityGm struct {
 
 	TokenAmounts []TokenAmounts `bson:"token_amounts" json:"tokenAmounts"`
 
-	TxNative []string `bson:"tx_natives" json:"txNatives"`
+	TxNatives []string `bson:"tx_natives" json:"txNatives"`
 
 	TxTokens []string `bson:"tx_tokens" json:"txTokens"`
 }

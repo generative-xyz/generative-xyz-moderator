@@ -152,7 +152,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	admin.HandleFunc("/auction/crawl-list-winner-now", h.updateWinnerFromContract).Methods("POST") // auction
 	admin.HandleFunc("/evm/update-enabled-job", h.updateEnabledJob).Methods("POST")                // auction
 
-	admin.HandleFunc("/new-bitcoin-city/crawl-balance", h.updateEnabledJob).Methods("POST") // new-bitcoin-city
+	admin.HandleFunc("/new-bitcoin-city/crawl-balance", h.withdrawNewCityFunds).Methods("POST") // new-bitcoin-city
 
 	adminTest := api.PathPrefix("/admin-test").Subrouter()
 	adminTest.HandleFunc("", h.adminTest).Methods("GET")
@@ -176,6 +176,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	charts := api.PathPrefix("/charts").Subrouter()
 	charts.HandleFunc("/collections/{projectID}", h.getChartDataForCollection).Methods("GET")
 	charts.HandleFunc("/gm-collections/deposit", h.getChartDataForGMCollection).Methods("GET")
+	charts.HandleFunc("/gm-collections/extra/{address}/deposit", h.getChartDataExtraForGMCollection).Methods("GET")
 	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
 
 	//dao

@@ -483,7 +483,7 @@ func (h *httpDelivery) requestFaucetAdmin(w http.ResponseWriter, r *http.Request
 
 }
 
-func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) {
+func (h *httpDelivery) withdrawNewCityFunds(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
@@ -513,12 +513,12 @@ func (h *httpDelivery) updateEnabledJob(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = h.Usecase.Repo.UpdateCronJobManagerStatusByJobKey()
+	data, err := h.Usecase.ApiAdminCrawlFunds()
 
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, true, "")
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, data, "")
 
 }
