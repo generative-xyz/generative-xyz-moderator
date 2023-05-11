@@ -111,6 +111,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
+				Value:     item.Value,
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
 				Currency:  string(entity.ETH),
 			})
@@ -332,6 +333,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					To:        item.To,
 					UsdtValue: item.UsdtValue,
 					Currency:  item.Currency,
+					Value:     item.Value,
 				}
 			} else {
 				result.MapItems[item.From].UsdtValue += item.UsdtValue
