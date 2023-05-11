@@ -202,7 +202,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
-	u.Cache.Delete(key)
+	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
 	if err != nil {
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
@@ -377,7 +377,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			result.UsdtValue = usdtValue
 		}
 
-		u.Cache.SetDataWithExpireTime(key, result, 3600)
+		u.Cache.SetDataWithExpireTime(key, result, 300)
 		return result, nil
 	}
 
