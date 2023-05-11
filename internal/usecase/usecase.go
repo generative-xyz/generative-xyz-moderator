@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
 	"rederinghub.io/internal/entity"
@@ -51,6 +52,7 @@ type Usecase struct {
 
 	TcClient, TcClientPublicNode, EthClient, EthClientDex *eth.Client
 	BsClient                                              *btc.BlockcypherService
+	EtherscanService                                      *etherscan.EtherscanService
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -78,6 +80,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.EthClientDex = global.EthClientDex
 	u.EthClient = global.EthClient
 	u.BsClient = global.BsClient
+	u.EtherscanService = global.EtherscanService
 
 	return u, nil
 }
