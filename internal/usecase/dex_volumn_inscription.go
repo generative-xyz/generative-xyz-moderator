@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"github.com/jinzhu/copier"
 	"math/big"
+	"os"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
+	"strings"
 )
 
 func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*structure.AggragetedCollectionVolumnResp, error) {
@@ -83,7 +85,6 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		return nil, err
 	}
 
-	//gmAddress := os.Getenv("GM_ETH_ADDERSS")
 	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
 	if err != nil {
 		return nil, err
@@ -97,11 +98,19 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	totalEth := utils.GetValue(ethBL.Result, 18)
 	if totalEth > 0 {
 		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
-
+		counting := 0
 		for _, item := range ethTx.Result {
+			if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
+				continue
+			}
 			item.From = tcAddress
+			item.To = gmAddress
 			itemTotalEth := utils.GetValue(item.Value, 18)
 			item.UsdtValue = utils.ToUSDT(fmt.Sprintf("%f", itemTotalEth), ethRate)
+			counting++
+		}
+		if counting == 0 {
+			return nil, errors.New("not balance")
 		}
 
 		resp := &structure.AnalyticsProjectDeposit{}
@@ -147,6 +156,23 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					data.UsdtValue += temp.UsdtValue
 					data.Value += temp.Value
 				}
+			}
+		}
+
+		// for old
+		gmAddress := os.Getenv("GM_ETH_ADDERSS")
+		if gmAddress == "" {
+			gmAddress = "0x360382fa386dB659a96557A2c7F9Ce7195de024E"
+		}
+		fromWallets := []string{
+			"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
+		}
+		for _, wallet := range fromWallets {
+			temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress)
+			if err != nil && temp != nil {
+				data.Items = append(data.Items, temp.Items...)
+				data.UsdtValue += temp.UsdtValue
+				data.Value += temp.Value
 			}
 		}
 	}(ethDataChan)
