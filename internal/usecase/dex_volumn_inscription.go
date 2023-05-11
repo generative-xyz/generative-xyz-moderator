@@ -86,7 +86,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 
 func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.eth1.gmAddress." + tcAddress + "." + gmAddress)
+	key := fmt.Sprintf("gm-collections.deposit.eth2.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
@@ -120,31 +120,43 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 
 	totalEth := utils.GetValue(ethBL.Result, 18)
 	if totalEth > 0 {
-		ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
-		time.Sleep(time.Millisecond * 100)
-		if err != nil {
-			return nil, err
-		}
 		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
-		counting := 0
+
 		var items []*etherscan.AddressTxItemResponse
-		for _, item := range ethTx.Result {
-			if oldData {
-				if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
-					continue
-				}
+		if oldData {
+			// get tx by addr
+			ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
+			time.Sleep(time.Millisecond * 100)
+			if err != nil {
+				return nil, err
 			}
+			counting := 0
+			for _, item := range ethTx.Result {
+				if oldData {
+					if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
+						continue
+					}
+				}
+				items = append(items, &etherscan.AddressTxItemResponse{
+					From:      tcAddress,
+					To:        gmAddress,
+					Value:     item.Value,
+					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
+					Currency:  string(entity.ETH),
+				})
+				counting++
+			}
+			if counting == 0 {
+				return nil, errors.New("not balance - " + gmAddress)
+			}
+		} else {
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     item.Value,
-				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
+				Value:     ethBL.Result,
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(ethBL.Result, 18)), ethRate),
 				Currency:  string(entity.ETH),
 			})
-			counting++
-		}
-		if counting == 0 {
-			return nil, errors.New("not balance - " + gmAddress)
 		}
 
 		resp := &structure.AnalyticsProjectDeposit{}
@@ -163,7 +175,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	return nil, errors.New("rate limit")
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc.gmAddress." + tcWallet + "." + gmWallet)
+	key := fmt.Sprintf("gm-collections.deposit.btc1.gmAddress." + tcWallet + "." + gmWallet)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
