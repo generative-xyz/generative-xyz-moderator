@@ -4,7 +4,7 @@ type AddressTxItemResponse struct {
 	TxID     string                      `json:"txid"`
 	Version  int                         `json:"version"`
 	LockTime int64                       `json:"locktime"`
-	Vin      interface{}                 `json:"vin"`
+	Vin      []AddressTxItemResponseVin  `json:"vin"`
 	Vout     []AddressTxItemResponseVout `json:"vout"`
 	Size     int64                       `json:"size"`
 	Weight   int64                       `json:"weight"`
@@ -25,4 +25,12 @@ type AddressTxItemResponseVout struct {
 	ScriptpubkeyType    string `json:"scriptpubkey_type"`
 	ScriptpubkeyAddress string `json:"scriptpubkey_address"`
 	Value               int64  `json:"value"`
+}
+
+type AddressTxItemResponseVin struct {
+	Prevout prevout `json:"prevout"`
+}
+
+type prevout struct {
+	Scriptpubkey_address string `json:"scriptpubkey_address"`
 }

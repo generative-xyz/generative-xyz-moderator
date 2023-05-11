@@ -141,10 +141,23 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 
 	vouts := []mempool_space.AddressTxItemResponseVout{}
 	for _, item := range resp {
-		vs := item.Vout
-		for _, v := range vs {
-			if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
-				vouts = append(vouts, v)
+		if item.Status.Confirmed {
+			if oldData {
+				isContinue := true
+				for _, v := range item.Vin {
+					if strings.ToLower(v.Prevout.Scriptpubkey_address) == strings.ToLower(tcWallet) {
+						isContinue = false
+					}
+				}
+				if isContinue {
+					continue
+				}
+			}
+			vs := item.Vout
+			for _, v := range vs {
+				if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
+					vouts = append(vouts, v)
+				}
 			}
 		}
 	}
@@ -276,6 +289,8 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			gmAddress = "bc1pqkvfsyxd8fw0e985wlts5kkz8lxgs62xgx8zsfyhaqr2qq3t2ttq28dfta"
 		}
 		fromWallets := []string{
+			"bc1pcry79t9fe9vcc8zeernn9k2yh8k95twc2yk5fcs5d4g8myly6wwst3r6xa",
+			"bc1qyczv69fgcxtkpwa6c7k3aaveqjvmr0gzltlhnz",
 			"bc1plurxvkzyg4vmp0qn9u0rx4xmhymjtqh0kan3gydmrrq2djdq5y0spr8894",
 			"bc1pft0ks6263303ycl93m74uxurk7jdz6dnsscz22yf74z4qku47lus38haz2",
 			"bc1q0whajwm89z822pqfe097z7yyay6rfvmhsagx56",
