@@ -16,6 +16,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/helpers"
 	"strings"
+	"time"
 )
 
 func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*structure.AggragetedCollectionVolumnResp, error) {
@@ -89,11 +90,13 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	}
 
 	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
+	time.Sleep(time.Millisecond * 150)
 	if err != nil {
 		return nil, err
 	}
 
 	ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
+	time.Sleep(time.Millisecond * 250)
 	if err != nil {
 		return nil, err
 	}
