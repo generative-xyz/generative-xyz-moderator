@@ -168,3 +168,8 @@ type AnalyticsProjectDeposit struct {
 	UsdtValue    float64     `json:"usdtValue"`
 	Items        interface{} `json:"items"`
 }
+
+type AnalyticsProjectDepositChan struct {
+	Value *AnalyticsProjectDeposit
+	Err   error
+}
