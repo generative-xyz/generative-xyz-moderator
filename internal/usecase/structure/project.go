@@ -162,11 +162,11 @@ type ProjectFloorPrice struct {
 }
 
 type AnalyticsProjectDeposit struct {
-	Value        string      `json:"value"`
-	Currency     string      `json:"currency"`
-	CurrencyRate float64     `json:"currencyRate"`
-	UsdtValue    float64     `json:"usdtValue"`
-	Items        interface{} `json:"items"`
+	//Value        string      `json:"value"`
+	//Currency     string      `json:"currency"`
+	//CurrencyRate float64     `json:"currencyRate"`
+	//UsdtValue    float64     `json:"usdtValue"`
+	Items interface{} `json:"items"`
 }
 
 type AnalyticsProjectDepositChan struct {
