@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
@@ -198,22 +199,65 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 }
 
 func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDeposit, error) {
-	ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
-	btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
+	key := fmt.Sprintf("gm-collections.deposit")
+	result := &structure.AnalyticsProjectDeposit{}
+	cached, err := u.Cache.GetData(key)
+	if err != nil {
+		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
+		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
 
-	go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
-		data := &structure.AnalyticsProjectDeposit{}
-		var err error
-		defer func() {
-			ethDataChan <- structure.AnalyticsProjectDepositChan{
-				Value: data,
-				Err:   err,
+		go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
+			data := &structure.AnalyticsProjectDeposit{}
+			var err error
+			defer func() {
+				ethDataChan <- structure.AnalyticsProjectDepositChan{
+					Value: data,
+					Err:   err,
+				}
+			}()
+			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
+			if err == nil {
+				for _, wallet := range wallets {
+					temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, false)
+					if err == nil && temp != nil {
+						data.Items = append(data.Items, temp.Items...)
+						data.UsdtValue += temp.UsdtValue
+						data.Value += temp.Value
+						data.CurrencyRate = temp.CurrencyRate
+					}
+				}
 			}
-		}()
-		wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
-		if err == nil {
-			for _, wallet := range wallets {
-				temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, false)
+			err = nil
+
+			// for old
+			gmAddress := os.Getenv("GM_ETH_ADDERSS")
+			if gmAddress == "" {
+				gmAddress = "0x360382fa386dB659a96557A2c7F9Ce7195de024E"
+			}
+			fromWallets := []string{
+				"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
+				"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
+				"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
+				"0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526",
+				"0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340",
+				"0x7729A5Cfe2b008B7B19525a10420E6f53941D2a4",
+				"0x4bF946271EEf390AC8c864A01F0D69bF3b858569",
+				"0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac",
+				"0x597c32011116c94994619Cf6De15b3Fdc061a983",
+				"0xB18278584bD3e41DB25453EE3c7DeDfc84040420",
+				"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
+				"0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3",
+				//"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
+				"0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70",
+				"0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446",
+				"0xbf22409c832E944CeF2B33d9929b8905163Ae5d4",
+				"0xda9979247dC98023C0Ff6A59BC7C91bB627d4934",
+				"0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61",
+				"0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30",
+				"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
+			}
+			for _, wallet := range fromWallets {
+				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, true)
 				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
@@ -221,141 +265,111 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 					data.CurrencyRate = temp.CurrencyRate
 				}
 			}
-		}
-		err = nil
+		}(ethDataChan)
 
-		// for old
-		gmAddress := os.Getenv("GM_ETH_ADDERSS")
-		if gmAddress == "" {
-			gmAddress = "0x360382fa386dB659a96557A2c7F9Ce7195de024E"
-		}
-		fromWallets := []string{
-			"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
-			"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
-			"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
-			"0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526",
-			"0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340",
-			"0x7729A5Cfe2b008B7B19525a10420E6f53941D2a4",
-			"0x4bF946271EEf390AC8c864A01F0D69bF3b858569",
-			"0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac",
-			"0x597c32011116c94994619Cf6De15b3Fdc061a983",
-			"0xB18278584bD3e41DB25453EE3c7DeDfc84040420",
-			"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
-			"0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3",
-			//"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
-			"0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70",
-			"0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446",
-			"0xbf22409c832E944CeF2B33d9929b8905163Ae5d4",
-			"0xda9979247dC98023C0Ff6A59BC7C91bB627d4934",
-			"0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61",
-			"0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30",
-			"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
-		}
-		for _, wallet := range fromWallets {
-			temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, true)
-			if err == nil && temp != nil {
-				data.Items = append(data.Items, temp.Items...)
-				data.UsdtValue += temp.UsdtValue
-				data.Value += temp.Value
-				data.CurrencyRate = temp.CurrencyRate
+		go func(btcDataChan chan structure.AnalyticsProjectDepositChan) {
+			data := &structure.AnalyticsProjectDeposit{}
+			var err error
+			defer func() {
+				btcDataChan <- structure.AnalyticsProjectDepositChan{
+					Value: data,
+					Err:   err,
+				}
+			}()
+			wallets, err := u.Repo.FindNewCityGmByType(string(entity.BIT))
+			if err == nil {
+				for _, wallet := range wallets {
+					temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address, false)
+					if err != nil && temp != nil {
+						data.Items = append(data.Items, temp.Items...)
+						data.UsdtValue += temp.UsdtValue
+						data.Value += temp.Value
+						data.CurrencyRate = temp.CurrencyRate
+					}
+				}
 			}
-		}
-	}(ethDataChan)
 
-	go func(btcDataChan chan structure.AnalyticsProjectDepositChan) {
-		data := &structure.AnalyticsProjectDeposit{}
-		var err error
-		defer func() {
-			btcDataChan <- structure.AnalyticsProjectDepositChan{
-				Value: data,
-				Err:   err,
+			// for old data
+			gmAddress := os.Getenv("GM_BTC_ADDRESS")
+			if gmAddress == "" {
+				gmAddress = "bc1pqkvfsyxd8fw0e985wlts5kkz8lxgs62xgx8zsfyhaqr2qq3t2ttq28dfta"
 			}
-		}()
-		wallets, err := u.Repo.FindNewCityGmByType(string(entity.BIT))
-		if err == nil {
-			for _, wallet := range wallets {
-				temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address, false)
-				if err != nil && temp != nil {
+			fromWallets := []string{
+				"bc1pcry79t9fe9vcc8zeernn9k2yh8k95twc2yk5fcs5d4g8myly6wwst3r6xa",
+				"bc1qyczv69fgcxtkpwa6c7k3aaveqjvmr0gzltlhnz",
+				"bc1plurxvkzyg4vmp0qn9u0rx4xmhymjtqh0kan3gydmrrq2djdq5y0spr8894",
+				"bc1pft0ks6263303ycl93m74uxurk7jdz6dnsscz22yf74z4qku47lus38haz2",
+				"bc1q0whajwm89z822pqfe097z7yyay6rfvmhsagx56",
+			}
+
+			for _, wallet := range fromWallets {
+				temp, err := u.GetChartDataBTCForGMCollection(wallet, gmAddress, true)
+				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
 					data.Value += temp.Value
 					data.CurrencyRate = temp.CurrencyRate
 				}
 			}
+
+		}(btcDataChan)
+
+		ethDataFromChan := <-ethDataChan
+		btcDataFromChan := <-btcDataChan
+
+		result := &structure.AnalyticsProjectDeposit{}
+		if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
+			result.Items = append(result.Items, ethDataFromChan.Value.Items...)
+			result.UsdtValue += ethDataFromChan.Value.UsdtValue
 		}
 
-		// for old data
-		gmAddress := os.Getenv("GM_BTC_ADDRESS")
-		if gmAddress == "" {
-			gmAddress = "bc1pqkvfsyxd8fw0e985wlts5kkz8lxgs62xgx8zsfyhaqr2qq3t2ttq28dfta"
-		}
-		fromWallets := []string{
-			"bc1pcry79t9fe9vcc8zeernn9k2yh8k95twc2yk5fcs5d4g8myly6wwst3r6xa",
-			"bc1qyczv69fgcxtkpwa6c7k3aaveqjvmr0gzltlhnz",
-			"bc1plurxvkzyg4vmp0qn9u0rx4xmhymjtqh0kan3gydmrrq2djdq5y0spr8894",
-			"bc1pft0ks6263303ycl93m74uxurk7jdz6dnsscz22yf74z4qku47lus38haz2",
-			"bc1q0whajwm89z822pqfe097z7yyay6rfvmhsagx56",
+		if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
+			result.Items = append(result.Items, btcDataFromChan.Value.Items...)
+			result.UsdtValue += btcDataFromChan.Value.UsdtValue
 		}
 
-		for _, wallet := range fromWallets {
-			temp, err := u.GetChartDataBTCForGMCollection(wallet, gmAddress, true)
-			if err == nil && temp != nil {
-				data.Items = append(data.Items, temp.Items...)
-				data.UsdtValue += temp.UsdtValue
-				data.Value += temp.Value
-				data.CurrencyRate = temp.CurrencyRate
-			}
-		}
-
-	}(btcDataChan)
-
-	ethDataFromChan := <-ethDataChan
-	btcDataFromChan := <-btcDataChan
-
-	result := &structure.AnalyticsProjectDeposit{}
-	if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
-		result.Items = append(result.Items, ethDataFromChan.Value.Items...)
-		result.UsdtValue += ethDataFromChan.Value.UsdtValue
-	}
-
-	if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
-		result.Items = append(result.Items, btcDataFromChan.Value.Items...)
-		result.UsdtValue += btcDataFromChan.Value.UsdtValue
-	}
-
-	if len(result.Items) > 0 {
-		result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
-		for _, item := range result.Items {
-			_, ok := result.MapItems[item.From]
-			if !ok {
-				result.MapItems[item.From] = &etherscan.AddressTxItemResponse{
-					From:      item.From,
-					To:        item.To,
-					UsdtValue: item.UsdtValue,
-					Currency:  item.Currency,
-					Value:     item.Value,
+		if len(result.Items) > 0 {
+			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+			for _, item := range result.Items {
+				_, ok := result.MapItems[item.From]
+				if !ok {
+					result.MapItems[item.From] = &etherscan.AddressTxItemResponse{
+						From:      item.From,
+						To:        item.To,
+						UsdtValue: item.UsdtValue,
+						Currency:  item.Currency,
+						Value:     item.Value,
+					}
+				} else {
+					result.MapItems[item.From].UsdtValue += item.UsdtValue
 				}
-			} else {
-				result.MapItems[item.From].UsdtValue += item.UsdtValue
 			}
+			result.Items = []*etherscan.AddressTxItemResponse{}
+			for _, item := range result.MapItems {
+				result.Items = append(result.Items, item)
+			}
+			usdtExtra := 0.0
+			usdtValue := 0.0
+			for _, item := range result.Items {
+				item.ExtraPercent = u.GetExtraPercent(item.From)
+				item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+				usdtExtra += item.UsdtValueExtra
+				usdtValue += item.UsdtValue
+			}
+			for _, item := range result.Items {
+				item.Percent = item.UsdtValueExtra / usdtExtra * 100
+				item.GMReceive = item.Percent * 8000 / 100
+			}
+			result.UsdtValue = usdtValue
 		}
-		result.Items = []*etherscan.AddressTxItemResponse{}
-		for _, item := range result.MapItems {
-			result.Items = append(result.Items, item)
-		}
-		usdtExtra := 0.0
-		usdtValue := 0.0
-		for _, item := range result.Items {
-			item.ExtraPercent = u.GetExtraPercent(item.From)
-			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
-			usdtExtra += item.UsdtValueExtra
-			usdtValue += item.UsdtValue
-		}
-		for _, item := range result.Items {
-			item.Percent = item.UsdtValueExtra / usdtExtra * 100
-			item.GMReceive = item.Percent * 8000 / 100
-		}
-		result.UsdtValue = usdtValue
+
+		u.Cache.SetDataWithExpireTime(key, result, 3600)
+		return result, nil
+	}
+
+	err = json.Unmarshal([]byte(*cached), result)
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
