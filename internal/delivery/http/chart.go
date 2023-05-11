@@ -93,3 +93,20 @@ func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *htt
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
+
+// UserCredits godoc
+// @Summary CollectionListing
+// @Description get list CollectionListing
+// @Tags Charts
+// @Accept  json
+// @Produce  json
+// @Param address path string  false "address"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /charts/gm-collections/extra/{address}/deposit [GET]
+func (h *httpDelivery) getChartDataExtraForGMCollection(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	// contractAddress := vars["contractAddress"]
+	address := vars["address"]
+	result := h.Usecase.GetExtraPercent(address)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}

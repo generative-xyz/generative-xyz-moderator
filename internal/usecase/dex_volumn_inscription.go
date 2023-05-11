@@ -204,7 +204,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 			result.Items = append(result.Items, item)
 		}
 		for _, item := range result.Items {
-			item.ExtraPercent = u.getExtraPercent(item.From)
+			item.ExtraPercent = u.GetExtraPercent(item.From)
 			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
 			item.Percent = float64(item.UsdtValue / result.UsdtValue)
 		}
@@ -213,7 +213,7 @@ func (u Usecase) GetChartDataForGMCollection() (*structure.AnalyticsProjectDepos
 	return result, nil
 }
 
-func (u Usecase) getExtraPercent(address string) float64 {
+func (u Usecase) GetExtraPercent(address string) float64 {
 	user, err := u.Repo.FindUserByWalletAddress(address)
 	if err == nil && user.UUID != "" {
 		return 30.0
