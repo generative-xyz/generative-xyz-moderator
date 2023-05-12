@@ -108,11 +108,11 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		pepeRate, _ = strconv.ParseFloat(*cachedPEPERate, 64)
 	}
 	if pepeRate == 0 {
-		pepeRate, err = helpers.GetExternalPrice("PEPE")
-		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
-			return nil, err
+		pRate, err := u.CoinMarketCap.PriceConversion(24478) //PEPE ID
+		if err == nil && pRate != nil {
+			pepeRate = pRate.Data.Quote.USD.Price
 		}
+
 		u.Cache.SetDataWithExpireTime(keypepeRate, pepeRate, 60*60) // cache by 1 hour
 	}
 
@@ -123,10 +123,9 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		turboRate, _ = strconv.ParseFloat(*cachedTURBORate, 64)
 	}
 	if turboRate == 0 {
-		turboRate, err = helpers.GetExternalPrice("TURBO")
-		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
-			return nil, err
+		tRate, err := u.CoinMarketCap.PriceConversion(24911) //TURBO ID
+		if err == nil && tRate != nil {
+			turboRate = tRate.Data.Quote.USD.Price
 		}
 		u.Cache.SetDataWithExpireTime(keyturboRate, turboRate, 60*60) // cache by 1 hour
 	}

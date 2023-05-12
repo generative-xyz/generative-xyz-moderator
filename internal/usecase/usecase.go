@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
@@ -55,6 +56,7 @@ type Usecase struct {
 	BsClient                                              *btc.BlockcypherService
 	EtherscanService                                      *etherscan.EtherscanService
 	MempoolService                                        *mempool_space.MempoolService
+	CoinMarketCap                                         *coin_market_cap.CoinMarketCap
 }
 
 func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error) {
@@ -84,6 +86,7 @@ func NewUsecase(global *global.Global, r repository.Repository) (*Usecase, error
 	u.BsClient = global.BsClient
 	u.EtherscanService = global.EtherscanService
 	u.MempoolService = global.MempoolService
+	u.CoinMarketCap = global.CoinMarketCap
 
 	return u, nil
 }
