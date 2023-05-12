@@ -714,7 +714,8 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			usdtValue := 0.0
 			for _, item := range result.Items {
 				item.ExtraPercent = u.GetExtraPercent(item.From)
-				item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+				//item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue // TODO
+				item.UsdtValueExtra = item.UsdtValue
 				usdtExtra += item.UsdtValueExtra
 				usdtValue += item.UsdtValue
 			}
@@ -738,7 +739,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 }
 
 func (u Usecase) GetExtraPercent(address string) float64 {
-	return 0.0
+	return 0.0 // TODO
 	user, err := u.Repo.FindUserByWalletAddress(address)
 	if err == nil && user.UUID != "" {
 		return 30.0
