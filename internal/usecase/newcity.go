@@ -52,7 +52,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		}
 	}
 
-	fmt.Println("itemEth: ", itemEth)
+	// fmt.Println("itemEth: ", itemEth)
 
 	if itemEth == nil {
 		ethClient := eth.NewClient(nil)
@@ -108,7 +108,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		}
 	}
 
-	fmt.Println("itemBtc: ", itemBtc)
+	// fmt.Println("itemBtc: ", itemBtc)
 
 	if itemBtc == nil {
 
