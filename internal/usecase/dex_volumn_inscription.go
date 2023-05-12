@@ -282,7 +282,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		if err != nil {
 			return nil, err
 		}
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 50)
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +309,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				UsdtValue:    item.UsdtValue,
 				Items:        analyticItems,
 			}
-			u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
+			u.Cache.SetDataWithExpireTime(key, resp1, 6*60*60) // cache by 6 hours
 			return resp1, nil
 		}
 		return nil, errors.New("not balance - " + gmWallet)
