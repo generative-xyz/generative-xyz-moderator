@@ -350,7 +350,7 @@ func GetGoogleSecretKey(name string) (string, error) {
 
 	// Build the request.
 	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: name,
+		Name: name + "/versions/latest",
 	}
 
 	// Call the API.
