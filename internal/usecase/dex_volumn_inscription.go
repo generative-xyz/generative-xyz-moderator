@@ -539,6 +539,15 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		return 20.0
 	}
 
+	// TODO manual
+	manual := map[string]bool{
+		"": true,
+	}
+	_, ok = manual[address]
+	if ok {
+		return 20.0
+	}
+
 	allow, err := u.Repo.GetProjectAllowList("999998", address)
 	if err == nil && allow.UUID != "" {
 		return 10.0
