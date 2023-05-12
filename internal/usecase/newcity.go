@@ -26,15 +26,18 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
-	secretKeyName := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
-	if len(secretKeyName) == 0 {
-		return nil, errors.New("please config google key first!")
-	}
+	// secretKeyName := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+	// if len(secretKeyName) == 0 {
+	// 	return nil, errors.New("please config google key first!")
+	// }
 
-	keyToEncrypt, err := GetGoogleSecretKey(secretKeyName)
-	if err != nil {
-		return nil, errors.New("can't not get secretKey from key name")
-	}
+	// keyToEncrypt, err := GetGoogleSecretKey(secretKeyName)
+	// if err != nil {
+	// 	return nil, errors.New("can't not get secretKey from key name")
+	// }
+
+	keyToEncrypt := os.Getenv("SECRET_KEY")
+	keyVersion := 0
 
 	if len(keyToEncrypt) == 0 {
 		return nil, errors.New("please config key first!")
@@ -70,7 +73,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddress, // temp address for the user send to
 			PrivateKey:  privateKeyEnCrypt,
-			KeyVersion:  1, // 2 from now
+			KeyVersion:  keyVersion,
 		}
 
 		err = u.Repo.InsertNewCityGm(itemEth)
@@ -125,7 +128,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddressBtc, // temp address for the user send to
 			PrivateKey:  privateKeyEnCryptBtc,
-			KeyVersion:  1, // 2 from now
+			KeyVersion:  keyVersion,
 		}
 
 		err = u.Repo.InsertNewCityGm(itemBtc)
