@@ -211,6 +211,8 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 			if item.Type == utils.NETWORK_ETH {
 
+				continue
+
 				// check balance:
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
