@@ -738,6 +738,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 }
 
 func (u Usecase) GetExtraPercent(address string) float64 {
+	return 0.0
 	user, err := u.Repo.FindUserByWalletAddress(address)
 	if err == nil && user.UUID != "" {
 		return 30.0
