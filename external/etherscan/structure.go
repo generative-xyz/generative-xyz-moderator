@@ -13,6 +13,8 @@ type WalletAddressTxResponse struct {
 }
 
 type AddressTxItemResponse struct {
+	ENS            string  `json:"ens"`
+	Avatar         string  `json:"avatar"`
 	From           string  `json:"from"`
 	To             string  `json:"to"`
 	Value          string  `json:"value"`
