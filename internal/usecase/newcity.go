@@ -56,6 +56,13 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			PrivateKey:  privateKeyEnCrypt,
 		}
 
+		ens, errENS := u.EthClient.GetEns(addressInput)
+		if errENS == nil {
+			if len(ens) > 0 {
+				itemEth.ENS = ens
+			}
+		}
+
 		err = u.Repo.InsertNewCityGm(itemEth)
 
 		if err != nil {
