@@ -12,6 +12,7 @@ import (
 	"os"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -134,7 +135,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
 	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", gmAddress))
 		return nil, err
 	}
 
@@ -219,8 +220,15 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 
 	moralisEthBL, err := u.MoralisNft.AddressBalance(gmAddress)
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
-		return nil, err
+		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err2222", zap.Error(err), zap.String("gmAddress", gmAddress))
+		//return nil, err
+		moralisEthBL = new(nfts.MoralisBalanceResp)
+		temp, err := u.EtherscanService.AddressBalance(gmAddress)
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err3333", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return nil, err
+		}
+		moralisEthBL.Balance = temp.Result
 	}
 
 	//ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
