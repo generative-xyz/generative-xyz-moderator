@@ -26,7 +26,17 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
-	if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
+	secretKeyName := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+	if len(secretKeyName) == 0 {
+		return nil, errors.New("please config google key first!")
+	}
+
+	keyToEncrypt, err := GetGoogleSecretKey(secretKeyName)
+	if err != nil {
+		return nil, errors.New("can't not get secretKey from key name")
+	}
+
+	if len(keyToEncrypt) == 0 {
 		return nil, errors.New("please config key first!")
 	}
 
@@ -49,7 +59,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("ApiCreateNewGM.ethClient.GenerateAddress", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
+		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, keyToEncrypt)
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -64,6 +74,10 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		}
 
 		err = u.Repo.InsertNewCityGm(itemEth)
+
+		if err != nil {
+			return nil, err
+		}
 
 		go func(item *entity.NewCityGm) {
 			ens, errENS := u.EthClient.GetEns(addressInput)
@@ -82,9 +96,6 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			u.Repo.UpdateNewCityGmENSAvatar(item)
 		}(itemEth)
 
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	itemBtc, err := u.Repo.FindNewCityGmByUserAddress(addressInput, utils.NETWORK_BTC)
@@ -103,7 +114,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("u.ApiCreateNewGM.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
+		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, keyToEncrypt)
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -133,7 +144,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 // admin
 func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
-	if true {
+	if false {
 		if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
 			return nil, errors.New("key to get key is empty")
 		}
@@ -181,10 +192,16 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 		return nil, errors.New("GM_ETH_WITHDRAW_ADDRESS not found")
 	}
 
+	btcWithdrawAddrses := os.Getenv("GM_BTC_WITHDRAW_ADDRESS")
+
+	if len(btcWithdrawAddrses) == 0 {
+		return nil, errors.New("GM_BTC_WITHDRAW_ADDRESS not found")
+	}
+
 	if len(list) > 0 {
 		for _, item := range list {
 
-			if item.Type == utils.NETWORK_ETH {
+			if item.Type == utils.NETWORK_ETH && item.UserAddress == ethWithdrawAddrses {
 
 				// check balance:
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
