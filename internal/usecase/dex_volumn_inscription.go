@@ -495,9 +495,17 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						UsdtValue: item.UsdtValue,
 						Currency:  item.Currency,
 						Value:     item.Value,
+						Avatar:    item.Avatar,
+						ENS:       item.ENS,
 					}
 				} else {
 					result.MapItems[item.From].UsdtValue += item.UsdtValue
+					if item.Avatar != "" {
+						result.MapItems[item.From].Avatar = item.Avatar
+					}
+					if item.ENS != "" {
+						result.MapItems[item.From].ENS = item.ENS
+					}
 				}
 			}
 			result.Items = []*etherscan.AddressTxItemResponse{}
