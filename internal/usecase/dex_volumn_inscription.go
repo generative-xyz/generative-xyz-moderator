@@ -437,6 +437,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		}
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
 		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
+		erc20DataChan := make(chan structure.AnalyticsProjectDepositChan)
 
 		go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
 			data := &structure.AnalyticsProjectDeposit{}
@@ -560,8 +561,35 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		}(btcDataChan)
 
+		go func(erc20DataChan chan structure.AnalyticsProjectDepositChan) {
+			data := &structure.AnalyticsProjectDeposit{}
+			var err error
+			defer func() {
+				erc20DataChan <- structure.AnalyticsProjectDepositChan{
+					Value: data,
+					Err:   err,
+				}
+			}()
+			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
+			if err == nil {
+				for _, wallet := range wallets {
+					temp, err := u.GetChartDataERC20ForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS, wallet.Avatar)
+					if err == nil && temp != nil {
+						data.Items = append(data.Items, temp.Items...)
+						data.UsdtValue += temp.UsdtValue
+						data.Value += temp.Value
+						data.CurrencyRate = temp.CurrencyRate
+					}
+					if err != nil {
+						u.Logger.ErrorAny("GetChartDataERC20ForGMCollection", zap.Any("err", err))
+					}
+				}
+			}
+		}(erc20DataChan)
+
 		ethDataFromChan := <-ethDataChan
 		btcDataFromChan := <-btcDataChan
+		erc20DataFromChan := <-erc20DataChan
 
 		result := &structure.AnalyticsProjectDeposit{}
 		if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
@@ -572,6 +600,11 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
 			result.Items = append(result.Items, btcDataFromChan.Value.Items...)
 			result.UsdtValue += btcDataFromChan.Value.UsdtValue
+		}
+
+		if erc20DataFromChan.Value != nil && len(erc20DataFromChan.Value.Items) > 0 {
+			result.Items = append(result.Items, erc20DataFromChan.Value.Items...)
+			result.UsdtValue += erc20DataFromChan.Value.UsdtValue
 		}
 
 		if len(result.Items) > 0 {
