@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
 	"time"
@@ -176,6 +177,8 @@ func startServer() {
 	ethClientDex := eth.NewClient(ethDexClientWrap)
 	eScan := etherscan.NewEtherscanService(conf, cache)
 	mpService := mempool_space.NewMempoolService(conf, cache)
+	coinMKC := coin_market_cap.NewCoinMarketCap(conf, cache)
+
 	// init blockcypher service:
 	bsClient := btc.NewBlockcypherService(conf.BlockcypherAPI, "", conf.BlockcypherToken, &chaincfg.MainNetParams)
 
@@ -209,6 +212,7 @@ func startServer() {
 		BsClient:           bsClient,       // for btc/blockcypher service
 		EtherscanService:   eScan,
 		MempoolService:     mpService,
+		CoinMarketCap:      coinMKC,
 	}
 
 	repo, err := repository.NewRepository(&g)
