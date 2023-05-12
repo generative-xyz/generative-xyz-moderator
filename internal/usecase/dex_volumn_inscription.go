@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/copier"
 	"go.uber.org/zap"
+	"log"
 	"math/big"
 	"os"
 	"rederinghub.io/external/etherscan"
@@ -14,6 +15,7 @@ import (
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
+	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 	"strconv"
 	"strings"
@@ -174,7 +176,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc2.gmAddress." + tcWallet + "." + gmWallet)
+	key := fmt.Sprintf("gm-collections.deposit.btc3.gmAddress." + tcWallet + "." + gmWallet)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
@@ -260,32 +262,33 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
 		return resp1, nil
 	} else {
-		_, bs, err := u.buildBTCClient()
+		/*_, bs, err := u.buildBTCClient()
 		if err != nil {
 			return nil, err
 		}
-		balance, confirm, err := bs.GetBalance(gmWallet)
+		balance, confirm, err := bs.GetBalance(gmWallet)*/
+		walletInfo, err := btc.GetBalanceFromQuickNode(gmWallet, u.Config.QuicknodeAPI)
+		if err != nil {
+			return nil, err
+		}
 		time.Sleep(time.Millisecond * 100)
 		if err != nil {
 			return nil, err
 		}
-		if balance.Cmp(big.NewInt(0)) > 0 {
-			if confirm == 0 {
-				return nil, errors.New("not confirm - " + gmWallet)
-			}
-			amount := fmt.Sprintf("%d", balance)
+		if walletInfo.Balance > 0 {
+			amount := fmt.Sprintf("%d", walletInfo.Balance)
 			amountF := utils.GetValue(amount, float64(8))
 			usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
 			item := &etherscan.AddressTxItemResponse{
 				From:      tcWallet,
 				To:        gmWallet,
-				Value:     fmt.Sprintf("%d", balance),
+				Value:     fmt.Sprintf("%d", walletInfo.Balance),
 				Currency:  string(entity.BIT),
-				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", balance), 8)), btcRate),
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate),
 			}
 			analyticItems = append(analyticItems, item)
 			resp1 := &structure.AnalyticsProjectDeposit{
-				Value:        fmt.Sprintf("%d", balance),
+				Value:        fmt.Sprintf("%d", walletInfo.Balance),
 				Currency:     string(entity.BIT),
 				CurrencyRate: btcRate,
 				UsdtValue:    usdt,
@@ -296,6 +299,14 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		}
 		return nil, errors.New("not balance - " + gmWallet)
 	}
+}
+
+func (u Usecase) JobGetChartDataForGMCollection() error {
+	_, err := u.GetChartDataForGMCollection(false)
+	if err != nil {
+		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
+	}
+	return err
 }
 
 func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
