@@ -26,6 +26,10 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
+	if len(os.Getenv("SECRET_KEY")) == 0 {
+		return nil, errors.New("please config key first!")
+	}
+
 	// get temp address from db:
 	itemEth, err := u.Repo.FindNewCityGmByUserAddress(addressInput, utils.NETWORK_ETH)
 
@@ -135,7 +139,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 		secretKey, err := GetGoogleSecretKey(secretKeyName)
 		if err != nil {
-			return nil, errors.New("can't not get secretKey from key name")
+			return nil, errors.New("can't not get secretKey from key name" + err.Error())
 		}
 
 		// try to encrypt
