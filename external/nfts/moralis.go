@@ -263,3 +263,20 @@ func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, token
 	nft := nfts[0]
 	return &nft, nil
 }
+
+func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, error) {
+	fullUrl := m.generateUrl(fmt.Sprintf("%s/%s", walletAddress, WalletAddressBalance), &MoralisFilter{})
+
+	data, err := m.request(fullUrl, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &MoralisBalanceResp{}
+	err = json.Unmarshal(data, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
