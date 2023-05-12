@@ -26,6 +26,8 @@ type NewCityGm struct {
 	TxNatives []string `bson:"tx_natives" json:"txNatives"`
 
 	TxTokens []string `bson:"tx_tokens" json:"txTokens"`
+
+	CheckCount int `bson:"check_count" json:"-"`
 }
 
 type TokenAmounts struct {
