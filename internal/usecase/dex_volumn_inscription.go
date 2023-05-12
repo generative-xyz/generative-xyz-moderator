@@ -493,7 +493,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 	}
 }
 
-func (u Usecase) JobGetChartDataForGMCollection() error {
+func (u Usecase) JobGetChartDataForGMCollection111() error {
 	_, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
 		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
@@ -759,7 +759,41 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 
 	// TODO manual
 	manual := map[string]bool{
-		"": true,
+		"0x87907E5ac909454cc16DD503DC03ed8864eB7191": true,
+		"0x08ADb99AF2B78AAb79e8bEe60dfd124C24C68926": true,
+		"0x26c4C9E2a772Fe5F413063c62E7b2E9e14F5Dc5A": true,
+		"0xbbE7148F4e5D7c607845b60C39A21173c0E0a77b": true,
+		"0xf6890Ef5C3ABD88130fa80407067AD49E383cf55": true,
+		"0x0b4Cf3ac10aF6E5e07c7920Cfc4b01DeA69Aa047": true,
+		"0x918453d249A22b6A8535c81e21F7530CD6Ab59F1": true,
+		"0xFa6284E0D78e9c3fe9934b548F167f8E82f63c38": true,
+		"0x941beced3e87a15ba22e1a3705b547f50cfd2eb1": true,
+		"0xF86a588f3604e3b12899f710E3D572F76ffB94B8": true,
+		"0xdDF9a1F60aed0118739e317290B874aDAe269327": true,
+		"0x73e60cD967E957bC6e074F93320FfA1d52697D5b": true,
+		"0x913735E6D76b6b954CA799511244FF430CdA642f": true,
+		"0xd0daddf983fce88bef3f10fc12280d0f0cd1208c": true,
+		"0x4A29367c5Ae9F84eF03E447D1f7deE8e6b16229D": true,
+		"0xf0E87FF63595e6043C31d78d4e16A48ff224880a": true,
+		"0x8ce3b15b6f3f32b757f88bdcf69464e5afdc8452": true,
+		"0x88b582774a9428226B33a76AA39821EC3899E883": true,
+		"0x4bdfa798281e74438399a45451C377A0de6206b1": true,
+		"0x93c2dc7c55af662d19d9ef01a14fee3682d7d3bd": true,
+		"0x0B442613dcc852B0531c7C23f4fCE48C962472E3": true,
+		"0xd0c72ada2bca3ae54e156416b35ee2ab14fd7e09": true,
+		"0x9a6ef672c9af8c98201D3DDfFBa9de4A67Bb7Df8": true,
+		"0xa3CFc7AF4e310eEaF32F325031Eb0352350f0822": true,
+		"0xF8C3A3CfEF10fb2b64D92AA9953923a65ef0b9Bd": true,
+		"0x509eCD4cCFc96Bc152156e986eC35Aaa680BD45A": true,
+		"0x2389b28518c89c3b65989b6959a16a3940b03446": true,
+		"0xf0358a8ccD61A35750c9210b80D3A6078b8c1309": true,
+		"0xD616B44BA3B0FBdaF403E5fb2675013B37ecb35f": true,
+		"0x0D8B49bE1176b7c9436167A4FaA2C0F8547Aa7E7": true,
+		"0x0a90470Ef017c15f18F29C0B33e4935B0eC34929": true,
+		"0x6F364eC121020E246993855666a536821D687621": true,
+		"0x7f1d1C865A9De2a35ec0269d547D8c943B61a794": true,
+		"0x6c8f1DA0f757Ce1a524F671e73Ee8097862b0a2A": true,
+		"0xdAfbA80aDF54C6a67FdA035C5eb669b894306819": true,
 	}
 	_, ok = manual[address]
 	if ok {
