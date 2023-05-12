@@ -12,6 +12,7 @@ import (
 	"os"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
+	"rederinghub.io/external/nfts"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils"
@@ -221,7 +222,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	if err != nil {
 		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err2222", zap.Error(err), zap.String("gmAddress", gmAddress))
 		//return nil, err
-
+		moralisEthBL = new(nfts.MoralisBalanceResp)
 		temp, err := u.EtherscanService.AddressBalance(gmAddress)
 		if err != nil {
 			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err3333", zap.Error(err), zap.String("gmAddress", gmAddress))
