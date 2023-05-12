@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
@@ -281,7 +282,7 @@ func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, 
 	return resp, nil
 }
 
-func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresses []string) ([]MoralisBalanceResp, error) {
+func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresses []string) (map[string]MoralisBalanceResp, error) {
 	f := &MoralisFilter{}
 	f.TokenAddresses = new([]string)
 
@@ -305,5 +306,10 @@ func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresse
 		return nil, err
 	}
 
-	return resp, nil
+	result := make(map[string]MoralisBalanceResp)
+	for _, i := range resp {
+		result[strings.ToLower(i.TokenAddress)] = i
+	}
+
+	return result, nil
 }
