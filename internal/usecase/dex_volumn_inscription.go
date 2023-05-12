@@ -87,7 +87,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
 	key := fmt.Sprintf("gm-collections.deposit.eth2.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
@@ -144,17 +144,16 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			}
 			counting := 0
 			for _, item := range ethTx.Result {
-				//if oldData {
 				if strings.ToLower(item.From) != strings.ToLower(tcAddress) {
 					continue
 				}
-				//}
 				items = append(items, &etherscan.AddressTxItemResponse{
 					From:      tcAddress,
 					To:        gmAddress,
 					Value:     item.Value,
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
 					Currency:  string(entity.ETH),
+					ENS:       ens,
 				})
 				counting++
 			}
@@ -174,6 +173,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 				Value:     moralisEthBL.Balance,
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(moralisEthBL.Balance, 18)), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
+				ENS:       ens,
 			})
 		}
 
@@ -358,7 +358,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 			if err == nil {
 				for _, wallet := range wallets {
-					temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false)
+					temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
@@ -377,32 +377,32 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			if gmAddress == "" {
 				gmAddress = "0x360382fa386dB659a96557A2c7F9Ce7195de024E"
 			}
-			fromWallets := []string{
-				"0x2c7aFd015A4080C835139E94D0f624bE552b9c66",
-				"0x46Ad79eFd29B4212eE2dB32153c682Db06614Ce5",
-				"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
-				"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325",
-				"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
-				"0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526",
-				"0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340",
-				"0x7729A5Cfe2b008B7B19525a10420E6f53941D2a4",
-				"0x4bF946271EEf390AC8c864A01F0D69bF3b858569",
-				"0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac",
-				"0x597c32011116c94994619Cf6De15b3Fdc061a983",
-				"0xB18278584bD3e41DB25453EE3c7DeDfc84040420",
-				"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
-				"0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3",
-				//"0xfA9A55607BF094f991884f722b7Fba3A76687e40",
-				"0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70",
-				"0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446",
-				"0xbf22409c832E944CeF2B33d9929b8905163Ae5d4",
-				"0xda9979247dC98023C0Ff6A59BC7C91bB627d4934",
-				"0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61",
-				"0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30",
-				"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
+			fromWallets := map[string]string{
+				"0x2c7aFd015A4080C835139E94D0f624bE552b9c66": "0x2c7aFd015A4080C835139E94D0f624bE552b9c66",
+				"0x46Ad79eFd29B4212eE2dB32153c682Db06614Ce5": "wwf88.eth",
+				"0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6": "0xD78D4be39B0C174dF23e1941aC7BA3e8E2a6b3B6",
+				"0xBFB9AC25EBC9105c2e061E7640B167c6150A7325": "littlered.eth",
+				"0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4": "0xa3017BB12fe3C0591e5C93011e988CA4b45aa1B4",
+				"0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526": "0xa3EEE445D4DFBBc0C2f4938CB396a59c7E0dE526",
+				"0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340": "0xEAcDD6b4B80Fcb241A4cfAb7f46e886F19c89340",
+				"0x7729A5Cfe2b008B7B19525a10420E6f53941D2a4": "trappavelli.eth",
+				"0x4bF946271EEf390AC8c864A01F0D69bF3b858569": "0x4bF946271EEf390AC8c864A01F0D69bF3b858569",
+				"0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac": "0x21668e3B9f5Aa2a3923E22AA96a255fE8d3b9aac",
+				"0x597c32011116c94994619Cf6De15b3Fdc061a983": "0x597c32011116c94994619Cf6De15b3Fdc061a983",
+				"0xB18278584bD3e41DB25453EE3c7DeDfc84040420": "0xB18278584bD3e41DB25453EE3c7DeDfc84040420",
+				"0xfA9A55607BF094f991884f722b7Fba3A76687e40": "0xfA9A55607BF094f991884f722b7Fba3A76687e40",
+				"0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3": "0xCa2b4ad56a82bc7F8c5A01184A9D9c341213e0d3",
+				//"0xfA9A55607BF094f991884f722b7Fba3A76687e40":,
+				"0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70": "0x63cBF2D7cf7EF30b9445bEAB92997FF27A0bcc70",
+				"0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446": "0x64BE8226638fdF2f85D8E3A01F849E0c47AE9446",
+				"0xbf22409c832E944CeF2B33d9929b8905163Ae5d4": "0xbf22409c832E944CeF2B33d9929b8905163Ae5d4",
+				"0xda9979247dC98023C0Ff6A59BC7C91bB627d4934": "0xda9979247dC98023C0Ff6A59BC7C91bB627d4934",
+				"0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61": "0x9c0Da3467AeD02e49Fe051104eFb2255C2982C61",
+				"0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30": "0xCd2b27C0dc8db90398dB92198a603e5D5D0d5e30",
+				"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82": "0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
 			}
-			for _, wallet := range fromWallets {
-				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, []string{}, true)
+			for wallet, ens := range fromWallets {
+				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, []string{}, true, ens)
 				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
