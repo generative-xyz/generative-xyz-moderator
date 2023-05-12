@@ -87,7 +87,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
 	key := fmt.Sprintf("gm-collections.deposit.erc20.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
@@ -573,7 +573,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 			if err == nil {
 				for _, wallet := range wallets {
-					temp, err := u.GetChartDataERC20ForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS, wallet.Avatar)
+					temp, err := u.GetChartDataERC20ForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, wallet.ENS, wallet.Avatar)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
