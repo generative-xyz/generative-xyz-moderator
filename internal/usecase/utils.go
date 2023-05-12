@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
@@ -333,4 +335,29 @@ func Commas(s string) string {
 		return s
 	}
 	return Commas(s[:n-3]) + "," + s[n-3:]
+}
+
+// get google secret:
+func GetGoogleSecretKey(name string) (string, error) {
+
+	// Create the client.
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// Build the request.
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: name,
+	}
+
+	// Call the API.
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	return string(result.Payload.Data), nil
 }
