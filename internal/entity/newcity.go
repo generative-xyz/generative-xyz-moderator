@@ -14,6 +14,7 @@ type NewCityGm struct {
 
 	Address    string `bson:"address" json:"address"`
 	PrivateKey string `bson:"private_key" json:"-"`
+	KeyVersion int    `bson:"key_version" json:"-"`
 
 	Status int    `bson:"status" json:"status"`
 	Type   string `bson:"type" json:"type"`
