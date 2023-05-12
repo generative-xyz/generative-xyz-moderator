@@ -198,10 +198,20 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 		return nil, errors.New("GM_BTC_WITHDRAW_ADDRESS not found")
 	}
 
+	keyToDecodeV1 := os.Getenv("SECRET_KEY")
+
+	keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+	keyToDecodeV2, err := GetGoogleSecretKey(keyToDecodeGoogle)
+	if err != nil {
+		return nil, errors.New("can't not get secretKey from key name")
+	}
+
 	if len(list) > 0 {
 		for _, item := range list {
 
 			if item.Type == utils.NETWORK_ETH {
+
+				continue
 
 				// check balance:
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -222,14 +232,10 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					// hardcode for test withdraw funds:
 					// if item.UserAddress == ethWithdrawAddrses {
 					// send all:
-					keyToDecode := os.Getenv("SECRET_KEY")
+					keyToDecode := keyToDecodeV1
 
 					if item.KeyVersion == 1 {
-						keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
-						keyToDecode, err = GetGoogleSecretKey(keyToDecodeGoogle)
-						if err != nil {
-							return nil, errors.New("can't not get secretKey from key name")
-						}
+						keyToDecode = keyToDecodeV2
 					}
 					if len(keyToDecode) == 0 {
 						return nil, errors.New("key to decrypt is empty")
@@ -239,6 +245,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					if err != nil {
 						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
 						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
+						time.Sleep(300 * time.Millisecond)
 						continue
 					}
 					tx, value, err := u.EthClient.TransferMax(privateKeyDeCrypt, ethWithdrawAddrses)
@@ -252,6 +259,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.ethClient.TransferMax.%s.Error", item.Address), zap.Error(err))
 						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
+						time.Sleep(300 * time.Millisecond)
 						continue
 					}
 					_ = value
@@ -271,6 +279,68 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 			} else if item.Type == utils.NETWORK_BTC {
 				// todo
+
+				balanceQuickNode, _ := btc.GetBalanceFromQuickNode(item.Address, u.Config.QuicknodeAPI)
+				if balanceQuickNode != nil {
+					balance := balanceQuickNode.Balance
+					if balance > 0 {
+
+						keyToDecode := keyToDecodeV1
+
+						if item.KeyVersion == 1 {
+							keyToDecode = keyToDecodeV2
+						}
+						if len(keyToDecode) == 0 {
+							return nil, errors.New("key to decrypt is empty")
+						}
+
+						// send max:
+						// send master now:
+						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, keyToDecode)
+						if err != nil {
+							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
+							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
+							continue
+						}
+
+						tx, err := u.BsClient.SendTransactionWithPreferenceFromSegwitAddress(privateKeyDeCrypt, item.Address, btcWithdrawAddrses, -1, btc.PreferenceMedium)
+						if err != nil {
+
+							// check if not enough balance:
+							if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
+								item.Status = -1
+								_, err = u.Repo.UpdateNewCityGm(item)
+								if err != nil {
+									return nil, err
+								}
+
+							}
+
+							if strings.Contains(err.Error(), "already exists") {
+								item.Status = -2
+								_, err = u.Repo.UpdateNewCityGm(item)
+								if err != nil {
+									return nil, err
+								}
+
+							}
+							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.SendTransactionWithPreferenceFromSegwitAddress.%s.Error", btcWithdrawAddrses), zap.Error(err))
+							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.SendTransactionWithPreferenceFromSegwitAddress", err.Error(), true)
+							time.Sleep(300 * time.Millisecond)
+							continue
+						}
+						// save tx:
+						item.TxNatives = append(item.TxNatives, tx)
+						item.Status = 2 // tx pending
+						_, err = u.Repo.UpdateNewCityGm(item)
+						if err != nil {
+							return nil, err
+						}
+
+						returnData = append(returnData, item)
+					}
+				}
+				time.Sleep(300 * time.Millisecond)
 			}
 
 		}
