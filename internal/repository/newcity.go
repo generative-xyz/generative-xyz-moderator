@@ -80,3 +80,13 @@ func (r Repository) UpdateNewCityGm(newCityGm *entity.NewCityGm) (*mongo.UpdateR
 
 	return result, nil
 }
+
+func (r Repository) UpdateNewCityGmENSAvatar(newCityGm *entity.NewCityGm) (*mongo.UpdateResult, error) {
+	filter := bson.D{{"uuid", newCityGm.UUID}}
+	result, err := r.UpdateOne(entity.NewCityGm{}.TableName(), filter, newCityGm)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
