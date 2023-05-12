@@ -168,7 +168,12 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
-		u.Cache.SetDataWithExpireTime(key, resp, 24*60*60) // cache by 1 day
+		cachedExpTime := 24 * 60 * 60
+
+		if oldData {
+			cachedExpTime = 30 * 24 * 60 * 60 //a month
+		}
+		u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime) // cache by 1 day
 		return resp, nil
 	}
 	return nil, errors.New("not balance - " + gmAddress)
@@ -259,7 +264,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			UsdtValue:    usdt,
 			Items:        analyticItems,
 		}
-		u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60) // cache by 1 day
+		u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60*30) // cache by a month
 		return resp1, nil
 	} else {
 		/*_, bs, err := u.buildBTCClient()
