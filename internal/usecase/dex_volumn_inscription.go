@@ -89,16 +89,44 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 
 func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	//keyPepe := fmt.Sprintf("gm-collections.deposit.pepe.gmAddress." + tcAddress + "." + gmAddress)
-	//keyTurbo := fmt.Sprintf("gm-collections.deposit.turbo.gmAddress." + tcAddress + "." + gmAddress)
+	key := fmt.Sprintf("gm-collections.deposit.erc20.gmAddress." + tcAddress + "." + gmAddress)
+	result := &structure.AnalyticsProjectDeposit{}
+	//u.Cache.Delete(key)
+	cached, err := u.Cache.GetData(key)
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return result, nil
+		}
+	}
 
-	var pepeRate float64 = 0
+	pepeRate, err := helpers.GetExternalPrice("PEPE")
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		return nil, err
+	}
+	keypepeRate := fmt.Sprintf("gm-collections.deposit.pepeRate.rate")
+	var ethRate float64
+	cachedETHRate, err := u.Cache.GetData(keypepeRate)
+	if err == nil {
+		ethRate, _ = strconv.ParseFloat(*cachedETHRate, 64)
+	}
+	if ethRate == 0 {
+		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return nil, err
+		}
+		u.Cache.SetDataWithExpireTime(keypepeRate, ethRate, 60*60) // cache by 1 hour
+	}
+
 	var turboRate float64 = 0
 	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
 	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
 	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
 		return nil, err
 	}
 
@@ -136,13 +164,16 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		})
 	}
 
-	resp := &structure.AnalyticsProjectDeposit{}
-	//resp.CurrencyRate = ethRate
-	//resp.Value = moralisEthBL.Balance
-	resp.Currency = string(entity.ETH)
-	resp.UsdtValue = usdtValue
-	resp.Items = items
-
+	if len(items) > 0 {
+		resp := &structure.AnalyticsProjectDeposit{}
+		//resp.CurrencyRate = ethRate
+		//resp.Value = moralisEthBL.Balance
+		resp.Currency = string(entity.ETH)
+		resp.UsdtValue = usdtValue
+		resp.Items = items
+		u.Cache.SetDataWithExpireTime(key, resp, 24*60*60) // cache by 1 day
+		return resp, nil
+	}
 	return nil, errors.New("not balance - " + gmAddress)
 }
 
