@@ -201,7 +201,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 	if len(list) > 0 {
 		for _, item := range list {
 
-			if item.Type == utils.NETWORK_ETH && item.UserAddress == ethWithdrawAddrses {
+			if item.Type == utils.NETWORK_ETH {
 
 				// check balance:
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -220,46 +220,54 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					}
 
 					// hardcode for test withdraw funds:
-					if item.UserAddress == ethWithdrawAddrses {
-						// send all:
-						keyToDecode := os.Getenv("SECRET_KEY")
+					// if item.UserAddress == ethWithdrawAddrses {
+					// send all:
+					keyToDecode := os.Getenv("SECRET_KEY")
 
-						if item.KeyVersion == 1 {
-							keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
-							keyToDecode, err = GetGoogleSecretKey(keyToDecodeGoogle)
-							if err != nil {
-								return nil, errors.New("can't not get secretKey from key name")
-							}
-						}
-						if len(keyToDecode) == 0 {
-							return nil, errors.New("key to decrypt is empty")
-						}
-
-						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, keyToDecode)
+					if item.KeyVersion == 1 {
+						keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+						keyToDecode, err = GetGoogleSecretKey(keyToDecodeGoogle)
 						if err != nil {
-							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
-							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
-							continue
+							return nil, errors.New("can't not get secretKey from key name")
 						}
-						tx, value, err := u.EthClient.TransferMax(privateKeyDeCrypt, ethWithdrawAddrses)
-						if err != nil {
-							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.ethClient.TransferMax.%s.Error", item.Address), zap.Error(err))
-							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
-							continue
-						}
-						_ = value
-
-						item.TxNatives = append(item.TxNatives, tx)
-						item.Status = 2 // tx pending
-						_, err = u.Repo.UpdateNewCityGm(item)
-						if err != nil {
-							return nil, err
-						}
-
-						returnData = append(returnData, item)
+					}
+					if len(keyToDecode) == 0 {
+						return nil, errors.New("key to decrypt is empty")
 					}
 
+					privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, keyToDecode)
+					if err != nil {
+						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
+						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
+						continue
+					}
+					tx, value, err := u.EthClient.TransferMax(privateKeyDeCrypt, ethWithdrawAddrses)
+					if err != nil {
+
+						// check if not enough balance:
+						if strings.Contains(err.Error(), "rlp: cannot encode negative big.Int") {
+							item.Status = -1
+							u.Repo.UpdateNewCityGm(item)
+						}
+
+						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.ethClient.TransferMax.%s.Error", item.Address), zap.Error(err))
+						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
+						continue
+					}
+					_ = value
+
+					item.TxNatives = append(item.TxNatives, tx)
+					item.Status = 2 // tx pending
+					_, err = u.Repo.UpdateNewCityGm(item)
+					if err != nil {
+						return nil, err
+					}
+
+					returnData = append(returnData, item)
+					// }
+
 				}
+				time.Sleep(300 * time.Millisecond)
 
 			} else if item.Type == utils.NETWORK_BTC {
 				// todo
