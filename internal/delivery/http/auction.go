@@ -12,8 +12,9 @@ import (
 
 func (h *httpDelivery) getListAuction(w http.ResponseWriter, r *http.Request) {
 
-	list, _ := h.Usecase.APIGetListAuction()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	// list, _ := h.Usecase.APIGetListAuction()
+
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) checkDeclared(w http.ResponseWriter, r *http.Request) {
@@ -24,20 +25,20 @@ func (h *httpDelivery) checkDeclared(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpDelivery) listSnapshot(w http.ResponseWriter, r *http.Request) {
 
-	list := h.Usecase.APIAuctionListSnapshot()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	// list := h.Usecase.APIAuctionListSnapshot()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) listBidWinnerConfig(w http.ResponseWriter, r *http.Request) {
 
-	list, _ := h.Usecase.GetAuctionListWinnerAddressFromConfig()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	// list, _ := h.Usecase.GetAuctionListWinnerAddressFromConfig()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) listBidWinnerBigList(w http.ResponseWriter, r *http.Request) {
 
-	list, _ := h.Usecase.GetAuctionListWinnerAddressFromBidList()
-	h.Response.RespondSuccess(w, http.StatusOK, response.Success, list, "")
+	// list, _ := h.Usecase.GetAuctionListWinnerAddressFromBidList()
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, nil, "")
 }
 
 func (h *httpDelivery) shareNow(w http.ResponseWriter, r *http.Request) {
