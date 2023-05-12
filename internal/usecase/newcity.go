@@ -108,6 +108,42 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 // admin
 func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
+	if true {
+		if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
+			return nil, errors.New("key to get key is empty")
+		}
+		keyName, err := GetGoogleSecretKey(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
+		if err != nil {
+			return nil, errors.New("can't not get keyName: " + err.Error())
+		}
+		secretKey, err := GetGoogleSecretKey(keyName)
+		if err != nil {
+			return nil, errors.New("can't not get secretKey from key name" + err.Error())
+		}
+
+		// try to encrypt
+		privKeyTest := "hello 123"
+
+		privateKeyDeCrypt, err := encrypt.EncryptToString(privKeyTest, secretKey)
+		if err != nil {
+			return nil, errors.New("can't not EncryptToString" + err.Error())
+
+		}
+		// try to decrypt
+		valueDecrypt, err := encrypt.DecryptToString(privateKeyDeCrypt, secretKey)
+		if err != nil {
+			return nil, errors.New("can't not DecryptToString" + err.Error())
+
+		}
+		ok := strings.EqualFold(valueDecrypt, privKeyTest)
+
+		if !ok {
+			return nil, errors.New("can't not compare")
+		}
+
+		return privateKeyDeCrypt, nil
+	}
+
 	var returnData []*entity.NewCityGm
 
 	list, err := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx, 3 confirm
@@ -160,7 +196,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 						}
 						_ = value
 
-						item.TxNatives = append(item.NativeAmount, tx)
+						item.TxNatives = append(item.TxNatives, tx)
 						item.Status = 2 // tx pending
 						_, err = u.Repo.UpdateNewCityGm(item)
 						if err != nil {
