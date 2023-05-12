@@ -1,6 +1,7 @@
 package global
 
 import (
+	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
@@ -48,4 +49,5 @@ type Global struct {
 	BsClient                                              *btc.BlockcypherService
 	EtherscanService                                      *etherscan.EtherscanService
 	MempoolService                                        *mempool_space.MempoolService
+	CoinMarketCap                                         *coin_market_cap.CoinMarketCap
 }
