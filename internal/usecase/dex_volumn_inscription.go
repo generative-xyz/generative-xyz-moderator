@@ -462,6 +462,30 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			}
 			u.Cache.SetDataWithExpireTime(key, resp1, 6*60*60) // cache by 6 hours
 			return resp1, nil
+		} else {
+			transferUsdtValue := float64(0)
+			if len(transferedBTC) > 0 {
+				for _, v := range transferedBTC {
+					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 8)), btcRate)
+				}
+				item := &etherscan.AddressTxItemResponse{
+					From:      tcWallet,
+					To:        gmWallet,
+					Value:     fmt.Sprintf("%d", walletInfo.Balance),
+					Currency:  string(entity.BIT),
+					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
+				}
+				analyticItems = append(analyticItems, item)
+				resp1 := &structure.AnalyticsProjectDeposit{
+					Value:        fmt.Sprintf("%d", walletInfo.Balance),
+					Currency:     string(entity.BIT),
+					CurrencyRate: btcRate,
+					UsdtValue:    item.UsdtValue,
+					Items:        analyticItems,
+				}
+				u.Cache.SetDataWithExpireTime(key, resp1, 6*60*60) // cache by 6 hours
+				return resp1, nil
+			}
 		}
 		return nil, errors.New("not balance - " + gmWallet)
 	}
