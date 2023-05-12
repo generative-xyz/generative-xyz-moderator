@@ -134,7 +134,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
 	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
 	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
-	time.Sleep(time.Millisecond * 250)
+	//time.Sleep(time.Millisecond * 250)
 	if err != nil {
 		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", gmAddress))
 		return nil, err
@@ -220,7 +220,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	}
 
 	moralisEthBL, err := u.MoralisNft.AddressBalance(gmAddress)
-	time.Sleep(time.Millisecond * 250)
+	//time.Sleep(time.Millisecond * 250)
 	if err != nil {
 		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err2222", zap.Error(err), zap.String("gmAddress", gmAddress))
 		//return nil, err
