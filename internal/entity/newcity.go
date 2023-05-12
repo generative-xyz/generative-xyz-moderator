@@ -9,6 +9,8 @@ type NewCityGm struct {
 	BaseEntity `bson:",inline"`
 
 	UserAddress string `bson:"user_address" json:"userAddress"` // to faucet ...
+	ENS         string `bson:"ens" json:"ens"`
+	Avatar      string `bson:"avatar" json:"avatar"`
 
 	Address    string `bson:"address" json:"address"`
 	PrivateKey string `bson:"private_key" json:"-"`
