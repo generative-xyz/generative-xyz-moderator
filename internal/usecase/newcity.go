@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"rederinghub.io/external/opensea"
 	"strings"
 	"time"
+
+	"rederinghub.io/external/opensea"
 
 	"go.uber.org/zap"
 	"rederinghub.io/internal/entity"
@@ -130,11 +131,9 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 		if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
 			return nil, errors.New("key to get key is empty")
 		}
-		keyName, err := GetGoogleSecretKey(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
-		if err != nil {
-			return nil, errors.New("can't not get keyName: " + err.Error())
-		}
-		secretKey, err := GetGoogleSecretKey(keyName)
+		secretKeyName := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+
+		secretKey, err := GetGoogleSecretKey(secretKeyName)
 		if err != nil {
 			return nil, errors.New("can't not get secretKey from key name" + err.Error())
 		}
