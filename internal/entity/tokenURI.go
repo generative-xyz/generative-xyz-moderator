@@ -12,8 +12,10 @@ import (
 type TokenPaidType string
 
 const (
-	ETH TokenPaidType = "eth"
-	BIT TokenPaidType = "btc"
+	ETH   TokenPaidType = "eth"
+	BIT   TokenPaidType = "btc"
+	PEPE  TokenPaidType = "pepe"
+	TURBO TokenPaidType = "turbo"
 )
 
 type InscriptionDetail struct {

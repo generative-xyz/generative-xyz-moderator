@@ -40,7 +40,8 @@ type MoralisTokensResp struct {
 }
 
 type MoralisBalanceResp struct {
-	Balance string `json:"balance"`
+	Balance      string `json:"balance"`
+	TokenAddress string `json:"token_address"`
 }
 
 type MoralisToken struct {

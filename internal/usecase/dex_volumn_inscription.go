@@ -87,6 +87,96 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
+func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
+	// try from cache
+	key := fmt.Sprintf("gm-collections.deposit.erc20.gmAddress." + tcAddress + "." + gmAddress)
+	result := &structure.AnalyticsProjectDeposit{}
+	//u.Cache.Delete(key)
+	cached, err := u.Cache.GetData(key)
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return result, nil
+		}
+	}
+
+	pepeRate, err := helpers.GetExternalPrice("PEPE")
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		return nil, err
+	}
+	keypepeRate := fmt.Sprintf("gm-collections.deposit.pepeRate.rate")
+	var ethRate float64
+	cachedETHRate, err := u.Cache.GetData(keypepeRate)
+	if err == nil {
+		ethRate, _ = strconv.ParseFloat(*cachedETHRate, 64)
+	}
+	if ethRate == 0 {
+		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return nil, err
+		}
+		u.Cache.SetDataWithExpireTime(keypepeRate, ethRate, 60*60) // cache by 1 hour
+	}
+
+	var turboRate float64 = 0
+	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
+	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
+	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		return nil, err
+	}
+
+	pepeBalance := moralisERC20BL[pepe]
+	turboBalance := moralisERC20BL[turbo]
+
+	var items []*etherscan.AddressTxItemResponse
+	totalPepe := utils.GetValue(pepeBalance.Balance, 18)
+	usdtValue := float64(0)
+	if totalPepe > 0 {
+		usdtValue += utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate)
+		transferUsdtValue := float64(0)
+		items = append(items, &etherscan.AddressTxItemResponse{
+			From:      tcAddress,
+			To:        gmAddress,
+			Value:     pepeBalance.Balance,
+			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate) + transferUsdtValue,
+			Currency:  string(entity.PEPE),
+			ENS:       ens,
+			Avatar:    avatar,
+		})
+	}
+	totalTurbo := utils.GetValue(turboBalance.Balance, 18)
+	if totalPepe > 0 {
+		usdtValue += utils.ToUSDT(fmt.Sprintf("%f", totalTurbo), turboRate)
+		transferUsdtValue := float64(0)
+		items = append(items, &etherscan.AddressTxItemResponse{
+			From:      tcAddress,
+			To:        gmAddress,
+			Value:     pepeBalance.Balance,
+			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate) + transferUsdtValue,
+			Currency:  string(entity.TURBO),
+			ENS:       ens,
+			Avatar:    avatar,
+		})
+	}
+
+	if len(items) > 0 {
+		resp := &structure.AnalyticsProjectDeposit{}
+		//resp.CurrencyRate = ethRate
+		//resp.Value = moralisEthBL.Balance
+		resp.Currency = string(entity.ETH)
+		resp.UsdtValue = usdtValue
+		resp.Items = items
+		u.Cache.SetDataWithExpireTime(key, resp, 24*60*60) // cache by 1 day
+		return resp, nil
+	}
+	return nil, errors.New("not balance - " + gmAddress)
+}
+
 func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
 	key := fmt.Sprintf("gm-collections.deposit.eth2.gmAddress." + tcAddress + "." + gmAddress)
@@ -172,7 +262,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 				From:      tcAddress,
 				To:        gmAddress,
 				Value:     moralisEthBL.Balance,
-				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(moralisEthBL.Balance, 18)), ethRate) + transferUsdtValue,
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
 				Avatar:    avatar,
@@ -347,6 +437,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		}
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
 		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
+		erc20DataChan := make(chan structure.AnalyticsProjectDepositChan)
 
 		go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
 			data := &structure.AnalyticsProjectDeposit{}
@@ -470,8 +561,35 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		}(btcDataChan)
 
+		go func(erc20DataChan chan structure.AnalyticsProjectDepositChan) {
+			data := &structure.AnalyticsProjectDeposit{}
+			var err error
+			defer func() {
+				erc20DataChan <- structure.AnalyticsProjectDepositChan{
+					Value: data,
+					Err:   err,
+				}
+			}()
+			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
+			if err == nil {
+				for _, wallet := range wallets {
+					temp, err := u.GetChartDataERC20ForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS, wallet.Avatar)
+					if err == nil && temp != nil {
+						data.Items = append(data.Items, temp.Items...)
+						data.UsdtValue += temp.UsdtValue
+						data.Value += temp.Value
+						data.CurrencyRate = temp.CurrencyRate
+					}
+					if err != nil {
+						u.Logger.ErrorAny("GetChartDataERC20ForGMCollection", zap.Any("err", err))
+					}
+				}
+			}
+		}(erc20DataChan)
+
 		ethDataFromChan := <-ethDataChan
 		btcDataFromChan := <-btcDataChan
+		erc20DataFromChan := <-erc20DataChan
 
 		result := &structure.AnalyticsProjectDeposit{}
 		if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
@@ -482,6 +600,11 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
 			result.Items = append(result.Items, btcDataFromChan.Value.Items...)
 			result.UsdtValue += btcDataFromChan.Value.UsdtValue
+		}
+
+		if erc20DataFromChan.Value != nil && len(erc20DataFromChan.Value.Items) > 0 {
+			result.Items = append(result.Items, erc20DataFromChan.Value.Items...)
+			result.UsdtValue += erc20DataFromChan.Value.UsdtValue
 		}
 
 		if len(result.Items) > 0 {
