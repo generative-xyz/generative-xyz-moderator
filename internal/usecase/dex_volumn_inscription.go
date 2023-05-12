@@ -301,6 +301,37 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		}
 		u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime) // cache by 1 day
 		return resp, nil
+	} else {
+		transferUsdtValue := float64(0)
+		if len(transferedETH) > 0 && !oldData {
+			for _, v := range transferedETH {
+				transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 18)), ethRate)
+			}
+			var items []*etherscan.AddressTxItemResponse
+			items = append(items, &etherscan.AddressTxItemResponse{
+				From:      tcAddress,
+				To:        gmAddress,
+				Value:     moralisEthBL.Balance,
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
+				Currency:  string(entity.ETH),
+				ENS:       ens,
+				Avatar:    avatar,
+			})
+			resp := &structure.AnalyticsProjectDeposit{}
+			resp.CurrencyRate = ethRate
+			resp.Currency = string(entity.ETH)
+			resp.Value = moralisEthBL.Balance
+			resp.UsdtValue = items[0].UsdtValue
+			resp.Items = items
+
+			cachedExpTime := 24 * 60 * 60
+
+			if oldData {
+				cachedExpTime = 30 * 24 * 60 * 60 //a month
+			}
+			u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime) // cache by 1 day
+			return resp, nil
+		}
 	}
 	return nil, errors.New("not balance - " + gmAddress)
 }
