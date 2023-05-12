@@ -493,7 +493,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 	}
 }
 
-func (u Usecase) JobGetChartDataForGMCollection111() error {
+func (u Usecase) JobGetChartDataForGMCollection() error {
 	_, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
 		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
