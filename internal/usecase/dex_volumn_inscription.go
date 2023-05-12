@@ -134,7 +134,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
 	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", gmAddress))
 		return nil, err
 	}
 
