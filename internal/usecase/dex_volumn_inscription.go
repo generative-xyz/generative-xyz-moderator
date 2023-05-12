@@ -87,7 +87,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
 	key := fmt.Sprintf("gm-collections.deposit.eth2.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
@@ -154,6 +154,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
 					Currency:  string(entity.ETH),
 					ENS:       ens,
+					Avatar:    avatar,
 				})
 				counting++
 			}
@@ -174,6 +175,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(moralisEthBL.Balance, 18)), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
+				Avatar:    avatar,
 			})
 		}
 
@@ -358,7 +360,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 			if err == nil {
 				for _, wallet := range wallets {
-					temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS)
+					temp, err := u.GetChartDataEthForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false, wallet.ENS, wallet.Avatar)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
@@ -402,7 +404,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 				"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82": "0xe9084DEDfcD06E63Dc980De1464f7786e2690c82",
 			}
 			for wallet, ens := range fromWallets {
-				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, []string{}, true, ens)
+				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, []string{}, true, ens, "")
 				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
