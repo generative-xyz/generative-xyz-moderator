@@ -26,7 +26,17 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
-	if len(os.Getenv("SECRET_KEY")) == 0 {
+	secretKeyName := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+	if len(secretKeyName) == 0 {
+		return nil, errors.New("please config google key first!")
+	}
+
+	keyToEncrypt, err := GetGoogleSecretKey(secretKeyName)
+	if err != nil {
+		return nil, errors.New("can't not get secretKey from key name")
+	}
+
+	if len(keyToEncrypt) == 0 {
 		return nil, errors.New("please config key first!")
 	}
 
@@ -49,7 +59,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("ApiCreateNewGM.ethClient.GenerateAddress", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
+		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, keyToEncrypt)
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -60,9 +70,14 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddress, // temp address for the user send to
 			PrivateKey:  privateKeyEnCrypt,
+			KeyVersion:  1, // 2 from now
 		}
 
 		err = u.Repo.InsertNewCityGm(itemEth)
+
+		if err != nil {
+			return nil, err
+		}
 
 		go func(item *entity.NewCityGm) {
 			ens, errENS := u.EthClient.GetEns(addressInput)
@@ -81,9 +96,6 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			u.Repo.UpdateNewCityGmENSAvatar(item)
 		}(itemEth)
 
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	itemBtc, err := u.Repo.FindNewCityGmByUserAddress(addressInput, utils.NETWORK_BTC)
@@ -102,7 +114,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("u.ApiCreateNewGM.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, os.Getenv("SECRET_KEY"))
+		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, keyToEncrypt)
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -113,6 +125,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddressBtc, // temp address for the user send to
 			PrivateKey:  privateKeyEnCryptBtc,
+			KeyVersion:  1, // 2 from now
 		}
 
 		err = u.Repo.InsertNewCityGm(itemBtc)
@@ -131,7 +144,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 // admin
 func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
-	if true {
+	if false {
 		if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
 			return nil, errors.New("key to get key is empty")
 		}
@@ -179,6 +192,12 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 		return nil, errors.New("GM_ETH_WITHDRAW_ADDRESS not found")
 	}
 
+	btcWithdrawAddrses := os.Getenv("GM_BTC_WITHDRAW_ADDRESS")
+
+	if len(btcWithdrawAddrses) == 0 {
+		return nil, errors.New("GM_BTC_WITHDRAW_ADDRESS not found")
+	}
+
 	if len(list) > 0 {
 		for _, item := range list {
 
@@ -201,33 +220,54 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					}
 
 					// hardcode for test withdraw funds:
-					if item.UserAddress == ethWithdrawAddrses {
-						// send all:
-						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
-						if err != nil {
-							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
-							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
-							continue
-						}
-						tx, value, err := u.EthClient.TransferMax(privateKeyDeCrypt, ethWithdrawAddrses)
-						if err != nil {
-							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.ethClient.TransferMax.%s.Error", item.Address), zap.Error(err))
-							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
-							continue
-						}
-						_ = value
+					// if item.UserAddress == ethWithdrawAddrses {
+					// send all:
+					keyToDecode := os.Getenv("SECRET_KEY")
 
-						item.TxNatives = append(item.TxNatives, tx)
-						item.Status = 2 // tx pending
-						_, err = u.Repo.UpdateNewCityGm(item)
+					if item.KeyVersion == 1 {
+						keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+						keyToDecode, err = GetGoogleSecretKey(keyToDecodeGoogle)
 						if err != nil {
-							return nil, err
+							return nil, errors.New("can't not get secretKey from key name")
 						}
-
-						returnData = append(returnData, item)
+					}
+					if len(keyToDecode) == 0 {
+						return nil, errors.New("key to decrypt is empty")
 					}
 
+					privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, keyToDecode)
+					if err != nil {
+						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
+						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
+						continue
+					}
+					tx, value, err := u.EthClient.TransferMax(privateKeyDeCrypt, ethWithdrawAddrses)
+					if err != nil {
+
+						// check if not enough balance:
+						if strings.Contains(err.Error(), "rlp: cannot encode negative big.Int") {
+							item.Status = -1
+							u.Repo.UpdateNewCityGm(item)
+						}
+
+						logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.ethClient.TransferMax.%s.Error", item.Address), zap.Error(err))
+						go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.ethClient.TransferMax", err.Error(), true)
+						continue
+					}
+					_ = value
+
+					item.TxNatives = append(item.TxNatives, tx)
+					item.Status = 2 // tx pending
+					_, err = u.Repo.UpdateNewCityGm(item)
+					if err != nil {
+						return nil, err
+					}
+
+					returnData = append(returnData, item)
+					// }
+
 				}
+				time.Sleep(300 * time.Millisecond)
 
 			} else if item.Type == utils.NETWORK_BTC {
 				// todo

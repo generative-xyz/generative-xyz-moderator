@@ -196,7 +196,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			logger.AtLog.Logger.Info("GetChartDataEthForGMCollection", zap.Any("result", result), zap.String("gmAddress", gmAddress))
 			return result, nil
 		}
 	}
