@@ -280,3 +280,30 @@ func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, 
 
 	return resp, nil
 }
+
+func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresses []string) ([]MoralisBalanceResp, error) {
+	f := &MoralisFilter{}
+	f.TokenAddresses = new([]string)
+
+	urls := url.Values{}
+	urls.Add("chain", m.conf.Moralis.Chain)
+	for key, tAddress := range tAddresses {
+		urls.Add(fmt.Sprintf("token_addresses[%d]", key), tAddress)
+	}
+
+	path := fmt.Sprintf("%s/%s?%s", walletAddress, WalletAddressTokenBalance, urls.Encode())
+	fullUrl := fmt.Sprintf("%s/%s", m.serverURL, path)
+
+	data, err := m.request(fullUrl, "GET", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := []MoralisBalanceResp{}
+	err = json.Unmarshal(data, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
