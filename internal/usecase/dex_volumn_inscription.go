@@ -525,6 +525,15 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		return 30.0
 	}
 
+	// TODO kll
+	kll := map[string]bool{
+		"": true,
+	}
+	_, ok := kll[address]
+	if ok {
+		return 25.0
+	}
+
 	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
 	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
 		return 20.0
