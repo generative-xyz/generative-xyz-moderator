@@ -56,12 +56,19 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			PrivateKey:  privateKeyEnCrypt,
 		}
 
-		ens, errENS := u.EthClient.GetEns(addressInput)
+		/*ens, errENS := u.EthClient.GetEns(addressInput)
 		if errENS == nil {
 			if len(ens) > 0 {
 				itemEth.ENS = ens
 			}
 		}
+
+		avatar, errAvatar := opensea.OpenseaService{}.GetProfileAvatar(addressInput)
+		if errAvatar == nil {
+			if len(avatar) > 0 {
+				itemEth.Avatar = avatar
+			}
+		}*/
 
 		err = u.Repo.InsertNewCityGm(itemEth)
 
