@@ -39,6 +39,10 @@ type MoralisTokensResp struct {
 	Result   []MoralisToken `json:"result"`
 }
 
+type MoralisBalanceResp struct {
+	Balance string `json:"balance"`
+}
+
 type MoralisToken struct {
 	TokenAddress      string  `json:"token_address"`
 	TokenID           string  `json:"token_id"`

@@ -17,6 +17,7 @@ import (
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
+	"rederinghub.io/utils/logger"
 	"strconv"
 	"strings"
 	"time"
@@ -95,6 +96,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
 			return result, nil
 		}
 	}
@@ -109,18 +111,25 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	if ethRate == 0 {
 		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
 		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
 			return nil, err
 		}
 		u.Cache.SetDataWithExpireTime(keyRate, ethRate, 60*60) // cache by 1 hour
 	}
 
-	ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
-	time.Sleep(time.Millisecond * 100)
+	moralisEthBL, err := u.MoralisNft.AddressBalance(gmAddress)
 	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
 		return nil, err
 	}
 
-	totalEth := utils.GetValue(ethBL.Result, 18)
+	//ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
+	//time.Sleep(time.Millisecond * 100)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	totalEth := utils.GetValue(moralisEthBL.Balance, 18)
 	if totalEth > 0 {
 		usdtValue := utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate)
 
@@ -130,6 +139,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			ethTx, err := u.EtherscanService.AddressTransactions(gmAddress)
 			time.Sleep(time.Millisecond * 100)
 			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
 				return nil, err
 			}
 			counting := 0
@@ -161,8 +171,8 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     ethBL.Result,
-				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(ethBL.Result, 18)), ethRate) + transferUsdtValue,
+				Value:     moralisEthBL.Balance,
+				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(moralisEthBL.Balance, 18)), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 			})
 		}
@@ -170,7 +180,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp := &structure.AnalyticsProjectDeposit{}
 		resp.CurrencyRate = ethRate
 		resp.Currency = string(entity.ETH)
-		resp.Value = ethBL.Result
+		resp.Value = moralisEthBL.Balance
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
