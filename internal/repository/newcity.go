@@ -83,7 +83,12 @@ func (r Repository) UpdateNewCityGm(newCityGm *entity.NewCityGm) (*mongo.UpdateR
 
 func (r Repository) UpdateNewCityGmENSAvatar(newCityGm *entity.NewCityGm) (*mongo.UpdateResult, error) {
 	filter := bson.D{{"uuid", newCityGm.UUID}}
-	result, err := r.UpdateOne(entity.NewCityGm{}.TableName(), filter, newCityGm)
+	result, err := r.DB.Collection(entity.NewCityGm{}.TableName()).UpdateOne(context.TODO(), filter, bson.M{
+		"$set": bson.M{
+			"avatar": newCityGm.Avatar,
+			"ens":    newCityGm.ENS,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
