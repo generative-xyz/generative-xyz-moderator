@@ -86,7 +86,7 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 // @Success 200 {object} response.JsonResponse{}
 // @Router /charts/gm-collections/deposit [GET]
 func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *http.Request) {
-	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") == "1")
+	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
