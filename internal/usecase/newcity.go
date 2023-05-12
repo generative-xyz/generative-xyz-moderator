@@ -135,7 +135,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 		secretKey, err := GetGoogleSecretKey(secretKeyName)
 		if err != nil {
-			return nil, errors.New("can't not get secretKey from key name" + err.Error())
+			return nil, errors.New("can't not get secretKey from key name")
 		}
 
 		// try to encrypt
