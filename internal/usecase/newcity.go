@@ -26,6 +26,10 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
+	if len(os.Getenv("SECRET_KEY")) == 0 {
+		return nil, errors.New("please config key first!")
+	}
+
 	// get temp address from db:
 	itemEth, err := u.Repo.FindNewCityGmByUserAddress(addressInput, utils.NETWORK_ETH)
 
