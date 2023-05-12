@@ -26,7 +26,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		return nil, errors.New("you address invalid")
 	}
 
-	if len(os.Getenv("SECRET_KEY")) == 0 {
+	if len(os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")) == 0 {
 		return nil, errors.New("please config key first!")
 	}
 
@@ -49,7 +49,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("ApiCreateNewGM.ethClient.GenerateAddress", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("SECRET_KEY"))
+		privateKeyEnCrypt, err := encrypt.EncryptToString(privateKey, os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -60,6 +60,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddress, // temp address for the user send to
 			PrivateKey:  privateKeyEnCrypt,
+			KeyVersion:  1, // 2 from now
 		}
 
 		err = u.Repo.InsertNewCityGm(itemEth)
@@ -102,7 +103,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			logger.AtLog.Logger.Error("u.ApiCreateNewGM.GenerateAddressSegwit", zap.Error(err))
 			return nil, err
 		}
-		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, os.Getenv("SECRET_KEY"))
+		privateKeyEnCryptBtc, err := encrypt.EncryptToString(privateKeyBtc, os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME"))
 		if err != nil {
 			logger.AtLog.Logger.Error("u.CreateMintReceiveAddress.Encrypt", zap.Error(err))
 			return nil, err
@@ -113,6 +114,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 			Status:      1,
 			Address:     receiveAddressBtc, // temp address for the user send to
 			PrivateKey:  privateKeyEnCryptBtc,
+			KeyVersion:  1, // 2 from now
 		}
 
 		err = u.Repo.InsertNewCityGm(itemBtc)
@@ -203,7 +205,20 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					// hardcode for test withdraw funds:
 					if item.UserAddress == ethWithdrawAddrses {
 						// send all:
-						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, os.Getenv("SECRET_KEY"))
+						keyToDecode := os.Getenv("SECRET_KEY")
+
+						if item.KeyVersion == 1 {
+							keyToDecodeGoogle := os.Getenv("GENERATIVE_ENCRYPT_SECRET_KEY_NAME")
+							keyToDecode, err = GetGoogleSecretKey(keyToDecodeGoogle)
+							if err != nil {
+								return nil, errors.New("can't not get secretKey from key name")
+							}
+						}
+						if len(keyToDecode) == 0 {
+							return nil, errors.New("key to decrypt is empty")
+						}
+
+						privateKeyDeCrypt, err := encrypt.DecryptToString(item.PrivateKey, keyToDecode)
 						if err != nil {
 							logger.AtLog.Logger.Error(fmt.Sprintf("ApiAdminCrawlFunds.Decrypt.%s.Error", item.Address), zap.Error(err))
 							go u.trackMintNftBtcHistory(item.UUID, "ApiAdminCrawlFunds", item.TableName(), item.Status, "ApiAdminCrawlFunds.DecryptToString", err.Error(), true)
