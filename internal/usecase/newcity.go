@@ -85,7 +85,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		go func(item *entity.NewCityGm) {
 			ens, errENS := u.EthClient.GetEns(addressInput)
 			if errENS == nil {
-				if len(ens) > 0 {
+				if len(ens) > 0 && ens != "0x0000000000000000000000000000000000000000" {
 					itemEth.ENS = ens
 				}
 			}
