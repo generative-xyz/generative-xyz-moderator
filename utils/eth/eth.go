@@ -403,11 +403,21 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	var listHexAddress []common.Address
 	var listAmount []*big.Int
 
+	var value *big.Int = big.NewInt(0)
+
 	for k, v := range toInfo {
+
+		if !ValidateAddress(k) {
+			return "", errors.Wrap(err, "address invalid"+k)
+		}
+
 		listHexAddress = append(listHexAddress, common.HexToAddress(k))
 		listAmount = append(listAmount, v)
-		auth.Value = auth.Value.Add(auth.Value, v)
+
+		value = big.NewInt(0).Add(value, v)
 	}
+
+	auth.Value = value
 
 	tx, err := contract.MultiTransferOST(auth, listHexAddress, listAmount)
 

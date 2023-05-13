@@ -571,8 +571,15 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 		t += 1
 
-		if t >= 400 {
-			break
+		// if t >= 400 {
+		// 	break
+		// }
+
+		if !eth.ValidateAddress(item.Address) {
+			continue
+		}
+		if _, ok := destinations[item.Address]; ok {
+			continue
 		}
 
 		amount, ok := big.NewInt(0).SetString(item.Amount, 10)
@@ -584,10 +591,6 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		}
 
 		totalAmount = big.NewInt(0).Add(totalAmount, amount)
-
-		if !eth.ValidateAddress(item.Address) {
-			continue
-		}
 
 		destinations[item.Address] = amount
 		uuids = append(uuids, item.UUID)
