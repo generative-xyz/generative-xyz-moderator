@@ -296,7 +296,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
-		cachedExpTime := 24 * 60 * 60
+		cachedExpTime := 1 * 60 * 60
 
 		if oldData {
 			cachedExpTime = 30 * 24 * 60 * 60 //a month
@@ -326,7 +326,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			resp.UsdtValue = items[0].UsdtValue
 			resp.Items = items
 
-			cachedExpTime := 24 * 60 * 60
+			cachedExpTime := 1 * 60 * 60
 
 			if oldData {
 				cachedExpTime = 30 * 24 * 60 * 60 //a month
