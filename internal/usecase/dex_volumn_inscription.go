@@ -485,7 +485,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 					UsdtValue:    item.UsdtValue,
 					Items:        analyticItems,
 				}
-				u.Cache.SetDataWithExpireTime(key, resp1, 6*60*60) // cache by 6 hours
+				u.Cache.SetDataWithExpireTime(key, resp1, 2*60*60) // cache by 6 hours
 				return resp1, nil
 			}
 		}
