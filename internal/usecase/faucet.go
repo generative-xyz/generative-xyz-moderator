@@ -564,8 +564,16 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 	totalAmount := big.NewInt(0)
 
+	t := 0
+
 	// get list again:
 	for _, item := range faucets {
+
+		t += 1
+
+		if t >= 400 {
+			break
+		}
 
 		amount, ok := big.NewInt(0).SetString(item.Amount, 10)
 		if !ok {
