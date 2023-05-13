@@ -588,9 +588,9 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		if !ok {
 			amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
 		}
-		if amount.Uint64() > maxFaucet.Uint64() || amount.Uint64() == 0 {
-			amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
-		}
+		// if amount.Uint64() > maxFaucet.Uint64() || amount.Uint64() == 0 {
+		// 	amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
+		// }
 
 		totalAmount = big.NewInt(0).Add(totalAmount, amount)
 
