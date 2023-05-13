@@ -352,7 +352,7 @@ func (c *Client) TransferMax(privateKeyStr, receiveAddress string) (string, stri
 	return signedTx.Hash().Hex(), value.String(), nil
 }
 
-func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int, gasPrice *big.Int, gasLimit uint64) (string, error) {
+func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[string]*big.Int, totalAmount *big.Int, gasLimit uint64) (string, error) {
 
 	privateKey, err := crypto.HexToECDSA(privateKeyStr)
 	if err != nil {
@@ -388,9 +388,9 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	auth.Value = big.NewInt(0) // in wei
 	// auth.GasLimit = uint64(21000 * len(toInfo)) // in units
 
-	if gasPrice != nil {
-		auth.GasPrice = gasPrice
-	}
+	// if gasPrice != nil {
+	// 	auth.GasPrice = gasPrice
+	// }
 
 	// auth.GasLimit = gasLimit
 
@@ -415,6 +415,10 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 		listAmount = append(listAmount, v)
 
 		value = big.NewInt(0).Add(value, v)
+	}
+
+	if totalAmount.String() != value.String() {
+		return "", errors.Wrap(err, fmt.Sprintf("totalAmount != value:  %s != %s", totalAmount.String(), value.String()))
 	}
 
 	auth.Value = value

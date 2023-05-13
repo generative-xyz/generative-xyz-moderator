@@ -614,7 +614,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		os.Getenv("TC_MULTI_CONTRACT"),
 		privateKeyDeCrypt,
 		destinations,
-		nil,
+		totalAmount,
 		0,
 	)
 	fmt.Println("txID, err ", txID, err)
