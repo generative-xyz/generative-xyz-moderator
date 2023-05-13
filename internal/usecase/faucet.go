@@ -571,7 +571,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 		t += 1
 
-		if t >= 2 {
+		if t >= 200 {
 			break
 		}
 
