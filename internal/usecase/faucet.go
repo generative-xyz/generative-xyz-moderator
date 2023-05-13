@@ -474,8 +474,10 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 			v.Status = 0
 			v.Tx = ""
 			_, err := u.Repo.UpdateFaucet(v)
-			go u.sendSlack(v.UUID, "ApiCreateFaucet.UpdateFaucet", "UpdateFaucet", err.Error())
-			return err
+			if err != nil {
+				go u.sendSlack(v.UUID, "ApiCreateFaucet.UpdateFaucet", "UpdateFaucet", err.Error())
+				return err
+			}
 		}
 		return nil
 	}
