@@ -473,6 +473,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		for _, v := range needRB {
 			v.Status = 0
 			v.Tx = ""
+			v.BtcTx = ""
+			v.ErrLogs = "retry miss send tc"
 			_, err := u.Repo.UpdateFaucet(v)
 			if err != nil {
 				go u.sendSlack(v.UUID, "ApiCreateFaucet.UpdateFaucet", "UpdateFaucet", err.Error())
