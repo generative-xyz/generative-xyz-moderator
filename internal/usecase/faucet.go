@@ -560,7 +560,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	var uuids []string
 
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
-	maxFaucet := big.NewInt(7 * 1e18)      // todo: move to config
+	// maxFaucet := big.NewInt(7 * 1e18)      // todo: move to config
 
 	totalAmount := big.NewInt(0)
 
