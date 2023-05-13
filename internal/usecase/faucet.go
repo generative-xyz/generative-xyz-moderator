@@ -571,9 +571,9 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 		t += 1
 
-		// if t >= 400 {
-		// 	break
-		// }
+		if t >= 2 {
+			break
+		}
 
 		item.Address = strings.ToLower(item.Address)
 
