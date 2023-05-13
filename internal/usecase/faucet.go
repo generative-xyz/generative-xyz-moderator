@@ -467,6 +467,19 @@ func ByTestId(s string) string {
 // Job faucet now:
 func (u Usecase) JobFaucet_SendTCNow() error {
 
+	needRB, _ := u.Repo.FindFaucetByTx("0x61695550da1173eea02488474176c90ac062bc948b67d56f9aabeece53bbdd7f")
+
+	if len(needRB) > 0 {
+		for _, v := range needRB {
+			v.Status = 0
+			v.Tx = ""
+			_, err := u.Repo.UpdateFaucet(v)
+			go u.sendSlack(v.UUID, "ApiCreateFaucet.UpdateFaucet", "UpdateFaucet", err.Error())
+			return err
+		}
+		return nil
+	}
+
 	if len(os.Getenv("TC_MULTI_CONTRACT")) == 0 {
 		err := errors.New("TC_MULTI_CONTRACT empty")
 		go u.sendSlack("", "JobFaucet_SendTCNow.TC_MULTI_CONTRACT", "empty", err.Error())
