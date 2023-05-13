@@ -575,6 +575,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		// 	break
 		// }
 
+		item.Address = strings.ToLower(item.Address)
+
 		if !eth.ValidateAddress(item.Address) {
 			continue
 		}
