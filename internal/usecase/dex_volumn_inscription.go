@@ -90,7 +90,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 
 func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.erc20.gmAddress." + tcAddress + "." + gmAddress)
+	key := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
@@ -183,7 +183,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		resp.Currency = string(entity.ETH)
 		resp.UsdtValue = usdtValue
 		resp.Items = items
-		u.Cache.SetDataWithExpireTime(key, resp, 24*60*60) // cache by 1 day
+		u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 		return resp, nil
 	}
 	return nil, errors.New("not balance - " + gmAddress)
@@ -191,7 +191,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 
 func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.eth2.gmAddress." + tcAddress + "." + gmAddress)
+	key := fmt.Sprintf("gm-collections.deposit.eth3.gmAddress." + tcAddress + "." + gmAddress)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
@@ -296,12 +296,12 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
-		cachedExpTime := 1 * 60 * 60
+		cachedExpTime := 1 * 60 * 60 // cache by 1 hour
 
 		if oldData {
 			cachedExpTime = 30 * 24 * 60 * 60 //a month
 		}
-		u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime) // cache by 1 day
+		u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
 		return resp, nil
 	} else {
 		transferUsdtValue := float64(0)
@@ -326,12 +326,12 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			resp.UsdtValue = items[0].UsdtValue
 			resp.Items = items
 
-			cachedExpTime := 1 * 60 * 60
+			cachedExpTime := 1 * 60 * 60 // cache by 1 hour
 
 			if oldData {
 				cachedExpTime = 30 * 24 * 60 * 60 //a month
 			}
-			u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime) // cache by 1 day
+			u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
 			return resp, nil
 		}
 	}
@@ -340,7 +340,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 
 func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, transferedBTC []string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc3.gmAddress." + tcWallet + "." + gmWallet)
+	key := fmt.Sprintf("gm-collections.deposit.btc4.gmAddress." + tcWallet + "." + gmWallet)
 	result := &structure.AnalyticsProjectDeposit{}
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
