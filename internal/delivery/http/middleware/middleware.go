@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"go.uber.org/zap"
@@ -44,15 +45,15 @@ func NewMiddleware(uc usecase.Usecase, g *global.Global) *middleware {
 
 func (m *middleware) LoggingMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		// defer func() {
-		// 	if err := recover(); err != nil {
-		// 		w.WriteHeader(http.StatusInternalServerError)
-		// 		m.log.Error(
-		// 			"err", err,
-		// 			"trace", debug.Stack(),
-		// 		)
-		// 	}
-		// }()
+		defer func() {
+			if err := recover(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				m.log.Error(
+					"err", err,
+					"trace", debug.Stack(),
+				)
+			}
+		}()
 
 		start := time.Now()
 		wrapped := wrapResponseWriter(w)
