@@ -566,6 +566,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 	t := 0
 
+	var faucetsSent []*entity.Faucet
+
 	// get list again:
 	for _, item := range faucets {
 
@@ -596,6 +598,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 		destinations[item.Address] = amount
 		uuids = append(uuids, item.UUID)
+		faucetsSent = append(faucetsSent, item)
 	}
 
 	uuidStr := strings.Join(uuids, ",")
@@ -628,7 +631,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 	// update status 1 first:
 	if len(uuids) > 0 {
-		for _, item := range faucets {
+		for _, item := range faucetsSent {
 			item.Status = 1
 			item.Tx = txID
 
@@ -646,7 +649,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "ok=>tcTx/btcTx", txID+"/"+txBtc)
 	// update tx by uuids:
 	if len(uuids) > 0 {
-		for _, item := range faucets {
+		for _, item := range faucetsSent {
 			item.Status = 2
 			item.Tx = txID
 			item.BtcTx = txBtc
