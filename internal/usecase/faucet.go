@@ -606,7 +606,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		return err
 	}
 
-	go u.sendSlack("", "ApiCreateFaucet.SendMulti", "call send with total amount:", totalAmount.String())
+	go u.sendSlack(fmt.Sprintf("%d", len(uuids)), "ApiCreateFaucet.SendMulti", "call send with total amount:", totalAmount.String())
 
 	txID, err := u.TcClient.SendMulti(
 		os.Getenv("TC_MULTI_CONTRACT"),
