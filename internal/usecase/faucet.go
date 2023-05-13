@@ -562,6 +562,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	amountFaucet := big.NewInt(0.1 * 1e18) // todo: move to config
 	maxFaucet := big.NewInt(7 * 1e18)      // todo: move to config
 
+	totalAmount := big.NewInt(0)
+
 	// get list again:
 	for _, item := range faucets {
 
@@ -571,6 +573,12 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		}
 		if amount.Uint64() > maxFaucet.Uint64() || amount.Uint64() == 0 {
 			amount = big.NewInt(0).SetUint64(amountFaucet.Uint64())
+		}
+
+		totalAmount = big.NewInt(0).Add(totalAmount, amount)
+
+		if !eth.ValidateAddress(item.Address) {
+			continue
 		}
 
 		destinations[item.Address] = amount
@@ -597,7 +605,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	fmt.Println("txID, err ", txID, err)
 
 	if err != nil {
-		go u.sendSlack(uuidStr, "ApiCreateFaucet.SendMulti", "call send "+txID, err.Error())
+		go u.sendSlack(uuidStr, "ApiCreateFaucet.SendMulti", fmt.Sprintf("call send %s err", totalAmount.String()), err.Error())
 		return err
 	}
 

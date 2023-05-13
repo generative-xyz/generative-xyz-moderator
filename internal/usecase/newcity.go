@@ -283,7 +283,10 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 			} else if item.Type == utils.NETWORK_BTC {
 				// todo
 
-				balanceQuickNode, _ := btc.GetBalanceFromQuickNode(item.Address, u.Config.QuicknodeAPI)
+				balanceQuickNode, err := btc.GetBalanceFromQuickNode(item.Address, u.Config.QuicknodeAPI)
+				if err != nil {
+					return nil, err
+				}
 				if balanceQuickNode != nil {
 					balance := balanceQuickNode.Balance
 					if balance > 0 {
