@@ -570,7 +570,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 				"0xe9084DEDfcD06E63Dc980De1464f7786e2690c82": "",
 			}
 			for wallet, ens := range fromWallets {
-				temp, err := u.GetChartDataEthForGMCollection(wallet, gmAddress, []string{}, true, ens, "")
+				temp, err := u.GetChartDataEthForGMCollection(strings.ToLower(wallet), gmAddress, []string{}, true, ens, "")
 				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
