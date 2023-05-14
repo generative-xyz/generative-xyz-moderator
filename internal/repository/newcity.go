@@ -101,7 +101,7 @@ func (r Repository) FindNewCitysGmByUserAddress(address string) ([]entity.NewCit
 	address = strings.ToLower(address)
 
 	var projects []entity.NewCityGm
-	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), bson.D{{"address", address}})
+	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), bson.D{{"user_address", address}})
 	if err != nil {
 		return nil, err
 	}
