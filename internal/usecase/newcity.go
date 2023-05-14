@@ -20,6 +20,16 @@ import (
 	"rederinghub.io/utils/logger"
 )
 
+func (u Usecase) ApiNewGMGetLogWithdraw(addressInput string) (interface{}, error) {
+
+	if !eth.ValidateAddress(addressInput) {
+		return nil, errors.New("you address invalid")
+	}
+
+	return u.Repo.FindNewCitysGmByUserAddress(addressInput)
+
+}
+
 func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 
 	if !eth.ValidateAddress(addressInput) {
