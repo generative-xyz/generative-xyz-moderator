@@ -106,6 +106,16 @@ func (h *httpDelivery) GetPriceCoinBase(w http.ResponseWriter, r *http.Request) 
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
+func (h *httpDelivery) GetBitcoinBalance(w http.ResponseWriter, r *http.Request) {
+	addr := r.URL.Query().Get("addr")
+	result, err := h.Usecase.GetBitcoinBalance(addr)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 // UserCredits godoc
 // @Summary CollectionListing
 // @Description get list CollectionListing
