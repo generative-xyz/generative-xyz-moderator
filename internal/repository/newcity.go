@@ -95,3 +95,20 @@ func (r Repository) UpdateNewCityGmENSAvatar(newCityGm *entity.NewCityGm) (*mong
 
 	return result, nil
 }
+
+func (r Repository) FindNewCitysGmByUserAddress(address string) ([]entity.NewCityGm, error) {
+
+	address = strings.ToLower(address)
+
+	var projects []entity.NewCityGm
+	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), bson.D{{"address", address}})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &projects); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}

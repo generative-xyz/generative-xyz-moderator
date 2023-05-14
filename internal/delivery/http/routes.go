@@ -241,6 +241,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 
 	newbitcoin := api.PathPrefix("/new-bitcoin-city").Subrouter()
 	newbitcoin.HandleFunc("/request-gm", h.requestGM).Methods("POST")
+	newbitcoin.HandleFunc("/log-withdraw", h.getLogWithdraw).Methods("GET")
 
 	marketplaceBTC := api.PathPrefix("/marketplace-btc").Subrouter()
 	// marketplaceBTC.HandleFunc("/listing", h.btcMarketplaceListing).Methods("POST")
