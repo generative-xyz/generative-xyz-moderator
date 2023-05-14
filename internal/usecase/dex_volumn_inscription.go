@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
@@ -1763,4 +1764,8 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 	}
 
 	return 0.0
+}
+
+func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionResponse, error) {
+	return u.CoinMarketCap.PriceConversion(coinID)
 }
