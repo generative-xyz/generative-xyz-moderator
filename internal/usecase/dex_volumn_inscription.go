@@ -685,6 +685,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		if len(result.Items) > 0 {
 			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 			for _, item := range result.Items {
+				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
 				if !ok {
 					result.MapItems[item.From] = &etherscan.AddressTxItemResponse{
