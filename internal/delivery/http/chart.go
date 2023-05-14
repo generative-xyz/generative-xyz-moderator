@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -87,6 +88,17 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 // @Router /charts/gm-collections/deposit [GET]
 func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *http.Request) {
 	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) GetPriceCoinBase(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	idInt, _ := strconv.Atoi(id)
+	result, err := h.Usecase.GetPriceCoinBase(idInt)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
