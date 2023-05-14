@@ -1767,5 +1767,18 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 }
 
 func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionResponse, error) {
-	return u.CoinMarketCap.PriceConversion(coinID)
+	key := fmt.Sprintf("gm-collections.coinbase.price.rate." + strconv.Itoa(coinID))
+	cached, err := u.Cache.GetData(key)
+	result := &coin_market_cap.PriceConversionResponse{}
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			return result, err
+		}
+	}
+	result, err = u.CoinMarketCap.PriceConversion(coinID)
+	if err == nil {
+		u.Cache.SetDataWithExpireTime(key, result, 60*60*1)
+	}
+	return result, nil
 }
