@@ -735,7 +735,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		}
 
 		//the new data must be greater than the cached data (old)
-		if result.UsdtValue > cachedData.UsdtValue {
+		if result.UsdtValue >= cachedData.UsdtValue {
 			u.Cache.SetDataWithExpireTime(key, result, 60*60*2)
 		}
 
