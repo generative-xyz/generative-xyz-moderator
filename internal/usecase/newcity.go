@@ -145,6 +145,25 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 }
 
 // admin
+
+func (u Usecase) JobNewCity_CrawlFunds() error {
+
+	go u.sendSlack("", "Start:JobNewCity_CrawlFunds", "Start", "ok")
+
+	data, err := u.ApiAdminCrawlFunds()
+
+	fmt.Println("DataFrom:JobNewCity_CrawlFunds", data)
+	fmt.Println("Error:JobNewCity_CrawlFunds", err)
+
+	if err != nil {
+		go u.sendSlack("", "DataFrom:JobNewCity_CrawlFunds", "error: ", err.Error())
+	}
+
+	go u.sendSlack("", "Complete:JobNewCity_CrawlFunds", "Done", "ok")
+
+	return err
+}
+
 func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 	if false {
@@ -213,8 +232,6 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 		for _, item := range list {
 
 			if item.Type == utils.NETWORK_ETH {
-
-				continue
 
 				// check balance:
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
