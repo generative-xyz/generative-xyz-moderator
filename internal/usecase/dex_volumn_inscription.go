@@ -727,12 +727,24 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			result.UsdtValue = usdtValue
 		}
 
-		u.Cache.SetDataWithExpireTime(key, result, 60*60*2)
+		cachedData := &structure.AnalyticsProjectDeposit{}
+		err := json.Unmarshal([]byte(*cached), cachedData)
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection json.Unmarshal.cachedData", zap.Error(err))
+			return nil, err
+		}
+
+		//the new data must be greater than the cached data (old)
+		if result.UsdtValue > cachedData.UsdtValue {
+			u.Cache.SetDataWithExpireTime(key, result, 60*60*2)
+		}
+
 		return result, nil
 	}
 
 	err = json.Unmarshal([]byte(*cached), result)
 	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection json.Unmarshal.cachedData", zap.Error(err))
 		return nil, err
 	}
 
