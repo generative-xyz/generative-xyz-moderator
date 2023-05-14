@@ -1778,7 +1778,26 @@ func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionR
 	}
 	result, err = u.CoinMarketCap.PriceConversion(coinID)
 	if err == nil {
-		u.Cache.SetDataWithExpireTime(key, result, 60*60*1)
+		u.Cache.SetDataWithExpireTime(key, result, 60*30)
+	}
+	return result, nil
+}
+
+func (u Usecase) GetBitcoinBalance(addr string) (*structure.BlockCypherWalletInfo, error) {
+	key := fmt.Sprintf("gm-collections.quicknode.bitcoin.balance" + addr)
+	result := &structure.BlockCypherWalletInfo{}
+
+	cached, err := u.Cache.GetData(key)
+	if err == nil {
+		err = json.Unmarshal([]byte(*cached), result)
+		if err == nil {
+			return result, err
+		}
+	}
+
+	result, err = btc.GetBalanceFromQuickNode(addr, u.Config.QuicknodeAPI)
+	if err == nil {
+		u.Cache.SetDataWithExpireTime(key, result, 60*5)
 	}
 	return result, nil
 }

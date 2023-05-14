@@ -177,6 +177,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	charts.HandleFunc("/collections/{projectID}", h.getChartDataForCollection).Methods("GET")
 	charts.HandleFunc("/gm-collections/deposit", h.getChartDataForGMCollection).Methods("GET")
 	charts.HandleFunc("/gm-collections/coinbase/price", h.GetPriceCoinBase).Methods("GET")
+	charts.HandleFunc("/gm-collections/quicknode/balance", h.GetPriceCoinBase).Methods("GET")
 	charts.HandleFunc("/gm-collections/extra/{address}/deposit", h.getChartDataExtraForGMCollection).Methods("GET")
 	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
 
