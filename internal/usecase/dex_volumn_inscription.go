@@ -725,7 +725,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			result.UsdtValue = usdtValue
 		}
 
-		u.Cache.SetDataWithExpireTime(key, result, 60*30)
+		u.Cache.SetDataWithExpireTime(key, result, 60*60*2)
 		return result, nil
 	}
 
