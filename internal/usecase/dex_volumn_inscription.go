@@ -767,6 +767,9 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		//the new data must be greater than the cached data (old)
 		if result.UsdtValue >= cachedData.UsdtValue {
 			u.Cache.SetDataWithExpireTime(key, result, 60*60*24*3)
+
+			//backup to DB
+			go u.BackupGMDashboardCachedData()
 		}
 
 		return result, nil
