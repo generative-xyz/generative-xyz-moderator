@@ -781,6 +781,8 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 			//backup to DB
 			//go u.BackupGMDashboardCachedData()
+		} else {
+			logger.AtLog.Logger.Error("result.UsdtValue < cachedData.UsdtValue", zap.Any("result.UsdtValue", result.UsdtValue), zap.Any("cachedData.UsdtValue", cachedData.UsdtValue))
 		}
 
 		return result, nil
