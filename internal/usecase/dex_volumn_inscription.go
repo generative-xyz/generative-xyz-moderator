@@ -155,7 +155,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		items = append(items, &etherscan.AddressTxItemResponse{
 			From:      tcAddress,
 			To:        gmAddress,
-			Value:     pepeBalance.Balance,
+			Value:     fmt.Sprintf("%f", totalPepe),
 			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate) + transferUsdtValue,
 			Currency:  string(entity.PEPE),
 			ENS:       ens,
@@ -170,7 +170,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		items = append(items, &etherscan.AddressTxItemResponse{
 			From:      tcAddress,
 			To:        gmAddress,
-			Value:     turboBalance.Balance,
+			Value:     fmt.Sprintf("%f", totalTurbo),
 			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalTurbo), turboRate) + transferUsdtValue,
 			Currency:  string(entity.TURBO),
 			ENS:       ens,
@@ -458,11 +458,10 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				}
 			}
 
-			temp, _ := strconv.ParseFloat(fmt.Sprintf("%d", walletInfo.Balance), 64)
 			item := &etherscan.AddressTxItemResponse{
 				From:      tcWallet,
 				To:        gmWallet,
-				Value:     fmt.Sprintf("%f", temp+transferBtcValue),
+				Value:     fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)+transferBtcValue),
 				Currency:  string(entity.BIT),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
 			}
