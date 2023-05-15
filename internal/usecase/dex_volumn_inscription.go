@@ -701,6 +701,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		if len(result.Items) > 0 {
 			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+			result.MapTokensDeposit = make(map[string][]structure.TokensDeposit)
 			for _, item := range result.Items {
 				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
@@ -714,6 +715,13 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						Avatar:    item.Avatar,
 						ENS:       item.ENS,
 					}
+					result.MapTokensDeposit[item.From] = []structure.TokensDeposit{
+						{
+							Name:      item.Currency,
+							Value:     item.Value,
+							UsdtValue: item.UsdtValue,
+						},
+					}
 				} else {
 					result.MapItems[item.From].UsdtValue += item.UsdtValue
 					if item.Avatar != "" {
@@ -722,6 +730,11 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					if item.ENS != "" {
 						result.MapItems[item.From].ENS = item.ENS
 					}
+					result.MapTokensDeposit[item.From] = append(result.MapTokensDeposit[item.From], structure.TokensDeposit{
+						Name:      item.Currency,
+						Value:     item.Value,
+						UsdtValue: item.UsdtValue,
+					})
 				}
 			}
 			result.Items = []*etherscan.AddressTxItemResponse{}
