@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"rederinghub.io/external/etherscan"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -88,6 +89,7 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 // @Router /charts/gm-collections/deposit [GET]
 func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *http.Request) {
 	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
