@@ -213,6 +213,11 @@ func (u Usecase) UpdateProjectFromChain(contractAddr string, tokenIDStr string, 
 		return nil, err
 	}
 
+	if project.Status == true && project.IsSynced == true && project.IsHidden == false {
+		err := errors.New("Skip: Project is synced")
+		return nil, err
+	}
+
 	if project.TokenID == project.TxHash {
 		tokenIDInt, err := strconv.Atoi(tokenIDStr)
 		if err != nil {
