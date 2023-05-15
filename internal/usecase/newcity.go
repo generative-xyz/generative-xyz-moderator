@@ -156,7 +156,7 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		"eth":       itemEth.Address,
 		"btc":       itemBtc.Address,
 	}
-	fmt.Println(fmt.Sprintf("ApiCreateNewGM.returnData.Tc.%s", addressInput), returnData)
+	fmt.Println(fmt.Sprintf("ApiCreateNewGM.returnData.Tc.%s", strings.ToLower(addressInput)), returnData)
 	return returnData, nil
 }
 
