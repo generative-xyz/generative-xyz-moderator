@@ -713,8 +713,22 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			}
 			usdtExtra := 0.0
 			usdtValue := 0.0
+
+			users, err := u.Repo.GetAllUserForGMPercent()
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataForGMCollection", zap.Error(err))
+				return nil, err
+			}
+
+			allowList, err := u.Repo.GetPJAllowList("999998")
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataForGMCollection", zap.Error(err))
+				return nil, err
+			}
+
 			for _, item := range result.Items {
-				item.ExtraPercent = u.GetExtraPercent(item.From)
+
+				item.ExtraPercent = u.GetExtraPercent(item.From, allowList, users)
 				//item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue // TODO
 				item.UsdtValueExtra = item.UsdtValue
 				usdtExtra += item.UsdtValueExtra
@@ -751,11 +765,12 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	return result, nil
 }
 
-func (u Usecase) GetExtraPercent(address string) float64 {
-	return 0.0 // TODO
-	user, err := u.Repo.FindUserByWalletAddress(address)
-	if err == nil && user.UUID != "" {
-		return 30.0
+func (u Usecase) GetExtraPercent(address string, allowList []entity.ProjectAllowList, generativeUsers []entity.Users) float64 {
+
+	for _, generativeUser := range generativeUsers {
+		if strings.ToLower(generativeUser.WalletAddress) == strings.ToLower(address) {
+			return 30.0
+		}
 	}
 
 	// TODO kll
@@ -1771,12 +1786,34 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		return 20.0
 	}
 
-	allow, err := u.Repo.GetProjectAllowList("999998", address)
-	if err == nil && allow.UUID != "" {
-		return 10.0
+	for _, allow := range allowList {
+		if strings.ToLower(allow.UserWalletAddress) == strings.ToLower(address) {
+			return 10.0
+		}
 	}
 
+	//allow, err := u.Repo.GetProjectAllowList("999998", address)
+	//if err == nil && allow.UUID != "" {
+	//	return 10.0
+	//}
+
 	return 0.0
+}
+
+func (u Usecase) GetExtraPercentNew(address string) float64 {
+	users, err := u.Repo.GetAllUserForGMPercent()
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataForGMCollection", zap.Error(err))
+		return 0
+	}
+
+	allowList, err := u.Repo.GetPJAllowList("999998")
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataForGMCollection", zap.Error(err))
+		return 0
+	}
+
+	return u.GetExtraPercent(address, allowList, users)
 }
 
 func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionResponse, error) {

@@ -129,6 +129,6 @@ func (h *httpDelivery) getChartDataExtraForGMCollection(w http.ResponseWriter, r
 	vars := mux.Vars(r)
 	// contractAddress := vars["contractAddress"]
 	address := vars["address"]
-	result := h.Usecase.GetExtraPercent(address)
+	result := h.Usecase.GetExtraPercentNew(address)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
