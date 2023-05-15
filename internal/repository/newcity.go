@@ -116,7 +116,7 @@ func (r Repository) FindNewCitysGmByUserAddress(address string) ([]entity.NewCit
 
 func (r Repository) SetUpdatedTimeNewCitysGm(tcAddress string) (*mongo.UpdateResult, error) {
 	f := bson.D{
-		{Key: "tc_address", Value: tcAddress},
+		{Key: "user_address", Value: tcAddress},
 	}
 
 	update := bson.M{
