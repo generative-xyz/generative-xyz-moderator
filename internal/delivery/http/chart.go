@@ -127,7 +127,6 @@ func (h *httpDelivery) GetBitcoinBalance(w http.ResponseWriter, r *http.Request)
 // @Router /charts/gm-collections/extra/{address}/deposit [GET]
 func (h *httpDelivery) getChartDataExtraForGMCollection(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	// contractAddress := vars["contractAddress"]
 	address := vars["address"]
 	result := h.Usecase.GetExtraPercent(address)
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
