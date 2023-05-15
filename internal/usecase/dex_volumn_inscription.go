@@ -280,10 +280,11 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 18)), ethRate)
 				}
 			}
+			temp, _ := strconv.ParseFloat(moralisEthBL.Balance, 64)
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     moralisEthBL.Balance,
+				Value:     fmt.Sprintf("%d", temp+transferUsdtValue),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
@@ -315,7 +316,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     moralisEthBL.Balance,
+				Value:     fmt.Sprintf("%d", transferUsdtValue),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
@@ -449,10 +450,11 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				}
 			}
 
+			temp, _ := strconv.ParseFloat(fmt.Sprintf("%d", walletInfo.Balance), 64)
 			item := &etherscan.AddressTxItemResponse{
 				From:      tcWallet,
 				To:        gmWallet,
-				Value:     fmt.Sprintf("%d", walletInfo.Balance),
+				Value:     fmt.Sprintf("%f", temp+transferUsdtValue),
 				Currency:  string(entity.BIT),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
 			}
@@ -472,10 +474,11 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				for _, v := range transferedBTC {
 					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 8)), btcRate)
 				}
+				temp, _ := strconv.ParseFloat(fmt.Sprintf("%d", walletInfo.Balance), 64)
 				item := &etherscan.AddressTxItemResponse{
 					From:      tcWallet,
 					To:        gmWallet,
-					Value:     fmt.Sprintf("%d", walletInfo.Balance),
+					Value:     fmt.Sprintf("%f", temp+transferUsdtValue),
 					Currency:  string(entity.BIT),
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
 				}
