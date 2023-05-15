@@ -1,4 +1,4 @@
-FROM golang:1.18 as deps
+FROM golang:1.18-buster as deps
 
 RUN apt-get -y update && apt-get -y upgrade && \
     apt-get -y install git && \
@@ -23,7 +23,7 @@ COPY  . .
 RUN echo "✅ Build for Linux"; make build
 
 # Distribution
-FROM ubuntu:20.04 as runner
+FROM debian:buster as runner
 RUN apt-get -y update && apt upgrade -y
 RUN apt-get -y install  software-properties-common && \
     apt-get -y install wget && \
