@@ -512,10 +512,22 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 	//clear cache for top 10 items
 	u.ClearCacheTop10GMDashboard()
 
-	_, err := u.GetChartDataForGMCollection(false)
+	//start
+	now := time.Now().UTC()
+	preText := fmt.Sprintf("[Analytics][Start] - Get chart data for GM Dashboard")
+	content := fmt.Sprintf("Start at: %v", now)
+	u.SendGMMEssageToSlack(preText, content)
+
+	data, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
 		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
 	}
+
+	//end
+	end := time.Now().UTC()
+	preText = fmt.Sprintf("[Analytics][End] - Get chart data for GM Dashboard")
+	content = fmt.Sprintf("End at: %v with USDT: %f, contributors: %d", end, data.UsdtValue, len(data.Items))
+	u.SendGMMEssageToSlack(preText, content)
 	return err
 }
 
@@ -1923,4 +1935,18 @@ func (u Usecase) RestoreGMDashboardCachedData(UUID string) {
 	}
 
 	u.Cache.SetDataWithExpireTime(key, resp, 60*60*1)
+}
+
+func (u *Usecase) SendGMMEssageToSlack(preText string, content string) {
+	slackChannel := os.Getenv("SLACK_GM_DASHBOARD")
+	if slackChannel == "" {
+		slackChannel = os.Getenv("SLACK_ALLOW_LIST_CHANNEL")
+	}
+
+	//send message to slack
+	title := ""
+
+	if _, _, err := u.Slack.SendMessageToSlackWithChannel(slackChannel, preText, title, content); err != nil {
+		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+	}
 }
