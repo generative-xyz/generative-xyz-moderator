@@ -399,3 +399,41 @@ func (r Repository) GetAllUserProfiles() ([]entity.Users, error) {
 
 	return users, nil
 }
+
+// find all user profile, exclude all, only wallet address is kept
+func (r Repository) GetAllUserForGMPercent() ([]entity.Users, error) {
+	users := []entity.Users{}
+	f := bson.M{}
+
+	opts := options.Find().SetProjection(bson.D{{Key: "wallet_address", Value: 1}})
+	cursor, err := r.DB.Collection(utils.COLLECTION_USERS).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r Repository) GetPJAllowList(projectID string) ([]entity.ProjectAllowList, error) {
+	resp := []entity.ProjectAllowList{}
+	f := bson.D{
+		{"projectID", projectID},
+	}
+
+	opts := options.Find().SetProjection(bson.D{{"projectID", 1}, {"userWalletAddress", 1}})
+	usr, err := r.DB.Collection(entity.ProjectAllowList{}.TableName()).Find(context.TODO(), f, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(usr, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
