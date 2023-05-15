@@ -11,7 +11,8 @@ env:
 
 jobs:
   build-and-push-to-gcr:
-    runs-on: ubuntu-latest
+#    runs-on: ubuntu-latest
+    runs-on: self-hosted
     concurrency:
       group: '${{ github.workflow }} @ ${{ github.ref }}'
       cancel-in-progress: false
@@ -51,6 +52,6 @@ jobs:
           tags: |
             ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}:latest
             ${{env.DOCKER_REGISTRY}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
+#          cache-from: type=gha
 #          cache-to: type=gha,mode=max
           build-args: ENV=${{ env.BUILD_ENV }}
