@@ -147,6 +147,7 @@ const (
 	COLLECTION_ACTIVITIES                string = "activities"
 	COLLECTION_REFERRALS                 string = "referrals"
 	COLLECTION_MARKETPLACE_LISTINGS      string = "marketplace_listings"
+	COLLECTION_CACHED_GM_DASHBOARD       string = "cached_gm_dashboard"
 	COLLECTION_MARKETPLACE_OFFERS        string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL              string = "proposals"
 	COLLECTION_DAO_PROPOSAL_DETAIL       string = "proposal_detail"
