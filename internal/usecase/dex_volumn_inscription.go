@@ -497,7 +497,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 
 func (u Usecase) JobGetChartDataForGMCollection() error {
 	//clear cache for top 10 items
-	//u.ClearCacheTop10GMDashboard()
+	u.ClearCacheTop10GMDashboard()
 
 	_, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
@@ -1832,6 +1832,12 @@ func (u Usecase) ClearCacheTop10GMDashboard() {
 	for i := 0; i < 10; i++ {
 		key := fmt.Sprintf("gm-collections.deposit.eth3.gmAddress." + items[i].From + "." + items[i].To)
 		err := u.Cache.Delete(key)
+		if err != nil {
+			logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err), zap.String("cachedKey", key), zap.Any("item", items[i]))
+		}
+
+		keyErc2 := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + items[i].From + "." + items[i].To)
+		err = u.Cache.Delete(keyErc2)
 		if err != nil {
 			logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err), zap.String("cachedKey", key), zap.Any("item", items[i]))
 		}
