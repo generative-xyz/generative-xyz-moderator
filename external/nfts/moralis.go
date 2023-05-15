@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"rederinghub.io/utils/logger"
 	"strconv"
 	"strings"
 
@@ -17,22 +20,26 @@ import (
 )
 
 type MoralisNfts struct {
-	conf      *config.Config
-	serverURL string
-	apiKey    string
+	conf       *config.Config
+	serverURL  string
+	apiKey     string
+	backupKeys []string
 	//client forwarder.IForwarder
 	cache redis.IRedisCache
 }
 
 func NewMoralisNfts(conf *config.Config, cache redis.IRedisCache) *MoralisNfts {
+	bkKeys := strings.ReplaceAll(os.Getenv("MORALIS_BK_KEYS"), " ", "")
+	bkKeyArray := strings.Split(bkKeys, ",")
 
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
 	return &MoralisNfts{
-		conf:      conf,
-		serverURL: serverURL,
-		apiKey:    apiKey,
-		cache:     cache,
+		conf:       conf,
+		serverURL:  serverURL,
+		apiKey:     apiKey,
+		backupKeys: bkKeyArray,
+		cache:      cache,
 	}
 }
 
@@ -113,15 +120,22 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 		return nil, err
 	}
 
+	hasApiKey := false
 	if len(headers) > 0 {
 		for key, val := range headers {
 			req.Header.Add(key, val)
+			if key == "X-API-Key" {
+				hasApiKey = true
+			}
 		}
 	}
 
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("X-API-Key", m.apiKey)
+
+	if !hasApiKey {
+		req.Header.Add("X-API-Key", m.apiKey)
+	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -267,27 +281,40 @@ func (m MoralisNfts) GetNftByContractAndTokenIDNoCahe(contractAddr string, token
 
 func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, error) {
 	fullUrl := m.generateUrl(fmt.Sprintf("%s/%s", walletAddress, WalletAddressBalance), &MoralisFilter{})
-
-	data, err := m.request(fullUrl, "GET", nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
+	var err error
 	resp := &MoralisBalanceResp{}
-	if string(data) == `{"message":"Invalid key"}` {
-		return nil, errors.New("invalid key")
-	}
-	err = json.Unmarshal(data, resp)
-	if err != nil {
-		return nil, err
+
+	m.backupKeys = append(m.backupKeys, m.apiKey)
+	for _, bkKey := range m.backupKeys {
+		err = nil
+		headers := make(map[string]string)
+		headers["X-API-Key"] = bkKey
+		data := []byte{}
+
+		data, err = m.request(fullUrl, "GET", headers, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if string(data) == `{"message":"Invalid key"}` {
+			return nil, errors.New("invalid key")
+		}
+		err = json.Unmarshal(data, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		//there is no error occur
+		break
 	}
 
-	return resp, nil
+	return resp, err
 }
 
 func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresses []string) (map[string]MoralisBalanceResp, error) {
 	f := &MoralisFilter{}
 	f.TokenAddresses = new([]string)
+	var err error
 
 	urls := url.Values{}
 	urls.Add("chain", m.conf.Moralis.Chain)
@@ -297,22 +324,42 @@ func (m MoralisNfts) TokenBalanceByWalletAddress(walletAddress string, tAddresse
 
 	path := fmt.Sprintf("%s/%s?%s", walletAddress, WalletAddressTokenBalance, urls.Encode())
 	fullUrl := fmt.Sprintf("%s/%s", m.serverURL, path)
-
-	data, err := m.request(fullUrl, "GET", nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := []MoralisBalanceResp{}
-	err = json.Unmarshal(data, &resp)
-	if err != nil {
-		return nil, err
-	}
-
 	result := make(map[string]MoralisBalanceResp)
-	for _, i := range resp {
-		result[strings.ToLower(i.TokenAddress)] = i
+
+	m.backupKeys = append(m.backupKeys, m.apiKey)
+
+	for _, bkKey := range m.backupKeys {
+		err = nil
+		headers := make(map[string]string)
+		headers["X-API-Key"] = bkKey
+		data := []byte{}
+
+		data, err = m.request(fullUrl, "GET", headers, nil)
+		if err != nil {
+			logger.AtLog.Logger.Error("MoralisNfts", zap.Error(err), zap.String("bkKey", bkKey), zap.String("bkKey", bkKey), zap.String("walletAddress", walletAddress), zap.Any("tAddresses", tAddresses))
+			continue
+		}
+
+		resp := []MoralisBalanceResp{}
+		err = json.Unmarshal(data, &resp)
+		if err != nil {
+			errMsg := &ErrorMessage{}
+			err = json.Unmarshal(data, &errMsg)
+			if err != nil {
+				logger.AtLog.Logger.Error("MoralisNfts", zap.Error(err), zap.String("walletAddress", walletAddress), zap.Any("tAddresses", tAddresses))
+				continue
+			}
+			err = errors.New(errMsg.Message)
+			continue
+		}
+
+		for _, i := range resp {
+			result[strings.ToLower(i.TokenAddress)] = i
+		}
+
+		//all errors have been passed
+		break
 	}
 
-	return result, nil
+	return result, err
 }

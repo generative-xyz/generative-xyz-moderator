@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"log"
 	"os"
 	"os/signal"
@@ -238,6 +239,27 @@ func startServer() {
 		_logger.AtLog.Errorf("LoadUsecases - Cannot init usecase", zap.Error(err))
 		return
 	}
+
+	//TODO - remove before push - start
+	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
+	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
+	gmAddress := "0xf74218736492a4c414b83520f00f86646656f6a5"
+
+	moralisERC20BL, err := moralis.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
+	if err != nil {
+		return
+	}
+
+	gmAddress = "0x3C67761d096F5F12367E64CecE9E214B9Fe9B731"
+	moralisBL, err := moralis.AddressBalance(gmAddress)
+	if err != nil {
+		return
+	}
+
+	spew.Dump(moralisERC20BL)
+	spew.Dump(moralisBL)
+	return
+	//TODO - remove before push - End
 
 	servers := make(map[string]delivery.AddedServer)
 	// api fixed run:

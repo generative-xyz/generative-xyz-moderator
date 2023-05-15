@@ -44,6 +44,10 @@ type MoralisBalanceResp struct {
 	TokenAddress string `json:"token_address"`
 }
 
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
 type MoralisToken struct {
 	TokenAddress      string  `json:"token_address"`
 	TokenID           string  `json:"token_id"`
