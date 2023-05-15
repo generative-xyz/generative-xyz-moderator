@@ -20,6 +20,7 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1811,4 +1812,25 @@ func (u Usecase) GetBitcoinBalance(addr string) (*structure.BlockCypherWalletInf
 		u.Cache.SetDataWithExpireTime(key, result, 60*5)
 	}
 	return result, nil
+}
+
+func (u Usecase) ClearCacheTop10GMDashboard() {
+	dashboardItems, err := u.GetChartDataForGMCollection(true)
+	if err != nil {
+		logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err))
+		return
+	}
+
+	items := dashboardItems.Items
+	sort.SliceStable(items, func(i, j int) bool {
+		return items[i].UsdtValue > items[j].UsdtValue
+	})
+
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("gm-collections.deposit.eth3.gmAddress." + items[i].From + "." + items[i].To)
+		err := u.Cache.Delete(key)
+		if err != nil {
+			logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err), zap.String("cachedKey", key), zap.Any("item", items[i]))
+		}
+	}
 }
