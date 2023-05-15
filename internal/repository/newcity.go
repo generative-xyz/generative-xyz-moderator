@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -111,4 +112,22 @@ func (r Repository) FindNewCitysGmByUserAddress(address string) ([]entity.NewCit
 	}
 
 	return projects, nil
+}
+
+func (r Repository) SetUpdatedTimeNewCitysGm(tcAddress string) (*mongo.UpdateResult, error) {
+	f := bson.D{
+		{Key: "tc_address", Value: tcAddress},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"updated_at": time.Now(),
+		},
+	}
+	result, err := r.DB.Collection(entity.NewCityGm{}.TableName()).UpdateMany(context.TODO(), f, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }
