@@ -767,6 +767,9 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		//the new data must be greater than the cached data (old)
 		if result.UsdtValue >= cachedData.UsdtValue {
 			u.Cache.SetDataWithExpireTime(key, result, 60*60*24*3)
+
+			//backup to DB
+			go u.BackupGMDashboardCachedData()
 		}
 
 		return result, nil
@@ -1868,4 +1871,56 @@ func (u Usecase) ClearCacheTop10GMDashboard() {
 			logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err), zap.String("cachedKey", key), zap.Any("item", items[i]))
 		}
 	}
+}
+
+func (u Usecase) BackupGMDashboardCachedData() {
+	key := fmt.Sprintf("gm-collections.deposit")
+	cached, err := u.Cache.GetData(key)
+	if err == nil && cached != nil {
+		dataEntity := &entity.CachedGMDashBoard{
+			Value: cached,
+			Key:   key,
+		}
+
+		dataEntity.SetID()
+		dataEntity.SetCreatedAt()
+
+		inserted, err := u.Repo.Create(context.Background(), dataEntity.TableName(), dataEntity, nil)
+		if err != nil {
+			logger.AtLog.Logger.Error("BackupGMDashboardCachedData", zap.Error(err), zap.String("key", key))
+			return
+		}
+
+		logger.AtLog.Logger.Info("BackupGMDashboardCachedData", zap.String("key", key), zap.Any("inserted", inserted))
+		return
+	}
+
+	logger.AtLog.Logger.Error("BackupGMDashboardCachedData", zap.Error(err), zap.String("key", key))
+}
+
+func (u Usecase) RestoreGMDashboardCachedData(UUID string) {
+	key := fmt.Sprintf("gm-collections.deposit")
+	cached, err := u.Repo.FindOne(entity.CachedGMDashBoard{}.TableName(), UUID)
+	if err != nil {
+		return
+	}
+
+	data := &entity.CachedGMDashBoard{}
+	err = helpers.Transform(cached, data)
+	if err != nil {
+		return
+	}
+
+	resp := &structure.AnalyticsProjectDeposit{}
+	bytes, err := json.Marshal(data.Value)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(bytes, resp)
+	if err != nil {
+		return
+	}
+
+	u.Cache.SetDataWithExpireTime(key, resp, 60*60*1)
 }
