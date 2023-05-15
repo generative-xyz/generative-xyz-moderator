@@ -148,10 +148,16 @@ func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
 		}
 	}
 
-	return map[string]string{
-		"eth": itemEth.Address,
-		"btc": itemBtc.Address,
-	}, nil
+	// update updated_at:
+	u.Repo.SetUpdatedTimeNewCitysGm(strings.ToLower(addressInput))
+
+	returnData := map[string]string{
+		"tcAddress": addressInput,
+		"eth":       itemEth.Address,
+		"btc":       itemBtc.Address,
+	}
+	fmt.Println(fmt.Sprintf("ApiCreateNewGM.returnData.Tc.%s", addressInput), returnData)
+	return returnData, nil
 }
 
 // admin
