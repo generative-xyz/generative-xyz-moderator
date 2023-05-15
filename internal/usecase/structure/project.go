@@ -164,12 +164,19 @@ type ProjectFloorPrice struct {
 }
 
 type AnalyticsProjectDeposit struct {
-	Value        string                             `json:"value"`
-	Currency     string                             `json:"currency"`
-	CurrencyRate float64                            `json:"currencyRate"`
-	UsdtValue    float64                            `json:"usdtValue"`
-	Items        []*etherscan.AddressTxItemResponse `json:"items"`
-	MapItems     map[string]*etherscan.AddressTxItemResponse
+	Value            string                             `json:"value"`
+	Currency         string                             `json:"currency"`
+	CurrencyRate     float64                            `json:"currencyRate"`
+	UsdtValue        float64                            `json:"usdtValue"`
+	Items            []*etherscan.AddressTxItemResponse `json:"items"`
+	MapItems         map[string]*etherscan.AddressTxItemResponse
+	MapTokensDeposit map[string][]TokensDeposit `json:"map_tokens_deposit"`
+}
+
+type TokensDeposit struct {
+	Name      string  `json:"name"`
+	Value     string  `json:"value"`
+	UsdtValue float64 `json:"usdtValue"`
 }
 
 type AnalyticsProjectDepositChan struct {
