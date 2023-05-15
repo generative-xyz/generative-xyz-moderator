@@ -509,7 +509,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 
 func (u Usecase) JobGetChartDataForGMCollection() error {
 	//clear cache for top 10 items
-	u.ClearCacheTop10GMDashboard()
+	//u.ClearCacheTop10GMDashboard()
 
 	//start
 	now := time.Now().UTC()
@@ -780,7 +780,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			u.Cache.SetDataWithExpireTime(key, result, 60*60*24*3)
 
 			//backup to DB
-			go u.BackupGMDashboardCachedData()
+			//go u.BackupGMDashboardCachedData()
 		}
 
 		return result, nil
