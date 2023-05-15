@@ -275,16 +275,18 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			}
 		} else {
 			transferUsdtValue := float64(0)
+			transferEthValue := float64(0)
 			if len(transferedETH) > 0 {
 				for _, v := range transferedETH {
-					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 18)), ethRate)
+					temp := utils.GetValue(v, 18)
+					transferEthValue += temp
+					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", temp), ethRate)
 				}
 			}
-			temp, _ := strconv.ParseFloat(moralisEthBL.Balance, 64)
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     fmt.Sprintf("%d", temp+transferUsdtValue),
+				Value:     fmt.Sprintf("%f", transferEthValue+totalEth),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
@@ -309,14 +311,17 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 	} else {
 		transferUsdtValue := float64(0)
 		if len(transferedETH) > 0 && !oldData {
+			transferEthValue := float64(0)
 			for _, v := range transferedETH {
-				transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 18)), ethRate)
+				temp := utils.GetValue(v, 18)
+				transferEthValue += temp
+				transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", temp), ethRate)
 			}
 			var items []*etherscan.AddressTxItemResponse
 			items = append(items, &etherscan.AddressTxItemResponse{
 				From:      tcAddress,
 				To:        gmAddress,
-				Value:     fmt.Sprintf("%d", transferUsdtValue),
+				Value:     fmt.Sprintf("%f", transferEthValue),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalEth), ethRate) + transferUsdtValue,
 				Currency:  string(entity.ETH),
 				ENS:       ens,
@@ -444,9 +449,12 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		}
 		if walletInfo.Balance > 0 {
 			transferUsdtValue := float64(0)
+			transferBtcValue := float64(0)
 			if len(transferedBTC) > 0 {
 				for _, v := range transferedBTC {
-					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 8)), btcRate)
+					temp := utils.GetValue(v, 8)
+					transferBtcValue += temp
+					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", temp), btcRate)
 				}
 			}
 
@@ -454,7 +462,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			item := &etherscan.AddressTxItemResponse{
 				From:      tcWallet,
 				To:        gmWallet,
-				Value:     fmt.Sprintf("%f", temp+transferUsdtValue),
+				Value:     fmt.Sprintf("%f", temp+transferBtcValue),
 				Currency:  string(entity.BIT),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
 			}
@@ -470,15 +478,17 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			return resp1, nil
 		} else {
 			transferUsdtValue := float64(0)
+			transferBtcValue := float64(0)
 			if len(transferedBTC) > 0 {
 				for _, v := range transferedBTC {
-					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(v, 8)), btcRate)
+					temp := utils.GetValue(v, 8)
+					transferBtcValue += temp
+					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", temp), btcRate)
 				}
-				temp, _ := strconv.ParseFloat(fmt.Sprintf("%d", walletInfo.Balance), 64)
 				item := &etherscan.AddressTxItemResponse{
 					From:      tcWallet,
 					To:        gmWallet,
-					Value:     fmt.Sprintf("%f", temp+transferUsdtValue),
+					Value:     fmt.Sprintf("%f", transferBtcValue),
 					Currency:  string(entity.BIT),
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
 				}
