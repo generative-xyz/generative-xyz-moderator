@@ -496,6 +496,9 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 }
 
 func (u Usecase) JobGetChartDataForGMCollection() error {
+	//clear cache for top 10 items
+	//u.ClearCacheTop10GMDashboard()
+
 	_, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
 		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
@@ -509,9 +512,6 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
 	if !useCaching || err != nil {
-		//clear cache for top 10 items
-		u.ClearCacheTop10GMDashboard()
-
 		if useCaching {
 			return nil, err
 		}
