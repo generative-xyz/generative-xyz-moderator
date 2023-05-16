@@ -204,7 +204,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		resp.Currency = string(entity.ETH)
 		resp.UsdtValue = usdtValue
 		resp.Items = items
-		u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+		u.Cache.SetDataWithExpireTime(key, resp, 12*60*60)
 
 		logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) > 0", zap.Any("result", resp), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 		return resp, nil
@@ -229,7 +229,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 			if newcity.Status == 1 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
 				// cache empty for inactive wallet
 				resp := &structure.AnalyticsProjectDeposit{}
-				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				err := u.Cache.SetDataWithExpireTime(key, resp, 12*60*60) // cache by 1 day
 				if err != nil {
 					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 				}
@@ -366,7 +366,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 
-		cachedExpTime := 1 * 60 * 60 // cache by 1 hour
+		cachedExpTime := 12 * 60 * 60
 
 		if oldData {
 			cachedExpTime = 30 * 24 * 60 * 60 //a month
@@ -405,7 +405,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 			resp.UsdtValue = items[0].UsdtValue
 			resp.Items = items
 
-			cachedExpTime := 1 * 60 * 60 // cache by 1 hour
+			cachedExpTime := 12 * 60 * 60 // cache by 1 hour
 
 			if oldData {
 				cachedExpTime = 30 * 24 * 60 * 60 //a month
@@ -579,7 +579,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 				UsdtValue:    item.UsdtValue,
 				Items:        analyticItems,
 			}
-			u.Cache.SetDataWithExpireTime(key, resp1, 2*60*60) // cache by 2 hours
+			u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 2 hours
 			return resp1, nil
 		} else {
 			transferUsdtValue := float64(0)
@@ -605,7 +605,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 					UsdtValue:    item.UsdtValue,
 					Items:        analyticItems,
 				}
-				u.Cache.SetDataWithExpireTime(key, resp1, 2*60*60) // cache by 6 hours
+				u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 6 hours
 				return resp1, nil
 			}
 		}
