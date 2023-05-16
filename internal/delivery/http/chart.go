@@ -146,3 +146,12 @@ func (h *httpDelivery) getListWallet(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
+
+func (h *httpDelivery) GetDataOld(w http.ResponseWriter, r *http.Request) {
+	result, err := h.Usecase.GetDataOld()
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
