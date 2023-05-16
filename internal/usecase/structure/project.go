@@ -177,6 +177,12 @@ type AnalyticsProjectDeposit struct {
 	MapTokensDeposit map[string][]TokensDeposit `json:"map_tokens_deposit"`
 }
 
+type AnalyticsProjectDepositExternal struct {
+	Error  interface{}             `json:"error"`
+	Status bool                    `json:"status"`
+	Data   AnalyticsProjectDeposit `json:"data"`
+}
+
 type TokensDeposit struct {
 	Name      string  `json:"name"`
 	Value     string  `json:"value"`
