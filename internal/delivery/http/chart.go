@@ -172,3 +172,26 @@ func (h *httpDelivery) GetDataOld(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
+
+// UserCredits godoc
+// @Summary CollectionListing
+// @Description get list CollectionListing
+// @Tags Charts
+// @Accept  json
+// @Produce  json
+// @Param projectID path string  false "projectID"
+// @Param dateRange query string false "dateRange"
+// @Success 200 {object} response.JsonResponse{}
+// @Router /charts/gm-collections/deposit/backup [GET]
+func (h *httpDelivery) getChartDataForGMCollectionBackup(w http.ResponseWriter, r *http.Request) {
+	result, err := h.Usecase.GetChartDataForGMCollectionBackup()
+	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+	for _, item := range result.Items {
+		item.To = ""
+	}
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
