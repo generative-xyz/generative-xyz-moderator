@@ -2,9 +2,9 @@ package http
 
 import (
 	"net/http"
-	"strconv"
-
+	"os"
 	"rederinghub.io/external/etherscan"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -89,14 +89,27 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 // @Success 200 {object} response.JsonResponse{}
 // @Router /charts/gm-collections/deposit [GET]
 func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *http.Request) {
-	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+	useBackup := os.Getenv("API_DEPOSIT_BACKUP")
+	result := &structure.AnalyticsProjectDeposit{}
+	var err error
+
+	if useBackup == "" {
+		result, err = h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	} else if useBackup == "true" {
+		result, err = h.Usecase.GetChartDataForGMCollectionBackup()
+		if err != nil {
+			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+			return
+		}
+	}
+
 	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 	for _, item := range result.Items {
 		item.To = ""
-	}
-	if err != nil {
-		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
-		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
