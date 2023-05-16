@@ -2098,6 +2098,49 @@ func (u *Usecase) SendGMMEssageToSlack(preText string, content string) {
 	}
 }
 
+func (u Usecase) ChartForGMDashboard() (*structure.GMDashBoardPercent, error) {
+	past := time.Now().UTC().Add(time.Hour * -24)
+
+	pastData := entity.AggregatedGMDashBoard{}
+	pastDataArr, err := u.Repo.AggregateGMDashboardCachedDataByTime(&past)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pastDataArr) == 1 {
+		pastData = pastDataArr[0]
+	}
+
+	if pastData.Usdt == 0 {
+		pastData.Usdt = float64(1700000.000)
+	}
+	if pastData.Contributors == 0 {
+		pastData.Contributors = int64(2100)
+	}
+
+	data, err := u.GetChartDataForGMCollection(true)
+	if err != nil {
+		return nil, err
+	}
+
+	contributors := float64(len(data.Items))
+	usdt := data.UsdtValue
+
+	percentContributor := ((contributors - float64(pastData.Contributors)) / contributors) * 100
+	percentUsdt := ((usdt - pastData.Usdt) / usdt) * 100
+
+	resp := &structure.GMDashBoardPercent{
+		PastContributors:   pastData.Contributors,
+		PastUSDT:           pastData.Usdt,
+		USDT:               usdt,
+		Contributor:        int64(len(data.Items)),
+		PercentUSDT:        percentUsdt,
+		PercentContributor: percentContributor,
+	}
+
+	return resp, nil
+}
+
 // DUYNQ get old
 func (u Usecase) GetDataOld() (*structure.AnalyticsProjectDeposit, error) {
 	result := &structure.AnalyticsProjectDeposit{}
