@@ -2,12 +2,13 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"rederinghub.io/external/opensea"
 
@@ -322,7 +323,10 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 				balanceQuickNode, err := btc.GetBalanceFromQuickNode(item.Address, u.Config.QuicknodeAPI)
 				if err != nil {
-					return nil, err
+					err = errors.Wrap(err, "btc.GetBalanceFromQuickNode")
+					go u.sendSlack("", "Start:JobNewCity_CrawlFunds", item.Address, err.Error())
+					time.Sleep(300 * time.Millisecond)
+					continue
 				}
 				if balanceQuickNode != nil {
 					balance := balanceQuickNode.Balance
@@ -332,7 +336,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 						item.NativeAmount = append(item.NativeAmount, big.NewInt(int64(balance)).String())
 						_, err := u.Repo.UpdateNewCityGm(item)
 						if err != nil {
-							return nil, err
+							return nil, errors.Wrap(err, "u.Repo.UpdateNewCityGm")
 						}
 
 						keyToDecode := keyToDecodeV1

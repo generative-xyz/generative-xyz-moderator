@@ -417,13 +417,19 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 		if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
 			// cache empty for inactive wallet
 			resp := &structure.AnalyticsProjectDeposit{}
-			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt != nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+			}
 		}
 	} else {
 		if newcity.Status == 1 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
 			// cache empty for inactive wallet
 			resp := &structure.AnalyticsProjectDeposit{}
-			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+			}
 		}
 	}
 	return nil, errors.New("not balance - " + newcity.Address)
