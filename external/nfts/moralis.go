@@ -277,6 +277,9 @@ func (m MoralisNfts) AddressBalance(walletAddress string) (*MoralisBalanceResp, 
 	if string(data) == `{"message":"Invalid key"}` {
 		return nil, errors.New("invalid key")
 	}
+	if strings.Contains(string(data), "limit") {
+		return nil, errors.New("rate limit")
+	}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
 		return nil, err
