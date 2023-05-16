@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"sort"
@@ -109,7 +108,8 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", newcity.Address))
+			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection cached", zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 			return result, nil
 		}
 	}
@@ -148,9 +148,11 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(newcity.Address, []string{pepe, turbo})
 	//time.Sleep(time.Millisecond * 250)
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", newcity.Address))
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 		return nil, err
 	}
+
+	logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection cached", zap.Any("moralisERC20BL", moralisERC20BL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 	pepeBalance := moralisERC20BL[pepe]
 	turboBalance := moralisERC20BL[turbo]
@@ -196,19 +198,34 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		resp.UsdtValue = usdtValue
 		resp.Items = items
 		u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+
+		logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) > 0", zap.Any("result", resp), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 		return resp, nil
+
 	} else {
 		if newcity.UpdatedAt != nil {
+
+			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt != nil", zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
+
 			if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
 				// cache empty for inactive wallet
 				resp := &structure.AnalyticsProjectDeposit{}
-				u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				if err != nil {
+					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt != nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+				}
 			}
 		} else {
+
+			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt == nil", zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 			if newcity.Status == 0 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
 				// cache empty for inactive wallet
 				resp := &structure.AnalyticsProjectDeposit{}
-				u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				if err != nil {
+					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+				}
 			}
 		}
 	}
@@ -234,7 +251,8 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Info("GetChartDataEthForGMCollection", zap.Any("result", result), zap.String("gmAddress", newcity.Address))
+			logger.AtLog.Logger.Info("GetChartDataEthForGMCollection cached", zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 			return result, nil
 		}
 	}
@@ -249,7 +267,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	if ethRate == 0 {
 		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
 		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("gmAddress", newcity.Address))
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
 			return nil, err
 		}
 		u.Cache.SetDataWithExpireTime(keyRate, ethRate, 60*60) // cache by 1 hour
@@ -258,7 +276,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	moralisEthBL, err := u.MoralisNft.AddressBalance(newcity.Address)
 	//time.Sleep(time.Millisecond * 250)
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err2222", zap.Error(err), zap.String("gmAddress", newcity.Address))
+		logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err2222", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
 		//return nil, err
 		moralisEthBL = new(nfts.MoralisBalanceResp)
 		temp, err := u.EtherscanService.AddressBalance(newcity.Address)
@@ -268,7 +286,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 		}
 		moralisEthBL.Balance = temp.Result
 		if moralisEthBL.Balance == "" {
-			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err4444", zap.Error(err), zap.String("gmAddress", newcity.Address))
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err4444", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
 			return nil, err
 		}
 	}
@@ -278,6 +296,8 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	//if err != nil {
 	//	return nil, err
 	//}
+
+	logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection moralisEthBL", zap.Any("moralisEthBL", moralisEthBL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 	totalEth := utils.GetValue(moralisEthBL.Balance, 18)
 	if totalEth > 0 {
@@ -344,7 +364,13 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 		if oldData {
 			cachedExpTime = 30 * 24 * 60 * 60 //a month
 		}
-		u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
+		err := u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err7777", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
+		}
+
+		logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection totalEth > 0", zap.Any("result", resp), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 		return resp, nil
 	} else {
 		transferUsdtValue := float64(0)
@@ -377,7 +403,12 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 			if oldData {
 				cachedExpTime = 30 * 24 * 60 * 60 //a month
 			}
-			u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
+			err := u.Cache.SetDataWithExpireTime(key, resp, cachedExpTime)
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err8888", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
+			}
+
+			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection totalEth == 0", zap.Any("result", resp), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 			return resp, nil
 		}
 	}
@@ -571,7 +602,12 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 
 	data, err := u.GetChartDataForGMCollection(false)
 	if err != nil {
-		log.Println("JobGetChartDataForGMCollection GetChartDataForGMCollection err", err)
+		//end
+		end := time.Now().UTC()
+		preText = fmt.Sprintf("[Analytics][Error] - Get chart data for GM Dashboard")
+		content = fmt.Sprintf("End at: %v with Err: %s", end, err.Error())
+		u.SendGMMEssageToSlack(preText, content)
+		return err
 	}
 
 	//end
@@ -579,7 +615,7 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 	preText = fmt.Sprintf("[Analytics][End] - Get chart data for GM Dashboard")
 	content = fmt.Sprintf("End at: %v with USDT: %f, contributors: %d", end, data.UsdtValue, len(data.Items))
 	u.SendGMMEssageToSlack(preText, content)
-	return err
+	return nil
 }
 
 func (u Usecase) GetListWallet(walletType string) ([]*structure.WalletResponse, error) {
