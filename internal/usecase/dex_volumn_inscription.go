@@ -191,10 +191,18 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 		return resp, nil
 	} else {
-		if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
-			// cache empty for inactive wallet
-			resp := &structure.AnalyticsProjectDeposit{}
-			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+		if newcity.UpdatedAt != nil {
+			if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
+				// cache empty for inactive wallet
+				resp := &structure.AnalyticsProjectDeposit{}
+				u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			}
+		} else {
+			if newcity.Status == 0 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
+				// cache empty for inactive wallet
+				resp := &structure.AnalyticsProjectDeposit{}
+				u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+			}
 		}
 	}
 	return nil, errors.New("not balance - " + newcity.Address)
