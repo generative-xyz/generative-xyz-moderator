@@ -461,6 +461,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
+			logger.AtLog.Logger.Info("GetChartDataBTCForGMCollection cached", zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 			return result, nil
 		}
 	}
@@ -538,6 +539,9 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 			Items:        analyticItems,
 		}
 		u.Cache.SetDataWithExpireTime(key, resp1, 24*60*60*30) // cache by a month
+
+		logger.AtLog.Logger.Info("GetChartDataBTCForGMCollection oldData", zap.Any("result", resp1), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 		return resp1, nil
 	} else {
 		/*_, bs, err := u.buildBTCClient()
@@ -579,7 +583,13 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 				UsdtValue:    item.UsdtValue,
 				Items:        analyticItems,
 			}
-			u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 2 hours
+			err := u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 2 hours
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataBTCForGMCollection  walletInfo.Balance > 0", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+			}
+
+			logger.AtLog.Logger.Info("GetChartDataBTCForGMCollection  walletInfo.Balance > 0", zap.Any("result", resp1), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 			return resp1, nil
 		} else {
 			transferUsdtValue := float64(0)
@@ -605,7 +615,13 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 					UsdtValue:    item.UsdtValue,
 					Items:        analyticItems,
 				}
-				u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 6 hours
+				err := u.Cache.SetDataWithExpireTime(key, resp1, 12*60*60) // cache by 6 hours
+				if err != nil {
+					logger.AtLog.Logger.Error("GetChartDataBTCForGMCollection  walletInfo.Balance <= 0", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+				}
+
+				logger.AtLog.Logger.Info("GetChartDataBTCForGMCollection  walletInfo.Balance <= 0", zap.Any("result", resp1), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+
 				return resp1, nil
 			}
 		}
@@ -616,7 +632,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 				resp := &structure.AnalyticsProjectDeposit{}
 				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 				if err != nil {
-					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt != nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+					logger.AtLog.Logger.Error("GetChartDataBTCForGMCollection  newcity.UpdatedAt != nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 				}
 			}
 		} else {
@@ -625,7 +641,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 				resp := &structure.AnalyticsProjectDeposit{}
 				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 				if err != nil {
-					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+					logger.AtLog.Logger.Error("GetChartDataBTCForGMCollection  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 				}
 			}
 		}
@@ -682,6 +698,7 @@ func (u Usecase) GetListWallet(walletType string) ([]*structure.WalletResponse, 
 	}
 	return res, nil
 }
+
 func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
@@ -2045,6 +2062,10 @@ func (u Usecase) ClearCacheTop10GMDashboard() {
 }
 
 func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject structure.AnalyticsProjectDeposit) {
+	if os.Getenv("ENV") != "mainnet" {
+		return
+	}
+
 	dataEntity := &entity.CachedGMDashBoard{
 		OldValue: oldObject,
 		Value:    newObject,
