@@ -30,6 +30,7 @@ func NewMoralisNfts(conf *config.Config, cache redis.IRedisCache) *MoralisNfts {
 
 	apiKey := conf.Moralis.Key
 	serverURL := conf.Moralis.URL
+	serverURL = "https://deep-index.moralis.io/api/v2"
 	return &MoralisNfts{
 		conf:      conf,
 		serverURL: serverURL,
