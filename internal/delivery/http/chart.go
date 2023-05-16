@@ -2,8 +2,9 @@ package http
 
 import (
 	"net/http"
-	"rederinghub.io/external/etherscan"
 	"strconv"
+
+	"rederinghub.io/external/etherscan"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -131,5 +132,14 @@ func (h *httpDelivery) getChartDataExtraForGMCollection(w http.ResponseWriter, r
 	vars := mux.Vars(r)
 	address := vars["address"]
 	result := h.Usecase.GetExtraPercent(address)
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
+func (h *httpDelivery) getListWallet(w http.ResponseWriter, r *http.Request) {
+	result, err := h.Usecase.GetListWallet(r.URL.Query().Get("wallet_type"))
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
