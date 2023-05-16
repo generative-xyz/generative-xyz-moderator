@@ -266,7 +266,7 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 				items = append(items, &etherscan.AddressTxItemResponse{
 					From:      tcAddress,
 					To:        gmAddress,
-					Value:     item.Value,
+					Value:     fmt.Sprintf("%f", utils.GetValue(item.Value, 18)),
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(item.Value, 18)), ethRate),
 					Currency:  string(entity.ETH),
 					ENS:       ens,
