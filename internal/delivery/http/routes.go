@@ -181,6 +181,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	charts.HandleFunc("/gm-collections/extra/{address}/deposit", h.getChartDataExtraForGMCollection).Methods("GET")
 	charts.HandleFunc("/tokens/{tokenID}", h.getChartDataFoTokenURI).Methods("GET")
 	charts.HandleFunc("/gm-collections/wallet", h.getListWallet).Methods("GET")
+	charts.HandleFunc("/gm-collections/data-old", h.GetDataOld).Methods("GET")
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
