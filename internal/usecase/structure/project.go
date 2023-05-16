@@ -1,6 +1,10 @@
 package structure
 
-import "rederinghub.io/external/etherscan"
+import (
+	"time"
+
+	"rederinghub.io/external/etherscan"
+)
 
 type FilterProjects struct {
 	BaseFilters
@@ -182,4 +186,16 @@ type TokensDeposit struct {
 type AnalyticsProjectDepositChan struct {
 	Value *AnalyticsProjectDeposit
 	Err   error
+}
+
+type WalletResponse struct {
+	UserAddress  string     `json:"user_address"`
+	ENS          string     `json:"ens"`
+	Avatar       string     `json:"avatar"`
+	Address      string     `json:"address"`
+	Status       int        `json:"status"`
+	Type         string     `json:"type"`
+	NativeAmount []string   `json:"native_amounts"`
+	CreatedAt    *time.Time `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at"`
 }

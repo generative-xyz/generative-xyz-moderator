@@ -5,11 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/copier"
-	"go.uber.org/zap"
 	"log"
 	"math/big"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jinzhu/copier"
+	"go.uber.org/zap"
 	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
@@ -20,10 +25,6 @@ import (
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func (u Usecase) GetChartDataOFProject(req structure.AggerateChartForProject) (*structure.AggragetedCollectionVolumnResp, error) {
@@ -581,6 +582,27 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 	return err
 }
 
+func (u Usecase) GetListWallet(walletType string) ([]*structure.WalletResponse, error) {
+	res := []*structure.WalletResponse{}
+	wallets, err := u.Repo.FindNewCityGmByType(walletType)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range wallets {
+		res = append(res, &structure.WalletResponse{
+			UserAddress:  v.UserAddress,
+			ENS:          v.ENS,
+			Avatar:       v.Avatar,
+			Address:      v.Address,
+			Status:       v.Status,
+			Type:         v.Type,
+			NativeAmount: v.NativeAmount,
+			CreatedAt:    v.CreatedAt,
+			UpdatedAt:    v.UpdatedAt,
+		})
+	}
+	return res, nil
+}
 func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
