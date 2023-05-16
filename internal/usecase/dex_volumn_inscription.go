@@ -219,7 +219,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 
 			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) = 0,  newcity.UpdatedAt == nil", zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
-			if newcity.Status == 0 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
+			if newcity.Status == 1 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
 				// cache empty for inactive wallet
 				resp := &structure.AnalyticsProjectDeposit{}
 				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
@@ -420,7 +420,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 		}
 	} else {
-		if newcity.Status == 0 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
+		if newcity.Status == 1 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
 			// cache empty for inactive wallet
 			resp := &structure.AnalyticsProjectDeposit{}
 			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
