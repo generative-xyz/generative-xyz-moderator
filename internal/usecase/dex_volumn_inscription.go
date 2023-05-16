@@ -233,6 +233,10 @@ func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress stri
 			return nil, err
 		}
 		moralisEthBL.Balance = temp.Result
+		if moralisEthBL.Balance == "" {
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection err4444", zap.Error(err), zap.String("gmAddress", gmAddress))
+			return nil, err
+		}
 	}
 
 	//ethBL, err := u.EtherscanService.AddressBalance(gmAddress)
