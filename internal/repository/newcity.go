@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/utils/helpers"
 )
@@ -60,7 +61,15 @@ func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, 
 		"status": bson.M{"$in": statuses},
 	}
 
-	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter)
+	// sort: created_at
+
+	// cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter)
+
+	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter, &options.FindOptions{
+		Sort: bson.D{{"created_at", -1}},
+		// Limit: &limit,
+		// Skip:  &offset,
+	})
 	if err != nil {
 		return nil, err
 	}
