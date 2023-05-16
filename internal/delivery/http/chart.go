@@ -91,6 +91,9 @@ func (h *httpDelivery) getChartDataForCollection(w http.ResponseWriter, r *http.
 func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *http.Request) {
 	result, err := h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
 	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+	for _, item := range result.Items {
+		item.To = ""
+	}
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
