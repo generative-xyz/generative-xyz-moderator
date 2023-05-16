@@ -491,10 +491,14 @@ definitions:
     enum:
     - eth
     - btc
+    - pepe
+    - turbo
     type: string
     x-enum-varnames:
     - ETH
     - BIT
+    - PEPE
+    - TURBO
   entity.TokenStats:
     properties:
       price_int:
@@ -2453,6 +2457,26 @@ paths:
           schema:
             $ref: '#/definitions/response.JsonResponse'
       summary: CollectionListing
+      tags:
+      - Charts
+  /charts/gm-collections/deposit/chart:
+    get:
+      consumes:
+      - application/json
+      description: Chart for deposit dashboard
+      parameters:
+      - description: dateRange
+        in: query
+        name: dateRange
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      summary: Chart for deposit dashboard
       tags:
       - Charts
   /charts/gm-collections/extra/{address}/deposit:
@@ -4880,7 +4904,8 @@ paths:
         in: query
         name: tokenID
         type: string
-      - description: attributes
+      - collectionFormat: csv
+        description: attributes
         in: query
         items:
           type: string

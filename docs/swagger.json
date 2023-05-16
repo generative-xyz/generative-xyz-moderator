@@ -729,6 +729,37 @@
                 }
             }
         },
+        "/charts/gm-collections/deposit/chart": {
+            "get": {
+                "description": "Chart for deposit dashboard",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Charts"
+                ],
+                "summary": "Chart for deposit dashboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "dateRange",
+                        "name": "dateRange",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/charts/gm-collections/extra/{address}/deposit": {
             "get": {
                 "description": "get list CollectionListing",
@@ -4946,6 +4977,7 @@
                         "items": {
                             "type": "string"
                         },
+                        "collectionFormat": "csv",
                         "description": "attributes",
                         "name": "attributes",
                         "in": "query"
@@ -6623,11 +6655,15 @@
             "type": "string",
             "enum": [
                 "eth",
-                "btc"
+                "btc",
+                "pepe",
+                "turbo"
             ],
             "x-enum-varnames": [
                 "ETH",
-                "BIT"
+                "BIT",
+                "PEPE",
+                "TURBO"
             ]
         },
         "entity.TokenStats": {
