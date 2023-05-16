@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"rederinghub.io/utils/request"
 	"sort"
 	"strconv"
 	"strings"
@@ -2358,3 +2359,28 @@ func (u Usecase) GetDataOld() (*structure.AnalyticsProjectDeposit, error) {
 }
 
 //
+
+func (u Usecase) GetChartDataForGMCollectionBackup() (*structure.AnalyticsProjectDeposit, error) {
+	fullUrl := "https://www.fprotocol.io/api/gm/deposit"
+	statusCode, req, err := request.GetRequest(fullUrl)
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataForGMCollectionBackup", zap.Error(err), zap.Int("statusCode", statusCode))
+		return nil, err
+	}
+
+	if statusCode != 200 {
+		err := errors.New(fmt.Sprintf("Response with status: %d", statusCode))
+		logger.AtLog.Logger.Error("GetChartDataForGMCollectionBackup", zap.Error(err), zap.Int("statusCode", statusCode))
+		return nil, err
+	}
+
+	rsp := &structure.AnalyticsProjectDepositExternal{}
+	err = json.Unmarshal(req, rsp)
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataForGMCollectionBackup", zap.Error(err), zap.Int("statusCode", statusCode))
+		return nil, err
+	}
+
+	logger.AtLog.Logger.Info("GetChartDataForGMCollectionBackup", zap.Float64("usdt", rsp.Data.UsdtValue), zap.Int("items", len(rsp.Data.Items)))
+	return &rsp.Data, nil
+}

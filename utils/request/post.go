@@ -70,3 +70,18 @@ func PostToRenderer(url string, body interface{}) (int, []byte, error) {
 
 	return PostRequestWithHeaders(url, headers, body)
 }
+
+func GetRequest(url string) (int, []byte, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return response.StatusCode, nil, err
+	}
+
+	return response.StatusCode, responseBody, nil
+}
