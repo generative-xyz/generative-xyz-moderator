@@ -614,7 +614,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		}
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
 		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
-		erc20DataChan := make(chan structure.AnalyticsProjectDepositChan)
+		//erc20DataChan := make(chan structure.AnalyticsProjectDepositChan)
 
 		go func(ethDataChan chan structure.AnalyticsProjectDepositChan) {
 			data := &structure.AnalyticsProjectDeposit{}
@@ -628,6 +628,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 			if err == nil {
 				for _, wallet := range wallets {
+					// eth
 					temp, err := u.GetChartDataEthForGMCollection(wallet, wallet.NativeAmount, false, wallet.ENS, wallet.Avatar)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
@@ -637,6 +638,18 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					}
 					if err != nil {
 						u.Logger.ErrorAny("GetChartDataEthForGMCollection", zap.Any("err", err))
+					}
+
+					// erc20
+					temp, err = u.GetChartDataERC20ForGMCollection(wallet, wallet.NativeAmount, wallet.ENS, wallet.Avatar)
+					if err == nil && temp != nil {
+						data.Items = append(data.Items, temp.Items...)
+						data.UsdtValue += temp.UsdtValue
+						data.Value += temp.Value
+						data.CurrencyRate = temp.CurrencyRate
+					}
+					if err != nil {
+						u.Logger.ErrorAny("GetChartDataERC20ForGMCollection", zap.Any("err", err))
 					}
 				}
 			}
@@ -737,7 +750,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		}(btcDataChan)
 
-		go func(erc20DataChan chan structure.AnalyticsProjectDepositChan) {
+		/*go func(erc20DataChan chan structure.AnalyticsProjectDepositChan) {
 			data := &structure.AnalyticsProjectDeposit{}
 			var err error
 			defer func() {
@@ -761,11 +774,11 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					}
 				}
 			}
-		}(erc20DataChan)
+		}(erc20DataChan)*/
 
 		ethDataFromChan := <-ethDataChan
 		btcDataFromChan := <-btcDataChan
-		erc20DataFromChan := <-erc20DataChan
+		//erc20DataFromChan := <-erc20DataChan
 
 		result := &structure.AnalyticsProjectDeposit{}
 		if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
@@ -778,10 +791,10 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			result.UsdtValue += btcDataFromChan.Value.UsdtValue
 		}
 
-		if erc20DataFromChan.Value != nil && len(erc20DataFromChan.Value.Items) > 0 {
+		/*if erc20DataFromChan.Value != nil && len(erc20DataFromChan.Value.Items) > 0 {
 			result.Items = append(result.Items, erc20DataFromChan.Value.Items...)
 			result.UsdtValue += erc20DataFromChan.Value.UsdtValue
-		}
+		}*/
 
 		if len(result.Items) > 0 {
 			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
