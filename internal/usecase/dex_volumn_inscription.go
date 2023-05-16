@@ -425,7 +425,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		usdt := utils.ToUSDT(fmt.Sprintf("%f", amountF), btcRate)
 
 		resp1 := &structure.AnalyticsProjectDeposit{
-			Value:        fmt.Sprintf("%d", total),
+			Value:        fmt.Sprintf("%f", amountF),
 			Currency:     string(entity.BIT),
 			CurrencyRate: btcRate,
 			UsdtValue:    usdt,
