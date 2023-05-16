@@ -8,8 +8,9 @@ import (
 
 type CachedGMDashBoard struct {
 	BaseEntity `bson:",inline"`
-	Value      *string `bson:"value"`
-	Key        string  `bson:"key"`
+	OldValue   interface{} `bson:"old_value"`
+	Value      interface{} `bson:"value"`
+	Key        string      `bson:"key"`
 }
 
 func (u CachedGMDashBoard) TableName() string {
