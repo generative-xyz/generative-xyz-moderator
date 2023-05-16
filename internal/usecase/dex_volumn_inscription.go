@@ -880,11 +880,13 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		result := &structure.AnalyticsProjectDeposit{}
 		if ethDataFromChan.Value != nil && len(ethDataFromChan.Value.Items) > 0 {
+			u.Logger.Info("Processing data after go routine ethDataFromChan: ", zap.Int("ethDataFromChan", len(ethDataFromChan.Value.Items)))
 			result.Items = append(result.Items, ethDataFromChan.Value.Items...)
 			result.UsdtValue += ethDataFromChan.Value.UsdtValue
 		}
 
 		if btcDataFromChan.Value != nil && len(btcDataFromChan.Value.Items) > 0 {
+			u.Logger.Info("Processing data after go routine btcDataFromChan: ", zap.Int("btcDataFromChan", len(btcDataFromChan.Value.Items)))
 			result.Items = append(result.Items, btcDataFromChan.Value.Items...)
 			result.UsdtValue += btcDataFromChan.Value.UsdtValue
 		}
@@ -895,8 +897,10 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		}*/
 
 		if len(result.Items) > 0 {
+			u.Logger.Info("Processing data after go routine")
 			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 			result.MapTokensDeposit = make(map[string][]structure.TokensDeposit)
+			u.Logger.Info("Processing data after go routine: build map")
 			for _, item := range result.Items {
 				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
@@ -933,11 +937,13 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 				}
 			}
 			result.Items = []*etherscan.AddressTxItemResponse{}
+			u.Logger.Info("Processing data after go routine: rebuild items")
 			for _, item := range result.MapItems {
 				result.Items = append(result.Items, item)
 			}
 			usdtExtra := 0.0
 			usdtValue := 0.0
+			u.Logger.Info("Processing data after go routine: calculate usd and extra")
 			for _, item := range result.Items {
 				item.ExtraPercent = 0.0 //TODO u.GetExtraPercent(item.From)
 				//item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue // TODO
@@ -945,13 +951,17 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 				usdtExtra += item.UsdtValueExtra
 				usdtValue += item.UsdtValue
 			}
+			u.Logger.Info("Processing data after go routine: calculate gm and percent")
 			for _, item := range result.Items {
 				item.Percent = item.UsdtValueExtra / usdtExtra * 100
 				item.GMReceive = item.Percent * 8000 / 100
 			}
 			result.UsdtValue = usdtValue
+
+			u.Logger.Info("End Processing data after go routine")
 		}
 
+		u.Logger.Info("Unmarshal old caching")
 		cachedData := &structure.AnalyticsProjectDeposit{}
 		err := json.Unmarshal([]byte(*cached), cachedData)
 		if err != nil {
