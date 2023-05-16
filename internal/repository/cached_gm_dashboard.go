@@ -10,7 +10,7 @@ import (
 func (r *Repository) AggregateGMDashboardCachedDataByTime(time *time.Time) ([]entity.AggregatedGMDashBoard, error) {
 	resp := []entity.AggregatedGMDashBoard{}
 	f := bson.A{
-		bson.D{{"$match", bson.D{{"created_at", bson.D{{"$gte", time}}}}}},
+		bson.D{{"$match", bson.D{{"created_at", bson.D{{"$lte", time}}}}}},
 		bson.D{
 			{"$project",
 				bson.D{
@@ -33,7 +33,7 @@ func (r *Repository) AggregateGMDashboardCachedDataByTime(time *time.Time) ([]en
 				},
 			},
 		},
-		bson.D{{"$sort", bson.D{{"created_at", 1}}}},
+		bson.D{{"$sort", bson.D{{"created_at", -1}}}},
 		bson.D{{"$limit", 1}},
 	}
 
