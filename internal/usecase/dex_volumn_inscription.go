@@ -90,16 +90,19 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 	return &structure.AggragetedTokenVolumnResp{Volumns: resp}, nil
 }
 
-func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress string, transferedETH []string, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, transferedETH []string, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + tcAddress + "." + gmAddress)
+	key := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
-	//u.Cache.Delete(key)
+	if time.Now().Add(time.Minute * 30).Before(*newcity.UpdatedAt) {
+		u.Cache.Delete(key)
+	}
+
 	cached, err := u.Cache.GetData(key)
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", gmAddress))
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection", zap.Error(err), zap.String("gmAddress", newcity.Address))
 			return result, nil
 		}
 	}
@@ -135,10 +138,10 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 
 	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
 	turbo := "0xa35923162c49cf95e6bf26623385eb431ad920d3"
-	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(gmAddress, []string{pepe, turbo})
+	moralisERC20BL, err := u.MoralisNft.TokenBalanceByWalletAddress(newcity.Address, []string{pepe, turbo})
 	//time.Sleep(time.Millisecond * 250)
 	if err != nil {
-		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", gmAddress))
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection err1111", zap.Error(err), zap.String("gmAddress", newcity.Address))
 		return nil, err
 	}
 
@@ -153,8 +156,8 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		usdtValue += utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate)
 		transferUsdtValue := float64(0)
 		items = append(items, &etherscan.AddressTxItemResponse{
-			From:      tcAddress,
-			To:        gmAddress,
+			From:      newcity.UserAddress,
+			To:        newcity.Address,
 			Value:     fmt.Sprintf("%f", totalPepe),
 			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalPepe), pepeRate) + transferUsdtValue,
 			Currency:  string(entity.PEPE),
@@ -168,8 +171,8 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		usdtValue += utils.ToUSDT(fmt.Sprintf("%f", totalTurbo), turboRate)
 		transferUsdtValue := float64(0)
 		items = append(items, &etherscan.AddressTxItemResponse{
-			From:      tcAddress,
-			To:        gmAddress,
+			From:      newcity.UserAddress,
+			To:        newcity.Address,
 			Value:     fmt.Sprintf("%f", totalTurbo),
 			UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", totalTurbo), turboRate) + transferUsdtValue,
 			Currency:  string(entity.TURBO),
@@ -187,8 +190,14 @@ func (u Usecase) GetChartDataERC20ForGMCollection(tcAddress string, gmAddress st
 		resp.Items = items
 		u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
 		return resp, nil
+	} else {
+		if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
+			// cache empty for inactive wallet
+			resp := &structure.AnalyticsProjectDeposit{}
+			u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+		}
 	}
-	return nil, errors.New("not balance - " + gmAddress)
+	return nil, errors.New("not balance - " + newcity.Address)
 }
 
 func (u Usecase) GetChartDataEthForGMCollection(tcAddress string, gmAddress string, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
@@ -680,7 +689,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.ETH))
 			if err == nil {
 				for _, wallet := range wallets {
-					temp, err := u.GetChartDataERC20ForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, wallet.ENS, wallet.Avatar)
+					temp, err := u.GetChartDataERC20ForGMCollection(wallet, wallet.NativeAmount, wallet.ENS, wallet.Avatar)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
