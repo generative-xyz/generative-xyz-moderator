@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"rederinghub.io/utils/config"
 	"rederinghub.io/utils/helpers"
@@ -121,7 +123,17 @@ func (m MoralisNfts) request(fullUrl string, method string, headers map[string]s
 
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("content-type", "application/json")
-	req.Header.Add("X-API-Key", m.apiKey)
+
+	apiKeys := []string{
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk1MjI3ZDJiLWRmNDktNDZiOS1iZGMxLTdkZDMyYjMyZGZhMyIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM4OTgwNzIsImV4cCI6NDgzOTY1ODA3Mn0.b2xPRQJJyMd1nJog6mkoUve-S4Mh2C_tlJuw55yxPZc",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk2YzM4OTczLWZkNzUtNDRlZC1hMzg1LTQ2MjZkNjlkZDg1OSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM5NDc5NzMsImV4cCI6NDgzOTcwNzk3M30.cy77GPkYLY6-XpdIUdkv_SlxZe8Whw4ftaHPpP-j-F8",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjQxZmNhY2M5LTA3ZDctNGE3My1hN2EyLWYzNDg2MWNkNjNmZSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODM5NDgwMDgsImV4cCI6NDgzOTcwODAwOH0.7oiCoODECGfvyXlpvJ8_ykryrYrj_DXVmgENhEUHFKI",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjBlYTY3YmQyLTk3M2QtNDhmYi1iZmQ4LTYyNjU5MDE3NGY3MSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODQxOTY0OTAsImV4cCI6NDgzOTk1NjQ5MH0.ZS1Enk_ns8bxUI-10bHABQ8BRRAthyr-O4QRccouyXQ",
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjBmYzRmZTdjLWVkMDktNGYyYy05MjFlLTgwNzg2MTVhZDQyMSIsIm9yZ0lkIjoiMzI3NDI5IiwidXNlcklkIjoiMzM2NjQyIiwidHlwZUlkIjoiNGEyZTNhZTQtZDAxNy00ZTYzLWFlODgtZmE0ZWQyZGJhNDEwIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2ODQxOTY1MTksImV4cCI6NDgzOTk1NjUxOX0.YKKXfgDevKS6skTikA5VSzxK5sgfadzwnXj6gFv0RF4",
+	}
+	s := rand.NewSource(time.Now().Unix())
+	r := rand.New(s)
+	req.Header.Add("X-API-Key", apiKeys[r.Intn(len(apiKeys))])
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
