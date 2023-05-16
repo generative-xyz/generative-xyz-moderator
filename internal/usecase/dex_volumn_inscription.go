@@ -122,11 +122,14 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	}
 	if pepeRate == 0 {
 		pRate, err := u.CoinMarketCap.PriceConversion(24478) //PEPE ID
-		if err == nil && pRate != nil {
-			pepeRate = pRate.Data.Quote.USD.Price
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection PriceConversion PEPE", zap.Any("err", err))
+		} else {
+			if pRate != nil {
+				pepeRate = pRate.Data.Quote.USD.Price
+				u.Cache.SetDataWithExpireTime(keypepeRate, pepeRate, 60*60) // cache by 1 hour
+			}
 		}
-
-		u.Cache.SetDataWithExpireTime(keypepeRate, pepeRate, 60*60) // cache by 1 hour
 	}
 
 	keyturboRate := fmt.Sprintf("gm-collections.deposit.turboRate.rate")
@@ -137,10 +140,14 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	}
 	if turboRate == 0 {
 		tRate, err := u.CoinMarketCap.PriceConversion(24911) //TURBO ID
-		if err == nil && tRate != nil {
-			turboRate = tRate.Data.Quote.USD.Price
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection PriceConversion TURBO", zap.Any("err", err))
+		} else {
+			if tRate != nil {
+				turboRate = tRate.Data.Quote.USD.Price
+				u.Cache.SetDataWithExpireTime(keyturboRate, turboRate, 60*60) // cache by 1 hour
+			}
 		}
-		u.Cache.SetDataWithExpireTime(keyturboRate, turboRate, 60*60) // cache by 1 hour
 	}
 
 	pepe := "0x6982508145454ce325ddbe47a25d4ec3d2311933"
