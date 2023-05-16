@@ -435,11 +435,21 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	return nil, errors.New("not balance - " + newcity.Address)
 }
 
-func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string, transferedBTC []string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
+func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transferedBTC []string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc4.gmAddress." + tcWallet + "." + gmWallet)
+	key := fmt.Sprintf("gm-collections.deposit.btc4.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
-	//u.Cache.Delete(key)
+	if !oldData {
+		if newcity.UpdatedAt != nil {
+			if time.Now().Add(time.Minute * -30).Before(*newcity.UpdatedAt) {
+				u.Cache.Delete(key)
+			}
+		} else {
+			if time.Now().Add(time.Minute * -30).Before(*newcity.CreatedAt) {
+				u.Cache.Delete(key)
+			}
+		}
+	}
 	cached, err := u.Cache.GetData(key)
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
@@ -465,7 +475,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 
 	analyticItems := []*etherscan.AddressTxItemResponse{}
 	if oldData {
-		resp, err := u.MempoolService.AddressTransactions(gmWallet)
+		resp, err := u.MempoolService.AddressTransactions(newcity.Address)
 		time.Sleep(time.Millisecond * 500)
 		if err != nil {
 			return nil, err
@@ -477,7 +487,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				if oldData {
 					isContinue := true
 					for _, v := range item.Vin {
-						if strings.ToLower(v.Prevout.Scriptpubkey_address) == strings.ToLower(tcWallet) {
+						if strings.ToLower(v.Prevout.Scriptpubkey_address) == strings.ToLower(newcity.UserAddress) {
 							isContinue = false
 						}
 					}
@@ -487,7 +497,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				}
 				vs := item.Vout
 				for _, v := range vs {
-					if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(gmWallet) {
+					if strings.ToLower(v.ScriptpubkeyAddress) == strings.ToLower(newcity.Address) {
 						vouts = append(vouts, v)
 					}
 				}
@@ -497,7 +507,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 		total := int64(0)
 		for _, vout := range vouts {
 			analyticItem := &etherscan.AddressTxItemResponse{
-				From:      tcWallet,
+				From:      newcity.UserAddress,
 				To:        vout.ScriptpubkeyAddress,
 				Value:     fmt.Sprintf("%d", vout.Value),
 				Currency:  string(entity.BIT),
@@ -528,7 +538,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			return nil, err
 		}
 		balance, confirm, err := bs.GetBalance(gmWallet)*/
-		walletInfo, err := btc.GetBalanceFromQuickNode(gmWallet, u.Config.QuicknodeAPI)
+		walletInfo, err := btc.GetBalanceFromQuickNode(newcity.Address, u.Config.QuicknodeAPI)
 		if err != nil {
 			return nil, err
 		}
@@ -548,8 +558,8 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 			}
 
 			item := &etherscan.AddressTxItemResponse{
-				From:      tcWallet,
-				To:        gmWallet,
+				From:      newcity.UserAddress,
+				To:        newcity.Address,
 				Value:     fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)+transferBtcValue),
 				Currency:  string(entity.BIT),
 				UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
@@ -574,8 +584,8 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 					transferUsdtValue += utils.ToUSDT(fmt.Sprintf("%f", temp), btcRate)
 				}
 				item := &etherscan.AddressTxItemResponse{
-					From:      tcWallet,
-					To:        gmWallet,
+					From:      newcity.UserAddress,
+					To:        newcity.Address,
 					Value:     fmt.Sprintf("%f", transferBtcValue),
 					Currency:  string(entity.BIT),
 					UsdtValue: utils.ToUSDT(fmt.Sprintf("%f", utils.GetValue(fmt.Sprintf("%d", walletInfo.Balance), 8)), btcRate) + transferUsdtValue,
@@ -592,7 +602,27 @@ func (u Usecase) GetChartDataBTCForGMCollection(tcWallet string, gmWallet string
 				return resp1, nil
 			}
 		}
-		return nil, errors.New("not balance - " + gmWallet)
+
+		if newcity.UpdatedAt != nil {
+			if time.Now().Add(time.Hour * -12).After(*newcity.UpdatedAt) {
+				// cache empty for inactive wallet
+				resp := &structure.AnalyticsProjectDeposit{}
+				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				if err != nil {
+					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt != nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+				}
+			}
+		} else {
+			if newcity.Status == 1 && time.Now().Add(time.Hour*-12).After(*newcity.CreatedAt) {
+				// cache empty for inactive wallet
+				resp := &structure.AnalyticsProjectDeposit{}
+				err := u.Cache.SetDataWithExpireTime(key, resp, 3*60*60) // cache by 1 day
+				if err != nil {
+					logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection  newcity.UpdatedAt == nil", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+				}
+			}
+		}
+		return nil, errors.New("not balance - " + newcity.Address)
 	}
 }
 
@@ -751,7 +781,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			wallets, err := u.Repo.FindNewCityGmByType(string(entity.BIT))
 			if err == nil {
 				for _, wallet := range wallets {
-					temp, err := u.GetChartDataBTCForGMCollection(wallet.UserAddress, wallet.Address, wallet.NativeAmount, false)
+					temp, err := u.GetChartDataBTCForGMCollection(wallet, wallet.NativeAmount, false)
 					if err == nil && temp != nil {
 						data.Items = append(data.Items, temp.Items...)
 						data.UsdtValue += temp.UsdtValue
@@ -778,7 +808,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			}
 
 			for _, wallet := range fromWallets {
-				temp, err := u.GetChartDataBTCForGMCollection(wallet, gmAddress, []string{}, true)
+				temp, err := u.GetChartDataBTCForGMCollection(entity.NewCityGm{UserAddress: strings.ToLower(wallet), Address: strings.ToLower(wallet)}, []string{}, true)
 				if err == nil && temp != nil {
 					data.Items = append(data.Items, temp.Items...)
 					data.UsdtValue += temp.UsdtValue
