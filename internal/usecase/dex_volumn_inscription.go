@@ -1060,6 +1060,11 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	//move out of routine for prevent data race
 	chanData := make(chan *etherscan.AddressTxItemResponse)
 	for i, item := range result.Items {
+		if item.UsdtValue < 0 {
+			u.Logger.AtLog().Logger.Info("maybe refund data", zap.String("from", item.From), zap.Float64("usdtValue", item.UsdtValue))
+			item.UsdtValue = float64(0)
+			item.UsdtValueExtra = float64(0)
+		}
 		go func(i int, txItem *etherscan.AddressTxItemResponse, dataChan chan *etherscan.AddressTxItemResponse) {
 			u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
 
