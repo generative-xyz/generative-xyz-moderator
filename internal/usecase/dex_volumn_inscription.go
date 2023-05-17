@@ -965,6 +965,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			for _, item := range result.Items {
 				item.Percent = item.UsdtValueExtra / usdtExtra * 100
 				item.GMReceive = item.Percent * 8000 / 100
+				item.GMReceiveString = fmt.Sprintf("%f", utils.ToWei(item.GMReceive, 18))
 			}
 			result.UsdtValue = usdtValue
 
