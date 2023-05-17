@@ -1,10 +1,12 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"rederinghub.io/external/etherscan"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -115,6 +117,33 @@ func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *htt
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
+func (h *httpDelivery) tryReallocate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("WalletAddress is incorect")
+		logger.AtLog.Logger.Error("withdraw.walletAddress", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if strings.ToLower(walletAddress) != strings.ToLower("0x07e51AEc82C7163e3237cfbf8C0E6A07413FA18E") {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("error call"))
+		return
+	}
+
+	result, err := h.Usecase.ReAllocateGM()
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+	for _, item := range result.Items {
+		item.To = ""
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 func (h *httpDelivery) GetPriceCoinBase(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	idInt, _ := strconv.Atoi(id)
@@ -169,14 +198,14 @@ func (h *httpDelivery) getListWallet(w http.ResponseWriter, r *http.Request) {
 // @Produce  json
 // @Success 200 {object} response.JsonResponse{}
 // @Router /charts/gm-collections/deposit/chart [GET]
-func (h *httpDelivery) getChartDepositDashboard(w http.ResponseWriter, r *http.Request) {
+/*func (h *httpDelivery) getChartDepositDashboard(w http.ResponseWriter, r *http.Request) {
 	result, err := h.Usecase.ChartForGMDashboard()
 	if err != nil {
 		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 		return
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
-}
+}*/
 
 func (h *httpDelivery) GetDataOld(w http.ResponseWriter, r *http.Request) {
 	result, err := h.Usecase.GetDataOld()

@@ -985,16 +985,21 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 }
 
 func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
+	u.Logger.Info("ReAllocateGM: get data from cache")
 	key := fmt.Sprintf("gm-collections.deposit")
 	result := &structure.AnalyticsProjectDeposit{}
-	//u.Cache.Delete(key)
 	cached, err := u.Cache.GetData(key)
-
-	err = json.Unmarshal([]byte(*cached), result)
-	if err != nil {
-		logger.AtLog.Logger.Error("ReAllocateGM json.Unmarshal.cachedData", zap.Error(err))
+	//cached = &testData
+	if cached == nil {
+		logger.AtLog.Logger.Error("ReAllocateGM err json.Unmarshal.cachedData")
 		return nil, err
 	}
+	err = json.Unmarshal([]byte(*cached), result)
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM err json.Unmarshal.cachedData", zap.Error(err))
+		return nil, err
+	}
+	u.Logger.Info("ReAllocateGM: json.Unmarshal success")
 
 	usdtExtra := 0.0
 	usdtValue := 0.0
@@ -1175,7 +1180,7 @@ func (u *Usecase) SendGMMEssageToSlack(preText string, content string) {
 	}
 }
 
-func (u Usecase) ChartForGMDashboard() (*structure.GMDashBoardPercent, error) {
+/*func (u Usecase) ChartForGMDashboard() (*structure.GMDashBoardPercent, error) {
 	past := time.Now().UTC().Add(time.Hour * -24)
 
 	pastData := entity.AggregatedGMDashBoard{}
@@ -1216,7 +1221,7 @@ func (u Usecase) ChartForGMDashboard() (*structure.GMDashBoardPercent, error) {
 	}
 
 	return resp, nil
-}
+}*/
 
 // DUYNQ get old
 func (u Usecase) GetDataOld() (*structure.AnalyticsProjectDeposit, error) {
@@ -1394,8 +1399,7 @@ func (u Usecase) GetDataOld() (*structure.AnalyticsProjectDeposit, error) {
 	return result, nil
 }
 
-//
-
+// DUYNQ backup api
 func (u Usecase) GetChartDataForGMCollectionBackup() (*structure.AnalyticsProjectDeposit, error) {
 	fullUrl := "https://www.fprotocol.io/api/gm/deposit"
 	statusCode, req, err := request.GetRequest(fullUrl)
