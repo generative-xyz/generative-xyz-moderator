@@ -1029,8 +1029,9 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 
 	usdtExtra := 0.0
 	usdtValue := 0.0
-	u.Logger.Info("Processing ReAllocateGM: get extra percent")
-	for _, item := range result.Items {
+	u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent for %d items", len(result.Items)))
+	for i, item := range result.Items {
+		u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
 		item.ExtraPercent = u.GetExtraPercent(item.From)
 		item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
 		usdtExtra += item.UsdtValueExtra
