@@ -1069,9 +1069,15 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		}
 	}
 
-	allow, err := u.Repo.GetProjectAllowList("999998", address)
+	/*allow, err := u.Repo.GetProjectAllowList("999998", address)
 	if err == nil && allow.UUID != "" {
 		return 10.0
+	}*/
+
+	for key, value := range allowList {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 10.0
+		}
 	}
 
 	return 0.0
