@@ -1051,6 +1051,9 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		item.Percent = item.UsdtValueExtra / usdtExtra * 100
 		item.GMReceive = item.Percent * 8000 / 100
 		item.GMReceiveString = fmt.Sprintf("%f", utils.ToWei(item.GMReceive, 18))
+		if strings.Contains(item.GMReceiveString, ".") {
+			item.GMReceiveString = strings.Split(item.GMReceiveString, ".")[0]
+		}
 	}
 	result.UsdtValue = usdtValue
 
