@@ -94,7 +94,8 @@ func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *htt
 	var err error
 
 	if useBackup == "" {
-		result, err = h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+		//result, err = h.Usecase.GetChartDataForGMCollection(r.URL.Query().Get("run") != "1")
+		result, err = h.Usecase.GetChartDataForGMCollection(true)
 		if err != nil {
 			h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
 			return
