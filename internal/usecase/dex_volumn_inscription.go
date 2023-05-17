@@ -96,11 +96,11 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	key := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
 	if newcity.UpdatedAt != nil {
-		if time.Now().Add(time.Minute * -30).Before(*newcity.UpdatedAt) {
+		if time.Now().Add(time.Minute * -90).Before(*newcity.UpdatedAt) {
 			u.Cache.Delete(key)
 		}
 	} else {
-		if time.Now().Add(time.Minute * -30).Before(*newcity.CreatedAt) {
+		if time.Now().Add(time.Minute * -90).Before(*newcity.CreatedAt) {
 			u.Cache.Delete(key)
 		}
 	}
@@ -246,11 +246,11 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	result := &structure.AnalyticsProjectDeposit{}
 	if !oldData {
 		if newcity.UpdatedAt != nil {
-			if time.Now().Add(time.Minute * -30).Before(*newcity.UpdatedAt) {
+			if time.Now().Add(time.Minute * -90).Before(*newcity.UpdatedAt) {
 				u.Cache.Delete(key)
 			}
 		} else {
-			if time.Now().Add(time.Minute * -30).Before(*newcity.CreatedAt) {
+			if time.Now().Add(time.Minute * -90).Before(*newcity.CreatedAt) {
 				u.Cache.Delete(key)
 			}
 		}
