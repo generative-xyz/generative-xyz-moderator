@@ -946,8 +946,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			usdtValue := 0.0
 			u.Logger.Info("Processing data after go routine: calculate usd and extra")
 			for _, item := range result.Items {
-				item.ExtraPercent = 0.0 //TODO u.GetExtraPercent(item.From)
-				//item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue // TODO
+				item.ExtraPercent = 0.0
 				item.UsdtValueExtra = item.UsdtValue
 				usdtExtra += item.UsdtValueExtra
 				usdtValue += item.UsdtValue
@@ -981,6 +980,38 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection json.Unmarshal.cachedData", zap.Error(err))
 		return nil, err
 	}
+
+	return result, nil
+}
+
+func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
+	key := fmt.Sprintf("gm-collections.deposit")
+	result := &structure.AnalyticsProjectDeposit{}
+	//u.Cache.Delete(key)
+	cached, err := u.Cache.GetData(key)
+
+	err = json.Unmarshal([]byte(*cached), result)
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM json.Unmarshal.cachedData", zap.Error(err))
+		return nil, err
+	}
+
+	usdtExtra := 0.0
+	usdtValue := 0.0
+	u.Logger.Info("Processing ReAllocateGM: get extra percent")
+	for _, item := range result.Items {
+		item.ExtraPercent = u.GetExtraPercent(item.From)
+		item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
+		item.UsdtValueExtra = item.UsdtValue
+		usdtExtra += item.UsdtValueExtra
+		usdtValue += item.UsdtValue
+	}
+	u.Logger.Info("Processing ReAllocateGM: calculate gm and percent")
+	for _, item := range result.Items {
+		item.Percent = item.UsdtValueExtra / usdtExtra * 100
+		item.GMReceive = item.Percent * 8000 / 100
+	}
+	result.UsdtValue = usdtValue
 
 	return result, nil
 }
