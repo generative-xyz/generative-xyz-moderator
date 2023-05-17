@@ -1025,12 +1025,6 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		"0xF0B131A9EAA9e2c8f1d26D200D47Bc1eDa50FB66": true,
 		"0x8dBb75c576B71B43eea54398F8606aeC530181dc": true,
 	}
-
-	//_, ok := kll[address]
-	//if ok {
-	//	return 25.0
-	//}
-
 	for key, value := range kll {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
 			return 25.0
@@ -2046,11 +2040,6 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		"0xC12A205bE940A7Bc1B604E770ED2D9aACD0e1aDA": true,
 		"0x91c9e5279cC51cec5789DdA21a2dF59cd26eC43B": true,
 	}
-	//_, ok = manual[address]
-	//if ok {
-	//	return 20.0
-	//}
-
 	for key, value := range manual {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
 			return 20.0
