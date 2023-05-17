@@ -991,6 +991,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 }
 
 func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error) {
+	return nil, errors.New("TODO")
 	result := &structure.AnalyticsProjectDeposit{}
 	keyRelocate := fmt.Sprintf(keyReAllocate)
 	cachedRelocation, err := u.Cache.GetData(keyRelocate)
