@@ -1,5 +1,9 @@
 package usecase
 
+var keyReAllocate = "gm-collections.deposit.reAllocate"
+
+var keyNotReAllocate = "gm-collections.deposit"
+
 var kll = map[string]bool{
 	"0xe96943DA5E2C74c0450612D5feB3537d036CEFC0": true,
 	"0xF3A66C660fa1A41f8FcC04504B506163c119552C": true,
