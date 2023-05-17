@@ -1022,7 +1022,7 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 }
 
 func (u Usecase) GetExtraPercent(address string) float64 {
-	user, err := u.Repo.FindUserByWalletAddress(address)
+	user, err := u.Repo.FindUserByWalletAddressEQ(address)
 	if err == nil && user.UUID != "" {
 		return 30.0
 	}
