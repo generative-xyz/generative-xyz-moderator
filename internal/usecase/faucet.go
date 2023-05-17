@@ -597,9 +597,10 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		item.Address = strings.ToLower(item.Address)
 
 		if !eth.ValidateAddress(item.Address) {
+			fmt.Println("faucet valid address: ", item.Address)
 			continue
 		}
-		if _, ok := destinations[item.Address]; ok {
+		if _, ok := destinations[item.Address]; ok {			
 			continue
 		}
 
@@ -616,6 +617,10 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		destinations[item.Address] = amount
 		uuids = append(uuids, item.UUID)
 		faucetsSent = append(faucetsSent, item)
+	}
+	
+	if len(destinations) == 0 {
+		return nil
 	}
 
 	uuidStr := strings.Join(uuids, ",")
