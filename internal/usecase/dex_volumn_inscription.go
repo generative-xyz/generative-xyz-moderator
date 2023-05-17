@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"math/big"
 	"os"
 	"rederinghub.io/utils/request"
 	"sort"
@@ -1151,10 +1152,10 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 	}
 
 	//TODO - move this nod into the other task
-	//tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
-	//if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
-	//	return 20.0
-	//}
+	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
+	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
+		return 20.0
+	}
 
 	for key, value := range manualAddMore {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
