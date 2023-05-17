@@ -128,7 +128,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		} else {
 			if pRate != nil {
 				pepeRate = pRate.Data.Quote.USD.Price
-				u.Cache.SetDataWithExpireTime(keypepeRate, pepeRate, 60*60) // cache by 1 hour
+				u.Cache.SetDataWithExpireTime(keypepeRate, pepeRate, 30*60)
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		} else {
 			if tRate != nil {
 				turboRate = tRate.Data.Quote.USD.Price
-				u.Cache.SetDataWithExpireTime(keyturboRate, turboRate, 60*60) // cache by 1 hour
+				u.Cache.SetDataWithExpireTime(keyturboRate, turboRate, 30*60)
 			}
 		}
 	}
@@ -205,7 +205,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		resp.Currency = string(entity.ETH)
 		resp.UsdtValue = usdtValue
 		resp.Items = items
-		u.Cache.SetDataWithExpireTime(key, resp, 12*60*60)
+		u.Cache.SetDataWithExpireTime(key, resp, 1*60*60)
 
 		logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection len(items) > 0", zap.Any("result", resp), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 		return resp, nil
