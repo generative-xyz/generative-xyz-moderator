@@ -1003,7 +1003,7 @@ func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error)
 
 	result := &structure.AnalyticsProjectDeposit{}
 	keyRelocate := fmt.Sprintf(keyReAllocate)
-	cachedRelocation, err := u.Cache.GetData(keyRelocate)
+	cachedRelocation, err := u.GetCacheFromServer(keyRelocate)
 	if err == nil && cachedRelocation != nil {
 		err = json.Unmarshal([]byte(*cachedRelocation), result)
 		if err != nil {
@@ -1052,43 +1052,67 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		logger.AtLog.Logger.Error("ReAllocateGM err json.Unmarshal.cachedData", zap.Error(err))
 		return nil, err
 	}
-	u.Logger.Info("ReAllocateGM: json.Unmarshal success")
+	u.Logger.AtLog().Logger.Info("ReAllocateGM: json.Unmarshal success")
 
 	usdtExtra := 0.0
 	usdtValue := 0.0
-	u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent for %d items", len(result.Items)))
+	u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent for %d items", len(result.Items)))
 
 	//move out of routine for prevent data race
-	for _, item := range result.Items {
-		usdtExtra += item.UsdtValueExtra
-		usdtValue += item.UsdtValue
-	}
-
 	chanData := make(chan *etherscan.AddressTxItemResponse)
 	for i, item := range result.Items {
 		go func(i int, txItem *etherscan.AddressTxItemResponse, dataChan chan *etherscan.AddressTxItemResponse) {
-			u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
-			txItem.ExtraPercent = u.GetExtraPercent(txItem.From)
-			txItem.UsdtValueExtra = txItem.UsdtValue/100*txItem.ExtraPercent + txItem.UsdtValue
-			item.Percent = item.UsdtValueExtra / usdtExtra * 100
-			item.GMReceive = item.Percent * 8000 / 100
+			u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
 
+			txItem.ExtraPercent = u.GetExtraPercent(txItem.From)
+			if txItem.ExtraPercent == 0 {
+				txItem.UsdtValueExtra = txItem.UsdtValue
+			} else {
+				txItem.UsdtValueExtra = txItem.UsdtValue/100*txItem.ExtraPercent + txItem.UsdtValue
+			}
 			dataChan <- txItem
+
 		}(i, item, chanData)
 
 		if i%100 == 0 {
 			time.Sleep(time.Millisecond * 250)
 		}
 	}
-	u.Logger.Info("Processing ReAllocateGM: calculate gm and percent")
 
-	for _, item := range result.Items {
-		item = <-chanData
+	resp := []*etherscan.AddressTxItemResponse{}
 
-		u.Logger.Info(fmt.Sprintf("Processing percent for %s", item.From), zap.Float64("Percent", item.Percent), zap.Float64("GMReceive", item.GMReceive))
+	//usdtExtra, usdtValue and the new updated items are created here
+	//move usdtExtra, usdtValue for calculating total
+	for {
+		dataFromChan := <-chanData
+
+		usdtExtra += dataFromChan.UsdtValueExtra
+		usdtValue += dataFromChan.UsdtValue
+
+		item := dataFromChan
+
+		resp = append(resp, item)
+		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.String("from", item.From), zap.Float64("UsdtValue", item.UsdtValue), zap.Float64("UsdtValueExtra", item.ExtraPercent), zap.Float64("ExtraPercent", item.UsdtValueExtra), zap.Int("items", len(resp)))
+
+		if len(resp) == len(result.Items) {
+			break
+		}
+	}
+
+	//calculate via the updated item array (resp)
+	for _, item := range resp {
+		item.Percent = item.UsdtValueExtra / usdtExtra * 100
+		item.GMReceive = item.Percent * 8000 / 100
+		item.GMReceiveString = fmt.Sprintf("%f", utils.ToWei(item.GMReceive, 18))
+		if strings.Contains(item.GMReceiveString, ".") {
+			item.GMReceiveString = strings.Split(item.GMReceiveString, ".")[0]
+		}
+
+		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.Float64("Percent", item.Percent), zap.Float64("GMReceive", item.GMReceive))
 	}
 
 	result.UsdtValue = usdtValue
+	result.Items = resp
 
 	err = u.Cache.SetDataWithExpireTime(keyReAllocate, result, 60*60*24*3) // 3 days
 	if err != nil {
