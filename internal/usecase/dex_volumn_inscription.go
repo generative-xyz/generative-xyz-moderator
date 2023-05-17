@@ -1091,7 +1091,7 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		item := dataFromChan
 
 		resp = append(resp, item)
-		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.String("from", item.From), zap.Float64("UsdtValue", item.UsdtValue), zap.Float64("UsdtValueExtra", item.ExtraPercent), zap.Float64("ExtraPercent", item.UsdtValueExtra), zap.Int("items", len(resp)))
+		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.String("from", item.From), zap.Float64("UsdtValue", item.UsdtValue), zap.Float64("UsdtValueExtra", item.UsdtValueExtra), zap.Float64("ExtraPercent", item.UsdtValueExtra), zap.Int("items", len(resp)))
 
 		if len(resp) == len(result.Items) {
 			break
@@ -1099,6 +1099,7 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	}
 
 	//calculate via the updated item array (resp)
+	totalGMReceive := float64(0)
 	for _, item := range resp {
 		item.Percent = item.UsdtValueExtra / usdtExtra * 100
 		item.GMReceive = item.Percent * 8000 / 100
@@ -1106,9 +1107,18 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		if strings.Contains(item.GMReceiveString, ".") {
 			item.GMReceiveString = strings.Split(item.GMReceiveString, ".")[0]
 		}
-
-		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.Float64("Percent", item.Percent), zap.Float64("GMReceive", item.GMReceive))
+		totalGMReceive += item.GMReceive
+		u.Logger.AtLog().Logger.Info("ReAllocateGM",
+			zap.String("From", item.From),
+			zap.Float64("UsdtValue", item.UsdtValue),
+			zap.Float64("UsdtValueExtra", item.UsdtValueExtra),
+			zap.Float64("ExtraPercent", item.ExtraPercent),
+			zap.Float64("Percent GM", item.Percent),
+			zap.Float64("GMReceive", item.GMReceive),
+		)
 	}
+
+	u.Logger.AtLog().Logger.Info("Review calculate totalGMReceive", zap.Float64("totalGMReceive", totalGMReceive))
 
 	result.UsdtValue = usdtValue
 	result.Items = resp
