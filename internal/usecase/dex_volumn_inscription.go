@@ -449,11 +449,11 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 	result := &structure.AnalyticsProjectDeposit{}
 	if !oldData {
 		if newcity.UpdatedAt != nil {
-			if time.Now().Add(time.Minute * -30).Before(*newcity.UpdatedAt) {
+			if time.Now().Add(time.Minute * -120).Before(*newcity.UpdatedAt) {
 				u.Cache.Delete(key)
 			}
 		} else {
-			if time.Now().Add(time.Minute * -30).Before(*newcity.CreatedAt) {
+			if time.Now().Add(time.Minute * -120).Before(*newcity.CreatedAt) {
 				u.Cache.Delete(key)
 			}
 		}
