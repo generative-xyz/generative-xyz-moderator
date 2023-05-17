@@ -706,10 +706,14 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	key := fmt.Sprintf(keyNotReAllocate)
 	result := &structure.AnalyticsProjectDeposit{}
 
-	// try get data from reAllocate
-	dataReAllocate, err := u.GetReallocateData()
-	if err == nil && dataReAllocate != nil {
-		return dataReAllocate, nil
+	if useCaching {
+		// try get data from reAllocate, check config
+		if os.Getenv("GetReallocateData") == "true" {
+			dataReAllocate, err := u.GetReallocateData()
+			if err == nil && dataReAllocate != nil {
+				return dataReAllocate, nil
+			}
+		}
 	}
 
 	cached, err := u.Cache.GetData(key)
