@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
+	"go.mongodb.org/mongo-driver/bson"
 	"os"
 	"rederinghub.io/utils/request"
 	"sort"
@@ -999,7 +999,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 }
 
 func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error) {
-	return nil, errors.New("TODO")
+
 	result := &structure.AnalyticsProjectDeposit{}
 	keyRelocate := fmt.Sprintf(keyReAllocate)
 	cachedRelocation, err := u.Cache.GetData(keyRelocate)
@@ -1014,8 +1014,26 @@ func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error)
 	}
 
 	// get database
-	// TODO @tri
-	return nil, nil
+	dataFromDB, err := u.Repo.GetTheLatestReAllocated()
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection data from DB", zap.Error(err))
+		return nil, err
+	}
+
+	url := dataFromDB.BackupFileName
+	data, err := u.GCS.ReadFile(url)
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection read file from GCS", zap.Error(err))
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, result)
+	if err != nil {
+		logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection read data from GCS", zap.Error(err))
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
@@ -1038,29 +1056,85 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	usdtExtra := 0.0
 	usdtValue := 0.0
 	u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent for %d items", len(result.Items)))
-	for i, item := range result.Items {
-		u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
-		item.ExtraPercent = u.GetExtraPercent(item.From)
-		if item.ExtraPercent == 0 {
-			item.UsdtValueExtra = item.UsdtValue
-		} else {
-			item.UsdtValueExtra = item.UsdtValue/100*item.ExtraPercent + item.UsdtValue
-		}
+
+	//move out of routine for prevent data race
+	for _, item := range result.Items {
 		usdtExtra += item.UsdtValueExtra
 		usdtValue += item.UsdtValue
 	}
-	u.Logger.Info("Processing ReAllocateGM: calculate gm and percent")
-	for _, item := range result.Items {
-		item.Percent = item.UsdtValueExtra / usdtExtra * 100
-		item.GMReceive = item.Percent * 8000 / 100
-		item.GMReceiveString = fmt.Sprintf("%f", utils.ToWei(item.GMReceive, 18))
-		if strings.Contains(item.GMReceiveString, ".") {
-			item.GMReceiveString = strings.Split(item.GMReceiveString, ".")[0]
+
+	chanData := make(chan *etherscan.AddressTxItemResponse)
+	for i, item := range result.Items {
+		go func(i int, txItem *etherscan.AddressTxItemResponse, dataChan chan *etherscan.AddressTxItemResponse) {
+			u.Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
+			txItem.ExtraPercent = u.GetExtraPercent(txItem.From)
+			txItem.UsdtValueExtra = txItem.UsdtValue/100*txItem.ExtraPercent + txItem.UsdtValue
+			item.Percent = item.UsdtValueExtra / usdtExtra * 100
+			item.GMReceive = item.Percent * 8000 / 100
+
+			dataChan <- txItem
+		}(i, item, chanData)
+
+		if i%100 == 0 {
+			time.Sleep(time.Millisecond * 250)
 		}
 	}
+	u.Logger.Info("Processing ReAllocateGM: calculate gm and percent")
+
+	for _, item := range result.Items {
+		item = <-chanData
+
+		u.Logger.Info(fmt.Sprintf("Processing percent for %s", item.From), zap.Float64("Percent", item.Percent), zap.Float64("GMReceive", item.GMReceive))
+	}
+
 	result.UsdtValue = usdtValue
 
+	err = u.Cache.SetDataWithExpireTime(keyReAllocate, result, 60*60*24*3) // 3 days
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM  set cache", zap.Error(err))
+	}
+
+	//backup to DB
+	u.SaveReAllocateToDB(result)
+
 	return result, nil
+}
+
+func (u Usecase) SaveReAllocateToDB(result *structure.AnalyticsProjectDeposit) {
+	dbBackupItem := &entity.CachedGMReAllocatedDashBoard{
+		Contributors: len(result.Items),
+		UsdtValue:    result.UsdtValue,
+	}
+
+	dbBackupItem.SetID()
+	dbBackupItem.SetCreatedAt()
+	objID, err := u.Repo.Create(context.TODO(), dbBackupItem.TableName(), dbBackupItem)
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM backup data to DB Err", zap.Error(err))
+	}
+
+	//upload items to GCS
+	bytesData, err := json.Marshal(result)
+	if err == nil {
+		fileName := fmt.Sprintf("items-%s.json", objID.Hex())
+		base64Data := helpers.Base64Encode(bytesData)
+		uploaded, err := u.GCS.UploadBaseToBucket(base64Data, fmt.Sprintf("backup/dashboard/gm/%s", fileName))
+		if err == nil {
+			dbBackupItem.BackupURL = fmt.Sprintf("%s%s", os.Getenv("GCS_ENDPOINT"), uploaded.Path)
+			dbBackupItem.BackupFilePath = uploaded.Path
+			dbBackupItem.BackupFileName = uploaded.Name
+
+			_, err = u.Repo.UpdateOne(dbBackupItem.TableName(), bson.D{{utils.KEY_UUID, objID.Hex()}}, dbBackupItem)
+			if err != nil {
+				logger.AtLog.Logger.Error("ReAllocateGM update data for Backup", zap.Any("objID", objID), zap.Error(err))
+			}
+		} else {
+			logger.AtLog.Logger.Error("ReAllocateGM upload backup file to GCS", zap.Any("objID", objID), zap.Error(err))
+		}
+	} else {
+		logger.AtLog.Logger.Error("ReAllocateGM create base64 data", zap.Any("objID", objID), zap.Error(err))
+	}
+	logger.AtLog.Logger.Info("ReAllocateGM backup data to DB", zap.Any("objID", objID))
 }
 
 func (u Usecase) GetExtraPercent(address string) float64 {
@@ -1076,10 +1150,11 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		}
 	}
 
-	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
-	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
-		return 20.0
-	}
+	//TODO - move this nod into the other task
+	//tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
+	//if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
+	//	return 20.0
+	//}
 
 	for key, value := range manualAddMore {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
