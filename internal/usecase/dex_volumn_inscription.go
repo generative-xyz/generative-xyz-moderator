@@ -703,9 +703,15 @@ func (u Usecase) GetListWallet(walletType string) ([]*structure.WalletResponse, 
 }
 
 func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.AnalyticsProjectDeposit, error) {
-	key := fmt.Sprintf("gm-collections.deposit")
+	key := fmt.Sprintf(keyNotReAllocate)
 	result := &structure.AnalyticsProjectDeposit{}
-	//u.Cache.Delete(key)
+
+	// try get data from reAllocate
+	dataReAllocate, err := u.GetReallocateData()
+	if err == nil && dataReAllocate != nil {
+		return dataReAllocate, nil
+	}
+
 	cached, err := u.Cache.GetData(key)
 	if !useCaching || err != nil {
 		if useCaching {
@@ -984,9 +990,28 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	return result, nil
 }
 
+func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error) {
+	result := &structure.AnalyticsProjectDeposit{}
+	keyRelocate := fmt.Sprintf(keyReAllocate)
+	cachedRelocation, err := u.Cache.GetData(keyRelocate)
+	if err == nil && cachedRelocation != nil {
+		err = json.Unmarshal([]byte(*cachedRelocation), result)
+		if err != nil {
+			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection json.Unmarshal.cachedData gm-collections.deposit.relocate", zap.Error(err))
+			return nil, err
+		}
+
+		return result, nil
+	}
+
+	// get database
+	// TODO @tri
+	return nil, nil
+}
+
 func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	u.Logger.Info("ReAllocateGM: get data from cache")
-	key := fmt.Sprintf("gm-collections.deposit")
+	key := fmt.Sprintf(keyNotReAllocate)
 	result := &structure.AnalyticsProjectDeposit{}
 	cached, err := u.Cache.GetData(key)
 	//cached = &testData
@@ -1140,7 +1165,7 @@ func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject structure.Anal
 }
 
 func (u Usecase) RestoreGMDashboardCachedData(UUID string) {
-	key := fmt.Sprintf("gm-collections.deposit")
+	key := fmt.Sprintf(keyNotReAllocate)
 	cached, err := u.Repo.FindOne(entity.CachedGMDashBoard{}.TableName(), UUID)
 	if err != nil {
 		return
