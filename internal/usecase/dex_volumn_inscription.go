@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"os"
 	"rederinghub.io/utils/request"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1003,7 +1002,7 @@ func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error)
 
 	result := &structure.AnalyticsProjectDeposit{}
 	keyRelocate := fmt.Sprintf(keyReAllocate)
-	cachedRelocation, err := u.GetCacheFromServer(keyRelocate)
+	cachedRelocation, err := u.Cache.GetData(keyRelocate)
 	if err == nil && cachedRelocation != nil {
 		err = json.Unmarshal([]byte(*cachedRelocation), result)
 		if err != nil {
@@ -1237,7 +1236,7 @@ func (u Usecase) GetBitcoinBalance(addr string) (*structure.BlockCypherWalletInf
 	return result, nil
 }
 
-func (u Usecase) ClearCacheTop10GMDashboard() {
+/*func (u Usecase) ClearCacheTop10GMDashboard() {
 	dashboardItems, err := u.GetChartDataForGMCollection(true)
 	if err != nil {
 		logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err))
@@ -1262,7 +1261,7 @@ func (u Usecase) ClearCacheTop10GMDashboard() {
 			logger.AtLog.Logger.Error("ClearCacheTop10", zap.Error(err), zap.String("cachedKey", key), zap.Any("item", items[i]))
 		}
 	}
-}
+}*/
 
 func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject structure.AnalyticsProjectDeposit) {
 	if os.Getenv("ENV") != "mainnet" {
