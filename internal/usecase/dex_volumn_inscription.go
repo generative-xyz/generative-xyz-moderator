@@ -1025,9 +1025,16 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		"0xF0B131A9EAA9e2c8f1d26D200D47Bc1eDa50FB66": true,
 		"0x8dBb75c576B71B43eea54398F8606aeC530181dc": true,
 	}
-	_, ok := kll[address]
-	if ok {
-		return 25.0
+
+	//_, ok := kll[address]
+	//if ok {
+	//	return 25.0
+	//}
+
+	for key, value := range kll {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 25.0
+		}
 	}
 
 	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
@@ -1997,10 +2004,57 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		"0x73D05c2Ea70dFC3B220444c94567dbc84Bb0d24C":                                                                    true,
 		"0xBDa3735c8BF15Eea9520CF165666E0CBcB13134A":                                                                    true,
 		"0x32CC128F35aD103041ECCb742Bb36e36Cf9158e4":                                                                    true,
+
+		//requested from csv - TC Address from ETH-2
+		"0xc5dD0224f10Fed0a173A1ef13fAD37B0Cf44a27B": true,
+		"0x76b7e810F7Fc39DdCbfFCC8AC8122c5c2f6DaA1a": true,
+		"0x1ce7D875753FF327E411799714b16ad82c0AAad9": true,
+		"0x8137c193D0C99fD3a49dB9A88495577ceB158a7A": true,
+		"0x391C4Eb280B2A3c3ab8B666b41cb88d96d249d50": true,
+		"0xa1b43Cb8514d25E720523d8F79606a4e837c9ddd": true,
+		"0x3903E9195355bcA1E0d2a2834Dc226bFE19F87D0": true,
+		"0x1dF49C9073AB4f560748f4E8a7Dd8A66AE8D1167": true,
+		"0x2e8cEBca515381B0eA47E34C1d79A817679061F5": true,
+
+		//requested from csv - TC Address from ETH-1
+		"0x0c76140C49e7a85c0D37783ea258722E89102A1E": true,
+		"0x7a919D232823e5FECc9Bb89A9205715064033d66": true,
+		"0x555C42320b6334253e2fc7Bc6888305d6A5D988D": true,
+		"0x3cD863cF1d3E88316333245597A5B88fb357C102": true,
+		"0x6E9310B70d0440da9AeA59F613eA484B57161AE9": true,
+		"0x5EdF0DFbd5E8A023C4Dd55F0725cBe84C1AB2F69": true,
+		"0x52F54F1BF61Dbeee854c20e27e6346d59f91eaD1": true,
+		"0xB0d6C10715d6a85AE403403548F1D9a26E6adf02": true,
+		"0x1F056Fa0d63AFa27F0899aF9d9Ab54C67A25F01F": true,
+		"0x80394c57EB082D35c7Ea73239992454aB768807B": true,
+		"0xE49F423670dd32bd6B24D941Fc5d353F4C902dd9": true,
+		"0x15063f48160E9EF8554416D32cE4cBB26fEE462E": true,
+		"0x874d9C5f7CCE9E06cD9742D1EF4a204Ce9e5b175": true,
+		"0x3981768a3b0E36bE3746c0E88c913765c2A1411a": true,
+		"0x9b7B50480DF5c5CB221A1991c50e8D9625680EE7": true,
+		"0xa43b84F2bE90EbaDB4BdfCD38FEF7422E41Ec425": true,
+		"0x7A25A709503f1bA5FfC4Ef78C9779A2813582e8A": true,
+		"0x28D0dc6e29B46bC8d21cD1C1a9622c7B384f1878": true,
+		"0xD4549c2a55dC95746E488b8976dFD5ADF9c7441e": true,
+		"0x568C229a40A03FDBA9a23c854C24388f3b68AA6c": true,
+		"0xC99A2eE4CEF26473daF9Ef553f5673e6b1f5Aeaf": true,
+		"0x960252Ae3c22636aD721792c1b3d06f1Df9D2b53": true,
+		"0x81522Aa51C3f98af67CD3d49735b09d805932f96": true,
+		"0x0297452097f55Ed93e1d06695F9B6FB0294acA76": true,
+		"0x2fcc16Bb6C6cC7528A5CA32121CE661D55C0A5FB": true,
+		"0x0EAF92059fdBDF86A9BCDF1cC99658b8a70995F1": true,
+		"0xC12A205bE940A7Bc1B604E770ED2D9aACD0e1aDA": true,
+		"0x91c9e5279cC51cec5789DdA21a2dF59cd26eC43B": true,
 	}
-	_, ok = manual[address]
-	if ok {
-		return 20.0
+	//_, ok = manual[address]
+	//if ok {
+	//	return 20.0
+	//}
+
+	for key, value := range manual {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 20.0
+		}
 	}
 
 	allow, err := u.Repo.GetProjectAllowList("999998", address)
