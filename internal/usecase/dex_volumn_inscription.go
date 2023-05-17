@@ -956,6 +956,9 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			usdtValue := 0.0
 			u.Logger.Info("Processing data after go routine: calculate usd and extra")
 			for _, item := range result.Items {
+				if item.UsdtValue < 0 {
+					item.UsdtValue = 0.0
+				}
 				item.ExtraPercent = 0.0
 				item.UsdtValueExtra = item.UsdtValue
 				usdtExtra += item.UsdtValueExtra
@@ -1062,8 +1065,8 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	for i, item := range result.Items {
 		if item.UsdtValue < 0 {
 			u.Logger.AtLog().Logger.Info("maybe refund data", zap.String("from", item.From), zap.Float64("usdtValue", item.UsdtValue))
-			item.UsdtValue = float64(0)
-			item.UsdtValueExtra = float64(0)
+			item.UsdtValue = 0.0
+			item.UsdtValueExtra = 0.0
 		}
 		go func(i int, txItem *etherscan.AddressTxItemResponse, dataChan chan *etherscan.AddressTxItemResponse) {
 			u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
