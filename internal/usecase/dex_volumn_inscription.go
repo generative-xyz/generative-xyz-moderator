@@ -657,6 +657,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 func (u Usecase) JobGetChartDataForGMCollection() error {
 	//clear cache for top 10 items
 	//u.ClearCacheTop10GMDashboard()
+	u.Logger.Info("GetChartDataForGMCollection: Start")
 
 	//start
 	now := time.Now().UTC()
@@ -671,7 +672,7 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 		preText = fmt.Sprintf("[Analytics][Error] - Get chart data for GM Dashboard")
 		content = fmt.Sprintf("End at: %v with Err: %s", end, err.Error())
 		go u.SendGMMEssageToSlack(preText, content)
-		u.Logger.Info("Error JobGetChartDataForGMCollection", zap.Any("err", err))
+		u.Logger.Error("GetChartDataForGMCollection: Error JobGetChartDataForGMCollection", zap.Error(err))
 		return err
 	}
 
@@ -680,7 +681,8 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 	preText = fmt.Sprintf("[Analytics][End] - Get chart data for GM Dashboard")
 	content = fmt.Sprintf("End at: %v with USDT: %f, contributors: %d", end, data.UsdtValue, len(data.Items))
 	go u.SendGMMEssageToSlack(preText, content)
-	u.Logger.Info("Complete JobGetChartDataForGMCollection", zap.Any("data", data.UsdtValue))
+	u.Logger.Info("GetChartDataForGMCollection: Complete JobGetChartDataForGMCollection", zap.Any("data", data.UsdtValue))
+
 	return nil
 }
 
@@ -730,14 +732,14 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 	if !useCaching || err != nil {
 		if useCaching {
 
-			u.Logger.AtLog().Error("GetChartDataForGMCollection: useCaching",
+			u.Logger.AtLog().Error("GetChartDataForGMCollection: GetChartDataForGMCollection: useCaching",
 				zap.String("key", key),
 				zap.Bool("useCaching", useCaching), zap.Error(err))
 
 			return nil, err
 		}
 
-		u.Logger.AtLog().Info("GetChartDataForGMCollection: Starting ...")
+		u.Logger.AtLog().Info("GetChartDataForGMCollection: GetChartDataForGMCollection: Starting ...")
 
 		ethDataChan := make(chan structure.AnalyticsProjectDepositChan)
 		btcDataChan := make(chan structure.AnalyticsProjectDepositChan)
@@ -764,7 +766,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataEthForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataForGMCollection: GetChartDataEthForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 
 					// erc20
@@ -776,7 +778,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataERC20ForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataForGMCollection: GetChartDataERC20ForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 				}
 			}
@@ -819,7 +821,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					data.CurrencyRate = temp.CurrencyRate
 				}
 				if err != nil {
-					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataEthForGMCollection for wallet %s", wallet), zap.Any("err", err))
+					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataForGMCollection: GetChartDataEthForGMCollection for wallet %s", wallet), zap.Any("err", err))
 				}
 			}
 		}(ethDataChan)
@@ -844,7 +846,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataBTCForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataForGMCollection: GetChartDataBTCForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 				}
 			}
@@ -871,7 +873,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					data.CurrencyRate = temp.CurrencyRate
 				}
 				if err != nil {
-					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataBTCForGMCollection for wallet %s", wallet), zap.Any("err", err))
+					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataForGMCollection: GetChartDataBTCForGMCollection for wallet %s", wallet), zap.Any("err", err))
 				}
 			}
 
@@ -937,6 +939,10 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			u.Logger.AtLog().Info("GetChartDataForGMCollection - Processing data after go routine: build map")
 
 			for i, item := range result.Items {
+				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataERC20ForGMCollection - [%d / %d] Add item to map[string]item - start", i, len(result.Items)),
+					zap.Any("item", item),
+				)
+
 				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
 
