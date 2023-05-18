@@ -672,6 +672,12 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 }
 
 func (u Usecase) JobGetChartDataForGMCollection() error {
+	u.Cache.SetStringData(utils.GM_CRONTAB_PROCESSING_KEY, "1")
+
+	defer func() {
+		u.Cache.SetStringData(utils.GM_CRONTAB_PROCESSING_KEY, "0")
+	}()
+
 	//clear cache for top 10 items
 	//u.ClearCacheTop10GMDashboard()
 	u.Logger.Info("GetChartDataForGMCollection: Start")
