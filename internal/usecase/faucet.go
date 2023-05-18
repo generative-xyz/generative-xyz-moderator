@@ -693,7 +693,12 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 func (u Usecase) sendSlack(ids, funcName, requestMsgStr, errorStr string) {
 	preText := fmt.Sprintf("[App: %s][recordIDs %s] - %s", "Faucet", ids, requestMsgStr)
-	if _, _, err := u.Slack.SendMessageToSlackWithChannel("C052K111MK6", preText, funcName, errorStr); err != nil {
+	channel := "C052K111MK6"
+	if strings.Contains(errorStr, "ok") || strings.Contains(preText, "ok") || strings.Contains(funcName, "ok") {
+		channel = "C0582QV7MQD"
+	}
+
+	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channel, preText, funcName, errorStr); err != nil {
 		fmt.Println("s.Slack.SendMessageToSlack err", err)
 	}
 }
@@ -729,6 +734,18 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 		} else {
 			// if error maybe tx is pending or rejected
 			// TODO check timeout to detect tx is rejected or not.
+			if strings.Contains(err.Error(), "not found") {
+				now := time.Now()
+				updatedTime := item.UpdatedAt
+				if updatedTime != nil {
+
+					duration := now.Sub(*updatedTime).Minutes()
+					if duration >= 30 {
+						u.sendSlack(item.UUID, "JobFaucet_CheckTx", fmt.Sprintf("long time to confirm ok? tcTx: https://explorer.trustless.computer/tx/%s, btcTx: https://mempool.space/tx/%s", item.Tx, item.BtcTx), "> 30 mins ago")
+					}
+				}
+			}
+			
 			mapCheckTxFalse[item.Tx] = "err: " + err.Error()
 		}
 	}
