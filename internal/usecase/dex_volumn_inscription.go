@@ -1130,6 +1130,7 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 	u.Logger.AtLog().Logger.Info("Review calculate totalGMReceive", zap.Float64("totalGMReceive", totalGMReceive))
 
 	result.UsdtValue = usdtValue
+	result.UsdtExtra = usdtExtra
 	result.Items = resp
 
 	err = u.Cache.SetDataWithExpireTime(keyReAllocate, result, 60*60*24*3) // 3 days
@@ -1147,6 +1148,7 @@ func (u Usecase) SaveReAllocateToDB(result *structure.AnalyticsProjectDeposit) {
 	dbBackupItem := &entity.CachedGMReAllocatedDashBoard{
 		Contributors: len(result.Items),
 		UsdtValue:    result.UsdtValue,
+		UsdtExtra:    result.UsdtExtra,
 	}
 
 	dbBackupItem.SetID()
@@ -1304,25 +1306,39 @@ func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject *structure.Ana
 	return
 }
 
-func (u Usecase) RestoreGMDashboardCachedData() {
+func (u Usecase) RestoreGMDashboardCachedData(uuid string) (*structure.AnalyticsProjectDeposit, error) {
+	resp := &structure.AnalyticsProjectDeposit{}
 	key := fmt.Sprintf(keyNotReAllocate)
-	cached, err := u.Repo.GetTheLatestGMDashboardNewCached()
-	if err != nil {
-		return
+	var cached *entity.CachedGMDashBoardNew
+	var err error
+	if uuid == "" {
+		cached, err = u.Repo.GetTheLatestGMDashboardNewCached()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cached, err = u.Repo.FindGMDashboardNewCached(uuid)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	data, err := u.GCS.ReadFile(cached.BackupFileName)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	resp := &structure.AnalyticsProjectDeposit{}
 	err = json.Unmarshal(data, resp)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	u.Cache.SetDataWithExpireTime(key, resp, 60*60*1)
+	err = u.Cache.SetDataWithExpireTime(key, resp, 60*60*1)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (u *Usecase) SendGMMEssageToSlack(preText string, content string) {

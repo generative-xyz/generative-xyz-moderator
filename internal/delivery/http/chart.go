@@ -144,6 +144,34 @@ func (h *httpDelivery) tryReallocate(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
+func (h *httpDelivery) restoreGMDashboard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
+	walletAddress, ok := iWalletAddress.(string)
+	if !ok {
+		err := errors.New("WalletAddress is incorect")
+		logger.AtLog.Logger.Error("withdraw.walletAddress", zap.Error(err))
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	if strings.ToLower(walletAddress) != strings.ToLower("0x07e51AEc82C7163e3237cfbf8C0E6A07413FA18E") {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("error call"))
+		return
+	}
+
+	uuid := r.URL.Query().Get("uuid")
+	result, err := h.Usecase.RestoreGMDashboardCachedData(uuid)
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+	for _, item := range result.Items {
+		item.To = ""
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+}
+
 func (h *httpDelivery) GetPriceCoinBase(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	idInt, _ := strconv.Atoi(id)
