@@ -560,7 +560,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 			go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain.UpdateFaucetByTxTc", "update by tx err: "+tempItem.Tx+", btcTx:"+txBtc, err.Error())
 			return err
 		}
-		go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "ok=>tcTx/btcTx", tempItem.Tx+"/"+txBtc)
+		go u.sendSlack(uuidStr, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "ok=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+tempItem.Tx+"/https://mempool.space/tx/"+txBtc)
 		return nil
 	}
 
@@ -668,7 +668,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "call send vs tcTx: "+txID, err.Error())
 		return err
 	}
-	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "ok=>tcTx/btcTx", txID+"/"+txBtc)
+	
+	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "ok=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+txID+"/https://mempool.space/tx/"+txBtc)
 	// update tx by uuids:
 	if len(uuids) > 0 {
 		for _, item := range faucetsSent {
