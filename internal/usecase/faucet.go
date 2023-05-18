@@ -560,7 +560,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 			go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain.UpdateFaucetByTxTc", "update by tx err: "+tempItem.Tx+", btcTx:"+txBtc, err.Error())
 			return err
 		}
-		go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "ok=>tcTx/btcTx", tempItem.Tx+"/"+txBtc)
+		go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "okk=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+tempItem.Tx+"/https://mempool.space/tx/"+txBtc)
 		return nil
 	}
 
@@ -668,7 +668,8 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 		go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "call send vs tcTx: "+txID, err.Error())
 		return err
 	}
-	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "ok=>tcTx/btcTx", txID+"/"+txBtc)
+	
+	go u.sendSlack(uuidStr, "ApiCreateFaucet.SubmitTCToBtcChain", "okk=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+txID+"/https://mempool.space/tx/"+txBtc)
 	// update tx by uuids:
 	if len(uuids) > 0 {
 		for _, item := range faucetsSent {
@@ -692,7 +693,12 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 
 func (u Usecase) sendSlack(ids, funcName, requestMsgStr, errorStr string) {
 	preText := fmt.Sprintf("[App: %s][recordIDs %s] - %s", "Faucet", ids, requestMsgStr)
-	if _, _, err := u.Slack.SendMessageToSlackWithChannel("C052K111MK6", preText, funcName, errorStr); err != nil {
+	channel := "C052K111MK6"
+	if strings.Contains(errorStr, "okk") || strings.Contains(preText, "okk") || strings.Contains(funcName, "okk") {
+		channel = "C0582QV7MQD"
+	}
+
+	if _, _, err := u.Slack.SendMessageToSlackWithChannel(channel, preText, funcName, errorStr); err != nil {
 		fmt.Println("s.Slack.SendMessageToSlack err", err)
 	}
 }
@@ -728,6 +734,18 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 		} else {
 			// if error maybe tx is pending or rejected
 			// TODO check timeout to detect tx is rejected or not.
+			if strings.Contains(err.Error(), "not found") {
+				now := time.Now()
+				updatedTime := item.UpdatedAt
+				if updatedTime != nil {
+
+					duration := now.Sub(*updatedTime).Minutes()
+					if duration >= 30 {
+						u.sendSlack(item.UUID, "JobFaucet_CheckTx", fmt.Sprintf("long time to confirm okk? tcTx: https://explorer.trustless.computer/tx/%s, btcTx: https://mempool.space/tx/%s", item.Tx, item.BtcTx), fmt.Sprintf("%.2f mins ago", duration))
+					}
+				}
+			}
+			
 			mapCheckTxFalse[item.Tx] = "err: " + err.Error()
 		}
 	}
