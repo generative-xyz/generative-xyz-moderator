@@ -1055,29 +1055,28 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		logger.AtLog.Logger.Error("ReAllocateGM err json.Unmarshal.cachedData", zap.Error(err))
 		return nil, err
 	}
-	u.Logger.AtLog().Logger.Info("ReAllocateGM: json.Unmarshal success")
 
 	usdtExtra := 0.0
 	usdtValue := 0.0
-	u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent for %d items", len(result.Items)))
+	u.Logger.AtLog().Logger.Info(fmt.Sprintf("ReAllocateGM - start with %d items", len(result.Items)))
 
 	//move out of routine for prevent data race
 	chanData := make(chan *etherscan.AddressTxItemResponse)
 	for i, item := range result.Items {
 		if item.UsdtValue < 0 {
-			u.Logger.AtLog().Logger.Info("maybe refund data", zap.String("from", item.From), zap.Float64("usdtValue", item.UsdtValue))
+			u.Logger.AtLog().Logger.Info(fmt.Sprintf("ReAllocateGM - maybe refund data, %s", item.From), zap.String("from", item.From), zap.Float64("usdtValue", item.UsdtValue))
 			item.UsdtValue = 0.0
 			item.UsdtValueExtra = 0.0
 		}
 		go func(i int, txItem *etherscan.AddressTxItemResponse, dataChan chan *etherscan.AddressTxItemResponse) {
-			u.Logger.AtLog().Logger.Info(fmt.Sprintf("Processing ReAllocateGM: get extra percent: %d", i))
-
 			txItem.ExtraPercent = u.GetExtraPercent(txItem.From)
 			if txItem.ExtraPercent == 0 {
 				txItem.UsdtValueExtra = txItem.UsdtValue
 			} else {
 				txItem.UsdtValueExtra = txItem.UsdtValue/100*txItem.ExtraPercent + txItem.UsdtValue
 			}
+
+			u.Logger.AtLog().Logger.Info(fmt.Sprintf("ReAllocateGM - process extra percent for %s", txItem.From), zap.String("from", txItem.From), zap.Float64("ExtraPercent", txItem.ExtraPercent), zap.Float64("UsdtValueExtra", txItem.UsdtValueExtra))
 			dataChan <- txItem
 
 		}(i, item, chanData)
@@ -1100,7 +1099,12 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 		item := dataFromChan
 
 		resp = append(resp, item)
-		u.Logger.AtLog().Logger.Info("ReAllocateGM", zap.String("from", item.From), zap.Float64("UsdtValue", item.UsdtValue), zap.Float64("UsdtValueExtra", item.UsdtValueExtra), zap.Float64("ExtraPercent", item.UsdtValueExtra), zap.Int("items", len(resp)))
+		u.Logger.AtLog().Logger.Info(fmt.Sprintf("ReAllocateGM - calculing total usdtExtra, usdtValue: %s", item.From),
+			zap.String("from", item.From),
+			zap.Float64("usdtValue", item.UsdtValue),
+			zap.Float64("usdtValueExtra", item.UsdtValueExtra),
+			zap.Float64("extraPercent", item.UsdtValueExtra),
+			zap.Int("items", len(resp)))
 
 		if len(resp) == len(result.Items) {
 			break
@@ -1109,7 +1113,8 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 
 	//calculate via the updated item array (resp)
 	totalGMReceive := float64(0)
-	for _, item := range resp {
+
+	for i, item := range resp {
 		item.Percent = item.UsdtValueExtra / usdtExtra * 100
 		item.GMReceive = item.Percent * 8000 / 100
 		item.GMReceiveString = fmt.Sprintf("%f", utils.ToWei(item.GMReceive, 18))
@@ -1117,20 +1122,25 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 			item.GMReceiveString = strings.Split(item.GMReceiveString, ".")[0]
 		}
 		totalGMReceive += item.GMReceive
-		u.Logger.AtLog().Logger.Info("ReAllocateGM",
-			zap.String("From", item.From),
-			zap.Float64("UsdtValue", item.UsdtValue),
-			zap.Float64("UsdtValueExtra", item.UsdtValueExtra),
-			zap.Float64("ExtraPercent", item.ExtraPercent),
-			zap.Float64("Percent GM", item.Percent),
-			zap.Float64("GMReceive", item.GMReceive),
+		u.Logger.AtLog().Logger.Info(fmt.Sprintf("ReAllocateGM - processed [%d / %d] - caculcating GM receive for: %s", i, len(resp), item.From),
+			zap.String("from", item.From),
+			zap.Float64("usdtValue", item.UsdtValue),
+			zap.Float64("usdtValueExtra", item.UsdtValueExtra),
+			zap.Float64("extraPercent", item.ExtraPercent),
+			zap.Float64("percentGM", item.Percent),
+			zap.Float64("gMReceive", item.GMReceive),
 		)
 	}
 
-	u.Logger.AtLog().Logger.Info("Review calculate totalGMReceive", zap.Float64("totalGMReceive", totalGMReceive))
+	u.Logger.AtLog().Logger.Info("ReAllocateGM - Review calculate totalGMReceive",
+		zap.Float64("totalGMReceive", totalGMReceive),
+		zap.Int("contributors", len(resp)),
+		zap.Float64("usdtValue", usdtValue),
+		zap.Float64("usdtExtra", usdtExtra))
 
 	result.UsdtValue = usdtValue
 	result.UsdtExtra = usdtExtra
+	result.TotalGMReceive = totalGMReceive
 	result.Items = resp
 
 	err = u.Cache.SetDataWithExpireTime(keyReAllocate, result, 60*60*24*3) // 3 days
@@ -1146,9 +1156,10 @@ func (u Usecase) ReAllocateGM() (*structure.AnalyticsProjectDeposit, error) {
 
 func (u Usecase) SaveReAllocateToDB(result *structure.AnalyticsProjectDeposit) {
 	dbBackupItem := &entity.CachedGMReAllocatedDashBoard{
-		Contributors: len(result.Items),
-		UsdtValue:    result.UsdtValue,
-		UsdtExtra:    result.UsdtExtra,
+		Contributors:   len(result.Items),
+		UsdtValue:      result.UsdtValue,
+		UsdtExtra:      result.UsdtExtra,
+		TotalGMReceive: result.TotalGMReceive,
 	}
 
 	dbBackupItem.SetID()
@@ -1172,6 +1183,14 @@ func (u Usecase) SaveReAllocateToDB(result *structure.AnalyticsProjectDeposit) {
 			_, err = u.Repo.UpdateOne(dbBackupItem.TableName(), bson.D{{utils.KEY_UUID, objID.Hex()}}, dbBackupItem)
 			if err != nil {
 				logger.AtLog.Logger.Error("ReAllocateGM update data for Backup", zap.Any("objID", objID), zap.Error(err))
+			} else {
+				//send message to slack
+				end := time.Now().UTC()
+				preText := fmt.Sprintf("[ReAllocated][Created backup] - Backup for reallocated has been created")
+				title := fmt.Sprintf("UUID %s, URL: %s", dbBackupItem.UUID, dbBackupItem.BackupURL)
+				content := fmt.Sprintf("Backup was created at: %v with USDT: %f, USDTExtra: %f, contributors: %d, totalGMReceive: %f - bk UUID: %s", end, dbBackupItem.UsdtValue, dbBackupItem.UsdtExtra, len(result.Items), result.TotalGMReceive, title)
+
+				go u.SendGMMEssageToSlack(preText, content)
 			}
 		} else {
 			logger.AtLog.Logger.Error("ReAllocateGM upload backup file to GCS", zap.Any("objID", objID), zap.Error(err))
