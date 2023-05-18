@@ -1804,6 +1804,12 @@ func (u Usecase) GetChartDataForGMCollectionBackup() (*structure.AnalyticsProjec
 		return nil, err
 	}
 
+	err = u.Cache.SetDataWithExpireTime(keyNotReAllocate, rsp.Data, 60*60*24*3)
+	if err != nil {
+		u.Logger.AtLog().Logger.Error("GetChartDataForGMCollection: SetDataWithExpireTime ...", zap.Error(err))
+	}
+
 	logger.AtLog.Logger.Info("GetChartDataForGMCollectionBackup", zap.Float64("usdt", rsp.Data.UsdtValue), zap.Int("items", len(rsp.Data.Items)))
+
 	return &rsp.Data, nil
 }
