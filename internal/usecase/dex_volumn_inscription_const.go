@@ -6,6 +6,7 @@ var newList30 = map[string]bool{
 	"0x8dBb75c576B71B43eea54398F8606aeC530181dc": true,
 	"0x87907E5ac909454cc16DD503DC03ed8864eB7191": true,
 	"0xdf05228A1f48139EEf48Bd9783688B32c79646d6": true,
+	"0xeDbFD9A19B62D50A48062774507B00aEE696fA8D": true,
 }
 
 var newList20 = map[string]bool{
@@ -177,6 +178,9 @@ var kll = map[string]bool{
 }
 
 var kll2 = map[string]bool{
+	"0x930DfD7f564aF5b5BE32c78436c285b5C19fb05f": true,
+	"0x56622A80E76833761605818874a1deC1c9a2f337": true,
+
 	"0xe96943DA5E2C74c0450612D5feB3537d036CEFC0":                     true,
 	"0xF3A66C660fa1A41f8FcC04504B506163c119552C":                     true,
 	"0x0C2A603D6432D6beb49FCF34fD558eAF4cE68eC8":                     true,
@@ -238,6 +242,8 @@ var kll2 = map[string]bool{
 }
 
 var manualAddMore = map[string]bool{
+	"0x802585810E31805D6683D9F4225BEbD7C0C9aC71": true,
+	"0x2bd2eD688376B82aD0477f02b001B737cDCC87dB": true,
 	"0x87907E5ac909454cc16DD503DC03ed8864eB7191": true,
 	"0x08ADb99AF2B78AAb79e8bEe60dfd124C24C68926": true,
 	"0x26c4C9E2a772Fe5F413063c62E7b2E9e14F5Dc5A": true,
