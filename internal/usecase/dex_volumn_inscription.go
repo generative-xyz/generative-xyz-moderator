@@ -1784,6 +1784,15 @@ func (u Usecase) GetDataOld() (*structure.AnalyticsProjectDeposit, error) {
 
 // DUYNQ backup api
 func (u Usecase) GetChartDataForGMCollectionBackup() (*structure.AnalyticsProjectDeposit, error) {
+	// try get data from reAllocate, check config
+	if os.Getenv("GetReallocateData") == "true" {
+		dataReAllocate, err := u.GetReallocateData()
+		if err == nil && dataReAllocate != nil {
+			return dataReAllocate, nil
+		}
+		return nil, err
+	}
+
 	fullUrl := "https://www.fprotocol.io/api/gm/deposit"
 	statusCode, req, err := request.GetRequest(fullUrl)
 	if err != nil {
