@@ -1292,6 +1292,12 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		}
 	}
 
+	for key, value := range kll2 {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 25.0
+		}
+	}
+
 	//TODO - move this nod into the other task
 	tcBalance, err := u.TcClientPublicNode.GetBalance(context.TODO(), address)
 	if err == nil && tcBalance.Cmp(big.NewInt(0)) > 0 {
