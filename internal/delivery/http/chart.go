@@ -113,6 +113,8 @@ func (h *httpDelivery) getChartDataForGMCollection(w http.ResponseWriter, r *htt
 	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 	for _, item := range result.Items {
 		item.To = ""
+		item.UsdtValueExtra = 0
+		item.GMReceiveString = ""
 	}
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
