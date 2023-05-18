@@ -110,7 +110,8 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection cached", zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+			logger.AtLog.Logger.Info(fmt.Sprintf("GetChartDataERC20ForGMCollection get from cached for userAddr %s wallet %s", newcity.UserAddress, newcity.Address),
+				zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 			return result, nil
 		}
@@ -161,7 +162,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection cached", zap.Any("moralisERC20BL", moralisERC20BL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+	logger.AtLog.Logger.Info(fmt.Sprintf("GetChartDataERC20ForGMCollection moralis balance pepe, turbo for user %s wallet %s", newcity.UserAddress, newcity.Address), zap.Any("moralisERC20BL", moralisERC20BL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 	pepeBalance := moralisERC20BL[pepe]
 	turboBalance := moralisERC20BL[turbo]
