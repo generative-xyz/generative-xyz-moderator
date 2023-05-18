@@ -742,6 +742,7 @@ func (u Usecase) JobFaucet_CheckTx(recordsToCheck []*entity.Faucet) error {
 					duration := now.Sub(*updatedTime).Minutes()
 					if duration >= 30 {
 						u.sendSlack(item.UUID, "JobFaucet_CheckTx", fmt.Sprintf("long time to confirm okk? tcTx: https://explorer.trustless.computer/tx/%s, btcTx: https://mempool.space/tx/%s", item.Tx, item.BtcTx), fmt.Sprintf("%.2f mins ago", duration))
+						break
 					}
 				}
 			}
