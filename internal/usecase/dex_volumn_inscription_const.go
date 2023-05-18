@@ -242,6 +242,7 @@ var kll2 = map[string]bool{
 }
 
 var manualAddMore = map[string]bool{
+	"0x4ed95e1a632ba57ab02f02c7cf948f13ac0cedc2": true,
 	"0x802585810E31805D6683D9F4225BEbD7C0C9aC71": true,
 	"0x2bd2eD688376B82aD0477f02b001B737cDCC87dB": true,
 	"0x87907E5ac909454cc16DD503DC03ed8864eB7191": true,
