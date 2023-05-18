@@ -172,6 +172,7 @@ type AnalyticsProjectDeposit struct {
 	Currency         string                             `json:"currency"`
 	CurrencyRate     float64                            `json:"currencyRate"`
 	UsdtValue        float64                            `json:"usdtValue"`
+	UsdtExtra        float64                            `json:"usdtExtra"`
 	Items            []*etherscan.AddressTxItemResponse `json:"items"`
 	MapItems         map[string]*etherscan.AddressTxItemResponse
 	MapTokensDeposit map[string][]TokensDeposit `json:"map_tokens_deposit"`
