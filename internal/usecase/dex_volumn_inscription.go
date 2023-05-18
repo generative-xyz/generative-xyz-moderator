@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"math/big"
 	"os"
+	"rederinghub.io/utils/googlecloud"
 	"rederinghub.io/utils/request"
 	"strconv"
 	"strings"
@@ -986,7 +987,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			return nil, err
 		}
 
-		go u.BackupGMDashboardCachedData(*cachedData, *result)
+		go u.BackupGMDashboardCachedData(cachedData, result)
 		u.Cache.SetDataWithExpireTime(key, result, 60*60*24*3)
 
 		return result, nil
@@ -1281,50 +1282,42 @@ func (u Usecase) GetBitcoinBalance(addr string) (*structure.BlockCypherWalletInf
 	}
 }*/
 
-func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject structure.AnalyticsProjectDeposit) {
+func (u Usecase) BackupGMDashboardCachedData(oldObject, newObject *structure.AnalyticsProjectDeposit) {
 	if os.Getenv("ENV") != "mainnet" {
 		return
 	}
 
-	dataEntity := &entity.CachedGMDashBoard{
-		OldValue: oldObject,
-		Value:    newObject,
-		Key:      "",
-	}
-
-	dataEntity.SetID()
-	dataEntity.SetCreatedAt()
-
-	inserted, err := u.Repo.Create(context.Background(), dataEntity.TableName(), dataEntity, nil)
+	inserted, err := u.UploadCachedAndCreateBk(oldObject, newObject)
 	if err != nil {
-		logger.AtLog.Logger.Error("BackupGMDashboardCachedData", zap.Error(err))
-		return
+		logger.AtLog.Logger.Info("BackupGMDashboardCachedData UploadCachedAndCreateBk", zap.Error(err))
 	}
-
 	logger.AtLog.Logger.Info("BackupGMDashboardCachedData", zap.Any("inserted", inserted))
+
+	end := time.Now().UTC()
+	preText := fmt.Sprintf("[Analytics][Created backup] - Get chart data for GM Dashboard")
+	title := fmt.Sprintf("UUID %s, URL: %s", inserted.UUID, inserted.BackupURL)
+	content := fmt.Sprintf("Backup was created at: %v with USDT: %f, contributors: %d - bk UUID: %s", end, newObject.UsdtValue, len(newObject.Items), title)
+
+	go u.SendGMMEssageToSlack(preText, content)
+	u.Logger.Info("Complete JobGetChartDataForGMCollection", zap.Any("data", newObject.UsdtValue))
+
 	return
 }
 
-func (u Usecase) RestoreGMDashboardCachedData(UUID string) {
+func (u Usecase) RestoreGMDashboardCachedData() {
 	key := fmt.Sprintf(keyNotReAllocate)
-	cached, err := u.Repo.FindOne(entity.CachedGMDashBoard{}.TableName(), UUID)
+	cached, err := u.Repo.GetTheLatestGMDashboardNewCached()
 	if err != nil {
 		return
 	}
 
-	data := &entity.CachedGMDashBoard{}
-	err = helpers.Transform(cached, data)
+	data, err := u.GCS.ReadFile(cached.BackupFileName)
 	if err != nil {
 		return
 	}
 
 	resp := &structure.AnalyticsProjectDeposit{}
-	bytes, err := json.Marshal(data.Value)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(bytes, resp)
+	err = json.Unmarshal(data, resp)
 	if err != nil {
 		return
 	}
@@ -1344,6 +1337,98 @@ func (u *Usecase) SendGMMEssageToSlack(preText string, content string) {
 	if _, _, err := u.Slack.SendMessageToSlackWithChannel(slackChannel, preText, title, content); err != nil {
 		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
 	}
+}
+
+func (u Usecase) UploadCachedAndCreateBk(oldData, newData *structure.AnalyticsProjectDeposit) (*entity.CachedGMDashBoardNew, error) {
+	type uploadChan struct {
+		Data *googlecloud.GcsUploadedObject
+		Err  error
+	}
+
+	uploadFunc := func(id string, data *structure.AnalyticsProjectDeposit, uploadOldChan chan uploadChan) {
+		uploaded := &googlecloud.GcsUploadedObject{}
+		var err error
+
+		defer func() {
+			uploadOldChan <- uploadChan{
+				Data: uploaded,
+				Err:  err,
+			}
+		}()
+
+		uploaded, err = u.UploadCachedDataToGCS(data, id)
+		if err != nil {
+			logger.AtLog.Logger.Error("UploadCachedAndCreateBk UploadCachedDataToGCS", zap.Error(err))
+			return
+		}
+
+	}
+	dbBackupItem := &entity.CachedGMDashBoardNew{}
+	err := u.Repo.InsertGMDashboardNewCached(dbBackupItem)
+	if err != nil {
+		logger.AtLog.Logger.Error("UploadCachedAndCreateBk InsertGMDashboardNewCached", zap.Error(err))
+		return nil, err
+	}
+
+	id := dbBackupItem.ID.Hex()
+	uploadOldChan := make(chan uploadChan)
+	uploadNewChan := make(chan uploadChan)
+
+	go uploadFunc(id, oldData, uploadOldChan)
+	go uploadFunc(id, newData, uploadNewChan)
+
+	oldDataFromChan := <-uploadOldChan
+	newDataFromChan := <-uploadNewChan
+
+	if oldDataFromChan.Err != nil {
+		logger.AtLog.Logger.Error("UploadCachedAndCreateBk oldDataFromChan", zap.Error(oldDataFromChan.Err))
+		return nil, err
+	}
+
+	if newDataFromChan.Err != nil {
+		logger.AtLog.Logger.Error("UploadCachedAndCreateBk newDataFromChan", zap.Error(newDataFromChan.Err))
+		return nil, err
+	}
+
+	dbBackupItem.UsdtValue = newData.UsdtValue
+	dbBackupItem.Contributors = len(newData.Items)
+
+	dbBackupItem.OldBackupURL = fmt.Sprintf("%s%s", os.Getenv("GCS_ENDPOINT"), oldDataFromChan.Data.Path)
+	dbBackupItem.OldBackupFilePath = oldDataFromChan.Data.Path
+	dbBackupItem.OldBackupFileName = oldDataFromChan.Data.Name
+
+	dbBackupItem.BackupURL = fmt.Sprintf("%s%s", os.Getenv("GCS_ENDPOINT"), newDataFromChan.Data.Path)
+	dbBackupItem.BackupFilePath = newDataFromChan.Data.Path
+	dbBackupItem.BackupFileName = newDataFromChan.Data.Name
+
+	_, err = u.Repo.UpdateOne(dbBackupItem.TableName(), bson.D{{utils.KEY_UUID, id}}, dbBackupItem)
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM update data for Backup", zap.Any("objID", id), zap.Error(err))
+		return nil, err
+	}
+
+	return dbBackupItem, nil
+}
+
+func (u Usecase) UploadCachedDataToGCS(data *structure.AnalyticsProjectDeposit, fileName string) (*googlecloud.GcsUploadedObject, error) {
+	uploadedTime := time.Now().UTC().UnixNano()
+
+	//upload items to GCS
+	bytesData, err := json.Marshal(data)
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM create base64 data", zap.Int64("objID", uploadedTime), zap.Error(err))
+		return nil, err
+	}
+
+	uploadedFileName := fmt.Sprintf("%s-items-%d.json", fileName, uploadedTime)
+	base64Data := helpers.Base64Encode(bytesData)
+	uploaded, err := u.GCS.UploadBaseToBucket(base64Data, fmt.Sprintf("backup/dashboard/gm-not-allocated/%s", uploadedFileName))
+	if err != nil {
+		logger.AtLog.Logger.Error("ReAllocateGM upload backup file to GCS", zap.Any("objID", uploadedTime), zap.Error(err))
+		return nil, err
+	}
+
+	return uploaded, nil
 }
 
 /*func (u Usecase) ChartForGMDashboard() (*structure.GMDashBoardPercent, error) {

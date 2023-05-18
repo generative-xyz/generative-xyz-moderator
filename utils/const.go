@@ -148,6 +148,7 @@ const (
 	COLLECTION_REFERRALS                       string = "referrals"
 	COLLECTION_MARKETPLACE_LISTINGS            string = "marketplace_listings"
 	COLLECTION_CACHED_GM_DASHBOARD             string = "cached_gm_dashboard"
+	COLLECTION_CACHED_GM_DASHBOARD_NEW         string = "cached_gm_dashboard_new"
 	COLLECTION_CACHED_REALLOCATED_GM_DASHBOARD string = "cached_gm_reallowcacted_dashboard"
 	COLLECTION_MARKETPLACE_OFFERS              string = "marketplace_offers"
 	COLLECTION_DAO_PROPOSAL                    string = "proposals"
