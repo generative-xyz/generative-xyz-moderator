@@ -680,7 +680,7 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 
 	//clear cache for top 10 items
 	//u.ClearCacheTop10GMDashboard()
-	u.Logger.Info("GetChartDataForGMCollection: Start")
+	u.Logger.Info("JobGetChartDataForGMCollection - JobGetChartDataForGMCollection - GetChartDataForGMCollection: Start")
 
 	//start
 	now := time.Now().UTC()
@@ -695,7 +695,7 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 		preText = fmt.Sprintf("[Analytics][Error] - Get chart data for GM Dashboard")
 		content = fmt.Sprintf("End at: %v with Err: %s", end, err.Error())
 		go u.SendGMMEssageToSlack(preText, content)
-		u.Logger.Error("GetChartDataForGMCollection: Error JobGetChartDataForGMCollection", zap.Error(err))
+		u.Logger.AtLog().Error("JobGetChartDataForGMCollection - GetChartDataForGMCollection: Error JobGetChartDataForGMCollection", zap.Error(err))
 		return err
 	}
 
@@ -704,7 +704,7 @@ func (u Usecase) JobGetChartDataForGMCollection() error {
 	preText = fmt.Sprintf("[Analytics][End] - Get chart data for GM Dashboard")
 	content = fmt.Sprintf("End at: %v with USDT: %f, contributors: %d", end, data.UsdtValue, len(data.Items))
 	go u.SendGMMEssageToSlack(preText, content)
-	u.Logger.Info("GetChartDataForGMCollection: Complete JobGetChartDataForGMCollection", zap.Any("data", data.UsdtValue))
+	u.Logger.AtLog().Logger.Info("JobGetChartDataForGMCollection - GetChartDataForGMCollection: Complete JobGetChartDataForGMCollection", zap.Any("data", data.UsdtValue))
 
 	return nil
 }
