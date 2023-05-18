@@ -928,19 +928,19 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			result.UsdtValue += erc20DataFromChan.Value.UsdtValue
 		}*/
 
-		u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - After routing", zap.Int("(result.Items", len(result.Items)))
+		u.Logger.AtLog().Info("GetChartDataForGMCollection - After routing", zap.Int("(result.Items", len(result.Items)))
 		if len(result.Items) > 0 {
-			u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection -Processing data after go routine", zap.Int("(result.Items", len(result.Items)))
+			u.Logger.AtLog().Info("GetChartDataForGMCollection -Processing data after go routine", zap.Int("(result.Items", len(result.Items)))
 
 			result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
 			result.MapTokensDeposit = make(map[string][]structure.TokensDeposit)
-			u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - Processing data after go routine: build map")
+			u.Logger.AtLog().Info("GetChartDataForGMCollection - Processing data after go routine: build map")
 
 			for i, item := range result.Items {
 				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
 
-				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataERC20ForGMCollection - [%d / %d] Add item to map[string]item: %s", i, len(result.Items), item.From),
+				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataForGMCollection - [%d / %d] Add item to map[string]item: %s", i, len(result.Items), item.From),
 					zap.Bool("ok", ok),
 				)
 
@@ -982,13 +982,13 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 				result.Items = append(result.Items, item)
 			}
 
-			u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - Processing data after go routine: rebuild items", zap.Int("items", len(result.Items)))
+			u.Logger.AtLog().Info("GetChartDataForGMCollection - Processing data after go routine: rebuild items", zap.Int("items", len(result.Items)))
 
 			usdtExtra := 0.0
 			usdtValue := 0.0
 
 			for i, item := range result.Items {
-				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataERC20ForGMCollection - [%d / %d] Processing total usdtExtra for %s", i, len(result.Items), item.From))
+				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataForGMCollection - [%d / %d] Processing total usdtExtra for %s", i, len(result.Items), item.From))
 
 				if item.UsdtValue < 0 {
 					item.UsdtValue = 0.0
@@ -1000,7 +1000,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			}
 
 			for i, item := range result.Items {
-				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataERC20ForGMCollection - [%d / %d] Processing GMReceive for %s", i, len(result.Items), item.From))
+				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataForGMCollection - [%d / %d] Processing GMReceive for %s", i, len(result.Items), item.From))
 
 				item.Percent = item.UsdtValueExtra / usdtExtra * 100
 				item.GMReceive = item.Percent * 8000 / 100
@@ -1011,17 +1011,17 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			}
 			result.UsdtValue = usdtValue
 
-			u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - End Processing data after go routine",
+			u.Logger.AtLog().Info("GetChartDataForGMCollection - End Processing data after go routine",
 				zap.Int("contributors", len(result.Items)),
 				zap.Float64("usdtValue", usdtValue),
 			)
 		}
 
-		u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - Unmarshal old caching")
+		u.Logger.AtLog().Info("GetChartDataForGMCollection - Unmarshal old caching")
 		cachedData := &structure.AnalyticsProjectDeposit{}
 		err := json.Unmarshal([]byte(*cached), cachedData)
 		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataERC20ForGMCollection json.Unmarshal.cachedData", zap.Error(err))
+			logger.AtLog.Logger.Error("GetChartDataForGMCollection json.Unmarshal.cachedData", zap.Error(err))
 			return nil, err
 		}
 
