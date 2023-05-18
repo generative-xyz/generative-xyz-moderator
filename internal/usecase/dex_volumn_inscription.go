@@ -747,7 +747,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny("GetChartDataEthForGMCollection", zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataEthForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 
 					// erc20
@@ -759,7 +759,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny("GetChartDataERC20ForGMCollection", zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataERC20ForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 				}
 			}
@@ -802,7 +802,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					data.CurrencyRate = temp.CurrencyRate
 				}
 				if err != nil {
-					u.Logger.ErrorAny("GetChartDataEthForGMCollection", zap.Any("err", err))
+					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataEthForGMCollection for wallet %s", wallet), zap.Any("err", err))
 				}
 			}
 		}(ethDataChan)
@@ -827,7 +827,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 						data.CurrencyRate = temp.CurrencyRate
 					}
 					if err != nil {
-						u.Logger.ErrorAny("GetChartDataBTCForGMCollection", zap.Any("err", err))
+						u.Logger.ErrorAny(fmt.Sprintf("GetChartDataBTCForGMCollection for wallet %s", wallet.UserAddress), zap.Any("err", err))
 					}
 				}
 			}
@@ -854,7 +854,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 					data.CurrencyRate = temp.CurrencyRate
 				}
 				if err != nil {
-					u.Logger.ErrorAny("GetChartDataBTCForGMCollection", zap.Any("err", err))
+					u.Logger.ErrorAny(fmt.Sprintf("GetChartDataBTCForGMCollection for wallet %s", wallet), zap.Any("err", err))
 				}
 			}
 
