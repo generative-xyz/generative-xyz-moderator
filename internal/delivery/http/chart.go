@@ -144,6 +144,21 @@ func (h *httpDelivery) tryReallocate(w http.ResponseWriter, r *http.Request) {
 	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 }
 
+func (h *httpDelivery) getReallocate(w http.ResponseWriter, r *http.Request) {
+
+	result, err := h.Usecase.GetReallocateData()
+	if err != nil {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, err)
+		return
+	}
+	result.MapItems = make(map[string]*etherscan.AddressTxItemResponse)
+	for _, item := range result.Items {
+		item.To = ""
+	}
+	h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
+
+}
+
 func (h *httpDelivery) restoreGMDashboard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	iWalletAddress := ctx.Value(utils.SIGNED_WALLET_ADDRESS)
