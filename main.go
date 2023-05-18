@@ -9,6 +9,8 @@ import (
 	"rederinghub.io/external/coin_market_cap"
 	"rederinghub.io/external/etherscan"
 	"rederinghub.io/external/mempool_space"
+	gm_crontab_sever "rederinghub.io/internal/delivery/gm_crontab_server"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -100,11 +102,11 @@ func init() {
 // @BasePath /rederinghub.io/v1
 func main() {
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered. Error:\n", r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		fmt.Println("Recovered. Error:\n", r)
+	//	}
+	//}()
 
 	// log.Println("init sentry ...")
 	// sentry.InitSentry(conf)
@@ -265,6 +267,21 @@ func startServer() {
 	servers["txconsumer"] = delivery.AddedServer{
 		Server:  txConsumer,
 		Enabled: conf.TxConsumerConfig.Enabled,
+	}
+
+	isGmEnabled := false
+	gmEnabled := os.Getenv("START_GM_CRONTAB")
+	if gmEnabled != "" {
+		isGmEnabled, err = strconv.ParseBool(gmEnabled)
+		if err != nil {
+			isGmEnabled = false
+		}
+	}
+
+	gmCrontab, _ := gm_crontab_sever.NewGmCrontabServer(uc)
+	servers["gm_crontab"] = delivery.AddedServer{
+		Server:  gmCrontab,
+		Enabled: isGmEnabled,
 	}
 
 	//var wait time.Duration

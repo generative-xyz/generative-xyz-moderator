@@ -211,6 +211,8 @@ const (
 	PLATFORM_ORDINAL = "ordinal"
 	PLATFORM_TC      = "tc"
 
+	GM_CRONTAB_PROCESSING_KEY = "gm_crontab_running"
+
 	AIRDROP_MAGIC  = "https://storage.googleapis.com/generative-static-prod/airdrop/magickey.html"
 	AIRDROP_GOLDEN = "https://storage.googleapis.com/generative-static-prod/airdrop/goldenkey.html"
 	AIRDROP_SILVER = "https://storage.googleapis.com/generative-static-prod/airdrop/silverkey.html"
