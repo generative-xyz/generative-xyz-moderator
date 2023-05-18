@@ -1058,7 +1058,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		go u.BackupGMDashboardCachedData(cachedData, result)
 
-		err = u.Cache.SetDataWithExpireTime(key, result, 60*60*24*3)
+		err = u.Cache.SetDataWithExpireTime(fmt.Sprintf("%s.internal", key), result, 60*60*24*3)
 		if err != nil {
 			u.Logger.AtLog().Logger.Error("GetChartDataForGMCollection: SetDataWithExpireTime ...", zap.Error(err))
 		}
