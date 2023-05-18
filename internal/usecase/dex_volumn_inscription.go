@@ -261,7 +261,8 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	if err == nil {
 		err = json.Unmarshal([]byte(*cached), result)
 		if err == nil {
-			logger.AtLog.Logger.Info("GetChartDataEthForGMCollection cached", zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+			logger.AtLog.Logger.Info(fmt.Sprintf("GetChartDataEthForGMCollection get from cached for userAddr %s wallet %s", newcity.UserAddress, newcity.Address),
+				zap.Any("result", result), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 			return result, nil
 		}
@@ -277,7 +278,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	if ethRate == 0 {
 		ethRate, err = helpers.GetExternalPrice(string(entity.ETH))
 		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
+			logger.AtLog.Logger.Error("GetChartDataEthForGMCollection get price for eth", zap.Error(err), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address))
 			return nil, err
 		}
 		u.Cache.SetDataWithExpireTime(keyRate, ethRate, 60*60) // cache by 1 hour
@@ -307,7 +308,8 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	//	return nil, err
 	//}
 
-	logger.AtLog.Logger.Info("GetChartDataERC20ForGMCollection moralisEthBL", zap.Any("moralisEthBL", moralisEthBL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
+	logger.AtLog.Logger.Info(fmt.Sprintf("GetChartDataERC20ForGMCollection moralisEthBL for user %s wallet %s", newcity.UserAddress, newcity.Address),
+		zap.Any("moralisEthBL", moralisEthBL), zap.String("walletAddress", newcity.UserAddress), zap.String("gmAddress", newcity.Address), zap.String("key", key))
 
 	totalEth := utils.GetValue(moralisEthBL.Balance, 18)
 	if totalEth > 0 {
