@@ -94,7 +94,7 @@ func (u Usecase) GetChartDataOFTokens(req structure.AggerateChartForToken) (*str
 
 func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, transferedETH []string, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.erc20_1.gmAddress." + newcity.UserAddress + "." + newcity.Address)
+	key := fmt.Sprintf("internal.gm-collections.deposit.erc20_1.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
 	if newcity.UpdatedAt != nil {
 		if time.Now().Add(time.Minute * -90).Before(*newcity.UpdatedAt) {
@@ -117,7 +117,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		}
 	}
 
-	keypepeRate := fmt.Sprintf("gm-collections.deposit.pepeRate.rate")
+	keypepeRate := fmt.Sprintf("internal.gm-collections.deposit.pepeRate.rate")
 	var pepeRate float64
 	cachedPEPERate, err := u.Cache.GetData(keypepeRate)
 	if err == nil {
@@ -135,7 +135,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 		}
 	}
 
-	keyturboRate := fmt.Sprintf("gm-collections.deposit.turboRate.rate")
+	keyturboRate := fmt.Sprintf("internal.gm-collections.deposit.turboRate.rate")
 	var turboRate float64 = 0
 	cachedTURBORate, err := u.Cache.GetData(keyturboRate)
 	if err == nil {
@@ -244,7 +244,7 @@ func (u Usecase) GetChartDataERC20ForGMCollection(newcity entity.NewCityGm, tran
 
 func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transferedETH []string, oldData bool, ens string, avatar string) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.eth3.gmAddress." + newcity.UserAddress + "." + newcity.Address)
+	key := fmt.Sprintf("internal.gm-collections.deposit.eth3.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
 	if !oldData {
 		if newcity.UpdatedAt != nil {
@@ -272,7 +272,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 	}
 
 	// try from cache
-	keyRate := fmt.Sprintf("gm-collections.deposit.eth.rate")
+	keyRate := fmt.Sprintf("internal.gm-collections.deposit.eth.rate")
 	var ethRate float64
 	cachedETHRate, err := u.Cache.GetData(keyRate)
 	if err == nil {
@@ -459,7 +459,7 @@ func (u Usecase) GetChartDataEthForGMCollection(newcity entity.NewCityGm, transf
 
 func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transferedBTC []string, oldData bool) (*structure.AnalyticsProjectDeposit, error) {
 	// try from cache
-	key := fmt.Sprintf("gm-collections.deposit.btc4.gmAddress." + newcity.UserAddress + "." + newcity.Address)
+	key := fmt.Sprintf("internal.gm-collections.deposit.btc4.gmAddress." + newcity.UserAddress + "." + newcity.Address)
 	result := &structure.AnalyticsProjectDeposit{}
 	if !oldData {
 		if newcity.UpdatedAt != nil {
@@ -482,7 +482,7 @@ func (u Usecase) GetChartDataBTCForGMCollection(newcity entity.NewCityGm, transf
 	}
 
 	// try from cache
-	keyRate := fmt.Sprintf("gm-collections.deposit.btc.rate")
+	keyRate := fmt.Sprintf("internal.gm-collections.deposit.btc.rate")
 	var btcRate float64
 	cachedETHRate, err := u.Cache.GetData(keyRate)
 	if err == nil {
@@ -1058,7 +1058,7 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		go u.BackupGMDashboardCachedData(cachedData, result)
 
-		err = u.Cache.SetDataWithExpireTime(fmt.Sprintf("%s.internal", key), result, 60*60*24*3)
+		err = u.Cache.SetDataWithExpireTime(fmt.Sprintf("internal.%s", key), result, 60*60*24*3)
 		if err != nil {
 			u.Logger.AtLog().Logger.Error("GetChartDataForGMCollection: SetDataWithExpireTime ...", zap.Error(err))
 		}
@@ -1338,7 +1338,7 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 }
 
 func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionResponse, error) {
-	key := fmt.Sprintf("gm-collections.coinbase.price.rate." + strconv.Itoa(coinID))
+	key := fmt.Sprintf("internal.gm-collections.coinbase.price.rate." + strconv.Itoa(coinID))
 	cached, err := u.Cache.GetData(key)
 	result := &coin_market_cap.PriceConversionResponse{}
 	if err == nil {
@@ -1355,7 +1355,7 @@ func (u Usecase) GetPriceCoinBase(coinID int) (*coin_market_cap.PriceConversionR
 }
 
 func (u Usecase) GetBitcoinBalance(addr string) (*structure.BlockCypherWalletInfo, error) {
-	key := fmt.Sprintf("gm-collections.quicknode.bitcoin.balance" + addr)
+	key := fmt.Sprintf("internal.gm-collections.quicknode.bitcoin.balance" + addr)
 	result := &structure.BlockCypherWalletInfo{}
 
 	cached, err := u.Cache.GetData(key)
