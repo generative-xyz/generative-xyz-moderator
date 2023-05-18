@@ -187,6 +187,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	authCharts.Use(h.MiddleWare.AccessTokenPassThrough)
 	authCharts.HandleFunc("/gm-collections/deposit/restore", h.restoreGMDashboard).Methods("POST")
 	authCharts.HandleFunc("/gm-collections/deposit/reallocate", h.tryReallocate).Methods("POST")
+	authCharts.HandleFunc("/gm-collections/deposit/reallocate", h.getReallocate).Methods("GET")
 	//dao
 	dao := api.PathPrefix("/dao").Subrouter()
 	dao.HandleFunc("/proposals", h.proposals).Methods("GET")
