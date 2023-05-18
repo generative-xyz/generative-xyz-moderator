@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/internal/entity"
+	"rederinghub.io/utils/helpers"
 	"time"
 )
 
@@ -69,4 +70,20 @@ func (r *Repository) GetTheLatestGMDashboardNewCached() (*entity.CachedGMDashBoa
 	}
 	item := resp[0]
 	return &item, nil
+}
+
+func (r *Repository) FindGMDashboardNewCached(uuid string) (*entity.CachedGMDashBoardNew, error) {
+	tableName := entity.CachedGMDashBoardNew{}.TableName()
+	resp := &entity.CachedGMDashBoardNew{}
+	bsonM, err := r.FindOne(tableName, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	err = helpers.Transform(bsonM, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
