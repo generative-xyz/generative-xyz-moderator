@@ -2,7 +2,6 @@ package gm_crontab_sever
 
 import (
 	"rederinghub.io/internal/usecase"
-	"rederinghub.io/utils"
 	"time"
 )
 
@@ -18,17 +17,7 @@ func NewGmCrontabServer(uc *usecase.Usecase) (*GmCrontabServer, error) {
 
 func (tx GmCrontabServer) StartServer() {
 	for {
-		processing := "0"
-		cached, err := tx.Usecase.Cache.GetData(utils.GM_CRONTAB_PROCESSING_KEY)
-		if cached == nil && err != nil {
-			cached = &processing
-		}
-
-		if *cached == "1" {
-			continue
-		}
-
 		tx.Usecase.JobGetChartDataForGMCollection()
-		time.Sleep(time.Minute * 5)
+		time.Sleep(time.Minute * 1)
 	}
 }
