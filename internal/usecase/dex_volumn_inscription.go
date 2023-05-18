@@ -1048,10 +1048,12 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 
 		u.Logger.AtLog().Logger.Info("GetChartDataForGMCollection - Unmarshal old caching")
 		cachedData := &structure.AnalyticsProjectDeposit{}
-		err := json.Unmarshal([]byte(*cached), cachedData)
-		if err != nil {
-			logger.AtLog.Logger.Error("GetChartDataForGMCollection json.Unmarshal.cachedData", zap.Error(err))
-			return nil, err
+		if cached != nil {
+			err := json.Unmarshal([]byte(*cached), cachedData)
+			if err != nil {
+				logger.AtLog.Logger.Error("GetChartDataForGMCollection json.Unmarshal.cachedData", zap.Error(err))
+				return nil, err
+			}
 		}
 
 		go u.BackupGMDashboardCachedData(cachedData, result)
