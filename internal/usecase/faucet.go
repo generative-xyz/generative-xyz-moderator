@@ -560,7 +560,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 			go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain.UpdateFaucetByTxTc", "update by tx err: "+tempItem.Tx+", btcTx:"+txBtc, err.Error())
 			return err
 		}
-		go u.sendSlack(uuidStr, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "okk=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+tempItem.Tx+"/https://mempool.space/tx/"+txBtc)
+		go u.sendSlack(tempItem.UUID, "ApiCreateFaucet.Re-SubmitTCToBtcChain", "okk=>tcTx/btcTx", "https://explorer.trustless.computer/tx/"+tempItem.Tx+"/https://mempool.space/tx/"+txBtc)
 		return nil
 	}
 
