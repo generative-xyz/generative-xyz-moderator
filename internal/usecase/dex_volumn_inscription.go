@@ -937,6 +937,10 @@ func (u Usecase) GetChartDataForGMCollection(useCaching bool) (*structure.Analyt
 			u.Logger.AtLog().Info("GetChartDataERC20ForGMCollection - Processing data after go routine: build map")
 
 			for i, item := range result.Items {
+				u.Logger.AtLog().Info(fmt.Sprintf("GetChartDataERC20ForGMCollection - [%d / %d] Add item to map[string]item - start", i, len(result.Items)),
+					zap.Any("item", item),
+				)
+
 				item.From = strings.ToLower(item.From)
 				_, ok := result.MapItems[item.From]
 
