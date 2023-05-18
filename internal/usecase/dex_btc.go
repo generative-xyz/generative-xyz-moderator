@@ -314,6 +314,9 @@ func (u Usecase) watchPendingDexBTCListing() error {
 		log.Println("JobWatchPendingDexBTCListing preCheckPendingDexBTCListingTx err", err.Error())
 	}
 	for _, order := range pendingOrders {
+		if len(order.Inputs) == 0 {
+			continue
+		}
 		inscriptionTx := strings.Split(order.Inputs[0], ":")
 		idx, err := strconv.Atoi(inscriptionTx[1])
 		if err != nil {
