@@ -131,7 +131,12 @@ func (h *httpDelivery) deleteRedis(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} response.JsonResponse{data=string}
 // @Router /admin/redis [DELETE]
 func (h *httpDelivery) deleteAllRedis(w http.ResponseWriter, r *http.Request) {
-	res, err := h.Usecase.DeleteAllRedis()
+	prefix := r.URL.Query().Get("prefix")
+	if prefix == "" {
+		h.Response.RespondWithError(w, http.StatusBadRequest, response.Error, errors.New("missing prefix"))
+		return
+	}
+	res, err := h.Usecase.DeleteAllRedis(prefix)
 
 	if err != nil {
 		logger.AtLog.Logger.Error("err", zap.Error(err))
