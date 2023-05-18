@@ -7,10 +7,11 @@ import (
 )
 
 type CachedGMReAllocatedDashBoard struct {
-	BaseEntity   `bson:",inline"`
-	Contributors int     `bson:"contributors" json:"contributors"`
-	UsdtValue    float64 `bson:"usdtValue" json:"usdtValue"`
-	UsdtExtra    float64 `bson:"usdtExtra" json:"usdtExtra"`
+	BaseEntity     `bson:",inline"`
+	Contributors   int     `bson:"contributors" json:"contributors"`
+	UsdtValue      float64 `bson:"usdtValue" json:"usdtValue"`
+	UsdtExtra      float64 `bson:"usdtExtra" json:"usdtExtra"`
+	TotalGMReceive float64 `bson:"totalGMReceive" json:"totalGMReceive"`
 
 	//only save uploaded link
 	BackupURL      string `bson:"backup_url" json:"backup_url"`
