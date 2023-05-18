@@ -1280,6 +1280,12 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		return 30.0
 	}
 
+	for key, value := range newList30 {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 30.0
+		}
+	}
+
 	for key, value := range kll {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
 			return 25.0
@@ -1298,15 +1304,26 @@ func (u Usecase) GetExtraPercent(address string) float64 {
 		}
 	}
 
-	/*allow, err := u.Repo.GetProjectAllowList("999998", address)
-	if err == nil && allow.UUID != "" {
-		return 10.0
-	}*/
+	for key, value := range newList20 {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 20.0
+		}
+	}
 
 	for key, value := range allowList {
 		if strings.ToLower(key) == strings.ToLower(address) && value == true {
 			return 10.0
 		}
+	}
+
+	for key, value := range allowList {
+		if strings.ToLower(key) == strings.ToLower(address) && value == true {
+			return 10.0
+		}
+	}
+
+	if strings.ToLower("0x8d73888d01DD73d63b1a93DD447Dd988ec9B5158") == strings.ToLower(address) {
+		return 10.0
 	}
 
 	return 0.0
