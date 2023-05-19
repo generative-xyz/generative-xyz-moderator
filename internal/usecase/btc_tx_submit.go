@@ -142,7 +142,7 @@ func (u Usecase) watchPendingBTCTxSubmit() error {
 	return nil
 }
 
-func (u Usecase) JobWatchPendingBTCTxSubmit() {
+func (u Usecase) JobWatchPendingBTCTxSubmit() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -156,4 +156,5 @@ func (u Usecase) JobWatchPendingBTCTxSubmit() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
