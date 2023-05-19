@@ -223,7 +223,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 	var returnData []*entity.NewCityGm
 
-	list, err := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx, 3 confirm
+	list, err := u.Repo.ListNewCityGmByStatus([]int{2}) // 1 pending, 2: tx
 
 	if err != nil {
 		return nil, err
@@ -265,10 +265,10 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 					// update balance
 					item.NativeAmount = append(item.NativeAmount, balance.String())
-					_, err := u.Repo.UpdateNewCityGm(item)
-					if err != nil {
-						return nil, err
-					}
+// 					_, err := u.Repo.UpdateNewCityGm(item)
+// 					if err != nil {
+// 						return nil, err
+// 					}
 
 					// hardcode for test withdraw funds:
 					// if item.UserAddress == ethWithdrawAddrses {
@@ -294,7 +294,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 						// check if not enough balance:
 						if strings.Contains(err.Error(), "rlp: cannot encode negative big.Int") {
-							item.Status = -1
+							item.Status = -3
 							u.Repo.UpdateNewCityGm(item)
 						}
 
@@ -306,7 +306,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 					_ = value
 
 					item.TxNatives = append(item.TxNatives, tx)
-					item.Status = 2 // tx pending
+					item.Status = 3
 					_, err = u.Repo.UpdateNewCityGm(item)
 					if err != nil {
 						return nil, err
@@ -338,10 +338,10 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 						// update balance
 						item.NativeAmount = append(item.NativeAmount, big.NewInt(int64(balance)).String())
-						_, err := u.Repo.UpdateNewCityGm(item)
-						if err != nil {
-							return nil, errors.Wrap(err, "u.Repo.UpdateNewCityGm")
-						}
+// 						_, err := u.Repo.UpdateNewCityGm(item)
+// 						if err != nil {
+// 							return nil, errors.Wrap(err, "u.Repo.UpdateNewCityGm")
+// 						}
 
 						keyToDecode := keyToDecodeV1
 
@@ -366,7 +366,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 							// check if not enough balance:
 							if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
-								item.Status = -1
+								item.Status = -3
 								_, err = u.Repo.UpdateNewCityGm(item)
 								if err != nil {
 									return nil, err
@@ -389,7 +389,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 						}
 						// save tx:
 						item.TxNatives = append(item.TxNatives, tx)
-						item.Status = 2 // tx pending
+						item.Status = 3 // tx pending
 						_, err = u.Repo.UpdateNewCityGm(item)
 						if err != nil {
 							return nil, err
