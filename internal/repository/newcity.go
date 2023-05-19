@@ -66,7 +66,7 @@ func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, 
 	// cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter)
 
 	cursor, err := r.DB.Collection(entity.NewCityGm{}.TableName()).Find(context.TODO(), filter, &options.FindOptions{
-		Sort: bson.D{{"created_at", -1}},
+		Sort: bson.D{{"created_at", 1}},
 		// Limit: &limit,
 		// Skip:  &offset,
 	})
