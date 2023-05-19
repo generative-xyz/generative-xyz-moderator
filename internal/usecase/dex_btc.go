@@ -228,7 +228,7 @@ func extractAllOutputFromPSBT(psbtData *psbt.Packet) (map[string][]*wire.TxOut, 
 	}
 	return result, nil
 }
-func (u Usecase) JobWatchPendingDexBTCListing() {
+func (u Usecase) JobWatchPendingDexBTCListing() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -242,9 +242,10 @@ func (u Usecase) JobWatchPendingDexBTCListing() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
 
-func (u Usecase) JobWatchPendingDexBTCBuyETH() {
+func (u Usecase) JobWatchPendingDexBTCBuyETH() error {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -258,6 +259,7 @@ func (u Usecase) JobWatchPendingDexBTCBuyETH() {
 	}(&wg)
 
 	wg.Wait()
+	return nil
 }
 
 func (u Usecase) InsertDexVolumnInscription(o entity.DexBTCListing) {
