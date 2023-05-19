@@ -1277,6 +1277,20 @@ func (u Usecase) SaveReAllocateToDB(result *structure.AnalyticsProjectDeposit) {
 
 func (u Usecase) GetExtraPercent(address string) float64 {
 	address = strings.ToLower(address)
+
+	if os.Getenv("GetReallocateData") == "true" {
+		dataReAllocate, err := u.GetReallocateData()
+		if err == nil && dataReAllocate != nil {
+			for _, item := range dataReAllocate.Items {
+				if strings.ToLower(item.From) == address {
+					return item.ExtraPercent
+				}
+			}
+			return float64(0)
+		}
+		return float64(0)
+	}
+
 	user, err := u.Repo.FindUserByWalletAddressEQ(address)
 	if err == nil && user.UUID != "" {
 		return 30.0
