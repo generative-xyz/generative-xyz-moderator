@@ -32,6 +32,10 @@ func (u Usecase) ApiNewGMGetLogWithdraw(addressInput string) (interface{}, error
 }
 
 func (u Usecase) ApiCreateNewGM(addressInput string) (interface{}, error) {
+	
+	if true {
+		return nil, errors.New("404")
+	}
 
 	if !eth.ValidateAddress(addressInput) {
 		return nil, errors.New("you address invalid")
