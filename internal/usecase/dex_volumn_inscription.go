@@ -1111,6 +1111,10 @@ func (u Usecase) GetReallocateData() (*structure.AnalyticsProjectDeposit, error)
 		return nil, err
 	}
 
+	err = u.Cache.SetDataWithExpireTime(keyRelocate, result, 60*60*24*3)
+	if err != nil {
+		u.Logger.AtLog().Logger.Error("GetChartDataForGMCollection: SetDataWithExpireTime ...", zap.Error(err))
+	}
 	return result, nil
 }
 
