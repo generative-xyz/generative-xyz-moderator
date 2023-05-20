@@ -223,7 +223,7 @@ func (u Usecase) ApiAdminCrawlFunds() (interface{}, error) {
 
 	var returnData []*entity.NewCityGm
 
-	list, err := u.Repo.ListNewCityGmByStatus([]int{2}) // 1 pending, 2: tx
+	list, err := u.Repo.ListNewCityGmByStatus([]int{1}) // 1 pending, 2: tx
 
 	if err != nil {
 		return nil, err
