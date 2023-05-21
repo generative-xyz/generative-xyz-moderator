@@ -1091,7 +1091,7 @@ func (u Usecase) MintNftViaTrustlessComputer_CallContract(item *entity.MintNftBt
 	// fmt.Println("byteData", byteData)
 
 	// get free temp wallet:
-	tempWallet := u.GetMintFreeTemAddress()
+	tempWallet, _ := u.Repo.GetMintFreeTempAddress1()
 	if tempWallet == nil {
 		go u.trackMintNftBtcHistory(item.UUID, "JobMint_MintNftBtc.MintTC", item.TableName(), item.Status, "GetMintFreeTemAddress", "can not get temp free wallet", true)
 		return nil
