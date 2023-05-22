@@ -2459,26 +2459,6 @@ paths:
       summary: CollectionListing
       tags:
       - Charts
-  /charts/gm-collections/deposit/chart:
-    get:
-      consumes:
-      - application/json
-      description: Chart for deposit dashboard
-      parameters:
-      - description: dateRange
-        in: query
-        name: dateRange
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.JsonResponse'
-      summary: Chart for deposit dashboard
-      tags:
-      - Charts
   /charts/gm-collections/extra/{address}/deposit:
     get:
       consumes:
@@ -5310,6 +5290,98 @@ paths:
       summary: Search
       tags:
       - Search
+  /soralis/tokens:
+    get:
+      description: Get all tokens
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get all tokens
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/balance/{walletAddress}:
+    get:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's detail
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/price/current:
+    get:
+      description: Get token's current price
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's current price
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/price/min-max:
+    get:
+      description: Get token's min-max price
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: 'default: hour'
+        in: query
+        name: chartType
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's min-max price
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/time-travel:
+    get:
+      description: Get token's time-travel
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's time-travel
+      tags:
+      - Soralis
   /token-activities:
     get:
       consumes:

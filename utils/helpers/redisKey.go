@@ -15,7 +15,7 @@ func ParseCache(cached *string, resp interface{}) error {
 
 	bytes := []byte(*cached)
 	err := json.Unmarshal(bytes, &resp)
-	if err != nil  {
+	if err != nil {
 		return err
 	}
 	return nil
@@ -30,11 +30,11 @@ func GenerateCachedProfileKey(accessToken string) string {
 }
 
 func GenerateCachedInscriptionOnweKey(inscriptionID string) string {
-	return fmt.Sprintf("%s.%s.owner", utils.REDIS_INSCRIPTION,inscriptionID)
+	return fmt.Sprintf("%s.%s.owner", utils.REDIS_INSCRIPTION, inscriptionID)
 }
 
 func GenerateUserKey(accessToken string) string {
-	return fmt.Sprintf("userKey.%s.s%s",  utils.AUTH_TOKEN , GenerateMd5String(accessToken))
+	return fmt.Sprintf("userKey.%s.s%s", utils.AUTH_TOKEN, GenerateMd5String(accessToken))
 }
 
 func GenerateMKPDataKey(accessToken string) string {
@@ -46,19 +46,19 @@ func GenerateUserWalletAddressKey(walletAddress string) string {
 }
 
 func ProjectDetailKey(contractAddr string, tokenID string) string {
-	return fmt.Sprintf("project.detail.%s.%s",contractAddr, tokenID)
+	return fmt.Sprintf("project.detail.%s.%s", contractAddr, tokenID)
 }
 
 func ProposalDetailKey(proposalID string) string {
-	return fmt.Sprintf("proposal.detail.%s",proposalID)
+	return fmt.Sprintf("proposal.detail.%s", proposalID)
 }
 
 func ProjectFirstSaleKey(projectID string) string {
-	return fmt.Sprintf("project.firstsale.%s",projectID)
+	return fmt.Sprintf("project.firstsale.%s", projectID)
 }
 
 func ProjectDetailgenNftAddrrKey(genNftAddrr string) string {
-	return fmt.Sprintf("project.detail.GenNFTAddrKey.%s",genNftAddrr)
+	return fmt.Sprintf("project.detail.GenNFTAddrKey.%s", genNftAddrr)
 }
 
 func ProjectRandomKey() string {
@@ -66,7 +66,7 @@ func ProjectRandomKey() string {
 }
 
 func ProfileSelingKey(sellerAddress string) (string, string, string) {
-	return fmt.Sprintf("selling.item.%s",sellerAddress),  fmt.Sprintf("selling.item.contractIDS.%s",sellerAddress), fmt.Sprintf("selling.item.tokenIDs.%s",sellerAddress)
+	return fmt.Sprintf("selling.item.%s", sellerAddress), fmt.Sprintf("selling.item.contractIDS.%s", sellerAddress), fmt.Sprintf("selling.item.tokenIDs.%s", sellerAddress)
 }
 
 func TokenURIKey(contractAddress string, tokenID string) string {
@@ -76,4 +76,3 @@ func TokenURIKey(contractAddress string, tokenID string) string {
 func TokenURIByGenNftAddrKey(gennftAddr string, tokenID string) string {
 	return fmt.Sprintf("tokenUri.genNftAddrr.%s.%s.%s", utils.COLLECTION_TOKEN_URI, gennftAddr, tokenID)
 }
-
