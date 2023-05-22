@@ -121,13 +121,13 @@ func (u Usecase) GetLevelFeeInfo(fileSize, customRate, mintPrice int64) (map[str
 
 	fastestFee := feeRateFromChain.FastestFee
 	fasterFee := feeRateFromChain.HalfHourFee
-	ecoFee := feeRateFromChain.EconomyFee // not use HourFee
+	ecoFee := feeRateFromChain.HourFee // use HourFee
 
 	// fmt.Println("fastestFee", fastestFee)
 	// fmt.Println("fasterFee", fasterFee)
 	// fmt.Println("ecoFee", ecoFee)
 
-	min := 4 // todo: move config
+	min := 10 // todo: move config
 
 	// set mint 5 if fee < 5.
 	if fastestFee < min {
