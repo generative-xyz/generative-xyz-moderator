@@ -57,8 +57,8 @@ func (u Usecase) CreateWithdrawProject(walletAddress string, wr structure.WithDr
 
 	//totalEarning := (refAmount + refAmount) - widthDrawAmount
 	// (refAmount + refAmount) is pushed into volumn by crontab
-	//TODO - calculate refAmount
-	wdType := string(entity.WithDrawReferal)
+
+	wdType := string(entity.WithDrawProject)
 	wdf := &entity.FilterWithdraw{
 		WalletAddress:  &walletAddress,
 		WithdrawItemID: &wr.ID,
