@@ -37,6 +37,7 @@ type TokenActivity struct {
 	ProjectID     string            `bson:"project_id" json:"project_id"`
 	TokenInfo     *TokenUri         `bson:"-" json:"token_info"`
 	BlockNumber   uint64            `bson:"block_number" json:"block_number"`
+	OfferingID    string            `bson:"offering_id" json:"offering_id"`
 }
 
 type FilterTokenActivities struct {

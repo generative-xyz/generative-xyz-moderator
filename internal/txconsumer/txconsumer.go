@@ -140,7 +140,10 @@ func (c *HttpTxConsumer) resolveTransaction() error {
 			case strings.ToLower(os.Getenv("GENERATIVE_PROJECT")): // master project
 				switch topic {
 				case strings.ToLower(c.Config.BlockChainEvent.TransferNFT):
-					c.Usecase.UpdateProjectWithListener(_log)
+					if os.Getenv("ENV") == "mainnet" {
+						c.Usecase.UpdateProjectWithListener(_log)
+					}
+
 				}
 			default:
 				switch topic {
