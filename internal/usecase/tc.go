@@ -403,24 +403,63 @@ func (u Usecase) GetTokenReport(address string) (interface{}, error) {
 	return result.Data, err
 }
 
-func (u Usecase) TokenHolderBalance(userWalletAddress string, tokenAddress string) (interface{}, error) {
+func (u Usecase) tokenBalance(userWalletAddress string, tokenAddress string) (*big.Int, int, error) {
 	client := u.TcClientPublicNode.GetClient()
 
 	hexAddress := common.HexToAddress(tokenAddress)
 	erc20, err := erc202.NewErc20(hexAddress, client)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	blance, err := erc20.BalanceOf(nil, common.HexToAddress(userWalletAddress))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	pow := math.Pow10(18)
+	decimal := 18
+	pow := math.Pow10(decimal)
 	powBig := big.NewInt(int64(pow))
 
 	blanceNew := blance.Quo(blance, powBig)
+	return blanceNew, decimal, nil
+}
 
-	return fmt.Sprintf("%d", blanceNew.Uint64()), nil
+func (u Usecase) TokenHolderBalance(userWalletAddress string, tokenAddress string) (interface{}, error) {
+	balanceNew, _, err := u.tokenBalance(userWalletAddress, tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return fmt.Sprintf("%d", balanceNew.Uint64()), nil
+}
+
+func (u Usecase) SoralisSnapShotUserTokenBalance(userWalletAddress string, tokenAddress string) (interface{}, error) {
+	balanceNew, decimal, err := u.tokenBalance(userWalletAddress, tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	obj := &entity.SoralisSnapShotBalance{
+		Balance:       fmt.Sprintf("%d", balanceNew.Uint64()),
+		Decimal:       decimal,
+		WalletAddress: strings.ToLower(userWalletAddress),
+		TokenAddress:  strings.ToLower(tokenAddress),
+	}
+
+	err = u.Repo.InsertSnapshot(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return fmt.Sprintf("%d", balanceNew.Uint64()), nil
+}
+
+func (u Usecase) SoralisGetSnapShotUserTokenBalance(userWalletAddress string, tokenAddress string) ([]entity.FilteredSoralisSnapShotBalance, error) {
+	data, err := u.Repo.GetSnapshotByWalletAddress(userWalletAddress, tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

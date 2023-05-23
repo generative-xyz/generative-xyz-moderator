@@ -400,6 +400,9 @@ func (h *httpDelivery) RegisterV1Routes() {
 	soralis.HandleFunc("/tokens/{tokenAddress}/price/min-max", h.soralisTokenMinMax).Methods("GET")
 	soralis.HandleFunc("/tokens/{tokenAddress}/price/current", h.soralisTokenCurrentPrice).Methods("GET")
 	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}", h.soralisUserTokenBalance).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}", h.soralisSnapShotUserTokenBalance).Methods("POST")
+
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}/time-travel", h.soralisGetSnapShotUserTokenBalance).Methods("GET")
 	soralis.HandleFunc("/tokens/{tokenAddress}/time-travel", h.soralisTimeTravel).Methods("GET")
 
 }

@@ -5327,6 +5327,52 @@ paths:
       summary: Get token's detail
       tags:
       - Soralis
+    post:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      summary: Get token's detail
+      tags:
+      - Soralis
+  /soralis/tokens/{tokenAddress}/balance/{walletAddress}/time-travel:
+    get:
+      description: Get token's detail
+      parameters:
+      - description: token address
+        in: path
+        name: tokenAddress
+        required: true
+        type: string
+      - description: wallet address
+        in: path
+        name: walletAddress
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.JsonResponse'
+      security:
+      - Authorization: []
+      tags:
+      - Soralis
   /soralis/tokens/{tokenAddress}/price/current:
     get:
       description: Get token's current price
