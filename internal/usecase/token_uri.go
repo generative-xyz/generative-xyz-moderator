@@ -1447,33 +1447,15 @@ func (u Usecase) parseAnimationURL(project entity.Projects) (*string, error) {
 
 }
 
-func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, error) {
+func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]entity.TokenUri, error) {
 	tokens, err := u.Repo.FindTokenByTokenIds(tokenIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	tokenIdToToken := map[string]*entity.TokenUri{}
+	tokenIdToToken := map[string]entity.TokenUri{}
 	for id, token := range tokens {
-
-		mkl, err := u.Repo.FindActivateListingByTokenID(token.TokenID)
-		if err == nil && mkl != nil {
-			token.Buyable = true
-			token.PriceBrc20 = entity.PriceBRC20Obj{
-				Value:      mkl.Price,
-				Address:    mkl.Erc20Token,
-				OfferingID: mkl.OfferingId,
-			}
-		} else {
-			token.Buyable = false
-			token.PriceBrc20 = entity.PriceBRC20Obj{
-				Value:      "",
-				Address:    "",
-				OfferingID: "",
-			}
-		}
-
-		tokenIdToToken[tokens[id].TokenID] = &token
+		tokenIdToToken[tokens[id].TokenID] = token
 	}
 	return tokenIdToToken, nil
 }
