@@ -737,37 +737,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/charts/gm-collections/deposit/chart": {
-            "get": {
-                "description": "Chart for deposit dashboard",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Charts"
-                ],
-                "summary": "Chart for deposit dashboard",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "dateRange",
-                        "name": "dateRange",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.JsonResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/charts/gm-collections/extra/{address}/deposit": {
             "get": {
                 "description": "get list CollectionListing",
@@ -5238,6 +5207,156 @@ const docTemplate = `{
                         "in": "query"
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get all tokens",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get all tokens",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/balance/{walletAddress}": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's detail",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "wallet address",
+                        "name": "walletAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/current": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's current price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's current price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/price/min-max": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's min-max price",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's min-max price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "tokenAddress",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "default: hour",
+                        "name": "chartType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.JsonResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/soralis/tokens/{tokenAddress}/time-travel": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get token's time-travel",
+                "tags": [
+                    "Soralis"
+                ],
+                "summary": "Get token's time-travel",
                 "responses": {
                     "200": {
                         "description": "OK",

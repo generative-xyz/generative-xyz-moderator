@@ -6,6 +6,7 @@ import (
 	"rederinghub.io/external/mempool_space"
 	"rederinghub.io/external/nfts"
 	"rederinghub.io/external/ord_service"
+	"rederinghub.io/external/token_explorer"
 	"rederinghub.io/utils/blockchain"
 	"rederinghub.io/utils/btc"
 	"rederinghub.io/utils/config"
@@ -50,4 +51,5 @@ type Global struct {
 	EtherscanService                                      *etherscan.EtherscanService
 	MempoolService                                        *mempool_space.MempoolService
 	CoinMarketCap                                         *coin_market_cap.CoinMarketCap
+	TokenExplorer                                         *token_explorer.TokenExplorer
 }
