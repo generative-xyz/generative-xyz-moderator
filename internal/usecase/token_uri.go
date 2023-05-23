@@ -1452,9 +1452,28 @@ func (u Usecase) GetTokensMap(tokenIDs []string) (map[string]*entity.TokenUri, e
 	if err != nil {
 		return nil, err
 	}
+
 	tokenIdToToken := map[string]*entity.TokenUri{}
-	for id := range tokens {
-		tokenIdToToken[tokens[id].TokenID] = &(tokens[id])
+	for id, token := range tokens {
+
+		mkl, err := u.Repo.FindActivateListingByTokenID(token.TokenID)
+		if err == nil && mkl != nil {
+			token.Buyable = true
+			token.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      mkl.Price,
+				Address:    mkl.Erc20Token,
+				OfferingID: mkl.OfferingId,
+			}
+		} else {
+			token.Buyable = false
+			token.PriceBrc20 = entity.PriceBRC20Obj{
+				Value:      "",
+				Address:    "",
+				OfferingID: "",
+			}
+		}
+
+		tokenIdToToken[tokens[id].TokenID] = &token
 	}
 	return tokenIdToToken, nil
 }
