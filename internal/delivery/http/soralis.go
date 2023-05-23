@@ -139,6 +139,54 @@ func (h *httpDelivery) soralisUserTokenBalance(w http.ResponseWriter, r *http.Re
 }
 
 // Discord godoc
+// @Summary Get token's detail
+// @Description Get token's detail
+// @Tags Soralis
+// @Content-Type: application/json
+// @Success 200 {object} response.JsonResponse
+// @Param tokenAddress path string true "token address"
+// @Param walletAddress path string true "wallet address"
+// @Security Authorization
+// @Router /soralis/tokens/{tokenAddress}/balance/{walletAddress} [POST]
+func (h *httpDelivery) soralisSnapShotUserTokenBalance(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			tokenAddress := vars["tokenAddress"]
+			walletAddress := vars["walletAddress"]
+
+			data, err := h.Usecase.SoralisSnapShotUserTokenBalance(walletAddress, tokenAddress)
+			if err != nil {
+				return nil, err
+			}
+			return data, nil
+		},
+	).ServeHTTP(w, r)
+}
+
+// @Description Get token's detail
+// @Tags Soralis
+// @Content-Type: application/json
+// @Success 200 {object} response.JsonResponse
+// @Param tokenAddress path string true "token address"
+// @Param walletAddress path string true "wallet address"
+// @Security Authorization
+// @Router /soralis/tokens/{tokenAddress}/balance/{walletAddress}/time-travel [GET]
+func (h *httpDelivery) soralisGetSnapShotUserTokenBalance(w http.ResponseWriter, r *http.Request) {
+	response.NewRESTHandlerTemplate(
+		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
+			tokenAddress := vars["tokenAddress"]
+			walletAddress := vars["walletAddress"]
+
+			data, err := h.Usecase.SoralisGetSnapShotUserTokenBalance(walletAddress, tokenAddress)
+			if err != nil {
+				return nil, err
+			}
+			return data, nil
+		},
+	).ServeHTTP(w, r)
+}
+
+// Discord godoc
 // @Summary Get token's time-travel
 // @Description Get token's time-travel
 // @Tags Soralis
