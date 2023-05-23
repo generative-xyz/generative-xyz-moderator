@@ -394,6 +394,14 @@ func (h *httpDelivery) RegisterV1Routes() {
 	aiSchool.HandleFunc("/list-dataset", h.schoolListDataset).Methods("GET")
 	// aiSchool.HandleFunc("/download", h.schoolDownload).Methods("GET")
 
+	soralis := api.PathPrefix("/soralis").Subrouter()
+	soralis.HandleFunc("/tokens", h.soralisTokens).Methods("GET")
+	//soralis.HandleFunc("/tokens/{tokenAddress}", h.soralisTokenDetail).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/price/min-max", h.soralisTokenMinMax).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/price/current", h.soralisTokenCurrentPrice).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/balance/{walletAddress}", h.soralisUserTokenBalance).Methods("GET")
+	soralis.HandleFunc("/tokens/{tokenAddress}/time-travel", h.soralisTimeTravel).Methods("GET")
+
 }
 
 func (h *httpDelivery) RegisterDocumentRoutes() {
