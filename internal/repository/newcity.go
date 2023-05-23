@@ -58,7 +58,7 @@ func (r Repository) FindNewCityGmByType(typeReq string) ([]entity.NewCityGm, err
 func (r Repository) ListNewCityGmByStatus(statuses []int) ([]*entity.NewCityGm, error) {
 	resp := []*entity.NewCityGm{}
 	filter := bson.M{
-		"status": bson.M{"$in": statuses},
+		//"status": bson.M{"$in": statuses},
 	}
 
 	// sort: created_at
