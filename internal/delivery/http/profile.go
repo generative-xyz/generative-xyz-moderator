@@ -236,12 +236,15 @@ func (h *httpDelivery) profileByWallet(w http.ResponseWriter, r *http.Request) {
 	response.NewRESTHandlerTemplate(
 		func(ctx context.Context, r *http.Request, vars map[string]string) (interface{}, error) {
 			walletAddress := vars["walletAddress"]
-			profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress)
+			profile, err := h.Usecase.GetUserProfileByWalletAddress(walletAddress) // try with eth wallet
 			if err != nil {
-				profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress)
+				profile, err = h.Usecase.GetUserProfileByBtcAddressTaproot(walletAddress) // try with taproot wallet
 				if err != nil {
-					logger.AtLog.Logger.Error("GetUserProfileByWalletAddress failed", zap.Error(err))
-					profile = &entity.Users{}
+					profile, err = h.Usecase.GetUserProfileBySlug(walletAddress) // try with slug
+					if err != nil {
+						logger.AtLog.Logger.Error("GetUserProfileByWalletAddress failed", zap.Error(err))
+						profile = &entity.Users{}
+					}
 				}
 			}
 			resp := &response.ProfileResponse{}
