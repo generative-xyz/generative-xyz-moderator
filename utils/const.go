@@ -127,6 +127,7 @@ const (
 	KEY_WALLET_ADDRESS             string = "wallet_address"
 	KEY_WALLET_ADDRESS_BTC         string = "wallet_address_btc"
 	KEY_WALLET_ADDRESS_BTC_TAPROOT string = "wallet_address_btc_taproot"
+	KEY_WALLET_SLUG                string = "slug"
 	KEY_DELETED_AT                 string = "deleted_at"
 	KEY_PROJECT_ID                 string = "project_id"
 	KEY_LISTING_CONTRACT           string = "collection_contract"

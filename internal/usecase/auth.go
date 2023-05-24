@@ -295,6 +295,18 @@ func (u Usecase) GetUserProfileByBtcAddressTaproot(userAddr string) (*entity.Use
 	return user, nil
 }
 
+func (u Usecase) GetUserProfileBySlug(slug string) (*entity.Users, error) {
+
+	logger.AtLog.Info("GetUserProfileBySlug", zap.String("slug", slug))
+	user, err := u.Repo.FindUserBySlug(slug)
+	if err != nil {
+		logger.AtLog.Error(err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (u Usecase) GetUserProfileByBtcAddress(userAddr string) (*entity.Users, error) {
 
 	logger.AtLog.Info("GetUserProfileByBtcAddress", zap.String("userAddr", userAddr))
