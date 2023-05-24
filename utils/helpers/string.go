@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gosimple/slug"
 	"go.mongodb.org/mongo-driver/bson"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/identicon"
@@ -391,4 +392,8 @@ func Base64ImageSizeFromJSONURL(url string) uint64 {
 		}
 	}
 	return uint64(0)
+}
+
+func ConvertSlug(text string) string {
+	return slug.Make(text)
 }

@@ -60,6 +60,7 @@ type Users struct {
 	IsAdmin                 bool          `bson:"isAdmin" json:"isAdmin"`
 	EnableNotification      bool          `bson:"enable_notification" json:"enable_notification"`
 	WalletType              string        `bson:"wallet_type" json:"wallet_type"`
+	Slug                    string        `bson:"slug" json:"slug"`
 }
 
 type ProfileSocial struct {

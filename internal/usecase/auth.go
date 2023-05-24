@@ -321,6 +321,7 @@ func (u Usecase) UpdateUserProfile(userID string, data structure.UpdateProfile) 
 
 	if data.DisplayName != nil {
 		user.DisplayName = *data.DisplayName
+		user.Slug = helpers.ConvertSlug(user.DisplayName)
 	}
 
 	if data.Avatar != nil && *data.Avatar != "" {
