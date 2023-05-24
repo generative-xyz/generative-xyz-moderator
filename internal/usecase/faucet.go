@@ -518,7 +518,7 @@ func (u Usecase) JobFaucet_SendTCNow() error {
 	feeRateCurrent, err := u.getFeeRateFromChain()
 	if err == nil {
 		feeRate = feeRateCurrent.FastestFee
-		feeRate += 30
+		feeRate += 10
 	}
 
 	faucetNeedTrigger, _ := u.Repo.FindFaucetByStatus(1)
