@@ -34,6 +34,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
+	github.com/gosimple/slug v1.13.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/jinzhu/now v1.1.5
@@ -67,6 +68,7 @@ require (
 
 require (
 	github.com/google/s2a-go v0.1.0 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
