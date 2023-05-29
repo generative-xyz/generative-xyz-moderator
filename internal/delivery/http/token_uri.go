@@ -671,6 +671,11 @@ func (h *httpDelivery) getTokensNew(f structure.FilterTokens) (*response.Paginat
 
 		item.PriceETH = amountETH
 
+		if _, ok := utils.ExceptionProjectContract[strings.ToLower(item.GenNFTAddr)]; ok {
+			temp, _ := new(big.Int).SetString(item.TokenID, 10)
+			item.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
+		}
+
 		if strings.HasSuffix(item.AnimationURL, ".html") {
 			client := http.Client{
 				CheckRedirect: func(r *http.Request, via []*http.Request) error {
