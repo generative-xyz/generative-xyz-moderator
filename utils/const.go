@@ -233,6 +233,6 @@ const (
 	BidProjectIDDev  = "1000362"
 )
 
-var ExceptionProject = map[string]bool{
-	"999998": true,
+var ExceptionProject = map[string]string{
+	"999998": "0x9841faa1133da03b9ae09e8daa1a725bc15575f0",
 }
