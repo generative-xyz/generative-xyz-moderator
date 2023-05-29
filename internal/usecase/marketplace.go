@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"rederinghub.io/utils"
 	"strings"
 	"sync"
 	"time"
@@ -251,6 +252,13 @@ func (u Usecase) ListToken(event *generative_marketplace_lib.GenerativeMarketpla
 		DurationTime:       event.Data.DurationTime.String(),
 	}
 
+	// override listing.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(listing.CollectionContract)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		listing.TokenId = projectIdInt.Add(projectIdInt, event.Data.TokenId).String()
+	}
+
 	sendMessage := func(listing entity.MarketplaceListings) {
 
 		profile, err := u.Repo.FindUserByWalletAddress(listing.Seller)
@@ -359,6 +367,13 @@ func (u Usecase) MakeOffer(event *generative_marketplace_lib.GenerativeMarketpla
 		DurationTime:       event.Data.DurationTime.String(),
 		BlockNumber:        blocknumber,
 		OwnerAddress:       &tok.OwnerAddr,
+	}
+
+	// override offer.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(offer.CollectionContract)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		offer.TokenId = projectIdInt.Add(projectIdInt, event.Data.TokenId).String()
 	}
 
 	sendMessage := func(offer entity.MarketplaceOffers) {
