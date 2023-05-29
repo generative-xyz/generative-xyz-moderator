@@ -170,7 +170,7 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
-	if _, ok := utils.ExceptionProject[resp.Project.TokenID]; ok {
+	if _, ok := utils.ExceptionProjectContract[strings.ToLower(resp.Project.GenNFTAddr)]; ok {
 		temp, _ := new(big.Int).SetString(resp.TokenID, 10)
 		resp.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
 	}

@@ -167,7 +167,7 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 				},
 			}
 
-			if _, ok := utils.ExceptionProject[data.ProjectID]; ok {
+			if _, ok := utils.ExceptionProjectContract[strings.ToLower(data.GenNftAddress)]; ok {
 				temp, _ := new(big.Int).SetString(data.TokenID, 10)
 				data.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
 			}
