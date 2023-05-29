@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -1548,4 +1550,78 @@ func (u Usecase) GetTokenMintingInfo(tokenID string) ([]repository.AggregateToke
 	///logger.AtLog.Logger.Info("tokenUri", zap.Any("tokenUri", tokenUri))
 	logger.AtLog.Logger.Info("tokenID", zap.Any("tokenID", tokenID), zap.Any("info", info))
 	return info, nil
+}
+
+func (u Usecase) InsertDataTokenUriFromNFT(jsonFilepath string, projectId string) {
+	// uc.InsertDataTokenUriFromNFT("nfts.json", "999998")
+	jsonFile, err := os.Open(jsonFilepath)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Successfully Opened users.json")
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	nfts := []entity.NFT{}
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	err = json.Unmarshal(byteValue, &nfts)
+
+	if err == nil {
+		contractAddress := "0xe08811c6ab1b27526fa9f889907d65f441adf124"
+		for _, nft := range nfts {
+			fmt.Sprintf("Inserting %s", nft.Name)
+			owner, _ := u.Repo.FindUserByAddress(nft.Owner)
+			project, _ := u.Repo.FindProjectByTokenID(projectId)
+			item := &entity.TokenUri{
+				ContractAddress:     contractAddress,
+				GenNFTAddr:          nft.CollectionAddress,
+				OwnerAddr:           nft.Owner,
+				MinterAddress:       &nft.Owner,
+				Owner:               owner,
+				ProjectID:           projectId,
+				Project:             project,
+				ParsedAttributesStr: nft.Attributes,
+				//Name:                nft.Name,
+			}
+
+			tempProjectId, _ := new(big.Int).SetString(projectId, 10)
+			item.ProjectIDInt = tempProjectId.Int64()
+			tempTokenId, _ := new(big.Int).SetString(nft.TokenId, 10)
+			fakeTokenId := item.ProjectIDInt*1000000 + tempTokenId.Int64()
+			item.TokenIDInt = int(fakeTokenId)
+			item.TokenID = fmt.Sprintf("%d", fakeTokenId)
+
+			var buf []byte
+			resp, _ := http.Get(nft.TokenUri)
+			buf, _ = ioutil.ReadAll(resp.Body)
+			image := helpers.Base64Encode(buf)
+			image = fmt.Sprintf("%s,%s", "data:image/svg+xml;base64", image)
+
+			thumbnail := ""
+			if image != "" {
+				base64Image := image
+				i := strings.Index(base64Image, ",")
+				if i >= 0 {
+					now := time.Now().UTC().Unix()
+
+					name := fmt.Sprintf("thumb/%d-%d.svg", fakeTokenId, now)
+					base64Image = base64Image[i+1:]
+					uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+					if err != nil {
+						logger.AtLog.Logger.Error("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Error(err))
+					} else {
+						logger.AtLog.Logger.Info("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Any("uploaded", uploaded))
+						thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+					}
+				}
+			}
+			item.ParsedImage = &thumbnail
+			item.Thumbnail = thumbnail
+			item.Image = thumbnail
+
+			u.Repo.UpdateOrInsertTokenUri(contractAddress, nft.TokenId, item)
+			fmt.Sprintf("Inserted %s", nft.Name)
+		}
+	}
 }
