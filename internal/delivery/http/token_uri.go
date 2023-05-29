@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -169,6 +170,10 @@ func (h *httpDelivery) tokenURIWithResp(w http.ResponseWriter, r *http.Request) 
 	logger.AtLog.Logger.Info("h.Usecase.GetToken", zap.Any("token.TokenID", token.TokenID))
 
 	resp, err := h.tokenToResp(token)
+	if _, ok := utils.ExceptionProject[resp.Project.TokenId]; ok {
+		temp, _ := new(big.Int).SetString(resp.TokenID, 10)
+		resp.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
+	}
 	if helpers.IsOrdinalProjectToken(token.TokenID) {
 		filter := &algolia.AlgoliaFilter{SearchStr: token.TokenID}
 		aresp, _, _, err := h.Usecase.AlgoliaSearchInscription(filter)

@@ -75,6 +75,8 @@ type InternalTokenURIResp struct {
 
 	ListingDetail *structure.MarketplaceNFTDetail `json:"listingDetail"`
 	PriceBrc20    entity.PriceBRC20Obj            `json:"priceBrc20""`
+
+	TokenIDData string `json:"tokenIDData"`
 }
 
 type OrdinalsData struct {
