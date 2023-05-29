@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/repository"
+	"rederinghub.io/utils"
 	erc202 "rederinghub.io/utils/contracts/erc20"
 	"sort"
 	"strings"
@@ -111,6 +112,7 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 		Collection        string               `json:"collection"`
 		CollectionAddress string               `json:"collection_address"`
 		TokenID           string               `json:"token_id"`
+		TokenIDData       string               `json:"token_id_data"`
 		ProjectID         string               `json:"project_id"`
 		ProjectName       string               `json:"project_name"`
 		TokenNumber       *int                 `json:"token_number"`
@@ -163,6 +165,11 @@ func (u Usecase) GetNftsByAddressFromTokenUri(address string) (interface{}, erro
 					Done:    0,
 					Pending: 0,
 				},
+			}
+
+			if _, ok := utils.ExceptionProject[data.ProjectID]; ok {
+				temp, _ := new(big.Int).SetString(data.TokenID, 10)
+				data.TokenIDData = fmt.Sprintf("%d", temp.Int64()%1000000)
 			}
 
 			mintingInfo, err := u.Repo.AggregateMintingInfo(ctx, nft.TokenID)
