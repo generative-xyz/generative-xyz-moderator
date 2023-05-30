@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"rederinghub.io/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -369,7 +370,15 @@ func (u Usecase) UpdateTokenOwner(chainLog types.Log, blockchain *blockchain.TcN
 		return err
 	}
 
-	token, err := u.Repo.FindTokenByTokenID(event.TokenId.String())
+	tokenIdStr := event.TokenId.String()
+	// override listing.TokenId
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(event.Raw.Address.String())]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		tokenIdStr = projectIdInt.Add(projectIdInt, event.TokenId).String()
+	}
+
+	token, err := u.Repo.FindTokenByTokenID(tokenIdStr)
 	if err != nil {
 		logger.AtLog.Logger.Error("cannot find token", zap.Error(err))
 		return err
