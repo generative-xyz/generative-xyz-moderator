@@ -42,6 +42,10 @@ func (u Usecase) GetBTCWalletInfo(address string) (*structure.WalletInfo, error)
 	// 		return &result, nil
 	// 	}
 	// }
+	err := preCheckOrdService(u.Config.QuicknodeAPI)
+	if err != nil {
+		return nil, errors.New("ordinals service is not ready yet")
+	}
 	t := time.Now()
 	apiToken := u.Config.BlockcypherToken
 	logger.AtLog.Logger.Info("GetBTCWalletInfo apiToken debug", zap.Any("apiToken", apiToken))
@@ -541,5 +545,67 @@ func (u Usecase) GetWalletTrackTxs(address string, limit, offset int64) ([]struc
 	wg.Wait()
 	// t3 := time.Since(t)
 	// log.Println("t3", t3)
+	return result, nil
+}
+
+func preCheckOrdService(qn string) error {
+	ordServer := os.Getenv("CUSTOM_ORD_SERVER")
+	if ordServer == "" {
+		ordServer = "https://dev-v5.generativeexplorer.com"
+	}
+	ordBlockCount, err := getORDBlockCount(ordServer)
+	if err != nil {
+		return err
+	}
+	quickNode, err := btc.GetBlockCountfromQuickNode(qn)
+	if err != nil {
+		return err
+	}
+	if ordBlockCount < quickNode.Result {
+		if quickNode.Result-ordBlockCount >= 4 {
+			return errors.New("ord block count is too far from quicknode")
+		}
+	}
+	return nil
+}
+
+func getORDBlockCount(ordServer string) (uint64, error) {
+	url := fmt.Sprintf("%s/block-count", ordServer)
+	fmt.Println("url", url)
+	var result uint64
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return result, err
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return result, err
+	}
+
+	defer func(r *http.Response) {
+		err := r.Body.Close()
+		if err != nil {
+			fmt.Println("Close body failed", err.Error())
+		}
+	}(res)
+
+	fmt.Println("http.StatusOK", http.StatusOK, "res.Body", res.Body)
+
+	if res.StatusCode != http.StatusOK {
+		return result, errors.New("getInscriptionByOutput Response status != 200")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return result, errors.New("Read body failed")
+	}
+
+	result, err = strconv.ParseUint(string(body), 10, 64)
+	if err != nil {
+		return result, err
+	}
 	return result, nil
 }
