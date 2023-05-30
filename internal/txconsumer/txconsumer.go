@@ -72,8 +72,7 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 	if processingBlock > defaultStartBlock {
 		defaultStartBlock = processingBlock
 	}
-	//return defaultStartBlock, nil
-	return 9670, nil
+	return defaultStartBlock, nil
 }
 
 func (c *HttpTxConsumer) setLastProcessedBlock(block int64) error {
