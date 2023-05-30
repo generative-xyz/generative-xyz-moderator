@@ -819,3 +819,31 @@ func (bs *BlockcypherService) BTCGetAddrInfoMulti(addresses []string) (map[strin
 
 	return balanceMap, nil
 }
+
+func GetBlockCountfromQuickNode(qn string) (*QuickNodeBlockCount, error) {
+	var result QuickNodeBlockCount
+
+	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getblockcount\"}"))
+
+	req, err := http.NewRequest("POST", qn, payload)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
