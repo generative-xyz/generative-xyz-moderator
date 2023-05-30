@@ -72,7 +72,8 @@ func (c *HttpTxConsumer) getLastProcessedBlock() (int64, error) {
 	if processingBlock > defaultStartBlock {
 		defaultStartBlock = processingBlock
 	}
-	return defaultStartBlock, nil
+	//return defaultStartBlock, nil
+	return 9670, nil
 }
 
 func (c *HttpTxConsumer) setLastProcessedBlock(block int64) error {
@@ -193,7 +194,12 @@ func (c *HttpTxConsumer) StartServer() {
 	logger.AtLog.Logger.Info("HttpTxConsumer start listening")
 
 	for {
-		err := c.resolveTransaction()
+		err := c.getTcAddress()
+		if err != nil {
+			logger.AtLog.Logger.Error("Error when resolve getTcAddress", zap.String("err", err.Error()))
+		}
+
+		err = c.resolveTransaction()
 		if err != nil {
 			logger.AtLog.Logger.Error("Error when resolve transactions", zap.String("err", err.Error()))
 		}
