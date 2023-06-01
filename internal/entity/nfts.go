@@ -7,4 +7,14 @@ type NFT struct {
 	TokenUri          string            `json:"token_uri"`
 	Owner             string            `json:"owner"`
 	Attributes        []TokenUriAttrStr `json:"attributes"`
+	Metadata          *NFTMetadata      `json:"metadata"`
+}
+
+type NFTMetadata struct {
+	Attributes   interface{} `json:"attributes"`
+	Description  string      `json:"description"`
+	ExternalUrl  interface{} `json:"external_url"`
+	Image        string      `json:"image"`
+	AnimationURL *string     `json:"animation_url"`
+	Name         string      `json:"name"`
 }
