@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"rederinghub.io/utils/helpers"
 
 	"go.uber.org/zap"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/usecase/structure"
-	"rederinghub.io/utils/helpers"
 	"rederinghub.io/utils/logger"
 	_req "rederinghub.io/utils/request"
 )
@@ -30,6 +30,10 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 
+	u.Capture(tokenURI)
+}
+
+func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
 	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
 	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
@@ -51,12 +55,14 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		token.ParsedAttributesStr = resp.TraitsStr
 		token.ThumbnailCapturedAt = resp.CapturedAt
 
-		updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
-		if err != nil {
-			logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
+		if os.Getenv("ENV") == "mainnet" {
+			updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
+			if err != nil {
+				logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
+			}
+			logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
+			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
 		}
-		logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
-		u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
 
 	}
 }

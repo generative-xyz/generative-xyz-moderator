@@ -97,6 +97,13 @@ func (h *httpDelivery) tokenTrait(w http.ResponseWriter, r *http.Request) {
 		captureInt = captureInt / 1000
 	}
 
+	tokenIDIntB, _ := new(big.Int).SetString(tokenID, 10)
+	if projectId, ok := utils.ExceptionProjectContract[strings.ToLower(contractAddress)]; ok {
+		projectIdInt, _ := new(big.Int).SetString(projectId, 10)
+		projectIdInt = new(big.Int).Mul(projectIdInt, big.NewInt(1000000))
+		tokenID = projectIdInt.Add(projectIdInt, tokenIDIntB).String()
+	}
+
 	message, err := h.Usecase.GetToken(structure.GetTokenMessageReq{
 		ContractAddress: contractAddress,
 		TokenID:         tokenID,
