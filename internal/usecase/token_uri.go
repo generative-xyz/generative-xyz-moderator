@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"rederinghub.io/utils/request"
 	"sort"
 	"strconv"
 	"strings"
@@ -72,12 +74,22 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, err
 	}
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath("google-chrome"),
-		chromedp.Flag("headless", eCH),
-		chromedp.Flag("disable-gpu", false),
-		chromedp.Flag("no-first-run", true),
-	)
+	opts := []chromedp.ExecAllocatorOption{}
+	if os.Getenv("ENV") == "mainnet" {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.ExecPath("google-chrome"),
+			chromedp.Flag("headless", eCH),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	} else {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", false),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	}
+
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
 	cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
@@ -1566,62 +1578,175 @@ func (u Usecase) InsertDataTokenUriFromNFT(jsonFilepath string, projectId string
 	nfts := []entity.NFT{}
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	err = json.Unmarshal(byteValue, &nfts)
+	inputChan := make(chan entity.NFT)
+	outputChan := make(chan *entity.TokenUri)
 
+	workerNumber := 100
 	if err == nil {
-		contractAddress := "0xe08811c6ab1b27526fa9f889907d65f441adf124"
-		for _, nft := range nfts {
-			fmt.Sprintf("Inserting %s", nft.Name)
-			owner, _ := u.Repo.FindUserByAddress(nft.Owner)
-			project, _ := u.Repo.FindProjectByTokenID(projectId)
-			item := &entity.TokenUri{
-				ContractAddress:     contractAddress,
-				GenNFTAddr:          nft.CollectionAddress,
-				OwnerAddr:           nft.Owner,
-				MinterAddress:       &nft.Owner,
-				Owner:               owner,
-				ProjectID:           projectId,
-				Project:             project,
-				ParsedAttributesStr: nft.Attributes,
-				//Name:                nft.Name,
+		contractAddress := "0xda00b6a8b521113501bb98fd0a7ffcfe756d9962"
+
+		//init worker
+		for i := 0; i < len(nfts); i++ {
+			go u.InsertDataTokenWoker(inputChan, outputChan, projectId, contractAddress)
+			if i > 0 && i%workerNumber == 0 {
+				time.Sleep(time.Millisecond * 500)
 			}
+		}
 
-			tempProjectId, _ := new(big.Int).SetString(projectId, 10)
-			item.ProjectIDInt = tempProjectId.Int64()
-			tempTokenId, _ := new(big.Int).SetString(nft.TokenId, 10)
-			fakeTokenId := item.ProjectIDInt*1000000 + tempTokenId.Int64()
-			item.TokenIDInt = int(fakeTokenId)
-			item.TokenID = fmt.Sprintf("%d", fakeTokenId)
+		for i := 0; i < len(nfts); i++ {
+			inputChan <- nfts[i]
+		}
 
-			var buf []byte
-			resp, _ := http.Get(nft.TokenUri)
-			buf, _ = ioutil.ReadAll(resp.Body)
-			image := helpers.Base64Encode(buf)
-			image = fmt.Sprintf("%s,%s", "data:image/svg+xml;base64", image)
-
-			thumbnail := ""
-			if image != "" {
-				base64Image := image
-				i := strings.Index(base64Image, ",")
-				if i >= 0 {
-					now := time.Now().UTC().Unix()
-
-					name := fmt.Sprintf("thumb/%d-%d.svg", fakeTokenId, now)
-					base64Image = base64Image[i+1:]
-					uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
-					if err != nil {
-						logger.AtLog.Logger.Error("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Error(err))
-					} else {
-						logger.AtLog.Logger.Info("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Any("uploaded", uploaded))
-						thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
-					}
-				}
-			}
-			item.ParsedImage = &thumbnail
-			item.Thumbnail = thumbnail
-			item.Image = thumbnail
-
-			u.Repo.UpdateOrInsertTokenUri(contractAddress, nft.TokenId, item)
-			fmt.Sprintf("Inserted %s", nft.Name)
+		for i := 0; i < len(nfts); i++ {
+			item := <-outputChan
+			u.Repo.UpdateOrInsertTokenUri(contractAddress, item.TokenID, item)
 		}
 	}
+}
+
+func (u Usecase) InsertDataTokenWoker(nftInput chan entity.NFT, outputChan chan *entity.TokenUri, projectId string, contractAddress string) {
+	animationURL := ""
+	isPubsub := false
+	nft := <-nftInput
+	if nft.Metadata != nil {
+		if nft.Metadata.AnimationURL != nil {
+			animationURL = *nft.Metadata.AnimationURL
+			isPubsub = true
+		}
+	} else {
+		filename := fmt.Sprintf("metadata-%s-%s.txt", nft.CollectionAddress, nft.TokenId)
+		data, err := helpers.Openfile(filename)
+		if err != nil {
+			url := fmt.Sprintf("https://api-nft-explorer.trustless.computer/api/v1/collection/%s/nft/%s/tokenuri", nft.CollectionAddress, nft.TokenId)
+
+			statusCode, body, err := request.GetRequest(url)
+			if err != nil {
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - GetRequest", zap.String("url", url), zap.Error(err))
+				return
+			}
+
+			if statusCode != 200 {
+				err := errors.New(fmt.Sprintf("Status code: %s", statusCode))
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - statusCode", zap.String("url", url), zap.Error(err))
+				return
+			}
+
+			metadata := &entity.NFTMetadata{}
+			err = json.Unmarshal(body, metadata)
+			if err != nil {
+				logger.AtLog.Error("PubSubCreateTokenThumbnail - Unmarshal", zap.String("url", url), zap.Error(err))
+				return
+			}
+			if metadata.AnimationURL != nil && *metadata.AnimationURL != "" {
+				animationURL = *metadata.AnimationURL
+				isPubsub = true
+
+				err = helpers.CreateFile(filename, *metadata.AnimationURL)
+				if err != nil {
+					logger.AtLog.Error("PubSubCreateTokenThumbnail - CreateFile", zap.String("url", url), zap.Error(err))
+					return
+				}
+			}
+		} else {
+			base64str := bytes.NewBuffer(data).String()
+			base64str = strings.ReplaceAll(base64str, "data:text/html;base64,", "")
+			base64str = strings.ReplaceAll(base64str, `"`, ``)
+			bytesData, err := helpers.Base64Decode(base64str)
+			if err == nil {
+				html := bytes.NewBuffer(bytesData).String()
+				html = strings.ReplaceAll(html, `Web3.givenProvider`, `"https://tc-node.trustless.computer"`)
+				html = strings.ReplaceAll(html, `isFakeData=!1`, `isFakeData=1`)
+				html = strings.ReplaceAll(html, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum`, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum || isFakeData`)
+				bytesData := []byte(html)
+				err := helpers.CreateTxtFile(fmt.Sprintf("index-%s-%s.html", nft.CollectionAddress, nft.TokenId), bytesData)
+				if err == nil {
+					now := time.Now().UTC().UnixNano()
+					encoded := helpers.Base64Encode(bytesData)
+					uploaded, err := u.GCS.UploadBaseToBucket(encoded, fmt.Sprintf("index-%d-%s-%s.html", now, nft.CollectionAddress, nft.TokenId))
+
+					if err == nil {
+						fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, nft.TokenId)
+
+						animationURL = fileURI
+						isPubsub = true
+					}
+
+				}
+			}
+
+		}
+	}
+
+	fmt.Sprintf("Inserting %s", nft.Name)
+	owner, _ := u.Repo.FindUserByAddress(nft.Owner)
+	project, _ := u.Repo.FindProjectByTokenID(projectId)
+	item := &entity.TokenUri{
+		ContractAddress:     contractAddress,
+		GenNFTAddr:          nft.CollectionAddress,
+		OwnerAddr:           nft.Owner,
+		MinterAddress:       &nft.Owner,
+		Owner:               owner,
+		ProjectID:           projectId,
+		Project:             project,
+		ParsedAttributesStr: nft.Attributes,
+		//Name:                nft.Name
+	}
+
+	tempProjectId, _ := new(big.Int).SetString(projectId, 10)
+	item.ProjectIDInt = tempProjectId.Int64()
+	tempTokenId, _ := new(big.Int).SetString(nft.TokenId, 10)
+	fakeTokenId := item.ProjectIDInt*1000000 + tempTokenId.Int64()
+	item.TokenIDInt = int(fakeTokenId)
+	item.TokenID = fmt.Sprintf("%d", fakeTokenId)
+
+	if !isPubsub {
+		var buf []byte
+		resp, _ := http.Get(nft.TokenUri)
+		buf, _ = ioutil.ReadAll(resp.Body)
+		image := helpers.Base64Encode(buf)
+		image = fmt.Sprintf("%s,%s", "data:image/svg+xml;base64", image)
+
+		thumbnail := ""
+		if image != "" {
+			base64Image := image
+			i := strings.Index(base64Image, ",")
+			if i >= 0 {
+				now := time.Now().UTC().Unix()
+
+				name := fmt.Sprintf("thumb/%d-%d.svg", fakeTokenId, now)
+				base64Image = base64Image[i+1:]
+				uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+				if err != nil {
+					logger.AtLog.Logger.Error("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Error(err))
+				} else {
+					logger.AtLog.Logger.Info("InsertDataTokenUriFromNFT", zap.Any("tokenID", fakeTokenId), zap.Any("uploaded", uploaded))
+					thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
+				}
+			}
+		}
+		item.ParsedImage = &thumbnail
+		item.Thumbnail = thumbnail
+		item.Image = thumbnail
+
+	} else {
+		item.AnimationURL = animationURL
+
+		//open chrome and capture image
+		resp, err := u.RunAndCap(item)
+		if err != nil {
+			logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
+			return
+		}
+
+		if resp.IsUpdated {
+			item.ParsedImage = &resp.ParsedImage
+			item.Thumbnail = resp.Thumbnail
+			item.ParsedAttributes = resp.Traits
+			item.ParsedAttributesStr = resp.TraitsStr
+			item.ThumbnailCapturedAt = resp.CapturedAt
+		}
+	}
+
+	outputChan <- item
+
 }
