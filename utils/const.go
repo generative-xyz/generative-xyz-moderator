@@ -235,4 +235,5 @@ const (
 
 var ExceptionProjectContract = map[string]string{
 	"0x9841faa1133da03b9ae09e8daa1a725bc15575f0": "999998",
+	"0xda00b6a8b521113501bb98fd0a7ffcfe756d9962": "999997",
 }
