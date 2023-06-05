@@ -1647,33 +1647,38 @@ func (u Usecase) InsertDataTokenWoker(nftInput chan entity.NFT, outputChan chan 
 					return
 				}
 			}
-		} else {
-			base64str := bytes.NewBuffer(data).String()
-			base64str = strings.ReplaceAll(base64str, "data:text/html;base64,", "")
-			base64str = strings.ReplaceAll(base64str, `"`, ``)
-			bytesData, err := helpers.Base64Decode(base64str)
+		}
+
+		data, err = helpers.Openfile(filename)
+		if err != nil {
+			logger.AtLog.Error("PubSubCreateTokenThumbnail - Unmarshal", zap.String("filename", filename), zap.Error(err))
+			return
+		}
+		//reopen file
+		base64str := bytes.NewBuffer(data).String()
+		base64str = strings.ReplaceAll(base64str, "data:text/html;base64,", "")
+		base64str = strings.ReplaceAll(base64str, `"`, ``)
+		bytesData, err := helpers.Base64Decode(base64str)
+		if err == nil {
+			html := bytes.NewBuffer(bytesData).String()
+			html = strings.ReplaceAll(html, `Web3.givenProvider`, `"https://tc-node.trustless.computer"`)
+			html = strings.ReplaceAll(html, `isFakeData=!1`, `isFakeData=1`)
+			html = strings.ReplaceAll(html, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum`, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum || isFakeData`)
+			bytesData := []byte(html)
+			err := helpers.CreateTxtFile(fmt.Sprintf("index-%s-%s.html", nft.CollectionAddress, nft.TokenId), bytesData)
 			if err == nil {
-				html := bytes.NewBuffer(bytesData).String()
-				html = strings.ReplaceAll(html, `Web3.givenProvider`, `"https://tc-node.trustless.computer"`)
-				html = strings.ReplaceAll(html, `isFakeData=!1`, `isFakeData=1`)
-				html = strings.ReplaceAll(html, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum`, `document.getElementById("btn-close").style.display="none",console.log(window.ethereum),window.ethereum || isFakeData`)
-				bytesData := []byte(html)
-				err := helpers.CreateTxtFile(fmt.Sprintf("index-%s-%s.html", nft.CollectionAddress, nft.TokenId), bytesData)
+				now := time.Now().UTC().UnixNano()
+				encoded := helpers.Base64Encode(bytesData)
+				uploaded, err := u.GCS.UploadBaseToBucket(encoded, fmt.Sprintf("index-%d-%s-%s.html", now, nft.CollectionAddress, nft.TokenId))
+
 				if err == nil {
-					now := time.Now().UTC().UnixNano()
-					encoded := helpers.Base64Encode(bytesData)
-					uploaded, err := u.GCS.UploadBaseToBucket(encoded, fmt.Sprintf("index-%d-%s-%s.html", now, nft.CollectionAddress, nft.TokenId))
+					fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, nft.TokenId)
 
-					if err == nil {
-						fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, nft.TokenId)
-
-						animationURL = fileURI
-						isPubsub = true
-					}
-
+					animationURL = fileURI
+					isPubsub = true
 				}
-			}
 
+			}
 		}
 	}
 
