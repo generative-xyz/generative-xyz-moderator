@@ -749,12 +749,14 @@ func (u Usecase) UpdateTokenOnwer(event string, offeringID string, fn func(offer
 	logger.AtLog.Logger.Info("updated", zap.Any("updated", updated))
 
 	//slack
-	preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
-	content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner, profile.DisplayName), helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
-	title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
+	if profile != nil {
+		preText := fmt.Sprintf("[TokenID %s] has been transfered to %s", token.TokenID, token.OwnerAddr)
+		content := fmt.Sprintf("To user: %s. Token: %s", helpers.CreateProfileLink(owner, profile.DisplayName), helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name))
+		title := fmt.Sprintf("OfferingID:  %s is %s", offeringID, event)
 
-	if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
-		logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		if _, _, err := u.Slack.SendMessageToSlack(preText, title, content); err != nil {
+			logger.AtLog.Logger.Error("s.Slack.SendMessageToSlack err", zap.Error(err))
+		}
 	}
 
 	// TODO: @dac add update collection stats here
