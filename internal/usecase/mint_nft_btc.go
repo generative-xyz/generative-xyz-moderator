@@ -2117,7 +2117,7 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				txFee, err := bs.EstimateFeeTransactionWithPreferenceFromSegwitAddressMultiAddress(privateKeyDeCrypt, mintItem.ReceiveAddress, destinations, btc.PreferenceMedium)
 				if err != nil {
 					// check if not enough balance:
-					if strings.Contains(err.Error(), "insufficient priority and fee for relay") {
+					if strings.Contains(err.Error(), "insufficient priority and fee for relay") || strings.Contains(err.Error(), "Not enough funds after fees in 1 inputs to pay for 2 outputs") {
 						mintItem.Status = entity.StatusMint_NotEnoughBalanceToSendMaster
 						u.Repo.UpdateMintNftBtc(mintItem)
 					}
