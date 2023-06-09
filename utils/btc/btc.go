@@ -633,7 +633,16 @@ func SendRawTxfromQuickNode(raw_tx string, qn string) (string, error) {
 	}
 	return string(body), nil
 }
+
+var quickNodeRateLock sync.Mutex
+
 func CheckTxfromQuickNode(txhash string, qn string) (*QuickNodeTx, error) {
+
+	quickNodeRateLock.Lock()
+	defer func() {
+		time.Sleep(100 * time.Millisecond)
+		quickNodeRateLock.Unlock()
+	}()
 	var result QuickNodeTx
 
 	payload := strings.NewReader(fmt.Sprintf("{\n\t\"method\": \"getrawtransaction\",\n\t\"params\": [\n\t\t\"%v\",\n\t\t2\n\t]\n}", txhash))
