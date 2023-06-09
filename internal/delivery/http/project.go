@@ -305,7 +305,7 @@ func (h *httpDelivery) projectMarketplaceData(w http.ResponseWriter, r *http.Req
 			result.TotalVolume += additionalAmount
 		}
 
-		h.Cache.SetData(helpers.GenerateMKPDataKey(projectID), result)
+		h.Cache.SetDataWithExpireTime(helpers.GenerateMKPDataKey(projectID), result, 600) // 10 min
 		h.Response.RespondSuccess(w, http.StatusOK, response.Success, result, "")
 		return
 	}
