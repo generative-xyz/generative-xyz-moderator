@@ -379,6 +379,21 @@ func (u Usecase) watchPendingDexBTCListing() error {
 							spentTx = curInscTx
 						}
 					}
+					if spentTx == "" {
+						for _, vIn := range order.Inputs {
+							vinParts := strings.Split(vIn, ":")
+							vinIdx, _ := strconv.Atoi(vinParts[1])
+							spentTx, err = btc.CheckOutcoinSpentBlockStream(vinParts[0], uint(vinIdx))
+							if err != nil {
+								log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream %v\n", order.Inputs)
+								continue
+							}
+
+							if spentTx != "" {
+								log.Printf("JobWatchPendingDexBTCListing btc.CheckOutcoinSpentBlockStream success2\n")
+							}
+						}
+					}
 				}
 			} else {
 				if txStatus.Outputs[idx].SpentBy != "" {
