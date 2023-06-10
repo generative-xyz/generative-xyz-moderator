@@ -6095,6 +6095,20 @@ const docTemplate = `{
                 }
             }
         },
+        "entity.PriceBRC20Obj": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "offering_id": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -6547,6 +6561,9 @@ const docTemplate = `{
                 "block_number_minted": {
                     "type": "string"
                 },
+                "buyable": {
+                    "type": "boolean"
+                },
                 "contract_address": {
                     "type": "string"
                 },
@@ -6635,6 +6652,9 @@ const docTemplate = `{
                 },
                 "parsed_image": {
                     "type": "string"
+                },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
                 },
                 "priority": {
                     "type": "integer"
@@ -6780,9 +6800,6 @@ const docTemplate = `{
                 },
                 "profile_social": {
                     "$ref": "#/definitions/entity.ProfileSocial"
-                },
-                "slug": {
-                    "type": "string"
                 },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
@@ -7449,11 +7466,11 @@ const docTemplate = `{
         "request.ParseSvgRequest": {
             "type": "object",
             "properties": {
+                "app_id": {
+                    "type": "string"
+                },
                 "delay_time": {
                     "type": "integer"
-                },
-                "device_id": {
-                    "type": "string"
                 },
                 "display_url": {
                     "type": "string"
@@ -8094,6 +8111,9 @@ const docTemplate = `{
                 "priceBTC": {
                     "type": "string"
                 },
+                "priceBrc20": {
+                    "$ref": "#/definitions/entity.PriceBRC20Obj"
+                },
                 "priceETH": {
                     "type": "string"
                 },
@@ -8116,9 +8136,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tokenID": {
-                    "type": "string"
-                },
-                "tokenIDData": {
                     "type": "string"
                 }
             }
@@ -8208,9 +8225,6 @@ const docTemplate = `{
                 },
                 "proposal": {
                     "$ref": "#/definitions/response.DaoArtist"
-                },
-                "slug": {
-                    "type": "string"
                 },
                 "walletAddress": {
                     "type": "string"

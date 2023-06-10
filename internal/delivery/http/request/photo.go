@@ -7,6 +7,6 @@ type CaptureRequest struct {
 
 type ParseSvgRequest struct {
 	Url       string `json:"display_url"`
-	ID        string `json:"device_id"`
+	ID        string `json:"app_id"`
 	DelayTime int    `json:"delay_time"`
 }

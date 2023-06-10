@@ -182,6 +182,15 @@ definitions:
       totalPage:
         type: integer
     type: object
+  entity.PriceBRC20Obj:
+    properties:
+      address:
+        type: string
+      offering_id:
+        type: string
+      value:
+        type: string
+    type: object
   entity.ProfileSocial:
     properties:
       discord:
@@ -499,6 +508,8 @@ definitions:
         type: string
       block_number_minted:
         type: string
+      buyable:
+        type: boolean
       contract_address:
         type: string
       created_at:
@@ -557,6 +568,8 @@ definitions:
         type: array
       parsed_image:
         type: string
+      priceBrc20:
+        $ref: '#/definitions/entity.PriceBRC20Obj'
       priority:
         type: integer
       project:
@@ -652,8 +665,6 @@ definitions:
         type: string
       profile_social:
         $ref: '#/definitions/entity.ProfileSocial'
-      slug:
-        type: string
       stats:
         $ref: '#/definitions/entity.UserStats'
       verifiedAt:
@@ -1090,10 +1101,10 @@ definitions:
     type: object
   request.ParseSvgRequest:
     properties:
+      app_id:
+        type: string
       delay_time:
         type: integer
-      device_id:
-        type: string
       display_url:
         type: string
     type: object
@@ -1515,6 +1526,8 @@ definitions:
         type: string
       priceBTC:
         type: string
+      priceBrc20:
+        $ref: '#/definitions/entity.PriceBRC20Obj'
       priceETH:
         type: string
       priority:
@@ -1530,8 +1543,6 @@ definitions:
       thumbnail:
         type: string
       tokenID:
-        type: string
-      tokenIDData:
         type: string
     type: object
   response.JsonResponse:
@@ -1590,8 +1601,6 @@ definitions:
         $ref: '#/definitions/response.ProfileSocial'
       proposal:
         $ref: '#/definitions/response.DaoArtist'
-      slug:
-        type: string
       walletAddress:
         type: string
       walletAddressBtc:
