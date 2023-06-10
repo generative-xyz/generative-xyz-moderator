@@ -56,17 +56,17 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 	resp := &structure.TokenAnimationURI{}
 	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
-	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: *token.ParsedImage,
-			Thumbnail:   token.Thumbnail,
-			Traits:      token.ParsedAttributes,
-			TraitsStr:   token.ParsedAttributesStr,
-			CapturedAt:  token.ThumbnailCapturedAt,
-			IsUpdated:   false,
-		}
-		return resp, nil
-	}
+	//if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
+	//	resp = &structure.TokenAnimationURI{
+	//		ParsedImage: *token.ParsedImage,
+	//		Thumbnail:   token.Thumbnail,
+	//		Traits:      token.ParsedAttributes,
+	//		TraitsStr:   token.ParsedAttributesStr,
+	//		CapturedAt:  token.ThumbnailCapturedAt,
+	//		IsUpdated:   false,
+	//	}
+	//	return resp, nil
+	//}
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
@@ -94,37 +94,12 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	cctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	imageURL := token.AnimationURL
-	if len(imageURL) == 0 {
-		parsedImage := ""
-		if token.ParsedImage != nil {
-			parsedImage = *token.ParsedImage
-		}
-
-		resp = &structure.TokenAnimationURI{
-			ParsedImage: parsedImage,
-			Thumbnail:   token.Thumbnail,
-			Traits:      token.ParsedAttributes,
-			TraitsStr:   token.ParsedAttributesStr,
-			CapturedAt:  token.ThumbnailCapturedAt,
-			IsUpdated:   false,
-		}
-		return resp, nil
-	}
-	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
-		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
-		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
-		if err == nil {
-			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
-			imageURL = fileURI
-		}
-		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
-	}
+	imageURL := token.AnimationHtml
 
 	traits := make(map[string]interface{})
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
-		chromedp.Navigate(imageURL),
+		chromedp.Navigate(*imageURL),
 		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 		chromedp.CaptureScreenshot(&buf),
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),

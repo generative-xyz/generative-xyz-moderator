@@ -1308,7 +1308,13 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	f := bson.D{{
 		Key:   utils.KEY_PROJECT_ID,
 		Value: projectID,
+		Ins
 	}}
+
+	opts := options.FindOptions{}
+	opts.Sort = bson.D{
+		{"order_inscription_index", -1},
+	}
 
 	cursor, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).Find(context.TODO(), f)
 	if err != nil {
@@ -1382,36 +1388,7 @@ func (r Repository) GetAllTokenTraitsByProjectID(projectID string) ([]entity.Agg
 }
 
 func (r Repository) SelectedTokenFields() bson.D {
-	f := bson.D{
-		{"token_id", 1},
-		{"gen_nft_addrress", 1},
-		{"contract_address", 1},
-		{"thumbnail", 1},
-		{"description", 1},
-		{"name", 1},
-		{"price", 1},
-		{"owner_addrress", 1},
-		{"creator_address", 1},
-		{"project_id", 1},
-		{"minted_time", 1},
-		{"priority", 1},
-		{"image", 1},
-		{"project.tokenid", 1},
-		{"project.tokenIDInt", 1},
-		{"project.contractAddress", 1},
-		{"project.name", 1},
-		//{"project", 1},
-		{"owner.wallet_address", 1},
-		{"owner.display_name", 1},
-		{"owner.avatar", 1},
-		{"creator.wallet_address", 1},
-		{"creator.display_name", 1},
-		{"creator.avatar", 1},
-		{"stats.price_int", 1},
-		{"minter_address", 1},
-		{"inscription_index", 1},
-		{"order_inscription_index", 1},
-	}
+	f := bson.D{}
 	return f
 }
 
@@ -1479,6 +1456,23 @@ func (r Repository) UpdateTokenPriceByTokenId(tokenId string, price int64) error
 	update := bson.M{
 		"$set": bson.M{
 			"stats.price_int": price,
+		},
+	}
+	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (r Repository) UpdateTokenThumbnailByTokenId(projectID string, tokenId string, thumbnail string) error {
+	filter := bson.D{
+		{Key: "token_id", Value: tokenId},
+		{Key: "project_id", Value: projectID},
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"thumbnail": thumbnail,
 		},
 	}
 	_, err := r.DB.Collection(utils.COLLECTION_TOKEN_URI).UpdateOne(context.TODO(), filter, update)
