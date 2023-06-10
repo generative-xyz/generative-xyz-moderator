@@ -99,7 +99,7 @@ func (u *Usecase) PubSubCaptureThumbnail(tracingInjection map[string]string, cha
 		return
 	}
 
-	url, err := u.CaptureContent(req.ID, req.Url)
+	url, err := u.CaptureContent(req.ID, req.Url, 18)
 	if err != nil {
 		logger.AtLog.Error("PubSubProjectUnzip", zap.Any("payload", payload), zap.Error(err))
 		return

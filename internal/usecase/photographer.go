@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,11 +16,7 @@ import (
 	"rederinghub.io/utils/redis"
 )
 
-func (u Usecase) CaptureContent(id, url string) (string, error) {
-
-	if utils.IsImageURL(url) {
-		return url, nil
-	}
+func (u Usecase) CaptureContent(id, url string, duration int) (string, error) {
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
@@ -40,7 +37,7 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 	err = chromedp.Run(cctx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(url),
-		chromedp.Sleep(time.Second*time.Duration(18)),
+		chromedp.Sleep(time.Second*time.Duration(duration)),
 		chromedp.CaptureScreenshot(&buf),
 		//chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
@@ -70,4 +67,30 @@ func (u Usecase) CaptureContent(id, url string) (string, error) {
 
 func (u Usecase) PublishImageData(req request.CaptureRequest) error {
 	return u.PubSub.Producer(utils.PUBSUB_CAPTURE_THUMBNAIL, redis.PubSubPayload{Data: req})
+}
+
+func (u Usecase) ParseSvg(req request.ParseSvgRequest) (*string, error) {
+	id := req.ID
+	url := req.Url
+
+	isImage, imageType := utils.IsImageURL(url)
+	if !isImage {
+		return nil, errors.New("Url is not an image")
+	}
+
+	if !strings.Contains(imageType, "svg") {
+		return &url, nil
+	}
+
+	duration := req.DelayTime
+	if duration == 0 {
+		duration = 1
+	}
+
+	image, err := u.CaptureContent(id, req.Url, duration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &image, nil
 }

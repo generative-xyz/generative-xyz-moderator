@@ -74,15 +74,15 @@ func MD5Ext(val interface{}) string {
 	return result
 }
 
-func IsImageURL(url string) bool {
-	response, err := http.Head(url)
+func IsImageURL(url string) (bool, string) {
+	response, err := http.Get(url)
 	if err != nil {
-		return false
+		return false, ""
 	}
 	defer response.Body.Close()
 
 	contentType := response.Header.Get("Content-Type")
 	contentType = strings.ToLower(contentType)
 
-	return strings.HasPrefix(contentType, "image/")
+	return strings.HasPrefix(contentType, "image/"), contentType
 }

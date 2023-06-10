@@ -652,6 +652,8 @@ definitions:
         type: string
       profile_social:
         $ref: '#/definitions/entity.ProfileSocial'
+      slug:
+        type: string
       stats:
         $ref: '#/definitions/entity.UserStats'
       verifiedAt:
@@ -1084,6 +1086,15 @@ definitions:
       seller_address:
         type: string
       seller_ord_address:
+        type: string
+    type: object
+  request.ParseSvgRequest:
+    properties:
+      delay_time:
+        type: integer
+      device_id:
+        type: string
+      display_url:
         type: string
     type: object
   request.ProfileSocial:
@@ -1520,6 +1531,8 @@ definitions:
         type: string
       tokenID:
         type: string
+      tokenIDData:
+        type: string
     type: object
   response.JsonResponse:
     properties:
@@ -1577,6 +1590,8 @@ definitions:
         $ref: '#/definitions/response.ProfileSocial'
       proposal:
         $ref: '#/definitions/response.DaoArtist'
+      slug:
+        type: string
       walletAddress:
         type: string
       walletAddressBtc:
@@ -3990,6 +4005,35 @@ paths:
       security:
       - Authorization: []
       summary: captures url content as image
+      tags:
+      - Photographer
+  /photo/pare-svg:
+    post:
+      consumes:
+      - application/json
+      description: captures svg and response png
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParseSvgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: captures svg
       tags:
       - Photographer
   /profile:

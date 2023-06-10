@@ -3232,6 +3232,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/photo/pare-svg": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "captures svg and response png",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Photographer"
+                ],
+                "summary": "captures svg",
+                "parameters": [
+                    {
+                        "description": "capture request",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ParseSvgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.JsonResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CaptureResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [
@@ -6730,6 +6781,9 @@ const docTemplate = `{
                 "profile_social": {
                     "$ref": "#/definitions/entity.ProfileSocial"
                 },
+                "slug": {
+                    "type": "string"
+                },
                 "stats": {
                     "$ref": "#/definitions/entity.UserStats"
                 },
@@ -7392,6 +7446,20 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ParseSvgRequest": {
+            "type": "object",
+            "properties": {
+                "delay_time": {
+                    "type": "integer"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "display_url": {
+                    "type": "string"
+                }
+            }
+        },
         "request.ProfileSocial": {
             "type": "object",
             "properties": {
@@ -8049,6 +8117,9 @@ const docTemplate = `{
                 },
                 "tokenID": {
                     "type": "string"
+                },
+                "tokenIDData": {
+                    "type": "string"
                 }
             }
         },
@@ -8137,6 +8208,9 @@ const docTemplate = `{
                 },
                 "proposal": {
                     "$ref": "#/definitions/response.DaoArtist"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "walletAddress": {
                     "type": "string"
