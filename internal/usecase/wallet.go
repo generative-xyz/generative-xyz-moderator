@@ -573,7 +573,7 @@ func preCheckOrdService(qn string) error {
 		return err
 	}
 	if ordBlockCount < quickNode.Result {
-		if quickNode.Result-ordBlockCount >= 4 {
+		if quickNode.Result-ordBlockCount > 0 {
 			return errors.New("ord block count is too far from quicknode")
 		}
 	}
