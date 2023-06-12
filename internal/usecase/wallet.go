@@ -185,6 +185,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 	if err != nil {
 		log.Println("GenBuyETHOrder GetBTCToETHRate", err.Error(), err)
 	}
+	var errOutput error
 	for _, output := range outputs {
 		wg.Add(1)
 		waitChan <- struct{}{}
@@ -202,12 +203,14 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 
 			inscriptions, err := getInscriptionByOutput(ordServer, op)
 			if err != nil {
+				errOutput = errors.New("getInscriptionByOutput error " + err.Error())
 				return
 			}
 			if len(inscriptions.Inscriptions) > 0 {
 				for _, insc := range inscriptions.Inscriptions {
 					data, err := getInscriptionByID(ordServer, insc)
 					if err != nil {
+						errOutput = errors.New("getInscriptionByID error " + err.Error())
 						return
 					}
 					tokenURI, err := u.Repo.FindTokenByTokenID(insc)
@@ -216,6 +219,7 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 					}
 					offset, err := strconv.ParseInt(strings.Split(data.Satpoint, ":")[2], 10, 64)
 					if err != nil {
+						errOutput = err
 						return
 					}
 					inscWalletInfo := structure.WalletInscriptionInfo{
@@ -301,6 +305,9 @@ func (u Usecase) InscriptionsByOutputs(outputs []string, currentListing []entity
 		}(output)
 	}
 	wg.Wait()
+	if errOutput != nil {
+		return nil, nil, errOutput
+	}
 	return result, outputInscMap, nil
 }
 
