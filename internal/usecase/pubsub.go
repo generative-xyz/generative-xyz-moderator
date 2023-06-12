@@ -16,17 +16,17 @@ import (
 //Queue functions
 
 // Processing functions
-func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
+func (u *Usecase) PubSubCreateTokenThumbnaill(tracingInjection map[string]string, channelName string, payload interface{}) {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("json.Marshal", zap.Error(err)))
+		logger.AtLog.Error("PubSubCreateTokenThumbnail", zap.Any("json.Marshal", zap.Error(err)))
 		return
 	}
 
 	tokenURI := &structure.TokenImagePayload{}
 	err = json.Unmarshal(bytes, tokenURI)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("json.Unmarshal", zap.Error(err)))
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Any("json.Unmarshal", zap.Error(err)))
 		return
 	}
 
@@ -34,20 +34,20 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 }
 
 func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
-	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
+	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
 	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("FindTokenByWithoutCache", zap.Error(err)))
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		return
 	}
 
 	resp, err := u.RunAndCap(token)
 	if err != nil {
-		logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("RunAndCap", zap.Error(err)))
+		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		return
 	}
 
-	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("RunAndCap.resp", zap.Any("resp)", resp)))
+	logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 	if resp.IsUpdated {
 		token.ParsedImage = &resp.ParsedImage
 		token.Thumbnail = resp.Thumbnail
@@ -58,9 +58,10 @@ func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
 		if os.Getenv("ENV") == "mainnet" {
 			updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
 			if err != nil {
-				logger.AtLog.Error("PubSubCreateTokenThumbnai", zap.Any("UpdateOrInsertTokenUri", err))
+				logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 			}
-			logger.AtLog.Logger.Info("PubSubCreateTokenThumbnai", zap.Any("updatedp", updated), zap.String("tokenID", token.TokenID))
+			logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.Any("updated", updated), zap.String("tokenID", token.TokenID))
+
 			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
 		}
 
