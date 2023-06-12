@@ -16,7 +16,7 @@ import (
 //Queue functions
 
 // Processing functions
-func (u *Usecase) PubSubCreateTokenThumbnaill(tracingInjection map[string]string, channelName string, payload interface{}) {
+func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string, channelName string, payload interface{}) {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
 		logger.AtLog.Error("PubSubCreateTokenThumbnail", zap.Any("json.Marshal", zap.Error(err)))
