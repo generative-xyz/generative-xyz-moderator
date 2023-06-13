@@ -46,6 +46,7 @@ func (u Usecase) SubmitBTCTransaction(list map[string]string) error {
 				Raw:                 raw,
 				RelatedInscriptions: relatedInscriptionArray,
 				Status:              0,
+				Error1:              err.Error(),
 			})
 			continue
 		}
