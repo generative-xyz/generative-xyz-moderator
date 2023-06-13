@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -73,11 +72,7 @@ func (u Usecase) ParseSvg(req request.ParseSvgRequest) (*string, error) {
 	id := req.ID
 	url := req.Url
 
-	isImage, imageType := utils.IsImageURL(url)
-	if !isImage {
-		return nil, errors.New("Url is not an image")
-	}
-
+	_, imageType := utils.IsImageURL(url)
 	if !strings.Contains(imageType, "svg") && !strings.Contains(imageType, "html") {
 		return &url, nil
 	}
