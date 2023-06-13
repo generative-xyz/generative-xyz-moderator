@@ -418,7 +418,8 @@ func (c *Client) SendMulti(contractAddress, privateKeyStr string, toInfo map[str
 	}
 
 	if totalAmount.String() != value.String() {
-		return "", errors.Wrap(err, fmt.Sprintf("totalAmount != value:  %s != %s", totalAmount.String(), value.String()))
+		err = errors.New(fmt.Sprintf("totalAmount != value:  %s != %s", totalAmount.String(), value.String()))
+		return "", errors.Wrap(err, "totalAmountDif")
 	}
 
 	auth.Value = value
