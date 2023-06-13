@@ -126,14 +126,14 @@ func (h ScronOrdinalCollectionHandler) StartServer() {
 	c := cron.New()
 	// cronjob to sync ordinals collection
 	c.AddFunc("0 */2 * * *", func() {
-		source := os.Getenv("ORDINAL_COLLECTION_REPOSITORY")
+		/*source := os.Getenv("ORDINAL_COLLECTION_REPOSITORY")
 		if source == "" {
 			source = "https://github.com/ordinals-wallet/ordinals-collections.git"
 		}
 		err := h.crawlOrdinalCollection(source)
 		if err != nil {
 			logger.AtLog.Logger.Error("DispatchCron.EveryTwoHour.SyncOrdinalWalletCollections", zap.Error(err))
-		}
+		}*/
 	})
 	c.AddFunc("*/15 * * * *", func() {
 		source := os.Getenv("GENERATIVE_COLLECTION_REPOSITORY")
