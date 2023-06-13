@@ -1308,7 +1308,6 @@ func (r Repository) GetAllTokensByProjectID(projectID string) ([]entity.TokenUri
 	f := bson.D{{
 		Key:   utils.KEY_PROJECT_ID,
 		Value: projectID,
-		Ins
 	}}
 
 	opts := options.FindOptions{}
