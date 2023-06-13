@@ -2259,10 +2259,10 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 				go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "destinations eth final to send", destinations, true)
 
 				// check test first:
-				testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
-				if testCronTab == nil || testCronTab.Enabled {
-					return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
-				}
+				// testCronTab, _ := u.Repo.FindCronJobManagerByUUID("64071ce60ae9297684ebc528_1")
+				// if testCronTab == nil || testCronTab.Enabled {
+				// 	return errors.New("pause for test -> SendMasterAndRefund: " + mintItem.UUID)
+				// }
 
 				privateKeyDeCrypt, err := encrypt.DecryptToString(mintItem.PrivateKey, os.Getenv("SECRET_KEY"))
 				if err != nil {
@@ -2282,6 +2282,13 @@ func (u Usecase) SendMasterAndRefund(uuid string, bs *btc.BlockcypherService, et
 					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err", err.Error(), true)
 					return err
 				}
+
+				if len(txID) == 0 {
+					err = errors.New("tx send multi is empty")
+					go u.trackMintNftBtcHistory(mintItem.UUID, "SendMasterAndRefund", mintItem.TableName(), mintItem.Status, "SendMulti err pls check <@phuong> tx empty!!!", err.Error(), true)
+					return err
+				}
+
 				// update now:
 				// update parent item:
 				mintItem.Status = entity.StatusMint_SendingFundToMaster
