@@ -78,7 +78,7 @@ func (u Usecase) ParseSvg(req request.ParseSvgRequest) (*string, error) {
 		return nil, errors.New("Url is not an image")
 	}
 
-	if !strings.Contains(imageType, "svg") {
+	if !strings.Contains(imageType, "svg") && !strings.Contains(imageType, "html") {
 		return &url, nil
 	}
 
