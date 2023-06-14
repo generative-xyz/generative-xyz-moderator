@@ -21,24 +21,7 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 	tokenCap := []entity.TokenUri{}
 	for _, tok := range tokens {
 
-		if tok.OrderInscriptionIndex == 226 ||
-			tok.OrderInscriptionIndex == 231 ||
-			tok.OrderInscriptionIndex == 196 ||
-			tok.OrderInscriptionIndex == 197 ||
-			tok.OrderInscriptionIndex == 199 ||
-			tok.OrderInscriptionIndex == 200 ||
-			tok.OrderInscriptionIndex == 201 ||
-			tok.OrderInscriptionIndex == 202 ||
-			tok.OrderInscriptionIndex == 203 ||
-			tok.OrderInscriptionIndex == 204 ||
-			tok.OrderInscriptionIndex == 205 ||
-			tok.OrderInscriptionIndex == 216 ||
-			tok.OrderInscriptionIndex == 218 ||
-			tok.OrderInscriptionIndex == 222 ||
-			tok.OrderInscriptionIndex == 224 ||
-			tok.OrderInscriptionIndex == 225 ||
-			tok.OrderInscriptionIndex == 227 ||
-			tok.OrderInscriptionIndex == 198 {
+		if tok.OrderInscriptionIndex >= 12 && tok.OrderInscriptionIndex <= 20 {
 			tokenCap = append(tokenCap, tok)
 		}
 	}
@@ -70,10 +53,11 @@ func CaptureThumbnail(repo *repository.Repository, uc *usecase.Usecase, projectI
 		}(&wg, inChan, respArr)
 	}
 
+	maxProcess := 2
 	for i, nft := range tokenCap {
 		wg.Add(1)
 		inChan <- nft
-		if i%10 == 0 && i > 0 {
+		if i%maxProcess == 0 && i > 0 || i == len(tokenCap)-1 {
 			wg.Wait()
 		}
 	}

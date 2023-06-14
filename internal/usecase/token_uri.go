@@ -42,6 +42,10 @@ import (
 )
 
 func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI, error) {
+	if token == nil {
+		return nil, errors.New("Token is empty")
+	}
+
 	captureTimeout := entity.DEFAULT_CAPTURE_TIME
 	p, err := u.Repo.FindProjectByTokenID(token.ProjectID)
 	if err == nil && p != nil && p.CatureThumbnailDelayTime != nil && *p.CatureThumbnailDelayTime != 0 {
