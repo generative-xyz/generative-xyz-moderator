@@ -60,14 +60,17 @@ func (h Handler) StartServer() {
 		m, ok := msg.(*redis2.Message)
 		if ok {
 			wg.Add(1)
+			processing++
 			go h.worker(&wg, m)
 
+			logger.AtLog.Logger.Info("pubsubHandler.Worker", zap.String("channel", m.Channel), zap.Any("payload", m.Payload), zap.Int("processing", processing))
+
 			if processing > 0 && processing%maxProcessing == 0 {
+				logger.AtLog.Logger.Info("pubsubHandler.Worker.Wait", zap.String("channel", m.Channel), zap.Any("payload", m.Payload), zap.Int("processing", processing))
 				wg.Wait()
 				processing = 0
 			}
 
-			processing++
 		}
 	}
 	return
@@ -87,7 +90,6 @@ func (h Handler) handlerMessage(msg *redis2.Message) error {
 	}()
 
 	chanName := msg.Channel
-	//	logger.AtLog.Info("pubsubHandler.handlerMessage", zap.String("channel", chanName), zap.Any("payload", msg.Payload))
 
 	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
 	if err != nil {
