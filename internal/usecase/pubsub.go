@@ -3,10 +3,8 @@ package usecase
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"rederinghub.io/utils/helpers"
-
 	"go.uber.org/zap"
+	"os"
 	"rederinghub.io/internal/delivery/http/request"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/logger"
@@ -30,12 +28,15 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 		return
 	}
 
+	//Save to DB
+
+	//move this to another Job
 	u.Capture(tokenURI)
 }
 
 func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
 	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
-	token, err := u.Repo.FindTokenByWithoutCache(tokenURI.ContractAddress, tokenURI.TokenID)
+	token, err := u.Repo.FindTokenForCaptureThumbnail(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		return
@@ -49,22 +50,11 @@ func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
 
 	logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 	if resp.IsUpdated {
-		token.ParsedImage = &resp.ParsedImage
-		token.Thumbnail = resp.Thumbnail
-		token.ParsedAttributes = resp.Traits
-		token.ParsedAttributesStr = resp.TraitsStr
-		token.ThumbnailCapturedAt = resp.CapturedAt
-
-		if os.Getenv("ENV") == "mainnet" {
-			updated, err := u.Repo.UpdateOrInsertTokenUri(tokenURI.ContractAddress, tokenURI.TokenID, token)
-			if err != nil {
-				logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
-			}
-			logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.Any("updated", updated), zap.String("tokenID", token.TokenID))
-
-			u.NotifyWithChannel(os.Getenv("SLACK_PROJECT_CHANNEL_ID"), fmt.Sprintf("[Token's thumnail is captured][token %s]", helpers.CreateTokenLink(token.ProjectID, token.TokenID, token.Name)), "", fmt.Sprintf("%s", helpers.CreateTokenImageLink(token.Thumbnail)))
+		err = u.Repo.UpdateTokenThumbnail(tokenURI.ContractAddress, tokenURI.TokenID, resp.Thumbnail, resp.ParsedImage, resp.Traits, resp.TraitsStr, resp.CapturedAt)
+		if err != nil {
+			logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		}
-
+		logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.String("tokenID", token.TokenID))
 	}
 }
 
