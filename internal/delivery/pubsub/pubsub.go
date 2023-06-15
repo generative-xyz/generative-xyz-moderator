@@ -1,13 +1,13 @@
 package pubsub
 
 import (
-	"fmt"
 	redis2 "github.com/go-redis/redis"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
 	"rederinghub.io/utils"
 	"rederinghub.io/utils/logger"
 	"rederinghub.io/utils/redis"
+	"sync"
 	"time"
 )
 
@@ -42,8 +42,10 @@ func (h Handler) StartServer() {
 	}
 
 	errCount := 0
-	processCount := 0
-	logger.AtLog.Info(fmt.Sprintf("pubsubHandler.SubscribeMessageRoute - Listen on channel name: %s ", names))
+	var wg sync.WaitGroup
+	processing := 0
+	maxProcessing := 5
+
 	for {
 		msg, err := pubsub.Receive()
 		if err != nil {
@@ -53,21 +55,30 @@ func (h Handler) StartServer() {
 			errCount++
 			continue
 		}
-		errCount = 0
-		if m, ok := msg.(*redis2.Message); ok {
-			processCount++
-			go func(message *redis2.Message) {
-				h.handlerMessage(message)
-				processCount--
-			}(m)
 
-			for processCount >= 5 {
-				time.Sleep(1 * time.Second)
+		errCount = 0
+		m, ok := msg.(*redis2.Message)
+		if ok {
+			wg.Add(1)
+			go h.worker(&wg, m)
+
+			if processing > 0 && processing%maxProcessing == 0 {
+				wg.Wait()
+				processing = 0
 			}
+
+			processing++
 		}
 	}
 	return
 }
+
+func (h Handler) worker(wg *sync.WaitGroup, message *redis2.Message) {
+	defer wg.Done()
+	h.handlerMessage(message)
+
+}
+
 func (h Handler) handlerMessage(msg *redis2.Message) error {
 	defer func() {
 		if rcv := recover(); rcv != nil {
@@ -76,7 +87,7 @@ func (h Handler) handlerMessage(msg *redis2.Message) error {
 	}()
 
 	chanName := msg.Channel
-	logger.AtLog.Info("pubsubHandler.handlerMessage", zap.String("channel", chanName), zap.Any("payload", msg.Payload))
+	//	logger.AtLog.Info("pubsubHandler.handlerMessage", zap.String("channel", chanName), zap.Any("payload", msg.Payload))
 
 	payload, tracingInjection, err := h.pubsub.Parsepayload(msg.Payload)
 	if err != nil {

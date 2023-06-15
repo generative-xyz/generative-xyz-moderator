@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"rederinghub.io/internal/delivery/http/request"
+	"rederinghub.io/internal/entity"
 	"rederinghub.io/internal/usecase/structure"
 	"rederinghub.io/utils/logger"
 	_req "rederinghub.io/utils/request"
@@ -35,26 +36,37 @@ func (u *Usecase) PubSubCreateTokenThumbnail(tracingInjection map[string]string,
 }
 
 func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
-	logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.Any("tokenURI", zap.Any("tokenURI)", tokenURI)))
-	token, err := u.Repo.FindTokenForCaptureThumbnail(tokenURI.ContractAddress, tokenURI.TokenID)
+	var err error
+	token := new(entity.TokenUri)
+	resp := new(structure.TokenAnimationURI)
+
+	defer func() {
+
+		if err != nil {
+			logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.String("gen_nft_addrress", token.GenNFTAddr), zap.Any("RunAndCap", resp))
+
+		} else {
+			logger.AtLog.Logger.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.Error(err))
+		}
+	}()
+
+	token, err = u.Repo.FindTokenForCaptureThumbnail(tokenURI.ContractAddress, tokenURI.TokenID)
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		return
 	}
 
-	resp, err := u.RunAndCap(token)
+	resp, err = u.RunAndCap(token)
 	if err != nil {
 		logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		return
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 	if resp.IsUpdated {
 		err = u.Repo.UpdateTokenThumbnail(tokenURI.ContractAddress, tokenURI.TokenID, resp.Thumbnail, resp.ParsedImage, resp.Traits, resp.TraitsStr, resp.CapturedAt)
 		if err != nil {
 			logger.AtLog.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s - %s", tokenURI.ContractAddress, tokenURI.TokenID), zap.Error(err), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress))
 		}
-		logger.AtLog.Logger.Info("PubSubCreateTokenThumbnail", zap.String("tokenID", token.TokenID))
 	}
 }
 
@@ -115,4 +127,9 @@ func (u *Usecase) PubSubCaptureThumbnail(tracingInjection map[string]string, cha
 	}
 	//logger.AtLog.Info("call to renderer-set-image ", zap.Error(err), zap.String("renderURL", renderURL), zap.String("device_id", req.ID), zap.Int("code", code), zap.String("response", string(result)))
 	fmt.Printf(`[POST] %s request {"display_url": "%s"}  - resp {"code": "%d", "result":"%v", "error": "%v" } \n`, renderURL, req.Url, code, string(result), err)
+}
+
+func (u *Usecase) PubsubTestChannel(tracingInjection map[string]string, channelName string, payload interface{}) {
+
+	logger.AtLog.Logger.Info("PubsubTestChannel", zap.String("channelName", channelName), zap.Any("tracingInjection", tracingInjection))
 }
