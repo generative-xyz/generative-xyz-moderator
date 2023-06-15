@@ -41,12 +41,11 @@ func (u *Usecase) Capture(tokenURI *structure.TokenImagePayload) {
 	resp := new(structure.TokenAnimationURI)
 
 	defer func() {
-
-		if err != nil {
-			logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.String("gen_nft_addrress", token.GenNFTAddr), zap.Any("RunAndCap", resp))
+		if err == nil {
+			logger.AtLog.Logger.Info(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.Any("request", tokenURI), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.String("gen_nft_addrress", token.GenNFTAddr), zap.String("Thumbnail", resp.Thumbnail), zap.Bool("Thumbnail.IsUpdated", resp.IsUpdated))
 
 		} else {
-			logger.AtLog.Logger.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.Error(err))
+			logger.AtLog.Logger.Error(fmt.Sprintf("PubSubCreateTokenThumbnail - %s", tokenURI.TokenID), zap.Any("request", tokenURI), zap.String("tokenURI", tokenURI.TokenID), zap.String("contract_address", tokenURI.ContractAddress), zap.Error(err))
 		}
 	}()
 

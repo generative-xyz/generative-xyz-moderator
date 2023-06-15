@@ -55,7 +55,6 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, errors.New("Token is empty")
 	}
 	resp := &structure.TokenAnimationURI{}
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID))
 	if token.ThumbnailCapturedAt != nil && token.ParsedImage != nil && !strings.HasSuffix(*token.ParsedImage, "i0") {
 		resp = &structure.TokenAnimationURI{
 			ParsedImage: *token.ParsedImage,
@@ -118,7 +117,7 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
 			imageURL = fileURI
 		}
-		logger.AtLog.Logger.Info("RunAndCap", zap.Any("token", token), zap.Any("fileURI", imageURL), zap.Any("uploaded", uploaded))
+
 	}
 
 	traits := make(map[string]interface{})
@@ -163,9 +162,10 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 			if err != nil {
 				logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
 			} else {
-				logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Any("uploaded", uploaded))
 				thumbnail = fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), name)
 			}
+
+			_ = uploaded
 		}
 	}
 
@@ -177,6 +177,8 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		CapturedAt:  &now,
 		IsUpdated:   true,
 	}
+
+	logger.AtLog.Logger.Info(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID), zap.Any("contractAddress", token.ContractAddress), zap.Any("cenNFTAddr", token.GenNFTAddr), zap.Any("projectID", token.ProjectID), zap.Any("tokenID", token.TokenID), zap.Any("fileURI", imageURL), zap.Any("uploaded", resp.Thumbnail))
 
 	return resp, nil
 }

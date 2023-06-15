@@ -1816,7 +1816,7 @@ func (r Repository) UpdateTokenThumbnail(contractAddress string, tokenId string,
 }
 
 func (r Repository) FindTokenForCaptureThumbnail(contractAddress string, tokenID string) (*entity.TokenUri, error) {
-	key := helpers.TokenURIKey(contractAddress, tokenID)
+
 	f := bson.D{
 		{Key: "$or", Value: bson.A{
 			bson.M{"gen_nft_addrress": strings.ToLower(contractAddress)},
@@ -1825,5 +1825,12 @@ func (r Repository) FindTokenForCaptureThumbnail(contractAddress string, tokenID
 		{"token_id", tokenID},
 	}
 
-	return r.FindTokenUriWithtCache(f, key)
+	s := r.DB.Collection(entity.TokenUri{}.TableName()).FindOne(context.Background(), f)
+	resp := &entity.TokenUri{}
+	err := s.Decode(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
