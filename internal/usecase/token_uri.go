@@ -178,7 +178,6 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	logger.AtLog.Logger.Info("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Any("fileURI", imageURL), zap.Any("resp", zap.Any("resp)", resp)))
 	return resp, nil
 }
 
