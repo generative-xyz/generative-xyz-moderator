@@ -73,6 +73,13 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return nil, err
 	}
 
+	var contextOpts = []chromedp.ContextOption{}
+	//contextOpts = []chromedp.ContextOption{
+	//	chromedp.WithErrorf(log.Printf),
+	//	chromedp.WithLogf(log.Printf),
+	//	chromedp.WithBrowserOption(),
+	//}
+
 	opts := []chromedp.ExecAllocatorOption{}
 	if os.Getenv("ENV") == "mainnet" {
 		opts = append(chromedp.DefaultExecAllocatorOptions[:],
@@ -90,7 +97,10 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 	}
 
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	cctx, cancel := chromedp.NewContext(allocCtx)
+	cctx, cancel := chromedp.NewContext(allocCtx, contextOpts...)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(captureTimeout)*5*time.Second)
 	defer cancel()
 
 	imageURL := token.AnimationURL
@@ -111,26 +121,37 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		return resp, nil
 	}
 	if strings.Index(imageURL, "data:text/html;base64,") >= 0 {
-		htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
-		uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
-		if err == nil {
-			fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
-			imageURL = fileURI
+		if token.AnimationHtml != nil && *token.AnimationHtml != "" {
+			imageURL = *token.AnimationHtml
+		} else {
+			htmlString := strings.ReplaceAll(token.AnimationURL, "data:text/html;base64,", "")
+			uploaded, err := u.GCS.UploadBaseToBucket(htmlString, fmt.Sprintf("btc-projects/%s/index.html", token.ProjectID))
+			if err == nil {
+				fileURI := fmt.Sprintf("%s/%s?seed=%s", os.Getenv("GCS_DOMAIN"), uploaded.Name, token.TokenID)
+				imageURL = fileURI
+			}
 		}
-
 	}
 
 	traits := make(map[string]interface{})
-	err = chromedp.Run(cctx,
+	err = chromedp.Run(ackCtx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(imageURL),
+		chromedp.WaitReady("body", chromedp.ByQuery),
 		chromedp.Sleep(time.Second*time.Duration(captureTimeout)),
 		chromedp.CaptureScreenshot(&buf),
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 
 	if err != nil {
-		logger.AtLog.Logger.Error("RunAndCap", zap.Any("tokenID", token.TokenID), zap.Error(err))
+		logger.AtLog.Logger.Error(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID),
+			zap.String("tokenID", token.TokenID),
+			zap.String("contractAddress", token.ContractAddress),
+			zap.String("cenNFTAddr", token.GenNFTAddr),
+			zap.String("projectID", token.ProjectID),
+			zap.String("tokenID", token.TokenID),
+			zap.String("fileURI", imageURL),
+			zap.Error(err))
 	}
 
 	for key, item := range traits {
@@ -178,7 +199,14 @@ func (u Usecase) RunAndCap(token *entity.TokenUri) (*structure.TokenAnimationURI
 		IsUpdated:   true,
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID), zap.Any("contractAddress", token.ContractAddress), zap.Any("cenNFTAddr", token.GenNFTAddr), zap.Any("projectID", token.ProjectID), zap.Any("tokenID", token.TokenID), zap.Any("fileURI", imageURL), zap.Any("uploaded", resp.Thumbnail))
+	logger.AtLog.Logger.Info(fmt.Sprintf("RunAndCap - %s - %s", token.ProjectID, token.TokenID),
+		zap.String("contractAddress", token.ContractAddress),
+		zap.String("cenNFTAddr", token.GenNFTAddr),
+		zap.String("projectID", token.ProjectID),
+		zap.String("tokenID", token.TokenID),
+		zap.String("fileURI", imageURL),
+		zap.String("uploaded", resp.Thumbnail),
+	)
 
 	return resp, nil
 }
@@ -298,7 +326,7 @@ func (u Usecase) GetToken(req structure.GetTokenMessageReq, captureTimeout int) 
 	}
 
 	go func() {
-		if tokenUri.Thumbnail == "" {
+		if tokenUri.ThumbnailCapturedAt == nil {
 			payload := redis.PubSubPayload{Data: structure.TokenImagePayload{
 				TokenID:         tokenUri.TokenID,
 				ContractAddress: tokenUri.ContractAddress,

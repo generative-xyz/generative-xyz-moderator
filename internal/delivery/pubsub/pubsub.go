@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"fmt"
 	redis2 "github.com/go-redis/redis"
 	"go.uber.org/zap"
 	"rederinghub.io/internal/usecase"
@@ -63,10 +64,7 @@ func (h Handler) StartServer() {
 			processing++
 			go h.worker(&wg, m)
 
-			logger.AtLog.Logger.Info("pubsubHandler.Worker", zap.String("channel", m.Channel), zap.Any("payload", m.Payload), zap.Int("processing", processing))
-
 			if processing > 0 && processing%maxProcessing == 0 {
-				logger.AtLog.Logger.Info("pubsubHandler.Worker.Wait", zap.String("channel", m.Channel), zap.Any("payload", m.Payload), zap.Int("processing", processing))
 				wg.Wait()
 				processing = 0
 			}
@@ -85,7 +83,7 @@ func (h Handler) worker(wg *sync.WaitGroup, message *redis2.Message) {
 func (h Handler) handlerMessage(msg *redis2.Message) error {
 	defer func() {
 		if rcv := recover(); rcv != nil {
-			logger.AtLog.Error("panic error", zap.Any("recover", rcv))
+			logger.AtLog.Logger.Error("handlerMessage", zap.Any("recover", rcv))
 		}
 	}()
 
@@ -95,6 +93,9 @@ func (h Handler) handlerMessage(msg *redis2.Message) error {
 	if err != nil {
 		return err
 	}
+
+	logger.AtLog.Logger.Info(fmt.Sprintf("handlerMessage - %s", chanName), zap.String("chanName", chanName), zap.Any("payload", payload))
+
 	switch chanName {
 	case h.pubsub.GetChannelName(utils.PUBSUB_TOKEN_THUMBNAIL):
 		h.useCase.PubSubCreateTokenThumbnail(tracingInjection, chanName, payload)
