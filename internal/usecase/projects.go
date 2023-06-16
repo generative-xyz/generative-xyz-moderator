@@ -1781,7 +1781,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	nftTokenURI["image"] = pe.Thumbnail
 	nftTokenURI["animation_url"] = ""
 	nftTokenURI["attributes"] = []string{}
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.String("projectID", pe.TokenID))
 
 	images := []string{}
 
@@ -1803,7 +1802,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 		return nil, err
 	}
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("ReadFolder", unzipFoler), zap.String("projectID", pe.TokenID), zap.Error(err))
 	maxSize := uint64(0)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(files), func(i, j int) { files[i], files[j] = files[j], files[i] })
@@ -1824,7 +1822,6 @@ func (u Usecase) UnzipProjectFile(zipPayload *structure.ProjectUnzipPayload) (*e
 	}
 	//
 
-	logger.AtLog.Logger.Info(fmt.Sprintf("UnzipProjectFile.%s", pe.TokenID), zap.Any("zipPayload", zipPayload), zap.Any("projecID", pe.TokenID), zap.Int("images", len(pe.Images)))
 	pe.Images = images
 	if len(images) > 0 {
 		pe.IsFullChain = true
