@@ -153,5 +153,5 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 			}, nil
 		}
 	}
-	return nil, fmt.Errorf("capture error")
+	return nil, fmt.Errorf("capture error 111")
 }
