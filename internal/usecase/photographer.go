@@ -89,3 +89,69 @@ func (u Usecase) ParseSvg(req request.ParseSvgRequest) (*string, error) {
 
 	return &image, nil
 }
+
+type ParsedHtml struct {
+	Image  string            `json:"image"`
+	Traits map[string]string `json:"traits"`
+}
+
+func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, error) {
+	id := req.ID
+	url := req.Url
+	duration := req.DelayTime
+
+	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
+	if err != nil {
+		return nil, err
+	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		//chromedp.ExecPath("google-chrome"),
+		chromedp.Flag("headless", eCH),
+		chromedp.Flag("disable-gpu", false),
+		chromedp.Flag("no-first-run", true),
+	)
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+	cctx, cancel := chromedp.NewContext(allocCtx)
+	defer cancel()
+
+	var buf []byte
+	traits := make(map[string]interface{})
+	err = chromedp.Run(cctx,
+		chromedp.EmulateViewport(960, 960),
+		chromedp.Navigate(url),
+		chromedp.Sleep(time.Second*time.Duration(duration)),
+		chromedp.CaptureScreenshot(&buf),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	image := helpers.Base64Encode(buf)
+	image = fmt.Sprintf("%s,%s", "data:image/png;base64", image)
+	if image != "" {
+		base64Image := image
+		i := strings.Index(base64Image, ",")
+		if i >= 0 {
+			now := time.Now().UTC().Unix()
+			name := fmt.Sprintf("capture/%s-%d.png", id, now)
+			base64Image = base64Image[i+1:]
+			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
+			if err != nil {
+				return nil, err
+			}
+
+			traitsResp := make(map[string]string)
+			for key, item := range traits {
+				traitsResp[key] = fmt.Sprintf("%v", item)
+			}
+
+			imageURL := fmt.Sprintf("%s/%s", os.Getenv("GCS_DOMAIN"), uploaded.Name)
+			return &ParsedHtml{
+				Image:  imageURL,
+				Traits: traitsResp,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("capture error")
+}

@@ -364,6 +364,7 @@ func (h *httpDelivery) RegisterV1Routes() {
 	photo.Use(h.MiddleWare.AuthorizationFunc)
 	photo.HandleFunc("/capture", h.Capture).Methods("POST")
 	photo.HandleFunc("/pare-svg", h.ParseSvg).Methods("POST")
+	photo.HandleFunc("/pare-html", h.ParseHtml).Methods("POST")
 	aiSchool := api.PathPrefix("/ai-school").Subrouter()
 	aiSchool.Use(h.MiddleWare.AccessTokenPassThrough)
 	aiSchool.HandleFunc("/list-progress", h.schoolListProgress).Methods("GET")

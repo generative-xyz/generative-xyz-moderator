@@ -4016,6 +4016,35 @@ paths:
       summary: captures url content as image
       tags:
       - Photographer
+  /photo/pare-html:
+    post:
+      consumes:
+      - application/json
+      description: parse html
+      parameters:
+      - description: capture request
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParseSvgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.JsonResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CaptureResponse'
+              type: object
+      security:
+      - Authorization: []
+      summary: parse html
+      tags:
+      - Photographer
   /photo/pare-svg:
     post:
       consumes:
