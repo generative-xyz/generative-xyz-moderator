@@ -3,7 +3,9 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"os"
+	"rederinghub.io/utils/logger"
 	"strconv"
 	"strings"
 	"time"
@@ -102,6 +104,7 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 
 	eCH, err := strconv.ParseBool(os.Getenv("ENABLED_CHROME_HEADLESS"))
 	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent", zap.Any("req", req), zap.Error(err))
 		return nil, err
 	}
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
@@ -124,6 +127,7 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 	if err != nil {
+		logger.AtLog.Logger.Error("CaptureHtmlContent - chromedp.Run", zap.Any("req", req), zap.Error(err))
 		return nil, err
 	}
 
@@ -138,6 +142,7 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 			base64Image = base64Image[i+1:]
 			uploaded, err := u.GCS.UploadBaseToBucket(base64Image, name)
 			if err != nil {
+				logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
 				return nil, err
 			}
 
@@ -153,5 +158,8 @@ func (u Usecase) CaptureHtmlContent(req request.ParseSvgRequest) (*ParsedHtml, e
 			}, nil
 		}
 	}
-	return nil, fmt.Errorf("capture error 111")
+
+	err = fmt.Errorf("capture error")
+	logger.AtLog.Logger.Error("CaptureHtmlContent - UploadBaseToBucket", zap.Any("req", req), zap.Error(err))
+	return nil, err
 }
