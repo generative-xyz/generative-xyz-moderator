@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go.uber.org/zap"
+	"log"
 	"os"
 	"rederinghub.io/utils/logger"
 	"strconv"
@@ -23,24 +24,45 @@ func (u Usecase) CaptureContent(id, url string, duration int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		//chromedp.ExecPath("google-chrome"),
-		chromedp.Flag("headless", eCH),
-		chromedp.Flag("disable-gpu", false),
-		chromedp.Flag("no-first-run", true),
-	)
+
+	var contextOpts = []chromedp.ContextOption{}
+	contextOpts = []chromedp.ContextOption{
+		chromedp.WithErrorf(log.Printf),
+		chromedp.WithLogf(log.Printf),
+		chromedp.WithBrowserOption(),
+	}
+
+	opts := []chromedp.ExecAllocatorOption{}
+	if os.Getenv("ENV") == "mainnet" {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.ExecPath("google-chrome"),
+			chromedp.Flag("headless", eCH),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	} else {
+		opts = append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", false),
+			chromedp.Flag("disable-gpu", false),
+			chromedp.Flag("no-first-run", true),
+		)
+	}
+
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	cctx, cancel := chromedp.NewContext(allocCtx)
+	cctx, cancel := chromedp.NewContext(allocCtx, contextOpts...)
+
+	//avoid overlap html
+	ackCtx, cancel := context.WithTimeout(cctx, time.Duration(duration)*5*time.Second)
 	defer cancel()
 
 	var buf []byte
-	//traits := make(map[string]interface{})
-	err = chromedp.Run(cctx,
+	traits := make(map[string]interface{})
+	err = chromedp.Run(ackCtx,
 		chromedp.EmulateViewport(960, 960),
 		chromedp.Navigate(url),
 		chromedp.Sleep(time.Second*time.Duration(duration)),
 		chromedp.CaptureScreenshot(&buf),
-		//chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
+		chromedp.EvaluateAsDevTools("window.$generativeTraits", &traits),
 	)
 	if err != nil {
 		return "", err
