@@ -88,6 +88,7 @@ func (u Usecase) GenerateMessage(data structure.GenerateMessage) (*string, error
 
 func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyResponse, error) {
 	logger.AtLog.Info("VerifyMessage", zap.Any("data", data))
+	logger.AtLog.Logger.Error("user try trace log data", zap.Any("data", data))
 
 	// validate data
 	if data.ETHSignature == "" || data.Signature == "" ||
@@ -104,7 +105,7 @@ func (u Usecase) VerifyMessage(data structure.VerifyMessage) (*structure.VerifyR
 		logger.AtLog.Error(err)
 		return nil, err
 	}
-	logger.AtLog.Info("user", user)
+	logger.AtLog.Logger.Error("user try trace log user", zap.Any("user", user))
 
 	isVeried, err := u.verifyBTCSegwit(user.Message, data)
 	if err != nil {
