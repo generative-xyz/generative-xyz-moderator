@@ -1000,6 +1000,7 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 				item.Royalty = item.Project.Royalty
 				item.IsMinting = false
 				item.MintingInfo = entity.MintingInfo{Done: 0, All: 0, Pending: 0}
+				item.IsOnChain = true
 			}
 		} else {
 			item.Owner = entity.TokenURIListingOwner{
@@ -1030,8 +1031,13 @@ func (u Usecase) FilterTokensNew(filter structure.FilterTokens) (*entity.Paginat
 					}
 					if mtinfo.Done < mtinfo.All {
 						item.IsMinting = true
+						item.IsOnChain = false
+					} else {
+						item.IsOnChain = true
 					}
 				}
+			} else {
+				item.IsOnChain = true
 			}
 
 		}
