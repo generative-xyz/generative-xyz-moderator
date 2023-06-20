@@ -188,6 +188,7 @@ type TokenUriListingFilter struct {
 	MintingInfo   MintingInfo   `bson:"-" json:"minting_info"`
 
 	TokenIDData string `json:"tokenIDData"`
+	IsOnChain   bool   `json:"isOnchain" bson:"isOnchain"`
 }
 
 type MintingInfo struct {
